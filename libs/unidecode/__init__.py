@@ -19,7 +19,7 @@ b'Knosos'
 import warnings
 from typing import Dict, Optional, Sequence
 
-Cache = {} # type: Dict[int, Optional[Sequence[Optional[str]]]]
+Cache: Dict[int, Optional[Sequence[Optional[str]]]] = {}
 
 class UnidecodeError(ValueError):
     def __init__(self, message: str, index: Optional[int] = None) -> None:

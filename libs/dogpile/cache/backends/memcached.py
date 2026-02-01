@@ -6,12 +6,12 @@ Provides backends for talking to `memcached <http://memcached.org>`_.
 
 """
 
+from collections.abc import Mapping
 import random
 import threading
 import time
 import typing
 from typing import Any
-from typing import Mapping
 import warnings
 
 from ..api import CacheBackend

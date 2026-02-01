@@ -1,9 +1,9 @@
 babelfish-0.6.1.dist-info/INSTALLER,sha256=zuuue4knoyJ-UwPPXg8fezS7VCrXJQrAP7zeNuwvFQg,4
-babelfish-0.6.1.dist-info/LICENSE,sha256=Oks1Oz6Ct0po2CM5dQD3S8oXrnJOJ1jMNj28Y5yXpao,1529
-babelfish-0.6.1.dist-info/METADATA,sha256=NrLR07hncTt09YG_BwYLy5FFw-UR_H7EPsTHgjd5gRk,3152
+babelfish-0.6.1.dist-info/METADATA,sha256=oeHMnqErUx_OEqyPZIX30k2OCUG_KA8S8BlJ5z8rMIk,3178
 babelfish-0.6.1.dist-info/RECORD,,
 babelfish-0.6.1.dist-info/REQUESTED,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
-babelfish-0.6.1.dist-info/WHEEL,sha256=Nq82e9rUAnEjt98J6MlVmMCZb-t9cYE2Ir1kpBmnWfs,88
+babelfish-0.6.1.dist-info/WHEEL,sha256=kJCRJT_g0adfAJzTx2GUMmS80rTJIVHRCfG0DQgLq3o,88
+babelfish-0.6.1.dist-info/licenses/LICENSE,sha256=Oks1Oz6Ct0po2CM5dQD3S8oXrnJOJ1jMNj28Y5yXpao,1529
 babelfish/__init__.py,sha256=acwjM_qKby8EzOkPVT-R1Usakhba0s7mO-Q4QXFPZgs,761
 babelfish/compat.py,sha256=nobpsm7Iv2QLBBg1af4OxgzcNAwRJP642Juyai_6UMg,976
 babelfish/converters/__init__.py,sha256=N2z65eoHo0_9ZHgipi-9cVpd2lMX3Dk8ro2YEStbETA,9361

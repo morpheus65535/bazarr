@@ -24,6 +24,7 @@ from werkzeug.routing import RoutingException
 from werkzeug.routing import Rule
 from werkzeug.serving import is_running_from_reloader
 from werkzeug.wrappers import Response as BaseResponse
+from werkzeug.wsgi import get_host
 
 from . import cli
 from . import typing as ft
@@ -59,6 +60,7 @@ if t.TYPE_CHECKING:  # pragma: no cover
 
     from .testing import FlaskClient
     from .testing import FlaskCliRunner
+    from .typing import HeadersValue
 
 T_shell_context_processor = t.TypeVar(
     "T_shell_context_processor", bound=ft.ShellContextProcessorCallable
@@ -179,8 +181,10 @@ class Flask(App):
             "TESTING": False,
             "PROPAGATE_EXCEPTIONS": None,
             "SECRET_KEY": None,
+            "SECRET_KEY_FALLBACKS": None,
             "PERMANENT_SESSION_LIFETIME": timedelta(days=31),
             "USE_X_SENDFILE": False,
+            "TRUSTED_HOSTS": None,
             "SERVER_NAME": None,
             "APPLICATION_ROOT": "/",
             "SESSION_COOKIE_NAME": "session",
@@ -188,9 +192,12 @@ class Flask(App):
             "SESSION_COOKIE_PATH": None,
             "SESSION_COOKIE_HTTPONLY": True,
             "SESSION_COOKIE_SECURE": False,
+            "SESSION_COOKIE_PARTITIONED": False,
             "SESSION_COOKIE_SAMESITE": None,
             "SESSION_REFRESH_EACH_REQUEST": True,
             "MAX_CONTENT_LENGTH": None,
+            "MAX_FORM_MEMORY_SIZE": 500_000,
+            "MAX_FORM_PARTS": 1_000,
             "SEND_FILE_MAX_AGE_DEFAULT": None,
             "TRAP_BAD_REQUEST_ERRORS": None,
             "TRAP_HTTP_EXCEPTIONS": False,
@@ -198,6 +205,7 @@ class Flask(App):
             "PREFERRED_URL_SCHEME": "http",
             "TEMPLATES_AUTO_RELOAD": None,
             "MAX_COOKIE_SIZE": 4093,
+            "PROVIDE_AUTOMATIC_OPTIONS": True,
         }
     )
 
@@ -257,9 +265,9 @@ class Flask(App):
         # For one, it might be created while the server is running (e.g. during
         # development). Also, Google App Engine stores static files somewhere
         if self.has_static_folder:
-            assert (
-                bool(static_host) == host_matching
-            ), "Invalid static_host/host_matching combination"
+            assert bool(static_host) == host_matching, (
+                "Invalid static_host/host_matching combination"
+            )
             # Use a weakref to avoid creating a reference cycle between the app
             # and the view function (see #3761).
             self_ref = weakref.ref(self)
@@ -319,9 +327,10 @@ class Flask(App):
             t.cast(str, self.static_folder), filename, max_age=max_age
         )
 
-    def open_resource(self, resource: str, mode: str = "rb") -> t.IO[t.AnyStr]:
-        """Open a resource file relative to :attr:`root_path` for
-        reading.
+    def open_resource(
+        self, resource: str, mode: str = "rb", encoding: str | None = None
+    ) -> t.IO[t.AnyStr]:
+        """Open a resource file relative to :attr:`root_path` for reading.
 
         For example, if the file ``schema.sql`` is next to the file
         ``app.py`` where the ``Flask`` app is defined, it can be opened
@@ -332,31 +341,46 @@ class Flask(App):
             with app.open_resource("schema.sql") as f:
                 conn.executescript(f.read())
 
-        :param resource: Path to the resource relative to
-            :attr:`root_path`.
-        :param mode: Open the file in this mode. Only reading is
-            supported, valid values are "r" (or "rt") and "rb".
+        :param resource: Path to the resource relative to :attr:`root_path`.
+        :param mode: Open the file in this mode. Only reading is supported,
+            valid values are ``"r"`` (or ``"rt"``) and ``"rb"``.
+        :param encoding: Open the file with this encoding when opening in text
+            mode. This is ignored when opening in binary mode.
 
-        Note this is a duplicate of the same method in the Flask
-        class.
-
+        .. versionchanged:: 3.1
+            Added the ``encoding`` parameter.
         """
         if mode not in {"r", "rt", "rb"}:
             raise ValueError("Resources can only be opened for reading.")
 
-        return open(os.path.join(self.root_path, resource), mode)
+        path = os.path.join(self.root_path, resource)
 
-    def open_instance_resource(self, resource: str, mode: str = "rb") -> t.IO[t.AnyStr]:
-        """Opens a resource from the application's instance folder
-        (:attr:`instance_path`).  Otherwise works like
-        :meth:`open_resource`.  Instance resources can also be opened for
-        writing.
+        if mode == "rb":
+            return open(path, mode)  # pyright: ignore
 
-        :param resource: the name of the resource.  To access resources within
-                         subfolders use forward slashes as separator.
-        :param mode: resource file opening mode, default is 'rb'.
+        return open(path, mode, encoding=encoding)
+
+    def open_instance_resource(
+        self, resource: str, mode: str = "rb", encoding: str | None = "utf-8"
+    ) -> t.IO[t.AnyStr]:
+        """Open a resource file relative to the application's instance folder
+        :attr:`instance_path`. Unlike :meth:`open_resource`, files in the
+        instance folder can be opened for writing.
+
+        :param resource: Path to the resource relative to :attr:`instance_path`.
+        :param mode: Open the file in this mode.
+        :param encoding: Open the file with this encoding when opening in text
+            mode. This is ignored when opening in binary mode.
+
+        .. versionchanged:: 3.1
+            Added the ``encoding`` parameter.
         """
-        return open(os.path.join(self.instance_path, resource), mode)
+        path = os.path.join(self.instance_path, resource)
+
+        if "b" in mode:
+            return open(path, mode)
+
+        return open(path, mode, encoding=encoding)
 
     def create_jinja_environment(self) -> Environment:
         """Create the Jinja environment based on :attr:`jinja_options`
@@ -403,32 +427,45 @@ class Flask(App):
         is created at a point where the request context is not yet set
         up so the request is passed explicitly.
 
-        .. versionadded:: 0.6
-
-        .. versionchanged:: 0.9
-           This can now also be called without a request object when the
-           URL adapter is created for the application context.
+        .. versionchanged:: 3.1
+            If :data:`SERVER_NAME` is set, it does not restrict requests to
+            only that domain, for both ``subdomain_matching`` and
+            ``host_matching``.
 
         .. versionchanged:: 1.0
             :data:`SERVER_NAME` no longer implicitly enables subdomain
             matching. Use :attr:`subdomain_matching` instead.
+
+        .. versionchanged:: 0.9
+           This can be called outside a request when the URL adapter is created
+           for an application context.
+
+        .. versionadded:: 0.6
         """
         if request is not None:
-            # If subdomain matching is disabled (the default), use the
-            # default subdomain in all cases. This should be the default
-            # in Werkzeug but it currently does not have that feature.
-            if not self.subdomain_matching:
-                subdomain = self.url_map.default_subdomain or None
-            else:
-                subdomain = None
+            if (trusted_hosts := self.config["TRUSTED_HOSTS"]) is not None:
+                request.trusted_hosts = trusted_hosts
+
+            # Check trusted_hosts here until bind_to_environ does.
+            request.host = get_host(request.environ, request.trusted_hosts)  # pyright: ignore
+            subdomain = None
+            server_name = self.config["SERVER_NAME"]
+
+            if self.url_map.host_matching:
+                # Don't pass SERVER_NAME, otherwise it's used and the actual
+                # host is ignored, which breaks host matching.
+                server_name = None
+            elif not self.subdomain_matching:
+                # Werkzeug doesn't implement subdomain matching yet. Until then,
+                # disable it by forcing the current subdomain to the default, or
+                # the empty string.
+                subdomain = self.url_map.default_subdomain or ""
 
             return self.url_map.bind_to_environ(
-                request.environ,
-                server_name=self.config["SERVER_NAME"],
-                subdomain=subdomain,
+                request.environ, server_name=server_name, subdomain=subdomain
             )
-        # We need at the very least the server name to be set for this
-        # to work.
+
+        # Need at least SERVER_NAME to match/build outside a request.
         if self.config["SERVER_NAME"] is not None:
             return self.url_map.bind(
                 self.config["SERVER_NAME"],
@@ -1146,7 +1183,8 @@ class Flask(App):
            response object.
         """
 
-        status = headers = None
+        status: int | None = None
+        headers: HeadersValue | None = None
 
         # unpack tuple returns
         if isinstance(rv, tuple):
@@ -1158,7 +1196,7 @@ class Flask(App):
             # decide if a 2-tuple has status or headers
             elif len_rv == 2:
                 if isinstance(rv[1], (Headers, dict, tuple, list)):
-                    rv, headers = rv
+                    rv, headers = rv  # pyright: ignore
                 else:
                     rv, status = rv  # type: ignore[assignment,misc]
             # other sized tuples are not allowed
@@ -1184,7 +1222,7 @@ class Flask(App):
                 # waiting to do it manually, so that the class can handle any
                 # special logic
                 rv = self.response_class(
-                    rv,
+                    rv,  # pyright: ignore
                     status=status,
                     headers=headers,  # type: ignore[arg-type]
                 )
@@ -1226,7 +1264,7 @@ class Flask(App):
 
         # extend existing headers with provided headers
         if headers:
-            rv.headers.update(headers)  # type: ignore[arg-type]
+            rv.headers.update(headers)
 
         return rv
 

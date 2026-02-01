@@ -12,6 +12,8 @@ class AsyncSimpleClient:
     The positional and keyword arguments given in the constructor are passed
     to the underlying :func:`socketio.AsyncClient` object.
     """
+    client_class = AsyncClient
+
     def __init__(self, *args, **kwargs):
         self.client_args = args
         self.client_kwargs = kwargs
@@ -60,7 +62,8 @@ class AsyncSimpleClient:
         self.namespace = namespace
         self.input_buffer = []
         self.input_event.clear()
-        self.client = AsyncClient(*self.client_args, **self.client_kwargs)
+        self.client = self.client_class(
+            *self.client_args, **self.client_kwargs)
 
         @self.client.event(namespace=self.namespace)
         def connect():  # pragma: no cover
@@ -102,7 +105,7 @@ class AsyncSimpleClient:
         The transport is returned as a string and can be one of ``polling``
         and ``websocket``.
         """
-        return self.client.transport if self.client else ''
+        return self.client.transport() if self.client else ''
 
     async def emit(self, event, data=None):
         """Emit an event to the server.
@@ -160,6 +163,8 @@ class AsyncSimpleClient:
                 return await self.client.call(event, data,
                                               namespace=self.namespace,
                                               timeout=timeout)
+            except TimeoutError:
+                raise
             except SocketIOError:
                 pass
 

@@ -1,5 +1,5 @@
 # testing/engines.py
-# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2026 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -15,6 +15,7 @@ import typing
 from typing import Any
 from typing import Dict
 from typing import Optional
+from typing import Union
 import warnings
 import weakref
 
@@ -115,7 +116,16 @@ class ConnectionKiller:
                 await_only(rec.dispose())
             else:
                 rec.dispose()
+
         eng.clear()
+
+    def _dispose_testing_engines(self, scope):
+        eng = self.testing_engines[scope]
+        for rec in list(eng):
+            if hasattr(rec, "sync_engine"):
+                await_only(rec.dispose())
+            else:
+                rec.dispose()
 
     def after_test(self):
         self._drop_testing_engines("function")
@@ -155,6 +165,10 @@ class ConnectionKiller:
                 assert (
                     False
                 ), "%d connection recs not cleared after test suite" % (ln)
+        if config.options and config.options.low_connections:
+            # for suites running with --low-connections, dispose the "global"
+            # engines to disconnect everything before making a testing engine
+            self._dispose_testing_engines("global")
 
     def final_cleanup(self):
         self.checkin_all()
@@ -285,32 +299,30 @@ def reconnecting_engine(url=None, options=None):
 
 @typing.overload
 def testing_engine(
-    url: Optional[URL] = None,
-    options: Optional[Dict[str, Any]] = None,
-    asyncio: Literal[False] = False,
-    transfer_staticpool: bool = False,
+    url: Optional[URL] = ...,
+    options: Optional[Dict[str, Any]] = ...,
+    *,
+    asyncio: Literal[False],
 ) -> Engine: ...
 
 
 @typing.overload
 def testing_engine(
-    url: Optional[URL] = None,
-    options: Optional[Dict[str, Any]] = None,
-    asyncio: Literal[True] = True,
-    transfer_staticpool: bool = False,
+    url: Optional[URL] = ...,
+    options: Optional[Dict[str, Any]] = ...,
+    *,
+    asyncio: Literal[True],
 ) -> AsyncEngine: ...
 
 
 def testing_engine(
-    url=None,
-    options=None,
-    asyncio=False,
-    transfer_staticpool=False,
-    share_pool=False,
-    _sqlite_savepoint=False,
-):
+    url: Optional[URL] = None,
+    options: Optional[Dict[str, Any]] = None,
+    *,
+    asyncio: bool = False,
+) -> Union[Engine, AsyncEngine]:
+
     if asyncio:
-        assert not _sqlite_savepoint
         from sqlalchemy.ext.asyncio import (
             create_async_engine as create_engine,
         )
@@ -318,50 +330,33 @@ def testing_engine(
         from sqlalchemy import create_engine
     from sqlalchemy.engine.url import make_url
 
+    url = make_url(url if url else config.db.url)
+
     if not options:
-        use_reaper = True
-        scope = "function"
-        sqlite_savepoint = False
-    else:
-        use_reaper = options.pop("use_reaper", True)
-        scope = options.pop("scope", "function")
-        sqlite_savepoint = options.pop("sqlite_savepoint", False)
+        options = {}
 
-    url = url or config.db.url
+    use_options = {}
 
-    url = make_url(url)
-
-    if (
-        config.db is None or url.drivername == config.db.url.drivername
-    ) and config.db_opts:
-        use_options = config.db_opts.copy()
-    else:
-        use_options = {}
-
-    if options is not None:
-        use_options.update(options)
+    for opt_dict in (config.db_opts, options):
+        if not opt_dict:
+            continue
+        use_options.update(
+            {
+                opt: value
+                for opt, value in opt_dict.items()
+                if opt not in ("scope", "use_reaper")
+                and not opt.startswith("sqlite_")
+            }
+        )
 
     engine = create_engine(url, **use_options)
 
-    if sqlite_savepoint and engine.name == "sqlite":
-        # apply SQLite savepoint workaround
-        @event.listens_for(engine, "connect")
-        def do_connect(dbapi_connection, connection_record):
-            dbapi_connection.isolation_level = None
+    if config.options and config.options.low_connections:
+        # for suites running with --low-connections, dispose the "global"
+        # engines to disconnect everything before making a testing engine
+        testing_reaper._dispose_testing_engines("global")
 
-        @event.listens_for(engine, "begin")
-        def do_begin(conn):
-            conn.exec_driver_sql("BEGIN")
-
-    if transfer_staticpool:
-        from sqlalchemy.pool import StaticPool
-
-        if config.db is not None and isinstance(config.db.pool, StaticPool):
-            use_reaper = False
-            engine.pool._transfer_from(config.db.pool)
-    elif share_pool:
-        engine.pool = config.db.pool
-
+    scope = options.get("scope", "function")
     if scope == "global":
         if asyncio:
             engine.sync_engine._has_events = True
@@ -370,16 +365,25 @@ def testing_engine(
                 True  # enable event blocks, helps with profiling
             )
 
+    from . import provision
+
+    provision.post_configure_testing_engine(engine.url, engine, options, scope)
+
+    # post_configure_testing_engine may have modified the options dictionary
+    # in place; consume additional post arguments afterwards
+
+    use_reaper = options.get("use_reaper", True)
+    if use_reaper:
+        testing_reaper.add_engine(engine, scope)
+
     if (
         isinstance(engine.pool, pool.QueuePool)
-        and "pool" not in use_options
-        and "pool_timeout" not in use_options
-        and "max_overflow" not in use_options
+        and "pool" not in options
+        and "pool_timeout" not in options
+        and "max_overflow" not in options
     ):
         engine.pool._timeout = 0
         engine.pool._max_overflow = 0
-    if use_reaper:
-        testing_reaper.add_engine(engine, scope)
 
     return engine
 

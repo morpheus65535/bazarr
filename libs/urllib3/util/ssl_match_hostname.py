@@ -146,7 +146,7 @@ def match_hostname(
                 if key == "commonName":
                     if _dnsname_match(value, hostname):
                         return
-                    dnsnames.append(value)
+                    dnsnames.append(value)  # Defensive: for Python < 3.9.3
 
     if len(dnsnames) > 1:
         raise CertificateError(

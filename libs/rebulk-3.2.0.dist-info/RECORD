@@ -1,9 +1,9 @@
 rebulk-3.2.0.dist-info/INSTALLER,sha256=zuuue4knoyJ-UwPPXg8fezS7VCrXJQrAP7zeNuwvFQg,4
-rebulk-3.2.0.dist-info/LICENSE,sha256=T5GEmMMWQJTH2LegC39LoN_xCeSgeD3yqc-TBqhDf-I,1083
-rebulk-3.2.0.dist-info/METADATA,sha256=lW7aYFXOISzM12csF8rMeumsfMpQSL3F2glfAwweKto,22418
+rebulk-3.2.0.dist-info/METADATA,sha256=-7ssIZNPu53rtVmiWER8qYJhGGc_ym6_a5KtAeJCCQM,22664
 rebulk-3.2.0.dist-info/RECORD,,
 rebulk-3.2.0.dist-info/REQUESTED,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
-rebulk-3.2.0.dist-info/WHEEL,sha256=Xo9-1PvkuimrydujYJAjF7pCkriuXBpUPEjma1nZyJ0,92
+rebulk-3.2.0.dist-info/WHEEL,sha256=wUyA8OaulRlbfwMtmQsvNngGrxQHAvkKcvRmdizlJi0,92
+rebulk-3.2.0.dist-info/licenses/LICENSE,sha256=T5GEmMMWQJTH2LegC39LoN_xCeSgeD3yqc-TBqhDf-I,1083
 rebulk-3.2.0.dist-info/top_level.txt,sha256=Gidw4JAD3UpIGIS_ZqanjtZ5JBD7N8W9nWVCuXKsy0U,7
 rebulk-3.2.0.dist-info/zip-safe,sha256=AbpHGcgLb-kRsJGnwFEktk7uzpZOCcBY74-YBdrKVGs,1
 rebulk/__init__.py,sha256=v1inOEPmyTG1Z10iHW0peqRQMuFPxdCNq1ZZ93Cead8,409

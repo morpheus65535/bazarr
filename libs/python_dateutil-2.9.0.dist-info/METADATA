@@ -1,4 +1,4 @@
-Metadata-Version: 2.1
+Metadata-Version: 2.4
 Name: python-dateutil
 Version: 2.9.0
 Summary: Extensions to the standard Python datetime module
@@ -33,6 +33,8 @@ Requires-Python: !=3.0.*,!=3.1.*,!=3.2.*,>=2.7
 Description-Content-Type: text/x-rst
 License-File: LICENSE
 Requires-Dist: six>=1.5
+Dynamic: description
+Dynamic: license-file
 
 dateutil - powerful extensions to datetime
 ==========================================

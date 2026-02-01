@@ -1,4 +1,4 @@
-Metadata-Version: 2.1
+Metadata-Version: 2.4
 Name: pyparsing
 Version: 3.1.4
 Summary: pyparsing module - Classes and methods to define and execute parsing grammars
@@ -26,6 +26,7 @@ Classifier: Programming Language :: Python :: Implementation :: PyPy
 Classifier: Topic :: Software Development :: Compilers
 Classifier: Topic :: Text Processing
 Classifier: Typing :: Typed
+License-File: LICENSE
 Requires-Dist: railroad-diagrams ; extra == "diagrams"
 Requires-Dist: jinja2 ; extra == "diagrams"
 Project-URL: Homepage, https://github.com/pyparsing/pyparsing/

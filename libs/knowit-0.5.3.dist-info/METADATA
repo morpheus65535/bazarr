@@ -1,9 +1,9 @@
-Metadata-Version: 2.1
+Metadata-Version: 2.4
 Name: knowit
 Version: 0.5.3
 Summary: Know better your media files
-Home-page: https://github.com/ratoaq2/knowit
 License: MIT
+License-File: LICENSE
 Keywords: video,mkv,mp4,mediainfo,metadata,movie,episode,tv,shows,series
 Author: Rato
 Requires-Python: >=3.9.0,<4.0.0
@@ -17,6 +17,8 @@ Classifier: Programming Language :: Python :: 3.9
 Classifier: Programming Language :: Python :: 3.10
 Classifier: Programming Language :: Python :: 3.11
 Classifier: Programming Language :: Python :: 3.12
+Classifier: Programming Language :: Python :: 3.13
+Classifier: Programming Language :: Python :: 3.14
 Classifier: Programming Language :: Python :: 3 :: Only
 Classifier: Topic :: Multimedia :: Video
 Classifier: Topic :: Software Development :: Libraries :: Python Modules
@@ -26,6 +28,7 @@ Requires-Dist: pint (>=0.20.1,<0.22.0)
 Requires-Dist: pymediainfo (>=6.0.1,<7.0.0)
 Requires-Dist: pyyaml (>=6.0,<7.0)
 Requires-Dist: trakit (>=0.2.1,<0.3.0)
+Project-URL: Homepage, https://github.com/ratoaq2/knowit
 Project-URL: Repository, https://github.com/ratoaq2/knowit
 Description-Content-Type: text/markdown
 

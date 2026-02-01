@@ -12,6 +12,8 @@ try:
 except ImportError:
     from typing_extensions import Literal  # type: ignore
 
+CONTENT_LENGTH_MAX_DIGITS = 20  # allow up to 1 billion TB - 1
+
 
 # Facts
 # -----
@@ -173,6 +175,8 @@ def normalize_and_validate(
                 raise LocalProtocolError("conflicting Content-Length headers")
             value = lengths.pop()
             validate(_content_length_re, value, "bad Content-Length")
+            if len(value) > CONTENT_LENGTH_MAX_DIGITS:
+                raise LocalProtocolError("bad Content-Length")
             if seen_content_length is None:
                 seen_content_length = value
                 new_headers.append((raw_name, name, value))

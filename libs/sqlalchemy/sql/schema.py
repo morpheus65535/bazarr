@@ -1,5 +1,5 @@
 # sql/schema.py
-# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2026 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -68,6 +68,7 @@ from .base import DedupeColumnCollection
 from .base import DialectKWArgs
 from .base import Executable
 from .base import SchemaEventTarget as SchemaEventTarget
+from .base import SchemaVisitable as SchemaVisitable
 from .coercions import _document_text_coercion
 from .elements import ClauseElement
 from .elements import ColumnClause
@@ -91,13 +92,16 @@ from ..util.typing import TypeGuard
 
 if typing.TYPE_CHECKING:
     from ._typing import _AutoIncrementType
+    from ._typing import _CreateDropBind
     from ._typing import _DDLColumnArgument
     from ._typing import _InfoType
     from ._typing import _TextCoercedExpressionArgument
     from ._typing import _TypeEngineArgument
+    from .base import ColumnSet
     from .base import ReadOnlyColumnCollection
     from .compiler import DDLCompiler
     from .elements import BindParameter
+    from .elements import KeyedColumnElement
     from .functions import Function
     from .type_api import TypeEngine
     from .visitors import anon_map
@@ -106,7 +110,6 @@ if typing.TYPE_CHECKING:
     from ..engine.interfaces import _CoreMultiExecuteParams
     from ..engine.interfaces import CoreExecuteOptionsParameter
     from ..engine.interfaces import ExecutionContext
-    from ..engine.mock import MockConnection
     from ..engine.reflection import _ReflectionInfo
     from ..sql.selectable import FromClause
 
@@ -114,8 +117,6 @@ _T = TypeVar("_T", bound="Any")
 _SI = TypeVar("_SI", bound="SchemaItem")
 _TAB = TypeVar("_TAB", bound="Table")
 
-
-_CreateDropBind = Union["Engine", "Connection", "MockConnection"]
 
 _ConstraintNameArgument = Optional[Union[str, _NoneName]]
 
@@ -210,7 +211,7 @@ def _copy_expression(
 
 
 @inspection._self_inspects
-class SchemaItem(SchemaEventTarget, visitors.Visitable):
+class SchemaItem(SchemaVisitable):
     """Base class for items that define a database schema."""
 
     __visit_name__ = "schema_item"
@@ -475,7 +476,7 @@ class Table(
             table.dispatch.before_parent_attach(table, metadata)
             metadata._add_table(name, schema, table)
             try:
-                table.__init__(name, metadata, *args, _no_init=False, **kw)
+                table.__init__(name, metadata, *args, _no_init=False, **kw)  # type: ignore[misc] # noqa: E501
                 table.dispatch.after_parent_attach(table, metadata)
                 return table
             except Exception:
@@ -1621,7 +1622,7 @@ class Column(DialectKWArgs, SchemaItem, ColumnClause[_T]):
             ``SERIAL``, MySQL ``AUTO_INCREMENT``, or ``IDENTITY`` on SQL Server
             should also be rendered.  Not every database backend has an
             "implied" default generator available; for example the Oracle Database
-            backends alway needs an explicit construct such as
+            backends always needs an explicit construct such as
             :class:`.Identity` to be included with a :class:`.Column` in order
             for the DDL rendered to include auto-generating constructs to also
             be produced in the database.
@@ -2241,7 +2242,7 @@ class Column(DialectKWArgs, SchemaItem, ColumnClause[_T]):
         return _DefaultDescriptionTuple._from_column_default(self.onupdate)
 
     @util.memoized_property
-    def _gen_static_annotations_cache_key(self) -> bool:  # type: ignore
+    def _gen_static_annotations_cache_key(self) -> bool:
         """special attribute used by cache key gen, if true, we will
         use a static cache key for the annotations dictionary, else we
         will generate a new cache key for annotations each time.
@@ -2617,6 +2618,8 @@ class Column(DialectKWArgs, SchemaItem, ColumnClause[_T]):
     def _make_proxy(
         self,
         selectable: FromClause,
+        primary_key: ColumnSet,
+        foreign_keys: Set[KeyedColumnElement[Any]],
         name: Optional[str] = None,
         key: Optional[str] = None,
         name_is_truncatable: bool = False,
@@ -2686,10 +2689,13 @@ class Column(DialectKWArgs, SchemaItem, ColumnClause[_T]):
         c._propagate_attrs = selectable._propagate_attrs
         if selectable._is_clone_of is not None:
             c._is_clone_of = selectable._is_clone_of.columns.get(c.key)
+
         if self.primary_key:
-            selectable.primary_key.add(c)  # type: ignore
+            primary_key.add(c)
+
         if fk:
-            selectable.foreign_keys.update(fk)  # type: ignore
+            foreign_keys.update(fk)  # type: ignore
+
         return c.key, c
 
 
@@ -2830,9 +2836,18 @@ class ForeignKey(DialectKWArgs, SchemaItem):
             issuing DDL for this constraint. Typical values include CASCADE,
             DELETE and RESTRICT.
 
+            .. seealso::
+
+                :ref:`on_update_on_delete`
+
         :param ondelete: Optional string. If set, emit ON DELETE <value> when
             issuing DDL for this constraint. Typical values include CASCADE,
-            DELETE and RESTRICT.
+            SET NULL and RESTRICT.  Some dialects may allow for additional
+            syntaxes.
+
+            .. seealso::
+
+                :ref:`on_update_on_delete`
 
         :param deferrable: Optional bool. If set, emit DEFERRABLE or NOT
             DEFERRABLE when issuing DDL for this constraint.
@@ -4616,12 +4631,21 @@ class ForeignKeyConstraint(ColumnCollectionConstraint):
         :param name: Optional, the in-database name of the key.
 
         :param onupdate: Optional string. If set, emit ON UPDATE <value> when
-          issuing DDL for this constraint. Typical values include CASCADE,
-          DELETE and RESTRICT.
+            issuing DDL for this constraint. Typical values include CASCADE,
+            DELETE and RESTRICT.
+
+            .. seealso::
+
+                :ref:`on_update_on_delete`
 
         :param ondelete: Optional string. If set, emit ON DELETE <value> when
-          issuing DDL for this constraint. Typical values include CASCADE,
-          DELETE and RESTRICT.
+            issuing DDL for this constraint. Typical values include CASCADE,
+            SET NULL and RESTRICT.  Some dialects may allow for additional
+            syntaxes.
+
+            .. seealso::
+
+                :ref:`on_update_on_delete`
 
         :param deferrable: Optional bool. If set, emit DEFERRABLE or NOT
           DEFERRABLE when issuing DDL for this constraint.
@@ -5595,7 +5619,7 @@ class MetaData(HasSchemaAttr):
     def clear(self) -> None:
         """Clear all Table objects from this MetaData."""
 
-        dict.clear(self.tables)  # type: ignore
+        dict.clear(self.tables)
         self._schemas.clear()
         self._fk_memos.clear()
 
@@ -5809,13 +5833,17 @@ class MetaData(HasSchemaAttr):
 
             kind = util.preloaded.engine_reflection.ObjectKind.TABLE
             available: util.OrderedSet[str] = util.OrderedSet(
-                insp.get_table_names(schema)
+                insp.get_table_names(schema, **dialect_kwargs)
             )
             if views:
                 kind = util.preloaded.engine_reflection.ObjectKind.ANY
-                available.update(insp.get_view_names(schema))
+                available.update(insp.get_view_names(schema, **dialect_kwargs))
                 try:
-                    available.update(insp.get_materialized_view_names(schema))
+                    available.update(
+                        insp.get_materialized_view_names(
+                            schema, **dialect_kwargs
+                        )
+                    )
                 except NotImplementedError:
                     pass
 

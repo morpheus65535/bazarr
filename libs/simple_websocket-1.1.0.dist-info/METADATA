@@ -1,4 +1,4 @@
-Metadata-Version: 2.1
+Metadata-Version: 2.4
 Name: simple-websocket
 Version: 1.1.0
 Summary: Simple WebSocket server and client for Python
@@ -15,12 +15,13 @@ Description-Content-Type: text/markdown
 License-File: LICENSE
 Requires-Dist: wsproto
 Provides-Extra: dev
-Requires-Dist: tox ; extra == 'dev'
-Requires-Dist: flake8 ; extra == 'dev'
-Requires-Dist: pytest ; extra == 'dev'
-Requires-Dist: pytest-cov ; extra == 'dev'
+Requires-Dist: tox; extra == "dev"
+Requires-Dist: flake8; extra == "dev"
+Requires-Dist: pytest; extra == "dev"
+Requires-Dist: pytest-cov; extra == "dev"
 Provides-Extra: docs
-Requires-Dist: sphinx ; extra == 'docs'
+Requires-Dist: sphinx; extra == "docs"
+Dynamic: license-file
 
 simple-websocket
 ================

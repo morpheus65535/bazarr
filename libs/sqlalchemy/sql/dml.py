@@ -1,5 +1,5 @@
 # sql/dml.py
-# Copyright (C) 2009-2025 the SQLAlchemy authors and contributors
+# Copyright (C) 2009-2026 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -23,6 +23,7 @@ from typing import NoReturn
 from typing import Optional
 from typing import overload
 from typing import Sequence
+from typing import Set
 from typing import Tuple
 from typing import Type
 from typing import TYPE_CHECKING
@@ -42,6 +43,7 @@ from .base import _from_objects
 from .base import _generative
 from .base import _select_iterables
 from .base import ColumnCollection
+from .base import ColumnSet
 from .base import CompileState
 from .base import DialectKWArgs
 from .base import Executable
@@ -418,13 +420,32 @@ class UpdateBase(
     is_dml = True
 
     def _generate_fromclause_column_proxies(
-        self, fromclause: FromClause
+        self,
+        fromclause: FromClause,
+        columns: ColumnCollection[str, KeyedColumnElement[Any]],
+        primary_key: ColumnSet,
+        foreign_keys: Set[KeyedColumnElement[Any]],
     ) -> None:
-        fromclause._columns._populate_separate_keys(
-            col._make_proxy(fromclause)
-            for col in self._all_selected_columns
-            if is_column_element(col)
-        )
+        prox = [
+            c._make_proxy(
+                fromclause,
+                key=proxy_key,
+                name=required_label_name,
+                name_is_truncatable=True,
+                primary_key=primary_key,
+                foreign_keys=foreign_keys,
+            )
+            for (
+                required_label_name,
+                proxy_key,
+                fallback_label_name,
+                c,
+                repeated,
+            ) in (self._generate_columns_plus_names(False))
+            if is_column_element(c)
+        ]
+
+        columns._populate_separate_keys(prox)
 
     def params(self, *arg: Any, **kw: Any) -> NoReturn:
         """Set the parameters for the statement.
@@ -471,7 +492,7 @@ class UpdateBase(
 
             The :meth:`.UpdateBase.return_defaults` method is used by the ORM
             for its internal work in fetching newly generated primary key
-            and server default values, in particular to provide the underyling
+            and server default values, in particular to provide the underlying
             implementation of the :paramref:`_orm.Mapper.eager_defaults`
             ORM feature as well as to allow RETURNING support with bulk
             ORM inserts.  Its behavior is fairly idiosyncratic
@@ -686,6 +707,16 @@ class UpdateBase(
                 )
 
         return self
+
+    def is_derived_from(self, fromclause: Optional[FromClause]) -> bool:
+        """Return ``True`` if this :class:`.ReturnsRows` is
+        'derived' from the given :class:`.FromClause`.
+
+        Since these are DMLs, we dont want such statements ever being adapted
+        so we return False for derives.
+
+        """
+        return False
 
     @_generative
     def returning(

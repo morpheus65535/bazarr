@@ -54,8 +54,8 @@ class Server(base_server.BaseServer):
     :param cors_allowed_origins: Origin or list of origins that are allowed to
                                  connect to this server. Only the same origin
                                  is allowed by default. Set this argument to
-                                 ``'*'`` to allow all origins, or to ``[]`` to
-                                 disable CORS handling.
+                                 ``'*'`` or ``['*']`` to allow all origins, or
+                                 to ``[]`` to disable CORS handling.
     :param cors_credentials: Whether credentials (cookies, authentication) are
                              allowed in requests to this server. The default
                              is ``True``.

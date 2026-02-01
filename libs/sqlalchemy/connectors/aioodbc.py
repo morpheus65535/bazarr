@@ -1,5 +1,5 @@
 # connectors/aioodbc.py
-# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2026 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -19,6 +19,7 @@ from .. import pool
 from .. import util
 from ..util.concurrency import await_fallback
 from ..util.concurrency import await_only
+
 
 if TYPE_CHECKING:
     from ..engine.interfaces import ConnectArgsType
@@ -57,6 +58,15 @@ class AsyncAdapt_aioodbc_connection(AsyncAdapt_dbapi_connection):
         # self._connection.autocommit = value
 
         self._connection._conn.autocommit = value
+
+    def ping(self, reconnect):
+        return self.await_(self._connection.ping(reconnect))
+
+    def add_output_converter(self, *arg, **kw):
+        self._connection.add_output_converter(*arg, **kw)
+
+    def character_set_name(self):
+        return self._connection.character_set_name()
 
     def cursor(self, server_side=False):
         # aioodbc sets connection=None when closed and just fails with

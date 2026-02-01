@@ -10,10 +10,10 @@
 #  License for the specific language governing permissions and limitations
 #  under the License.
 
-"""Tests for stevedore.extension
-"""
+"""Tests for stevedore.extension"""
 
-import importlib.metadata as importlib_metadata
+import importlib.metadata
+from typing import Any
 
 from stevedore import driver
 from stevedore import exception
@@ -24,26 +24,33 @@ from stevedore.tests import utils
 
 class TestCallback(utils.TestCase):
     def test_detect_plugins(self):
+        em: driver.DriverManager[Any]
         em = driver.DriverManager('stevedore.test.extension', 't1')
         names = sorted(em.names())
         self.assertEqual(names, ['t1'])
 
     def test_call(self):
-        def invoke(ext, *args, **kwds):
+        def invoke(ext, /, *args, **kwds):
             return (ext.name, args, kwds)
+
+        em: driver.DriverManager[Any]
         em = driver.DriverManager('stevedore.test.extension', 't1')
         result = em(invoke, 'a', b='C')
         self.assertEqual(result, ('t1', ('a',), {'b': 'C'}))
 
     def test_driver_property_not_invoked_on_load(self):
-        em = driver.DriverManager('stevedore.test.extension', 't1',
-                                  invoke_on_load=False)
+        em: driver.DriverManager[Any]
+        em = driver.DriverManager(
+            'stevedore.test.extension', 't1', invoke_on_load=False
+        )
         d = em.driver
         self.assertIs(d, test_extension.FauxExtension)
 
     def test_driver_property_invoked_on_load(self):
-        em = driver.DriverManager('stevedore.test.extension', 't1',
-                                  invoke_on_load=True)
+        em: driver.DriverManager[Any]
+        em = driver.DriverManager(
+            'stevedore.test.extension', 't1', invoke_on_load=True
+        )
         d = em.driver
         self.assertIsInstance(d, test_extension.FauxExtension)
 
@@ -51,8 +58,9 @@ class TestCallback(utils.TestCase):
         try:
             driver.DriverManager('stevedore.test.extension.none', 't1')
         except exception.NoMatches as err:
-            self.assertIn("No 'stevedore.test.extension.none' driver found",
-                          str(err))
+            self.assertIn(
+                "No 'stevedore.test.extension.none' driver found", str(err)
+            )
 
     def test_bad_driver(self):
         try:
@@ -65,19 +73,21 @@ class TestCallback(utils.TestCase):
     def test_multiple_drivers(self):
         # The idea for this test was contributed by clayg:
         # https://gist.github.com/clayg/6311348
-        extensions = [
+        extensions: list[extension.Extension[Any]] = [
             extension.Extension(
                 'backend',
-                importlib_metadata.EntryPoint(
-                    'backend', 'pkg1:driver', 'backend'),
-                'pkg backend',
+                importlib.metadata.EntryPoint(
+                    'backend', 'pkg1:driver', 'backend'
+                ),
+                lambda x: None,
                 None,
             ),
             extension.Extension(
                 'backend',
-                importlib_metadata.EntryPoint(
-                    'backend', 'pkg2:driver', 'backend'),
-                'pkg backend',
+                importlib.metadata.EntryPoint(
+                    'backend', 'pkg2:driver', 'backend'
+                ),
+                lambda x: None,
                 None,
             ),
         ]

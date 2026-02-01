@@ -1,10 +1,10 @@
 python_anticaptcha-0.1.dev191+g6d2bad22e.dist-info/INSTALLER,sha256=zuuue4knoyJ-UwPPXg8fezS7VCrXJQrAP7zeNuwvFQg,4
-python_anticaptcha-0.1.dev191+g6d2bad22e.dist-info/LICENSE.md,sha256=Yn5dZtOJWFEnvJF0vW0ZYLQLbia5fSeb0PXCH9R-V7A,1069
-python_anticaptcha-0.1.dev191+g6d2bad22e.dist-info/METADATA,sha256=4qD2B6a5DDCxqjCZ4qHlvW01Cwg87yU37SRG29xs2BY,7912
+python_anticaptcha-0.1.dev191+g6d2bad22e.dist-info/METADATA,sha256=LwqIbOW7HKFZ-CRX6XX-RKlS1DoCQRkFrMur5Q9xpcs,8127
 python_anticaptcha-0.1.dev191+g6d2bad22e.dist-info/RECORD,,
 python_anticaptcha-0.1.dev191+g6d2bad22e.dist-info/REQUESTED,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
-python_anticaptcha-0.1.dev191+g6d2bad22e.dist-info/WHEEL,sha256=P2T-6epvtXQ2cBOE_U1K4_noqlJFN3tj15djMgEu4NM,110
+python_anticaptcha-0.1.dev191+g6d2bad22e.dist-info/WHEEL,sha256=Mk1ST5gDzEO5il5kYREiBnzzM469m5sI8ESPl7TRhJY,110
 python_anticaptcha-0.1.dev191+g6d2bad22e.dist-info/direct_url.json,sha256=Tj3EWYB7HC9ktc2UAVbtNje9zl7gGwLfgascMkfGMSM,151
+python_anticaptcha-0.1.dev191+g6d2bad22e.dist-info/licenses/LICENSE.md,sha256=Yn5dZtOJWFEnvJF0vW0ZYLQLbia5fSeb0PXCH9R-V7A,1069
 python_anticaptcha-0.1.dev191+g6d2bad22e.dist-info/top_level.txt,sha256=SxRL0T_eHr7l9jCC_cUsakrZOHLejPt4NzTtrBrNZPo,19
 python_anticaptcha/__init__.py,sha256=AA2G5cXb7U1jrrkg46jeY857xfv6mFtFowFWGmrzOwI,848
 python_anticaptcha/base.py,sha256=GTpMwJw9aPNwWDjdUK1iomXwI7_GkWGmcY4QlH_cDhE,7472

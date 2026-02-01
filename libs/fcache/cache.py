@@ -154,7 +154,14 @@ class FileCache(MutableMapping):
         """Delete the write buffer and cache directory."""
         if not self._sync:
             del self._buffer
-        shutil.rmtree(self.cache_dir)
+
+        # Allow multiple processes to delete() at the same time,
+        # meaning some or all of cache_dir may already be deleted
+        def _on_error(function, path, excinfo):
+            if excinfo[0] != FileNotFoundError:
+                raise
+
+        shutil.rmtree(self.cache_dir, onerror=_on_error)
 
     def close(self):
         """Sync the write buffer, then close the cache.

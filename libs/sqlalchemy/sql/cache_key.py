@@ -1,5 +1,5 @@
 # sql/cache_key.py
-# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2026 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -516,7 +516,7 @@ class CacheKey(NamedTuple):
                             e2,
                         )
             else:
-                pickup_index = stack.pop(-1)
+                stack.pop(-1)
                 break
 
     def _diff(self, other: CacheKey) -> str:

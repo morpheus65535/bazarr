@@ -1,9 +1,9 @@
 json_tricks-3.17.3.dist-info/INSTALLER,sha256=zuuue4knoyJ-UwPPXg8fezS7VCrXJQrAP7zeNuwvFQg,4
-json_tricks-3.17.3.dist-info/LICENSE.txt,sha256=lVlH8LklWeHpkR8K7i3KfqD7ZHBheJ9D9byZD1RybvY,1501
-json_tricks-3.17.3.dist-info/METADATA,sha256=kOLvvWdtorbHS4vuzLZMO4CGKsN3d2fBr37M7t9Gqzs,16907
+json_tricks-3.17.3.dist-info/METADATA,sha256=dJl1rvLXxUJ5EkppVPu_xwiU0Suc2IARLPpKs-ubAOE,17133
 json_tricks-3.17.3.dist-info/RECORD,,
 json_tricks-3.17.3.dist-info/REQUESTED,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
-json_tricks-3.17.3.dist-info/WHEEL,sha256=P2T-6epvtXQ2cBOE_U1K4_noqlJFN3tj15djMgEu4NM,110
+json_tricks-3.17.3.dist-info/WHEEL,sha256=Mk1ST5gDzEO5il5kYREiBnzzM469m5sI8ESPl7TRhJY,110
+json_tricks-3.17.3.dist-info/licenses/LICENSE.txt,sha256=lVlH8LklWeHpkR8K7i3KfqD7ZHBheJ9D9byZD1RybvY,1501
 json_tricks-3.17.3.dist-info/top_level.txt,sha256=cIJdcQJF7Hp1oM4islwmZvJc34kAtMLILDaxF-d5ZHE,12
 json_tricks-3.17.3.dist-info/zip-safe,sha256=AbpHGcgLb-kRsJGnwFEktk7uzpZOCcBY74-YBdrKVGs,1
 json_tricks/__init__.py,sha256=D7QTRO4WbuMTp4KBWaGJlhjHqZLg_0ogyITc96VPzYw,1559

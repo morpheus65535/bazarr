@@ -326,7 +326,7 @@ class EnvironBuilder:
         self.request_uri = path
         if base_url is not None:
             base_url = iri_to_uri(base_url)
-        self.base_url = base_url  # type: ignore
+        self.base_url = base_url
         if isinstance(query_string, str):
             self.query_string = query_string
         else:
@@ -656,7 +656,7 @@ class EnvironBuilder:
         try:
             files = self.files.values()
         except AttributeError:
-            files = ()  # type: ignore
+            files = ()
         for f in files:
             try:
                 f.close()
@@ -818,7 +818,7 @@ class Client:
                 {},
             )
 
-        self.response_wrapper = t.cast(t.Type["TestResponse"], response_wrapper)
+        self.response_wrapper = t.cast(type["TestResponse"], response_wrapper)
 
         if use_cookies:
             self._cookies: dict[tuple[str, str, str], Cookie] | None = {}
@@ -1431,7 +1431,7 @@ class Cookie:
     def _from_response_header(cls, server_name: str, path: str, header: str) -> te.Self:
         header, _, parameters_str = header.partition(";")
         key, _, value = header.partition("=")
-        decoded_key, decoded_value = next(parse_cookie(header).items())
+        decoded_key, decoded_value = next(parse_cookie(header).items())  # type: ignore[call-overload]
         params = {}
 
         for item in parameters_str.split(";"):

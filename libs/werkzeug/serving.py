@@ -81,7 +81,7 @@ except AttributeError:
 LISTEN_QUEUE = 128
 
 _TSSLContextArg = t.Optional[
-    t.Union["ssl.SSLContext", t.Tuple[str, t.Optional[str]], t.Literal["adhoc"]]
+    t.Union["ssl.SSLContext", tuple[str, t.Optional[str]], t.Literal["adhoc"]]
 ]
 
 if t.TYPE_CHECKING:
@@ -774,8 +774,8 @@ class BaseWSGIServer(HTTPServer):
 
                     if sys.platform == "darwin" and port == 5000:
                         print(
-                            "On macOS, try disabling the 'AirPlay Receiver' service"
-                            " from System Preferences -> General -> AirDrop & Handoff.",
+                            "On macOS, try searching for and disabling"
+                            " 'AirPlay Receiver' in System Settings.",
                             file=sys.stderr,
                         )
 

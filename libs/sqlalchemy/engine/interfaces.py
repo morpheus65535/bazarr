@@ -1,5 +1,5 @@
 # engine/interfaces.py
-# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2026 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -10,7 +10,6 @@
 from __future__ import annotations
 
 from enum import Enum
-from types import ModuleType
 from typing import Any
 from typing import Awaitable
 from typing import Callable
@@ -34,7 +33,7 @@ from typing import Union
 from .. import util
 from ..event import EventTarget
 from ..pool import Pool
-from ..pool import PoolProxiedConnection
+from ..pool import PoolProxiedConnection as PoolProxiedConnection
 from ..sql.compiler import Compiled as Compiled
 from ..sql.compiler import Compiled  # noqa
 from ..sql.compiler import TypeCompiler as TypeCompiler
@@ -51,6 +50,7 @@ if TYPE_CHECKING:
     from .base import Engine
     from .cursor import CursorResult
     from .url import URL
+    from ..connectors.asyncio import AsyncIODBAPIConnection
     from ..event import _ListenerFnType
     from ..event import dispatcher
     from ..exc import StatementError
@@ -70,6 +70,7 @@ if TYPE_CHECKING:
     from ..sql.sqltypes import Integer
     from ..sql.type_api import _TypeMemoDict
     from ..sql.type_api import TypeEngine
+    from ..util.langhelpers import generic_fn_descriptor
 
 ConnectArgsType = Tuple[Sequence[str], MutableMapping[str, Any]]
 
@@ -106,6 +107,22 @@ class ExecuteStyle(Enum):
     """
 
 
+class DBAPIModule(Protocol):
+    class Error(Exception):
+        def __getattr__(self, key: str) -> Any: ...
+
+    class OperationalError(Error):
+        pass
+
+    class InterfaceError(Error):
+        pass
+
+    class IntegrityError(Error):
+        pass
+
+    def __getattr__(self, key: str) -> Any: ...
+
+
 class DBAPIConnection(Protocol):
     """protocol representing a :pep:`249` database connection.
 
@@ -122,11 +139,13 @@ class DBAPIConnection(Protocol):
 
     def commit(self) -> None: ...
 
-    def cursor(self) -> DBAPICursor: ...
+    def cursor(self, *args: Any, **kwargs: Any) -> DBAPICursor: ...
 
     def rollback(self) -> None: ...
 
-    autocommit: bool
+    def __getattr__(self, key: str) -> Any: ...
+
+    def __setattr__(self, key: str, value: Any) -> None: ...
 
 
 class DBAPIType(Protocol):
@@ -658,7 +677,7 @@ class Dialect(EventTarget):
 
     dialect_description: str
 
-    dbapi: Optional[ModuleType]
+    dbapi: Optional[DBAPIModule]
     """A reference to the DBAPI module object itself.
 
     SQLAlchemy dialects import DBAPI modules using the classmethod
@@ -682,7 +701,7 @@ class Dialect(EventTarget):
     """
 
     @util.non_memoized_property
-    def loaded_dbapi(self) -> ModuleType:
+    def loaded_dbapi(self) -> DBAPIModule:
         """same as .dbapi, but is never None; will raise an error if no
         DBAPI was set up.
 
@@ -760,6 +779,14 @@ class Dialect(EventTarget):
     default_isolation_level: Optional[IsolationLevel]
     """the isolation that is implicitly present on new connections"""
 
+    skip_autocommit_rollback: bool
+    """Whether or not the :paramref:`.create_engine.skip_autocommit_rollback`
+    parameter was set.
+
+    .. versionadded:: 2.0.43
+
+    """
+
     # create_engine()  -> isolation_level  currently goes here
     _on_connect_isolation_level: Optional[IsolationLevel]
 
@@ -779,8 +806,14 @@ class Dialect(EventTarget):
 
     max_identifier_length: int
     """The maximum length of identifier names."""
+    max_index_name_length: Optional[int]
+    """The maximum length of index names if different from
+    ``max_identifier_length``."""
+    max_constraint_name_length: Optional[int]
+    """The maximum length of constraint names if different from
+    ``max_identifier_length``."""
 
-    supports_server_side_cursors: bool
+    supports_server_side_cursors: Union[generic_fn_descriptor[bool], bool]
     """indicates if the dialect supports server side cursors"""
 
     server_side_cursors: bool
@@ -1192,6 +1225,13 @@ class Dialect(EventTarget):
     tuple_in_values: bool
     """target database supports tuple IN, i.e. (x, y) IN ((q, p), (r, z))"""
 
+    requires_name_normalize: bool
+    """Indicates symbol names are returned by the database in
+    UPPERCASED if they are case insensitive within the database.
+    If this is True, the methods normalize_name()
+    and denormalize_name() must be provided.
+    """
+
     _bind_typing_render_casts: bool
 
     _type_memos: MutableMapping[TypeEngine[Any], _TypeMemoDict]
@@ -1233,7 +1273,7 @@ class Dialect(EventTarget):
         raise NotImplementedError()
 
     @classmethod
-    def import_dbapi(cls) -> ModuleType:
+    def import_dbapi(cls) -> DBAPIModule:
         """Import the DBAPI module that is used by this dialect.
 
         The Python module object returned here will be assigned as an
@@ -1281,8 +1321,6 @@ class Dialect(EventTarget):
            any :meth:`_engine.Dialect.on_connect` hooks are called.
 
         """
-
-        pass
 
     if TYPE_CHECKING:
 
@@ -2205,7 +2243,7 @@ class Dialect(EventTarget):
 
     def is_disconnect(
         self,
-        e: Exception,
+        e: DBAPIModule.Error,
         connection: Optional[Union[PoolProxiedConnection, DBAPIConnection]],
         cursor: Optional[DBAPICursor],
     ) -> bool:
@@ -2309,7 +2347,7 @@ class Dialect(EventTarget):
         """
         return self.on_connect()
 
-    def on_connect(self) -> Optional[Callable[[Any], Any]]:
+    def on_connect(self) -> Optional[Callable[[Any], None]]:
         """return a callable which sets up a newly created DBAPI connection.
 
         The callable should accept a single argument "conn" which is the
@@ -2458,6 +2496,30 @@ class Dialect(EventTarget):
 
         raise NotImplementedError()
 
+    def detect_autocommit_setting(self, dbapi_conn: DBAPIConnection) -> bool:
+        """Detect the current autocommit setting for a DBAPI connection.
+
+        :param dbapi_connection: a DBAPI connection object
+        :return: True if autocommit is enabled, False if disabled
+        :rtype: bool
+
+        This method inspects the given DBAPI connection to determine
+        whether autocommit mode is currently enabled. The specific
+        mechanism for detecting autocommit varies by database dialect
+        and DBAPI driver, however it should be done **without** network
+        round trips.
+
+        .. note::
+
+            Not all dialects support autocommit detection. Dialects
+            that do not support this feature will raise
+            :exc:`NotImplementedError`.
+
+        """
+        raise NotImplementedError(
+            "This dialect cannot detect autocommit on a DBAPI connection"
+        )
+
     def get_default_isolation_level(
         self, dbapi_conn: DBAPIConnection
     ) -> IsolationLevel:
@@ -2482,7 +2544,7 @@ class Dialect(EventTarget):
 
     def get_isolation_level_values(
         self, dbapi_conn: DBAPIConnection
-    ) -> List[IsolationLevel]:
+    ) -> Sequence[IsolationLevel]:
         """return a sequence of string isolation level names that are accepted
         by this dialect.
 
@@ -2655,6 +2717,9 @@ class Dialect(EventTarget):
     def get_dialect_pool_class(self, url: URL) -> Type[Pool]:
         """return a Pool class to use for a given URL"""
         raise NotImplementedError()
+
+    def validate_identifier(self, ident: str) -> None:
+        """Validates an identifier name, raising an exception if invalid"""
 
 
 class CreateEnginePlugin:
@@ -3363,7 +3428,7 @@ class AdaptedConnection:
 
     __slots__ = ("_connection",)
 
-    _connection: Any
+    _connection: AsyncIODBAPIConnection
 
     @property
     def driver_connection(self) -> Any:

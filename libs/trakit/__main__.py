@@ -33,6 +33,13 @@ def build_argument_parser() -> argparse.ArgumentParser:
         help='The expected language to be guessed',
         type=str,
     )
+    conf_opts.add_argument(
+        '-t',
+        '--type',
+        dest='type',
+        help='The input type: trackname or filename. Default is trackname',
+        type=str,
+    )
 
     output_opts = opts.add_argument_group('Output')
     output_opts.add_argument(
@@ -91,7 +98,7 @@ def trakit(value: str, opts: argparse.Namespace) -> typing.Mapping:
     return info
 
 
-def main(args: typing.Optional[typing.List[str]] = None):
+def execute(args: typing.Optional[typing.List[str]] = None):
     """Execute main function for entry point."""
     argument_parser = build_argument_parser()
     args = args or sys.argv[1:]
@@ -102,6 +109,10 @@ def main(args: typing.Optional[typing.List[str]] = None):
         logging.getLogger('rebulk').setLevel(logging.DEBUG)
 
     return trakit(opts.value, opts)
+
+
+def main(args: typing.Optional[typing.List[str]] = None):
+    execute(args)
 
 
 if __name__ == '__main__':

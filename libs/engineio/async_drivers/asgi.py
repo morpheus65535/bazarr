@@ -1,6 +1,6 @@
+import inspect
 import os
 import sys
-import asyncio
 
 from engineio.static_files import get_static_file
 
@@ -102,7 +102,7 @@ class ASGIApp:
                 if self.on_startup:
                     try:
                         await self.on_startup() \
-                            if asyncio.iscoroutinefunction(self.on_startup) \
+                            if inspect.iscoroutinefunction(self.on_startup) \
                             else self.on_startup()
                     except:
                         await send({'type': 'lifespan.startup.failed'})
@@ -112,7 +112,7 @@ class ASGIApp:
                 if self.on_shutdown:
                     try:
                         await self.on_shutdown() \
-                            if asyncio.iscoroutinefunction(self.on_shutdown) \
+                            if inspect.iscoroutinefunction(self.on_shutdown) \
                             else self.on_shutdown()
                     except:
                         await send({'type': 'lifespan.shutdown.failed'})
@@ -280,7 +280,12 @@ class WebSocket:  # pragma: no cover
         event = await self.asgi_receive()
         if event['type'] != 'websocket.receive':
             raise OSError()
-        return event.get('bytes') or event.get('text')
+        if event.get('bytes', None) is not None:
+            return event['bytes']
+        elif event.get('text', None) is not None:
+            return event['text']
+        else:  # pragma: no cover
+            raise OSError()
 
 
 _async = {

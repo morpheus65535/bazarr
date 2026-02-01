@@ -4,12 +4,18 @@ wsproto/events
 
 Events that result from processing data on a WebSocket connection.
 """
+
+from __future__ import annotations
+
 from abc import ABC
 from dataclasses import dataclass, field
-from typing import Generic, List, Optional, Sequence, TypeVar, Union
+from typing import TYPE_CHECKING, Generic, TypeVar
 
-from .extensions import Extension
-from .typing import Headers
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from .extensions import Extension
+    from .typing import Headers
 
 
 class Event(ABC):
@@ -22,7 +28,8 @@ class Event(ABC):
 
 @dataclass(frozen=True)
 class Request(Event):
-    """The beginning of a Websocket connection, the HTTP Upgrade request
+    """
+    The beginning of a Websocket connection, the HTTP Upgrade request
 
     This event is fired when a SERVER connection receives a WebSocket
     handshake request (HTTP with upgrade header).
@@ -54,16 +61,15 @@ class Request(Event):
 
     host: str
     target: str
-    extensions: Union[Sequence[Extension], Sequence[str]] = field(  # type: ignore[assignment]
-        default_factory=list
-    )
+    extensions: Sequence[Extension] | Sequence[str] = field(default_factory=list)
     extra_headers: Headers = field(default_factory=list)
-    subprotocols: List[str] = field(default_factory=list)
+    subprotocols: list[str] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
 class AcceptConnection(Event):
-    """The acceptance of a Websocket upgrade request.
+    """
+    The acceptance of a Websocket upgrade request.
 
     This event is fired when a CLIENT receives an acceptance response
     from a server. It is also used to accept an upgrade request when
@@ -82,14 +88,15 @@ class AcceptConnection(Event):
 
     """
 
-    subprotocol: Optional[str] = None
-    extensions: List[Extension] = field(default_factory=list)
+    subprotocol: str | None = None
+    extensions: list[Extension] = field(default_factory=list)
     extra_headers: Headers = field(default_factory=list)
 
 
 @dataclass(frozen=True)
 class RejectConnection(Event):
-    """The rejection of a Websocket upgrade request, the HTTP response.
+    """
+    The rejection of a Websocket upgrade request, the HTTP response.
 
     The ``RejectConnection`` event sends the appropriate HTTP headers to
     communicate to the peer that the handshake has been rejected. You may also
@@ -133,7 +140,8 @@ class RejectConnection(Event):
 
 @dataclass(frozen=True)
 class RejectData(Event):
-    """The rejection HTTP response body.
+    """
+    The rejection HTTP response body.
 
     The caller may send multiple ``RejectData`` events. The final event should
     have the ``body_finished`` attribute set to ``True``.
@@ -156,8 +164,8 @@ class RejectData(Event):
 
 @dataclass(frozen=True)
 class CloseConnection(Event):
-
-    """The end of a Websocket connection, represents a closure frame.
+    """
+    The end of a Websocket connection, represents a closure frame.
 
     **wsproto does not automatically send a response to a close event.** To
     comply with the RFC you MUST send a close event back to the remote WebSocket
@@ -179,19 +187,20 @@ class CloseConnection(Event):
     """
 
     code: int
-    reason: Optional[str] = None
+    reason: str | None = None
 
-    def response(self) -> "CloseConnection":
+    def response(self) -> CloseConnection:
         """Generate an RFC-compliant close frame to send back to the peer."""
         return CloseConnection(code=self.code, reason=self.reason)
 
 
-T = TypeVar("T", bytes, str)
+T = TypeVar("T", bytes | bytearray, str)
 
 
 @dataclass(frozen=True)
 class Message(Event, Generic[T]):
-    """The websocket data message.
+    """
+    The websocket data message.
 
     Fields:
 
@@ -222,7 +231,8 @@ class Message(Event, Generic[T]):
 
 @dataclass(frozen=True)
 class TextMessage(Message[str]):  # pylint: disable=unsubscriptable-object
-    """This event is fired when a data frame with TEXT payload is received.
+    """
+    Fired when a data frame with TEXT payload is received.
 
     Fields:
 
@@ -231,35 +241,31 @@ class TextMessage(Message[str]):  # pylint: disable=unsubscriptable-object
        The message data as string, This only represents a single chunk
        of data and not a full WebSocket message.  You need to buffer
        and reassemble these chunks to get the full message.
-
     """
-
-    # https://github.com/python/mypy/issues/5744
-    data: str
 
 
 @dataclass(frozen=True)
-class BytesMessage(Message[bytes]):  # pylint: disable=unsubscriptable-object
-    """This event is fired when a data frame with BINARY payload is
-    received.
+class BytesMessage(
+    Message[bytearray | bytes]  # pylint: disable=unsubscriptable-object
+):
+    """
+    Fired when a data frame with BINARY payload is received.
 
     Fields:
 
     .. attribute:: data
 
-       The message data as byte string, can be decoded as UTF-8 for
+       The message data as bytes or a bytearray, can be decoded as UTF-8 for
        TEXT messages.  This only represents a single chunk of data and
        not a full WebSocket message.  You need to buffer and
        reassemble these chunks to get the full message.
     """
 
-    # https://github.com/python/mypy/issues/5744
-    data: bytes
-
 
 @dataclass(frozen=True)
 class Ping(Event):
-    """The Ping event can be sent to trigger a ping frame and is fired
+    """
+    The Ping event can be sent to trigger a ping frame and is fired
     when a Ping is received.
 
     **wsproto does not automatically send a pong response to a ping event.** To
@@ -275,14 +281,15 @@ class Ping(Event):
 
     payload: bytes = b""
 
-    def response(self) -> "Pong":
+    def response(self) -> Pong:
         """Generate an RFC-compliant :class:`Pong` response to this ping."""
         return Pong(payload=self.payload)
 
 
 @dataclass(frozen=True)
 class Pong(Event):
-    """The Pong event is fired when a Pong is received.
+    """
+    The Pong event is fired when a Pong is received.
 
     Fields:
 

@@ -1,4 +1,4 @@
-Metadata-Version: 2.1
+Metadata-Version: 2.4
 Name: guessit
 Version: 3.8.0
 Summary: GuessIt - a library for guessing information from video filenames.
@@ -27,6 +27,13 @@ Requires-Dist: rebulk>=3.2.0
 Requires-Dist: babelfish>=0.6.0
 Requires-Dist: python-dateutil
 Requires-Dist: importlib-resources; python_version < "3.9"
+Provides-Extra: test
+Requires-Dist: pytest; extra == "test"
+Requires-Dist: pytest-mock; extra == "test"
+Requires-Dist: pytest-benchmark; extra == "test"
+Requires-Dist: pytest-cov; extra == "test"
+Requires-Dist: pylint; extra == "test"
+Requires-Dist: PyYAML; extra == "test"
 Provides-Extra: dev
 Requires-Dist: tox; extra == "dev"
 Requires-Dist: mkdocs; extra == "dev"
@@ -35,13 +42,19 @@ Requires-Dist: pyinstaller; extra == "dev"
 Requires-Dist: wheel; extra == "dev"
 Requires-Dist: python-semantic-release; extra == "dev"
 Requires-Dist: twine; extra == "dev"
-Provides-Extra: test
-Requires-Dist: pytest; extra == "test"
-Requires-Dist: pytest-mock; extra == "test"
-Requires-Dist: pytest-benchmark; extra == "test"
-Requires-Dist: pytest-cov; extra == "test"
-Requires-Dist: pylint; extra == "test"
-Requires-Dist: PyYAML; extra == "test"
+Dynamic: author
+Dynamic: author-email
+Dynamic: classifier
+Dynamic: description
+Dynamic: description-content-type
+Dynamic: download-url
+Dynamic: home-page
+Dynamic: keywords
+Dynamic: license
+Dynamic: license-file
+Dynamic: provides-extra
+Dynamic: requires-dist
+Dynamic: summary
 
 GuessIt
 

@@ -158,7 +158,13 @@ AUTOLINK_RE = r'<((?:[Ff]|[Hh][Tt])[Tt][Pp][Ss]?://[^<>]*)>'
 AUTOMAIL_RE = r'<([^<> !]+@[^@<> ]+)>'
 """ Match an automatic email link (`<me@example.com>`). """
 
-HTML_RE = r'(<(\/?[a-zA-Z][^<>@ ]*( [^<>]*)?|!--(?:(?!<!--|-->).)*--)>)'
+HTML_RE = (
+    r'(<(\/?[a-zA-Z][^<>@ ]*( [^<>]*)?|'          # Tag
+    r'!--(?:(?!<!--|-->).)*--|'                   # Comment
+    r'[?](?:(?!<[?]|[?]>).)*[?]|'                 # Processing instruction
+    r'!\[CDATA\[(?:(?!<!\[CDATA\[|\]\]>).)*\]\]'  # `CDATA`
+    ')>)'
+)
 """ Match an HTML tag (`<...>`). """
 
 ENTITY_RE = r'(&(?:\#[0-9]+|\#x[0-9a-fA-F]+|[a-zA-Z0-9]+);)'
@@ -514,7 +520,8 @@ class HtmlInlineProcessor(InlineProcessor):
             value = stash.get(id)
             if value is not None:
                 try:
-                    return self.md.serializer(value)
+                    # Ensure we don't have a placeholder inside a placeholder
+                    return self.unescape(self.md.serializer(value))
                 except Exception:
                     return r'\%s' % value
 

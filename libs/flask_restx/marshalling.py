@@ -171,9 +171,11 @@ def _marshal(data, fields, envelope=None, skip_none=False, mask=None, ordered=Fa
         return (key, value)
 
     items = (
-        (k, marshal(data, v, skip_none=skip_none, ordered=ordered))
-        if isinstance(v, dict)
-        else __format_field(k, v)
+        (
+            (k, marshal(data, v, skip_none=skip_none, ordered=ordered))
+            if isinstance(v, dict)
+            else __format_field(k, v)
+        )
         for k, v in fields.items()
     )
 

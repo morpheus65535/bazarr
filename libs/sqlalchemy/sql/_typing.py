@@ -1,5 +1,5 @@
 # sql/_typing.py
-# Copyright (C) 2022-2025 the SQLAlchemy authors and contributors
+# Copyright (C) 2022-2026 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -56,6 +56,7 @@ if TYPE_CHECKING:
     from .roles import FromClauseRole
     from .schema import Column
     from .selectable import Alias
+    from .selectable import CompoundSelect
     from .selectable import CTE
     from .selectable import FromClause
     from .selectable import Join
@@ -69,7 +70,10 @@ if TYPE_CHECKING:
     from .sqltypes import TableValueType
     from .sqltypes import TupleType
     from .type_api import TypeEngine
+    from ..engine import Connection
     from ..engine import Dialect
+    from ..engine import Engine
+    from ..engine.mock import MockConnection
     from ..util.typing import TypeGuard
 
 _T = TypeVar("_T", bound=Any)
@@ -182,6 +186,19 @@ _T8 = TypeVar("_T8", bound=Any)
 _T9 = TypeVar("_T9", bound=Any)
 
 
+_OnlyColumnArgument = Union[
+    "ColumnElement[_T]",
+    _HasClauseElement[_T],
+    roles.DMLColumnRole,
+]
+"""A narrow type that is looking for a ColumnClause (e.g. table column with a
+name) or an ORM element that produces this.
+
+This is used for constructs that need a named column to represent a
+position in a selectable, like TextClause().columns() or values(...).
+
+"""
+
 _ColumnExpressionArgument = Union[
     "ColumnElement[_T]",
     _HasClauseElement[_T],
@@ -224,6 +241,7 @@ _InfoType = Dict[Any, Any]
 
 _FromClauseArgument = Union[
     roles.FromClauseRole,
+    roles.TypedColumnsClauseRole[Any],
     Type[Any],
     Inspectable[_HasClauseElement[Any]],
     _HasClauseElement[Any],
@@ -247,7 +265,9 @@ come from the ORM.
 """
 
 _SelectStatementForCompoundArgument = Union[
-    "SelectBase", roles.CompoundElementRole
+    "Select[_TP]",
+    "CompoundSelect[_TP]",
+    roles.CompoundElementRole,
 ]
 """SELECT statement acceptable by ``union()`` and other SQL set operations"""
 
@@ -298,6 +318,8 @@ _LimitOffsetType = Union[int, _ColumnExpressionArgument[int], None]
 
 _AutoIncrementType = Union[bool, Literal["auto", "ignore_fk"]]
 
+_CreateDropBind = Union["Engine", "Connection", "MockConnection"]
+
 if TYPE_CHECKING:
 
     def is_sql_compiler(c: Compiled) -> TypeGuard[SQLCompiler]: ...
@@ -329,11 +351,11 @@ if TYPE_CHECKING:
     def is_selectable(t: Any) -> TypeGuard[Selectable]: ...
 
     def is_select_base(
-        t: Union[Executable, ReturnsRows]
+        t: Union[Executable, ReturnsRows],
     ) -> TypeGuard[SelectBase]: ...
 
     def is_select_statement(
-        t: Union[Executable, ReturnsRows]
+        t: Union[Executable, ReturnsRows],
     ) -> TypeGuard[Select[Any]]: ...
 
     def is_table(t: FromClause) -> TypeGuard[TableClause]: ...

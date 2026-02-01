@@ -12,9 +12,9 @@ base backend.
 
 from __future__ import annotations
 
-from typing import Mapping
-from typing import Optional
-from typing import Sequence
+from collections.abc import Iterable
+from collections.abc import Mapping
+from collections.abc import Sequence
 
 from .api import BackendFormatted
 from .api import BackendSetType
@@ -34,6 +34,10 @@ class ProxyBackend(CacheBackend):
         from dogpile.cache.proxy import ProxyBackend
 
         class MyFirstProxy(ProxyBackend):
+            def get_serialized(self, key):
+                # ... custom code goes here ...
+                return self.proxied.get_serialized(key)
+
             def get(self, key):
                 # ... custom code goes here ...
                 return self.proxied.get(key)
@@ -43,6 +47,10 @@ class ProxyBackend(CacheBackend):
                 self.proxied.set(key)
 
         class MySecondProxy(ProxyBackend):
+            def get_serialized(self, key):
+                # ... custom code goes here ...
+                return self.proxied.get_serialized(key)
+
             def get(self, key):
                 # ... custom code goes here ...
                 return self.proxied.get(key)
@@ -94,23 +102,23 @@ class ProxyBackend(CacheBackend):
     def delete(self, key: KeyType) -> None:
         self.proxied.delete(key)
 
-    def get_multi(self, keys: Sequence[KeyType]) -> Sequence[BackendFormatted]:
+    def get_multi(self, keys: Iterable[KeyType]) -> Sequence[BackendFormatted]:
         return self.proxied.get_multi(keys)
 
     def set_multi(self, mapping: Mapping[KeyType, BackendSetType]) -> None:
         self.proxied.set_multi(mapping)
 
-    def delete_multi(self, keys: Sequence[KeyType]) -> None:
+    def delete_multi(self, keys: Iterable[KeyType]) -> None:
         self.proxied.delete_multi(keys)
 
-    def get_mutex(self, key: KeyType) -> Optional[CacheMutex]:
+    def get_mutex(self, key: KeyType) -> CacheMutex | None:
         return self.proxied.get_mutex(key)
 
     def get_serialized(self, key: KeyType) -> SerializedReturnType:
         return self.proxied.get_serialized(key)
 
     def get_serialized_multi(
-        self, keys: Sequence[KeyType]
+        self, keys: Iterable[KeyType]
     ) -> Sequence[SerializedReturnType]:
         return self.proxied.get_serialized_multi(keys)
 

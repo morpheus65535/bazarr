@@ -1,5 +1,5 @@
 # __init__.py
-# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2026 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -269,7 +269,7 @@ from .types import Uuid as Uuid
 from .types import VARBINARY as VARBINARY
 from .types import VARCHAR as VARCHAR
 
-__version__ = "2.0.37"
+__version__ = "2.0.46"
 
 
 def __go(lcls: Any) -> None:
@@ -281,14 +281,3 @@ def __go(lcls: Any) -> None:
 
 
 __go(locals())
-
-
-def __getattr__(name: str) -> Any:
-    if name == "SingleonThreadPool":
-        _util.warn_deprecated(
-            "SingleonThreadPool was a typo in the v2 series. "
-            "Please use the correct SingletonThreadPool name.",
-            "2.0.24",
-        )
-        return SingletonThreadPool
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

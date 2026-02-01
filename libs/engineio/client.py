@@ -1,11 +1,12 @@
 from base64 import b64encode
-from engineio.json import JSONDecodeError
+from http.cookies import SimpleCookie
 import logging
 import queue
 import ssl
 import threading
 import time
 import urllib
+from engineio.json import JSONDecodeError
 
 try:
     import requests
@@ -91,7 +92,6 @@ class Client(base_client.BaseClient):
             if not transports:
                 raise ValueError('No valid transports provided')
         self.transports = transports or valid_transports
-        self.queue = self.create_queue()
         return getattr(self, '_connect_' + self.transports[0])(
             url, headers or {}, engineio_path)
 
@@ -162,13 +162,26 @@ class Client(base_client.BaseClient):
 
     def create_queue(self, *args, **kwargs):
         """Create a queue object."""
-        q = queue.Queue(*args, **kwargs)
-        q.Empty = queue.Empty
-        return q
+        return queue.Queue(*args, **kwargs)
+
+    def get_queue_empty_exception(self):
+        """Return the queue empty exception raised by queues created by the
+        ``create_queue()`` method.
+        """
+        return queue.Empty
 
     def create_event(self, *args, **kwargs):
         """Create an event object."""
         return threading.Event(*args, **kwargs)
+
+    def _reset(self):
+        super()._reset()
+        while True:  # pragma: no cover
+            try:
+                self.queue.get_nowait()
+                self.queue.task_done()
+            except self.queue_empty:
+                break
 
     def _connect_polling(self, url, headers, engineio_path):
         """Establish a long-polling connection to the Engine.IO server."""
@@ -256,8 +269,10 @@ class Client(base_client.BaseClient):
         extra_options = {}
         if self.http:
             # cookies
-            cookies = '; '.join([f"{cookie.name}={cookie.value}"
-                                 for cookie in self.http.cookies])
+            ck = SimpleCookie()
+            for cookie in self.http.cookies:
+                ck[cookie.name] = cookie.value
+            cookies = ck.output(header='', sep=';').strip()
             for header, value in headers.items():
                 if header.lower() == 'cookie':
                     if cookies:
@@ -566,7 +581,7 @@ class Client(base_client.BaseClient):
             packets = None
             try:
                 packets = [self.queue.get(timeout=timeout)]
-            except self.queue.Empty:
+            except self.queue_empty:
                 self.logger.error('packet queue is empty, aborting')
                 break
             if packets == [None]:
@@ -576,7 +591,7 @@ class Client(base_client.BaseClient):
                 while True:
                     try:
                         packets.append(self.queue.get(block=False))
-                    except self.queue.Empty:
+                    except self.queue_empty:
                         break
                     if packets[-1] is None:
                         packets = packets[:-1]

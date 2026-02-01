@@ -1,16 +1,83 @@
 import logging
 import urllib.parse as parse
+import urllib
+import urllib.request
+import ssl
+from typing import Tuple
+import json
+
+
+class RequestHelpers:
+    @staticmethod
+    def post(
+            url: str,
+            headers: dict = {},
+            proxies: dict = {},
+            verify_ssl: bool = False) -> Tuple[int, dict]:
+        return RequestHelpers.request(
+            url,
+            "POST",
+            headers=headers,
+            proxies=proxies,
+            verify_ssl=verify_ssl
+        )
+
+    @staticmethod
+    def request(
+            url: str,
+            method: str,
+            headers: dict = {},
+            proxies: dict = {},
+            verify_ssl: bool = False) -> Tuple[int, dict]:
+        context = ssl.create_default_context()
+        if not verify_ssl:
+            context.check_hostname = False
+            context.verify_mode = ssl.CERT_NONE
+        headers.update({'Content-Type': 'application/json'})
+        proxy_handler = None
+
+        if len(proxies.keys()) > 0:
+            proxy_handler = urllib.request.ProxyHandler(proxies)
+            # pragma: no cover
+
+        req = urllib.request.Request(
+            url,
+            method=method,
+            headers=headers)
+
+        opener = urllib.request.build_opener(proxy_handler)\
+            if proxy_handler is not None else\
+            urllib.request.urlopen
+
+        with opener(
+                req,
+                context=context) as response:
+            status_code = response.getcode()
+            response_body = response.read().decode('utf-8')
+
+            try:
+                json_data = json.loads(response_body)
+            except json.JSONDecodeError:  # pragma: no cover
+                json_data = None  # pragma: no cover
+
+            return status_code, json_data
 
 
 class Helpers:
+
     @staticmethod
     def configure_logger(level=logging.INFO, handler=None):
         logger = Helpers.get_logger()
         if handler is None:
             handler = logging.StreamHandler()
+            debug_formatter = ""\
+                if level != logging.DEBUG else\
+                "- %(filename)s:%(lineno)d "
             handler.setFormatter(
                 logging.Formatter(
-                    '%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+                    '%(asctime)s - %(name)s '
+                    + debug_formatter +
+                    '- %(levelname)s - %(message)s'))
             handler.setLevel(level)
         logger.addHandler(handler)
         logger.setLevel(level)

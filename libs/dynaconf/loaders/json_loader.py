@@ -6,6 +6,7 @@ from pathlib import Path
 from dynaconf import default_settings
 from dynaconf.constants import JSON_EXTENSIONS
 from dynaconf.loaders.base import BaseLoader
+from dynaconf.loaders.base import SourceMetadata
 from dynaconf.utils import object_merge
 from dynaconf.utils.parse_conf import try_to_encode
 
@@ -15,7 +16,15 @@ except ImportError:  # pragma: no cover
     commentjson = None
 
 
-def load(obj, env=None, silent=True, key=None, filename=None, validate=False):
+def load(
+    obj,
+    env=None,
+    silent=True,
+    key=None,
+    filename=None,
+    validate=False,
+    identifier="json",
+):
     """
     Reads and loads in to "obj" a single key or all keys from source file.
 
@@ -35,10 +44,16 @@ def load(obj, env=None, silent=True, key=None, filename=None, validate=False):
         file_reader = json.load
         string_reader = json.loads
 
+    # when load_file function is called directly it comes with module and line number
+    if isinstance(identifier, SourceMetadata) and identifier.loader.startswith(
+        "load_file"
+    ):
+        identifier = identifier.loader
+
     loader = BaseLoader(
         obj=obj,
         env=env,
-        identifier="json",
+        identifier=identifier,
         extensions=JSON_EXTENSIONS,
         file_reader=file_reader,
         string_reader=string_reader,

@@ -1,9 +1,9 @@
 textdistance-4.6.3.dist-info/INSTALLER,sha256=zuuue4knoyJ-UwPPXg8fezS7VCrXJQrAP7zeNuwvFQg,4
-textdistance-4.6.3.dist-info/LICENSE,sha256=oOV_OJnxc9uQzeaMabB-rqV8Gti-Q1kQXusPgFxoEJI,1049
-textdistance-4.6.3.dist-info/METADATA,sha256=v0xojwY_m6pFs-ZggR9u3C0Nx1ZMnYvU9n5hPbWLJTg,18148
+textdistance-4.6.3.dist-info/METADATA,sha256=B_NEivAzssLk4waA8BIkEg7Fe58hzJz5JCNN-5fYXQg,18425
 textdistance-4.6.3.dist-info/RECORD,,
 textdistance-4.6.3.dist-info/REQUESTED,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
-textdistance-4.6.3.dist-info/WHEEL,sha256=OVMc5UfuAQiSplgO0_WdW7vXVGAt9Hdd6qtN4HotdyA,91
+textdistance-4.6.3.dist-info/WHEEL,sha256=wUyA8OaulRlbfwMtmQsvNngGrxQHAvkKcvRmdizlJi0,92
+textdistance-4.6.3.dist-info/licenses/LICENSE,sha256=oOV_OJnxc9uQzeaMabB-rqV8Gti-Q1kQXusPgFxoEJI,1049
 textdistance-4.6.3.dist-info/top_level.txt,sha256=GBIsLNa3pcbaPSp8KNq93YdHKE3CNIQMQrLrZdectak,13
 textdistance/__init__.py,sha256=abtyaG6QgNqbwQTs_8q1rJUSPr78akEOLYgJDXHgtLM,355
 textdistance/algorithms/__init__.py,sha256=1raagDGcgHenA-Ncj3oKHTCk0ai8ltLdqQzTA__clkg,217

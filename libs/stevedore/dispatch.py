@@ -10,42 +10,55 @@
 #  License for the specific language governing permissions and limitations
 #  under the License.
 
+from collections.abc import Callable
+from collections.abc import Sequence
 import logging
+from typing import Any
+from typing import Concatenate
+from typing import ParamSpec
+from typing import TypeVar
 
 from .enabled import EnabledExtensionManager
 from .exception import NoMatches
+from .extension import Extension
+from .extension import OnLoadFailureCallbackT
 
 LOG = logging.getLogger(__name__)
 
+T = TypeVar('T')
+U = TypeVar('U')
+P = ParamSpec('P')
+Q = ParamSpec('Q')
 
-class DispatchExtensionManager(EnabledExtensionManager):
+
+class DispatchExtensionManager(EnabledExtensionManager[T]):
     """Loads all plugins and filters on execution.
 
     This is useful for long-running processes that need to pass
     different inputs to different extensions.
 
     :param namespace: The namespace for the entry points.
-    :type namespace: str
     :param check_func: Function to determine which extensions to load.
-    :type check_func: callable
     :param invoke_on_load: Boolean controlling whether to invoke the
         object returned by the entry point after the driver is loaded.
-    :type invoke_on_load: bool
     :param invoke_args: Positional arguments to pass when invoking
         the object returned by the entry point. Only used if invoke_on_load
         is True.
-    :type invoke_args: tuple
     :param invoke_kwds: Named arguments to pass when invoking
         the object returned by the entry point. Only used if invoke_on_load
         is True.
-    :type invoke_kwds: dict
     :param propagate_map_exceptions: Boolean controlling whether exceptions
         are propagated up through the map call or whether they are logged and
         then ignored
-    :type invoke_on_load: bool
     """
 
-    def map(self, filter_func, func, *args, **kwds):
+    def map(  # type: ignore[override]
+        self,
+        filter_func: Callable[Concatenate[Extension[T], P], bool],
+        func: Callable[Concatenate[Extension[T], Q], U],
+        *args: Any,
+        **kwds: Any,
+    ) -> list[U]:
         """Iterate over the extensions invoking func() for any where
         filter_func() returns True.
 
@@ -79,14 +92,22 @@ class DispatchExtensionManager(EnabledExtensionManager):
         """
         if not self.extensions:
             # FIXME: Use a more specific exception class here.
-            raise NoMatches('No %s extensions found' % self.namespace)
-        response = []
+            raise NoMatches(f'No {self.namespace} extensions found')
+        response: list[U] = []
         for e in self.extensions:
             if filter_func(e, *args, **kwds):
-                self._invoke_one_plugin(response.append, func, e, args, kwds)
+                self._invoke_one_plugin(
+                    response.append, func, e, *args, **kwds
+                )
         return response
 
-    def map_method(self, filter_func, method_name, *args, **kwds):
+    def map_method(  # type: ignore[override]
+        self,
+        filter_func: Callable[Concatenate[Extension[T], P], bool],
+        method_name: str,
+        *args: Any,
+        **kwds: Any,
+    ) -> Any:
         """Iterate over the extensions invoking each one's object method called
         `method_name` for any where filter_func() returns True.
 
@@ -107,11 +128,16 @@ class DispatchExtensionManager(EnabledExtensionManager):
         :param kwds: Keyword arguments to pass to method
         :returns: List of values returned from methods
         """
-        return self.map(filter_func, self._call_extension_method,
-                        method_name, *args, **kwds)
+        return self.map(
+            filter_func,
+            self._call_extension_method,
+            method_name,
+            *args,
+            **kwds,
+        )
 
 
-class NameDispatchExtensionManager(DispatchExtensionManager):
+class NameDispatchExtensionManager(DispatchExtensionManager[T]):
     """Loads all plugins and filters on execution.
 
     This is useful for long-running processes that need to pass
@@ -123,41 +149,40 @@ class NameDispatchExtensionManager(DispatchExtensionManager):
     and ``False`` indicating that the extension should be ignored.
 
     :param namespace: The namespace for the entry points.
-    :type namespace: str
     :param check_func: Function to determine which extensions to load.
-    :type check_func: callable
     :param invoke_on_load: Boolean controlling whether to invoke the
         object returned by the entry point after the driver is loaded.
-    :type invoke_on_load: bool
     :param invoke_args: Positional arguments to pass when invoking
         the object returned by the entry point. Only used if invoke_on_load
         is True.
-    :type invoke_args: tuple
     :param invoke_kwds: Named arguments to pass when invoking
         the object returned by the entry point. Only used if invoke_on_load
         is True.
-    :type invoke_kwds: dict
     :param propagate_map_exceptions: Boolean controlling whether exceptions
         are propagated up through the map call or whether they are logged and
         then ignored
-    :type invoke_on_load: bool
     :param on_load_failure_callback: Callback function that will be called when
         an entrypoint can not be loaded. The arguments that will be provided
         when this is called (when an entrypoint fails to load) are
         (manager, entrypoint, exception)
-    :type on_load_failure_callback: function
-    :param verify_requirements: Use setuptools to enforce the
-        dependencies of the plugin(s) being loaded. Defaults to False.
-    :type verify_requirements: bool
-
+    :param verify_requirements: **DEPRECATED** This is a no-op and will be
+        removed in a future version.
     """
 
-    def __init__(self, namespace, check_func, invoke_on_load=False,
-                 invoke_args=(), invoke_kwds={},
-                 propagate_map_exceptions=False,
-                 on_load_failure_callback=None,
-                 verify_requirements=False):
-        super(NameDispatchExtensionManager, self).__init__(
+    def __init__(
+        self,
+        namespace: str,
+        check_func: Callable[[Extension[T]], bool],
+        invoke_on_load: bool = False,
+        invoke_args: tuple[Any, ...] | None = None,
+        invoke_kwds: dict[str, Any] | None = None,
+        propagate_map_exceptions: bool = False,
+        on_load_failure_callback: 'OnLoadFailureCallbackT[T] | None' = None,
+        verify_requirements: bool | None = None,
+    ):
+        invoke_args = () if invoke_args is None else invoke_args
+        invoke_kwds = {} if invoke_kwds is None else invoke_kwds
+        super().__init__(
             namespace=namespace,
             check_func=check_func,
             invoke_on_load=invoke_on_load,
@@ -168,11 +193,17 @@ class NameDispatchExtensionManager(DispatchExtensionManager):
             verify_requirements=verify_requirements,
         )
 
-    def _init_plugins(self, extensions):
-        super(NameDispatchExtensionManager, self)._init_plugins(extensions)
-        self.by_name = dict((e.name, e) for e in self.extensions)
+    def _init_plugins(self, extensions: list[Extension[T]]) -> None:
+        super()._init_plugins(extensions)
+        self.by_name = {e.name: e for e in self.extensions}
 
-    def map(self, names, func, *args, **kwds):
+    def map(  # type: ignore[override]
+        self,
+        names: Sequence[str],
+        func: Callable[Concatenate[Extension[T], P], U],
+        *args: P.args,
+        **kwds: P.kwargs,
+    ) -> list[U]:
         """Iterate over the extensions invoking func() for any where
         the name is in the given list of names.
 
@@ -194,17 +225,21 @@ class NameDispatchExtensionManager(DispatchExtensionManager):
         :param kwds: Keyword arguments to pass to func()
         :returns: List of values returned from func()
         """
-        response = []
+        response: list[U] = []
         for name in names:
             try:
                 e = self.by_name[name]
             except KeyError:
                 LOG.debug('Missing extension %r being ignored', name)
             else:
-                self._invoke_one_plugin(response.append, func, e, args, kwds)
+                self._invoke_one_plugin(
+                    response.append, func, e, *args, **kwds
+                )
         return response
 
-    def map_method(self, names, method_name, *args, **kwds):
+    def map_method(  # type: ignore[override]
+        self, names: Sequence[str], method_name: str, *args: Any, **kwds: Any
+    ) -> Any:
         """Iterate over the extensions invoking each one's object method called
         `method_name` for any where the name is in the given list of names.
 
@@ -225,5 +260,6 @@ class NameDispatchExtensionManager(DispatchExtensionManager):
         :param kwds: Keyword arguments to pass to method
         :returns: List of values returned from methods
         """
-        return self.map(names, self._call_extension_method,
-                        method_name, *args, **kwds)
+        return self.map(
+            names, self._call_extension_method, method_name, *args, **kwds
+        )

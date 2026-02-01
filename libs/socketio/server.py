@@ -543,6 +543,9 @@ class Server(base_server.BaseServer):
         except exceptions.ConnectionRefusedError as exc:
             fail_reason = exc.error_args
             success = False
+        except ConnectionRefusedError:
+            fail_reason = {"message": "Connection refused by server"}
+            success = False
 
         if success is False:
             if self.always_connect:

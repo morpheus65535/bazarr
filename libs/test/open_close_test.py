@@ -1,16 +1,14 @@
-import os
-import unittest
 import logging
-import time
 import threading
 import uuid
 
-from subprocess import Popen, PIPE
 from signalrcore.hub_connection_builder import HubConnectionBuilder
-from signalrcore.subject import Subject
-from test.base_test_case import BaseTestCase, Urls
+from test.base_test_case import BaseTestCase
 
-class TestClientStreamMethod(BaseTestCase):    
+LOCKS = {}
+
+
+class TestOpenCloseMethods(BaseTestCase):
     def setUp(self):
         pass
 
@@ -22,43 +20,61 @@ class TestClientStreamMethod(BaseTestCase):
             .with_url(self.server_url, options={"verify_ssl": False})\
             .configure_logging(logging.ERROR)\
             .build()
-        
-        _lock = threading.Lock()
-        self.assertTrue(_lock.acquire(timeout=30))
-        
 
-        connection.on_open(lambda: _lock.release())
-        connection.on_close(lambda: _lock.release())
-        
+        identifier = str(uuid.uuid4())
+        LOCKS[identifier] = threading.Lock()
+
+        def release():
+            LOCKS[identifier].release()
+
+        self.assertTrue(LOCKS[identifier].acquire(timeout=30))
+
+        connection.on_open(release)
+        connection.on_close(release)
+
         result = connection.start()
 
         self.assertTrue(result)
-        
-        self.assertTrue(_lock.acquire(timeout=30))  # Released on open
-        
+
+        self.assertTrue(LOCKS[identifier].acquire(timeout=30))
+        # Released on open
+
         result = connection.start()
 
         self.assertFalse(result)
 
         connection.stop()
 
+        del LOCKS[identifier]
+        del connection
+
     def test_open_close(self):
-        self.connection = self.get_connection()
-      
-        _lock = threading.Lock()
+        connection = self.get_connection()
 
-        self.connection.on_open(lambda: _lock.release())
-        self.connection.on_close(lambda: _lock.release())
+        identifier = str(uuid.uuid4())
+        LOCKS[identifier] = threading.Lock()
 
-        self.assertTrue(_lock.acquire())
+        def release():
+            LOCKS[identifier].release()
 
-        self.connection.start()
+        connection.on_open(release)
+        connection.on_close(release)
 
-        self.assertTrue(_lock.acquire())
-        
-        self.connection.stop()
-        
-        self.assertTrue(_lock.acquire())
+        self.assertTrue(LOCKS[identifier].acquire(timeout=30))
 
-        _lock.release()
-        del _lock
+        connection.start()
+
+        self.assertTrue(
+            LOCKS[identifier].acquire(timeout=30),
+            "on_open was not fired")
+
+        connection.on_open(lambda: None)
+
+        connection.stop()
+
+        self.assertTrue(
+            LOCKS[identifier].acquire(timeout=30),
+            "on_close was not fired")
+
+        del LOCKS[identifier]
+        del connection

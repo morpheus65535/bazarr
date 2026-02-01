@@ -1,5 +1,5 @@
 # testing/suite/test_results.py
-# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2026 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -268,6 +268,8 @@ class ServerSideCursorsTest(
             return isinstance(cursor, sscursor)
         elif self.engine.dialect.driver == "mariadbconnector":
             return not cursor.buffered
+        elif self.engine.dialect.driver == "mysqlconnector":
+            return "buffered" not in type(cursor).__name__.lower()
         elif self.engine.dialect.driver in ("asyncpg", "aiosqlite"):
             return cursor.server_side
         elif self.engine.dialect.driver == "pg8000":

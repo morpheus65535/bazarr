@@ -1,5 +1,5 @@
 # util/compat.py
-# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2026 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -17,6 +17,7 @@ import inspect
 import operator
 import platform
 import sys
+import sysconfig
 import typing
 from typing import Any
 from typing import Callable
@@ -32,6 +33,8 @@ from typing import Type
 from typing import TypeVar
 
 
+py314b1 = sys.version_info >= (3, 14, 0, "beta", 1)
+py314 = sys.version_info >= (3, 14)
 py313 = sys.version_info >= (3, 13)
 py312 = sys.version_info >= (3, 12)
 py311 = sys.version_info >= (3, 11)
@@ -40,6 +43,7 @@ py39 = sys.version_info >= (3, 9)
 py38 = sys.version_info >= (3, 8)
 pypy = platform.python_implementation() == "PyPy"
 cpython = platform.python_implementation() == "CPython"
+freethreading = bool(sysconfig.get_config_var("Py_GIL_DISABLED"))
 
 win32 = sys.platform.startswith("win")
 osx = sys.platform.startswith("darwin")
@@ -299,3 +303,14 @@ def local_dataclass_fields(cls: Type[Any]) -> Iterable[dataclasses.Field[Any]]:
         return [f for f in dataclasses.fields(cls) if f not in super_fields]
     else:
         return []
+
+
+if freethreading:
+    import threading
+
+    mini_gil = threading.RLock()
+    """provide a threading.RLock() under python freethreading only"""
+else:
+    import contextlib
+
+    mini_gil = contextlib.nullcontext()  # type: ignore[assignment]

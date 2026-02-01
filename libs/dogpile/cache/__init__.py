@@ -1,6 +1,13 @@
-from .region import CacheRegion  # noqa
-from .region import make_region  # noqa
-from .region import register_backend  # noqa
-from .. import __version__  # noqa
+from .backends import register_backend
+from .region import CacheRegion
+from .region import make_region
+from .. import __version__
 
 # backwards compat
+
+__all__ = [
+    "CacheRegion",
+    "make_region",
+    "register_backend",
+    "__version__",
+]

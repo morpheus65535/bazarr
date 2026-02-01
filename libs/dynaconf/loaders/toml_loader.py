@@ -6,12 +6,21 @@ from pathlib import Path
 from dynaconf import default_settings
 from dynaconf.constants import TOML_EXTENSIONS
 from dynaconf.loaders.base import BaseLoader
+from dynaconf.loaders.base import SourceMetadata
 from dynaconf.utils import object_merge
 from dynaconf.vendor import toml  # Backwards compatibility with uiri/toml
 from dynaconf.vendor import tomllib  # New tomllib stdlib on py3.11
 
 
-def load(obj, env=None, silent=True, key=None, filename=None, validate=False):
+def load(
+    obj,
+    env=None,
+    silent=True,
+    key=None,
+    filename=None,
+    validate=False,
+    identifier="toml",
+):
     """
     Reads and loads in to "obj" a single key or all keys from source file.
 
@@ -22,12 +31,17 @@ def load(obj, env=None, silent=True, key=None, filename=None, validate=False):
     :param filename: Optional custom filename to load
     :return: None
     """
+    # when load_file function is called directly it comes with module and line number
+    if isinstance(identifier, SourceMetadata) and identifier.loader.startswith(
+        "load_file"
+    ):
+        identifier = identifier.loader
 
     try:
         loader = BaseLoader(
             obj=obj,
             env=env,
-            identifier="toml",
+            identifier=identifier,
             extensions=TOML_EXTENSIONS,
             file_reader=tomllib.load,
             string_reader=tomllib.loads,
@@ -57,7 +71,7 @@ def load(obj, env=None, silent=True, key=None, filename=None, validate=False):
         loader = BaseLoader(
             obj=obj,
             env=env,
-            identifier="toml",
+            identifier=identifier,
             extensions=TOML_EXTENSIONS,
             file_reader=toml.load,
             string_reader=toml.loads,

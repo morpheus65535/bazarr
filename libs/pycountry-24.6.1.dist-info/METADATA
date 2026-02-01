@@ -1,9 +1,9 @@
-Metadata-Version: 2.1
+Metadata-Version: 2.4
 Name: pycountry
 Version: 24.6.1
 Summary: ISO country, subdivision, language, currency and script definitions and their translations
-Home-page: https://github.com/flyingcircusio/pycountry
 License: LGPL-2.1-only
+License-File: LICENSE.txt
 Keywords: country,subdivision,language,currency,iso,3166,639,4217,15924,3166-1,3166-2,3166-3
 Author: Christian Theune
 Author-email: ct@flyingcircus.io
@@ -24,6 +24,7 @@ Classifier: Programming Language :: Python :: 3.10
 Classifier: Programming Language :: Python :: 3.11
 Classifier: Programming Language :: Python :: 3.12
 Classifier: Programming Language :: Python :: 3.13
+Classifier: Programming Language :: Python :: 3.14
 Classifier: Topic :: Software Development :: Internationalization
 Classifier: Topic :: Software Development :: Localization
 Requires-Dist: importlib-resources (>5.12.0) ; python_version < "3.9"

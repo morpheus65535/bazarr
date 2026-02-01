@@ -1,12 +1,10 @@
 # orm/path_registry.py
-# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2026 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
 # the MIT License: https://www.opensource.org/licenses/mit-license.php
-"""Path tracking utilities, representing mapper graph traversals.
-
-"""
+"""Path tracking utilities, representing mapper graph traversals."""
 
 from __future__ import annotations
 
@@ -566,7 +564,7 @@ class PropRegistry(PathRegistry):
             # entities are used.
             #
             # here we are trying to distinguish between a path that starts
-            # on a the with_polymorhpic entity vs. one that starts on a
+            # on a with_polymorphic entity vs. one that starts on a
             # normal entity that introduces a with_polymorphic() in the
             # middle using of_type():
             #

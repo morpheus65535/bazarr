@@ -10,8 +10,8 @@
 #  License for the specific language governing permissions and limitations
 #  under the License.
 
-"""Tests for stevedore._cache
-"""
+"""Tests for stevedore._cache"""
+
 import sys
 
 from unittest import mock
@@ -21,7 +21,6 @@ from stevedore.tests import utils
 
 
 class TestCache(utils.TestCase):
-
     def test_disable_caching_executable(self):
         """Test caching is disabled if python interpreter is located under /tmp
         directory (Ansible)
@@ -39,7 +38,7 @@ class TestCache(utils.TestCase):
         with mock.patch('os.path.isfile') as mock_path:
             mock_path.return_value = True
             sot = _cache.Cache()
-            mock_path.assert_called_with('%s/.disable' % cache_dir)
+            mock_path.assert_called_with(f'{cache_dir}/.disable')
             self.assertTrue(sot._disable_caching)
 
             mock_path.return_value = False
@@ -52,7 +51,7 @@ class TestCache(utils.TestCase):
         sot = _cache.Cache()
         sot._disable_caching = True
         mock_open.side_effect = IOError
-        sot._get_data_for_path('fake')
+        sot._get_data_for_path(('fake',))
         mock_mkdir.assert_not_called()
 
     def test__build_cacheable_data(self):

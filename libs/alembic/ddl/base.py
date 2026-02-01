@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import functools
+from typing import Any
 from typing import Optional
 from typing import TYPE_CHECKING
 from typing import Union
@@ -14,7 +15,10 @@ from sqlalchemy import types as sqltypes
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.schema import Column
 from sqlalchemy.schema import DDLElement
+from sqlalchemy.sql.elements import ColumnElement
 from sqlalchemy.sql.elements import quoted_name
+from sqlalchemy.sql.elements import TextClause
+from sqlalchemy.sql.schema import FetchedValue
 
 from ..util.sqla_compat import _columns_for_constraint  # noqa
 from ..util.sqla_compat import _find_columns  # noqa
@@ -23,20 +27,16 @@ from ..util.sqla_compat import _is_type_bound  # noqa
 from ..util.sqla_compat import _table_for_constraint  # noqa
 
 if TYPE_CHECKING:
-    from typing import Any
 
+    from sqlalchemy import Computed
+    from sqlalchemy import Identity
     from sqlalchemy.sql.compiler import Compiled
     from sqlalchemy.sql.compiler import DDLCompiler
-    from sqlalchemy.sql.elements import TextClause
-    from sqlalchemy.sql.functions import Function
-    from sqlalchemy.sql.schema import FetchedValue
     from sqlalchemy.sql.type_api import TypeEngine
 
     from .impl import DefaultImpl
-    from ..util.sqla_compat import Computed
-    from ..util.sqla_compat import Identity
 
-_ServerDefault = Union["TextClause", "FetchedValue", "Function[Any]", str]
+_ServerDefaultType = Union[FetchedValue, str, TextClause, ColumnElement[Any]]
 
 
 class AlterTable(DDLElement):
@@ -75,7 +75,7 @@ class AlterColumn(AlterTable):
         schema: Optional[str] = None,
         existing_type: Optional[TypeEngine] = None,
         existing_nullable: Optional[bool] = None,
-        existing_server_default: Optional[_ServerDefault] = None,
+        existing_server_default: Optional[_ServerDefaultType] = None,
         existing_comment: Optional[str] = None,
     ) -> None:
         super().__init__(name, schema=schema)
@@ -119,7 +119,7 @@ class ColumnDefault(AlterColumn):
         self,
         name: str,
         column_name: str,
-        default: Optional[_ServerDefault],
+        default: Optional[_ServerDefaultType],
         **kw,
     ) -> None:
         super().__init__(name, column_name, **kw)
@@ -154,17 +154,26 @@ class AddColumn(AlterTable):
         name: str,
         column: Column[Any],
         schema: Optional[Union[quoted_name, str]] = None,
+        if_not_exists: Optional[bool] = None,
+        inline_references: Optional[bool] = None,
     ) -> None:
         super().__init__(name, schema=schema)
         self.column = column
+        self.if_not_exists = if_not_exists
+        self.inline_references = inline_references
 
 
 class DropColumn(AlterTable):
     def __init__(
-        self, name: str, column: Column[Any], schema: Optional[str] = None
+        self,
+        name: str,
+        column: Column[Any],
+        schema: Optional[str] = None,
+        if_exists: Optional[bool] = None,
     ) -> None:
         super().__init__(name, schema=schema)
         self.column = column
+        self.if_exists = if_exists
 
 
 class ColumnComment(AlterColumn):
@@ -189,7 +198,13 @@ def visit_rename_table(
 def visit_add_column(element: AddColumn, compiler: DDLCompiler, **kw) -> str:
     return "%s %s" % (
         alter_table(compiler, element.table_name, element.schema),
-        add_column(compiler, element.column, **kw),
+        add_column(
+            compiler,
+            element.column,
+            if_not_exists=element.if_not_exists,
+            inline_references=element.inline_references,
+            **kw,
+        ),
     )
 
 
@@ -197,7 +212,9 @@ def visit_add_column(element: AddColumn, compiler: DDLCompiler, **kw) -> str:
 def visit_drop_column(element: DropColumn, compiler: DDLCompiler, **kw) -> str:
     return "%s %s" % (
         alter_table(compiler, element.table_name, element.schema),
-        drop_column(compiler, element.column.name, **kw),
+        drop_column(
+            compiler, element.column.name, if_exists=element.if_exists, **kw
+        ),
     )
 
 
@@ -297,11 +314,15 @@ def format_column_name(
 
 def format_server_default(
     compiler: DDLCompiler,
-    default: Optional[_ServerDefault],
+    default: Optional[_ServerDefaultType],
 ) -> str:
-    return compiler.get_column_default_string(
+    # this can be updated to use compiler.render_default_string
+    # for SQLAlchemy 2.0 and above; not in 1.4
+    default_str = compiler.get_column_default_string(
         Column("x", Integer, server_default=default)
     )
+    assert default_str is not None
+    return default_str
 
 
 def format_type(compiler: DDLCompiler, type_: TypeEngine) -> str:
@@ -316,16 +337,61 @@ def alter_table(
     return "ALTER TABLE %s" % format_table_name(compiler, name, schema)
 
 
-def drop_column(compiler: DDLCompiler, name: str, **kw) -> str:
-    return "DROP COLUMN %s" % format_column_name(compiler, name)
+def drop_column(
+    compiler: DDLCompiler, name: str, if_exists: Optional[bool] = None, **kw
+) -> str:
+    return "DROP COLUMN %s%s" % (
+        "IF EXISTS " if if_exists else "",
+        format_column_name(compiler, name),
+    )
 
 
 def alter_column(compiler: DDLCompiler, name: str) -> str:
     return "ALTER COLUMN %s" % format_column_name(compiler, name)
 
 
-def add_column(compiler: DDLCompiler, column: Column[Any], **kw) -> str:
-    text = "ADD COLUMN %s" % compiler.get_column_specification(column, **kw)
+def add_column(
+    compiler: DDLCompiler,
+    column: Column[Any],
+    if_not_exists: Optional[bool] = None,
+    inline_references: Optional[bool] = None,
+    **kw,
+) -> str:
+    text = "ADD COLUMN %s%s" % (
+        "IF NOT EXISTS " if if_not_exists else "",
+        compiler.get_column_specification(column, **kw),
+    )
+
+    if column.primary_key:
+        text += " PRIMARY KEY"
+
+    # Handle inline REFERENCES if requested
+    # Only render inline if there's exactly one foreign key AND the
+    # ForeignKeyConstraint is single-column, to avoid non-deterministic
+    # behavior with sets and to ensure proper syntax
+    if (
+        inline_references
+        and len(column.foreign_keys) == 1
+        and (fk := list(column.foreign_keys)[0])
+        and fk.constraint is not None
+        and len(fk.constraint.columns) == 1
+    ):
+        ref_col = fk.column
+        ref_table = ref_col.table
+
+        # Format with proper quoting
+        if ref_table.schema:
+            table_name = "%s.%s" % (
+                compiler.preparer.quote_schema(ref_table.schema),
+                compiler.preparer.quote(ref_table.name),
+            )
+        else:
+            table_name = compiler.preparer.quote(ref_table.name)
+
+        text += " REFERENCES %s (%s)" % (
+            table_name,
+            compiler.preparer.quote(ref_col.name),
+        )
 
     const = " ".join(
         compiler.process(constraint) for constraint in column.constraints

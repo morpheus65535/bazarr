@@ -297,6 +297,9 @@ class ScriptInfo:
     a bigger role.  Typically it's created automatically by the
     :class:`FlaskGroup` but you can also manually create it and pass it
     onwards as click object.
+
+    .. versionchanged:: 3.1
+        Added the ``load_dotenv_defaults`` parameter and attribute.
     """
 
     def __init__(
@@ -304,6 +307,7 @@ class ScriptInfo:
         app_import_path: str | None = None,
         create_app: t.Callable[..., Flask] | None = None,
         set_debug_flag: bool = True,
+        load_dotenv_defaults: bool = True,
     ) -> None:
         #: Optionally the import path for the Flask application.
         self.app_import_path = app_import_path
@@ -314,6 +318,16 @@ class ScriptInfo:
         #: this script info.
         self.data: dict[t.Any, t.Any] = {}
         self.set_debug_flag = set_debug_flag
+
+        self.load_dotenv_defaults = get_load_dotenv(load_dotenv_defaults)
+        """Whether default ``.flaskenv`` and ``.env`` files should be loaded.
+
+        ``ScriptInfo`` doesn't load anything, this is for reference when doing
+        the load elsewhere during processing.
+
+        .. versionadded:: 3.1
+        """
+
         self._loaded_app: Flask | None = None
 
     def load_app(self) -> Flask:
@@ -323,9 +337,9 @@ class ScriptInfo:
         """
         if self._loaded_app is not None:
             return self._loaded_app
-
+        app: Flask | None = None
         if self.create_app is not None:
-            app: Flask | None = self.create_app()
+            app = self.create_app()
         else:
             if self.app_import_path:
                 path, name = (
@@ -479,23 +493,22 @@ _debug_option = click.Option(
 def _env_file_callback(
     ctx: click.Context, param: click.Option, value: str | None
 ) -> str | None:
-    if value is None:
-        return None
-
-    import importlib
-
     try:
-        importlib.import_module("dotenv")
+        import dotenv  # noqa: F401
     except ImportError:
-        raise click.BadParameter(
-            "python-dotenv must be installed to load an env file.",
-            ctx=ctx,
-            param=param,
-        ) from None
+        # Only show an error if a value was passed, otherwise we still want to
+        # call load_dotenv and show a message without exiting.
+        if value is not None:
+            raise click.BadParameter(
+                "python-dotenv must be installed to load an env file.",
+                ctx=ctx,
+                param=param,
+            ) from None
 
-    # Don't check FLASK_SKIP_DOTENV, that only disables automatically
-    # loading .env and .flaskenv files.
-    load_dotenv(value)
+    # Load if a value was passed, or we want to load default files, or both.
+    if value is not None or ctx.obj.load_dotenv_defaults:
+        load_dotenv(value, load_defaults=ctx.obj.load_dotenv_defaults)
+
     return value
 
 
@@ -504,7 +517,11 @@ def _env_file_callback(
 _env_file_option = click.Option(
     ["-e", "--env-file"],
     type=click.Path(exists=True, dir_okay=False),
-    help="Load environment variables from this file. python-dotenv must be installed.",
+    help=(
+        "Load environment variables from this file, taking precedence over"
+        " those set by '.env' and '.flaskenv'. Variables set directly in the"
+        " environment take highest precedence. python-dotenv must be installed."
+    ),
     is_eager=True,
     expose_value=False,
     callback=_env_file_callback,
@@ -528,6 +545,9 @@ class FlaskGroup(AppGroup):
         directory to the directory containing the first file found.
     :param set_debug_flag: Set the app's debug flag.
 
+    .. versionchanged:: 3.1
+        ``-e path`` takes precedence over default ``.env`` and ``.flaskenv`` files.
+
     .. versionchanged:: 2.2
         Added the ``-A/--app``, ``--debug/--no-debug``, ``-e/--env-file`` options.
 
@@ -549,7 +569,7 @@ class FlaskGroup(AppGroup):
         set_debug_flag: bool = True,
         **extra: t.Any,
     ) -> None:
-        params = list(extra.pop("params", None) or ())
+        params: list[click.Parameter] = list(extra.pop("params", None) or ())
         # Processing is done with option callbacks instead of a group
         # callback. This allows users to make a custom group callback
         # without losing the behavior. --env-file must come first so
@@ -587,7 +607,7 @@ class FlaskGroup(AppGroup):
             # Use a backport on Python < 3.10. We technically have
             # importlib.metadata on 3.8+, but the API changed in 3.10,
             # so use the backport for consistency.
-            import importlib_metadata as metadata
+            import importlib_metadata as metadata  # pyright: ignore
 
         for ep in metadata.entry_points(group="flask.commands"):
             self.add_command(ep.load(), ep.name)
@@ -654,20 +674,19 @@ class FlaskGroup(AppGroup):
         # when importing, blocking whatever command is being called.
         os.environ["FLASK_RUN_FROM_CLI"] = "true"
 
-        # Attempt to load .env and .flask env files. The --env-file
-        # option can cause another file to be loaded.
-        if get_load_dotenv(self.load_dotenv):
-            load_dotenv()
-
         if "obj" not in extra and "obj" not in self.context_settings:
             extra["obj"] = ScriptInfo(
-                create_app=self.create_app, set_debug_flag=self.set_debug_flag
+                create_app=self.create_app,
+                set_debug_flag=self.set_debug_flag,
+                load_dotenv_defaults=self.load_dotenv,
             )
 
         return super().make_context(info_name, args, parent=parent, **extra)
 
     def parse_args(self, ctx: click.Context, args: list[str]) -> list[str]:
-        if not args and self.no_args_is_help:
+        if (not args and self.no_args_is_help) or (
+            len(args) == 1 and args[0] in self.get_help_option_names(ctx)
+        ):
             # Attempt to load --env-file and --app early in case they
             # were given as env vars. Otherwise no_args_is_help will not
             # see commands from app.cli.
@@ -684,18 +703,26 @@ def _path_is_ancestor(path: str, other: str) -> bool:
     return os.path.join(path, other[len(path) :].lstrip(os.sep)) == other
 
 
-def load_dotenv(path: str | os.PathLike[str] | None = None) -> bool:
-    """Load "dotenv" files in order of precedence to set environment variables.
-
-    If an env var is already set it is not overwritten, so earlier files in the
-    list are preferred over later files.
+def load_dotenv(
+    path: str | os.PathLike[str] | None = None, load_defaults: bool = True
+) -> bool:
+    """Load "dotenv" files to set environment variables. A given path takes
+    precedence over ``.env``, which takes precedence over ``.flaskenv``. After
+    loading and combining these files, values are only set if the key is not
+    already set in ``os.environ``.
 
     This is a no-op if `python-dotenv`_ is not installed.
 
     .. _python-dotenv: https://github.com/theskumar/python-dotenv#readme
 
-    :param path: Load the file at this location instead of searching.
-    :return: ``True`` if a file was loaded.
+    :param path: Load the file at this location.
+    :param load_defaults: Search for and load the default ``.flaskenv`` and
+        ``.env`` files.
+    :return: ``True`` if at least one env var was loaded.
+
+    .. versionchanged:: 3.1
+        Added the ``load_defaults`` parameter. A given path takes precedence
+        over default files.
 
     .. versionchanged:: 2.0
         The current directory is not changed to the location of the
@@ -715,34 +742,33 @@ def load_dotenv(path: str | os.PathLike[str] | None = None) -> bool:
     except ImportError:
         if path or os.path.isfile(".env") or os.path.isfile(".flaskenv"):
             click.secho(
-                " * Tip: There are .env or .flaskenv files present."
-                ' Do "pip install python-dotenv" to use them.',
+                " * Tip: There are .env files present. Install python-dotenv"
+                " to use them.",
                 fg="yellow",
                 err=True,
             )
 
         return False
 
-    # Always return after attempting to load a given path, don't load
-    # the default files.
-    if path is not None:
-        if os.path.isfile(path):
-            return dotenv.load_dotenv(path, encoding="utf-8")
+    data: dict[str, str | None] = {}
 
-        return False
+    if load_defaults:
+        for default_name in (".flaskenv", ".env"):
+            if not (default_path := dotenv.find_dotenv(default_name, usecwd=True)):
+                continue
 
-    loaded = False
+            data |= dotenv.dotenv_values(default_path, encoding="utf-8")
 
-    for name in (".env", ".flaskenv"):
-        path = dotenv.find_dotenv(name, usecwd=True)
+    if path is not None and os.path.isfile(path):
+        data |= dotenv.dotenv_values(path, encoding="utf-8")
 
-        if not path:
+    for key, value in data.items():
+        if key in os.environ or value is None:
             continue
 
-        dotenv.load_dotenv(path, encoding="utf-8")
-        loaded = True
+        os.environ[key] = value
 
-    return loaded  # True if at least one file was located and loaded.
+    return bool(data)  # True if at least one env var was loaded.
 
 
 def show_server_banner(debug: bool, app_import_path: str | None) -> None:
@@ -934,7 +960,7 @@ def run_command(
     option.
     """
     try:
-        app: WSGIApplication = info.load_app()
+        app: WSGIApplication = info.load_app()  # pyright: ignore
     except Exception as e:
         if is_running_from_reloader():
             # When reloading, print out the error immediately, but raise

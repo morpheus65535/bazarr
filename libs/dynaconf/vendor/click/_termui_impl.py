@@ -227,9 +227,9 @@ def open_url(url,wait=_C,locate=_C):
 		if A.startswith(('http://','https://'))and not D and not C:import webbrowser as J;J.open(A);return 0
 		return 1
 def _translate_ch_to_exc(ch):
-	if ch=='\x03':raise KeyboardInterrupt()
-	if ch=='\x04'and not WIN:raise EOFError()
-	if ch=='\x1a'and WIN:raise EOFError()
+	if ch=='\x03':raise KeyboardInterrupt
+	if ch=='\x04'and not WIN:raise EOFError
+	if ch=='\x1a'and WIN:raise EOFError
 if WIN:
 	import msvcrt
 	@contextlib.contextmanager

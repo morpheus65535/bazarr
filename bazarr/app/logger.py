@@ -9,7 +9,6 @@ import warnings
 
 from logging.handlers import TimedRotatingFileHandler
 from utilities.central import get_log_file_path
-from pytz_deprecation_shim import PytzUsageWarning
 
 from .config import settings
 
@@ -129,8 +128,6 @@ class UnwantedWaitressMessageFilter(logging.Filter):
 
 def configure_logging(debug=False):
     warnings.simplefilter('ignore', category=ResourceWarning)
-    warnings.simplefilter('ignore', category=PytzUsageWarning)
-    # warnings.simplefilter('ignore', category=SAWarning)
 
     if debug:
         log_level = logging.DEBUG

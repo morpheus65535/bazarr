@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from collections import defaultdict
 from urllib.parse import quote
 
@@ -34,11 +33,10 @@ class Settings(PlexObject):
 
     def _loadData(self, data):
         """ Load attribute values from Plex XML response. """
-        self._data = data
         for elem in data:
             id = utils.lowerFirst(elem.attrib['id'])
             if id in self._settings:
-                self._settings[id]._loadData(elem)
+                self._settings[id]._invalidateCacheAndLoadData(elem)
                 continue
             self._settings[id] = Setting(self._server, elem, self._initpath)
 

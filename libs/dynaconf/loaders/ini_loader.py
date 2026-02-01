@@ -5,6 +5,7 @@ from pathlib import Path
 from dynaconf import default_settings
 from dynaconf.constants import INI_EXTENSIONS
 from dynaconf.loaders.base import BaseLoader
+from dynaconf.loaders.base import SourceMetadata
 from dynaconf.utils import object_merge
 
 try:
@@ -13,7 +14,15 @@ except ImportError:  # pragma: no cover
     ConfigObj = None
 
 
-def load(obj, env=None, silent=True, key=None, filename=None, validate=False):
+def load(
+    obj,
+    env=None,
+    silent=True,
+    key=None,
+    filename=None,
+    validate=False,
+    identifier="ini",
+):
     """
     Reads and loads in to "obj" a single key or all keys from source file.
 
@@ -28,10 +37,16 @@ def load(obj, env=None, silent=True, key=None, filename=None, validate=False):
         BaseLoader.warn_not_installed(obj, "ini")
         return
 
+    # when load_file function is called directly it comes with module and line number
+    if isinstance(identifier, SourceMetadata) and identifier.loader.startswith(
+        "load_file"
+    ):
+        identifier = identifier.loader
+
     loader = BaseLoader(
         obj=obj,
         env=env,
-        identifier="ini",
+        identifier=identifier,
         extensions=INI_EXTENSIONS,
         file_reader=lambda fileobj: ConfigObj(fileobj).dict(),
         string_reader=lambda strobj: ConfigObj(strobj.split("\n")).dict(),

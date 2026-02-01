@@ -4,17 +4,12 @@ wsproto/handshake
 
 An implementation of WebSocket handshakes.
 """
+from __future__ import annotations
+
 from collections import deque
 from typing import (
+    TYPE_CHECKING,
     cast,
-    Deque,
-    Dict,
-    Generator,
-    Iterable,
-    List,
-    Optional,
-    Sequence,
-    Union,
 )
 
 import h11
@@ -22,18 +17,25 @@ import h11
 from .connection import Connection, ConnectionState, ConnectionType
 from .events import AcceptConnection, Event, RejectConnection, RejectData, Request
 from .extensions import Extension
-from .typing import Headers
 from .utilities import (
+    LocalProtocolError,
+    RemoteProtocolError,
     generate_accept_token,
     generate_nonce,
-    LocalProtocolError,
     normed_header_dict,
-    RemoteProtocolError,
     split_comma_header,
 )
 
+if TYPE_CHECKING:
+    from collections.abc import Generator, Iterable, Sequence
+
+    from .typing import Headers
+
 # RFC6455, Section 4.2.1/6 - Reading the Client's Opening Handshake
 WEBSOCKET_VERSION = b"13"
+
+# RFC6455, Section 4.2.1/3 - Value of the Upgrade header
+WEBSOCKET_UPGRADE = b"websocket"
 
 
 class H11Handshake:
@@ -48,18 +50,19 @@ class H11Handshake:
         else:
             self._h11_connection = h11.Connection(h11.SERVER)
 
-        self._connection: Optional[Connection] = None
-        self._events: Deque[Event] = deque()
-        self._initiating_request: Optional[Request] = None
-        self._nonce: Optional[bytes] = None
+        self._connection: Connection | None = None
+        self._events: deque[Event] = deque()
+        self._initiating_request: Request | None = None
+        self._nonce: bytes | None = None
 
     @property
     def state(self) -> ConnectionState:
         return self._state
 
     @property
-    def connection(self) -> Optional[Connection]:
-        """Return the established connection.
+    def connection(self) -> Connection | None:
+        """
+        Return the established connection.
 
         This will either return the connection or raise a
         LocalProtocolError if the connection has not yet been
@@ -70,9 +73,10 @@ class H11Handshake:
         return self._connection
 
     def initiate_upgrade_connection(
-        self, headers: Headers, path: Union[bytes, str]
+        self, headers: Headers, path: bytes | str,
     ) -> None:
-        """Initiate an upgrade connection.
+        """
+        Initiate an upgrade connection.
 
         This should be used if the request has already be received and
         parsed.
@@ -81,15 +85,17 @@ class H11Handshake:
         :param str path: A URL path.
         """
         if self.client:
+            msg = "Cannot initiate an upgrade connection when acting as the client"
             raise LocalProtocolError(
-                "Cannot initiate an upgrade connection when acting as the client"
+                msg,
             )
         upgrade_request = h11.Request(method=b"GET", target=path, headers=headers)
         h11_client = h11.Connection(h11.CLIENT)
         self.receive_data(h11_client.send(upgrade_request))
 
     def send(self, event: Event) -> bytes:
-        """Send an event to the remote.
+        """
+        Send an event to the remote.
 
         This will return the bytes to send based on the event or raise
         a LocalProtocolError if the event is not valid given the
@@ -108,13 +114,15 @@ class H11Handshake:
         elif isinstance(event, RejectData):
             data += self._send_reject_data(event)
         else:
+            msg = f"Event {event} cannot be sent during the handshake"
             raise LocalProtocolError(
-                f"Event {event} cannot be sent during the handshake"
+                msg,
             )
         return data
 
-    def receive_data(self, data: Optional[bytes]) -> None:
-        """Receive data from the remote.
+    def receive_data(self, data: bytes | None) -> None:
+        """
+        Receive data from the remote.
 
         A list of events that the remote peer triggered by sending
         this data can be retrieved with :meth:`events`.
@@ -126,8 +134,9 @@ class H11Handshake:
             try:
                 event = self._h11_connection.next_event()
             except h11.RemoteProtocolError:
+                msg = "Bad HTTP message"
                 raise RemoteProtocolError(
-                    "Bad HTTP message", event_hint=RejectConnection()
+                    msg, event_hint=RejectConnection(),
                 )
             if (
                 isinstance(event, h11.ConnectionClosed)
@@ -146,7 +155,7 @@ class H11Handshake:
                                 headers=list(event.headers),
                                 status_code=event.status_code,
                                 has_body=False,
-                            )
+                            ),
                         )
                         self._state = ConnectionState.CLOSED
                 elif isinstance(event, h11.Response):
@@ -156,21 +165,21 @@ class H11Handshake:
                             headers=list(event.headers),
                             status_code=event.status_code,
                             has_body=True,
-                        )
+                        ),
                     )
                 elif isinstance(event, h11.Data):
                     self._events.append(
-                        RejectData(data=event.data, body_finished=False)
+                        RejectData(data=event.data, body_finished=False),
                     )
                 elif isinstance(event, h11.EndOfMessage):
                     self._events.append(RejectData(data=b"", body_finished=True))
                     self._state = ConnectionState.CLOSED
-            else:
-                if isinstance(event, h11.Request):
-                    self._events.append(self._process_connection_request(event))
+            elif isinstance(event, h11.Request):
+                self._events.append(self._process_connection_request(event))
 
     def events(self) -> Generator[Event, None, None]:
-        """Return a generator that provides any events that have been generated
+        """
+        Return a generator that provides any events that have been generated
         by protocol activity.
 
         :returns: a generator that yields H11 events.
@@ -180,18 +189,19 @@ class H11Handshake:
 
     # Server mode methods
 
-    def _process_connection_request(  # noqa: MC0001
-        self, event: h11.Request
+    def _process_connection_request(
+        self, event: h11.Request,
     ) -> Request:
         if event.method != b"GET":
+            msg = "Request method must be GET"
             raise RemoteProtocolError(
-                "Request method must be GET", event_hint=RejectConnection()
+                msg, event_hint=RejectConnection(),
             )
         connection_tokens = None
-        extensions: List[str] = []
+        extensions: list[str] = []
         host = None
         key = None
-        subprotocols: List[str] = []
+        subprotocols: list[str] = []
         upgrade = b""
         version = None
         headers: Headers = []
@@ -218,28 +228,34 @@ class H11Handshake:
         if connection_tokens is None or not any(
             token.lower() == "upgrade" for token in connection_tokens
         ):
+            msg = "Missing header, 'Connection: Upgrade'"
             raise RemoteProtocolError(
-                "Missing header, 'Connection: Upgrade'", event_hint=RejectConnection()
+                msg, event_hint=RejectConnection(),
             )
         if version != WEBSOCKET_VERSION:
+            msg = "Missing header, 'Sec-WebSocket-Version'"
             raise RemoteProtocolError(
-                "Missing header, 'Sec-WebSocket-Version'",
+                msg,
                 event_hint=RejectConnection(
                     headers=[(b"Sec-WebSocket-Version", WEBSOCKET_VERSION)],
                     status_code=426 if version else 400,
                 ),
             )
         if key is None:
+            msg = "Missing header, 'Sec-WebSocket-Key'"
             raise RemoteProtocolError(
-                "Missing header, 'Sec-WebSocket-Key'", event_hint=RejectConnection()
+                msg, event_hint=RejectConnection(),
             )
-        if upgrade.lower() != b"websocket":
+        if upgrade.lower() != WEBSOCKET_UPGRADE:
+            msg = f"Missing header, 'Upgrade: {WEBSOCKET_UPGRADE.decode()}'"
             raise RemoteProtocolError(
-                "Missing header, 'Upgrade: WebSocket'", event_hint=RejectConnection()
+                msg,
+                event_hint=RejectConnection(),
             )
         if host is None:
+            msg = "Missing header, 'Host'"
             raise RemoteProtocolError(
-                "Missing header, 'Host'", event_hint=RejectConnection()
+                msg, event_hint=RejectConnection(),
             )
 
         self._initiating_request = Request(
@@ -260,28 +276,31 @@ class H11Handshake:
         accept_token = generate_accept_token(nonce)
 
         headers = [
-            (b"Upgrade", b"WebSocket"),
+            (b"Upgrade", WEBSOCKET_UPGRADE),
             (b"Connection", b"Upgrade"),
             (b"Sec-WebSocket-Accept", accept_token),
         ]
 
         if event.subprotocol is not None:
             if event.subprotocol not in self._initiating_request.subprotocols:
-                raise LocalProtocolError(f"unexpected subprotocol {event.subprotocol}")
+                msg = f"unexpected subprotocol {event.subprotocol}"
+                raise LocalProtocolError(msg)
             headers.append(
-                (b"Sec-WebSocket-Protocol", event.subprotocol.encode("ascii"))
+                (b"Sec-WebSocket-Protocol", event.subprotocol.encode("ascii")),
             )
 
         if event.extensions:
             accepts = server_extensions_handshake(
-                cast(Sequence[str], self._initiating_request.extensions),
+                cast("Sequence[str]", self._initiating_request.extensions),
                 event.extensions,
             )
             if accepts:
                 headers.append((b"Sec-WebSocket-Extensions", accepts))
 
         response = h11.InformationalResponse(
-            status_code=101, headers=headers + event.extra_headers
+            status_code=101,
+            headers=headers + event.extra_headers,
+            reason=b"Switching Protocols",
         )
         self._connection = Connection(
             ConnectionType.CLIENT if self.client else ConnectionType.SERVER,
@@ -292,8 +311,9 @@ class H11Handshake:
 
     def _reject(self, event: RejectConnection) -> bytes:
         if self.state != ConnectionState.CONNECTING:
+            msg = f"Connection cannot be rejected in state {self.state}"
             raise LocalProtocolError(
-                "Connection cannot be rejected in state %s" % self.state
+                msg,
             )
 
         headers = list(event.headers)
@@ -309,8 +329,9 @@ class H11Handshake:
 
     def _send_reject_data(self, event: RejectData) -> bytes:
         if self.state != ConnectionState.REJECTING:
+            msg = f"Cannot send rejection data in state {self.state}"
             raise LocalProtocolError(
-                f"Cannot send rejection data in state {self.state}"
+                msg,
             )
 
         data = self._h11_connection.send(h11.Data(data=event.data)) or b""
@@ -327,7 +348,7 @@ class H11Handshake:
 
         headers = [
             (b"Host", request.host.encode("idna")),
-            (b"Upgrade", b"WebSocket"),
+            (b"Upgrade", WEBSOCKET_UPGRADE),
             (b"Connection", b"Upgrade"),
             (b"Sec-WebSocket-Key", self._nonce),
             (b"Sec-WebSocket-Version", WEBSOCKET_VERSION),
@@ -338,11 +359,11 @@ class H11Handshake:
                 (
                     b"Sec-WebSocket-Protocol",
                     (", ".join(request.subprotocols)).encode("ascii"),
-                )
+                ),
             )
 
         if request.extensions:
-            offers: Dict[str, Union[str, bool]] = {}
+            offers: dict[str, str | bool] = {}
             for e in request.extensions:
                 assert isinstance(e, Extension)
                 offers[e.name] = e.offer()
@@ -365,15 +386,15 @@ class H11Handshake:
         return self._h11_connection.send(upgrade) or b""
 
     def _establish_client_connection(
-        self, event: h11.InformationalResponse
-    ) -> AcceptConnection:  # noqa: MC0001
+        self, event: h11.InformationalResponse,
+    ) -> AcceptConnection:
         # _establish_client_connection is always called after _initiate_connection.
         assert self._initiating_request is not None
         assert self._nonce is not None
 
         accept = None
         connection_tokens = None
-        accepts: List[str] = []
+        accepts: list[str] = []
         subprotocol = None
         upgrade = b""
         headers: Headers = []
@@ -382,16 +403,16 @@ class H11Handshake:
             if name == b"connection":
                 connection_tokens = split_comma_header(value)
                 continue  # Skip appending to headers
-            elif name == b"sec-websocket-extensions":
+            if name == b"sec-websocket-extensions":
                 accepts = split_comma_header(value)
                 continue  # Skip appending to headers
-            elif name == b"sec-websocket-accept":
+            if name == b"sec-websocket-accept":
                 accept = value
                 continue  # Skip appending to headers
-            elif name == b"sec-websocket-protocol":
+            if name == b"sec-websocket-protocol":
                 subprotocol = value.decode("ascii")
                 continue  # Skip appending to headers
-            elif name == b"upgrade":
+            if name == b"upgrade":
                 upgrade = value
                 continue  # Skip appending to headers
             headers.append((name, value))
@@ -399,24 +420,28 @@ class H11Handshake:
         if connection_tokens is None or not any(
             token.lower() == "upgrade" for token in connection_tokens
         ):
+            msg = "Missing header, 'Connection: Upgrade'"
             raise RemoteProtocolError(
-                "Missing header, 'Connection: Upgrade'", event_hint=RejectConnection()
+                msg, event_hint=RejectConnection(),
             )
-        if upgrade.lower() != b"websocket":
+        if upgrade.lower() != WEBSOCKET_UPGRADE:
+            msg = f"Missing header, 'Upgrade: {WEBSOCKET_UPGRADE.decode()}'"
             raise RemoteProtocolError(
-                "Missing header, 'Upgrade: WebSocket'", event_hint=RejectConnection()
+                msg,
+                event_hint=RejectConnection(),
             )
         accept_token = generate_accept_token(self._nonce)
         if accept != accept_token:
-            raise RemoteProtocolError("Bad accept token", event_hint=RejectConnection())
-        if subprotocol is not None:
-            if subprotocol not in self._initiating_request.subprotocols:
-                raise RemoteProtocolError(
-                    f"unrecognized subprotocol {subprotocol}",
-                    event_hint=RejectConnection(),
-                )
+            msg = "Bad accept token"
+            raise RemoteProtocolError(msg, event_hint=RejectConnection())
+        if subprotocol is not None and subprotocol not in self._initiating_request.subprotocols:
+            msg = f"unrecognized subprotocol {subprotocol}"
+            raise RemoteProtocolError(
+                msg,
+                event_hint=RejectConnection(),
+            )
         extensions = client_extensions_handshake(
-            accepts, cast(Sequence[Extension], self._initiating_request.extensions)
+            accepts, cast("Sequence[Extension]", self._initiating_request.extensions),
         )
 
         self._connection = Connection(
@@ -426,23 +451,22 @@ class H11Handshake:
         )
         self._state = ConnectionState.OPEN
         return AcceptConnection(
-            extensions=extensions, extra_headers=headers, subprotocol=subprotocol
+            extensions=extensions, extra_headers=headers, subprotocol=subprotocol,
         )
 
     def __repr__(self) -> str:
-        return "{}(client={}, state={})".format(
-            self.__class__.__name__, self.client, self.state
-        )
+        return f"{self.__class__.__name__}(client={self.client}, state={self.state})"
 
 
 def server_extensions_handshake(
-    requested: Iterable[str], supported: List[Extension]
-) -> Optional[bytes]:
-    """Agree on the extensions to use returning an appropriate header value.
+    requested: Iterable[str], supported: list[Extension],
+) -> bytes | None:
+    """
+    Agree on the extensions to use returning an appropriate header value.
 
     This returns None if there are no agreed extensions
     """
-    accepts: Dict[str, Union[bool, bytes]] = {}
+    accepts: dict[str, bool | bytes] = {}
     for offer in requested:
         name = offer.split(";", 1)[0].strip()
         for extension in supported:
@@ -455,25 +479,24 @@ def server_extensions_handshake(
                     accepts[extension.name] = accept.encode("ascii")
 
     if accepts:
-        extensions: List[bytes] = []
+        extensions: list[bytes] = []
         for name, params in accepts.items():
             name_bytes = name.encode("ascii")
             if isinstance(params, bool):
                 assert params
                 extensions.append(name_bytes)
+            elif params == b"":
+                extensions.append(b"%s" % (name_bytes))
             else:
-                if params == b"":
-                    extensions.append(b"%s" % (name_bytes))
-                else:
-                    extensions.append(b"%s; %s" % (name_bytes, params))
+                extensions.append(b"%s; %s" % (name_bytes, params))
         return b", ".join(extensions)
 
     return None
 
 
 def client_extensions_handshake(
-    accepted: Iterable[str], supported: Sequence[Extension]
-) -> List[Extension]:
+    accepted: Iterable[str], supported: Sequence[Extension],
+) -> list[Extension]:
     # This raises RemoteProtocolError is the accepted extension is not
     # supported.
     extensions = []
@@ -485,7 +508,8 @@ def client_extensions_handshake(
                 extensions.append(extension)
                 break
         else:
+            msg = f"unrecognized extension {name}"
             raise RemoteProtocolError(
-                f"unrecognized extension {name}", event_hint=RejectConnection()
+                msg, event_hint=RejectConnection(),
             )
     return extensions

@@ -44,6 +44,10 @@ class SubripFormat(FormatBase):
             # disambiguation vs. WebVTT
             return None
 
+        if "http://www.w3.org/ns/ttml" in text:
+            # disambiguation vs. TTML
+            return None
+
         for line in text.splitlines():
             if len(cls.TIMESTAMP.findall(line)) == 2:
                 return "srt"

@@ -54,7 +54,8 @@ BLOCK_LEVEL_ELEMENTS: list[str] = [
     # Other elements which Markdown should not be mucking up the contents of.
     'canvas', 'colgroup', 'dd', 'body', 'dt', 'group', 'html', 'iframe', 'li', 'legend',
     'math', 'map', 'noscript', 'output', 'object', 'option', 'progress', 'script',
-    'style', 'summary', 'tbody', 'td', 'textarea', 'tfoot', 'th', 'thead', 'tr', 'video'
+    'style', 'summary', 'tbody', 'td', 'textarea', 'tfoot', 'th', 'thead', 'tr', 'video',
+    'center'
 ]
 """
 List of HTML tags which get treated as block-level elements. Same as the `block_level_elements`

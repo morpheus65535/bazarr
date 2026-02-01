@@ -1,10 +1,10 @@
 pydantic-1.10.14.dist-info/INSTALLER,sha256=zuuue4knoyJ-UwPPXg8fezS7VCrXJQrAP7zeNuwvFQg,4
-pydantic-1.10.14.dist-info/LICENSE,sha256=njlGaQrIi2tz6PABoFhq8TVovohS_VFOQ5Pzl2F2Q4c,1127
-pydantic-1.10.14.dist-info/METADATA,sha256=DNR2l_mD0QFQmYDjgw39Zj1Ps7j1zOLR_NoAcgeLSC4,150194
+pydantic-1.10.14.dist-info/METADATA,sha256=j6taetaRij1eE9KE9PzbcBD5nMfGmgi6NRgb2D5U310,150449
 pydantic-1.10.14.dist-info/RECORD,,
 pydantic-1.10.14.dist-info/REQUESTED,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
-pydantic-1.10.14.dist-info/WHEEL,sha256=Xo9-1PvkuimrydujYJAjF7pCkriuXBpUPEjma1nZyJ0,92
+pydantic-1.10.14.dist-info/WHEEL,sha256=wUyA8OaulRlbfwMtmQsvNngGrxQHAvkKcvRmdizlJi0,92
 pydantic-1.10.14.dist-info/entry_points.txt,sha256=EquH5n3pilIXg-LLa1K4evpu5-6dnvxzi6vwvkoAMns,45
+pydantic-1.10.14.dist-info/licenses/LICENSE,sha256=njlGaQrIi2tz6PABoFhq8TVovohS_VFOQ5Pzl2F2Q4c,1127
 pydantic-1.10.14.dist-info/top_level.txt,sha256=cmo_5n0F_YY5td5nPZBfdjBENkmGg_pE5ShWXYbXxTM,9
 pydantic/__init__.py,sha256=iTu8CwWWvn6zM_zYJtqhie24PImW25zokitz_06kDYw,2771
 pydantic/_hypothesis_plugin.py,sha256=gILcyAEfZ3u9YfKxtDxkReLpakjMou1VWC3FEcXmJgQ,14844

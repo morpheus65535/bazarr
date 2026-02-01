@@ -1,7 +1,7 @@
+from collections.abc import Callable
+from collections.abc import MutableMapping
 import threading
 from typing import Any
-from typing import Callable
-from typing import MutableMapping
 import weakref
 
 

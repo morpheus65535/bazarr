@@ -1,6 +1,5 @@
 from __future__ import absolute_import
-_E='  in "%s", line %d, column %d'
-_D='column'
+_D='  in "%s", line %d, column %d'
 _C=False
 _B='\n'
 _A=None
@@ -9,9 +8,9 @@ from.compat import utf8
 if _C:from typing import Any,Dict,Optional,List,Text
 __all__=['FileMark','StringMark','CommentMark','YAMLError','MarkedYAMLError','ReusedAnchorWarning','UnsafeLoaderWarning','MarkedYAMLWarning','MarkedYAMLFutureWarning']
 class StreamMark:
-	__slots__='name','index','line',_D
+	__slots__='name','index','line','column'
 	def __init__(A,name,index,line,column):A.name=name;A.index=index;A.line=line;A.column=column
-	def __str__(A):B=_E%(A.name,A.line+1,A.column+1);return B
+	def __str__(A):B=_D%(A.name,A.line+1,A.column+1);return B
 	def __eq__(A,other):
 		B=other
 		if A.line!=B.line or A.column!=B.column:return _C
@@ -20,7 +19,7 @@ class StreamMark:
 	def __ne__(A,other):return not A.__eq__(other)
 class FileMark(StreamMark):__slots__=()
 class StringMark(StreamMark):
-	__slots__='name','index','line',_D,'buffer','pointer'
+	__slots__='name','index','line','column','buffer','pointer'
 	def __init__(A,name,index,line,column,buffer,pointer):StreamMark.__init__(A,name,index,line,column);A.buffer=buffer;A.pointer=pointer
 	def get_snippet(A,indent=4,max_length=75):
 		J=' ... ';I='\x00\r\n\x85\u2028\u2029';F=max_length;E=indent
@@ -35,11 +34,11 @@ class StringMark(StreamMark):
 			if C-A.pointer>F/2-1:G=J;C-=5;break
 		K=utf8(A.buffer[B:C]);H='^';H='^ (line: {})'.format(A.line+1);return' '*E+D+K+G+_B+' '*(E+A.pointer-B+len(D))+H
 	def __str__(A):
-		B=A.get_snippet();C=_E%(A.name,A.line+1,A.column+1)
+		B=A.get_snippet();C=_D%(A.name,A.line+1,A.column+1)
 		if B is not _A:C+=':\n'+B
 		return C
 class CommentMark:
-	__slots__=_D,
+	__slots__='column',
 	def __init__(A,column):A.column=column
 class YAMLError(Exception):0
 class MarkedYAMLError(YAMLError):

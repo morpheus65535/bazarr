@@ -1,4 +1,4 @@
-Metadata-Version: 2.1
+Metadata-Version: 2.4
 Name: ffmpeg-python
 Version: 0.2.0
 Summary: Python bindings for FFmpeg - with complex filtering support
@@ -21,12 +21,22 @@ Classifier: Programming Language :: Python :: 3.5
 Classifier: Programming Language :: Python :: 3.6
 Requires-Dist: future
 Provides-Extra: dev
-Requires-Dist: future ==0.17.1 ; extra == 'dev'
-Requires-Dist: numpy ==1.16.4 ; extra == 'dev'
-Requires-Dist: pytest-mock ==1.10.4 ; extra == 'dev'
-Requires-Dist: pytest ==4.6.1 ; extra == 'dev'
-Requires-Dist: Sphinx ==2.1.0 ; extra == 'dev'
-Requires-Dist: tox ==3.12.1 ; extra == 'dev'
+Requires-Dist: future==0.17.1; extra == "dev"
+Requires-Dist: numpy==1.16.4; extra == "dev"
+Requires-Dist: pytest-mock==1.10.4; extra == "dev"
+Requires-Dist: pytest==4.6.1; extra == "dev"
+Requires-Dist: Sphinx==2.1.0; extra == "dev"
+Requires-Dist: tox==3.12.1; extra == "dev"
+Dynamic: author
+Dynamic: author-email
+Dynamic: classifier
+Dynamic: description
+Dynamic: download-url
+Dynamic: home-page
+Dynamic: keywords
+Dynamic: provides-extra
+Dynamic: requires-dist
+Dynamic: summary
 
 ffmpeg-python: Python bindings for FFmpeg
 =========================================

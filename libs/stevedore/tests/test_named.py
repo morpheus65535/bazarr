@@ -10,6 +10,7 @@
 #  License for the specific language governing permissions and limitations
 #  under the License.
 
+from typing import Any
 from unittest import mock
 
 from stevedore import named
@@ -18,6 +19,7 @@ from stevedore.tests import utils
 
 class TestNamed(utils.TestCase):
     def test_named(self):
+        em: named.NamedExtensionManager[Any]
         em = named.NamedExtensionManager(
             'stevedore.test.extension',
             names=['t1'],
@@ -37,6 +39,7 @@ class TestNamed(utils.TestCase):
         init_name = 'stevedore.tests.test_extension.FauxExtension.__init__'
         with mock.patch(init_name) as m:
             m.side_effect = AssertionError
+            em: named.NamedExtensionManager[Any]
             em = named.NamedExtensionManager(
                 'stevedore.test.extension',
                 # Look for an extension that does not exist so the
@@ -47,29 +50,27 @@ class TestNamed(utils.TestCase):
                 invoke_kwds={'b': 'B'},
             )
             actual = em.names()
-            self.assertEqual(actual, [])
+        self.assertEqual(actual, [])
 
     def test_extensions_listed_in_name_order(self):
         # Since we don't know the "natural" order of the extensions, run
         # the test both ways: if the sorting is broken, one of them will
         # fail
+        em: named.NamedExtensionManager[Any]
         em = named.NamedExtensionManager(
-            'stevedore.test.extension',
-            names=['t1', 't2'],
-            name_order=True
+            'stevedore.test.extension', names=['t1', 't2'], name_order=True
         )
         actual = em.names()
         self.assertEqual(actual, ['t1', 't2'])
 
         em = named.NamedExtensionManager(
-            'stevedore.test.extension',
-            names=['t2', 't1'],
-            name_order=True
+            'stevedore.test.extension', names=['t2', 't1'], name_order=True
         )
         actual = em.names()
         self.assertEqual(actual, ['t2', 't1'])
 
     def test_load_fail_ignored_when_sorted(self):
+        em: named.NamedExtensionManager[Any]
         em = named.NamedExtensionManager(
             'stevedore.test.extension',
             names=['e1', 't2', 'e2', 't1'],

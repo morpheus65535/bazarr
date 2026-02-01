@@ -1,5 +1,4 @@
 from __future__ import print_function,absolute_import,division,unicode_literals
-_C='comment'
 _B=False
 _A=None
 from.compat import text_type
@@ -23,11 +22,11 @@ class ScalarString(text_type):
 		if any or A.anchor.always_dump:return A.anchor
 	def yaml_set_anchor(A,value,always_dump=_B):A.anchor.value=value;A.anchor.always_dump=always_dump
 class LiteralScalarString(ScalarString):
-	__slots__=_C;style='|'
+	__slots__='comment';style='|'
 	def __new__(A,value,anchor=_A):return ScalarString.__new__(A,value,anchor=anchor)
 PreservedScalarString=LiteralScalarString
 class FoldedScalarString(ScalarString):
-	__slots__='fold_pos',_C;style='>'
+	__slots__='fold_pos','comment';style='>'
 	def __new__(A,value,anchor=_A):return ScalarString.__new__(A,value,anchor=anchor)
 class SingleQuotedScalarString(ScalarString):
 	__slots__=();style="'"

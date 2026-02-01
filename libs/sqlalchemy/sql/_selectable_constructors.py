@@ -1,5 +1,5 @@
 # sql/_selectable_constructors.py
-# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2026 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -12,7 +12,6 @@ from typing import Optional
 from typing import overload
 from typing import Tuple
 from typing import TYPE_CHECKING
-from typing import TypeVar
 from typing import Union
 
 from . import coercions
@@ -36,6 +35,7 @@ from .selectable import Values
 if TYPE_CHECKING:
     from ._typing import _FromClauseArgument
     from ._typing import _OnClauseArgument
+    from ._typing import _OnlyColumnArgument
     from ._typing import _SelectStatementForCompoundArgument
     from ._typing import _T0
     from ._typing import _T1
@@ -47,15 +47,13 @@ if TYPE_CHECKING:
     from ._typing import _T7
     from ._typing import _T8
     from ._typing import _T9
+    from ._typing import _TP
     from ._typing import _TypedColumnClauseArgument as _TCCA
     from .functions import Function
     from .selectable import CTE
     from .selectable import HasCTE
     from .selectable import ScalarSelect
     from .selectable import SelectBase
-
-
-_T = TypeVar("_T", bound=Any)
 
 
 def alias(
@@ -106,9 +104,28 @@ def cte(
     )
 
 
+# TODO: mypy requires the _TypedSelectable overloads in all compound select
+# constructors since _SelectStatementForCompoundArgument includes
+# untyped args that make it return CompoundSelect[Unpack[tuple[Never, ...]]]
+# pyright does not have this issue
+_TypedSelectable = Union["Select[_TP]", "CompoundSelect[_TP]"]
+
+
+@overload
 def except_(
-    *selects: _SelectStatementForCompoundArgument,
-) -> CompoundSelect:
+    *selects: _TypedSelectable[_TP],
+) -> CompoundSelect[_TP]: ...
+
+
+@overload
+def except_(
+    *selects: _SelectStatementForCompoundArgument[_TP],
+) -> CompoundSelect[_TP]: ...
+
+
+def except_(
+    *selects: _SelectStatementForCompoundArgument[_TP],
+) -> CompoundSelect[_TP]:
     r"""Return an ``EXCEPT`` of multiple selectables.
 
     The returned object is an instance of
@@ -121,9 +138,21 @@ def except_(
     return CompoundSelect._create_except(*selects)
 
 
+@overload
 def except_all(
-    *selects: _SelectStatementForCompoundArgument,
-) -> CompoundSelect:
+    *selects: _TypedSelectable[_TP],
+) -> CompoundSelect[_TP]: ...
+
+
+@overload
+def except_all(
+    *selects: _SelectStatementForCompoundArgument[_TP],
+) -> CompoundSelect[_TP]: ...
+
+
+def except_all(
+    *selects: _SelectStatementForCompoundArgument[_TP],
+) -> CompoundSelect[_TP]:
     r"""Return an ``EXCEPT ALL`` of multiple selectables.
 
     The returned object is an instance of
@@ -181,9 +210,21 @@ def exists(
     return Exists(__argument)
 
 
+@overload
 def intersect(
-    *selects: _SelectStatementForCompoundArgument,
-) -> CompoundSelect:
+    *selects: _TypedSelectable[_TP],
+) -> CompoundSelect[_TP]: ...
+
+
+@overload
+def intersect(
+    *selects: _SelectStatementForCompoundArgument[_TP],
+) -> CompoundSelect[_TP]: ...
+
+
+def intersect(
+    *selects: _SelectStatementForCompoundArgument[_TP],
+) -> CompoundSelect[_TP]:
     r"""Return an ``INTERSECT`` of multiple selectables.
 
     The returned object is an instance of
@@ -196,9 +237,21 @@ def intersect(
     return CompoundSelect._create_intersect(*selects)
 
 
+@overload
 def intersect_all(
-    *selects: _SelectStatementForCompoundArgument,
-) -> CompoundSelect:
+    *selects: _TypedSelectable[_TP],
+) -> CompoundSelect[_TP]: ...
+
+
+@overload
+def intersect_all(
+    *selects: _SelectStatementForCompoundArgument[_TP],
+) -> CompoundSelect[_TP]: ...
+
+
+def intersect_all(
+    *selects: _SelectStatementForCompoundArgument[_TP],
+) -> CompoundSelect[_TP]:
     r"""Return an ``INTERSECT ALL`` of multiple selectables.
 
     The returned object is an instance of
@@ -557,9 +610,21 @@ def tablesample(
     return TableSample._factory(selectable, sampling, name=name, seed=seed)
 
 
+@overload
 def union(
-    *selects: _SelectStatementForCompoundArgument,
-) -> CompoundSelect:
+    *selects: _TypedSelectable[_TP],
+) -> CompoundSelect[_TP]: ...
+
+
+@overload
+def union(
+    *selects: _SelectStatementForCompoundArgument[_TP],
+) -> CompoundSelect[_TP]: ...
+
+
+def union(
+    *selects: _SelectStatementForCompoundArgument[_TP],
+) -> CompoundSelect[_TP]:
     r"""Return a ``UNION`` of multiple selectables.
 
     The returned object is an instance of
@@ -579,9 +644,21 @@ def union(
     return CompoundSelect._create_union(*selects)
 
 
+@overload
 def union_all(
-    *selects: _SelectStatementForCompoundArgument,
-) -> CompoundSelect:
+    *selects: _TypedSelectable[_TP],
+) -> CompoundSelect[_TP]: ...
+
+
+@overload
+def union_all(
+    *selects: _SelectStatementForCompoundArgument[_TP],
+) -> CompoundSelect[_TP]: ...
+
+
+def union_all(
+    *selects: _SelectStatementForCompoundArgument[_TP],
+) -> CompoundSelect[_TP]:
     r"""Return a ``UNION ALL`` of multiple selectables.
 
     The returned object is an instance of
@@ -598,29 +675,77 @@ def union_all(
 
 
 def values(
-    *columns: ColumnClause[Any],
+    *columns: _OnlyColumnArgument[Any],
     name: Optional[str] = None,
     literal_binds: bool = False,
 ) -> Values:
-    r"""Construct a :class:`_expression.Values` construct.
+    r"""Construct a :class:`_expression.Values` construct representing the
+    SQL ``VALUES`` clause.
 
-    The column expressions and the actual data for
-    :class:`_expression.Values` are given in two separate steps.  The
-    constructor receives the column expressions typically as
-    :func:`_expression.column` constructs,
-    and the data is then passed via the
-    :meth:`_expression.Values.data` method as a list,
-    which can be called multiple
-    times to add more data, e.g.::
+    The column expressions and the actual data for :class:`_expression.Values`
+    are given in two separate steps.  The constructor receives the column
+    expressions typically as :func:`_expression.column` constructs, and the
+    data is then passed via the :meth:`_expression.Values.data` method as a
+    list, which can be called multiple times to add more data, e.g.::
 
         from sqlalchemy import column
         from sqlalchemy import values
+        from sqlalchemy import Integer
+        from sqlalchemy import String
+
+        value_expr = (
+            values(
+                column("id", Integer),
+                column("name", String),
+            )
+            .data([(1, "name1"), (2, "name2")])
+            .data([(3, "name3")])
+        )
+
+    Would represent a SQL fragment like::
+
+        VALUES(1, "name1"), (2, "name2"), (3, "name3")
+
+    The :class:`_sql.values` construct has an optional
+    :paramref:`_sql.values.name` field; when using this field, the
+    PostgreSQL-specific "named VALUES" clause may be generated::
 
         value_expr = values(
-            column("id", Integer),
-            column("name", String),
-            name="my_values",
+            column("id", Integer), column("name", String), name="somename"
         ).data([(1, "name1"), (2, "name2"), (3, "name3")])
+
+    When selecting from the above construct, the name and column names will
+    be listed out using a PostgreSQL-specific syntax::
+
+        >>> print(value_expr.select())
+        SELECT somename.id, somename.name
+        FROM (VALUES (:param_1, :param_2), (:param_3, :param_4),
+        (:param_5, :param_6)) AS somename (id, name)
+
+    For a more database-agnostic means of SELECTing named columns from a
+    VALUES expression, the :meth:`.Values.cte` method may be used, which
+    produces a named CTE with explicit column names against the VALUES
+    construct within; this syntax works on PostgreSQL, SQLite, and MariaDB::
+
+        value_expr = (
+            values(
+                column("id", Integer),
+                column("name", String),
+            )
+            .data([(1, "name1"), (2, "name2"), (3, "name3")])
+            .cte()
+        )
+
+    Rendering as::
+
+        >>> print(value_expr.select())
+        WITH anon_1(id, name) AS
+        (VALUES (:param_1, :param_2), (:param_3, :param_4), (:param_5, :param_6))
+        SELECT anon_1.id, anon_1.name
+        FROM anon_1
+
+    .. versionadded:: 2.0.42  Added the :meth:`.Values.cte` method to
+       :class:`.Values`
 
     :param \*columns: column expressions, typically composed using
      :func:`_expression.column` objects.
@@ -633,5 +758,6 @@ def values(
      the data values inline in the SQL output, rather than using bound
      parameters.
 
-    """
+    """  # noqa: E501
+
     return Values(*columns, literal_binds=literal_binds, name=name)

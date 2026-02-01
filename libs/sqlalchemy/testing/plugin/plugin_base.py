@@ -1,5 +1,5 @@
 # testing/plugin/plugin_base.py
-# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2026 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -110,7 +110,7 @@ def setup_options(make_option):
     make_option(
         "--disable-asyncio",
         action="store_true",
-        help="disable test / fixtures / provisoning running in asyncio",
+        help="disable test / fixtures / provisioning running in asyncio",
     )
     make_option(
         "--backend-only",
@@ -543,9 +543,16 @@ def want_method(cls, fn):
 
 
 def generate_sub_tests(cls, module, markers):
-    if "backend" in markers or "sparse_backend" in markers:
+    if (
+        "backend" in markers
+        or "sparse_backend" in markers
+        or "sparse_driver_backend" in markers
+    ):
         sparse = "sparse_backend" in markers
-        for cfg in _possible_configs_for_cls(cls, sparse=sparse):
+        sparse_driver = "sparse_driver_backend" in markers
+        for cfg in _possible_configs_for_cls(
+            cls, sparse=sparse, sparse_driver=sparse_driver
+        ):
             orig_name = cls.__name__
 
             # we can have special chars in these names except for the
@@ -581,8 +588,8 @@ def stop_test_class(cls):
 
 
 def stop_test_class_outside_fixtures(cls):
-    engines.testing_reaper.stop_test_class_outside_fixtures()
     provision.stop_test_class_outside_fixtures(config, config.db, cls)
+    engines.testing_reaper.stop_test_class_outside_fixtures()
     try:
         if not options.low_connections:
             assertions.global_cleanup_assertions()
@@ -629,7 +636,9 @@ def after_test_fixtures(test):
     engines.testing_reaper.after_test_outside_fixtures(test)
 
 
-def _possible_configs_for_cls(cls, reasons=None, sparse=False):
+def _possible_configs_for_cls(
+    cls, reasons=None, sparse=False, sparse_driver=False
+):
     all_configs = set(config.Config.all_configs())
 
     if cls.__unsupported_on__:
@@ -660,6 +669,12 @@ def _possible_configs_for_cls(cls, reasons=None, sparse=False):
                         reasons.extend(skip_reasons)
                     break
 
+                warnings = check.matching_warnings(config_obj)
+                if warnings:
+                    cls.__warnings__ = getattr(
+                        cls, "__warnings__", ()
+                    ) + tuple(warnings)
+
     if hasattr(cls, "__prefer_requires__"):
         non_preferred = set()
         requirements = config.requirements
@@ -677,20 +692,54 @@ def _possible_configs_for_cls(cls, reasons=None, sparse=False):
         # sorted so we get the same backend each time selecting the highest
         # server version info.
         per_dialect = {}
-        for cfg in reversed(
+
+        sorted_all_configs = reversed(
             sorted(
                 all_configs,
                 key=lambda cfg: (
+                    "z" if cfg.is_default_dialect else "a",
                     cfg.db.name,
                     cfg.db.driver,
                     cfg.db.dialect.server_version_info,
+                    cfg.db.dialect.is_async,
                 ),
             )
-        ):
+        )
+
+        for cfg in sorted_all_configs:
             db = cfg.db.name
             if db not in per_dialect:
                 per_dialect[db] = cfg
         return per_dialect.values()
+    elif sparse_driver:
+        # a more liberal form of "sparse" that will select for one driver,
+        # but still return for multiple database servers
+
+        dbs = {}
+
+        sorted_all_configs = list(
+            reversed(
+                sorted(
+                    all_configs,
+                    key=lambda cfg: (
+                        cfg.db.name,
+                        cfg.db.driver,
+                        cfg.db.dialect.server_version_info,
+                        cfg.db.dialect.is_async,
+                    ),
+                )
+            )
+        )
+
+        for cfg in sorted_all_configs:
+            key = (cfg.db.name, cfg.db.dialect.server_version_info)
+            if key in dbs and dbs[key].is_default_dialect:
+                continue
+            else:
+                dbs[key] = cfg
+
+        chosen_cfgs = set(dbs.values())
+        return [cfg for cfg in sorted_all_configs if cfg in chosen_cfgs]
 
     return all_configs
 

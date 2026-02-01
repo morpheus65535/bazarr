@@ -1,19 +1,19 @@
 # Tables Extension for Python-Markdown
 # ====================================
 
-# Added parsing of tables to Python-Markdown.
+# Adds parsing of tables to Python-Markdown.
 
 # See https://Python-Markdown.github.io/extensions/tables
 # for documentation.
 
-# Original code Copyright 2009 [Waylan Limberg](http://achinghead.com)
+# Original code Copyright 2009 [Waylan Limberg](https://github.com/waylan)
 
 # All changes Copyright 2008-2014 The Python Markdown Project
 
 # License: [BSD](https://opensource.org/licenses/bsd-license.php)
 
 """
-Added parsing of tables to Python-Markdown.
+Adds parsing of tables to Python-Markdown.
 
 See the [documentation](https://Python-Markdown.github.io/extensions/tables)
 for details.

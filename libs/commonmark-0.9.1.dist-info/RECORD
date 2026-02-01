@@ -1,11 +1,11 @@
-../../bin/cmark,sha256=9VDG1ndLNwNOV_TrxTbXT8hoJDgy_8LPVNnXKiBsaPI,238
+../../bin/cmark,sha256=g6uoxffQUa9UYL2yLCpSGbNBnjlhDSQcQAD2n3KX_1Q,191
 commonmark-0.9.1.dist-info/INSTALLER,sha256=zuuue4knoyJ-UwPPXg8fezS7VCrXJQrAP7zeNuwvFQg,4
-commonmark-0.9.1.dist-info/LICENSE,sha256=2gzYPRg8HXgZy_BFQcKl0fX2g47YKBCpFDqJ3cvCt94,1645
-commonmark-0.9.1.dist-info/METADATA,sha256=P4I2lYU0_28ghpI6Vk-kSLK1jDnma-dDl28W-BP_nHI,5725
+commonmark-0.9.1.dist-info/METADATA,sha256=GPMY5sZ6IQiKHDgWfQA4wqQA2uI31Szl12fZDUTn2rQ,6018
 commonmark-0.9.1.dist-info/RECORD,,
 commonmark-0.9.1.dist-info/REQUESTED,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
-commonmark-0.9.1.dist-info/WHEEL,sha256=P2T-6epvtXQ2cBOE_U1K4_noqlJFN3tj15djMgEu4NM,110
+commonmark-0.9.1.dist-info/WHEEL,sha256=Mk1ST5gDzEO5il5kYREiBnzzM469m5sI8ESPl7TRhJY,110
 commonmark-0.9.1.dist-info/entry_points.txt,sha256=TKUdr3xoGWriPzVk97_5NN8G-BPB_9_lr-EaMXOw8ng,48
+commonmark-0.9.1.dist-info/licenses/LICENSE,sha256=2gzYPRg8HXgZy_BFQcKl0fX2g47YKBCpFDqJ3cvCt94,1645
 commonmark-0.9.1.dist-info/top_level.txt,sha256=HeslGuf22YTnjJce2B9Q2yrMRAr_Gia2EDi47Dye_Ig,11
 commonmark/__init__.py,sha256=RqqRUq_nHkT5wIsiQEdILfl6hFSiokLSWpfSAvgFEa0,302
 commonmark/blocks.py,sha256=GGPw34diVDEnEeO99OEu2ORmgKC1x8yvYin3uDdYQQg,30411

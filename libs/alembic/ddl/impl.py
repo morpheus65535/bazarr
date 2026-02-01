@@ -43,10 +43,13 @@ if TYPE_CHECKING:
     from sqlalchemy.engine import Connection
     from sqlalchemy.engine import Dialect
     from sqlalchemy.engine.cursor import CursorResult
+    from sqlalchemy.engine.interfaces import ReflectedForeignKeyConstraint
+    from sqlalchemy.engine.interfaces import ReflectedIndex
+    from sqlalchemy.engine.interfaces import ReflectedPrimaryKeyConstraint
+    from sqlalchemy.engine.interfaces import ReflectedUniqueConstraint
     from sqlalchemy.engine.reflection import Inspector
     from sqlalchemy.sql import ClauseElement
     from sqlalchemy.sql import Executable
-    from sqlalchemy.sql.elements import ColumnElement
     from sqlalchemy.sql.elements import quoted_name
     from sqlalchemy.sql.schema import Constraint
     from sqlalchemy.sql.schema import ForeignKeyConstraint
@@ -55,11 +58,17 @@ if TYPE_CHECKING:
     from sqlalchemy.sql.selectable import TableClause
     from sqlalchemy.sql.type_api import TypeEngine
 
-    from .base import _ServerDefault
+    from .base import _ServerDefaultType
     from ..autogenerate.api import AutogenContext
     from ..operations.batch import ApplyBatchImpl
     from ..operations.batch import BatchOperationsImpl
 
+    _ReflectedConstraint = (
+        ReflectedForeignKeyConstraint
+        | ReflectedPrimaryKeyConstraint
+        | ReflectedIndex
+        | ReflectedUniqueConstraint
+    )
 log = logging.getLogger(__name__)
 
 
@@ -257,8 +266,11 @@ class DefaultImpl(metaclass=ImplMeta):
         self,
         table_name: str,
         column_name: str,
+        *,
         nullable: Optional[bool] = None,
-        server_default: Union[_ServerDefault, Literal[False]] = False,
+        server_default: Optional[
+            Union[_ServerDefaultType, Literal[False]]
+        ] = False,
         name: Optional[str] = None,
         type_: Optional[TypeEngine] = None,
         schema: Optional[str] = None,
@@ -266,7 +278,9 @@ class DefaultImpl(metaclass=ImplMeta):
         comment: Optional[Union[str, Literal[False]]] = False,
         existing_comment: Optional[str] = None,
         existing_type: Optional[TypeEngine] = None,
-        existing_server_default: Optional[_ServerDefault] = None,
+        existing_server_default: Optional[
+            Union[_ServerDefaultType, Literal[False]]
+        ] = None,
         existing_nullable: Optional[bool] = None,
         existing_autoincrement: Optional[bool] = None,
         **kw: Any,
@@ -369,25 +383,45 @@ class DefaultImpl(metaclass=ImplMeta):
         self,
         table_name: str,
         column: Column[Any],
+        *,
         schema: Optional[Union[str, quoted_name]] = None,
+        if_not_exists: Optional[bool] = None,
+        inline_references: Optional[bool] = None,
     ) -> None:
-        self._exec(base.AddColumn(table_name, column, schema=schema))
+        self._exec(
+            base.AddColumn(
+                table_name,
+                column,
+                schema=schema,
+                if_not_exists=if_not_exists,
+                inline_references=inline_references,
+            )
+        )
 
     def drop_column(
         self,
         table_name: str,
         column: Column[Any],
+        *,
         schema: Optional[str] = None,
+        if_exists: Optional[bool] = None,
         **kw,
     ) -> None:
-        self._exec(base.DropColumn(table_name, column, schema=schema))
+        self._exec(
+            base.DropColumn(
+                table_name, column, schema=schema, if_exists=if_exists
+            )
+        )
 
-    def add_constraint(self, const: Any) -> None:
+    def add_constraint(self, const: Any, **kw: Any) -> None:
         if const._create_rule is None or const._create_rule(self):
-            self._exec(schema.AddConstraint(const))
+            if sqla_compat.sqla_2_1:
+                # this should be the default already
+                kw.setdefault("isolate_from_table", True)
+            self._exec(schema.AddConstraint(const, **kw))
 
-    def drop_constraint(self, const: Constraint) -> None:
-        self._exec(schema.DropConstraint(const))
+    def drop_constraint(self, const: Constraint, **kw: Any) -> None:
+        self._exec(schema.DropConstraint(const, **kw))
 
     def rename_table(
         self,
@@ -440,7 +474,7 @@ class DefaultImpl(metaclass=ImplMeta):
     def drop_table_comment(self, table: Table) -> None:
         self._exec(schema.DropTableComment(table))
 
-    def create_column_comment(self, column: ColumnElement[Any]) -> None:
+    def create_column_comment(self, column: Column[Any]) -> None:
         self._exec(schema.SetColumnComment(column))
 
     def drop_index(self, index: Index, **kw: Any) -> None:
@@ -459,7 +493,9 @@ class DefaultImpl(metaclass=ImplMeta):
         if self.as_sql:
             for row in rows:
                 self._exec(
-                    sqla_compat._insert_inline(table).values(
+                    table.insert()
+                    .inline()
+                    .values(
                         **{
                             k: (
                                 sqla_compat._literal_bindparam(
@@ -477,14 +513,10 @@ class DefaultImpl(metaclass=ImplMeta):
         else:
             if rows:
                 if multiinsert:
-                    self._exec(
-                        sqla_compat._insert_inline(table), multiparams=rows
-                    )
+                    self._exec(table.insert().inline(), multiparams=rows)
                 else:
                     for row in rows:
-                        self._exec(
-                            sqla_compat._insert_inline(table).values(**row)
-                        )
+                        self._exec(table.insert().inline().values(**row))
 
     def _tokenize_column_type(self, column: Column) -> Params:
         definition: str
@@ -693,7 +725,7 @@ class DefaultImpl(metaclass=ImplMeta):
         diff, ignored = _compare_identity_options(
             metadata_identity,
             inspector_identity,
-            sqla_compat.Identity(),
+            schema.Identity(),
             skip={"always"},
         )
 
@@ -824,9 +856,9 @@ class DefaultImpl(metaclass=ImplMeta):
                 metadata_indexes.discard(idx)
 
     def adjust_reflected_dialect_options(
-        self, reflected_object: Dict[str, Any], kind: str
+        self, reflected_object: _ReflectedConstraint, kind: str
     ) -> Dict[str, Any]:
-        return reflected_object.get("dialect_options", {})
+        return reflected_object.get("dialect_options", {})  # type: ignore[return-value]   # noqa: E501
 
 
 class Params(NamedTuple):
@@ -874,12 +906,13 @@ def _compare_identity_options(
         set(meta_d).union(insp_d),
     )
     if sqla_compat.identity_has_dialect_kwargs:
+        assert hasattr(default_io, "dialect_kwargs")
         # use only the dialect kwargs in inspector_io since metadata_io
         # can have options for many backends
         check_dicts(
             getattr(metadata_io, "dialect_kwargs", {}),
             getattr(inspector_io, "dialect_kwargs", {}),
-            default_io.dialect_kwargs,  # type: ignore[union-attr]
+            default_io.dialect_kwargs,
             getattr(inspector_io, "dialect_kwargs", {}),
         )
 

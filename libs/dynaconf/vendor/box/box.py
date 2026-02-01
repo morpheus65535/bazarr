@@ -15,9 +15,9 @@ _K='box_intact_types'
 _J='default_box'
 _I='utf-8'
 _H='_box_config'
-_G=True
-_F='camel_killer_box'
-_E='conversion_box'
+_G='camel_killer_box'
+_F='conversion_box'
+_E=True
 _D='frozen_box'
 _C='__safe_keys'
 _B=False
@@ -52,10 +52,10 @@ def _parse_box_dots(item):
 def _get_box_config():return{_Q:_B,_C:{}}
 class Box(dict):
 	_protected_keys=['to_dict','to_json','to_yaml','from_yaml','from_json','from_toml','to_toml','merge_update']+[A for A in dir({})if not A.startswith('_')]
-	def __new__(A,*D,box_settings=_A,default_box=_B,default_box_attr=NO_DEFAULT,default_box_none_transform=_G,frozen_box=_B,camel_killer_box=_B,conversion_box=_G,modify_tuples_box=_B,box_safe_prefix='x',box_duplicates=_N,box_intact_types=(),box_recast=_A,box_dots=_B,**E):C=default_box_attr;B=super(Box,A).__new__(A,*D,**E);B._box_config=_get_box_config();B._box_config.update({_J:default_box,_V:A.__class__ if C is NO_DEFAULT else C,_R:default_box_none_transform,_E:conversion_box,_S:box_safe_prefix,_D:frozen_box,_F:camel_killer_box,_T:modify_tuples_box,_O:box_duplicates,_K:tuple(box_intact_types),_L:box_recast,_P:box_dots,_W:box_settings or{}});return B
-	def __init__(A,*B,box_settings=_A,default_box=_B,default_box_attr=NO_DEFAULT,default_box_none_transform=_G,frozen_box=_B,camel_killer_box=_B,conversion_box=_G,modify_tuples_box=_B,box_safe_prefix='x',box_duplicates=_N,box_intact_types=(),box_recast=_A,box_dots=_B,**F):
-		E=default_box_attr;super().__init__();A._box_config=_get_box_config();A._box_config.update({_J:default_box,_V:A.__class__ if E is NO_DEFAULT else E,_R:default_box_none_transform,_E:conversion_box,_S:box_safe_prefix,_D:frozen_box,_F:camel_killer_box,_T:modify_tuples_box,_O:box_duplicates,_K:tuple(box_intact_types),_L:box_recast,_P:box_dots,_W:box_settings or{}})
-		if not A._box_config[_E]and A._box_config[_O]!=_N:raise BoxError('box_duplicates are only for conversion_boxes')
+	def __new__(A,*D,box_settings=_A,default_box=_B,default_box_attr=NO_DEFAULT,default_box_none_transform=_E,frozen_box=_B,camel_killer_box=_B,conversion_box=_E,modify_tuples_box=_B,box_safe_prefix='x',box_duplicates=_N,box_intact_types=(),box_recast=_A,box_dots=_B,**E):C=default_box_attr;B=super(Box,A).__new__(A,*D,**E);B._box_config=_get_box_config();B._box_config.update({_J:default_box,_V:A.__class__ if C is NO_DEFAULT else C,_R:default_box_none_transform,_F:conversion_box,_S:box_safe_prefix,_D:frozen_box,_G:camel_killer_box,_T:modify_tuples_box,_O:box_duplicates,_K:tuple(box_intact_types),_L:box_recast,_P:box_dots,_W:box_settings or{}});return B
+	def __init__(A,*B,box_settings=_A,default_box=_B,default_box_attr=NO_DEFAULT,default_box_none_transform=_E,frozen_box=_B,camel_killer_box=_B,conversion_box=_E,modify_tuples_box=_B,box_safe_prefix='x',box_duplicates=_N,box_intact_types=(),box_recast=_A,box_dots=_B,**F):
+		E=default_box_attr;super().__init__();A._box_config=_get_box_config();A._box_config.update({_J:default_box,_V:A.__class__ if E is NO_DEFAULT else E,_R:default_box_none_transform,_F:conversion_box,_S:box_safe_prefix,_D:frozen_box,_G:camel_killer_box,_T:modify_tuples_box,_O:box_duplicates,_K:tuple(box_intact_types),_L:box_recast,_P:box_dots,_W:box_settings or{}})
+		if not A._box_config[_F]and A._box_config[_O]!=_N:raise BoxError('box_duplicates are only for conversion_boxes')
 		if len(B)==1:
 			if isinstance(B[0],str):raise BoxValueError('Cannot extrapolate Box from string')
 			if isinstance(B[0],Mapping):
@@ -70,7 +70,7 @@ class Box(dict):
 		for(D,C)in F.items():
 			if B and isinstance(B[0],Mapping)and C is B[0]:C=A
 			A.__setitem__(D,C)
-		A._box_config[_Q]=_G
+		A._box_config[_Q]=_E
 	def __add__(C,other):
 		A=other;B=C.copy()
 		if not isinstance(A,dict):raise BoxTypeError(f"Box can only merge two boxes or a box and a dictionary.")
@@ -91,7 +91,7 @@ class Box(dict):
 				else:C.add(A)
 		for A in B.keys():
 			if A not in C:
-				if B._box_config[_E]:
+				if B._box_config[_F]:
 					A=B._safe_attr(A)
 					if A:C.add(A)
 		return list(C)
@@ -114,8 +114,9 @@ class Box(dict):
 	def __setstate__(A,state):B=state;A._box_config=B[_H];A.__dict__.update(B)
 	def keys(A):return super().keys()
 	def values(A):return[A[B]for B in A.keys()]
-	def items(A):return[(B,A[B])for B in A.keys()]
-	def _safe_items(A):return[(B,A._safe_get(B))for B in A.keys()]
+	def items(A,bypass_eval=_B):
+		if not bypass_eval:return[(B,A[B])for B in A.keys()]
+		return[(B,A.get(B,bypass_eval=_E))for B in A.keys()]
 	def __get_default(B,item):
 		A=B._box_config[_V]
 		if A in(B.__class__,dict):C=B.__class__(**B.__box_config())
@@ -138,14 +139,14 @@ class Box(dict):
 		return C
 	def __convert_and_store(B,item,value):
 		C=item;A=value
-		if B._box_config[_E]:D=B._safe_attr(C);B._box_config[_C][D]=C
+		if B._box_config[_F]:D=B._safe_attr(C);B._box_config[_C][D]=C
 		if isinstance(A,(int,float,str,bytes,bytearray,bool,complex,set,frozenset)):return super().__setitem__(C,A)
 		if B._box_config[_K]and isinstance(A,B._box_config[_K]):return super().__setitem__(C,A)
 		if isinstance(A,dict)and not isinstance(A,Box):A=B.__class__(A,**B.__box_config())
 		elif isinstance(A,list)and not isinstance(A,box.BoxList):
 			if B._box_config[_D]:A=_recursive_tuples(A,B.__class__,recreate_tuples=B._box_config[_T],**B.__box_config())
 			else:A=box.BoxList(A,box_class=B.__class__,**B.__box_config())
-		elif B._box_config[_T]and isinstance(A,tuple):A=_recursive_tuples(A,B.__class__,recreate_tuples=_G,**B.__box_config())
+		elif B._box_config[_T]and isinstance(A,tuple):A=_recursive_tuples(A,B.__class__,recreate_tuples=_E,**B.__box_config())
 		super().__setitem__(C,A)
 	def __getitem__(B,item,_ignore_default=_B):
 		A=item
@@ -156,7 +157,7 @@ class Box(dict):
 				C,F=_parse_box_dots(A)
 				if C in B.keys():
 					if hasattr(B[C],'__getitem__'):return B[C][F]
-			if B._box_config[_F]and isinstance(A,str):
+			if B._box_config[_G]and isinstance(A,str):
 				D=_camel_killer(A)
 				if D in B.keys():return super().__getitem__(D)
 			if B._box_config[_J]and not _ignore_default:return B.__get_default(A)
@@ -164,12 +165,12 @@ class Box(dict):
 	def __getattr__(A,item):
 		B=item
 		try:
-			try:C=A.__getitem__(B,_ignore_default=_G)
+			try:C=A.__getitem__(B,_ignore_default=_E)
 			except KeyError:C=object.__getattribute__(A,B)
 		except AttributeError as E:
 			if B=='__getstate__':raise BoxKeyError(B)from _A
 			if B==_H:raise BoxError('_box_config key must exist')from _A
-			if A._box_config[_E]:
+			if A._box_config[_F]:
 				D=A._safe_attr(B)
 				if D in A._box_config[_C]:return A.__getitem__(A._box_config[_C][D])
 			if A._box_config[_J]:return A.__get_default(B)
@@ -183,9 +184,9 @@ class Box(dict):
 			if D in A.keys():
 				if hasattr(A[D],'__setitem__'):return A[D].__setitem__(E,C)
 		C=A.__recast(B,C)
-		if B not in A.keys()and A._box_config[_F]:
-			if A._box_config[_F]and isinstance(B,str):B=_camel_killer(B)
-		if A._box_config[_E]and A._box_config[_O]!=_N:A._conversion_checks(B)
+		if B not in A.keys()and A._box_config[_G]:
+			if A._box_config[_G]and isinstance(B,str):B=_camel_killer(B)
+		if A._box_config[_F]and A._box_config[_O]!=_N:A._conversion_checks(B)
 		A.__convert_and_store(B,C)
 	def __setattr__(A,key,value):
 		C=value;B=key
@@ -201,8 +202,8 @@ class Box(dict):
 		if B not in A.keys()and A._box_config[_P]and isinstance(B,str)and'.'in B:
 			C,E=B.split('.',1)
 			if C in A.keys()and isinstance(A[C],dict):return A[C].__delitem__(E)
-		if B not in A.keys()and A._box_config[_F]:
-			if A._box_config[_F]and isinstance(B,str):
+		if B not in A.keys()and A._box_config[_G]:
+			if A._box_config[_G]and isinstance(B,str):
 				for D in A:
 					if _camel_killer(B)==D:B=D;break
 		super().__delitem__(B)
@@ -213,7 +214,7 @@ class Box(dict):
 		if B in A._protected_keys:raise BoxKeyError(f'Key name "{B}" is protected')
 		try:A.__delitem__(B)
 		except KeyError as D:
-			if A._box_config[_E]:
+			if A._box_config[_F]:
 				C=A._safe_attr(B)
 				if C in A._box_config[_C]:A.__delitem__(A._box_config[_C][C]);del A._box_config[_C][C];return
 			raise BoxKeyError(D)
@@ -281,7 +282,7 @@ class Box(dict):
 		B=attr;G=string.ascii_letters+string.digits+'_'
 		if isinstance(B,tuple):B='_'.join([str(A)for A in B])
 		B=B.decode(_I,_N)if isinstance(B,bytes)else str(B)
-		if C.__box_config()[_F]:B=_camel_killer(B)
+		if C.__box_config()[_G]:B=_camel_killer(B)
 		A=[];D=0
 		for(E,F)in enumerate(B):
 			if F in G:D=E;A.append(F)

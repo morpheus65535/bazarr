@@ -1,5 +1,5 @@
 # orm/mapper.py
-# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2026 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -1056,7 +1056,7 @@ class Mapper(
 
     """
 
-    primary_key: Tuple[Column[Any], ...]
+    primary_key: Tuple[ColumnElement[Any], ...]
     """An iterable containing the collection of :class:`_schema.Column`
     objects
     which comprise the 'primary key' of the mapped table, from the
@@ -2100,12 +2100,20 @@ class Mapper(
             "_configure_property(%s, %s)", key, prop_arg.__class__.__name__
         )
 
+        # early setup mode - don't assign any props, only
+        # ensure a Column is turned into a ColumnProperty.
+        # see #12858
+        early_setup = not hasattr(self, "_props")
+
         if not isinstance(prop_arg, MapperProperty):
             prop: MapperProperty[Any] = self._property_from_column(
-                key, prop_arg
+                key, prop_arg, early_setup
             )
         else:
             prop = prop_arg
+
+        if early_setup:
+            return prop
 
         if isinstance(prop, properties.ColumnProperty):
             col = self.persist_selectable.corresponding_column(prop.columns[0])
@@ -2355,16 +2363,17 @@ class Mapper(
 
     @util.preload_module("sqlalchemy.orm.descriptor_props")
     def _property_from_column(
-        self,
-        key: str,
-        column: KeyedColumnElement[Any],
+        self, key: str, column: KeyedColumnElement[Any], early_setup: bool
     ) -> ColumnProperty[Any]:
         """generate/update a :class:`.ColumnProperty` given a
         :class:`_schema.Column` or other SQL expression object."""
 
         descriptor_props = util.preloaded.orm_descriptor_props
 
-        prop = self._props.get(key)
+        if early_setup:
+            prop = None
+        else:
+            prop = self._props.get(key)
 
         if isinstance(prop, properties.ColumnProperty):
             return self._reconcile_prop_with_incoming_columns(
@@ -2554,7 +2563,7 @@ class Mapper(
         if spec == "*":
             mappers = list(self.self_and_descendants)
         elif spec:
-            mapper_set = set()
+            mapper_set: Set[Mapper[Any]] = set()
             for m in util.to_list(spec):
                 m = _class_to_mapper(m)
                 if not m.isa(self):
@@ -3428,9 +3437,11 @@ class Mapper(
         return self.class_manager.mapper.base_mapper
 
     def _result_has_identity_key(self, result, adapter=None):
-        pk_cols: Sequence[ColumnClause[Any]] = self.primary_key
-        if adapter:
-            pk_cols = [adapter.columns[c] for c in pk_cols]
+        pk_cols: Sequence[ColumnElement[Any]]
+        if adapter is not None:
+            pk_cols = [adapter.columns[c] for c in self.primary_key]
+        else:
+            pk_cols = self.primary_key
         rk = result.keys()
         for col in pk_cols:
             if col not in rk:
@@ -3440,7 +3451,7 @@ class Mapper(
 
     def identity_key_from_row(
         self,
-        row: Optional[Union[Row[Any], RowMapping]],
+        row: Union[Row[Any], RowMapping],
         identity_token: Optional[Any] = None,
         adapter: Optional[ORMAdapter] = None,
     ) -> _IdentityKeyType[_O]:
@@ -3455,18 +3466,21 @@ class Mapper(
             for the "row" argument
 
         """
-        pk_cols: Sequence[ColumnClause[Any]] = self.primary_key
-        if adapter:
-            pk_cols = [adapter.columns[c] for c in pk_cols]
-
-        if hasattr(row, "_mapping"):
-            mapping = row._mapping  # type: ignore
+        pk_cols: Sequence[ColumnElement[Any]]
+        if adapter is not None:
+            pk_cols = [adapter.columns[c] for c in self.primary_key]
         else:
-            mapping = cast("Mapping[Any, Any]", row)
+            pk_cols = self.primary_key
+
+        mapping: RowMapping
+        if hasattr(row, "_mapping"):
+            mapping = row._mapping
+        else:
+            mapping = row  # type: ignore[assignment]
 
         return (
             self._identity_class,
-            tuple(mapping[column] for column in pk_cols),  # type: ignore
+            tuple(mapping[column] for column in pk_cols),
             identity_token,
         )
 
@@ -4303,7 +4317,7 @@ def _dispose_registries(registries: Set[_RegistryType], cascade: bool) -> None:
         reg._new_mappers = False
 
 
-def reconstructor(fn):
+def reconstructor(fn: _Fn) -> _Fn:
     """Decorate a method as the 'reconstructor' hook.
 
     Designates a single method as the "reconstructor", an ``__init__``-like
@@ -4329,7 +4343,7 @@ def reconstructor(fn):
         :meth:`.InstanceEvents.load`
 
     """
-    fn.__sa_reconstructor__ = True
+    fn.__sa_reconstructor__ = True  # type: ignore[attr-defined]
     return fn
 
 
@@ -4363,7 +4377,7 @@ def validates(
      :func:`.validates` usage where only one validator should emit per
      attribute operation.
 
-     .. versionchanged:: 2.0.16 This paramter inadvertently defaulted to
+     .. versionchanged:: 2.0.16 This parameter inadvertently defaulted to
         ``False`` for releases 2.0.0 through 2.0.15.  Its correct default
         of ``True`` is restored in 2.0.16.
 

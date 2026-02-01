@@ -1,4 +1,5 @@
 import asyncio
+import inspect
 import sys
 from urllib.parse import urlsplit
 from .. import exceptions
@@ -24,7 +25,7 @@ def get_tornado_handler(engineio_server):
         async def get(self, *args, **kwargs):
             if self.request.headers.get('Upgrade', '').lower() == 'websocket':
                 ret = super().get(*args, **kwargs)
-                if asyncio.iscoroutine(ret):
+                if inspect.iscoroutine(ret):
                     await ret
             else:
                 await engineio_server.handle_request(self)

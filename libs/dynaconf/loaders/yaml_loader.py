@@ -6,6 +6,7 @@ from warnings import warn
 from dynaconf import default_settings
 from dynaconf.constants import YAML_EXTENSIONS
 from dynaconf.loaders.base import BaseLoader
+from dynaconf.loaders.base import SourceMetadata
 from dynaconf.utils import object_merge
 from dynaconf.utils.parse_conf import try_to_encode
 from dynaconf.vendor.ruamel import yaml
@@ -53,7 +54,15 @@ class AllLoader(BaseLoader):
         return data
 
 
-def load(obj, env=None, silent=True, key=None, filename=None, validate=False):
+def load(
+    obj,
+    env=None,
+    silent=True,
+    key=None,
+    filename=None,
+    validate=False,
+    identifier="yaml",
+):
     """
     Reads and loads in to "obj" a single key or all keys from source file.
 
@@ -82,10 +91,16 @@ def load(obj, env=None, silent=True, key=None, filename=None, validate=False):
     if yaml_reader.__name__.endswith("_all"):
         _loader = AllLoader
 
+    # when load_file function is called directly it comes with module and line number
+    if isinstance(identifier, SourceMetadata) and identifier.loader.startswith(
+        "load_file"
+    ):
+        identifier = identifier.loader
+
     loader = _loader(
         obj=obj,
         env=env,
-        identifier="yaml",
+        identifier=identifier,
         extensions=YAML_EXTENSIONS,
         file_reader=yaml_reader,
         string_reader=yaml_reader,

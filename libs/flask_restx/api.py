@@ -2,6 +2,7 @@ import difflib
 import inspect
 from itertools import chain
 import logging
+import threading
 import operator
 import re
 import sys
@@ -16,7 +17,7 @@ from flask import make_response as original_flask_make_response
 
 from flask.signals import got_request_exception
 
-from jsonschema import RefResolver
+from referencing import Registry
 
 from werkzeug.utils import cached_property
 from werkzeug.datastructures import Headers
@@ -133,7 +134,7 @@ class Api(object):
         format_checker=None,
         url_scheme=None,
         default_swagger_filename="swagger.json",
-        **kwargs
+        **kwargs,
     ):
         self.version = version
         self.title = title or "API"
@@ -161,6 +162,7 @@ class Api(object):
             }
         )
         self._schema = None
+        self._schema_lock = threading.Lock()
         self.models = {}
         self._refresolver = None
         self.format_checker = format_checker
@@ -567,14 +569,17 @@ class Api(object):
         :returns dict: the schema as a serializable dict
         """
         if not self._schema:
-            try:
-                self._schema = Swagger(self).as_dict()
-            except Exception:
-                # Log the source exception for debugging purpose
-                # and return an error message
-                msg = "Unable to render schema"
-                log.exception(msg)  # This will provide a full traceback
-                return {"error": msg}
+            # Guard schema initialization to avoid concurrent construction on first access
+            with self._schema_lock:
+                if not self._schema:
+                    try:
+                        self._schema = Swagger(self).as_dict()
+                    except Exception:
+                        # Log the source exception for debugging purpose
+                        # and return an error message
+                        msg = "Unable to render schema"
+                        log.exception(msg)  # This will provide a full traceback
+                        return {"error": msg}
         return self._schema
 
     @property
@@ -825,7 +830,44 @@ class Api(object):
     @property
     def refresolver(self):
         if not self._refresolver:
-            self._refresolver = RefResolver.from_schema(self.__schema__)
+            # Create a registry that can resolve references within our schema
+            registry = Registry()
+            schema = self.__schema__
+
+            # If schema has definitions, register it
+            if "definitions" in schema:
+                schema_id = schema.get("$id", "http://localhost/schema.json")
+                registry = registry.with_resource(schema_id, schema)
+            else:
+                # If no definitions in schema, register all models individually
+                for name, model in self.models.items():
+                    model_schema = model.__schema__
+                    # Add $id to the model schema so it can be referenced
+                    if "$id" not in model_schema:
+                        model_schema = model_schema.copy()
+                        model_schema["$id"] = (
+                            f"http://localhost/schema.json#/definitions/{name}"
+                        )
+                    registry = registry.with_resource(
+                        f"http://localhost/schema.json#/definitions/{name}",
+                        model_schema,
+                    )
+
+                # Also register the root schema with definitions
+                if self.models:
+                    definitions = {}
+                    for name, model in self.models.items():
+                        definitions[name] = model.__schema__
+
+                    schema_with_definitions = {
+                        "$id": "http://localhost/schema.json",
+                        "definitions": definitions,
+                    }
+                    registry = registry.with_resource(
+                        "http://localhost/schema.json", schema_with_definitions
+                    )
+
+            self._refresolver = registry
         return self._refresolver
 
     @staticmethod
@@ -861,7 +903,7 @@ class Api(object):
             "%s.%s" % (blueprint_setup.blueprint.name, endpoint),
             view_func,
             defaults=defaults,
-            **options
+            **options,
         )
 
     def _deferred_blueprint_init(self, setup_state):

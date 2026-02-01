@@ -33,6 +33,7 @@ import xml.etree.ElementTree as etree
 FN_BACKLINK_TEXT = util.STX + "zz1337820767766393qq" + util.ETX
 NBSP_PLACEHOLDER = util.STX + "qq3936677670287331zz" + util.ETX
 RE_REF_ID = re.compile(r'(fnref)(\d+)')
+RE_REFERENCE = re.compile(r'(?<!!)\[\^([^\]]*)\](?!\s*:)')
 
 
 class FootnoteExtension(Extension):
@@ -61,6 +62,11 @@ class FootnoteExtension(Extension):
             ],
             'SEPARATOR': [
                 ':', 'Footnote separator.'
+            ],
+            'USE_DEFINITION_ORDER': [
+                True,
+                'Order footnote labels by definition order (True) or by document order (False). '
+                'Default: True.'
             ]
         }
         """ Default configuration options. """
@@ -70,6 +76,9 @@ class FootnoteExtension(Extension):
         self.unique_prefix = 0
         self.found_refs: dict[str, int] = {}
         self.used_refs: set[str] = set()
+
+        # Backward compatibility with old '%d' placeholder
+        self.setConfig('BACKLINK_TITLE', self.getConfig("BACKLINK_TITLE").replace("%d", "{}"))
 
         self.reset()
 
@@ -89,6 +98,12 @@ class FootnoteExtension(Extension):
         # `codehilite`) so they can run on the the contents of the div.
         md.treeprocessors.register(FootnoteTreeprocessor(self), 'footnote', 50)
 
+        # Insert a tree-processor to reorder the footnotes if necessary. This must be after
+        # `inline` tree-processor so it can access the footnote reference order
+        # (`self.footnote_order`) that gets populated by the `FootnoteInlineProcessor`.
+        if not self.getConfig("USE_DEFINITION_ORDER"):
+            md.treeprocessors.register(FootnoteReorderingProcessor(self), 'footnote-reorder', 19)
+
         # Insert a tree-processor that will run after inline is done.
         # In this tree-processor we want to check our duplicate footnote tracker
         # And add additional `backrefs` to the footnote pointing back to the
@@ -100,6 +115,7 @@ class FootnoteExtension(Extension):
 
     def reset(self) -> None:
         """ Clear footnotes on reset, and prepare for distinct document. """
+        self.footnote_order: list[str] = []
         self.footnotes: OrderedDict[str, str] = OrderedDict()
         self.unique_prefix += 1
         self.found_refs = {}
@@ -150,6 +166,11 @@ class FootnoteExtension(Extension):
         """ Store a footnote for later retrieval. """
         self.footnotes[id] = text
 
+    def addFootnoteRef(self, id: str) -> None:
+        """ Store a footnote reference id in order of appearance. """
+        if id not in self.footnote_order:
+            self.footnote_order.append(id)
+
     def get_separator(self) -> str:
         """ Get the footnote separator. """
         return self.getConfig("SEPARATOR")
@@ -180,9 +201,6 @@ class FootnoteExtension(Extension):
         ol = etree.SubElement(div, "ol")
         surrogate_parent = etree.Element("div")
 
-        # Backward compatibility with old '%d' placeholder
-        backlink_title = self.getConfig("BACKLINK_TITLE").replace("%d", "{}")
-
         for index, id in enumerate(self.footnotes.keys(), start=1):
             li = etree.SubElement(ol, "li")
             li.set("id", self.makeFootnoteId(id))
@@ -198,7 +216,7 @@ class FootnoteExtension(Extension):
             backlink.set("class", "footnote-backref")
             backlink.set(
                 "title",
-                backlink_title.format(index)
+                self.getConfig('BACKLINK_TITLE').format(index)
             )
             backlink.text = FN_BACKLINK_TEXT
 
@@ -214,7 +232,7 @@ class FootnoteExtension(Extension):
 
 
 class FootnoteBlockProcessor(BlockProcessor):
-    """ Find all footnote references and store for later use. """
+    """ Find footnote definitions and store for later use. """
 
     RE = re.compile(r'^[ ]{0,3}\[\^([^\]]*)\]:[ ]*(.*)$', re.MULTILINE)
 
@@ -228,6 +246,7 @@ class FootnoteBlockProcessor(BlockProcessor):
     def run(self, parent: etree.Element, blocks: list[str]) -> bool:
         """ Find, set, and remove footnote definitions. """
         block = blocks.pop(0)
+
         m = self.RE.search(block)
         if m:
             id = m.group(1)
@@ -312,14 +331,21 @@ class FootnoteInlineProcessor(InlineProcessor):
     def handleMatch(self, m: re.Match[str], data: str) -> tuple[etree.Element | None, int | None, int | None]:
         id = m.group(1)
         if id in self.footnotes.footnotes.keys():
+            self.footnotes.addFootnoteRef(id)
+
+            if not self.footnotes.getConfig("USE_DEFINITION_ORDER"):
+                # Order by reference
+                footnote_num = self.footnotes.footnote_order.index(id) + 1
+            else:
+                # Order by definition
+                footnote_num = list(self.footnotes.footnotes.keys()).index(id) + 1
+
             sup = etree.Element("sup")
             a = etree.SubElement(sup, "a")
             sup.set('id', self.footnotes.makeFootnoteRefId(id, found=True))
             a.set('href', '#' + self.footnotes.makeFootnoteId(id))
             a.set('class', 'footnote-ref')
-            a.text = self.footnotes.getConfig("SUPERSCRIPT_TEXT").format(
-                list(self.footnotes.footnotes.keys()).index(id) + 1
-            )
+            a.text = self.footnotes.getConfig("SUPERSCRIPT_TEXT").format(footnote_num)
             return sup, m.start(0), m.end(0)
         else:
             return None, None, None
@@ -399,6 +425,44 @@ class FootnoteTreeprocessor(Treeprocessor):
                     child.tail = None
             else:
                 root.append(footnotesDiv)
+
+
+class FootnoteReorderingProcessor(Treeprocessor):
+    """ Reorder list items in the footnotes div. """
+
+    def __init__(self, footnotes: FootnoteExtension):
+        self.footnotes = footnotes
+
+    def run(self, root: etree.Element) -> None:
+        if not self.footnotes.footnotes:
+            return
+        if self.footnotes.footnote_order != list(self.footnotes.footnotes.keys()):
+            for div in root.iter('div'):
+                if div.attrib.get('class', '') == 'footnote':
+                    self.reorder_footnotes(div)
+                    break
+
+    def reorder_footnotes(self, parent: etree.Element) -> None:
+        old_list = parent.find('ol')
+        parent.remove(old_list)
+        items = old_list.findall('li')
+
+        def order_by_id(li) -> int:
+            id = li.attrib.get('id', '').split(self.footnotes.get_separator(), 1)[-1]
+            return (
+                self.footnotes.footnote_order.index(id)
+                if id in self.footnotes.footnote_order
+                else len(self.footnotes.footnotes)
+            )
+
+        items = sorted(items, key=order_by_id)
+
+        new_list = etree.SubElement(parent, 'ol')
+
+        for index, item in enumerate(items, start=1):
+            backlink = item.find('.//a[@class="footnote-backref"]')
+            backlink.set("title", self.footnotes.getConfig("BACKLINK_TITLE").format(index))
+            new_list.append(item)
 
 
 class FootnotePostprocessor(Postprocessor):

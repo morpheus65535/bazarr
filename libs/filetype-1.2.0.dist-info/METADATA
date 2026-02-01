@@ -1,4 +1,4 @@
-Metadata-Version: 2.1
+Metadata-Version: 2.4
 Name: filetype
 Version: 1.2.0
 Summary: Infer file type and MIME type of any file/buffer. No external dependencies.
@@ -26,6 +26,17 @@ Classifier: Topic :: System
 Classifier: Topic :: System :: Filesystems
 Classifier: Topic :: Utilities
 License-File: LICENSE
+Dynamic: author
+Dynamic: author-email
+Dynamic: classifier
+Dynamic: description
+Dynamic: download-url
+Dynamic: home-page
+Dynamic: keywords
+Dynamic: license
+Dynamic: license-file
+Dynamic: platform
+Dynamic: summary
 
 filetype.py |Build Status| |PyPI| |Pyversions| |API|
 ====================================================

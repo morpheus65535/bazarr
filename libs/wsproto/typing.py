@@ -1,3 +1,3 @@
-from typing import List, Tuple
+from __future__ import annotations
 
-Headers = List[Tuple[bytes, bytes]]
+Headers = list[tuple[bytes, bytes]]

@@ -10,19 +10,39 @@
 #  License for the specific language governing permissions and limitations
 #  under the License.
 
-"""ExtensionManager
-"""
+"""ExtensionManager"""
 
+from collections.abc import Callable
+from collections.abc import ItemsView
+from collections.abc import Iterator
+import importlib.metadata
+import itertools
 import logging
 import operator
+from typing import Any
+from typing import Concatenate
+from typing import Generic
+from typing import ParamSpec
+from typing import TYPE_CHECKING
+from typing import TypeAlias
+from typing import TypeVar
+import warnings
 
 from . import _cache
+from .exception import MultipleMatches
 from .exception import NoMatches
+
+if TYPE_CHECKING:
+    from typing_extensions import Self
 
 LOG = logging.getLogger(__name__)
 
+T = TypeVar('T')
+U = TypeVar('U')
+P = ParamSpec('P')
 
-class Extension(object):
+
+class Extension(Generic[T]):
     """Book-keeping object for tracking extensions.
 
     The arguments passed to the constructor are saved as attributes of
@@ -31,41 +51,40 @@ class Extension(object):
     :class:`ExtensionManager` directly.
 
     :param name: The entry point name.
-    :type name: str
-    :param entry_point: The EntryPoint instance returned by
-        :mod:`entrypoints`.
-    :type entry_point: EntryPoint
+    :param entry_point: The EntryPoint instance returned by :mod:`entrypoints`.
     :param plugin: The value returned by entry_point.load()
     :param obj: The object returned by ``plugin(*args, **kwds)`` if the
                 manager invoked the extension on load.
 
     """
 
-    def __init__(self, name, entry_point, plugin, obj):
+    def __init__(
+        self,
+        name: str,
+        entry_point: importlib.metadata.EntryPoint,
+        plugin: Callable[..., T],
+        obj: T | None,
+    ) -> None:
         self.name = name
         self.entry_point = entry_point
         self.plugin = plugin
         self.obj = obj
 
     @property
-    def module_name(self):
+    def module_name(self) -> str:
         """The name of the module from which the entry point is loaded.
 
         :return: A string in 'dotted.module' format.
         """
-        # NOTE: importlib_metadata from PyPI includes this but the
-        # Python 3.8 standard library does not.
-        match = self.entry_point.pattern.match(self.entry_point.value)
-        return match.group('module')
+        return self.entry_point.module
 
     @property
-    def attr(self):
+    def attr(self) -> str:
         """The attribute of the module to be loaded."""
-        match = self.entry_point.pattern.match(self.entry_point.value)
-        return match.group('attr')
+        return self.entry_point.attr
 
     @property
-    def entry_point_target(self):
+    def entry_point_target(self) -> str:
         """The module and attribute referenced by this extension's entry_point.
 
         :return: A string representation of the target of the entry point in
@@ -74,141 +93,215 @@ class Extension(object):
         return self.entry_point.value
 
 
-class ExtensionManager(object):
+#: OnLoadFailureCallbackT defines the type for callbacks when a plugin fails
+#: to load. The callback callable should expect the extension manager instance,
+#: the underlying entrypoint instance, and the exception raised during
+#: attempted loading.
+OnLoadFailureCallbackT: TypeAlias = Callable[
+    ['ExtensionManager[T]', importlib.metadata.EntryPoint, BaseException], None
+]
+
+#: ConflictResolver defines the type for conflict resolution callables. The
+#: callable should expect the extension namespace, extension name, and a list
+#: of the entrypoints themselves.
+ConflictResolverT: TypeAlias = Callable[
+    [str, str, list[Extension[T]]], Extension[T]
+]
+
+
+def ignore_conflicts(
+    namespace: str, name: str, entrypoints: list[Extension[T]]
+) -> Extension[T]:
+    LOG.warning(
+        "multiple implementations found for the '%(name)s' extension in "
+        "%(namespace)s namespace: %(conflicts)s",
+        {
+            'name': name,
+            'namespace': namespace,
+            'conflicts': ', '.join(
+                ep.plugin.__qualname__ for ep in entrypoints
+            ),
+        },
+    )
+    # use the most last found entrypoint
+    return entrypoints[-1]
+
+
+def error_on_conflict(
+    namespace: str, name: str, entrypoints: list[Extension[T]]
+) -> Extension[T]:
+    raise MultipleMatches(
+        "multiple implementations found for the '{name}' command in "
+        "{namespace} namespace: {conflicts}".format(
+            name=name,
+            namespace=namespace,
+            conflicts=', '.join(ep.plugin.__qualname__ for ep in entrypoints),
+        )
+    )
+
+
+class ExtensionManager(Generic[T]):
     """Base class for all of the other managers.
 
     :param namespace: The namespace for the entry points.
-    :type namespace: str
     :param invoke_on_load: Boolean controlling whether to invoke the
         object returned by the entry point after the driver is loaded.
-    :type invoke_on_load: bool
     :param invoke_args: Positional arguments to pass when invoking
         the object returned by the entry point. Only used if invoke_on_load
         is True.
-    :type invoke_args: tuple
     :param invoke_kwds: Named arguments to pass when invoking
         the object returned by the entry point. Only used if invoke_on_load
         is True.
-    :type invoke_kwds: dict
     :param propagate_map_exceptions: Boolean controlling whether exceptions
         are propagated up through the map call or whether they are logged and
         then ignored
-    :type propagate_map_exceptions: bool
     :param on_load_failure_callback: Callback function that will be called when
         an entrypoint can not be loaded. The arguments that will be provided
         when this is called (when an entrypoint fails to load) are
         (manager, entrypoint, exception)
-    :type on_load_failure_callback: function
-    :param verify_requirements: Use setuptools to enforce the
-        dependencies of the plugin(s) being loaded. Defaults to False.
-    :type verify_requirements: bool
+    :param verify_requirements: **DEPRECATED** This is a no-op and will be
+        removed in a future version.
+    :param conflict_resolver: A callable that determines what to do in the
+        event that there are multiple entrypoints in the same group with the
+        same name. This is only used if retrieving entrypoint by name.
     """
 
-    def __init__(self, namespace,
-                 invoke_on_load=False,
-                 invoke_args=(),
-                 invoke_kwds={},
-                 propagate_map_exceptions=False,
-                 on_load_failure_callback=None,
-                 verify_requirements=False):
-        self._init_attributes(
-            namespace,
-            propagate_map_exceptions=propagate_map_exceptions,
-            on_load_failure_callback=on_load_failure_callback)
-        extensions = self._load_plugins(invoke_on_load,
-                                        invoke_args,
-                                        invoke_kwds,
-                                        verify_requirements)
+    ENTRY_POINT_CACHE: dict[str, list[importlib.metadata.EntryPoint]] = {}
+
+    def __init__(
+        self,
+        namespace: str,
+        invoke_on_load: bool = False,
+        invoke_args: tuple[Any, ...] | None = None,
+        invoke_kwds: dict[str, Any] | None = None,
+        propagate_map_exceptions: bool = False,
+        on_load_failure_callback: 'OnLoadFailureCallbackT[T] | None' = None,
+        verify_requirements: bool | None = None,
+        *,
+        conflict_resolver: 'ConflictResolverT[T]' = ignore_conflicts,
+    ) -> None:
+        invoke_args = () if invoke_args is None else invoke_args
+        invoke_kwds = {} if invoke_kwds is None else invoke_kwds
+
+        if verify_requirements is not None:
+            warnings.warn(
+                'The verify_requirements argument is now a no-op and is '
+                'deprecated for removal. Remove the argument from calls.',
+                DeprecationWarning,
+            )
+
+        self.namespace = namespace
+        self.propagate_map_exceptions = propagate_map_exceptions
+        self._on_load_failure_callback = on_load_failure_callback
+        self._conflict_resolver = conflict_resolver
+
+        extensions = self._load_plugins(
+            invoke_on_load, invoke_args, invoke_kwds
+        )
+
         self._init_plugins(extensions)
 
     @classmethod
-    def make_test_instance(cls, extensions, namespace='TESTING',
-                           propagate_map_exceptions=False,
-                           on_load_failure_callback=None,
-                           verify_requirements=False):
+    def make_test_instance(
+        cls,
+        extensions: list[Extension[T]],
+        namespace: str = 'TESTING',
+        propagate_map_exceptions: bool = False,
+        on_load_failure_callback: 'OnLoadFailureCallbackT[T] | None' = None,
+        verify_requirements: bool | None = None,
+        *,
+        conflict_resolver: 'ConflictResolverT[T]' = ignore_conflicts,
+    ) -> 'Self':
         """Construct a test ExtensionManager
 
         Test instances are passed a list of extensions to work from rather
         than loading them from entry points.
 
         :param extensions: Pre-configured Extension instances to use
-        :type extensions: list of :class:`~stevedore.extension.Extension`
         :param namespace: The namespace for the manager; used only for
             identification since the extensions are passed in.
-        :type namespace: str
         :param propagate_map_exceptions: When calling map, controls whether
             exceptions are propagated up through the map call or whether they
             are logged and then ignored
-        :type propagate_map_exceptions: bool
         :param on_load_failure_callback: Callback function that will
             be called when an entrypoint can not be loaded. The
             arguments that will be provided when this is called (when
             an entrypoint fails to load) are (manager, entrypoint,
             exception)
-        :type on_load_failure_callback: function
-        :param verify_requirements: Use setuptools to enforce the
-            dependencies of the plugin(s) being loaded. Defaults to False.
-        :type verify_requirements: bool
+        :param verify_requirements: **DEPRECATED** This is a no-op and will be
+            removed in a future version.
+        :param conflict_resolver: A callable that determines what to do in the
+            event that there are multiple entrypoints in the same group with
+            the same name. This is only used if retrieving entrypoint by name.
         :return: The manager instance, initialized for testing
-
         """
+        if verify_requirements is not None:
+            warnings.warn(
+                'The verify_requirements argument is now a no-op and is '
+                'deprecated for removal. Remove the argument from calls.',
+                DeprecationWarning,
+            )
 
         o = cls.__new__(cls)
-        o._init_attributes(namespace,
-                           propagate_map_exceptions=propagate_map_exceptions,
-                           on_load_failure_callback=on_load_failure_callback)
+        o.namespace = namespace
+        o.propagate_map_exceptions = propagate_map_exceptions
+        o._on_load_failure_callback = on_load_failure_callback
+        o._conflict_resolver = conflict_resolver
         o._init_plugins(extensions)
         return o
 
-    def _init_attributes(self, namespace, propagate_map_exceptions=False,
-                         on_load_failure_callback=None):
-        self.namespace = namespace
-        self.propagate_map_exceptions = propagate_map_exceptions
-        self._on_load_failure_callback = on_load_failure_callback
-
-    def _init_plugins(self, extensions):
-        self.extensions = extensions
-        self._extensions_by_name_cache = None
+    def _init_plugins(self, extensions: list[Extension[T]]) -> None:
+        self.extensions: list[Extension[T]] = extensions
+        self._extensions_by_name_cache: dict[str, Extension[T]] | None = None
 
     @property
-    def _extensions_by_name(self):
+    def _extensions_by_name(self) -> dict[str, Extension[T]]:
         if self._extensions_by_name_cache is None:
             d = {}
-            for e in self.extensions:
-                d[e.name] = e
+            for name, _extensions in itertools.groupby(
+                self.extensions, lambda x: x.name
+            ):
+                extensions = list(_extensions)
+                if len(extensions) > 1:
+                    ext = self._conflict_resolver(
+                        self.namespace, name, extensions
+                    )
+                else:
+                    ext = extensions[0]
+
+                d[name] = ext
+
             self._extensions_by_name_cache = d
         return self._extensions_by_name_cache
 
-    ENTRY_POINT_CACHE = {}
-
-    def list_entry_points(self):
+    def list_entry_points(self) -> list[importlib.metadata.EntryPoint]:
         """Return the list of entry points for this namespace.
 
         The entry points are not actually loaded, their list is just read and
         returned.
-
         """
         if self.namespace not in self.ENTRY_POINT_CACHE:
             eps = list(_cache.get_group_all(self.namespace))
             self.ENTRY_POINT_CACHE[self.namespace] = eps
         return self.ENTRY_POINT_CACHE[self.namespace]
 
-    def entry_points_names(self):
+    def entry_points_names(self) -> list[str]:
         """Return the list of entry points names for this namespace."""
         return list(map(operator.attrgetter("name"), self.list_entry_points()))
 
-    def _load_plugins(self, invoke_on_load, invoke_args, invoke_kwds,
-                      verify_requirements):
+    def _load_plugins(
+        self,
+        invoke_on_load: bool,
+        invoke_args: tuple[Any, ...],
+        invoke_kwds: dict[str, Any],
+    ) -> list[Extension[T]]:
         extensions = []
         for ep in self.list_entry_points():
             LOG.debug('found extension %r', ep)
             try:
-                ext = self._load_one_plugin(ep,
-                                            invoke_on_load,
-                                            invoke_args,
-                                            invoke_kwds,
-                                            verify_requirements,
-                                            )
+                ext = self._load_one_plugin(
+                    ep, invoke_on_load, invoke_args, invoke_kwds
+                )
                 if ext:
                     extensions.append(ext)
             except (KeyboardInterrupt, AssertionError):
@@ -224,34 +317,44 @@ class ExtensionManager(object):
                     # enough to debug that.  If debug logging is
                     # enabled for our logger, provide the full
                     # traceback.
-                    LOG.error('Could not load %r: %s', ep.name, err,
-                              exc_info=LOG.isEnabledFor(logging.DEBUG))
+                    LOG.error(
+                        'Could not load %r: %s',
+                        ep.name,
+                        err,
+                        exc_info=LOG.isEnabledFor(logging.DEBUG),
+                    )
         return extensions
 
-    def _load_one_plugin(self, ep, invoke_on_load, invoke_args, invoke_kwds,
-                         verify_requirements):
-        # NOTE(dhellmann): Using require=False is deprecated in
-        # setuptools 11.3.
-        if hasattr(ep, 'resolve') and hasattr(ep, 'require'):
-            if verify_requirements:
-                ep.require()
-            plugin = ep.resolve()
-        else:
-            plugin = ep.load()
+    # NOTE(stephenfin): While this can't return None, all the subclasses can,
+    # and this allows us to satisfy Liskov's Principle. `_load_plugins` handles
+    # things just fine in either case.
+    def _load_one_plugin(
+        self,
+        ep: importlib.metadata.EntryPoint,
+        invoke_on_load: bool,
+        invoke_args: tuple[Any],
+        invoke_kwds: dict[str, Any],
+    ) -> Extension[T] | None:
+        plugin = ep.load()
         if invoke_on_load:
             obj = plugin(*invoke_args, **invoke_kwds)
         else:
             obj = None
         return Extension(ep.name, ep, plugin, obj)
 
-    def names(self):
-        "Returns the names of the discovered extensions"
+    def names(self) -> list[str]:
+        """Returns the names of the discovered extensions"""
         # We want to return the names of the extensions in the order
         # they would be used by map(), since some subclasses change
         # that order.
         return [e.name for e in self.extensions]
 
-    def map(self, func, *args, **kwds):
+    def map(
+        self,
+        func: Callable[Concatenate[Extension[T], P], U],
+        *args: P.args,
+        **kwds: P.kwargs,
+    ) -> list[U]:
         """Iterate over the extensions invoking func() for each.
 
         The signature for func() should be::
@@ -273,17 +376,19 @@ class ExtensionManager(object):
         """
         if not self.extensions:
             # FIXME: Use a more specific exception class here.
-            raise NoMatches('No %s extensions found' % self.namespace)
-        response = []
+            raise NoMatches(f'No {self.namespace} extensions found')
+        response: list[U] = []
         for e in self.extensions:
-            self._invoke_one_plugin(response.append, func, e, args, kwds)
+            self._invoke_one_plugin(response.append, func, e, *args, **kwds)
         return response
 
     @staticmethod
-    def _call_extension_method(extension, method_name, *args, **kwds):
+    def _call_extension_method(
+        extension: Extension[T], /, method_name: str, *args: Any, **kwds: Any
+    ) -> Any:
         return getattr(extension.obj, method_name)(*args, **kwds)
 
-    def map_method(self, method_name, *args, **kwds):
+    def map_method(self, method_name: str, *args: Any, **kwds: Any) -> Any:
         """Iterate over the extensions invoking a method by name.
 
         This is equivalent of using :meth:`map` with func set to
@@ -302,10 +407,18 @@ class ExtensionManager(object):
         :param kwds: Keyword arguments to pass to method
         :returns: List of values returned from methods
         """
-        return self.map(self._call_extension_method,
-                        method_name, *args, **kwds)
+        return self.map(
+            self._call_extension_method, method_name, *args, **kwds
+        )
 
-    def _invoke_one_plugin(self, response_callback, func, e, args, kwds):
+    def _invoke_one_plugin(
+        self,
+        response_callback: Callable[..., Any],
+        func: Callable[Concatenate[Extension[T], P], U],
+        e: Extension[T],
+        *args: P.args,
+        **kwds: P.kwargs,
+    ) -> None:
         try:
             response_callback(func(e, *args, **kwds))
         except Exception as err:
@@ -315,14 +428,14 @@ class ExtensionManager(object):
                 LOG.error('error calling %r: %s', e.name, err)
                 LOG.exception(err)
 
-    def items(self):
+    def items(self) -> ItemsView[str, Extension[T]]:
         """Return an iterator of tuples of the form (name, extension).
 
         This is analogous to the Mapping.items() method.
         """
         return self._extensions_by_name.items()
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[Extension[T]]:
         """Produce iterator for the manager.
 
         Iterating over an ExtensionManager produces the :class:`Extension`
@@ -330,15 +443,14 @@ class ExtensionManager(object):
         """
         return iter(self.extensions)
 
-    def __getitem__(self, name):
+    def __getitem__(self, name: str) -> Extension[T]:
         """Return the named extension.
 
         Accessing an ExtensionManager as a dictionary (``em['name']``)
-        produces the :class:`Extension` instance with the
-        specified name.
+        produces the :class:`Extension` instance with the specified name.
         """
         return self._extensions_by_name[name]
 
-    def __contains__(self, name):
+    def __contains__(self, name: str) -> bool:
         """Return true if name is in list of enabled extensions."""
         return any(extension.name == name for extension in self.extensions)

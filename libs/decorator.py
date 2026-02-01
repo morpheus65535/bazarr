@@ -1,6 +1,6 @@
 # #########################     LICENSE     ############################ #
 
-# Copyright (c) 2005-2021, Michele Simionato
+# Copyright (c) 2005-2025, Michele Simionato
 # All rights reserved.
 
 # Redistribution and use in source and binary forms, with or without
@@ -37,10 +37,11 @@ import sys
 import inspect
 import operator
 import itertools
+import functools
 from contextlib import _GeneratorContextManager
 from inspect import getfullargspec, iscoroutinefunction, isgeneratorfunction
 
-__version__ = '5.1.1'
+__version__ = '5.2.1'
 
 DEF = re.compile(r'\s*def\s*([_\w][_\w\d]*)\s*\(')
 POS = inspect.Parameter.POSITIONAL_OR_KEYWORD
@@ -71,7 +72,7 @@ class FunctionMaker(object):
                 self.name = '_lambda_'
             self.doc = func.__doc__
             self.module = func.__module__
-            if inspect.isroutine(func):
+            if inspect.isroutine(func) or isinstance(func, functools.partial):
                 argspec = getfullargspec(func)
                 self.annotations = getattr(func, '__annotations__', {})
                 for a in ('args', 'varargs', 'varkw', 'defaults', 'kwonlyargs',
@@ -214,6 +215,8 @@ def decorate(func, caller, extras=(), kwsyntax=False):
     does. By default kwsyntax is False and the the arguments are untouched.
     """
     sig = inspect.signature(func)
+    if isinstance(func, functools.partial):
+        func = functools.update_wrapper(func, func.func)
     if iscoroutinefunction(caller):
         async def fun(*args, **kw):
             if not kwsyntax:
@@ -230,6 +233,7 @@ def decorate(func, caller, extras=(), kwsyntax=False):
             if not kwsyntax:
                 args, kw = fix(args, kw, sig)
             return caller(func, *(extras + args), **kw)
+
     fun.__name__ = func.__name__
     fun.__doc__ = func.__doc__
     fun.__wrapped__ = func
@@ -252,6 +256,10 @@ def decorate(func, caller, extras=(), kwsyntax=False):
         fun.__module__ = func.__module__
     except AttributeError:
         pass
+    try:
+        fun.__name__ = func.__name__
+    except AttributeError:  # happens with old versions of numpy.vectorize
+        func.__name__ == 'noname'
     try:
         fun.__dict__.update(func.__dict__)
     except AttributeError:
@@ -419,8 +427,8 @@ def dispatch_on(*dispatch_args):
             """
             check(types)
             lst = []
-            for anc in itertools.product(*ancestors(*types)):
-                lst.append(tuple(a.__name__ for a in anc))
+            for ancs in itertools.product(*ancestors(*types)):
+                lst.append(tuple(a.__name__ for a in ancs))
             return lst
 
         def _dispatch(dispatch_args, *args, **kw):

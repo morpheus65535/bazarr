@@ -391,7 +391,7 @@ class TocTreeprocessor(Treeprocessor):
                 if int(el.tag[-1]) >= self.toc_top and int(el.tag[-1]) <= self.toc_bottom:
                     toc_tokens.append({
                         'level': int(el.tag[-1]),
-                        'id': el.attrib["id"],
+                        'id': unescape(el.attrib["id"]),
                         'name': name,
                         'html': innerhtml,
                         'data-toc-label': data_toc_label

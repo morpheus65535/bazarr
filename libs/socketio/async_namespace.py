@@ -1,4 +1,5 @@
 import asyncio
+import inspect
 
 from socketio import base_namespace
 
@@ -32,7 +33,7 @@ class AsyncNamespace(base_namespace.BaseServerNamespace):
         handler_name = 'on_' + (event or '')
         if hasattr(self, handler_name):
             handler = getattr(self, handler_name)
-            if asyncio.iscoroutinefunction(handler) is True:
+            if inspect.iscoroutinefunction(handler) is True:
                 try:
                     try:
                         ret = await handler(*args)
@@ -213,7 +214,7 @@ class AsyncClientNamespace(base_namespace.BaseClientNamespace):
         handler_name = 'on_' + (event or '')
         if hasattr(self, handler_name):
             handler = getattr(self, handler_name)
-            if asyncio.iscoroutinefunction(handler) is True:
+            if inspect.iscoroutinefunction(handler) is True:
                 try:
                     try:
                         ret = await handler(*args)

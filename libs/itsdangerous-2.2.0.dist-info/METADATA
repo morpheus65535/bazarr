@@ -1,4 +1,4 @@
-Metadata-Version: 2.1
+Metadata-Version: 2.4
 Name: itsdangerous
 Version: 2.2.0
 Summary: Safely pass data to untrusted environments and back.
@@ -11,6 +11,7 @@ Classifier: License :: OSI Approved :: BSD License
 Classifier: Operating System :: OS Independent
 Classifier: Programming Language :: Python
 Classifier: Typing :: Typed
+License-File: LICENSE.txt
 Project-URL: Changes, https://itsdangerous.palletsprojects.com/changes/
 Project-URL: Chat, https://discord.gg/pallets
 Project-URL: Documentation, https://itsdangerous.palletsprojects.com/

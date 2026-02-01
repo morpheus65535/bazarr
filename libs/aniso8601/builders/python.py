@@ -61,8 +61,8 @@ def year_range_check(valuestr, limit):
     YYYYstr = valuestr
 
     # Truncated dates, like '19', refer to 1900-1999 inclusive,
-    # we simply parse to 1900
-    if len(valuestr) < 4:
+    # we simply parse to 1900, Y and YYY strings are not supported
+    if len(valuestr) == 2:
         # Shift 0s in from the left to form complete year
         YYYYstr = valuestr.ljust(4, "0")
 

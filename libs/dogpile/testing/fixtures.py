@@ -50,9 +50,11 @@ class _GenericBackendFixture:
     def _check_backend_available(cls, backend):
         pass
 
+    backend: str
     region_args = {}
     config_args = {}
     extra_arguments = {}
+    backend_argument_names = ()
 
     _region_inst = None
     _backend_inst = None
@@ -397,6 +399,33 @@ class _GenericBackendTestSuite(_GenericBackendFixture):
         assert_raises_message(
             Exception, "boom", reg.get_or_create, some_key, boom
         )
+
+    def test_argument_dictionary_unmodified(self):
+        fixed_arg_names = getattr(self, "backend_argument_names", None)
+
+        backend_arguments = {}
+        if not fixed_arg_names:
+            backend_arguments.update(self.config_args["arguments"])
+        else:
+            backend_arguments.update(
+                {key: "somevalue" for key in self.backend_argument_names}
+            )
+
+        assert backend_arguments, (
+            "suite has no config_args['arguments'] and no "
+            "backend_argument_names attribute I can use to generate an "
+            "arg dict"
+        )
+
+        backend_arguments.update(
+            {"arbitrary_arg_one": "foo", "arbitrary_arg_two": "bar"}
+        )
+        argument_dict_copy = dict(backend_arguments)
+
+        region = CacheRegion()
+        region.configure(self.backend, arguments=backend_arguments)
+
+        eq_(backend_arguments, argument_dict_copy)
 
 
 def raise_cant_deserialize_exception(v):

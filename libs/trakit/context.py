@@ -10,6 +10,7 @@ class Context(dict):
         if language and not isinstance(language, babelfish.Language):
             language = babelfish.Language.fromietf(str(language))
         self.expected_language: typing.Optional[babelfish.Language] = language
+        self.type: typing.Literal['trackname', 'filename'] = self.get('type') or 'trackname'
 
     def accept(self, lang: babelfish.Language):
         if self.expected_language is None:

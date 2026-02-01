@@ -1,10 +1,10 @@
-requests_toolbelt-1.0.0.dist-info/AUTHORS.rst,sha256=V98Zj2LJCYqslcm47B8LjvwCQID2HVoO2J70xdo88DE,986
 requests_toolbelt-1.0.0.dist-info/INSTALLER,sha256=zuuue4knoyJ-UwPPXg8fezS7VCrXJQrAP7zeNuwvFQg,4
-requests_toolbelt-1.0.0.dist-info/LICENSE,sha256=H4z4vazZjtbTbQ_sDAf3dlrOvW6BIFliq1FGAjs8hY0,596
-requests_toolbelt-1.0.0.dist-info/METADATA,sha256=VKZ6dVIztwCA36fDA6pi-GCk8jScVoOwZm4N6rIWgvI,14636
+requests_toolbelt-1.0.0.dist-info/METADATA,sha256=LaUcu90Y7PpRGkluIMXAtWBEaVc6PX1ViLKYtwJQeKk,14892
 requests_toolbelt-1.0.0.dist-info/RECORD,,
 requests_toolbelt-1.0.0.dist-info/REQUESTED,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
-requests_toolbelt-1.0.0.dist-info/WHEEL,sha256=P2T-6epvtXQ2cBOE_U1K4_noqlJFN3tj15djMgEu4NM,110
+requests_toolbelt-1.0.0.dist-info/WHEEL,sha256=Mk1ST5gDzEO5il5kYREiBnzzM469m5sI8ESPl7TRhJY,110
+requests_toolbelt-1.0.0.dist-info/licenses/AUTHORS.rst,sha256=V98Zj2LJCYqslcm47B8LjvwCQID2HVoO2J70xdo88DE,986
+requests_toolbelt-1.0.0.dist-info/licenses/LICENSE,sha256=H4z4vazZjtbTbQ_sDAf3dlrOvW6BIFliq1FGAjs8hY0,596
 requests_toolbelt-1.0.0.dist-info/top_level.txt,sha256=94d34hHwG8qjeDXYn9Co3jucG_N9CkO-V5kWQ6Cre8w,18
 requests_toolbelt/__init__.py,sha256=ZUDjGuNOjooYe7jy2PoScTWLIr073PfmGUsc_KEp-Vk,1188
 requests_toolbelt/_compat.py,sha256=K7xMtOshOUWDtGG2hBfuw89R1BdkIvAz_x62CCMRvdg,9260

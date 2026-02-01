@@ -61,7 +61,8 @@ class BaseClient:
         self.ws = None
         self.read_loop_task = None
         self.write_loop_task = None
-        self.queue = None
+        self.queue = self.create_queue()
+        self.queue_empty = self.get_queue_empty_exception()
         self.state = 'disconnected'
         self.ssl_verify = ssl_verify
         self.websocket_extra_options = websocket_extra_options or {}
@@ -156,3 +157,13 @@ class BaseClient:
         if not self.timestamp_requests:
             return ''
         return '&t=' + str(time.time())
+
+    def create_queue(self, *args, **kwargs):  # pragma: no cover
+        """Create a queue object."""
+        raise NotImplementedError('must be implemented in a subclass')
+
+    def get_queue_empty_exception(self):  # pragma: no cover
+        """Return the queue empty exception raised by queues created by the
+        ``create_queue()`` method.
+        """
+        raise NotImplementedError('must be implemented in a subclass')

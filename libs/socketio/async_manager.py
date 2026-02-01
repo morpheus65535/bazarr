@@ -1,4 +1,5 @@
 import asyncio
+import inspect
 
 from engineio import packet as eio_packet
 from socketio import packet
@@ -113,7 +114,7 @@ class AsyncManager(BaseManager):
             del self.callbacks[sid][id]
         if callback is not None:
             ret = callback(*data)
-            if asyncio.iscoroutine(ret):
+            if inspect.iscoroutine(ret):
                 try:
                     await ret
                 except asyncio.CancelledError:  # pragma: no cover

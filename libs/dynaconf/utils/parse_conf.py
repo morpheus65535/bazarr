@@ -133,12 +133,63 @@ class Merge(MetaValue):
                     }
                 elif "," in self.value:
                     # @merge foo,bar
-                    self.value = self.value.split(",")
+                    self.value = [
+                        parse_conf_data(
+                            v, tomlfy=True, box_settings=box_settings
+                        )
+                        for v in self.value.split(",")
+                    ]
                 else:
                     # @merge foo
                     self.value = [self.value]
 
         self.unique = unique
+
+
+class Insert(MetaValue):
+    """Triggers the value to be inserted into a list at specific index"""
+
+    _dynaconf_insert = True
+
+    def __init__(self, value, box_settings):
+        """
+        normally value will be a string like
+        `0 foo` or `-1 foo` and needs to get split
+        but value can also be just a single string with or without space
+        like `foo` and in this case it will be treated as `0 foo`
+        but it can also be `foo bar` and in this case it will be treated as `0 foo bar`
+        we need to check if the first part is a number
+        if it is not a number then we will treat it as `0 value`
+        if it is a number then we will split it as `index, value`
+        this must use a regex to match value, examples:
+            -1 foo -> index = -1, value = foo
+            0 foo -> index = 0, value = foo
+            0 foo bar -> index = 0, value = foo bar
+            0 42 -> index = 0, value = 42
+            0 42 foo -> index = 0, value = 42 foo
+            foo -> index = 0, value = foo
+            foo bar -> index = 0, value = foo bar
+            42 -> index = 0, value = 42
+            42 foo -> index = 42, value = foo
+            42 foo bar -> index = 42, value = foo bar
+        """
+        self.box_settings = box_settings
+
+        try:
+            if value.lstrip("-+")[0].isdigit():
+                # `0 foo` or `-1 foo` or `42 foo` or `42`(raise ValueError)
+                index, value = value.split(" ", 1)
+            else:
+                # `foo` or `foo bar`
+                index, value = 0, value
+        except ValueError:
+            # `42` or any other non split able value
+            index, value = 0, value
+
+        self.index = int(index)
+        self.value = parse_conf_data(
+            value, tomlfy=True, box_settings=box_settings
+        )
 
 
 class BaseFormatter:
@@ -219,8 +270,14 @@ class Lazy:
         self, value=empty, formatter=Formatters.python_formatter, casting=None
     ):
         self.value = value
-        self.formatter = formatter
         self.casting = casting
+        # Sometimes a simple function is passed to the formatter.
+        # but on evaluation-time, we may need to access `formatter.token`
+        # so we are wrapping the fn to comply with this interface.
+        if isinstance(formatter, BaseFormatter):
+            self.formatter = formatter
+        else:
+            self.formatter = BaseFormatter(formatter, "lambda")
 
     @property
     def context(self):
@@ -303,6 +360,7 @@ converters = {
     "@merge_unique": lambda value, box_settings: Merge(
         value, box_settings, unique=True
     ),
+    "@insert": Insert,
     "@get": lambda value: Lazy(value, formatter=Formatters.get_formatter),
     # Special markers to be used as placeholders e.g: in prefilled forms
     # will always return None when evaluated
@@ -443,7 +501,7 @@ def parse_conf_data(data, tomlfy=False, box_settings=None):
         # recursively parse inner dict items
         # It is important to keep the same object id because
         # of mutability
-        for k, v in data._safe_items():
+        for k, v in data.items(bypass_eval=True):
             data[k] = parse_conf_data(
                 v, tomlfy=tomlfy, box_settings=box_settings
             )

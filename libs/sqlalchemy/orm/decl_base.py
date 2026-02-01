@@ -1,5 +1,5 @@
 # orm/decl_base.py
-# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2026 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -103,6 +103,7 @@ class MappedClassProtocol(Protocol[_O]):
 
 class _DeclMappedClassProtocol(MappedClassProtocol[_O], Protocol):
     "Internal more detailed version of ``MappedClassProtocol``."
+
     metadata: MetaData
     __tablename__: str
     __mapper_args__: _MapperKwArgs
@@ -1217,15 +1218,15 @@ class _ClassScanMapperConfig(_MapperConfig):
             # dataclasses callable, based on the fields present.  This
             # means remove the Mapped[] container and ensure all Field
             # entries have an annotation
-            restored = getattr(klass, "__annotations__", None)
+            restored = util.get_annotations(klass)
             klass.__annotations__ = cast("Dict[str, Any]", use_annotations)
         else:
             restored = None
 
         try:
-            dataclass_callable(
+            dataclass_callable(  # type: ignore[call-overload]
                 klass,
-                **{
+                **{  # type: ignore[call-overload,unused-ignore]
                     k: v
                     for k, v in dataclass_setup_arguments.items()
                     if v is not _NoArg.NO_ARG and k != "dataclass_callable"
@@ -1248,7 +1249,7 @@ class _ClassScanMapperConfig(_MapperConfig):
                 if restored is None:
                     del klass.__annotations__
                 else:
-                    klass.__annotations__ = restored
+                    klass.__annotations__ = restored  # type: ignore[assignment]  # noqa: E501
 
     @classmethod
     def _assert_dc_arguments(cls, arguments: _DataclassArguments) -> None:
@@ -1296,8 +1297,6 @@ class _ClassScanMapperConfig(_MapperConfig):
                     or isinstance(attr_value, _MappedAttribute)
                 )
             )
-        else:
-            is_dataclass_field = False
 
         is_dataclass_field = False
         extracted = _extract_mapped_subtype(
@@ -1577,7 +1576,7 @@ class _ClassScanMapperConfig(_MapperConfig):
                                 is_dataclass,
                             )
                         except NameError as ne:
-                            raise exc.ArgumentError(
+                            raise orm_exc.MappedAnnotationError(
                                 f"Could not resolve all types within mapped "
                                 f'annotation: "{annotation}".  Ensure all '
                                 f"types are written correctly and are "
@@ -1601,9 +1600,15 @@ class _ClassScanMapperConfig(_MapperConfig):
                                 "default_factory",
                                 "repr",
                                 "default",
+                                "dataclass_metadata",
                             ]
                         else:
-                            argnames = ["init", "default_factory", "repr"]
+                            argnames = [
+                                "init",
+                                "default_factory",
+                                "repr",
+                                "dataclass_metadata",
+                            ]
 
                         args = {
                             a
@@ -2018,8 +2023,7 @@ class _DeferredMapperConfig(_ClassScanMapperConfig):
     def _early_mapping(self, mapper_kw: _MapperKwArgs) -> None:
         pass
 
-    # mypy disallows plain property override of variable
-    @property  # type: ignore
+    @property
     def cls(self) -> Type[Any]:
         return self._cls()  # type: ignore
 

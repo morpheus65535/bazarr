@@ -1,4 +1,4 @@
-Metadata-Version: 2.1
+Metadata-Version: 2.4
 Name: chardet
 Version: 5.2.0
 Summary: Universal encoding detector for Python 3
@@ -29,6 +29,7 @@ Classifier: Topic :: Software Development :: Libraries :: Python Modules
 Classifier: Topic :: Text Processing :: Linguistic
 Requires-Python: >=3.7
 License-File: LICENSE
+Dynamic: license-file
 
 Chardet: The Universal Character Encoding Detector
 --------------------------------------------------

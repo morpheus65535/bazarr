@@ -32,10 +32,17 @@ def load(obj, env=None, silent=True, key=None, validate=False):
 
     redis = StrictRedis(**obj.get("REDIS_FOR_DYNACONF"))
     prefix = obj.get("ENVVAR_PREFIX_FOR_DYNACONF")
+    env_list = build_env_list(obj, env or obj.current_env)
     # prefix is added to env_list to keep backwards compatibility
-    env_list = [prefix] + build_env_list(obj, env or obj.current_env)
+    if prefix:
+        env_list.insert(0, prefix)
+
     for env_name in env_list:
-        holder = f"{prefix.upper()}_{env_name.upper()}"
+        if prefix:
+            holder = f"{prefix.upper()}_{env_name.upper()}"
+        else:
+            holder = env_name.upper()
+
         try:
             source_metadata = SourceMetadata(IDENTIFIER, "unique", env_name)
             if key:

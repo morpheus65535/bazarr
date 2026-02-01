@@ -1,5 +1,5 @@
 # testing/suite/test_update_delete.py
-# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2026 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -18,7 +18,7 @@ from ... import testing
 class SimpleUpdateDeleteTest(fixtures.TablesTest):
     run_deletes = "each"
     __requires__ = ("sane_rowcount",)
-    __backend__ = True
+    __sparse_driver_backend__ = True
 
     @classmethod
     def define_tables(cls, metadata):

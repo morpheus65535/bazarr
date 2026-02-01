@@ -1,5 +1,5 @@
 # dialects/oracle/cx_oracle.py
-# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2026 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -1233,6 +1233,9 @@ class OracleDialect_cx_oracle(OracleDialect):
             dbapi_connection.rollback()
             with dbapi_connection.cursor() as cursor:
                 cursor.execute(f"ALTER SESSION SET ISOLATION_LEVEL={level}")
+
+    def detect_autocommit_setting(self, dbapi_conn) -> bool:
+        return bool(dbapi_conn.autocommit)
 
     def _detect_decimal_char(self, connection):
         # we have the option to change this setting upon connect,

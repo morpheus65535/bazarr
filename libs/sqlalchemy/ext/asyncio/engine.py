@@ -1,5 +1,5 @@
 # ext/asyncio/engine.py
-# Copyright (C) 2020-2025 the SQLAlchemy authors and contributors
+# Copyright (C) 2020-2026 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -186,7 +186,8 @@ class AsyncConnectable:
         "default_isolation_level",
     ],
 )
-class AsyncConnection(
+# "Class has incompatible disjoint bases" - no idea
+class AsyncConnection(  # type:ignore[misc]
     ProxyComparable[Connection],
     StartableContext["AsyncConnection"],
     AsyncConnectable,
@@ -255,7 +256,7 @@ class AsyncConnection(
 
     @classmethod
     def _regenerate_proxy_for_target(
-        cls, target: Connection
+        cls, target: Connection, **additional_kw: Any  # noqa: U100
     ) -> AsyncConnection:
         return AsyncConnection(
             AsyncEngine._retrieve_proxy_for_target(target.engine), target
@@ -576,7 +577,7 @@ class AsyncConnection(
         """
         if not self.dialect.supports_server_side_cursors:
             raise exc.InvalidRequestError(
-                "Cant use `stream` or `stream_scalars` with the current "
+                "Can't use `stream` or `stream_scalars` with the current "
                 "dialect since it does not support server side cursors."
             )
 
@@ -994,7 +995,8 @@ class AsyncConnection(
     ],
     attributes=["url", "pool", "dialect", "engine", "name", "driver", "echo"],
 )
-class AsyncEngine(ProxyComparable[Engine], AsyncConnectable):
+# "Class has incompatible disjoint bases" - no idea
+class AsyncEngine(ProxyComparable[Engine], AsyncConnectable):  # type: ignore[misc]  # noqa:E501
     """An asyncio proxy for a :class:`_engine.Engine`.
 
     :class:`_asyncio.AsyncEngine` is acquired using the
@@ -1041,7 +1043,9 @@ class AsyncEngine(ProxyComparable[Engine], AsyncConnectable):
         return self.sync_engine
 
     @classmethod
-    def _regenerate_proxy_for_target(cls, target: Engine) -> AsyncEngine:
+    def _regenerate_proxy_for_target(
+        cls, target: Engine, **additional_kw: Any  # noqa: U100
+    ) -> AsyncEngine:
         return AsyncEngine(target)
 
     @contextlib.asynccontextmanager
@@ -1344,7 +1348,7 @@ class AsyncTransaction(
 
     @classmethod
     def _regenerate_proxy_for_target(
-        cls, target: Transaction
+        cls, target: Transaction, **additional_kw: Any  # noqa: U100
     ) -> AsyncTransaction:
         sync_connection = target.connection
         sync_transaction = target
@@ -1429,7 +1433,7 @@ def _get_sync_engine_or_connection(
 
 
 def _get_sync_engine_or_connection(
-    async_engine: Union[AsyncEngine, AsyncConnection]
+    async_engine: Union[AsyncEngine, AsyncConnection],
 ) -> Union[Engine, Connection]:
     if isinstance(async_engine, AsyncConnection):
         return async_engine._proxied

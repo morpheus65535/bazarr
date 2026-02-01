@@ -37,30 +37,47 @@ class MessagePackHubProtocol(BaseHubProtocol):
         try:
             messages = []
             offset = 0
+            max_length_prefix_size = 5
+            num_bits_to_shift = [0, 7, 14, 21, 28]
             while offset < len(raw):
-                length = msgpack.unpackb(raw[offset: offset + 1])
-                values = msgpack.unpackb(raw[offset + 1: offset + length + 1])
-                offset = offset + length + 1
+                length = 0
+                num_bytes = 0
+                while True:
+                    byte_read = raw[offset + num_bytes]
+                    length |=\
+                        (byte_read & 0x7F) << num_bits_to_shift[num_bytes]
+                    num_bytes += 1
+                    if byte_read & 0x80 == 0:
+                        break
+                    if offset == max_length_prefix_size\
+                            or offset + num_bytes > len(raw):
+                        raise Exception("Cannot read message length")
+                offset = offset + num_bytes
+                values = msgpack.unpackb(raw[offset: offset + length])
+                offset = offset + length
                 message = self._decode_message(values)
                 messages.append(message)
         except Exception as ex:
-            Helpers.get_logger().error("Parse messages Error {0}".format(ex))
-            Helpers.get_logger().error("raw msg '{0}'".format(raw))
+            self.logger.error("Parse messages Error {0}".format(ex))
+            self.logger.error("raw msg '{0}'".format(raw))
         return messages
 
     def decode_handshake(self, raw_message):
         try:
             has_various_messages = 0x1E in raw_message
-            handshake_data = raw_message[0: raw_message.index(0x1E)] if has_various_messages else raw_message
-            messages = self.parse_messages(raw_message[raw_message.index(0x1E) + 1:]) if has_various_messages else []
+            handshake_data = raw_message[0: raw_message.index(0x1E)]\
+                if has_various_messages else raw_message
+            messages = self.parse_messages(
+                raw_message[raw_message.index(0x1E) + 1:])\
+                if has_various_messages else []
             data = json.loads(handshake_data)
             return HandshakeResponseMessage(data.get("error", None)), messages
         except Exception as ex:
             if type(raw_message) is str:
                 data = json.loads(raw_message[0: raw_message.index("}") + 1])
                 return HandshakeResponseMessage(data.get("error", None)), []
-            Helpers.get_logger().error(raw_message)
-            Helpers.get_logger().error(ex)
+            self.logger.error(raw_message)
+            self.logger.error(ex)
             raise ex
 
     def encode(self, message):
@@ -150,9 +167,6 @@ class MessagePackHubProtocol(BaseHubProtocol):
 
         elif raw[0] == 7:  # CloseMessageEncoding
             return CloseMessage(error=raw[1])  # AllowReconnect is missing
-        print(".......................................")
-        print(raw)
-        print("---------------------------------------")
         raise Exception("Unknown message type.")
 
     def _to_varint(self, value):

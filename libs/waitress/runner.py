@@ -19,7 +19,7 @@ import getopt
 import logging
 import os
 import os.path
-import re
+import pkgutil
 import sys
 
 from waitress import serve
@@ -179,47 +179,6 @@ Tuning options:
 
 """
 
-RUNNER_PATTERN = re.compile(
-    r"""
-    ^
-    (?P<module>
-        [a-z_][a-z0-9_]*(?:\.[a-z_][a-z0-9_]*)*
-    )
-    :
-    (?P<object>
-        [a-z_][a-z0-9_]*(?:\.[a-z_][a-z0-9_]*)*
-    )
-    $
-    """,
-    re.I | re.X,
-)
-
-
-def match(obj_name):
-    matches = RUNNER_PATTERN.match(obj_name)
-    if not matches:
-        raise ValueError(f"Malformed application '{obj_name}'")
-    return matches.group("module"), matches.group("object")
-
-
-def resolve(module_name, object_name):
-    """Resolve a named object in a module."""
-    # We cast each segments due to an issue that has been found to manifest
-    # in Python 2.6.6, but not 2.6.8, and may affect other revisions of Python
-    # 2.6 and 2.7, whereby ``__import__`` chokes if the list passed in the
-    # ``fromlist`` argument are unicode strings rather than 8-bit strings.
-    # The error triggered is "TypeError: Item in ``fromlist '' not a string".
-    # My guess is that this was fixed by checking against ``basestring``
-    # rather than ``str`` sometime between the release of 2.6.6 and 2.6.8,
-    # but I've yet to go over the commits. I know, however, that the NEWS
-    # file makes no mention of such a change to the behaviour of
-    # ``__import__``.
-    segments = [str(segment) for segment in object_name.split(".")]
-    obj = __import__(module_name, fromlist=segments[:1])
-    for segment in segments:
-        obj = getattr(obj, segment)
-    return obj
-
 
 def show_help(stream, name, error=None):  # pragma: no cover
     if error is not None:
@@ -268,25 +227,14 @@ def run(argv=sys.argv, _serve=serve):
     if logger.level == logging.NOTSET:
         logger.setLevel(logging.INFO)
 
-    try:
-        module, obj_name = match(args[0])
-    except ValueError as exc:
-        show_help(sys.stderr, name, str(exc))
-        show_exception(sys.stderr)
-        return 1
-
     # Add the current directory onto sys.path
     sys.path.append(os.getcwd())
 
     # Get the WSGI function.
     try:
-        app = resolve(module, obj_name)
-    except ImportError:
-        show_help(sys.stderr, name, f"Bad module '{module}'")
-        show_exception(sys.stderr)
-        return 1
-    except AttributeError:
-        show_help(sys.stderr, name, f"Bad object name '{obj_name}'")
+        app = pkgutil.resolve_name(args[0])
+    except (ValueError, ImportError, AttributeError) as exc:
+        show_help(sys.stderr, name, str(exc))
         show_exception(sys.stderr)
         return 1
     if kw["call"]:

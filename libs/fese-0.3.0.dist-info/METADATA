@@ -1,4 +1,4 @@
-Metadata-Version: 2.1
+Metadata-Version: 2.4
 Name: fese
 Version: 0.3.0
 Summary: A library to extract FFmpeg subtitle streams
@@ -8,6 +8,7 @@ Description-Content-Type: text/markdown
 License-File: LICENSE
 Requires-Dist: babelfish
 Requires-Dist: pysubs2
+Dynamic: license-file
 
 # fese
 

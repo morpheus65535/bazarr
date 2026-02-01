@@ -6,7 +6,7 @@
 # See https://Python-Markdown.github.io/extensions/abbreviations
 # for documentation.
 
-# Original code Copyright 2007-2008 [Waylan Limberg](http://achinghead.com/)
+# Original code Copyright 2007-2008 [Waylan Limberg](https://github.com/waylan)
 # and [Seemant Kulleen](http://www.kulleen.org/)
 
 # All changes Copyright 2008-2014 The Python Markdown Project
@@ -33,7 +33,7 @@ import xml.etree.ElementTree as etree
 
 if TYPE_CHECKING:  # pragma: no cover
     from .. import Markdown
-    from ..blockparsers import BlockParser
+    from ..blockparser import BlockParser
 
 
 class AbbrExtension(Extension):
@@ -86,29 +86,34 @@ class AbbrTreeprocessor(Treeprocessor):
         self.RE: re.RegexObject | None = None
         super().__init__(md)
 
+    def create_element(self, title: str, text: str, tail: str) -> etree.Element:
+        ''' Create an `abbr` element. '''
+        abbr = etree.Element('abbr', {'title': title})
+        abbr.text = AtomicString(text)
+        abbr.tail = tail
+        return abbr
+
     def iter_element(self, el: etree.Element, parent: etree.Element | None = None) -> None:
         ''' Recursively iterate over elements, run regex on text and wrap matches in `abbr` tags. '''
         for child in reversed(el):
             self.iter_element(child, el)
         if text := el.text:
-            for m in reversed(list(self.RE.finditer(text))):
-                if self.abbrs[m.group(0)]:
-                    abbr = etree.Element('abbr', {'title': self.abbrs[m.group(0)]})
-                    abbr.text = AtomicString(m.group(0))
-                    abbr.tail = text[m.end():]
-                    el.insert(0, abbr)
-                    text = text[:m.start()]
-            el.text = text
+            if not isinstance(text, AtomicString):
+                for m in reversed(list(self.RE.finditer(text))):
+                    if self.abbrs[m.group(0)]:
+                        abbr = self.create_element(self.abbrs[m.group(0)], m.group(0), text[m.end():])
+                        el.insert(0, abbr)
+                        text = text[:m.start()]
+                el.text = text
         if parent is not None and el.tail:
             tail = el.tail
             index = list(parent).index(el) + 1
-            for m in reversed(list(self.RE.finditer(tail))):
-                abbr = etree.Element('abbr', {'title': self.abbrs[m.group(0)]})
-                abbr.text = AtomicString(m.group(0))
-                abbr.tail = tail[m.end():]
-                parent.insert(index, abbr)
-                tail = tail[:m.start()]
-            el.tail = tail
+            if not isinstance(tail, AtomicString):
+                for m in reversed(list(self.RE.finditer(tail))):
+                    abbr = self.create_element(self.abbrs[m.group(0)], m.group(0), tail[m.end():])
+                    parent.insert(index, abbr)
+                    tail = tail[:m.start()]
+                el.tail = tail
 
     def run(self, root: etree.Element) -> etree.Element | None:
         ''' Step through tree to find known abbreviations. '''

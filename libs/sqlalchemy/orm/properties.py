@@ -1,5 +1,5 @@
 # orm/properties.py
-# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2026 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -28,6 +28,7 @@ from typing import TypeVar
 from typing import Union
 
 from . import attributes
+from . import exc as orm_exc
 from . import strategy_options
 from .base import _DeclarativeMapped
 from .base import class_mapper
@@ -56,6 +57,7 @@ from ..sql.type_api import TypeEngine
 from ..util.typing import de_optionalize_union_types
 from ..util.typing import get_args
 from ..util.typing import includes_none
+from ..util.typing import is_a_type
 from ..util.typing import is_fwd_ref
 from ..util.typing import is_pep593
 from ..util.typing import is_pep695
@@ -232,7 +234,7 @@ class ColumnProperty(
             return self.strategy._have_default_expression  # type: ignore
 
         return ("deferred", True) not in self.strategy_key or (
-            self not in self.parent._readonly_props  # type: ignore
+            self not in self.parent._readonly_props
         )
 
     @util.preload_module("sqlalchemy.orm.state", "sqlalchemy.orm.strategies")
@@ -661,6 +663,31 @@ class MappedColumn(
         # Column will be merged into it in _init_column_for_annotation().
         return MappedColumn()
 
+    def _adjust_for_existing_column(
+        self,
+        decl_scan: _ClassScanMapperConfig,
+        key: str,
+        given_column: Column[_T],
+    ) -> Column[_T]:
+        if (
+            self._use_existing_column
+            and decl_scan.inherits
+            and decl_scan.single
+        ):
+            if decl_scan.is_deferred:
+                raise sa_exc.ArgumentError(
+                    "Can't use use_existing_column with deferred mappers"
+                )
+            supercls_mapper = class_mapper(decl_scan.inherits, False)
+
+            colname = (
+                given_column.name if given_column.name is not None else key
+            )
+            given_column = supercls_mapper.local_table.c.get(  # type: ignore[assignment] # noqa: E501
+                colname, given_column
+            )
+        return given_column
+
     def declarative_scan(
         self,
         decl_scan: _ClassScanMapperConfig,
@@ -675,21 +702,9 @@ class MappedColumn(
     ) -> None:
         column = self.column
 
-        if (
-            self._use_existing_column
-            and decl_scan.inherits
-            and decl_scan.single
-        ):
-            if decl_scan.is_deferred:
-                raise sa_exc.ArgumentError(
-                    "Can't use use_existing_column with deferred mappers"
-                )
-            supercls_mapper = class_mapper(decl_scan.inherits, False)
-
-            colname = column.name if column.name is not None else key
-            column = self.column = supercls_mapper.local_table.c.get(  # type: ignore[assignment] # noqa: E501
-                colname, column
-            )
+        column = self.column = self._adjust_for_existing_column(
+            decl_scan, key, self.column
+        )
 
         if column.key is None:
             column.key = key
@@ -706,6 +721,8 @@ class MappedColumn(
 
         self._init_column_for_annotation(
             cls,
+            decl_scan,
+            key,
             registry,
             extracted_mapped_annotation,
             originating_module,
@@ -714,6 +731,7 @@ class MappedColumn(
     @util.preload_module("sqlalchemy.orm.decl_base")
     def declarative_scan_for_composite(
         self,
+        decl_scan: _ClassScanMapperConfig,
         registry: _RegistryType,
         cls: Type[Any],
         originating_module: Optional[str],
@@ -724,12 +742,14 @@ class MappedColumn(
         decl_base = util.preloaded.orm_decl_base
         decl_base._undefer_column_name(param_name, self.column)
         self._init_column_for_annotation(
-            cls, registry, param_annotation, originating_module
+            cls, decl_scan, key, registry, param_annotation, originating_module
         )
 
     def _init_column_for_annotation(
         self,
         cls: Type[Any],
+        decl_scan: _ClassScanMapperConfig,
+        key: str,
         registry: _RegistryType,
         argument: _AnnotationScanType,
         originating_module: Optional[str],
@@ -749,11 +769,19 @@ class MappedColumn(
         if not self._has_nullable:
             self.column.nullable = nullable
 
-        our_type = de_optionalize_union_types(argument)
-
         find_mapped_in: Tuple[Any, ...] = ()
         our_type_is_pep593 = False
         raw_pep_593_type = None
+        raw_pep_695_type = None
+
+        our_type: Any = de_optionalize_union_types(argument)
+
+        if is_pep695(our_type):
+            raw_pep_695_type = our_type
+            our_type = de_optionalize_union_types(raw_pep_695_type.__value__)
+            our_args = get_args(raw_pep_695_type)
+            if our_args:
+                our_type = our_type[our_args]
 
         if is_pep593(our_type):
             our_type_is_pep593 = True
@@ -763,9 +791,6 @@ class MappedColumn(
             if nullable:
                 raw_pep_593_type = de_optionalize_union_types(raw_pep_593_type)
             find_mapped_in = pep_593_components[1:]
-        elif is_pep695(argument) and is_pep593(argument.__value__):
-            # do not support nested annotation inside unions ets
-            find_mapped_in = get_args(argument.__value__)[1:]
 
         use_args_from: Optional[MappedColumn[Any]]
         for elem in find_mapped_in:
@@ -776,6 +801,11 @@ class MappedColumn(
             use_args_from = None
 
         if use_args_from is not None:
+
+            self.column = use_args_from._adjust_for_existing_column(
+                decl_scan, key, self.column
+            )
+
             if (
                 not self._has_insert_default
                 and use_args_from.column.default is not None
@@ -845,16 +875,19 @@ class MappedColumn(
                         )
 
         if sqltype._isnull and not self.column.foreign_keys:
-            new_sqltype = None
-
             checks: List[Any]
             if our_type_is_pep593:
                 checks = [our_type, raw_pep_593_type]
             else:
                 checks = [our_type]
 
+            if raw_pep_695_type is not None:
+                checks.insert(0, raw_pep_695_type)
+
             for check_type in checks:
-                new_sqltype = registry._resolve_type(check_type)
+                new_sqltype = registry._resolve_type(
+                    check_type, _do_fallbacks=check_type is our_type
+                )
                 if new_sqltype is not None:
                     break
             else:
@@ -862,16 +895,41 @@ class MappedColumn(
                     isinstance(our_type, type)
                     and issubclass(our_type, TypeEngine)
                 ):
-                    raise sa_exc.ArgumentError(
+                    raise orm_exc.MappedAnnotationError(
                         f"The type provided inside the {self.column.key!r} "
                         "attribute Mapped annotation is the SQLAlchemy type "
                         f"{our_type}. Expected a Python type instead"
                     )
+                elif is_a_type(checks[0]):
+                    if len(checks) == 1:
+                        detail = (
+                            "the type object is not resolvable by the registry"
+                        )
+                    elif len(checks) == 2:
+                        detail = (
+                            f"neither '{checks[0]}' nor '{checks[1]}' "
+                            "are resolvable by the registry"
+                        )
+                    else:
+                        detail = (
+                            f"""none of {
+                                ", ".join(f"'{t}'" for t in checks)
+                            } """
+                            "are resolvable by the registry"
+                        )
+                    raise orm_exc.MappedAnnotationError(
+                        "Could not locate SQLAlchemy Core type when resolving "
+                        f"for Python type indicated by '{checks[0]}' inside "
+                        "the "
+                        f"Mapped[] annotation for the {self.column.key!r} "
+                        f"attribute; {detail}"
+                    )
                 else:
-                    raise sa_exc.ArgumentError(
-                        "Could not locate SQLAlchemy Core type for Python "
-                        f"type {our_type} inside the {self.column.key!r} "
-                        "attribute Mapped annotation"
+                    raise orm_exc.MappedAnnotationError(
+                        f"The object provided inside the {self.column.key!r} "
+                        "attribute Mapped annotation is not a Python type, "
+                        f"it's the object {argument!r}. Expected a Python "
+                        "type."
                     )
 
             self.column._set_type(new_sqltype)

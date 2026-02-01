@@ -1,5 +1,5 @@
 # orm/descriptor_props.py
-# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2026 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -98,6 +98,11 @@ class DescriptorProperty(MapperProperty[_T]):
     _links_to_entity = False
 
     descriptor: DescriptorReference[Any]
+
+    def _column_strategy_attrs(self) -> Sequence[QueryableAttribute[Any]]:
+        raise NotImplementedError(
+            "This MapperProperty does not implement column loader strategies"
+        )
 
     def get_history(
         self,
@@ -388,7 +393,9 @@ class CompositeProperty(
             self.composite_class = argument
 
         if is_dataclass(self.composite_class):
-            self._setup_for_dataclass(registry, cls, originating_module, key)
+            self._setup_for_dataclass(
+                decl_scan, registry, cls, originating_module, key
+            )
         else:
             for attr in self.attrs:
                 if (
@@ -432,6 +439,7 @@ class CompositeProperty(
     @util.preload_module("sqlalchemy.orm.decl_base")
     def _setup_for_dataclass(
         self,
+        decl_scan: _ClassScanMapperConfig,
         registry: _RegistryType,
         cls: Type[Any],
         originating_module: Optional[str],
@@ -459,6 +467,7 @@ class CompositeProperty(
 
             if isinstance(attr, MappedColumn):
                 attr.declarative_scan_for_composite(
+                    decl_scan,
                     registry,
                     cls,
                     originating_module,
@@ -499,6 +508,9 @@ class CompositeProperty(
 
             props.append(prop)
         return props
+
+    def _column_strategy_attrs(self) -> Sequence[QueryableAttribute[Any]]:
+        return self._comparable_elements
 
     @util.non_memoized_property
     @util.preload_module("orm.properties")
@@ -989,7 +1001,7 @@ class SynonymProperty(DescriptorProperty[_T]):
             if isinstance(attr, attributes.QueryableAttribute):
                 return attr.comparator
             elif isinstance(attr, SQLORMOperations):
-                # assocaition proxy comes here
+                # association proxy comes here
                 return attr
 
             raise sa_exc.InvalidRequestError(
@@ -998,6 +1010,9 @@ class SynonymProperty(DescriptorProperty[_T]):
                 % (self.parent.class_.__name__, self.name, attr)
             )
         return attr.property
+
+    def _column_strategy_attrs(self) -> Sequence[QueryableAttribute[Any]]:
+        return (getattr(self.parent.class_, self.name),)
 
     def _comparator_factory(self, mapper: Mapper[Any]) -> SQLORMOperations[_T]:
         prop = self._proxied_object

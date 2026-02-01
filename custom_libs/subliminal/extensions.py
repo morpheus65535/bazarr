@@ -64,7 +64,7 @@ class RegistrableExtensionManager(ExtensionManager):
         if ep.name in self.names():
             raise ValueError('An extension with the same name already exist')
 
-        ext = self._load_one_plugin(ep, False, (), {}, False)
+        ext = self._load_one_plugin(ep, False, (), {})
         self.extensions.append(ext)
         if self._extensions_by_name is not None:
             self._extensions_by_name[ext.name] = ext

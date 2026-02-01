@@ -10,6 +10,7 @@ from urllib.parse import urlsplit
 
 import werkzeug.test
 from click.testing import CliRunner
+from click.testing import Result
 from werkzeug.test import Client
 from werkzeug.wrappers import Request as BaseRequest
 
@@ -57,9 +58,9 @@ class EnvironBuilder(werkzeug.test.EnvironBuilder):
     ) -> None:
         assert not (base_url or subdomain or url_scheme) or (
             base_url is not None
-        ) != bool(
-            subdomain or url_scheme
-        ), 'Cannot pass "subdomain" or "url_scheme" with "base_url".'
+        ) != bool(subdomain or url_scheme), (
+            'Cannot pass "subdomain" or "url_scheme" with "base_url".'
+        )
 
         if base_url is None:
             http_host = app.config.get("SERVER_NAME") or "localhost"
@@ -79,13 +80,12 @@ class EnvironBuilder(werkzeug.test.EnvironBuilder):
             path = url.path
 
             if url.query:
-                sep = b"?" if isinstance(url.query, bytes) else "?"
-                path += sep + url.query
+                path = f"{path}?{url.query}"
 
         self.app = app
         super().__init__(path, base_url, *args, **kwargs)
 
-    def json_dumps(self, obj: t.Any, **kwargs: t.Any) -> str:  # type: ignore
+    def json_dumps(self, obj: t.Any, **kwargs: t.Any) -> str:
         """Serialize ``obj`` to a JSON-formatted string.
 
         The serialization will be configured according to the config associated
@@ -240,10 +240,10 @@ class FlaskClient(Client):
         response.json_module = self.application.json  # type: ignore[assignment]
 
         # Re-push contexts that were preserved during the request.
-        while self._new_contexts:
-            cm = self._new_contexts.pop()
+        for cm in self._new_contexts:
             self._context_stack.enter_context(cm)
 
+        self._new_contexts.clear()
         return response
 
     def __enter__(self) -> FlaskClient:
@@ -274,7 +274,7 @@ class FlaskCliRunner(CliRunner):
 
     def invoke(  # type: ignore
         self, cli: t.Any = None, args: t.Any = None, **kwargs: t.Any
-    ) -> t.Any:
+    ) -> Result:
         """Invokes a CLI command in an isolated environment. See
         :meth:`CliRunner.invoke <click.testing.CliRunner.invoke>` for
         full method documentation. See :ref:`testing-cli` for examples.

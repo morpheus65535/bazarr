@@ -1,13 +1,11 @@
 # orm/state_changes.py
-# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2026 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
 # the MIT License: https://www.opensource.org/licenses/mit-license.php
 
-"""State tracking utilities used by :class:`_orm.Session`.
-
-"""
+"""State tracking utilities used by :class:`_orm.Session`."""
 
 from __future__ import annotations
 
@@ -82,7 +80,7 @@ class _StateChange:
          indicate state should not change at the end of the method.
 
         """
-        assert prerequisite_states, "no prequisite states sent"
+        assert prerequisite_states, "no prerequisite states sent"
         has_prerequisite_states = (
             prerequisite_states is not _StateChangeStates.ANY
         )
@@ -127,7 +125,7 @@ class _StateChange:
                     )
                 else:
                     raise sa_exc.IllegalStateChangeError(
-                        f"Cant run operation '{fn.__name__}()' here; "
+                        f"Can't run operation '{fn.__name__}()' here; "
                         f"will move to state {moves_to!r} where we are "
                         f"expecting {next_state!r}",
                         code="isce",

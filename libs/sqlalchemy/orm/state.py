@@ -1,5 +1,5 @@
 # orm/state.py
-# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2026 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -510,6 +510,31 @@ class InstanceState(interfaces.InspectionAttrInfo, Generic[_O]):
     def _dispose(self) -> None:
         # used by the test suite, apparently
         self._detach()
+
+    def _force_dereference(self) -> None:
+        """Force this InstanceState to act as though its weakref has
+        been GC'ed.
+
+        this is used for test code that has to test reactions to objects
+        being GC'ed.  We can't reliably force GCs to happen under all
+        CI circumstances.
+
+        """
+
+        # if _strong_obj is set, then our object would not be getting
+        # GC'ed (at least within the scope of what we use this for in tests).
+        # so make sure this is not set
+        assert self._strong_obj is None
+
+        obj = self.obj()
+        if obj is None:
+            # object was GC'ed and we're done!  woop
+            return
+
+        del obj
+
+        self._cleanup(self.obj)
+        self.obj = lambda: None  # type: ignore
 
     def _cleanup(self, ref: weakref.ref[_O]) -> None:
         """Weakref callback cleanup.

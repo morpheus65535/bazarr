@@ -1,4 +1,5 @@
 import asyncio
+import inspect
 
 import engineio
 
@@ -373,15 +374,15 @@ class AsyncServer(base_server.BaseServer):
         context manager block are saved back to the session. Example usage::
 
             @eio.on('connect')
-            def on_connect(sid, environ):
+            async def on_connect(sid, environ):
                 username = authenticate_user(environ)
                 if not username:
                     return False
-                with eio.session(sid) as session:
+                async with eio.session(sid) as session:
                     session['username'] = username
 
             @eio.on('message')
-            def on_message(sid, msg):
+            async def on_message(sid, msg):
                 async with eio.session(sid) as session:
                     print('received message from ', session['username'])
         """
@@ -561,6 +562,9 @@ class AsyncServer(base_server.BaseServer):
         except exceptions.ConnectionRefusedError as exc:
             fail_reason = exc.error_args
             success = False
+        except ConnectionRefusedError:
+            fail_reason = {"message": "Connection refused by server"}
+            success = False
 
         if success is False:
             if self.always_connect:
@@ -634,7 +638,7 @@ class AsyncServer(base_server.BaseServer):
         # first see if we have an explicit handler for the event
         handler, args = self._get_event_handler(event, namespace, args)
         if handler:
-            if asyncio.iscoroutinefunction(handler):
+            if inspect.iscoroutinefunction(handler):
                 try:
                     try:
                         ret = await handler(*args)

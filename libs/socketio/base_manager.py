@@ -29,7 +29,13 @@ class BaseManager:
         return self.rooms.keys()
 
     def get_participants(self, namespace, room):
-        """Return an iterable with the active participants in a room."""
+        """Return an iterable with the active participants in a room.
+
+        Note that in a multi-server scenario this method only returns the
+        participants connect to the server in which the method is called. There
+        is currently no functionality to assemble a complete list of users
+        across multiple servers.
+        """
         ns = self.rooms.get(namespace, {})
         if hasattr(room, '__len__') and not isinstance(room, str):
             participants = ns[room[0]]._fwdm.copy() if room[0] in ns else {}

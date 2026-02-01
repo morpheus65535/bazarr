@@ -1,13 +1,11 @@
 # orm/base.py
-# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2026 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
 # the MIT License: https://www.opensource.org/licenses/mit-license.php
 
-"""Constants and rudimental functions used throughout the ORM.
-
-"""
+"""Constants and rudimental functions used throughout the ORM."""
 
 from __future__ import annotations
 
@@ -145,7 +143,7 @@ class PassiveFlag(FastIntFlag):
     """
 
     NO_AUTOFLUSH = 64
-    """Loader callables should disable autoflush.""",
+    """Loader callables should disable autoflush."""
 
     NO_RAISE = 128
     """Loader callables should not raise any assertions"""
@@ -435,7 +433,7 @@ def _inspect_mapped_object(instance: _T) -> Optional[InstanceState[_T]]:
 
 
 def _class_to_mapper(
-    class_or_mapper: Union[Mapper[_T], Type[_T]]
+    class_or_mapper: Union[Mapper[_T], Type[_T]],
 ) -> Mapper[_T]:
     # can't get mypy to see an overload for this
     insp = inspection.inspect(class_or_mapper, False)
@@ -447,7 +445,7 @@ def _class_to_mapper(
 
 
 def _mapper_or_none(
-    entity: Union[Type[_T], _InternalEntityType[_T]]
+    entity: Union[Type[_T], _InternalEntityType[_T]],
 ) -> Optional[Mapper[_T]]:
     """Return the :class:`_orm.Mapper` for the given class or None if the
     class is not mapped.

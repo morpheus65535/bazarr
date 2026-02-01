@@ -1,12 +1,9 @@
-import uuid
 from .hub.base_hub_connection import BaseHubConnection
 from .hub.auth_hub_connection import AuthHubConnection
 from .transport.websockets.reconnection import \
     IntervalReconnectionHandler, RawReconnectionHandler, ReconnectionType
 from .helpers import Helpers
-from .messages.invocation_message import InvocationMessage
 from .protocol.json_hub_protocol import JsonHubProtocol
-from .subject import Subject
 
 
 class HubConnectionBuilder(object):
@@ -37,6 +34,7 @@ class HubConnectionBuilder(object):
         self.enable_trace = False  # socket trace
         self.skip_negotiation = False  # By default do not skip negotiation
         self.running = False
+        self.proxies = dict()
 
     def with_url(
             self,
@@ -85,7 +83,7 @@ class HubConnectionBuilder(object):
         if hub_url is None or hub_url.strip() == "":
             raise ValueError("hub_url must be a valid url.")
 
-        if options is not None and type(options) != dict:
+        if options is not None and type(options) is not dict:
             raise TypeError(
                 "options must be a dict {0}.".format(self.options))
 
@@ -125,6 +123,28 @@ class HubConnectionBuilder(object):
         """
         Helpers.configure_logger(logging_level, handler)
         self.enable_trace = socket_trace
+        return self
+
+    def configure_proxies(
+            self,
+            proxies: dict):
+        """configures proxies
+
+        Args:
+            proxies (dict): {
+              "http"  : "http://host:port",
+              "https" : "https://host:port",
+              "ftp"   : "ftp://port:port"
+            }
+
+        Returns:
+            [HubConnectionBuilder]: Instance hub with proxies configured
+        """
+
+        if "http" not in proxies.keys() or "https" not in proxies.keys():
+            raise ValueError("Only http and https keys are allowed")
+
+        self.proxies = proxies
         return self
 
     def with_hub_protocol(self, protocol):
@@ -182,6 +202,7 @@ class HubConnectionBuilder(object):
                 keep_alive_interval=self.keep_alive_interval,
                 reconnection_handler=self.reconnection_handler,
                 verify_ssl=self.verify_ssl,
+                proxies=self.proxies,
                 skip_negotiation=self.skip_negotiation,
                 enable_trace=self.enable_trace)\
             if self.has_auth_configured else\
@@ -192,9 +213,10 @@ class HubConnectionBuilder(object):
                 reconnection_handler=self.reconnection_handler,
                 headers=self.headers,
                 verify_ssl=self.verify_ssl,
+                proxies=self.proxies,
                 skip_negotiation=self.skip_negotiation,
                 enable_trace=self.enable_trace)
-            
+
     def with_automatic_reconnect(self, data: dict):
         """Configures automatic reconnection
             https://devblogs.microsoft.com/aspnet/asp-net-core-updates-in-net-core-3-0-preview-4/

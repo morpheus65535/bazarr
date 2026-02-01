@@ -1,5 +1,6 @@
 import re
 import typing
+from pathlib import Path
 
 from rebulk.match import Match
 
@@ -97,3 +98,10 @@ def blank_release_names(value: str):
         match = release_name_re.search(value, match.end('release'))
 
     return result
+
+
+def blank_base_name_and_extension(value: str):
+    p = Path(value)
+    stems = p.stem.split('.')
+
+    return '.'.join(stems[1:])

@@ -11,7 +11,6 @@ from typing import Any
 from typing import Callable
 from typing import cast
 from typing import Collection
-from typing import ContextManager
 from typing import Dict
 from typing import Iterable
 from typing import Iterator
@@ -22,17 +21,17 @@ from typing import Tuple
 from typing import TYPE_CHECKING
 from typing import Union
 
-from sqlalchemy import Column
 from sqlalchemy import literal_column
+from sqlalchemy import select
 from sqlalchemy.engine import Engine
 from sqlalchemy.engine import url as sqla_url
 from sqlalchemy.engine.strategies import MockEngineStrategy
+from typing_extensions import ContextManager
 
 from .. import ddl
 from .. import util
 from ..util import sqla_compat
 from ..util.compat import EncodedIO
-from ..util.sqla_compat import _select
 
 if TYPE_CHECKING:
     from sqlalchemy.engine import Dialect
@@ -175,7 +174,11 @@ class MigrationContext:
                 opts["output_encoding"],
             )
         else:
-            self.output_buffer = opts.get("output_buffer", sys.stdout)
+            self.output_buffer = opts.get(
+                "output_buffer", sys.stdout
+            )  # type:ignore[assignment]  # noqa: E501
+
+        self.transactional_ddl = transactional_ddl
 
         self._user_compare_type = opts.get("compare_type", True)
         self._user_compare_server_default = opts.get(
@@ -368,7 +371,7 @@ class MigrationContext:
 
     def begin_transaction(
         self, _per_migration: bool = False
-    ) -> Union[_ProxyTransaction, ContextManager[None]]:
+    ) -> Union[_ProxyTransaction, ContextManager[None, Optional[bool]]]:
         """Begin a logical transaction for migration operations.
 
         This method is used within an ``env.py`` script to demarcate where
@@ -534,7 +537,7 @@ class MigrationContext:
         return tuple(
             row[0]
             for row in self.connection.execute(
-                _select(self._version.c.version_num)
+                select(self._version.c.version_num)
             )
         )
 
@@ -701,54 +704,6 @@ class MigrationContext:
             return self.environment_context.config
         else:
             return None
-
-    def _compare_type(
-        self, inspector_column: Column[Any], metadata_column: Column
-    ) -> bool:
-        if self._user_compare_type is False:
-            return False
-
-        if callable(self._user_compare_type):
-            user_value = self._user_compare_type(
-                self,
-                inspector_column,
-                metadata_column,
-                inspector_column.type,
-                metadata_column.type,
-            )
-            if user_value is not None:
-                return user_value
-
-        return self.impl.compare_type(inspector_column, metadata_column)
-
-    def _compare_server_default(
-        self,
-        inspector_column: Column[Any],
-        metadata_column: Column[Any],
-        rendered_metadata_default: Optional[str],
-        rendered_column_default: Optional[str],
-    ) -> bool:
-        if self._user_compare_server_default is False:
-            return False
-
-        if callable(self._user_compare_server_default):
-            user_value = self._user_compare_server_default(
-                self,
-                inspector_column,
-                metadata_column,
-                rendered_column_default,
-                metadata_column.server_default,
-                rendered_metadata_default,
-            )
-            if user_value is not None:
-                return user_value
-
-        return self.impl.compare_server_default(
-            inspector_column,
-            metadata_column,
-            rendered_metadata_default,
-            rendered_column_default,
-        )
 
 
 class HeadMaintainer:

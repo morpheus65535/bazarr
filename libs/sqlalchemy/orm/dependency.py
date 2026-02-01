@@ -1,5 +1,5 @@
 # orm/dependency.py
-# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2026 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -7,9 +7,7 @@
 # mypy: ignore-errors
 
 
-"""Relationship dependencies.
-
-"""
+"""Relationship dependencies."""
 
 from __future__ import annotations
 
@@ -1054,7 +1052,7 @@ class ManyToManyDP(DependencyProcessor):
             # so that prop_has_changes() returns True
             for state in states:
                 if self._pks_changed(uowcommit, state):
-                    history = uowcommit.get_attribute_history(
+                    uowcommit.get_attribute_history(
                         state, self.key, attributes.PASSIVE_OFF
                     )
 

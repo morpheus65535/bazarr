@@ -11,22 +11,22 @@
 #  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #  License for the specific language governing permissions and limitations
 #  under the License.
+
+from collections.abc import Iterable
+from typing import Any
+
 from stevedore.example import base
 
 
 class Simple(base.FormatterBase):
     """A very basic formatter."""
 
-    def format(self, data):
+    def format(self, data: dict[str, Any]) -> Iterable[str]:
         """Format the data and return unicode text.
 
-        :param data: A dictionary with string keys and simple types as
-                     values.
-        :type data: dict(str:?)
+        :param data: A dictionary with string keys and simple types as values.
+        :returns: Iterable producing the formatted text.
         """
         for name, value in sorted(data.items()):
-            line = '{name} = {value}\n'.format(
-                name=name,
-                value=value,
-            )
+            line = f'{name} = {value}\n'
             yield line

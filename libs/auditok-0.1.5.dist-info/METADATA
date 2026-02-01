@@ -1,4 +1,4 @@
-Metadata-Version: 2.1
+Metadata-Version: 2.4
 Name: auditok
 Version: 0.1.5
 Summary: A module for Audio/Acoustic Activity Detection
@@ -26,6 +26,17 @@ Classifier: Topic :: Scientific/Engineering :: Information Analysis
 Requires: PyAudio
 Provides: auditok
 License-File: LICENSE
+Dynamic: author
+Dynamic: author-email
+Dynamic: classifier
+Dynamic: description
+Dynamic: home-page
+Dynamic: license
+Dynamic: license-file
+Dynamic: platform
+Dynamic: provides
+Dynamic: requires
+Dynamic: summary
 
 auditok, an AUDIo TOKenization tool
 ===================================

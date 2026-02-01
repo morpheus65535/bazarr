@@ -1,4 +1,4 @@
-Metadata-Version: 2.1
+Metadata-Version: 2.4
 Name: html5lib
 Version: 1.1
 Summary: HTML parser based on the WHATWG HTML specification
@@ -25,18 +25,29 @@ Classifier: Topic :: Text Processing :: Markup :: HTML
 Requires-Python: >=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*
 License-File: LICENSE
 License-File: AUTHORS.rst
-Requires-Dist: six >=1.9
+Requires-Dist: six>=1.9
 Requires-Dist: webencodings
-Provides-Extra: all
-Requires-Dist: genshi ; extra == 'all'
-Requires-Dist: chardet >=2.2 ; extra == 'all'
-Requires-Dist: lxml ; (platform_python_implementation == 'CPython') and extra == 'all'
-Provides-Extra: chardet
-Requires-Dist: chardet >=2.2 ; extra == 'chardet'
-Provides-Extra: genshi
-Requires-Dist: genshi ; extra == 'genshi'
 Provides-Extra: lxml
-Requires-Dist: lxml ; (platform_python_implementation == 'CPython') and extra == 'lxml'
+Requires-Dist: lxml; platform_python_implementation == "CPython" and extra == "lxml"
+Provides-Extra: genshi
+Requires-Dist: genshi; extra == "genshi"
+Provides-Extra: chardet
+Requires-Dist: chardet>=2.2; extra == "chardet"
+Provides-Extra: all
+Requires-Dist: genshi; extra == "all"
+Requires-Dist: chardet>=2.2; extra == "all"
+Requires-Dist: lxml; platform_python_implementation == "CPython" and extra == "all"
+Dynamic: classifier
+Dynamic: description
+Dynamic: home-page
+Dynamic: license
+Dynamic: license-file
+Dynamic: maintainer
+Dynamic: maintainer-email
+Dynamic: provides-extra
+Dynamic: requires-dist
+Dynamic: requires-python
+Dynamic: summary
 
 html5lib
 ========

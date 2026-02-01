@@ -2,7 +2,6 @@
 
 import os
 import datetime
-import pytz
 import logging
 import subliminal_patch
 import pretty
@@ -12,6 +11,7 @@ import requests
 import traceback
 import re
 
+from zoneinfo import ZoneInfo
 from requests import ConnectionError
 from subzero.language import Language
 from subliminal_patch.exceptions import (TooManyRequests, APIThrottled, ParseResponseError, IPAddressBlocked,
@@ -46,13 +46,13 @@ def time_until_midnight(timezone):
 # Titulky resets its download limits at the start of a new day from its perspective - the Europe/Prague timezone
 # Needs to convert to offset-naive dt
 def titulky_limit_reset_timedelta():
-    return time_until_midnight(timezone=pytz.timezone('Europe/Prague'))
+    return time_until_midnight(timezone=datetime.datetime.now(ZoneInfo('Europe/Prague')))
 
 
 # LegendasDivx reset its searches limit at approximately midnight, Lisbon time, every day. We wait 1 more hours just
 # to be sure.
 def legendasdivx_limit_reset_timedelta():
-    return time_until_midnight(timezone=pytz.timezone('Europe/Lisbon')) + datetime.timedelta(minutes=60)
+    return time_until_midnight(timezone=datetime.datetime.now(ZoneInfo('Europe/Lisbon'))) + datetime.timedelta(minutes=60)
 
 
 VALID_THROTTLE_EXCEPTIONS = (TooManyRequests, DownloadLimitExceeded, ServiceUnavailable, APIThrottled,

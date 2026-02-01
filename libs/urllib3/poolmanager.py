@@ -203,6 +203,20 @@ class PoolManager(RequestMethods):
         **connection_pool_kw: typing.Any,
     ) -> None:
         super().__init__(headers)
+        # PoolManager handles redirects itself in PoolManager.urlopen().
+        # It always passes redirect=False to the underlying connection pool to
+        # suppress per-pool redirect handling. If the user supplied a non-Retry
+        # value (int/bool/etc) for retries and we let the pool normalize it
+        # while redirect=False, the resulting Retry object would have redirect
+        # handling disabled, which can interfere with PoolManager's own
+        # redirect logic. Normalize here so redirects remain governed solely by
+        # PoolManager logic.
+        if "retries" in connection_pool_kw:
+            retries = connection_pool_kw["retries"]
+            if not isinstance(retries, Retry):
+                retries = Retry.from_int(retries)
+                connection_pool_kw = connection_pool_kw.copy()
+                connection_pool_kw["retries"] = retries
         self.connection_pool_kw = connection_pool_kw
 
         self.pools: RecentlyUsedContainer[PoolKey, HTTPConnectionPool]
@@ -456,7 +470,7 @@ class PoolManager(RequestMethods):
             kw["body"] = None
             kw["headers"] = HTTPHeaderDict(kw["headers"])._prepare_for_method_change()
 
-        retries = kw.get("retries")
+        retries = kw.get("retries", response.retries)
         if not isinstance(retries, Retry):
             retries = Retry.from_int(retries, redirect=redirect)
 

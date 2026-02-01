@@ -6,7 +6,7 @@
 # See https://Python-Markdown.github.io/extensions/wikilinks
 # for documentation.
 
-# Original code Copyright [Waylan Limberg](http://achinghead.com/).
+# Original code Copyright [Waylan Limberg](https://github.com/waylan).
 
 # All changes Copyright The Python Markdown Project
 

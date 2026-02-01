@@ -1,4 +1,4 @@
-Metadata-Version: 2.1
+Metadata-Version: 2.4
 Name: commonmark
 Version: 0.9.1
 Summary: Python parser for the CommonMark Markdown spec
@@ -26,10 +26,24 @@ Classifier: Topic :: Text Processing :: Markup
 Classifier: Topic :: Utilities
 Description-Content-Type: text/x-rst
 License-File: LICENSE
-Requires-Dist: future >=0.14.0 ; python_version < "3"
+Requires-Dist: future>=0.14.0; python_version < "3"
 Provides-Extra: test
-Requires-Dist: flake8 ==3.7.8 ; extra == 'test'
-Requires-Dist: hypothesis ==3.55.3 ; extra == 'test'
+Requires-Dist: flake8==3.7.8; extra == "test"
+Requires-Dist: hypothesis==3.55.3; extra == "test"
+Dynamic: author
+Dynamic: author-email
+Dynamic: classifier
+Dynamic: description
+Dynamic: description-content-type
+Dynamic: home-page
+Dynamic: keywords
+Dynamic: license
+Dynamic: license-file
+Dynamic: maintainer
+Dynamic: maintainer-email
+Dynamic: provides-extra
+Dynamic: requires-dist
+Dynamic: summary
 
 commonmark.py
 =============

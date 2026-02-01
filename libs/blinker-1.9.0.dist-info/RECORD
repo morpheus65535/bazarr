@@ -1,0 +1,10 @@
+blinker-1.9.0.dist-info/INSTALLER,sha256=zuuue4knoyJ-UwPPXg8fezS7VCrXJQrAP7zeNuwvFQg,4
+blinker-1.9.0.dist-info/METADATA,sha256=Hm3ML4yc6CZezNGpUtlvXKx1rmrsvXD4bcPrQ9B5AeI,1659
+blinker-1.9.0.dist-info/RECORD,,
+blinker-1.9.0.dist-info/REQUESTED,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
+blinker-1.9.0.dist-info/WHEEL,sha256=G2gURzTEtmeR8nrdXUJfNiB3VYVxigPQ-bEQujpNiNs,82
+blinker-1.9.0.dist-info/licenses/LICENSE.txt,sha256=nrc6HzhZekqhcCXSrhvjg5Ykx5XphdTw6Xac4p-spGc,1054
+blinker/__init__.py,sha256=I2EdZqpy4LyjX17Hn1yzJGWCjeLaVaPzsMgHkLfj_cQ,317
+blinker/_utilities.py,sha256=0J7eeXXTUx0Ivf8asfpx0ycVkp0Eqfqnj117x2mYX9E,1675
+blinker/base.py,sha256=QpDuvXXcwJF49lUBcH5BiST46Rz9wSG7VW_p7N_027M,19132
+blinker/py.typed,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0

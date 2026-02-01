@@ -1,4 +1,6 @@
 import asyncio
+from http.cookies import SimpleCookie
+import inspect
 import signal
 import ssl
 import threading
@@ -126,7 +128,6 @@ class AsyncClient(base_client.BaseClient):
             if not transports:
                 raise ValueError('No valid transports provided')
         self.transports = transports or valid_transports
-        self.queue = self.create_queue()
         return await getattr(self, '_connect_' + self.transports[0])(
             url, headers or {}, engineio_path)
 
@@ -199,11 +200,15 @@ class AsyncClient(base_client.BaseClient):
         """
         return await asyncio.sleep(seconds)
 
-    def create_queue(self):
+    def create_queue(self, *args, **kwargs):
         """Create a queue object."""
-        q = asyncio.Queue()
-        q.Empty = asyncio.QueueEmpty
-        return q
+        return asyncio.Queue(*args, **kwargs)
+
+    def get_queue_empty_exception(self):
+        """Return the queue empty exception raised by queues created by the
+        ``create_queue()`` method.
+        """
+        return asyncio.QueueEmpty
 
     def create_event(self):
         """Create an event object."""
@@ -211,6 +216,12 @@ class AsyncClient(base_client.BaseClient):
 
     async def _reset(self):
         super()._reset()
+        while True:  # pragma: no cover
+            try:
+                self.queue.get_nowait()
+                self.queue.task_done()
+            except self.queue_empty:
+                break
         if not self.external_http:  # pragma: no cover
             if self.http and not self.http.closed:
                 await self.http.close()
@@ -310,16 +321,16 @@ class AsyncClient(base_client.BaseClient):
 
         # extract any new cookies passed in a header so that they can also be
         # sent the the WebSocket route
-        cookies = {}
         for header, value in headers.items():
             if header.lower() == 'cookie':
-                cookies = dict(
-                    [cookie.split('=', 1) for cookie in value.split('; ')])
+                ck = SimpleCookie(headers[header])
+                self.http.cookie_jar.update_cookies(
+                    {k: m.value for k, m in ck.items()})
                 del headers[header]
                 break
-        self.http.cookie_jar.update_cookies(cookies)
 
-        extra_options = {'timeout': self.request_timeout}
+        extra_options = {
+            'timeout': aiohttp.ClientWSTimeout(ws_close=self.request_timeout)}
         if not self.ssl_verify:
             ssl_context = ssl.create_default_context()
             ssl_context.check_hostname = False
@@ -459,7 +470,7 @@ class AsyncClient(base_client.BaseClient):
         run_async = kwargs.pop('run_async', False)
         ret = None
         if event in self.handlers:
-            if asyncio.iscoroutinefunction(self.handlers[event]) is True:
+            if inspect.iscoroutinefunction(self.handlers[event]) is True:
                 if run_async:
                     task = self.start_background_task(self.handlers[event],
                                                       *args)
@@ -624,7 +635,7 @@ class AsyncClient(base_client.BaseClient):
             packets = None
             try:
                 packets = [await asyncio.wait_for(self.queue.get(), timeout)]
-            except (self.queue.Empty, asyncio.TimeoutError):
+            except (self.queue_empty, asyncio.TimeoutError):
                 self.logger.error('packet queue is empty, aborting')
                 break
             except asyncio.CancelledError:  # pragma: no cover
@@ -636,7 +647,7 @@ class AsyncClient(base_client.BaseClient):
                 while True:
                     try:
                         packets.append(self.queue.get_nowait())
-                    except self.queue.Empty:
+                    except self.queue_empty:
                         break
                     if packets[-1] is None:
                         packets = packets[:-1]

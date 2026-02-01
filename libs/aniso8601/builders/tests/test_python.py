@@ -197,17 +197,6 @@ class TestPythonTimeBuilder(unittest.TestCase):
             # Make sure we shift in zeros
             (
                 {
-                    "YYYY": "1",
-                    "MM": None,
-                    "DD": None,
-                    "Www": None,
-                    "D": None,
-                    "DDD": None,
-                },
-                datetime.date(1000, 1, 1),
-            ),
-            (
-                {
                     "YYYY": "12",
                     "MM": None,
                     "DD": None,
@@ -216,17 +205,6 @@ class TestPythonTimeBuilder(unittest.TestCase):
                     "DDD": None,
                 },
                 datetime.date(1200, 1, 1),
-            ),
-            (
-                {
-                    "YYYY": "123",
-                    "MM": None,
-                    "DD": None,
-                    "Www": None,
-                    "D": None,
-                    "DDD": None,
-                },
-                datetime.date(1230, 1, 1),
             ),
         )
 

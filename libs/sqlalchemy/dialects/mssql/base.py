@@ -1,5 +1,5 @@
 # dialects/mssql/base.py
-# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2026 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -984,6 +984,7 @@ import codecs
 import datetime
 import operator
 import re
+from typing import Any
 from typing import overload
 from typing import TYPE_CHECKING
 from uuid import UUID as _python_UUID
@@ -1034,6 +1035,7 @@ from ...util import update_wrapper
 from ...util.typing import Literal
 
 if TYPE_CHECKING:
+    from ...sql.ddl import DropIndex
     from ...sql.dml import DMLState
     from ...sql.selectable import TableClause
 
@@ -2064,8 +2066,8 @@ class MSSQLCompiler(compiler.SQLCompiler):
     def visit_aggregate_strings_func(self, fn, **kw):
         expr = fn.clauses.clauses[0]._compiler_dispatch(self, **kw)
         kw["literal_execute"] = True
-        delimeter = fn.clauses.clauses[1]._compiler_dispatch(self, **kw)
-        return f"string_agg({expr}, {delimeter})"
+        delimiter = fn.clauses.clauses[1]._compiler_dispatch(self, **kw)
+        return f"string_agg({expr}, {delimiter})"
 
     def visit_concat_op_expression_clauselist(
         self, clauselist, operator, **kw
@@ -2700,11 +2702,13 @@ class MSDDLCompiler(compiler.DDLCompiler):
 
         return text
 
-    def visit_drop_index(self, drop, **kw):
-        return "\nDROP INDEX %s ON %s" % (
-            self._prepared_index_name(drop.element, include_schema=False),
-            self.preparer.format_table(drop.element.table),
+    def visit_drop_index(self, drop: DropIndex, **kw: Any) -> str:
+        index_name = self._prepared_index_name(
+            drop.element, include_schema=False
         )
+        table_name = self.preparer.format_table(drop.element.table)
+        if_exists = " IF EXISTS" if drop.if_exists else ""
+        return f"\nDROP INDEX{if_exists} {index_name} ON {table_name}"
 
     def visit_primary_key_constraint(self, constraint, **kw):
         if len(constraint) == 0:
@@ -3503,6 +3507,9 @@ join sys.schemas as sch on
 where
     tab.name = :tabname
     and sch.name = :schname
+order by
+    ind_col.index_id,
+    ind_col.key_ordinal
             """
             )
             .bindparams(
@@ -3632,27 +3639,36 @@ where
     @reflection.cache
     @_db_plus_owner
     def get_columns(self, connection, tablename, dbname, owner, schema, **kw):
+        sys_columns = ischema.sys_columns
+        sys_types = ischema.sys_types
+        sys_default_constraints = ischema.sys_default_constraints
+        computed_cols = ischema.computed_columns
+        identity_cols = ischema.identity_columns
+        extended_properties = ischema.extended_properties
+
+        # to access sys tables, need an object_id.
+        # object_id() can normally match to the unquoted name even if it
+        # has special characters. however it also accepts quoted names,
+        # which means for the special case that the name itself has
+        # "quotes" (e.g. brackets for SQL Server) we need to "quote" (e.g.
+        # bracket) that name anyway.  Fixed as part of #12654
+
         is_temp_table = tablename.startswith("#")
         if is_temp_table:
             owner, tablename = self._get_internal_temp_table_name(
                 connection, tablename
             )
 
-            columns = ischema.mssql_temp_table_columns
-        else:
-            columns = ischema.columns
-
-        computed_cols = ischema.computed_columns
-        identity_cols = ischema.identity_columns
+        object_id_tokens = [self.identifier_preparer.quote(tablename)]
         if owner:
-            whereclause = sql.and_(
-                columns.c.table_name == tablename,
-                columns.c.table_schema == owner,
-            )
-            full_name = columns.c.table_schema + "." + columns.c.table_name
-        else:
-            whereclause = columns.c.table_name == tablename
-            full_name = columns.c.table_name
+            object_id_tokens.insert(0, self.identifier_preparer.quote(owner))
+
+        if is_temp_table:
+            object_id_tokens.insert(0, "tempdb")
+
+        object_id = func.object_id(".".join(object_id_tokens))
+
+        whereclause = sys_columns.c.object_id == object_id
 
         if self._supports_nvarchar_max:
             computed_definition = computed_cols.c.definition
@@ -3662,92 +3678,112 @@ where
                 computed_cols.c.definition, NVARCHAR(4000)
             )
 
-        object_id = func.object_id(full_name)
-
         s = (
             sql.select(
-                columns.c.column_name,
-                columns.c.data_type,
-                columns.c.is_nullable,
-                columns.c.character_maximum_length,
-                columns.c.numeric_precision,
-                columns.c.numeric_scale,
-                columns.c.column_default,
-                columns.c.collation_name,
+                sys_columns.c.name,
+                sys_types.c.name,
+                sys_columns.c.is_nullable,
+                sys_columns.c.max_length,
+                sys_columns.c.precision,
+                sys_columns.c.scale,
+                sys_default_constraints.c.definition,
+                sys_columns.c.collation_name,
                 computed_definition,
                 computed_cols.c.is_persisted,
                 identity_cols.c.is_identity,
                 identity_cols.c.seed_value,
                 identity_cols.c.increment_value,
-                ischema.extended_properties.c.value.label("comment"),
+                extended_properties.c.value.label("comment"),
             )
-            .select_from(columns)
+            .select_from(sys_columns)
+            .join(
+                sys_types,
+                onclause=sys_columns.c.user_type_id
+                == sys_types.c.user_type_id,
+            )
+            .outerjoin(
+                sys_default_constraints,
+                sql.and_(
+                    sys_default_constraints.c.object_id
+                    == sys_columns.c.default_object_id,
+                    sys_default_constraints.c.parent_column_id
+                    == sys_columns.c.column_id,
+                ),
+            )
             .outerjoin(
                 computed_cols,
                 onclause=sql.and_(
-                    computed_cols.c.object_id == object_id,
-                    computed_cols.c.name
-                    == columns.c.column_name.collate("DATABASE_DEFAULT"),
+                    computed_cols.c.object_id == sys_columns.c.object_id,
+                    computed_cols.c.column_id == sys_columns.c.column_id,
                 ),
             )
             .outerjoin(
                 identity_cols,
                 onclause=sql.and_(
-                    identity_cols.c.object_id == object_id,
-                    identity_cols.c.name
-                    == columns.c.column_name.collate("DATABASE_DEFAULT"),
+                    identity_cols.c.object_id == sys_columns.c.object_id,
+                    identity_cols.c.column_id == sys_columns.c.column_id,
                 ),
             )
             .outerjoin(
-                ischema.extended_properties,
+                extended_properties,
                 onclause=sql.and_(
-                    ischema.extended_properties.c["class"] == 1,
-                    ischema.extended_properties.c.major_id == object_id,
-                    ischema.extended_properties.c.minor_id
-                    == columns.c.ordinal_position,
-                    ischema.extended_properties.c.name == "MS_Description",
+                    extended_properties.c["class"] == 1,
+                    extended_properties.c.name == "MS_Description",
+                    sys_columns.c.object_id == extended_properties.c.major_id,
+                    sys_columns.c.column_id == extended_properties.c.minor_id,
                 ),
             )
             .where(whereclause)
-            .order_by(columns.c.ordinal_position)
+            .order_by(sys_columns.c.column_id)
         )
 
-        c = connection.execution_options(future_result=True).execute(s)
+        if is_temp_table:
+            exec_opts = {"schema_translate_map": {"sys": "tempdb.sys"}}
+        else:
+            exec_opts = {"schema_translate_map": {}}
+        c = connection.execution_options(**exec_opts).execute(s)
 
         cols = []
         for row in c.mappings():
-            name = row[columns.c.column_name]
-            type_ = row[columns.c.data_type]
-            nullable = row[columns.c.is_nullable] == "YES"
-            charlen = row[columns.c.character_maximum_length]
-            numericprec = row[columns.c.numeric_precision]
-            numericscale = row[columns.c.numeric_scale]
-            default = row[columns.c.column_default]
-            collation = row[columns.c.collation_name]
+            name = row[sys_columns.c.name]
+            type_ = row[sys_types.c.name]
+            nullable = row[sys_columns.c.is_nullable] == 1
+            maxlen = row[sys_columns.c.max_length]
+            numericprec = row[sys_columns.c.precision]
+            numericscale = row[sys_columns.c.scale]
+            default = row[sys_default_constraints.c.definition]
+            collation = row[sys_columns.c.collation_name]
             definition = row[computed_definition]
             is_persisted = row[computed_cols.c.is_persisted]
             is_identity = row[identity_cols.c.is_identity]
             identity_start = row[identity_cols.c.seed_value]
             identity_increment = row[identity_cols.c.increment_value]
-            comment = row[ischema.extended_properties.c.value]
+            comment = row[extended_properties.c.value]
 
             coltype = self.ischema_names.get(type_, None)
 
             kwargs = {}
+
             if coltype in (
-                MSString,
-                MSChar,
-                MSNVarchar,
-                MSNChar,
-                MSText,
-                MSNText,
                 MSBinary,
                 MSVarBinary,
                 sqltypes.LargeBinary,
             ):
-                if charlen == -1:
-                    charlen = None
-                kwargs["length"] = charlen
+                kwargs["length"] = maxlen if maxlen != -1 else None
+            elif coltype in (
+                MSString,
+                MSChar,
+                MSText,
+            ):
+                kwargs["length"] = maxlen if maxlen != -1 else None
+                if collation:
+                    kwargs["collation"] = collation
+            elif coltype in (
+                MSNVarchar,
+                MSNChar,
+                MSNText,
+            ):
+                kwargs["length"] = maxlen // 2 if maxlen != -1 else None
                 if collation:
                     kwargs["collation"] = collation
 
@@ -3969,6 +4005,8 @@ index_info AS (
             index_info.index_schema = fk_info.unique_constraint_schema
             AND index_info.index_name = fk_info.unique_constraint_name
             AND index_info.ordinal_position = fk_info.ordinal_position
+            AND NOT (index_info.table_schema = fk_info.table_schema
+                     AND index_info.table_name = fk_info.table_name)
 
     ORDER BY fk_info.constraint_schema, fk_info.constraint_name,
         fk_info.ordinal_position
@@ -3991,10 +4029,8 @@ index_info AS (
         )
 
         # group rows by constraint ID, to handle multi-column FKs
-        fkeys = []
-
-        def fkey_rec():
-            return {
+        fkeys = util.defaultdict(
+            lambda: {
                 "name": None,
                 "constrained_columns": [],
                 "referred_schema": None,
@@ -4002,8 +4038,7 @@ index_info AS (
                 "referred_columns": [],
                 "options": {},
             }
-
-        fkeys = util.defaultdict(fkey_rec)
+        )
 
         for r in connection.execute(s).all():
             (

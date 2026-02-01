@@ -1,5 +1,5 @@
-Metadata-Version: 2.1
-Name: json-tricks
+Metadata-Version: 2.4
+Name: json_tricks
 Version: 3.17.3
 Summary: Extra features for Python's JSON: comments, order, numpy, pandas, datetimes, and many more! Simple but customizable.
 Home-page: https://github.com/mverleg/pyjson_tricks
@@ -29,6 +29,17 @@ Classifier: Programming Language :: Python :: Implementation :: PyPy
 Classifier: Topic :: Software Development :: Libraries :: Python Modules
 Description-Content-Type: text/markdown
 License-File: LICENSE.txt
+Dynamic: author
+Dynamic: author-email
+Dynamic: classifier
+Dynamic: description
+Dynamic: description-content-type
+Dynamic: home-page
+Dynamic: keywords
+Dynamic: license
+Dynamic: license-file
+Dynamic: maintainer
+Dynamic: summary
 
 # JSON tricks (python)
 

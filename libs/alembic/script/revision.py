@@ -45,7 +45,7 @@ _T = TypeVar("_T")
 _TR = TypeVar("_TR", bound=Optional[_RevisionOrStr])
 
 _relative_destination = re.compile(r"(?:(.+?)@)?(\w+)?((?:\+|-)\d+)")
-_revision_illegal_chars = ["@", "-", "+"]
+_revision_illegal_chars = ["@", "-", "+", ":"]
 
 
 class _CollectRevisionsProtocol(Protocol):
@@ -1708,7 +1708,7 @@ def tuple_rev_as_scalar(rev: None) -> None: ...
 
 @overload
 def tuple_rev_as_scalar(
-    rev: Union[Tuple[_T, ...], List[_T]]
+    rev: Union[Tuple[_T, ...], List[_T]],
 ) -> Union[_T, Tuple[_T, ...], List[_T]]: ...
 
 

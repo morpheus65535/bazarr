@@ -1,9 +1,9 @@
 emoji-2.15.0.dist-info/INSTALLER,sha256=zuuue4knoyJ-UwPPXg8fezS7VCrXJQrAP7zeNuwvFQg,4
-emoji-2.15.0.dist-info/LICENSE.txt,sha256=qr2kOJIUWxqqcdUw68m401hiYjUFScW5KezCFDn8JJI,1483
-emoji-2.15.0.dist-info/METADATA,sha256=kyyn-n5Ki1oYQmsl13A4FLBusuzOD9tNUxoRXNzXu8I,5663
+emoji-2.15.0.dist-info/METADATA,sha256=-CdcS3VOA-TjSZn5nRegc-V92kGrFtCvJSbjLFQ2kTY,5682
 emoji-2.15.0.dist-info/RECORD,,
 emoji-2.15.0.dist-info/REQUESTED,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
-emoji-2.15.0.dist-info/WHEEL,sha256=iAkIy5fosb7FzIOwONchHf19Qu7_1wCWyFNR5gu9nU0,91
+emoji-2.15.0.dist-info/WHEEL,sha256=wUyA8OaulRlbfwMtmQsvNngGrxQHAvkKcvRmdizlJi0,92
+emoji-2.15.0.dist-info/licenses/LICENSE.txt,sha256=qr2kOJIUWxqqcdUw68m401hiYjUFScW5KezCFDn8JJI,1483
 emoji-2.15.0.dist-info/top_level.txt,sha256=UxKwtYLYBTA8ldfisbxvrXDgSz3eVBOq51i2h2ewato,6
 emoji/__init__.py,sha256=lre9bUqWcCnm3C_vrgoL1Gb3XgFq21AzfR0pFJMx8Bg,2147
 emoji/core.py,sha256=brUYVrp8gvERytZjNA9_5haRjs-XibB7Kl1WtTZWKYI,15677

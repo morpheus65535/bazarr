@@ -62,6 +62,10 @@ def get_client(obj):
             credentials.token,
             role=obj.VAULT_AUTH_ROLE_FOR_DYNACONF,
         )
+
+    if obj.VAULT_TOKEN_RENEW_FOR_DYNACONF:
+        client.auth.token.renew_self()
+
     assert client.is_authenticated(), (
         "Vault authentication error: is VAULT_TOKEN_FOR_DYNACONF or "
         "VAULT_ROLE_ID_FOR_DYNACONF defined?"

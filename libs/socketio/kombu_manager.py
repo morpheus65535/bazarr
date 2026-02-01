@@ -1,4 +1,3 @@
-import pickle
 import time
 import uuid
 
@@ -7,6 +6,7 @@ try:
 except ImportError:
     kombu = None
 
+from engineio import json
 from .pubsub_manager import PubSubManager
 
 
@@ -102,7 +102,7 @@ class KombuManager(PubSubManager):  # pragma: no cover
             try:
                 producer_publish = self._producer_publish(
                     self.publisher_connection)
-                producer_publish(pickle.dumps(data))
+                producer_publish(json.dumps(data))
                 break
             except (OSError, kombu.exceptions.KombuError):
                 if retry:
@@ -115,10 +115,10 @@ class KombuManager(PubSubManager):  # pragma: no cover
                     break
 
     def _listen(self):
-        reader_queue = self._queue()
         retry_sleep = 1
         while True:
             try:
+                reader_queue = self._queue()
                 with self._connection() as connection:
                     with connection.SimpleQueue(reader_queue) as queue:
                         while True:

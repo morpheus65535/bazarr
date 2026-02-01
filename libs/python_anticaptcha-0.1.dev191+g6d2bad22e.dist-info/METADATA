@@ -1,4 +1,4 @@
-Metadata-Version: 2.1
+Metadata-Version: 2.4
 Name: python-anticaptcha
 Version: 0.1.dev191+g6d2bad22e
 Summary: Client library for solve captchas with Anticaptcha.com support.
@@ -23,12 +23,23 @@ Classifier: Programming Language :: Python :: 3.10
 License-File: LICENSE.md
 Requires-Dist: requests
 Requires-Dist: six
-Provides-Extra: docs
-Requires-Dist: sphinx ; extra == 'docs'
 Provides-Extra: tests
-Requires-Dist: retry ; extra == 'tests'
-Requires-Dist: nose2 ; extra == 'tests'
-Requires-Dist: selenium ; extra == 'tests'
+Requires-Dist: retry; extra == "tests"
+Requires-Dist: nose2; extra == "tests"
+Requires-Dist: selenium; extra == "tests"
+Provides-Extra: docs
+Requires-Dist: sphinx; extra == "docs"
+Dynamic: author
+Dynamic: author-email
+Dynamic: classifier
+Dynamic: description
+Dynamic: home-page
+Dynamic: keywords
+Dynamic: license
+Dynamic: license-file
+Dynamic: provides-extra
+Dynamic: requires-dist
+Dynamic: summary
 
 python-anticaptcha
 ==================

@@ -72,11 +72,11 @@ class Packet:
             else:
                 self.packet_type = int(encoded_packet[0])
                 try:
-                    self.data = self.json.loads(encoded_packet[1:])
-                    if isinstance(self.data, int):
+                    if encoded_packet[1].isnumeric():
                         # do not allow integer payloads, see
                         # github.com/miguelgrinberg/python-engineio/issues/75
                         # for background on this decision
                         raise ValueError
-                except ValueError:
+                    self.data = self.json.loads(encoded_packet[1:])
+                except (ValueError, IndexError):
                     self.data = encoded_packet[1:]

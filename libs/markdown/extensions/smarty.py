@@ -77,8 +77,7 @@
 #    of this software, even if advised of the possibility of such damage.
 
 """
-Adds conversion of ASCII dashes, quotes and ellipses to their HTML
-entity equivalents.
+Convert ASCII dashes, quotes and ellipses to their HTML entity equivalents.
 
 See the [documentation](https://Python-Markdown.github.io/extensions/smarty)
 for details.
@@ -135,6 +134,8 @@ doubleQuoteStartRe = r'^"(?=%s\B)' % punctClass
 #   <p>He said, "'Quoted' words in a larger quote."</p>
 doubleQuoteSetsRe = r""""'(?=\w)"""
 singleQuoteSetsRe = r"""'"(?=\w)"""
+doubleQuoteSetsRe2 = r'(?<=%s)\'"' % closeClass
+singleQuoteSetsRe2 = r"(?<=%s)\"'" % closeClass
 
 # Special case for decade abbreviations (the '80s):
 decadeAbbrRe = r"(?<!\w)'(?=\d{2}s)"
@@ -144,7 +145,7 @@ openingDoubleQuotesRegex = r'%s"(?=\w)' % openingQuotesBase
 
 # Double closing quotes:
 closingDoubleQuotesRegex = r'"(?=\s)'
-closingDoubleQuotesRegex2 = '(?<=%s)"' % closeClass
+closingDoubleQuotesRegex2 = r'(?<=%s)"' % closeClass
 
 # Get most opening single quotes:
 openingSingleQuotesRegex = r"%s'(?=\w)" % openingQuotesBase
@@ -241,6 +242,8 @@ class SmartyExtension(Extension):
             (doubleQuoteStartRe, (rdquo,)),
             (doubleQuoteSetsRe, (ldquo + lsquo,)),
             (singleQuoteSetsRe, (lsquo + ldquo,)),
+            (doubleQuoteSetsRe2, (rsquo + rdquo,)),
+            (singleQuoteSetsRe2, (rdquo + rsquo,)),
             (decadeAbbrRe, (rsquo,)),
             (openingSingleQuotesRegex, (1, lsquo)),
             (closingSingleQuotesRegex, (rsquo,)),

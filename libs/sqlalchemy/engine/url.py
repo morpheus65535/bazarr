@@ -1,5 +1,5 @@
 # engine/url.py
-# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2026 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -920,5 +920,5 @@ def _parse_url(name: str) -> URL:
 
     else:
         raise exc.ArgumentError(
-            "Could not parse SQLAlchemy URL from string '%s'" % name
+            "Could not parse SQLAlchemy URL from given URL string"
         )

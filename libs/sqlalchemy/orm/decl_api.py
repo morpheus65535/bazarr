@@ -1,5 +1,5 @@
 # orm/decl_api.py
-# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2026 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -78,6 +78,7 @@ from ..util.typing import flatten_newtype
 from ..util.typing import is_generic
 from ..util.typing import is_literal
 from ..util.typing import is_newtype
+from ..util.typing import is_pep593
 from ..util.typing import is_pep695
 from ..util.typing import Literal
 from ..util.typing import LITERAL_TYPES
@@ -248,7 +249,7 @@ class _declared_attr_common:
         cascading: bool = False,
         quiet: bool = False,
     ):
-        # suppport
+        # support
         # @declared_attr
         # @classmethod
         # def foo(cls) -> Mapped[thing]:
@@ -512,6 +513,9 @@ def declarative_mixin(cls: Type[_T]) -> Type[_T]:
 
     .. versionadded:: 1.4.6
 
+    .. legacy:: This api is considered legacy and will be deprecated in the next
+      SQLAlchemy version.
+
     .. seealso::
 
         :ref:`orm_mixins_toplevel`
@@ -682,7 +686,7 @@ class DeclarativeBase(
     :param metadata: optional :class:`_schema.MetaData` collection.
      If a :class:`_orm.registry` is constructed automatically, this
      :class:`_schema.MetaData` collection will be used to construct it.
-     Otherwise, the local :class:`_schema.MetaData` collection will supercede
+     Otherwise, the local :class:`_schema.MetaData` collection will supersede
      that used by an existing :class:`_orm.registry` passed using the
      :paramref:`_orm.DeclarativeBase.registry` parameter.
     :param type_annotation_map: optional type annotation map that will be
@@ -1233,7 +1237,7 @@ class registry:
         )
 
     def _resolve_type(
-        self, python_type: _MatchedOnType, _do_fallbacks: bool = True
+        self, python_type: _MatchedOnType, _do_fallbacks: bool = False
     ) -> Optional[sqltypes.TypeEngine[Any]]:
         python_type_type: Type[Any]
         search: Iterable[Tuple[_MatchedOnType, Type[Any]]]
@@ -1244,7 +1248,7 @@ class registry:
 
                 search = (
                     (python_type, python_type_type),
-                    *((lt, python_type_type) for lt in LITERAL_TYPES),  # type: ignore[arg-type] # noqa: E501
+                    *((lt, python_type_type) for lt in LITERAL_TYPES),
                 )
             else:
                 python_type_type = python_type.__origin__
@@ -1285,12 +1289,14 @@ class registry:
             if is_pep695(python_type):
                 # NOTE: assume there aren't type alias types of new types.
                 python_type_to_check = python_type
-                while is_pep695(python_type_to_check):
+                while is_pep695(python_type_to_check) and not is_pep593(
+                    python_type_to_check
+                ):
                     python_type_to_check = python_type_to_check.__value__
                 python_type_to_check = de_optionalize_union_types(
                     python_type_to_check
                 )
-                kind = "TypeAliasType"
+                kind = "pep-695 type"
             if is_newtype(python_type):
                 python_type_to_check = flatten_newtype(python_type)
                 kind = "NewType"
@@ -1301,14 +1307,27 @@ class registry:
                 )
                 if res_after_fallback is not None:
                     assert kind is not None
-                    warn_deprecated(
-                        f"Matching the provided {kind} '{python_type}' on "
-                        "its resolved value without matching it in the "
-                        "type_annotation_map is deprecated; add this type to "
-                        "the type_annotation_map to allow it to match "
-                        "explicitly.",
-                        "2.0",
-                    )
+                    if kind == "pep-695 type":
+                        warn_deprecated(
+                            f"Matching to {kind} '{python_type}' in "
+                            "a recursive "
+                            "fashion without the recursed type being present "
+                            "in the type_annotation_map is deprecated; add "
+                            "this type or its recursed value to "
+                            "the type_annotation_map to allow it to match "
+                            "explicitly.",
+                            "2.0",
+                        )
+                    else:
+                        warn_deprecated(
+                            f"Matching the provided {kind} '{python_type}' on "
+                            "its resolved value without matching it in the "
+                            "type_annotation_map is deprecated; add this "
+                            "type to "
+                            "the type_annotation_map to allow it to match "
+                            "explicitly.",
+                            "2.0",
+                        )
                     return res_after_fallback
 
         return None
@@ -1643,6 +1662,8 @@ class registry:
             :ref:`orm_declarative_native_dataclasses` - complete background
             on SQLAlchemy native dataclass mapping
 
+            :func:`_orm.mapped_as_dataclass` - functional version that may
+            provide better compatibility with mypy
 
         .. versionadded:: 2.0
 
@@ -1904,6 +1925,72 @@ def as_declarative(**kw: Any) -> Callable[[Type[_T]], Type[_T]]:
     return registry(
         metadata=metadata, class_registry=class_registry
     ).as_declarative_base(**kw)
+
+
+@compat_typing.dataclass_transform(
+    field_specifiers=(
+        MappedColumn,
+        RelationshipProperty,
+        Composite,
+        Synonym,
+        mapped_column,
+        relationship,
+        composite,
+        synonym,
+        deferred,
+    ),
+)
+def mapped_as_dataclass(
+    registry: RegistryType,
+    *,
+    init: Union[_NoArg, bool] = _NoArg.NO_ARG,
+    repr: Union[_NoArg, bool] = _NoArg.NO_ARG,  # noqa: A002
+    eq: Union[_NoArg, bool] = _NoArg.NO_ARG,
+    order: Union[_NoArg, bool] = _NoArg.NO_ARG,
+    unsafe_hash: Union[_NoArg, bool] = _NoArg.NO_ARG,
+    match_args: Union[_NoArg, bool] = _NoArg.NO_ARG,
+    kw_only: Union[_NoArg, bool] = _NoArg.NO_ARG,
+    dataclass_callable: Union[
+        _NoArg, Callable[..., Type[Any]]
+    ] = _NoArg.NO_ARG,
+) -> Callable[[Type[_O]], Type[_O]]:
+    """Standalone function form of :meth:`_orm.registry.mapped_as_dataclass`
+    which may have better compatibility with mypy.
+
+    The :class:`_orm.registry` is passed as the first argument to the
+    decorator.
+
+    e.g.::
+
+        from sqlalchemy.orm import Mapped
+        from sqlalchemy.orm import mapped_as_dataclass
+        from sqlalchemy.orm import mapped_column
+        from sqlalchemy.orm import registry
+
+        some_registry = registry()
+
+
+        @mapped_as_dataclass(some_registry)
+        class Relationships:
+            __tablename__ = "relationships"
+
+            entity_id1: Mapped[int] = mapped_column(primary_key=True)
+            entity_id2: Mapped[int] = mapped_column(primary_key=True)
+            level: Mapped[int] = mapped_column(Integer)
+
+    .. versionadded:: 2.0.44
+
+    """
+    return registry.mapped_as_dataclass(
+        init=init,
+        repr=repr,
+        eq=eq,
+        order=order,
+        unsafe_hash=unsafe_hash,
+        match_args=match_args,
+        kw_only=kw_only,
+        dataclass_callable=dataclass_callable,
+    )
 
 
 @inspection._inspects(

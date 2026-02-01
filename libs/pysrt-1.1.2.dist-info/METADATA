@@ -1,4 +1,4 @@
-Metadata-Version: 2.1
+Metadata-Version: 2.4
 Name: pysrt
 Version: 1.1.2
 Summary: SubRip (.srt) subtitle parser and writer
@@ -21,6 +21,16 @@ Classifier: Topic :: Multimedia :: Video
 Classifier: Topic :: Software Development :: Libraries
 Classifier: Topic :: Text Processing :: Markup
 Requires-Dist: chardet
+Dynamic: author
+Dynamic: author-email
+Dynamic: classifier
+Dynamic: description
+Dynamic: home-page
+Dynamic: keywords
+Dynamic: license
+Dynamic: platform
+Dynamic: requires-dist
+Dynamic: summary
 
 pysrt
 =============

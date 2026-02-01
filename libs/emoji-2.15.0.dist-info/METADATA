@@ -1,4 +1,4 @@
-Metadata-Version: 2.1
+Metadata-Version: 2.4
 Name: emoji
 Version: 2.15.0
 Summary: Emoji for Python
@@ -30,8 +30,9 @@ Requires-Python: >=3.8
 Description-Content-Type: text/x-rst
 License-File: LICENSE.txt
 Provides-Extra: dev
-Requires-Dist: pytest >=7.4.4 ; extra == 'dev'
-Requires-Dist: coverage ; extra == 'dev'
+Requires-Dist: pytest>=7.4.4; extra == "dev"
+Requires-Dist: coverage; extra == "dev"
+Dynamic: license-file
 
 Emoji
 =====

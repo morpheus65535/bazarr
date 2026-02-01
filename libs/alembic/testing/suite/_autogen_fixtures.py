@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 from typing import Dict
+from typing import Literal
+from typing import overload
 from typing import Set
 
 from sqlalchemy import CHAR
@@ -14,6 +16,7 @@ from sqlalchemy import inspect
 from sqlalchemy import Integer
 from sqlalchemy import MetaData
 from sqlalchemy import Numeric
+from sqlalchemy import PrimaryKeyConstraint
 from sqlalchemy import String
 from sqlalchemy import Table
 from sqlalchemy import Text
@@ -149,6 +152,118 @@ class ModelOne:
         return m
 
 
+class NamingConvModel:
+    __requires__ = ("unique_constraint_reflection",)
+    configure_opts = {"conv_all_constraint_names": True}
+    naming_convention = {
+        "ix": "ix_%(column_0_label)s",
+        "uq": "uq_%(table_name)s_%(constraint_name)s",
+        "ck": "ck_%(table_name)s_%(constraint_name)s",
+        "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
+        "pk": "pk_%(table_name)s",
+    }
+
+    @classmethod
+    def _get_db_schema(cls):
+        # database side - assume all constraints have a name that
+        # we would assume here is a "db generated" name.  need to make
+        # sure these all render with op.f().
+        m = MetaData()
+        Table(
+            "x1",
+            m,
+            Column("q", Integer),
+            Index("db_x1_index_q", "q"),
+            PrimaryKeyConstraint("q", name="db_x1_primary_q"),
+        )
+        Table(
+            "x2",
+            m,
+            Column("q", Integer),
+            Column("p", ForeignKey("x1.q", name="db_x2_foreign_q")),
+            CheckConstraint("q > 5", name="db_x2_check_q"),
+        )
+        Table(
+            "x3",
+            m,
+            Column("q", Integer),
+            Column("r", Integer),
+            Column("s", Integer),
+            UniqueConstraint("q", name="db_x3_unique_q"),
+        )
+        Table(
+            "x4",
+            m,
+            Column("q", Integer),
+            PrimaryKeyConstraint("q", name="db_x4_primary_q"),
+        )
+        Table(
+            "x5",
+            m,
+            Column("q", Integer),
+            Column("p", ForeignKey("x4.q", name="db_x5_foreign_q")),
+            Column("r", Integer),
+            Column("s", Integer),
+            PrimaryKeyConstraint("q", name="db_x5_primary_q"),
+            UniqueConstraint("r", name="db_x5_unique_r"),
+            CheckConstraint("s > 5", name="db_x5_check_s"),
+        )
+        # SQLite and it's "no names needed" thing.  bleh.
+        # we can't have a name for these so you'll see "None" for the name.
+        Table(
+            "unnamed_sqlite",
+            m,
+            Column("q", Integer),
+            Column("r", Integer),
+            PrimaryKeyConstraint("q"),
+            UniqueConstraint("r"),
+        )
+        return m
+
+    @classmethod
+    def _get_model_schema(cls):
+        from sqlalchemy.sql.naming import conv
+
+        m = MetaData(naming_convention=cls.naming_convention)
+        Table(
+            "x1", m, Column("q", Integer, primary_key=True), Index(None, "q")
+        )
+        Table(
+            "x2",
+            m,
+            Column("q", Integer),
+            Column("p", ForeignKey("x1.q")),
+            CheckConstraint("q > 5", name="token_x2check1"),
+        )
+        Table(
+            "x3",
+            m,
+            Column("q", Integer),
+            Column("r", Integer),
+            Column("s", Integer),
+            UniqueConstraint("r", name="token_x3r"),
+            UniqueConstraint("s", name=conv("userdef_x3_unique_s")),
+        )
+        Table(
+            "x4",
+            m,
+            Column("q", Integer, primary_key=True),
+            Index("userdef_x4_idx_q", "q"),
+        )
+        Table(
+            "x6",
+            m,
+            Column("q", Integer, primary_key=True),
+            Column("p", ForeignKey("x4.q")),
+            Column("r", Integer),
+            Column("s", Integer),
+            UniqueConstraint("r", name="token_x6r"),
+            CheckConstraint("s > 5", "token_x6check1"),
+            CheckConstraint("s < 20", conv("userdef_x6_check_s")),
+        )
+        return m
+
+
 class _ComparesFKs:
     def _assert_fk_diff(
         self,
@@ -268,17 +383,46 @@ class AutogenTest(_ComparesFKs):
 
 
 class AutogenFixtureTest(_ComparesFKs):
+
+    @overload
     def _fixture(
         self,
-        m1,
-        m2,
+        m1: MetaData,
+        m2: MetaData,
+        include_schemas=...,
+        opts=...,
+        object_filters=...,
+        name_filters=...,
+        *,
+        return_ops: Literal[True],
+        max_identifier_length=...,
+    ) -> ops.UpgradeOps: ...
+
+    @overload
+    def _fixture(
+        self,
+        m1: MetaData,
+        m2: MetaData,
+        include_schemas=...,
+        opts=...,
+        object_filters=...,
+        name_filters=...,
+        *,
+        return_ops: Literal[False] = ...,
+        max_identifier_length=...,
+    ) -> list[Any]: ...
+
+    def _fixture(
+        self,
+        m1: MetaData,
+        m2: MetaData,
         include_schemas=False,
         opts=None,
         object_filters=_default_object_filters,
         name_filters=_default_name_filters,
-        return_ops=False,
+        return_ops: bool = False,
         max_identifier_length=None,
-    ):
+    ) -> ops.UpgradeOps | list[Any]:
         if max_identifier_length:
             dialect = self.bind.dialect
             existing_length = dialect.max_identifier_length

@@ -1,9 +1,9 @@
 pycountry-24.6.1.dist-info/INSTALLER,sha256=zuuue4knoyJ-UwPPXg8fezS7VCrXJQrAP7zeNuwvFQg,4
-pycountry-24.6.1.dist-info/LICENSE.txt,sha256=P6OcbhijpEEQgrZMFk3q4dj0ewOk1FMEwfCuR4Ym44I,24463
-pycountry-24.6.1.dist-info/METADATA,sha256=eQp7PAiAqzFjGMPZCPGYmDuB3JbA8vSwxUqeJg8y9Uo,13035
+pycountry-24.6.1.dist-info/METADATA,sha256=M8vOl1YaZ6Cf6Q8mnoE-GLMqcB1Hkti7bC3YICcDkLU,13057
 pycountry-24.6.1.dist-info/RECORD,,
 pycountry-24.6.1.dist-info/REQUESTED,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
-pycountry-24.6.1.dist-info/WHEEL,sha256=Nq82e9rUAnEjt98J6MlVmMCZb-t9cYE2Ir1kpBmnWfs,88
+pycountry-24.6.1.dist-info/WHEEL,sha256=kJCRJT_g0adfAJzTx2GUMmS80rTJIVHRCfG0DQgLq3o,88
+pycountry-24.6.1.dist-info/licenses/LICENSE.txt,sha256=P6OcbhijpEEQgrZMFk3q4dj0ewOk1FMEwfCuR4Ym44I,24463
 pycountry/COPYRIGHT.txt,sha256=9LAWFwZLzZ6f49ti7Jxu-NCvzDiN2ljZspNaVR15YOQ,2054
 pycountry/__init__.py,sha256=YLNhtu9WmoG-K6yDc3MwQFHlCk5o-kLiA6BfSdf65xE,10577
 pycountry/databases/iso15924.json,sha256=Z009yLGKO5ma9xlvd5QopGXl-wr0FNBxlX0QNIvJgX4,17097

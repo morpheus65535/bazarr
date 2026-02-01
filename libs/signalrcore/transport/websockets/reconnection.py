@@ -34,7 +34,7 @@ class ConnectionStateChecker(object):
 
 
 class ReconnectionType(Enum):
-    raw = 0  # Reconnection with max reconnections and constant sleep time
+    raw = 0  # Reconnection with max reconnects and constant sleep time
     interval = 1  # variable sleep time
 
 

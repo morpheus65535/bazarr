@@ -18,7 +18,7 @@ HAS_NEVER_CHECK_COMMON_NAME = False
 IS_PYOPENSSL = False
 ALPN_PROTOCOLS = ["http/1.1"]
 
-_TYPE_VERSION_INFO = typing.Tuple[int, int, int, str, int]
+_TYPE_VERSION_INFO = tuple[int, int, int, str, int]
 
 # Maps the length of a digest to a possible hash function producing this digest
 HASHFUNC_MAP = {
@@ -32,7 +32,7 @@ def _is_bpo_43522_fixed(
     version_info: _TYPE_VERSION_INFO,
     pypy_version_info: _TYPE_VERSION_INFO | None,
 ) -> bool:
-    """Return True for CPython 3.8.9+, 3.9.3+ or 3.10+ and PyPy 7.3.8+ where
+    """Return True for CPython 3.9.3+ or 3.10+ and PyPy 7.3.8+ where
     setting SSLContext.hostname_checks_common_name to False works.
 
     Outside of CPython and PyPy we don't know which implementations work
@@ -48,11 +48,7 @@ def _is_bpo_43522_fixed(
     elif implementation_name == "cpython":
         major_minor = version_info[:2]
         micro = version_info[2]
-        return (
-            (major_minor == (3, 8) and micro >= 9)
-            or (major_minor == (3, 9) and micro >= 3)
-            or major_minor >= (3, 10)
-        )
+        return (major_minor == (3, 9) and micro >= 3) or major_minor >= (3, 10)
     else:  # Defensive:
         return False
 
@@ -105,6 +101,7 @@ try:  # Do we have ssl at all?
         OPENSSL_VERSION_NUMBER,
         PROTOCOL_TLS,
         PROTOCOL_TLS_CLIENT,
+        VERIFY_X509_STRICT,
         OP_NO_SSLv2,
         OP_NO_SSLv3,
         SSLContext,
@@ -113,15 +110,18 @@ try:  # Do we have ssl at all?
 
     PROTOCOL_SSLv23 = PROTOCOL_TLS
 
+    # Needed for Python 3.9 which does not define this
+    VERIFY_X509_PARTIAL_CHAIN = getattr(ssl, "VERIFY_X509_PARTIAL_CHAIN", 0x80000)
+
     # Setting SSLContext.hostname_checks_common_name = False didn't work before CPython
-    # 3.8.9, 3.9.3, and 3.10 (but OK on PyPy) or OpenSSL 1.1.1l+
+    # 3.9.3, and 3.10 (but OK on PyPy) or OpenSSL 1.1.1l+
     if HAS_NEVER_CHECK_COMMON_NAME and not _is_has_never_check_common_name_reliable(
         OPENSSL_VERSION,
         OPENSSL_VERSION_NUMBER,
         sys.implementation.name,
         sys.version_info,
         sys.pypy_version_info if sys.implementation.name == "pypy" else None,  # type: ignore[attr-defined]
-    ):
+    ):  # Defensive: for Python < 3.9.3
         HAS_NEVER_CHECK_COMMON_NAME = False
 
     # Need to be careful here in case old TLS versions get
@@ -136,12 +136,14 @@ try:  # Do we have ssl at all?
 
     from .ssltransport import SSLTransport  # type: ignore[assignment]
 except ImportError:
-    OP_NO_COMPRESSION = 0x20000  # type: ignore[assignment]
-    OP_NO_TICKET = 0x4000  # type: ignore[assignment]
-    OP_NO_SSLv2 = 0x1000000  # type: ignore[assignment]
-    OP_NO_SSLv3 = 0x2000000  # type: ignore[assignment]
-    PROTOCOL_SSLv23 = PROTOCOL_TLS = 2  # type: ignore[assignment]
-    PROTOCOL_TLS_CLIENT = 16  # type: ignore[assignment]
+    OP_NO_COMPRESSION = 0x20000  # type: ignore[assignment, misc]
+    OP_NO_TICKET = 0x4000  # type: ignore[assignment, misc]
+    OP_NO_SSLv2 = 0x1000000  # type: ignore[assignment, misc]
+    OP_NO_SSLv3 = 0x2000000  # type: ignore[assignment, misc]
+    PROTOCOL_SSLv23 = PROTOCOL_TLS = 2  # type: ignore[assignment, misc]
+    PROTOCOL_TLS_CLIENT = 16  # type: ignore[assignment, misc]
+    VERIFY_X509_PARTIAL_CHAIN = 0x80000
+    VERIFY_X509_STRICT = 0x20  # type: ignore[assignment, misc]
 
 
 _TYPE_PEER_CERT_RET = typing.Union["_TYPE_PEER_CERT_RET_DICT", bytes, None]
@@ -227,6 +229,7 @@ def create_urllib3_context(
     ciphers: str | None = None,
     ssl_minimum_version: int | None = None,
     ssl_maximum_version: int | None = None,
+    verify_flags: int | None = None,
 ) -> ssl.SSLContext:
     """Creates and configures an :class:`ssl.SSLContext` instance for use with urllib3.
 
@@ -251,6 +254,9 @@ def create_urllib3_context(
     :param ciphers:
         Which cipher suites to allow the server to select. Defaults to either system configured
         ciphers if OpenSSL 1.1.1+, otherwise uses a secure default set of ciphers.
+    :param verify_flags:
+        The flags for certificate verification operations. These default to
+        ``ssl.VERIFY_X509_PARTIAL_CHAIN`` and ``ssl.VERIFY_X509_STRICT`` for Python 3.13+.
     :returns:
         Constructed SSLContext object with specified options
     :rtype: SSLContext
@@ -283,7 +289,7 @@ def create_urllib3_context(
             # keep the maximum version to be it's default value: 'TLSVersion.MAXIMUM_SUPPORTED'
             warnings.warn(
                 "'ssl_version' option is deprecated and will be "
-                "removed in urllib3 v2.1.0. Instead use 'ssl_minimum_version'",
+                "removed in urllib3 v2.6.0. Instead use 'ssl_minimum_version'",
                 category=DeprecationWarning,
                 stacklevel=2,
             )
@@ -324,6 +330,16 @@ def create_urllib3_context(
 
     context.options |= options
 
+    if verify_flags is None:
+        verify_flags = 0
+        # In Python 3.13+ ssl.create_default_context() sets VERIFY_X509_PARTIAL_CHAIN
+        # and VERIFY_X509_STRICT so we do the same
+        if sys.version_info >= (3, 13):
+            verify_flags |= VERIFY_X509_PARTIAL_CHAIN
+            verify_flags |= VERIFY_X509_STRICT
+
+    context.verify_flags |= verify_flags
+
     # Enable post-handshake authentication for TLS 1.3, see GH #1634. PHA is
     # necessary for conditional client cert authentication with TLS 1.3.
     # The attribute is None for OpenSSL <= 1.1.0 or does not exist when using
@@ -345,15 +361,15 @@ def create_urllib3_context(
 
     try:
         context.hostname_checks_common_name = False
-    except AttributeError:  # Defensive: for CPython < 3.8.9 and 3.9.3; for PyPy < 7.3.8
+    except AttributeError:  # Defensive: for CPython < 3.9.3; for PyPy < 7.3.8
         pass
 
-    # Enable logging of TLS session keys via defacto standard environment variable
-    # 'SSLKEYLOGFILE', if the feature is available (Python 3.8+). Skip empty values.
-    if hasattr(context, "keylog_filename"):
-        sslkeylogfile = os.environ.get("SSLKEYLOGFILE")
-        if sslkeylogfile:
-            context.keylog_filename = sslkeylogfile
+    if "SSLKEYLOGFILE" in os.environ:
+        sslkeylogfile = os.path.expandvars(os.environ.get("SSLKEYLOGFILE"))
+    else:
+        sslkeylogfile = None
+    if sslkeylogfile:
+        context.keylog_filename = sslkeylogfile
 
     return context
 
@@ -373,8 +389,7 @@ def ssl_wrap_socket(
     key_password: str | None = ...,
     ca_cert_data: None | str | bytes = ...,
     tls_in_tls: typing.Literal[False] = ...,
-) -> ssl.SSLSocket:
-    ...
+) -> ssl.SSLSocket: ...
 
 
 @typing.overload
@@ -392,8 +407,7 @@ def ssl_wrap_socket(
     key_password: str | None = ...,
     ca_cert_data: None | str | bytes = ...,
     tls_in_tls: bool = ...,
-) -> ssl.SSLSocket | SSLTransportType:
-    ...
+) -> ssl.SSLSocket | SSLTransportType: ...
 
 
 def ssl_wrap_socket(

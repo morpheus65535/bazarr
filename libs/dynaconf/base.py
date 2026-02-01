@@ -27,7 +27,6 @@ from dynaconf.utils import compat_kwargs
 from dynaconf.utils import ensure_a_list
 from dynaconf.utils import missing
 from dynaconf.utils import object_merge
-from dynaconf.utils import recursively_evaluate_lazy_format
 from dynaconf.utils import RENAMED_VARS
 from dynaconf.utils import upperfy
 from dynaconf.utils.boxing import DynaBox
@@ -143,8 +142,6 @@ class LazySettings(LazyObject):
         ):
             return self._wrapped.get_fresh(name)
         value = getattr(self._wrapped, name)
-        if name not in RESERVED_ATTRS:
-            return recursively_evaluate_lazy_format(value, self)
         return value
 
     def __call__(self, *args, **kwargs):
@@ -464,7 +461,7 @@ class Settings:
         dotted_lookup=empty,
         parent=None,
         sysenv_fallback=None,
-    ):
+    ) -> Any:
         """
         Get a value from settings store, this is the preferred way to access::
 
@@ -968,6 +965,15 @@ class Settings:
             self.store.get(key, None) if not isinstance(parsed, Lazy) else None
         )
 
+        if getattr(parsed, "_dynaconf_insert", False):
+            # `@insert` calls insert in a list by index
+            if existing and isinstance(existing, list):
+                source_metadata = source_metadata._replace(merged=True)
+                existing.insert(parsed.index, parsed.unwrap())
+                parsed = existing
+            else:
+                parsed = [parsed.unwrap()]
+
         if getattr(parsed, "_dynaconf_del", None):
             self.unset(key, force=True)  # `@del` in a first level var.
             return
@@ -1152,6 +1158,10 @@ class Settings:
         """Clean end Execute all loaders"""
         self.clean()
         self._loaded_hooks.clear()
+        for hook in self._post_hooks:
+            with suppress(AttributeError, TypeError):
+                hook._called = False
+
         self.execute_loaders(env, silent)
 
     def execute_loaders(
@@ -1208,7 +1218,13 @@ class Settings:
                 last_loader.load(self, env, silent, key)
 
     def load_file(
-        self, path=None, env=None, silent=True, key=None, validate=empty
+        self,
+        path=None,
+        env=None,
+        silent=True,
+        key=None,
+        validate=empty,
+        run_hooks=True,
     ):
         """Programmatically load files from ``path``.
 
@@ -1217,63 +1233,95 @@ class Settings:
         - Directory of the last loaded file
         - CWD
 
-        :param path: A single filename or a file list
+        :param path: A single filename, a glob or a file list
         :param env: Which env to load from file (default current_env)
         :param silent: Should raise errors?
         :param key: Load a single key?
         :param validate: Should trigger validation?
+        :param run_hooks: Should run collected hooks?
         """
+        files = ensure_a_list(path)
+        if not files:  # a glob pattern may return empty
+            return
+
         if validate is empty:
             validate = self.get("VALIDATE_ON_UPDATE_FOR_DYNACONF")
 
-        env = (env or self.current_env).upper()
-        files = ensure_a_list(path)
-        if files:
-            already_loaded = set()
-            for _filename in files:
+        env = "_envless" if env is False else (env or self.current_env).upper()
+
+        # Using inspect take the filename and line number of the caller
+        # to be used in the source_metadata
+        frame = inspect.currentframe()
+        caller = inspect.getouterframes(frame)[1]
+
+        already_loaded = set()
+        for _filename in files:
+            # load_file() will handle validation later
+            with suppress(ValidationError):
+                source_metadata = SourceMetadata(
+                    loader=f"load_file@{caller.filename}:{caller.lineno}",
+                    identifier=_filename,
+                    env=env,
+                )
+                if py_loader.try_to_load_from_py_module_name(
+                    obj=self,
+                    name=_filename,
+                    silent=True,
+                    identifier=source_metadata,
+                ):
+                    # if it was possible to load from module name
+                    # continue the loop.
+                    continue
+
+            root_dir = str(self._root_path or os.getcwd())
+
+            # Issue #494
+            if (
+                isinstance(_filename, Path)
+                and str(_filename.parent) in root_dir
+            ):  # pragma: no cover
+                filepath = str(_filename)
+            else:
+                filepath = os.path.join(root_dir, str(_filename))
+
+            paths = [p for p in sorted(glob(filepath)) if ".local." not in p]
+            local_paths = [p for p in sorted(glob(filepath)) if ".local." in p]
+
+            # Handle possible *.globs sorted alphanumeric
+            for path in paths + local_paths:
+                if path in already_loaded:  # pragma: no cover
+                    continue
+
                 # load_file() will handle validation later
                 with suppress(ValidationError):
-                    if py_loader.try_to_load_from_py_module_name(
-                        obj=self, name=_filename, silent=True
-                    ):
-                        # if it was possible to load from module name
-                        # continue the loop.
-                        continue
+                    source_metadata = SourceMetadata(
+                        loader=f"load_file@{caller.filename}:{caller.lineno}",
+                        identifier=path,
+                        env=env,
+                    )
+                    settings_loader(
+                        obj=self,
+                        env=env,
+                        silent=silent,
+                        key=key,
+                        filename=path,
+                        validate=validate,
+                        identifier=source_metadata,
+                    )
+                    already_loaded.add(path)
 
-                root_dir = str(self._root_path or os.getcwd())
-
-                # Issue #494
-                if (
-                    isinstance(_filename, Path)
-                    and str(_filename.parent) in root_dir
-                ):  # pragma: no cover
-                    filepath = str(_filename)
-                else:
-                    filepath = os.path.join(root_dir, str(_filename))
-
-                paths = [
-                    p for p in sorted(glob(filepath)) if ".local." not in p
-                ]
-                local_paths = [
-                    p for p in sorted(glob(filepath)) if ".local." in p
-                ]
-
-                # Handle possible *.globs sorted alphanumeric
-                for path in paths + local_paths:
-                    if path in already_loaded:  # pragma: no cover
-                        continue
-
-                    # load_file() will handle validation later
-                    with suppress(ValidationError):
-                        settings_loader(
-                            obj=self,
-                            env=env,
-                            silent=silent,
-                            key=key,
-                            filename=path,
-                            validate=validate,
-                        )
-                        already_loaded.add(path)
+        if run_hooks:
+            # this will call any collected hook that was not called yet
+            execute_instance_hooks(
+                self,
+                "post",
+                [
+                    _hook
+                    for _hook in self._post_hooks
+                    if getattr(_hook, "_dynaconf_hook", False) is True
+                    and not getattr(_hook, "_called", False)
+                ],
+            )
 
         # handle param `validate`
         if validate is True:
@@ -1357,19 +1405,33 @@ class Settings:
             value = self.get_fresh(key)
             return value is True or value in true_values
 
-    def populate_obj(self, obj, keys=None, ignore=None):
+    def populate_obj(
+        self,
+        obj,
+        keys=None,
+        ignore=None,
+        internal=False,
+        convert_to_dict=False,
+    ):
         """Given the `obj` populate it using self.store items.
 
         :param obj: An object to be populated, a class instance.
         :param keys: A list of keys to be included.
         :param ignore: A list of keys to be excluded.
+        :param internal: Include internal keys.
+        :param convert_to_dict: Convert the settings to a pure dict (no Box)
+         before populating.
         """
+        data = self.to_dict(internal=internal) if convert_to_dict else self
         keys = keys or self.keys()
         for key in keys:
             key = upperfy(key)
+            if not internal:
+                if key in UPPER_DEFAULT_SETTINGS:
+                    continue
             if ignore and key in ignore:
                 continue
-            value = self.get(key, empty)
+            value = data.get(key, empty)
             if value is not empty:
                 setattr(obj, key, value)
 

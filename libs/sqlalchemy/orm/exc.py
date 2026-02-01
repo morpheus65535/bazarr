@@ -1,5 +1,5 @@
 # orm/exc.py
-# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2026 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -63,6 +63,15 @@ ConcurrentModificationError = StaleDataError
 
 class FlushError(sa_exc.SQLAlchemyError):
     """A invalid condition was detected during flush()."""
+
+
+class MappedAnnotationError(sa_exc.ArgumentError):
+    """Raised when ORM annotated declarative cannot interpret the
+    expression present inside of the :class:`.Mapped` construct.
+
+    .. versionadded:: 2.0.40
+
+    """
 
 
 class UnmappedError(sa_exc.InvalidRequestError):

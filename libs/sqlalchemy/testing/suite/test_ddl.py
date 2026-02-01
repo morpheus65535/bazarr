@@ -1,5 +1,5 @@
 # testing/suite/test_ddl.py
-# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2026 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -29,7 +29,7 @@ from ... import UniqueConstraint
 
 
 class TableDDLTest(fixtures.TestBase):
-    __backend__ = True
+    __sparse_driver_backend__ = True
 
     def _simple_fixture(self, schema=None):
         return Table(
@@ -202,7 +202,7 @@ class LongNameBlowoutTest(fixtures.TestBase):
 
     """
 
-    __backend__ = True
+    __sparse_driver_backend__ = True
 
     def fk(self, metadata, connection):
         convention = {

@@ -1,12 +1,12 @@
-../../bin/futurize,sha256=7Lk9R2v7Usin7rOiWvHbV-X3oc6CYy2xASihkysoa9E,238
-../../bin/pasteurize,sha256=wR7PHvhXRdB8TXwiZN3U2yIg5zLkWFnEkeo-XsZl-1Y,240
+../../bin/futurize,sha256=0rIbTcKHf_wbiGyG39YusJOLKI8gp9L4KwFK2Xy35Y4,191
+../../bin/pasteurize,sha256=VI5mNq5LUEdSo0OD0o8Ll8mAX2Rd5a0sTNUggklZS4w,193
 future-1.0.0.dist-info/INSTALLER,sha256=zuuue4knoyJ-UwPPXg8fezS7VCrXJQrAP7zeNuwvFQg,4
-future-1.0.0.dist-info/LICENSE.txt,sha256=vroEEDw6n_-Si1nHfV--sDo-S9DXrD0eH4mUoh4w7js,1075
-future-1.0.0.dist-info/METADATA,sha256=MNNaUKMRbZAmVYq5Am_-1NtYZ1ViECpSa8VsQjXbkT4,3959
+future-1.0.0.dist-info/METADATA,sha256=dZAK1V_8LoINxvLyWh7gTiGSU7b_bY_vR_uY0E8UUh8,4177
 future-1.0.0.dist-info/RECORD,,
 future-1.0.0.dist-info/REQUESTED,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
-future-1.0.0.dist-info/WHEEL,sha256=Xo9-1PvkuimrydujYJAjF7pCkriuXBpUPEjma1nZyJ0,92
+future-1.0.0.dist-info/WHEEL,sha256=wUyA8OaulRlbfwMtmQsvNngGrxQHAvkKcvRmdizlJi0,92
 future-1.0.0.dist-info/entry_points.txt,sha256=U9LtP60KSNXoj58mzV5TbotBF371gTWzrKrzJIH80Kw,88
+future-1.0.0.dist-info/licenses/LICENSE.txt,sha256=vroEEDw6n_-Si1nHfV--sDo-S9DXrD0eH4mUoh4w7js,1075
 future-1.0.0.dist-info/top_level.txt,sha256=DT0C3az2gb-uJaj-fs0h4WwHYlJVDp0EvLdud1y5Zyw,38
 future/__init__.py,sha256=T9PNLu6ycmVtpETLxRurmufuRAaosICWmWdAExZb5a8,2938
 future/backports/__init__.py,sha256=5QXvQ_jc5Xx6p4dSaHnZXPZazBEunKDKhbUjxZ0XD1I,530

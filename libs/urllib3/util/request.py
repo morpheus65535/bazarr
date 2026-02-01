@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import io
+import sys
 import typing
 from base64 import b64encode
 from enum import Enum
@@ -28,8 +29,12 @@ except ImportError:
     pass
 else:
     ACCEPT_ENCODING += ",br"
+
 try:
-    import zstandard as _unused_module_zstd  # noqa: F401
+    if sys.version_info >= (3, 14):
+        from compression import zstd as _unused_module_zstd  # noqa: F401
+    else:
+        from backports import zstd as _unused_module_zstd  # noqa: F401
 except ImportError:
     pass
 else:
@@ -68,8 +73,11 @@ def make_headers(
 
     :param accept_encoding:
         Can be a boolean, list, or string.
-        ``True`` translates to 'gzip,deflate'.  If either the ``brotli`` or
-        ``brotlicffi`` package is installed 'gzip,deflate,br' is used instead.
+        ``True`` translates to 'gzip,deflate'.  If the dependencies for
+        Brotli (either the ``brotli`` or ``brotlicffi`` package) and/or
+        Zstandard (the ``backports.zstd`` package for Python before 3.14)
+        algorithms are installed, then their encodings are
+        included in the string ('br' and 'zstd', respectively).
         List will get joined by comma.
         String will be used as provided.
 
@@ -116,14 +124,14 @@ def make_headers(
         headers["connection"] = "keep-alive"
 
     if basic_auth:
-        headers[
-            "authorization"
-        ] = f"Basic {b64encode(basic_auth.encode('latin-1')).decode()}"
+        headers["authorization"] = (
+            f"Basic {b64encode(basic_auth.encode('latin-1')).decode()}"
+        )
 
     if proxy_basic_auth:
-        headers[
-            "proxy-authorization"
-        ] = f"Basic {b64encode(proxy_basic_auth.encode('latin-1')).decode()}"
+        headers["proxy-authorization"] = (
+            f"Basic {b64encode(proxy_basic_auth.encode('latin-1')).decode()}"
+        )
 
     if disable_cache:
         headers["cache-control"] = "no-cache"
@@ -220,7 +228,6 @@ def body_to_chunks(
     elif hasattr(body, "read"):
 
         def chunk_readable() -> typing.Iterable[bytes]:
-            nonlocal body, blocksize
             encode = isinstance(body, io.TextIOBase)
             while True:
                 datablock = body.read(blocksize)

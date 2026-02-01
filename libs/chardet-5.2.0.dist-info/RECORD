@@ -1,11 +1,11 @@
-../../bin/chardetect,sha256=hNe1Qxrl8Vaa1el5gT0V8iHTckEMwUBcC3oA2IJOyNE,244
+../../bin/chardetect,sha256=7tQYuvRzQLHg-vSFo9s17ZYVJqV7G4MWmowGBsnMebc,197
 chardet-5.2.0.dist-info/INSTALLER,sha256=zuuue4knoyJ-UwPPXg8fezS7VCrXJQrAP7zeNuwvFQg,4
-chardet-5.2.0.dist-info/LICENSE,sha256=3GJlINzVOiL3J68-5Cx3DlbJemT-OtsGN5nYqwMv5VE,26530
-chardet-5.2.0.dist-info/METADATA,sha256=PAr2NQ6hQWpjyFnwlI7MoxHt2S_6oRiUsucOKMNhzGw,3418
+chardet-5.2.0.dist-info/METADATA,sha256=rkaOE3KgHvl1lL9e4oH3auGS4m1oS0FqM-KHugXfNtw,3440
 chardet-5.2.0.dist-info/RECORD,,
 chardet-5.2.0.dist-info/REQUESTED,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
-chardet-5.2.0.dist-info/WHEEL,sha256=OVMc5UfuAQiSplgO0_WdW7vXVGAt9Hdd6qtN4HotdyA,91
+chardet-5.2.0.dist-info/WHEEL,sha256=wUyA8OaulRlbfwMtmQsvNngGrxQHAvkKcvRmdizlJi0,92
 chardet-5.2.0.dist-info/entry_points.txt,sha256=_cdvYc4jyY68GYfsQAAthNMxO-yodcGkvNC1xOEsLmI,59
+chardet-5.2.0.dist-info/licenses/LICENSE,sha256=3GJlINzVOiL3J68-5Cx3DlbJemT-OtsGN5nYqwMv5VE,26530
 chardet-5.2.0.dist-info/top_level.txt,sha256=AowzBbZy4x8EirABDdJSLJZMkJ_53iIag8xfKR6D7kI,8
 chardet/__init__.py,sha256=57R-HSxj0PWmILMN0GFmUNqEMfrEVSamXyjD-W6_fbs,4797
 chardet/__main__.py,sha256=puNj2o_QfBRKElEkiVp1zEIL1gGYD2o-JuXLFlqHDC4,123

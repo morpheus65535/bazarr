@@ -14,8 +14,8 @@
 # License: [BSD](https://opensource.org/licenses/bsd-license.php)
 
 """
-A Python-Markdown extension to treat newlines as hard breaks; like
-GitHub-flavored Markdown does.
+A Python-Markdown extension to treat newlines as hard breaks.
+Similar to GitHub-flavored Markdown's behavior.
 
 See the [documentation](https://Python-Markdown.github.io/extensions/nl2br)
 for details.

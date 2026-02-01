@@ -1,5 +1,5 @@
 # testing/assertions.py
-# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2026 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -201,7 +201,10 @@ def _expect_warnings(
         if raise_on_any_unexpected:
 
             def real_warn(msg, *arg, **kw):
-                raise AssertionError("Got unexpected warning: %r" % msg)
+                if isinstance(msg, sa_exc.SATestSuiteWarning):
+                    warnings.warn(msg, *arg, **kw)
+                else:
+                    raise AssertionError("Got unexpected warning: %r" % msg)
 
         else:
             real_warn = warnings.warn
@@ -274,8 +277,8 @@ def int_within_variance(expected, received, variance):
     )
 
 
-def eq_regex(a, b, msg=None):
-    assert re.match(b, a), msg or "%r !~ %r" % (a, b)
+def eq_regex(a, b, msg=None, flags=0):
+    assert re.match(b, a, flags), msg or "%r !~ %r" % (a, b)
 
 
 def eq_(a, b, msg=None):
@@ -513,6 +516,7 @@ class AssertsCompiledSQL:
         use_default_dialect=False,
         allow_dialect_select=False,
         supports_default_values=True,
+        supports_native_boolean=False,
         supports_default_metavalue=True,
         literal_binds=False,
         render_postcompile=False,
@@ -527,6 +531,7 @@ class AssertsCompiledSQL:
             dialect = default.DefaultDialect()
             dialect.supports_default_values = supports_default_values
             dialect.supports_default_metavalue = supports_default_metavalue
+            dialect.supports_native_boolean = supports_native_boolean
         elif allow_dialect_select:
             dialect = None
         else:

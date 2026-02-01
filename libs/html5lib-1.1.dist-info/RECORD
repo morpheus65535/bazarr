@@ -1,10 +1,10 @@
-html5lib-1.1.dist-info/AUTHORS.rst,sha256=DrNAMifoDpuQyJn-KW-H6K8Tt2a5rKnV2UF4-DRrGUI,983
 html5lib-1.1.dist-info/INSTALLER,sha256=zuuue4knoyJ-UwPPXg8fezS7VCrXJQrAP7zeNuwvFQg,4
-html5lib-1.1.dist-info/LICENSE,sha256=FqOZkWGekvGGgJMtoqkZn999ld8-yu3FLqBiGKq6_W8,1084
-html5lib-1.1.dist-info/METADATA,sha256=o9amJ3IQEmkazpYOi8BlOpuZzAxHaFC7MDg7R_u4bsI,16098
+html5lib-1.1.dist-info/METADATA,sha256=YRnbU0xsELfcLEmMmEbrdtWZL7_a7muglhmZFJQK2qc,16319
 html5lib-1.1.dist-info/RECORD,,
 html5lib-1.1.dist-info/REQUESTED,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
-html5lib-1.1.dist-info/WHEEL,sha256=P2T-6epvtXQ2cBOE_U1K4_noqlJFN3tj15djMgEu4NM,110
+html5lib-1.1.dist-info/WHEEL,sha256=Mk1ST5gDzEO5il5kYREiBnzzM469m5sI8ESPl7TRhJY,110
+html5lib-1.1.dist-info/licenses/AUTHORS.rst,sha256=DrNAMifoDpuQyJn-KW-H6K8Tt2a5rKnV2UF4-DRrGUI,983
+html5lib-1.1.dist-info/licenses/LICENSE,sha256=FqOZkWGekvGGgJMtoqkZn999ld8-yu3FLqBiGKq6_W8,1084
 html5lib-1.1.dist-info/top_level.txt,sha256=XEX6CHpskSmvjJB4tP6m4Q5NYXhIf_0ceMc0PNbzJPQ,9
 html5lib/__init__.py,sha256=pWnYcfZ69wNLrdQL7bpr49FUi8O8w0KhKCOHsyRgYGQ,1143
 html5lib/_ihatexml.py,sha256=ifOwF7pXqmyThIXc3boWc96s4MDezqRrRVp7FwDYUFs,16728

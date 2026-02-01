@@ -1,11 +1,13 @@
 # dialects/mysql/expression.py
-# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2026 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
 # the MIT License: https://www.opensource.org/licenses/mit-license.php
-# mypy: ignore-errors
 
+from __future__ import annotations
+
+from typing import Any
 
 from ... import exc
 from ... import util
@@ -18,7 +20,7 @@ from ...sql.base import Generative
 from ...util.typing import Self
 
 
-class match(Generative, elements.BinaryExpression):
+class match(Generative, elements.BinaryExpression[Any]):
     """Produce a ``MATCH (X, Y) AGAINST ('TEXT')`` clause.
 
     E.g.::
@@ -73,8 +75,9 @@ class match(Generative, elements.BinaryExpression):
     __visit_name__ = "mysql_match"
 
     inherit_cache = True
+    modifiers: util.immutabledict[str, Any]
 
-    def __init__(self, *cols, **kw):
+    def __init__(self, *cols: elements.ColumnElement[Any], **kw: Any):
         if not cols:
             raise exc.ArgumentError("columns are required")
 

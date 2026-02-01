@@ -16,8 +16,11 @@ from typing import TYPE_CHECKING
 from typing import Union
 
 from sqlalchemy import Column
+from sqlalchemy import Float
+from sqlalchemy import Identity
 from sqlalchemy import literal_column
 from sqlalchemy import Numeric
+from sqlalchemy import select
 from sqlalchemy import text
 from sqlalchemy import types as sqltypes
 from sqlalchemy.dialects.postgresql import BIGINT
@@ -49,6 +52,7 @@ from ..operations.base import Operations
 from ..util import sqla_compat
 from ..util.sqla_compat import compiles
 
+
 if TYPE_CHECKING:
     from typing import Literal
 
@@ -66,11 +70,11 @@ if TYPE_CHECKING:
     from sqlalchemy.sql.schema import Table
     from sqlalchemy.sql.type_api import TypeEngine
 
-    from .base import _ServerDefault
+    from .base import _ServerDefaultType
+    from .impl import _ReflectedConstraint
     from ..autogenerate.api import AutogenContext
     from ..autogenerate.render import _f_name
     from ..runtime.migration import MigrationContext
-
 
 log = logging.getLogger(__name__)
 
@@ -109,6 +113,7 @@ class PostgresqlImpl(DefaultImpl):
         rendered_metadata_default,
         rendered_inspector_default,
     ):
+
         # don't do defaults for SERIAL columns
         if (
             metadata_column.primary_key
@@ -117,6 +122,11 @@ class PostgresqlImpl(DefaultImpl):
             return False
 
         conn_col_default = rendered_inspector_default
+
+        if conn_col_default and re.match(
+            r"nextval\('(.+?)'::regclass\)", conn_col_default
+        ):
+            conn_col_default = conn_col_default.replace("::regclass", "")
 
         defaults_equal = conn_col_default == rendered_metadata_default
         if defaults_equal:
@@ -132,33 +142,38 @@ class PostgresqlImpl(DefaultImpl):
         metadata_default = metadata_column.server_default.arg
 
         if isinstance(metadata_default, str):
-            if not isinstance(inspector_column.type, Numeric):
+            if not isinstance(inspector_column.type, (Numeric, Float)):
                 metadata_default = re.sub(r"^'|'$", "", metadata_default)
                 metadata_default = f"'{metadata_default}'"
 
             metadata_default = literal_column(metadata_default)
 
         # run a real compare against the server
+        # TODO: this seems quite a bad idea for a default that's a SQL
+        # function!   SQL functions are not deterministic!
         conn = self.connection
         assert conn is not None
         return not conn.scalar(
-            sqla_compat._select(
-                literal_column(conn_col_default) == metadata_default
-            )
+            select(literal_column(conn_col_default) == metadata_default)
         )
 
-    def alter_column(  # type:ignore[override]
+    def alter_column(
         self,
         table_name: str,
         column_name: str,
+        *,
         nullable: Optional[bool] = None,
-        server_default: Union[_ServerDefault, Literal[False]] = False,
+        server_default: Optional[
+            Union[_ServerDefaultType, Literal[False]]
+        ] = False,
         name: Optional[str] = None,
         type_: Optional[TypeEngine] = None,
         schema: Optional[str] = None,
         autoincrement: Optional[bool] = None,
         existing_type: Optional[TypeEngine] = None,
-        existing_server_default: Optional[_ServerDefault] = None,
+        existing_server_default: Optional[
+            Union[_ServerDefaultType, Literal[False]]
+        ] = None,
         existing_nullable: Optional[bool] = None,
         existing_autoincrement: Optional[bool] = None,
         **kw: Any,
@@ -314,7 +329,7 @@ class PostgresqlImpl(DefaultImpl):
         self, item: Union[Index, UniqueConstraint]
     ) -> Tuple[Any, ...]:
         # only the positive case is returned by sqlalchemy reflection so
-        # None and False are threated the same
+        # None and False are treated the same
         if item.dialect_kwargs.get("postgresql_nulls_not_distinct"):
             return ("nulls_not_distinct",)
         return ()
@@ -408,10 +423,10 @@ class PostgresqlImpl(DefaultImpl):
         return ComparisonResult.Equal()
 
     def adjust_reflected_dialect_options(
-        self, reflected_options: Dict[str, Any], kind: str
+        self, reflected_object: _ReflectedConstraint, kind: str
     ) -> Dict[str, Any]:
         options: Dict[str, Any]
-        options = reflected_options.get("dialect_options", {}).copy()
+        options = reflected_object.get("dialect_options", {}).copy()  # type: ignore[attr-defined]  # noqa: E501
         if not options.get("postgresql_include"):
             options.pop("postgresql_include", None)
         return options
@@ -585,7 +600,7 @@ def visit_identity_column(
                 )
             else:
                 text += "SET %s " % compiler.get_identity_options(
-                    sqla_compat.Identity(**{attr: getattr(identity, attr)})
+                    Identity(**{attr: getattr(identity, attr)})
                 )
         return text
 
@@ -845,5 +860,5 @@ def _render_potential_column(
         return render._render_potential_expr(
             value,
             autogen_context,
-            wrap_in_text=isinstance(value, (TextClause, FunctionElement)),
+            wrap_in_element=isinstance(value, (TextClause, FunctionElement)),
         )

@@ -1,5 +1,5 @@
 # ext/associationproxy.py
-# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2026 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -99,6 +99,7 @@ def association_proxy(
     compare: Union[_NoArg, bool] = _NoArg.NO_ARG,
     kw_only: Union[_NoArg, bool] = _NoArg.NO_ARG,
     hash: Union[_NoArg, bool, None] = _NoArg.NO_ARG,  # noqa: A002
+    dataclass_metadata: Union[_NoArg, Mapping[Any, Any], None] = _NoArg.NO_ARG,
 ) -> AssociationProxy[Any]:
     r"""Return a Python property implementing a view of a target
     attribute which references an attribute on members of the
@@ -162,7 +163,7 @@ def association_proxy(
       the proxied value to ``None`` should **create** the source object
       if it does not exist, using the creator.  Only applies to scalar
       attributes.  This is mutually exclusive
-      vs. the :paramref:`.assocation_proxy.cascade_scalar_deletes`.
+      vs. the :paramref:`.association_proxy.cascade_scalar_deletes`.
 
       .. versionadded:: 2.0.18
 
@@ -206,6 +207,12 @@ def association_proxy(
 
      .. versionadded:: 2.0.36
 
+    :param dataclass_metadata: Specific to
+     :ref:`orm_declarative_native_dataclasses`, supplies metadata
+     to be attached to the generated dataclass field.
+
+     .. versionadded:: 2.0.42
+
     :param info: optional, will be assigned to
      :attr:`.AssociationProxy.info` if present.
 
@@ -245,7 +252,14 @@ def association_proxy(
         cascade_scalar_deletes=cascade_scalar_deletes,
         create_on_none_assignment=create_on_none_assignment,
         attribute_options=_AttributeOptions(
-            init, repr, default, default_factory, compare, kw_only, hash
+            init,
+            repr,
+            default,
+            default_factory,
+            compare,
+            kw_only,
+            hash,
+            dataclass_metadata,
         ),
     )
 
@@ -658,7 +672,7 @@ class AssociationProxyInstance(SQLORMOperations[_T]):
         except Exception as err:
             raise exc.InvalidRequestError(
                 f"Association proxy received an unexpected error when "
-                f"trying to retreive attribute "
+                f"trying to retrieve attribute "
                 f'"{target_class.__name__}.{parent.value_attr}" from '
                 f'class "{target_class.__name__}": {err}'
             ) from err

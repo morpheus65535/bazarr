@@ -1,11 +1,12 @@
 import asyncio
+import base64
 from functools import partial
 import uuid
 
 from engineio import json
-import pickle
 
 from .async_manager import AsyncManager
+from .packet import Packet
 
 
 class AsyncPubSubManager(AsyncManager):
@@ -65,8 +66,16 @@ class AsyncPubSubManager(AsyncManager):
             callback = (room, namespace, id)
         else:
             callback = None
+        if isinstance(data, tuple):
+            data = list(data)
+        else:
+            data = [data]
+        binary = Packet.data_is_binary(data)
+        if binary:
+            data, attachments = Packet.deconstruct_binary(data)
+            data = [data, *[base64.b64encode(a).decode() for a in attachments]]
         message = {'method': 'emit', 'event': event, 'data': data,
-                   'namespace': namespace, 'room': room,
+                   'binary': binary, 'namespace': namespace, 'room': room,
                    'skip_sid': skip_sid, 'callback': callback,
                    'host_id': self.host_id}
         await self._handle_emit(message)  # handle in this host
@@ -146,7 +155,16 @@ class AsyncPubSubManager(AsyncManager):
                                *remote_callback)
         else:
             callback = None
-        await super().emit(message['event'], message['data'],
+        data = message['data']
+        if message.get('binary'):
+            attachments = [base64.b64decode(a) for a in data[1:]]
+            data = Packet.reconstruct_binary(data[0], attachments)
+        if isinstance(data, list):
+            if len(data) == 1:
+                data = data[0]
+            else:
+                data = tuple(data)
+        await super().emit(message['event'], data,
                            namespace=message.get('namespace'),
                            room=message.get('room'),
                            skip_sid=message.get('skip_sid'),
@@ -202,16 +220,10 @@ class AsyncPubSubManager(AsyncManager):
                     if isinstance(message, dict):
                         data = message
                     else:
-                        if isinstance(message, bytes):  # pragma: no cover
-                            try:
-                                data = pickle.loads(message)
-                            except:
-                                pass
-                        if data is None:
-                            try:
-                                data = json.loads(message)
-                            except:
-                                pass
+                        try:
+                            data = json.loads(message)
+                        except:
+                            pass
                     if data and 'method' in data:
                         self._get_logger().debug('pubsub message: {}'.format(
                             data['method']))

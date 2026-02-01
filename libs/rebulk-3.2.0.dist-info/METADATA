@@ -1,4 +1,4 @@
-Metadata-Version: 2.1
+Metadata-Version: 2.4
 Name: rebulk
 Version: 3.2.0
 Summary: Rebulk - Define simple search patterns in bulk to perform advanced matching on any string.
@@ -21,15 +21,27 @@ Classifier: Programming Language :: Python :: 3.11
 Classifier: Topic :: Software Development :: Libraries :: Python Modules
 Description-Content-Type: text/markdown
 License-File: LICENSE
-Provides-Extra: dev
-Requires-Dist: pytest ; extra == 'dev'
-Requires-Dist: pylint ; extra == 'dev'
-Requires-Dist: tox ; extra == 'dev'
-Provides-Extra: native
-Requires-Dist: regex ; extra == 'native'
 Provides-Extra: test
-Requires-Dist: pytest ; extra == 'test'
-Requires-Dist: pylint ; extra == 'test'
+Requires-Dist: pytest; extra == "test"
+Requires-Dist: pylint; extra == "test"
+Provides-Extra: dev
+Requires-Dist: pytest; extra == "dev"
+Requires-Dist: pylint; extra == "dev"
+Requires-Dist: tox; extra == "dev"
+Provides-Extra: native
+Requires-Dist: regex; extra == "native"
+Dynamic: author
+Dynamic: author-email
+Dynamic: classifier
+Dynamic: description
+Dynamic: description-content-type
+Dynamic: download-url
+Dynamic: home-page
+Dynamic: keywords
+Dynamic: license
+Dynamic: license-file
+Dynamic: provides-extra
+Dynamic: summary
 
 ReBulk
 ======

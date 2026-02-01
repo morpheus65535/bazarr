@@ -1,5 +1,5 @@
 # ext/mypy/names.py
-# Copyright (C) 2021-2025 the SQLAlchemy authors and contributors
+# Copyright (C) 2021-2026 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -297,7 +297,7 @@ def type_id_for_callee(callee: Expression) -> Optional[int]:
 
 
 def type_id_for_named_node(
-    node: Union[NameExpr, MemberExpr, SymbolNode]
+    node: Union[NameExpr, MemberExpr, SymbolNode],
 ) -> Optional[int]:
     type_id, fullnames = _lookup.get(node.name, (None, None))
 

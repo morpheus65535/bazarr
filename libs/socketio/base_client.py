@@ -93,6 +93,7 @@ class BaseClient:
 
         self.connected = False  #: Indicates if the client is connected or not.
         self.namespaces = {}  #: set of connected namespaces.
+        self.failed_namespaces = []
         self.handlers = {}
         self.namespace_handlers = {}
         self.callbacks = {}

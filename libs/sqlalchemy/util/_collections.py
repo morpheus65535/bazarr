@@ -1,5 +1,5 @@
 # util/_collections.py
-# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2026 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -454,7 +454,9 @@ def to_column_set(x: Any) -> Set[Any]:
         return x
 
 
-def update_copy(d, _new=None, **kw):
+def update_copy(
+    d: Dict[Any, Any], _new: Optional[Dict[Any, Any]] = None, **kw: Any
+) -> Dict[Any, Any]:
     """Copy the given dict and update with the given values."""
 
     d = d.copy()

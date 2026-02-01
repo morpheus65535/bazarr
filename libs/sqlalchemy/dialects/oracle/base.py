@@ -1,5 +1,5 @@
 # dialects/oracle/base.py
-# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2026 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -153,15 +153,140 @@ Identifier Casing
 -----------------
 
 In Oracle Database, the data dictionary represents all case insensitive
-identifier names using UPPERCASE text.  SQLAlchemy on the other hand considers
-an all-lower case identifier name to be case insensitive.  The Oracle Database
-dialects convert all case insensitive identifiers to and from those two formats
-during schema level communication, such as reflection of tables and indexes.
-Using an UPPERCASE name on the SQLAlchemy side indicates a case sensitive
-identifier, and SQLAlchemy will quote the name - this will cause mismatches
-against data dictionary data received from Oracle Database, so unless
-identifier names have been truly created as case sensitive (i.e. using quoted
-names), all lowercase names should be used on the SQLAlchemy side.
+identifier names using UPPERCASE text.  This is in contradiction to the
+expectations of SQLAlchemy, which assume a case insensitive name is represented
+as lowercase text.
+
+As an example of case insensitive identifier names, consider the following table:
+
+.. sourcecode:: sql
+
+    CREATE TABLE MyTable (Identifier INTEGER PRIMARY KEY)
+
+If you were to ask Oracle Database for information about this table, the
+table name would be reported as ``MYTABLE`` and the column name would
+be reported as ``IDENTIFIER``.    Compare to most other databases such as
+PostgreSQL and MySQL which would report these names as ``mytable`` and
+``identifier``.   The names are **not quoted, therefore are case insensitive**.
+The special casing of ``MyTable`` and ``Identifier`` would only be maintained
+if they were quoted in the table definition:
+
+.. sourcecode:: sql
+
+    CREATE TABLE "MyTable" ("Identifier" INTEGER PRIMARY KEY)
+
+When constructing a SQLAlchemy :class:`.Table` object, **an all lowercase name
+is considered to be case insensitive**.   So the following table assumes
+case insensitive names::
+
+    Table("mytable", metadata, Column("identifier", Integer, primary_key=True))
+
+Whereas when mixed case or UPPERCASE names are used, case sensitivity is
+assumed::
+
+    Table("MyTable", metadata, Column("Identifier", Integer, primary_key=True))
+
+A similar situation occurs at the database driver level when emitting a
+textual SQL SELECT statement and looking at column names in the DBAPI
+``cursor.description`` attribute.  A database like PostgreSQL will normalize
+case insensitive names to be lowercase::
+
+    >>> pg_engine = create_engine("postgresql://scott:tiger@localhost/test")
+    >>> pg_connection = pg_engine.connect()
+    >>> result = pg_connection.exec_driver_sql("SELECT 1 AS SomeName")
+    >>> result.cursor.description
+    (Column(name='somename', type_code=23),)
+
+Whereas Oracle normalizes them to UPPERCASE::
+
+    >>> oracle_engine = create_engine("oracle+oracledb://scott:tiger@oracle18c/xe")
+    >>> oracle_connection = oracle_engine.connect()
+    >>> result = oracle_connection.exec_driver_sql(
+    ...     "SELECT 1 AS SomeName FROM DUAL"
+    ... )
+    >>> result.cursor.description
+    [('SOMENAME', <DbType DB_TYPE_NUMBER>, 127, None, 0, -127, True)]
+
+In order to achieve cross-database parity for the two cases of a. table
+reflection and b. textual-only SQL statement round trips, SQLAlchemy performs a step
+called **name normalization** when using the Oracle dialect.  This process may
+also apply to other third party dialects that have similar UPPERCASE handling
+of case insensitive names.
+
+When using name normalization, SQLAlchemy attempts to detect if a name is
+case insensitive by checking if all characters are UPPERCASE letters only;
+if so, then it assumes this is a case insensitive name and is delivered as
+a lowercase name.
+
+For table reflection, a tablename that is seen represented as all UPPERCASE
+in Oracle Database's catalog tables will be assumed to have a case insensitive
+name.  This is what allows the ``Table`` definition to use lower case names
+and be equally compatible from a reflection point of view on Oracle Database
+and all other databases such as PostgreSQL and MySQL::
+
+    # matches a table created with CREATE TABLE mytable
+    Table("mytable", metadata, autoload_with=some_engine)
+
+Above, the all lowercase name ``"mytable"`` is case insensitive; it will match
+a table reported by PostgreSQL as ``"mytable"`` and a table reported by
+Oracle as ``"MYTABLE"``.  If name normalization were not present, it would
+not be possible for the above :class:`.Table` definition to be introspectable
+in a cross-database way, since we are dealing with a case insensitive name
+that is not reported by each database in the same way.
+
+Case sensitivity can be forced on in this case, such as if we wanted to represent
+the quoted tablename ``"MYTABLE"`` with that exact casing, most simply by using
+that casing directly, which will be seen as a case sensitive name::
+
+    # matches a table created with CREATE TABLE "MYTABLE"
+    Table("MYTABLE", metadata, autoload_with=some_engine)
+
+For the unusual case of a quoted all-lowercase name, the :class:`.quoted_name`
+construct may be used::
+
+    from sqlalchemy import quoted_name
+
+    # matches a table created with CREATE TABLE "mytable"
+    Table(
+        quoted_name("mytable", quote=True), metadata, autoload_with=some_engine
+    )
+
+Name normalization also takes place when handling result sets from **purely
+textual SQL strings**, that have no other :class:`.Table` or :class:`.Column`
+metadata associated with them. This includes SQL strings executed using
+:meth:`.Connection.exec_driver_sql` and SQL strings executed using the
+:func:`.text` construct which do not include :class:`.Column` metadata.
+
+Returning to the Oracle Database SELECT statement, we see that even though
+``cursor.description`` reports the column name as ``SOMENAME``, SQLAlchemy
+name normalizes this to ``somename``::
+
+    >>> oracle_engine = create_engine("oracle+oracledb://scott:tiger@oracle18c/xe")
+    >>> oracle_connection = oracle_engine.connect()
+    >>> result = oracle_connection.exec_driver_sql(
+    ...     "SELECT 1 AS SomeName FROM DUAL"
+    ... )
+    >>> result.cursor.description
+    [('SOMENAME', <DbType DB_TYPE_NUMBER>, 127, None, 0, -127, True)]
+    >>> result.keys()
+    RMKeyView(['somename'])
+
+The single scenario where the above behavior produces inaccurate results
+is when using an all-uppercase, quoted name.  SQLAlchemy has no way to determine
+that a particular name in ``cursor.description`` was quoted, and is therefore
+case sensitive, or was not quoted, and should be name normalized::
+
+    >>> result = oracle_connection.exec_driver_sql(
+    ...     'SELECT 1 AS "SOMENAME" FROM DUAL'
+    ... )
+    >>> result.cursor.description
+    [('SOMENAME', <DbType DB_TYPE_NUMBER>, 127, None, 0, -127, True)]
+    >>> result.keys()
+    RMKeyView(['somename'])
+
+For this case, a new feature will be available in SQLAlchemy 2.1 to disable
+the name normalization behavior in specific cases.
+
 
 .. _oracle_max_identifier_lengths:
 
@@ -597,11 +722,230 @@ The ``oracle_compress`` parameter accepts either an integer specifying the
 number of prefix columns to compress, or ``True`` to use the default (all
 columns for non-unique indexes, all but the last column for unique indexes).
 
+.. _oracle_vector_datatype:
+
+VECTOR Datatype
+---------------
+
+Oracle Database 23ai introduced a new VECTOR datatype for artificial intelligence
+and machine learning search operations. The VECTOR datatype is a homogeneous array
+of 8-bit signed integers, 8-bit unsigned integers (binary), 32-bit floating-point
+numbers, or 64-bit floating-point numbers.
+
+A vector's storage type can be either DENSE or SPARSE. A dense vector contains
+meaningful values in most or all of its dimensions. In contrast, a sparse vector
+has non-zero values in only a few dimensions, with the majority being zero.
+
+Sparse vectors are represented by the total number of vector dimensions, an array
+of indices, and an array of values where each value’s location in the vector is
+indicated by the corresponding indices array position. All other vector values are
+treated as zero.
+
+The storage formats that can be used with sparse vectors are float32, float64, and
+int8. Note that the binary storage format cannot be used with sparse vectors.
+
+Sparse vectors are supported when you are using Oracle Database 23.7 or later.
+
+.. seealso::
+
+    `Using VECTOR Data
+    <https://python-oracledb.readthedocs.io/en/latest/user_guide/vector_data_type.html>`_ - in the documentation
+    for the :ref:`oracledb` driver.
+
+.. versionadded:: 2.0.41 - Added VECTOR datatype
+
+.. versionadded:: 2.0.43 - Added DENSE/SPARSE support
+
+CREATE TABLE support for VECTOR
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+With the :class:`.VECTOR` datatype, you can specify the number of dimensions,
+the storage format, and the storage type for the data. Valid values for the
+storage format are enum members of :class:`.VectorStorageFormat`. Valid values
+for the storage type are enum members of :class:`.VectorStorageType`. If
+storage type is not specified, a DENSE vector is created by default.
+
+To create a table that includes a :class:`.VECTOR` column::
+
+    from sqlalchemy.dialects.oracle import (
+        VECTOR,
+        VectorStorageFormat,
+        VectorStorageType,
+    )
+
+    t = Table(
+        "t1",
+        metadata,
+        Column("id", Integer, primary_key=True),
+        Column(
+            "embedding",
+            VECTOR(
+                dim=3,
+                storage_format=VectorStorageFormat.FLOAT32,
+                storage_type=VectorStorageType.SPARSE,
+            ),
+        ),
+        Column(...),
+        ...,
+    )
+
+Vectors can also be defined with an arbitrary number of dimensions and formats.
+This allows you to specify vectors of different dimensions with the various
+storage formats mentioned below.
+
+**Examples**
+
+* In this case, the storage format is flexible, allowing any vector type data to be
+  inserted, such as INT8 or BINARY etc::
+
+    vector_col: Mapped[array.array] = mapped_column(VECTOR(dim=3))
+
+* The dimension is flexible in this case, meaning that any dimension vector can
+  be used::
+
+    vector_col: Mapped[array.array] = mapped_column(
+        VECTOR(storage_format=VectorStorageType.INT8)
+    )
+
+* Both the dimensions and the storage format are flexible. It creates a DENSE vector::
+
+    vector_col: Mapped[array.array] = mapped_column(VECTOR)
+
+* To create a SPARSE vector with both dimensions and the storage format as flexible,
+  use the :attr:`.VectorStorageType.SPARSE` storage type::
+
+    vector_col: Mapped[array.array] = mapped_column(
+        VECTOR(storage_type=VectorStorageType.SPARSE)
+    )
+
+Python Datatypes for VECTOR
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+VECTOR data can be inserted using Python list or Python ``array.array()`` objects.
+Python arrays of type FLOAT (32-bit), DOUBLE (64-bit), INT (8-bit signed integers),
+or BINARY (8-bit unsigned integers) are used as bind values when inserting
+VECTOR columns::
+
+    from sqlalchemy import insert, select
+
+    with engine.begin() as conn:
+        conn.execute(
+            insert(t1),
+            {"id": 1, "embedding": [1, 2, 3]},
+        )
+
+Data can be inserted into a sparse vector using the :class:`_oracle.SparseVector`
+class, creating an object consisting of the number of dimensions, an array of indices, and a
+corresponding array of values::
+
+    from sqlalchemy import insert, select
+    from sqlalchemy.dialects.oracle import SparseVector
+
+    sparse_val = SparseVector(10, [1, 2], array.array("d", [23.45, 221.22]))
+
+    with engine.begin() as conn:
+        conn.execute(
+            insert(t1),
+            {"id": 1, "embedding": sparse_val},
+        )
+
+VECTOR Indexes
+~~~~~~~~~~~~~~
+
+The VECTOR feature supports an Oracle-specific parameter ``oracle_vector``
+on the :class:`.Index` construct, which allows the construction of VECTOR
+indexes.
+
+SPARSE vectors cannot be used in the creation of vector indexes.
+
+To utilize VECTOR indexing, set the ``oracle_vector`` parameter to True to use
+the default values provided by Oracle. HNSW is the default indexing method::
+
+    from sqlalchemy import Index
+
+    Index(
+        "vector_index",
+        t1.c.embedding,
+        oracle_vector=True,
+    )
+
+The full range of parameters for vector indexes are available by using the
+:class:`.VectorIndexConfig` dataclass in place of a boolean; this dataclass
+allows full configuration of the index::
+
+    Index(
+        "hnsw_vector_index",
+        t1.c.embedding,
+        oracle_vector=VectorIndexConfig(
+            index_type=VectorIndexType.HNSW,
+            distance=VectorDistanceType.COSINE,
+            accuracy=90,
+            hnsw_neighbors=5,
+            hnsw_efconstruction=20,
+            parallel=10,
+        ),
+    )
+
+    Index(
+        "ivf_vector_index",
+        t1.c.embedding,
+        oracle_vector=VectorIndexConfig(
+            index_type=VectorIndexType.IVF,
+            distance=VectorDistanceType.DOT,
+            accuracy=90,
+            ivf_neighbor_partitions=5,
+        ),
+    )
+
+For complete explanation of these parameters, see the Oracle documentation linked
+below.
+
+.. seealso::
+
+    `CREATE VECTOR INDEX <https://www.oracle.com/pls/topic/lookup?ctx=dblatest&id=GUID-B396C369-54BB-4098-A0DD-7C54B3A0D66F>`_ - in the Oracle documentation
+
+
+
+Similarity Searching
+~~~~~~~~~~~~~~~~~~~~
+
+When using the :class:`_oracle.VECTOR` datatype with a :class:`.Column` or similar
+ORM mapped construct, additional comparison functions are available, including:
+
+* ``l2_distance``
+* ``cosine_distance``
+* ``inner_product``
+
+Example Usage::
+
+    result_vector = connection.scalars(
+        select(t1).order_by(t1.embedding.l2_distance([2, 3, 4])).limit(3)
+    )
+
+    for user in vector:
+        print(user.id, user.embedding)
+
+FETCH APPROXIMATE support
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Approximate vector search can only be performed when all syntax and semantic
+rules are satisfied, the corresponding vector index is available, and the
+query optimizer determines to perform it. If any of these conditions are
+unmet, then an approximate search is not performed. In this case the query
+returns exact results.
+
+To enable approximate searching during similarity searches on VECTORS, the
+``oracle_fetch_approximate`` parameter may be used with the :meth:`.Select.fetch`
+clause to add ``FETCH APPROX`` to the SELECT statement::
+
+    select(users_table).fetch(5, oracle_fetch_approximate=True)
+
 """  # noqa
 
 from __future__ import annotations
 
 from collections import defaultdict
+from dataclasses import fields
 from functools import lru_cache
 from functools import wraps
 import re
@@ -624,6 +968,9 @@ from .types import RAW
 from .types import ROWID  # noqa
 from .types import TIMESTAMP
 from .types import VARCHAR2  # noqa
+from .vector import VECTOR
+from .vector import VectorIndexConfig
+from .vector import VectorIndexType
 from ... import Computed
 from ... import exc
 from ... import schema as sa_schema
@@ -642,6 +989,7 @@ from ...sql import func
 from ...sql import null
 from ...sql import or_
 from ...sql import select
+from ...sql import selectable as sa_selectable
 from ...sql import sqltypes
 from ...sql import util as sql_util
 from ...sql import visitors
@@ -703,6 +1051,7 @@ ischema_names = {
     "BINARY_DOUBLE": BINARY_DOUBLE,
     "BINARY_FLOAT": BINARY_FLOAT,
     "ROWID": ROWID,
+    "VECTOR": VECTOR,
 }
 
 
@@ -859,6 +1208,18 @@ class OracleTypeCompiler(compiler.GenericTypeCompiler):
 
     def visit_ROWID(self, type_, **kw):
         return "ROWID"
+
+    def visit_VECTOR(self, type_, **kw):
+        dim = type_.dim if type_.dim is not None else "*"
+        storage_format = (
+            type_.storage_format.value
+            if type_.storage_format is not None
+            else "*"
+        )
+        storage_type = (
+            type_.storage_type.value if type_.storage_type is not None else "*"
+        )
+        return f"VECTOR({dim},{storage_format},{storage_type})"
 
 
 class OracleCompiler(compiler.SQLCompiler):
@@ -1097,6 +1458,29 @@ class OracleCompiler(compiler.SQLCompiler):
             return select._limit_clause
         else:
             return select._fetch_clause
+
+    def fetch_clause(
+        self,
+        select,
+        fetch_clause=None,
+        require_offset=False,
+        use_literal_execute_for_simple_int=False,
+        **kw,
+    ):
+        text = super().fetch_clause(
+            select,
+            fetch_clause=fetch_clause,
+            require_offset=require_offset,
+            use_literal_execute_for_simple_int=(
+                use_literal_execute_for_simple_int
+            ),
+            **kw,
+        )
+
+        if select.dialect_options["oracle"]["fetch_approximate"]:
+            text = re.sub("FETCH FIRST", "FETCH APPROX FIRST", text)
+
+        return text
 
     def translate_select_structure(self, select_stmt, **kwargs):
         select = select_stmt
@@ -1346,6 +1730,48 @@ class OracleCompiler(compiler.SQLCompiler):
 
 
 class OracleDDLCompiler(compiler.DDLCompiler):
+
+    def _build_vector_index_config(
+        self, vector_index_config: VectorIndexConfig
+    ) -> str:
+        parts = []
+        sql_param_name = {
+            "hnsw_neighbors": "neighbors",
+            "hnsw_efconstruction": "efconstruction",
+            "ivf_neighbor_partitions": "neighbor partitions",
+            "ivf_sample_per_partition": "sample_per_partition",
+            "ivf_min_vectors_per_partition": "min_vectors_per_partition",
+        }
+        if vector_index_config.index_type == VectorIndexType.HNSW:
+            parts.append("ORGANIZATION INMEMORY NEIGHBOR GRAPH")
+        elif vector_index_config.index_type == VectorIndexType.IVF:
+            parts.append("ORGANIZATION NEIGHBOR PARTITIONS")
+        if vector_index_config.distance is not None:
+            parts.append(f"DISTANCE {vector_index_config.distance.value}")
+
+        if vector_index_config.accuracy is not None:
+            parts.append(
+                f"WITH TARGET ACCURACY {vector_index_config.accuracy}"
+            )
+
+        parameters_str = [f"type {vector_index_config.index_type.name}"]
+        prefix = vector_index_config.index_type.name.lower() + "_"
+
+        for field in fields(vector_index_config):
+            if field.name.startswith(prefix):
+                key = sql_param_name.get(field.name)
+                value = getattr(vector_index_config, field.name)
+                if value is not None:
+                    parameters_str.append(f"{key} {value}")
+
+        parameters_str = ", ".join(parameters_str)
+        parts.append(f"PARAMETERS ({parameters_str})")
+
+        if vector_index_config.parallel is not None:
+            parts.append(f"PARALLEL {vector_index_config.parallel}")
+
+        return " ".join(parts)
+
     def define_constraint_cascades(self, constraint):
         text = ""
         if constraint.ondelete is not None:
@@ -1378,6 +1804,9 @@ class OracleDDLCompiler(compiler.DDLCompiler):
             text += "UNIQUE "
         if index.dialect_options["oracle"]["bitmap"]:
             text += "BITMAP "
+        vector_options = index.dialect_options["oracle"]["vector"]
+        if vector_options:
+            text += "VECTOR "
         text += "INDEX %s ON %s (%s)" % (
             self._prepared_index_name(index, include_schema=True),
             preparer.format_table(index.table, use_schema=True),
@@ -1395,6 +1824,11 @@ class OracleDDLCompiler(compiler.DDLCompiler):
                 text += " COMPRESS %d" % (
                     index.dialect_options["oracle"]["compress"]
                 )
+        if vector_options:
+            if vector_options is True:
+                vector_options = VectorIndexConfig()
+
+            text += " " + self._build_vector_index_config(vector_options)
         return text
 
     def post_create_table(self, table):
@@ -1545,7 +1979,16 @@ class OracleDialect(default.DefaultDialect):
                 "tablespace": None,
             },
         ),
-        (sa_schema.Index, {"bitmap": False, "compress": False}),
+        (
+            sa_schema.Index,
+            {
+                "bitmap": False,
+                "compress": False,
+                "vector": False,
+            },
+        ),
+        (sa_selectable.Select, {"fetch_approximate": False}),
+        (sa_selectable.CompoundSelect, {"fetch_approximate": False}),
     ]
 
     @util.deprecated_params(
@@ -2175,7 +2618,7 @@ class OracleDialect(default.DefaultDialect):
             and ObjectKind.TABLE in kind
             and ObjectKind.MATERIALIZED_VIEW not in kind
         ):
-            # cant use EXCEPT ALL / MINUS here because we don't have an
+            # can't use EXCEPT ALL / MINUS here because we don't have an
             # excludable row vs. the query above
             # outerjoin + where null works better on oracle 21 but 11 does
             # not like it at all. this is the next best thing

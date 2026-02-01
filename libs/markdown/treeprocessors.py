@@ -368,7 +368,7 @@ class InlineProcessor(Treeprocessor):
         stack = [(tree, tree_parents)]
 
         while stack:
-            currElement, parents = stack.pop()
+            currElement, parents = stack.pop(0)
 
             self.ancestors = parents
             self.__build_ancestors(currElement, self.ancestors)

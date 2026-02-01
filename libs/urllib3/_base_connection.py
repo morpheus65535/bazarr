@@ -62,8 +62,7 @@ if typing.TYPE_CHECKING:
             socket_options: _TYPE_SOCKET_OPTIONS | None = ...,
             proxy: Url | None = None,
             proxy_config: ProxyConfig | None = None,
-        ) -> None:
-            ...
+        ) -> None: ...
 
         def set_tunnel(
             self,
@@ -71,11 +70,9 @@ if typing.TYPE_CHECKING:
             port: int | None = None,
             headers: typing.Mapping[str, str] | None = None,
             scheme: str = "http",
-        ) -> None:
-            ...
+        ) -> None: ...
 
-        def connect(self) -> None:
-            ...
+        def connect(self) -> None: ...
 
         def request(
             self,
@@ -91,14 +88,11 @@ if typing.TYPE_CHECKING:
             preload_content: bool = True,
             decode_content: bool = True,
             enforce_content_length: bool = True,
-        ) -> None:
-            ...
+        ) -> None: ...
 
-        def getresponse(self) -> BaseHTTPResponse:
-            ...
+        def getresponse(self) -> BaseHTTPResponse: ...
 
-        def close(self) -> None:
-            ...
+        def close(self) -> None: ...
 
         @property
         def is_closed(self) -> bool:
@@ -168,5 +162,4 @@ if typing.TYPE_CHECKING:
             cert_file: str | None = None,
             key_file: str | None = None,
             key_password: str | None = None,
-        ) -> None:
-            ...
+        ) -> None: ...

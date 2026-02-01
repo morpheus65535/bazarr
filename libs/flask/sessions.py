@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import collections.abc as c
 import hashlib
 import typing as t
 from collections.abc import MutableMapping
@@ -20,8 +21,7 @@ if t.TYPE_CHECKING:  # pragma: no cover
     from .wrappers import Response
 
 
-# TODO generic when Python > 3.8
-class SessionMixin(MutableMapping):  # type: ignore[type-arg]
+class SessionMixin(MutableMapping[str, t.Any]):
     """Expands a basic dictionary with session attributes."""
 
     @property
@@ -49,8 +49,7 @@ class SessionMixin(MutableMapping):  # type: ignore[type-arg]
     accessed = True
 
 
-# TODO generic when Python > 3.8
-class SecureCookieSession(CallbackDict, SessionMixin):  # type: ignore[type-arg]
+class SecureCookieSession(CallbackDict[str, t.Any], SessionMixin):
     """Base class for sessions based on signed cookies.
 
     This session backend will set the :attr:`modified` and
@@ -72,7 +71,10 @@ class SecureCookieSession(CallbackDict, SessionMixin):  # type: ignore[type-arg]
     #: different users.
     accessed = False
 
-    def __init__(self, initial: t.Any = None) -> None:
+    def __init__(
+        self,
+        initial: c.Mapping[str, t.Any] | c.Iterable[tuple[str, t.Any]] | None = None,
+    ) -> None:
         def on_update(self: te.Self) -> None:
             self.modified = True
             self.accessed = True
@@ -105,7 +107,7 @@ class NullSession(SecureCookieSession):
             "application to something unique and secret."
         )
 
-    __setitem__ = __delitem__ = clear = pop = popitem = update = setdefault = _fail  # type: ignore # noqa: B950
+    __setitem__ = __delitem__ = clear = pop = popitem = update = setdefault = _fail  # noqa: B950
     del _fail
 
 
@@ -224,6 +226,14 @@ class SessionInterface:
         """
         return app.config["SESSION_COOKIE_SAMESITE"]  # type: ignore[no-any-return]
 
+    def get_cookie_partitioned(self, app: Flask) -> bool:
+        """Returns True if the cookie should be partitioned. By default, uses
+        the value of :data:`SESSION_COOKIE_PARTITIONED`.
+
+        .. versionadded:: 3.1
+        """
+        return app.config["SESSION_COOKIE_PARTITIONED"]  # type: ignore[no-any-return]
+
     def get_expiration_time(self, app: Flask, session: SessionMixin) -> datetime | None:
         """A helper method that returns an expiration date for the session
         or ``None`` if the session is linked to the browser session.  The
@@ -307,14 +317,21 @@ class SecureCookieSessionInterface(SessionInterface):
     def get_signing_serializer(self, app: Flask) -> URLSafeTimedSerializer | None:
         if not app.secret_key:
             return None
-        signer_kwargs = dict(
-            key_derivation=self.key_derivation, digest_method=self.digest_method
-        )
+
+        keys: list[str | bytes] = []
+
+        if fallbacks := app.config["SECRET_KEY_FALLBACKS"]:
+            keys.extend(fallbacks)
+
+        keys.append(app.secret_key)  # itsdangerous expects current key at top
         return URLSafeTimedSerializer(
-            app.secret_key,
+            keys,  # type: ignore[arg-type]
             salt=self.salt,
             serializer=self.serializer,
-            signer_kwargs=signer_kwargs,
+            signer_kwargs={
+                "key_derivation": self.key_derivation,
+                "digest_method": self.digest_method,
+            },
         )
 
     def open_session(self, app: Flask, request: Request) -> SecureCookieSession | None:
@@ -338,6 +355,7 @@ class SecureCookieSessionInterface(SessionInterface):
         domain = self.get_cookie_domain(app)
         path = self.get_cookie_path(app)
         secure = self.get_cookie_secure(app)
+        partitioned = self.get_cookie_partitioned(app)
         samesite = self.get_cookie_samesite(app)
         httponly = self.get_cookie_httponly(app)
 
@@ -354,6 +372,7 @@ class SecureCookieSessionInterface(SessionInterface):
                     domain=domain,
                     path=path,
                     secure=secure,
+                    partitioned=partitioned,
                     samesite=samesite,
                     httponly=httponly,
                 )
@@ -365,15 +384,16 @@ class SecureCookieSessionInterface(SessionInterface):
             return
 
         expires = self.get_expiration_time(app, session)
-        val = self.get_signing_serializer(app).dumps(dict(session))  # type: ignore
+        val = self.get_signing_serializer(app).dumps(dict(session))  # type: ignore[union-attr]
         response.set_cookie(
             name,
-            val,  # type: ignore
+            val,
             expires=expires,
             httponly=httponly,
             domain=domain,
             path=path,
             secure=secure,
+            partitioned=partitioned,
             samesite=samesite,
         )
         response.vary.add("Cookie")

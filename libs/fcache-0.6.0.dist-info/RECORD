@@ -1,0 +1,10 @@
+fcache-0.6.0.dist-info/INSTALLER,sha256=zuuue4knoyJ-UwPPXg8fezS7VCrXJQrAP7zeNuwvFQg,4
+fcache-0.6.0.dist-info/METADATA,sha256=zbfQF7h7gdqEqoEVV1JG3YKafEWp5MejX1KII2vtD-U,2818
+fcache-0.6.0.dist-info/RECORD,,
+fcache-0.6.0.dist-info/REQUESTED,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
+fcache-0.6.0.dist-info/WHEEL,sha256=WLgqFyCfm_KASv4WHyYy0P3pM_m7J5L9k2skdKLirC8,87
+fcache-0.6.0.dist-info/licenses/AUTHORS.rst,sha256=z5OBAQvrU1cODlriE7s3MA3AK1JRqcz_c5lxaagXIec,398
+fcache-0.6.0.dist-info/licenses/LICENSE.txt,sha256=UK1ituPhetE5O947l7Iz53IihKh1ZtmBBjUbCCas8-Y,1056
+fcache/__init__.py,sha256=cID1jLnC_vj48GgMN6Yb1FA3JsQ95zNmCHmRYE8TFhY,22
+fcache/cache.py,sha256=WseAg7MRCBRFGIHQYXIKt-cC0MYsFpNuHEAeBRfFgkc,11714
+fcache/posixemulation.py,sha256=qBz1W_LLS0sa9PfAq5SsL_jiZ_OH3h09rwqgrQT4a9A,3748

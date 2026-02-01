@@ -1,5 +1,5 @@
 # ext/hybrid.py
-# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2026 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -253,7 +253,7 @@ is not available to SQLAlchemy under :pep:`484` compliance.
 
 In order to produce a reasonable syntax while remaining typing compliant,
 the :attr:`.hybrid_property.inplace` decorator allows the same
-decorator to be re-used with different method names, while still producing
+decorator to be reused with different method names, while still producing
 a single decorator under one name::
 
     # correct use which is also accepted by pep-484 tooling
@@ -465,7 +465,7 @@ in-Python getter/setter methods can treat ``accounts`` as a Python
 list available on ``self``.
 
 .. tip:: The ``User.balance`` getter in the above example accesses the
-   ``self.acccounts`` collection, which will normally be loaded via the
+   ``self.accounts`` collection, which will normally be loaded via the
    :func:`.selectinload` loader strategy configured on the ``User.balance``
    :func:`_orm.relationship`. The default loader strategy when not otherwise
    stated on :func:`_orm.relationship` is :func:`.lazyload`, which emits SQL on
@@ -923,11 +923,11 @@ class HybridExtensionType(InspectionAttrExtensionType):
 
 
 class _HybridGetterType(Protocol[_T_co]):
-    def __call__(s, self: Any) -> _T_co: ...
+    def __call__(s, __self: Any) -> _T_co: ...
 
 
 class _HybridSetterType(Protocol[_T_con]):
-    def __call__(s, self: Any, value: _T_con) -> None: ...
+    def __call__(s, __self: Any, value: _T_con) -> None: ...
 
 
 class _HybridUpdaterType(Protocol[_T_con]):
@@ -939,12 +939,12 @@ class _HybridUpdaterType(Protocol[_T_con]):
 
 
 class _HybridDeleterType(Protocol[_T_co]):
-    def __call__(s, self: Any) -> None: ...
+    def __call__(s, __self: Any) -> None: ...
 
 
 class _HybridExprCallableType(Protocol[_T_co]):
     def __call__(
-        s, cls: Any
+        s, __cls: Any
     ) -> Union[_HasClauseElement[_T_co], SQLColumnExpression[_T_co]]: ...
 
 
@@ -1140,10 +1140,12 @@ class hybrid_property(interfaces.InspectionAttrInfo, ORMDescriptor[_T]):
         else:
             return self.fget(instance)
 
-    def __set__(self, instance: object, value: Any) -> None:
+    def __set__(
+        self, instance: object, value: Union[SQLCoreOperations[_T], _T]
+    ) -> None:
         if self.fset is None:
             raise AttributeError("can't set attribute")
-        self.fset(instance, value)
+        self.fset(instance, value)  # type: ignore[arg-type]
 
     def __delete__(self, instance: object) -> None:
         if self.fdel is None:
@@ -1244,7 +1246,7 @@ class hybrid_property(interfaces.InspectionAttrInfo, ORMDescriptor[_T]):
         """Return the inplace mutator for this :class:`.hybrid_property`.
 
         This is to allow in-place mutation of the hybrid, allowing the first
-        hybrid method of a certain name to be re-used in order to add
+        hybrid method of a certain name to be reused in order to add
         more methods without having to name those methods the same, e.g.::
 
             class Interval(Base):

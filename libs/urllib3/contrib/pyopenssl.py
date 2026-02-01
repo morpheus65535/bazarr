@@ -40,7 +40,7 @@ like this:
 
 from __future__ import annotations
 
-import OpenSSL.SSL  # type: ignore[import-untyped]
+import OpenSSL.SSL  # type: ignore[import-not-found]
 from cryptography import x509
 
 try:
@@ -61,7 +61,7 @@ from socket import timeout
 from .. import util
 
 if typing.TYPE_CHECKING:
-    from OpenSSL.crypto import X509  # type: ignore[import-untyped]
+    from OpenSSL.crypto import X509  # type: ignore[import-not-found]
 
 
 __all__ = ["inject_into_urllib3", "extract_from_urllib3"]
@@ -366,9 +366,11 @@ class WrappedSocket:
             )
             total_sent += sent
 
-    def shutdown(self) -> None:
-        # FIXME rethrow compatible exceptions should we ever use this
-        self.connection.shutdown()
+    def shutdown(self, how: int) -> None:
+        try:
+            self.connection.shutdown()
+        except OpenSSL.SSL.Error as e:
+            raise ssl.SSLError(f"shutdown error: {e!r}") from e
 
     def close(self) -> None:
         self._closed = True
@@ -422,6 +424,7 @@ class PyOpenSSLContext:
         self.check_hostname = False
         self._minimum_version: int = ssl.TLSVersion.MINIMUM_SUPPORTED
         self._maximum_version: int = ssl.TLSVersion.MAXIMUM_SUPPORTED
+        self._verify_flags: int = ssl.VERIFY_X509_TRUSTED_FIRST
 
     @property
     def options(self) -> int:
@@ -431,6 +434,15 @@ class PyOpenSSLContext:
     def options(self, value: int) -> None:
         self._options = value
         self._set_ctx_options()
+
+    @property
+    def verify_flags(self) -> int:
+        return self._verify_flags
+
+    @verify_flags.setter
+    def verify_flags(self, value: int) -> None:
+        self._verify_flags = value
+        self._ctx.get_cert_store().set_flags(self._verify_flags)
 
     @property
     def verify_mode(self) -> int:

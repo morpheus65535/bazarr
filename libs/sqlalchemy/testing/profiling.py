@@ -1,5 +1,5 @@
 # testing/profiling.py
-# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2026 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -26,6 +26,7 @@ import sys
 
 from . import config
 from .util import gc_collect
+from ..util import freethreading
 from ..util import has_compiled_ext
 
 
@@ -91,6 +92,8 @@ class ProfileStatsFile:
     @property
     def platform_key(self):
         dbapi_key = config.db.name + "_" + config.db.driver
+        if config.db.dialect.is_async:
+            dbapi_key += "_async"
 
         if config.db.name == "sqlite" and config.db.dialect._is_url_file_db(
             config.db.url
@@ -99,6 +102,8 @@ class ProfileStatsFile:
 
         # keep it at 2.7, 3.1, 3.2, etc. for now.
         py_version = ".".join([str(v) for v in sys.version_info[0:2]])
+        if freethreading:
+            py_version += "t"
 
         platform_tokens = [
             platform.machine(),

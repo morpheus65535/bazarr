@@ -6,10 +6,7 @@ try:
 except ImportError:
     import winreg
 
-try:
-    import zoneinfo  # pragma: no cover
-except ImportError:
-    from backports import zoneinfo  # pragma: no cover
+import zoneinfo
 
 from tzlocal import utils
 from tzlocal.windows_tz import win_tz

@@ -196,8 +196,4 @@ _extra_languages = {
         "matches": ("fil", "filipino"),
         "language_args": ("tgl", "PH"),
     },
-    "chi": {
-        "matches": ("zh-tw", "zht", "zh-hant", "zhhant", "hant", "big5", "traditional"),
-        "language_args": ("zho", "TW"),
-    },
 }

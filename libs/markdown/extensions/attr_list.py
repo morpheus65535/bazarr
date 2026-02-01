@@ -8,14 +8,15 @@
 # See https://Python-Markdown.github.io/extensions/attr_list
 # for documentation.
 
-# Original code Copyright 2011 [Waylan Limberg](http://achinghead.com/).
+# Original code Copyright 2011 [Waylan Limberg](https://github.com/waylan).
 
 # All changes Copyright 2011-2014 The Python Markdown Project
 
 # License: [BSD](https://opensource.org/licenses/bsd-license.php)
 
 """
- Adds attribute list syntax. Inspired by
+Adds attribute list syntax to Python-Markdown.
+Inspired by
 [Maruku](http://maruku.rubyforge.org/proposal.html#attribute_lists)'s
 feature of the same name.
 

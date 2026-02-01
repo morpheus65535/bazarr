@@ -1,5 +1,5 @@
 # dialects/postgresql/pg8000.py
-# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors <see AUTHORS
+# Copyright (C) 2005-2026 the SQLAlchemy authors and contributors <see AUTHORS
 # file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -539,6 +539,9 @@ class PGDialect_pg8000(PGDialect):
             )
             cursor.execute("COMMIT")
             cursor.close()
+
+    def detect_autocommit_setting(self, dbapi_conn) -> bool:
+        return bool(dbapi_conn.autocommit)
 
     def set_readonly(self, connection, value):
         cursor = connection.cursor()

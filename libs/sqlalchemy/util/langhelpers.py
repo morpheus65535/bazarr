@@ -1,5 +1,5 @@
 # util/langhelpers.py
-# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2026 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -60,7 +60,85 @@ _HP = TypeVar("_HP", bound="hybridproperty[Any]")
 _HM = TypeVar("_HM", bound="hybridmethod[Any]")
 
 
-if compat.py310:
+if compat.py314:
+    # vendor a minimal form of get_annotations per
+    # https://github.com/python/cpython/issues/133684#issuecomment-2863841891
+
+    from annotationlib import call_annotate_function  # type: ignore[import-not-found,unused-ignore]  # noqa: E501
+    from annotationlib import Format
+
+    def _get_and_call_annotate(obj, format):  # noqa: A002
+        annotate = getattr(obj, "__annotate__", None)
+        if annotate is not None:
+            ann = call_annotate_function(annotate, format, owner=obj)
+            if not isinstance(ann, dict):
+                raise ValueError(f"{obj!r}.__annotate__ returned a non-dict")
+            return ann
+        return None
+
+    # this is ported from py3.13.0a7
+    _BASE_GET_ANNOTATIONS = type.__dict__["__annotations__"].__get__
+
+    def _get_dunder_annotations(obj):
+        if isinstance(obj, type):
+            try:
+                ann = _BASE_GET_ANNOTATIONS(obj)
+            except AttributeError:
+                # For static types, the descriptor raises AttributeError.
+                return {}
+        else:
+            ann = getattr(obj, "__annotations__", None)
+            if ann is None:
+                return {}
+
+        if not isinstance(ann, dict):
+            raise ValueError(
+                f"{obj!r}.__annotations__ is neither a dict nor None"
+            )
+        return dict(ann)
+
+    def _vendored_get_annotations(
+        obj: Any, *, format: Format  # noqa: A002
+    ) -> Mapping[str, Any]:
+        """A sparse implementation of annotationlib.get_annotations()"""
+
+        try:
+            ann = _get_dunder_annotations(obj)
+        except Exception:
+            pass
+        else:
+            if ann is not None:
+                return dict(ann)
+
+        # But if __annotations__ threw a NameError, we try calling __annotate__
+        ann = _get_and_call_annotate(obj, format)
+        if ann is None:
+            # If that didn't work either, we have a very weird object:
+            # evaluating
+            # __annotations__ threw NameError and there is no __annotate__.
+            # In that case,
+            # we fall back to trying __annotations__ again.
+            ann = _get_dunder_annotations(obj)
+
+        if ann is None:
+            if isinstance(obj, type) or callable(obj):
+                return {}
+            raise TypeError(f"{obj!r} does not have annotations")
+
+        if not ann:
+            return {}
+
+        return dict(ann)
+
+    def get_annotations(obj: Any) -> Mapping[str, Any]:
+        # FORWARDREF has the effect of giving us ForwardRefs and not
+        # actually trying to evaluate the annotations.  We need this so
+        # that the annotations act as much like
+        # "from __future__ import annotations" as possible, which is going
+        # away in future python as a separate mode
+        return _vendored_get_annotations(obj, format=Format.FORWARDREF)
+
+elif compat.py310:
 
     def get_annotations(obj: Any) -> Mapping[str, Any]:
         return inspect.get_annotations(obj)
@@ -250,10 +328,30 @@ def decorator(target: Callable[..., Any]) -> Callable[[_Fn], _Fn]:
         if not inspect.isfunction(fn) and not inspect.ismethod(fn):
             raise Exception("not a decoratable function")
 
-        spec = compat.inspect_getfullargspec(fn)
-        env: Dict[str, Any] = {}
+        # Python 3.14 defer creating __annotations__ until its used.
+        # We do not want to create __annotations__ now.
+        annofunc = getattr(fn, "__annotate__", None)
+        if annofunc is not None:
+            fn.__annotate__ = None  # type: ignore[union-attr]
+            try:
+                spec = compat.inspect_getfullargspec(fn)
+            finally:
+                fn.__annotate__ = annofunc  # type: ignore[union-attr]
+        else:
+            spec = compat.inspect_getfullargspec(fn)
 
-        spec = _update_argspec_defaults_into_env(spec, env)
+        # Do not generate code for annotations.
+        # update_wrapper() copies the annotation from fn to decorated.
+        # We use dummy defaults for code generation to avoid having
+        # copy of large globals for compiling.
+        # We copy __defaults__ and __kwdefaults__ from fn to decorated.
+        empty_defaults = (None,) * len(spec.defaults or ())
+        empty_kwdefaults = dict.fromkeys(spec.kwonlydefaults or ())
+        spec = spec._replace(
+            annotations={},
+            defaults=empty_defaults,
+            kwonlydefaults=empty_kwdefaults,
+        )
 
         names = (
             tuple(cast("Tuple[str, ...]", spec[0]))
@@ -298,41 +396,21 @@ def decorator(target: Callable[..., Any]) -> Callable[[_Fn], _Fn]:
                 % metadata
             )
 
-        mod = sys.modules[fn.__module__]
-        env.update(vars(mod))
-        env.update({targ_name: target, fn_name: fn, "__name__": fn.__module__})
+        env: Dict[str, Any] = {
+            targ_name: target,
+            fn_name: fn,
+            "__name__": fn.__module__,
+        }
 
         decorated = cast(
             types.FunctionType,
             _exec_code_in_env(code, env, fn.__name__),
         )
-        decorated.__defaults__ = getattr(fn, "__func__", fn).__defaults__
-
-        decorated.__wrapped__ = fn  # type: ignore[attr-defined]
+        decorated.__defaults__ = fn.__defaults__
+        decorated.__kwdefaults__ = fn.__kwdefaults__  # type: ignore
         return update_wrapper(decorated, fn)  # type: ignore[return-value]
 
     return update_wrapper(decorate, target)  # type: ignore[return-value]
-
-
-def _update_argspec_defaults_into_env(spec, env):
-    """given a FullArgSpec, convert defaults to be symbol names in an env."""
-
-    if spec.defaults:
-        new_defaults = []
-        i = 0
-        for arg in spec.defaults:
-            if type(arg).__module__ not in ("builtins", "__builtin__"):
-                name = "x%d" % i
-                env[name] = arg
-                new_defaults.append(name)
-                i += 1
-            else:
-                new_defaults.append(arg)
-        elem = list(spec)
-        elem[3] = tuple(new_defaults)
-        return compat.FullArgSpec(*elem)
-    else:
-        return spec
 
 
 def _exec_code_in_env(
@@ -384,6 +462,9 @@ class PluginLoader:
             return getattr(mod, objname)
 
         self.impls[name] = load
+
+    def deregister(self, name: str) -> None:
+        del self.impls[name]
 
 
 def _inspect_func_args(fn):
@@ -1293,6 +1374,9 @@ class MemoizedSlots:
     This allows the functionality of memoized_property and
     memoized_instancemethod to be available to a class using __slots__.
 
+    The memoized get is not threadsafe under freethreading and the
+    creator method may in extremely rare cases be called more than once.
+
     """
 
     __slots__ = ()
@@ -1313,20 +1397,20 @@ class MemoizedSlots:
             setattr(self, key, value)
             return value
         elif hasattr(self.__class__, f"_memoized_method_{key}"):
-            fn = getattr(self, f"_memoized_method_{key}")
+            meth = getattr(self, f"_memoized_method_{key}")
 
             def oneshot(*args, **kw):
-                result = fn(*args, **kw)
+                result = meth(*args, **kw)
 
                 def memo(*a, **kw):
                     return result
 
-                memo.__name__ = fn.__name__
-                memo.__doc__ = fn.__doc__
+                memo.__name__ = meth.__name__
+                memo.__doc__ = meth.__doc__
                 setattr(self, key, memo)
                 return result
 
-            oneshot.__doc__ = fn.__doc__
+            oneshot.__doc__ = meth.__doc__
             return oneshot
         else:
             return self._fallback_getattr(key)

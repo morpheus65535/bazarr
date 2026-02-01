@@ -1,4 +1,4 @@
-Metadata-Version: 2.1
+Metadata-Version: 2.4
 Name: Flask-SQLAlchemy
 Version: 3.1.1
 Summary: Add SQLAlchemy support to your Flask application.
@@ -12,6 +12,7 @@ Classifier: License :: OSI Approved :: BSD License
 Classifier: Operating System :: OS Independent
 Classifier: Programming Language :: Python
 Classifier: Topic :: Internet :: WWW/HTTP :: Dynamic Content
+License-File: LICENSE.rst
 Requires-Dist: flask>=2.2.5
 Requires-Dist: sqlalchemy>=2.0.16
 Project-URL: Changes, https://flask-sqlalchemy.palletsprojects.com/changes/

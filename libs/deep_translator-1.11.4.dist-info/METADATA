@@ -1,9 +1,9 @@
-Metadata-Version: 2.1
+Metadata-Version: 2.4
 Name: deep-translator
 Version: 1.11.4
 Summary: A flexible free and unlimited python tool to translate between different languages in a simple way using multiple translators
-Home-page: https://github.com/nidhaloff/deep_translator
 License: MIT
+License-File: LICENSE
 Keywords: deep_translator,deepL,DeeplTranslator,translator,translation,automation,web scraping,google translator,google translation,google trans,PONS,YANDEX,MyMemory translator,Linguee,QcriTranslator,Language,Language detection,detect language,free translation,unlimited translation,translate for free
 Author: Nidhal Baccouri
 Author-email: nidhalbacc@gmail.com
@@ -24,6 +24,7 @@ Classifier: Programming Language :: Python :: 3.10
 Classifier: Programming Language :: Python :: 3.11
 Classifier: Programming Language :: Python :: 3.12
 Classifier: Programming Language :: Python :: 3.13
+Classifier: Programming Language :: Python :: 3.14
 Classifier: Topic :: Communications
 Classifier: Topic :: Education
 Classifier: Topic :: Software Development
@@ -38,6 +39,7 @@ Requires-Dist: openai (>=0.27.6,<0.28.0) ; (python_full_version >= "3.7.1" and p
 Requires-Dist: pypdf (>=3.3.0,<4.0.0) ; extra == "pdf"
 Requires-Dist: requests (>=2.23.0,<3.0.0)
 Project-URL: Documentation, https://deep-translator.readthedocs.io/en/latest/
+Project-URL: Homepage, https://github.com/nidhaloff/deep_translator
 Project-URL: Repository, https://github.com/nidhaloff/deep_translator
 Description-Content-Type: text/x-rst
 

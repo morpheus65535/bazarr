@@ -4,14 +4,20 @@ wsproto
 
 A WebSocket implementation.
 """
-from typing import Generator, Optional, Union
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 from .connection import Connection, ConnectionState, ConnectionType
-from .events import Event
 from .handshake import H11Handshake
-from .typing import Headers
 
-__version__ = "1.2.0"
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
+    from .events import Event
+    from .typing import Headers
+
+__version__ = "1.3.2"
 
 
 class WSConnection:
@@ -28,7 +34,7 @@ class WSConnection:
         """
         self.client = connection_type is ConnectionType.CLIENT
         self.handshake = H11Handshake(connection_type)
-        self.connection: Optional[Connection] = None
+        self.connection: Connection | None = None
 
     @property
     def state(self) -> ConnectionState:
@@ -41,7 +47,7 @@ class WSConnection:
         return self.connection.state
 
     def initiate_upgrade_connection(
-        self, headers: Headers, path: Union[bytes, str]
+        self, headers: Headers, path: bytes | str,
     ) -> None:
         self.handshake.initiate_upgrade_connection(headers, path)
 
@@ -64,7 +70,7 @@ class WSConnection:
             data += self.connection.send(event)
         return data
 
-    def receive_data(self, data: Optional[bytes]) -> None:
+    def receive_data(self, data: bytes | None) -> None:
         """
         Feed network data into the connection instance.
 

@@ -4,23 +4,26 @@ wsproto/extensions
 
 WebSocket extensions.
 """
+from __future__ import annotations
 
 import zlib
-from typing import Optional, Tuple, Union
+from abc import ABC, abstractmethod
+from typing import Optional
 
 from .frame_protocol import CloseReason, FrameDecoder, FrameProtocol, Opcode, RsvBits
 
 
-class Extension:
+class Extension(ABC):
     name: str
 
     def enabled(self) -> bool:
         return False
 
-    def offer(self) -> Union[bool, str]:
+    @abstractmethod
+    def offer(self) -> bool | str:
         pass
 
-    def accept(self, offer: str) -> Optional[Union[bool, str]]:
+    def accept(self, offer: str) -> bool | str | None:
         pass
 
     def finalize(self, offer: str) -> None:
@@ -28,31 +31,31 @@ class Extension:
 
     def frame_inbound_header(
         self,
-        proto: Union[FrameDecoder, FrameProtocol],
+        proto: FrameDecoder | FrameProtocol,
         opcode: Opcode,
         rsv: RsvBits,
         payload_length: int,
-    ) -> Union[CloseReason, RsvBits]:
+    ) -> CloseReason | RsvBits:
         return RsvBits(False, False, False)
 
     def frame_inbound_payload_data(
-        self, proto: Union[FrameDecoder, FrameProtocol], data: bytes
-    ) -> Union[bytes, CloseReason]:
+        self, proto: FrameDecoder | FrameProtocol, data: bytes,
+    ) -> bytes | CloseReason:
         return data
 
     def frame_inbound_complete(
-        self, proto: Union[FrameDecoder, FrameProtocol], fin: bool
-    ) -> Union[bytes, CloseReason, None]:
+        self, proto: FrameDecoder | FrameProtocol, fin: bool,
+    ) -> bytes | CloseReason | None:
         pass
 
     def frame_outbound(
         self,
-        proto: Union[FrameDecoder, FrameProtocol],
+        proto: FrameDecoder | FrameProtocol,
         opcode: Opcode,
         rsv: RsvBits,
         data: bytes,
         fin: bool,
-    ) -> Tuple[RsvBits, bytes]:
+    ) -> tuple[RsvBits, bytes]:
         return (rsv, data)
 
 
@@ -65,9 +68,9 @@ class PerMessageDeflate(Extension):
     def __init__(
         self,
         client_no_context_takeover: bool = False,
-        client_max_window_bits: Optional[int] = None,
+        client_max_window_bits: int | None = None,
         server_no_context_takeover: bool = False,
-        server_max_window_bits: Optional[int] = None,
+        server_max_window_bits: int | None = None,
     ) -> None:
         self.client_no_context_takeover = client_no_context_takeover
         self.server_no_context_takeover = server_no_context_takeover
@@ -81,11 +84,11 @@ class PerMessageDeflate(Extension):
         self._compressor: Optional[zlib._Compress] = None  # noqa
         self._decompressor: Optional[zlib._Decompress] = None  # noqa
         # This refers to the current frame
-        self._inbound_is_compressible: Optional[bool] = None
+        self._inbound_is_compressible: bool | None = None
         # This refers to the ongoing message (which might span multiple
         # frames). Only the first frame in a fragmented message is flagged for
         # compression, so this carries that bit forward.
-        self._inbound_compressed: Optional[bool] = None
+        self._inbound_compressed: bool | None = None
 
         self._enabled = False
 
@@ -96,7 +99,8 @@ class PerMessageDeflate(Extension):
     @client_max_window_bits.setter
     def client_max_window_bits(self, value: int) -> None:
         if value < 9 or value > 15:
-            raise ValueError("Window size must be between 9 and 15 inclusive")
+            msg = "Window size must be between 9 and 15 inclusive"
+            raise ValueError(msg)
         self._client_max_window_bits = value
 
     @property
@@ -106,7 +110,8 @@ class PerMessageDeflate(Extension):
     @server_max_window_bits.setter
     def server_max_window_bits(self, value: int) -> None:
         if value < 9 or value > 15:
-            raise ValueError("Window size must be between 9 and 15 inclusive")
+            msg = "Window size must be between 9 and 15 inclusive"
+            raise ValueError(msg)
         self._server_max_window_bits = value
 
     def _compressible_opcode(self, opcode: Opcode) -> bool:
@@ -115,10 +120,10 @@ class PerMessageDeflate(Extension):
     def enabled(self) -> bool:
         return self._enabled
 
-    def offer(self) -> Union[bool, str]:
+    def offer(self) -> bool | str:
         parameters = [
-            "client_max_window_bits=%d" % self.client_max_window_bits,
-            "server_max_window_bits=%d" % self.server_max_window_bits,
+            f"client_max_window_bits={self.client_max_window_bits}",
+            f"server_max_window_bits={self.server_max_window_bits}",
         ]
 
         if self.client_no_context_takeover:
@@ -142,7 +147,7 @@ class PerMessageDeflate(Extension):
 
         self._enabled = True
 
-    def _parse_params(self, params: str) -> Tuple[Optional[int], Optional[int]]:
+    def _parse_params(self, params: str) -> tuple[int | None, int | None]:
         client_max_window_bits = None
         server_max_window_bits = None
 
@@ -165,7 +170,7 @@ class PerMessageDeflate(Extension):
 
         return client_max_window_bits, server_max_window_bits
 
-    def accept(self, offer: str) -> Union[bool, None, str]:
+    def accept(self, offer: str) -> bool | None | str:
         client_max_window_bits, server_max_window_bits = self._parse_params(offer)
 
         parameters = []
@@ -176,10 +181,10 @@ class PerMessageDeflate(Extension):
             parameters.append("server_no_context_takeover")
         try:
             if client_max_window_bits is not None:
-                parameters.append("client_max_window_bits=%d" % client_max_window_bits)
+                parameters.append(f"client_max_window_bits={client_max_window_bits}")
                 self.client_max_window_bits = client_max_window_bits
             if server_max_window_bits is not None:
-                parameters.append("server_max_window_bits=%d" % server_max_window_bits)
+                parameters.append(f"server_max_window_bits={server_max_window_bits}")
                 self.server_max_window_bits = server_max_window_bits
         except ValueError:
             return None
@@ -189,11 +194,11 @@ class PerMessageDeflate(Extension):
 
     def frame_inbound_header(
         self,
-        proto: Union[FrameDecoder, FrameProtocol],
+        proto: FrameDecoder | FrameProtocol,
         opcode: Opcode,
         rsv: RsvBits,
         payload_length: int,
-    ) -> Union[CloseReason, RsvBits]:
+    ) -> CloseReason | RsvBits:
         if rsv.rsv1 and opcode.iscontrol():
             return CloseReason.PROTOCOL_ERROR
         if rsv.rsv1 and opcode is Opcode.CONTINUATION:
@@ -215,8 +220,8 @@ class PerMessageDeflate(Extension):
         return RsvBits(True, False, False)
 
     def frame_inbound_payload_data(
-        self, proto: Union[FrameDecoder, FrameProtocol], data: bytes
-    ) -> Union[bytes, CloseReason]:
+        self, proto: FrameDecoder | FrameProtocol, data: bytes,
+    ) -> bytes | CloseReason:
         if not self._inbound_compressed or not self._inbound_is_compressible:
             return data
         assert self._decompressor is not None
@@ -227,8 +232,8 @@ class PerMessageDeflate(Extension):
             return CloseReason.INVALID_FRAME_PAYLOAD_DATA
 
     def frame_inbound_complete(
-        self, proto: Union[FrameDecoder, FrameProtocol], fin: bool
-    ) -> Union[bytes, CloseReason, None]:
+        self, proto: FrameDecoder | FrameProtocol, fin: bool,
+    ) -> bytes | CloseReason | None:
         if not fin:
             return None
         if not self._inbound_is_compressible:
@@ -259,17 +264,17 @@ class PerMessageDeflate(Extension):
 
     def frame_outbound(
         self,
-        proto: Union[FrameDecoder, FrameProtocol],
+        proto: FrameDecoder | FrameProtocol,
         opcode: Opcode,
         rsv: RsvBits,
         data: bytes,
         fin: bool,
-    ) -> Tuple[RsvBits, bytes]:
+    ) -> tuple[RsvBits, bytes]:
         if not self._compressible_opcode(opcode):
             return (rsv, data)
 
         if opcode is not Opcode.CONTINUATION:
-            rsv = RsvBits(True, *rsv[1:])
+            rsv = RsvBits(True, rsv[1], rsv[2])
 
         if self._compressor is None:
             assert opcode is not Opcode.CONTINUATION
@@ -278,7 +283,7 @@ class PerMessageDeflate(Extension):
             else:
                 bits = self.server_max_window_bits
             self._compressor = zlib.compressobj(
-                zlib.Z_DEFAULT_COMPRESSION, zlib.DEFLATED, -int(bits)
+                zlib.Z_DEFAULT_COMPRESSION, zlib.DEFLATED, -int(bits),
             )
 
         data = self._compressor.compress(bytes(data))
@@ -298,10 +303,10 @@ class PerMessageDeflate(Extension):
         return (rsv, data)
 
     def __repr__(self) -> str:
-        descr = ["client_max_window_bits=%d" % self.client_max_window_bits]
+        descr = [f"client_max_window_bits={self.client_max_window_bits}"]
         if self.client_no_context_takeover:
             descr.append("client_no_context_takeover")
-        descr.append("server_max_window_bits=%d" % self.server_max_window_bits)
+        descr.append(f"server_max_window_bits={self.server_max_window_bits}")
         if self.server_no_context_takeover:
             descr.append("server_no_context_takeover")
 

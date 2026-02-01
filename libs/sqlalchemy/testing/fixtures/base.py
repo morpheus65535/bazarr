@@ -1,5 +1,5 @@
 # testing/fixtures/base.py
-# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2026 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -14,6 +14,7 @@ from .. import assertions
 from .. import config
 from ..assertions import eq_
 from ..util import drop_all_tables_from_metadata
+from ..util import picklers
 from ... import Column
 from ... import func
 from ... import Integer
@@ -166,10 +167,7 @@ class TestBase:
         def gen_testing_engine(
             url=None,
             options=None,
-            future=None,
             asyncio=False,
-            transfer_staticpool=False,
-            share_pool=False,
         ):
             if options is None:
                 options = {}
@@ -178,8 +176,6 @@ class TestBase:
                 url=url,
                 options=options,
                 asyncio=asyncio,
-                transfer_staticpool=transfer_staticpool,
-                share_pool=share_pool,
             )
 
         yield gen_testing_engine
@@ -193,6 +189,10 @@ class TestBase:
             return testing_engine(**kw)
 
         return go
+
+    @config.fixture(params=picklers())
+    def picklers(self, request):
+        yield request.param
 
     @config.fixture()
     def metadata(self, request):

@@ -4,6 +4,7 @@ and allows to validate specs against them.
 
 .. versionadded:: 0.12.1
 """
+
 import io
 import json
 

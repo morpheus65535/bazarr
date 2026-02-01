@@ -1,18 +1,15 @@
 # sql/type_api.py
-# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2026 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
 # the MIT License: https://www.opensource.org/licenses/mit-license.php
 
-"""Base types API.
-
-"""
+"""Base types API."""
 
 from __future__ import annotations
 
 from enum import Enum
-from types import ModuleType
 import typing
 from typing import Any
 from typing import Callable
@@ -58,6 +55,7 @@ if typing.TYPE_CHECKING:
     from .sqltypes import NUMERICTYPE as NUMERICTYPE  # noqa: F401
     from .sqltypes import STRINGTYPE as STRINGTYPE  # noqa: F401
     from .sqltypes import TABLEVALUE as TABLEVALUE  # noqa: F401
+    from ..engine.interfaces import DBAPIModule
     from ..engine.interfaces import Dialect
     from ..util.typing import GenericProtocol
 
@@ -67,6 +65,7 @@ _T_con = TypeVar("_T_con", bound=Any, contravariant=True)
 _O = TypeVar("_O", bound=object)
 _TE = TypeVar("_TE", bound="TypeEngine[Any]")
 _CT = TypeVar("_CT", bound=Any)
+_RT = TypeVar("_RT", bound=Any)
 
 _MatchedOnType = Union[
     "GenericProtocol[Any]", TypeAliasType, NewType, Type[Any]
@@ -186,10 +185,24 @@ class TypeEngine(Visitable, Generic[_T]):
         def __reduce__(self) -> Any:
             return self.__class__, (self.expr,)
 
+        @overload
+        def operate(
+            self,
+            op: OperatorType,
+            *other: Any,
+            result_type: Type[TypeEngine[_RT]],
+            **kwargs: Any,
+        ) -> ColumnElement[_RT]: ...
+
+        @overload
+        def operate(
+            self, op: OperatorType, *other: Any, **kwargs: Any
+        ) -> ColumnElement[_CT]: ...
+
         @util.preload_module("sqlalchemy.sql.default_comparator")
         def operate(
             self, op: OperatorType, *other: Any, **kwargs: Any
-        ) -> ColumnElement[_CT]:
+        ) -> ColumnElement[Any]:
             default_comparator = util.preloaded.sql_default_comparator
             op_fn, addtl_kw = default_comparator.operator_lookup[op.__name__]
             if kwargs:
@@ -376,7 +389,7 @@ class TypeEngine(Visitable, Generic[_T]):
         as the sole positional argument and will return a string representation
         to be rendered in a SQL statement.
 
-        .. note::
+        .. tip::
 
             This method is only called relative to a **dialect specific type
             object**, which is often **private to a dialect in use** and is not
@@ -410,7 +423,7 @@ class TypeEngine(Visitable, Generic[_T]):
 
         If processing is not necessary, the method should return ``None``.
 
-        .. note::
+        .. tip::
 
             This method is only called relative to a **dialect specific type
             object**, which is often **private to a dialect in use** and is not
@@ -446,7 +459,7 @@ class TypeEngine(Visitable, Generic[_T]):
 
         If processing is not necessary, the method should return ``None``.
 
-        .. note::
+        .. tip::
 
             This method is only called relative to a **dialect specific type
             object**, which is often **private to a dialect in use** and is not
@@ -485,11 +498,19 @@ class TypeEngine(Visitable, Generic[_T]):
         It is the SQL analogue of the :meth:`.TypeEngine.result_processor`
         method.
 
+        .. note:: The :func:`.TypeEngine.column_expression` method is applied
+           only to the **outermost columns clause** of a SELECT statement, that
+           is, the columns that are to be delivered directly into the returned
+           result rows.  It does **not** apply to the columns clause inside
+           of subqueries.  This necessarily avoids double conversions against
+           the column and only runs the conversion when ready to be returned
+           to the client.
+
         This method is called during the **SQL compilation** phase of a
         statement, when rendering a SQL string. It is **not** called
         against specific values.
 
-        .. note::
+        .. tip::
 
             This method is only called relative to a **dialect specific type
             object**, which is often **private to a dialect in use** and is not
@@ -599,7 +620,7 @@ class TypeEngine(Visitable, Generic[_T]):
 
         return x == y  # type: ignore[no-any-return]
 
-    def get_dbapi_type(self, dbapi: ModuleType) -> Optional[Any]:
+    def get_dbapi_type(self, dbapi: DBAPIModule) -> Optional[Any]:
         """Return the corresponding type object from the underlying DB-API, if
         any.
 
@@ -1375,6 +1396,10 @@ class UserDefinedType(
         """
 
         return self
+
+    if TYPE_CHECKING:
+
+        def get_col_spec(self, **kw: Any) -> str: ...
 
 
 class Emulated(TypeEngineMixin):
@@ -2251,7 +2276,7 @@ class TypeDecorator(SchemaEventTarget, ExternalType, TypeEngine[_T]):
         instance.__dict__.update(self.__dict__)
         return instance
 
-    def get_dbapi_type(self, dbapi: ModuleType) -> Optional[Any]:
+    def get_dbapi_type(self, dbapi: DBAPIModule) -> Optional[Any]:
         """Return the DBAPI type object represented by this
         :class:`.TypeDecorator`.
 

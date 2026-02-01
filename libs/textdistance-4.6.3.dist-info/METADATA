@@ -1,4 +1,4 @@
-Metadata-Version: 2.1
+Metadata-Version: 2.4
 Name: textdistance
 Version: 4.6.3
 Summary: Compute distance between the two texts.
@@ -17,6 +17,43 @@ Classifier: Topic :: Scientific/Engineering :: Human Machine Interfaces
 Requires-Python: >=3.5
 Description-Content-Type: text/markdown
 License-File: LICENSE
+Provides-Extra: extras
+Requires-Dist: jellyfish; extra == "extras"
+Requires-Dist: numpy; extra == "extras"
+Requires-Dist: Levenshtein; extra == "extras"
+Requires-Dist: pyxDamerauLevenshtein; extra == "extras"
+Requires-Dist: rapidfuzz>=2.6.0; extra == "extras"
+Provides-Extra: benchmark
+Requires-Dist: jellyfish; extra == "benchmark"
+Requires-Dist: numpy; extra == "benchmark"
+Requires-Dist: Levenshtein; extra == "benchmark"
+Requires-Dist: pyxDamerauLevenshtein; extra == "benchmark"
+Requires-Dist: rapidfuzz>=2.6.0; extra == "benchmark"
+Requires-Dist: distance; extra == "benchmark"
+Requires-Dist: pylev; extra == "benchmark"
+Requires-Dist: py_stringmatching; extra == "benchmark"
+Requires-Dist: tabulate; extra == "benchmark"
+Provides-Extra: test
+Requires-Dist: hypothesis; extra == "test"
+Requires-Dist: isort; extra == "test"
+Requires-Dist: numpy; extra == "test"
+Requires-Dist: pytest; extra == "test"
+Provides-Extra: lint
+Requires-Dist: twine; extra == "lint"
+Requires-Dist: mypy; extra == "lint"
+Requires-Dist: isort; extra == "lint"
+Requires-Dist: flake8; extra == "lint"
+Requires-Dist: types-tabulate; extra == "lint"
+Requires-Dist: flake8-blind-except; extra == "lint"
+Requires-Dist: flake8-bugbear; extra == "lint"
+Requires-Dist: flake8-commas; extra == "lint"
+Requires-Dist: flake8-logging-format; extra == "lint"
+Requires-Dist: flake8-mutable; extra == "lint"
+Requires-Dist: flake8-pep3101; extra == "lint"
+Requires-Dist: flake8-quotes; extra == "lint"
+Requires-Dist: flake8-string-format; extra == "lint"
+Requires-Dist: flake8-tidy-imports; extra == "lint"
+Requires-Dist: pep8-naming; extra == "lint"
 Provides-Extra: dameraulevenshtein
 Requires-Dist: rapidfuzz>=2.6.0; extra == "dameraulevenshtein"
 Requires-Dist: jellyfish; extra == "dameraulevenshtein"
@@ -35,6 +72,12 @@ Requires-Dist: jellyfish; extra == "jarowinkler"
 Provides-Extra: levenshtein
 Requires-Dist: rapidfuzz>=2.6.0; extra == "levenshtein"
 Requires-Dist: Levenshtein; extra == "levenshtein"
+Provides-Extra: common
+Requires-Dist: jellyfish; extra == "common"
+Requires-Dist: numpy; extra == "common"
+Requires-Dist: Levenshtein; extra == "common"
+Requires-Dist: pyxDamerauLevenshtein; extra == "common"
+Requires-Dist: rapidfuzz>=2.6.0; extra == "common"
 Provides-Extra: all
 Requires-Dist: jellyfish; extra == "all"
 Requires-Dist: numpy; extra == "all"
@@ -43,18 +86,14 @@ Requires-Dist: pyxDamerauLevenshtein; extra == "all"
 Requires-Dist: rapidfuzz>=2.6.0; extra == "all"
 Requires-Dist: distance; extra == "all"
 Requires-Dist: pylev; extra == "all"
-Requires-Dist: py-stringmatching; extra == "all"
+Requires-Dist: py_stringmatching; extra == "all"
 Requires-Dist: tabulate; extra == "all"
-Provides-Extra: benchmark
-Requires-Dist: jellyfish; extra == "benchmark"
-Requires-Dist: numpy; extra == "benchmark"
-Requires-Dist: Levenshtein; extra == "benchmark"
-Requires-Dist: pyxDamerauLevenshtein; extra == "benchmark"
-Requires-Dist: rapidfuzz>=2.6.0; extra == "benchmark"
-Requires-Dist: distance; extra == "benchmark"
-Requires-Dist: pylev; extra == "benchmark"
-Requires-Dist: py-stringmatching; extra == "benchmark"
-Requires-Dist: tabulate; extra == "benchmark"
+Provides-Extra: extra
+Requires-Dist: jellyfish; extra == "extra"
+Requires-Dist: numpy; extra == "extra"
+Requires-Dist: Levenshtein; extra == "extra"
+Requires-Dist: pyxDamerauLevenshtein; extra == "extra"
+Requires-Dist: rapidfuzz>=2.6.0; extra == "extra"
 Provides-Extra: benchmarks
 Requires-Dist: jellyfish; extra == "benchmarks"
 Requires-Dist: numpy; extra == "benchmarks"
@@ -63,47 +102,21 @@ Requires-Dist: pyxDamerauLevenshtein; extra == "benchmarks"
 Requires-Dist: rapidfuzz>=2.6.0; extra == "benchmarks"
 Requires-Dist: distance; extra == "benchmarks"
 Requires-Dist: pylev; extra == "benchmarks"
-Requires-Dist: py-stringmatching; extra == "benchmarks"
+Requires-Dist: py_stringmatching; extra == "benchmarks"
 Requires-Dist: tabulate; extra == "benchmarks"
-Provides-Extra: common
-Requires-Dist: jellyfish; extra == "common"
-Requires-Dist: numpy; extra == "common"
-Requires-Dist: Levenshtein; extra == "common"
-Requires-Dist: pyxDamerauLevenshtein; extra == "common"
-Requires-Dist: rapidfuzz>=2.6.0; extra == "common"
-Provides-Extra: extra
-Requires-Dist: jellyfish; extra == "extra"
-Requires-Dist: numpy; extra == "extra"
-Requires-Dist: Levenshtein; extra == "extra"
-Requires-Dist: pyxDamerauLevenshtein; extra == "extra"
-Requires-Dist: rapidfuzz>=2.6.0; extra == "extra"
-Provides-Extra: extras
-Requires-Dist: jellyfish; extra == "extras"
-Requires-Dist: numpy; extra == "extras"
-Requires-Dist: Levenshtein; extra == "extras"
-Requires-Dist: pyxDamerauLevenshtein; extra == "extras"
-Requires-Dist: rapidfuzz>=2.6.0; extra == "extras"
-Provides-Extra: lint
-Requires-Dist: twine; extra == "lint"
-Requires-Dist: mypy; extra == "lint"
-Requires-Dist: isort; extra == "lint"
-Requires-Dist: flake8; extra == "lint"
-Requires-Dist: types-tabulate; extra == "lint"
-Requires-Dist: flake8-blind-except; extra == "lint"
-Requires-Dist: flake8-bugbear; extra == "lint"
-Requires-Dist: flake8-commas; extra == "lint"
-Requires-Dist: flake8-logging-format; extra == "lint"
-Requires-Dist: flake8-mutable; extra == "lint"
-Requires-Dist: flake8-pep3101; extra == "lint"
-Requires-Dist: flake8-quotes; extra == "lint"
-Requires-Dist: flake8-string-format; extra == "lint"
-Requires-Dist: flake8-tidy-imports; extra == "lint"
-Requires-Dist: pep8-naming; extra == "lint"
-Provides-Extra: test
-Requires-Dist: hypothesis; extra == "test"
-Requires-Dist: isort; extra == "test"
-Requires-Dist: numpy; extra == "test"
-Requires-Dist: pytest; extra == "test"
+Dynamic: author
+Dynamic: author-email
+Dynamic: classifier
+Dynamic: description
+Dynamic: description-content-type
+Dynamic: download-url
+Dynamic: home-page
+Dynamic: keywords
+Dynamic: license
+Dynamic: license-file
+Dynamic: provides-extra
+Dynamic: requires-python
+Dynamic: summary
 
 # TextDistance
 

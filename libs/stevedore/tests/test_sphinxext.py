@@ -9,10 +9,10 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-"""Tests for the sphinx extension
-"""
 
-import importlib.metadata as importlib_metadata
+"""Tests for the sphinx extension"""
+
+import importlib.metadata
 
 from stevedore import extension
 from stevedore import sphinxext
@@ -24,16 +24,13 @@ def _make_ext(name, docstring):
         pass
 
     inner.__doc__ = docstring
-    m1 = importlib_metadata.EntryPoint(
-        name, '{}_module:{}'.format(name, name), 'group',
-    )
+    m1 = importlib.metadata.EntryPoint(name, f'{name}_module:{name}', 'group')
     return extension.Extension(name, m1, inner, None)
 
 
 class TestSphinxExt(utils.TestCase):
-
     def setUp(self):
-        super(TestSphinxExt, self).setUp()
+        super().setUp()
         self.exts = [
             _make_ext('test1', 'One-line docstring'),
             _make_ext('test2', 'Multi-line docstring\n\nAnother para'),
@@ -54,12 +51,7 @@ class TestSphinxExt(utils.TestCase):
         ext = [_make_ext('nodoc', None)]
         em = extension.ExtensionManager.make_test_instance(ext)
         results = list(sphinxext._simple_list(em))
-        self.assertEqual(
-            [
-                ('* nodoc -- ', 'nodoc_module'),
-            ],
-            results,
-        )
+        self.assertEqual([('* nodoc -- ', 'nodoc_module')], results)
 
     def test_detailed_list(self):
         results = list(sphinxext._detailed_list(self.em))
@@ -108,9 +100,13 @@ class TestSphinxExt(utils.TestCase):
                 ('nodoc', 'nodoc_module'),
                 ('-----', 'nodoc_module'),
                 ('\n', 'nodoc_module'),
-                (('.. warning:: No documentation found for '
-                 'nodoc in nodoc_module:nodoc'),
-                 'nodoc_module'),
+                (
+                    (
+                        '.. warning:: No documentation found for '
+                        'nodoc in nodoc_module:nodoc'
+                    ),
+                    'nodoc_module',
+                ),
                 ('\n', 'nodoc_module'),
             ],
             results,

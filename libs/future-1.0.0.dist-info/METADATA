@@ -1,4 +1,4 @@
-Metadata-Version: 2.1
+Metadata-Version: 2.4
 Name: future
 Version: 1.0.0
 Summary: Clean single-source support for Python 3 and 2
@@ -29,6 +29,17 @@ Classifier: Development Status :: 6 - Mature
 Classifier: Intended Audience :: Developers
 Requires-Python: >=2.6, !=3.0.*, !=3.1.*, !=3.2.*
 License-File: LICENSE.txt
+Dynamic: author
+Dynamic: author-email
+Dynamic: classifier
+Dynamic: description
+Dynamic: home-page
+Dynamic: keywords
+Dynamic: license
+Dynamic: license-file
+Dynamic: project-url
+Dynamic: requires-python
+Dynamic: summary
 
 
 future: Easy, safe support for Python 2/3 compatibility

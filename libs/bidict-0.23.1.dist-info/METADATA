@@ -1,4 +1,4 @@
-Metadata-Version: 2.1
+Metadata-Version: 2.4
 Name: bidict
 Version: 0.23.1
 Summary: The bidirectional mapping library for Python.
@@ -17,6 +17,7 @@ Classifier: Typing :: Typed
 Requires-Python: >=3.8
 Description-Content-Type: text/x-rst
 License-File: LICENSE
+Dynamic: license-file
 
 .. role:: doc
 .. (Forward declaration for the "doc" role that Sphinx defines for interop with renderers that

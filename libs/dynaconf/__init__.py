@@ -4,6 +4,7 @@ from dynaconf.base import LazySettings
 from dynaconf.constants import DEFAULT_SETTINGS_FILES
 from dynaconf.contrib import DjangoDynaconf
 from dynaconf.contrib import FlaskDynaconf
+from dynaconf.hooking import post_hook
 from dynaconf.utils.inspect import get_history
 from dynaconf.utils.inspect import inspect_settings
 from dynaconf.utils.parse_conf import add_converter
@@ -39,4 +40,5 @@ __all__ = [
     "get_history",
     "DynaconfFormatError",
     "DynaconfParseError",
+    "post_hook",
 ]

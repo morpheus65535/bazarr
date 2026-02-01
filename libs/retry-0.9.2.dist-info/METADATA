@@ -1,4 +1,4 @@
-Metadata-Version: 2.1
+Metadata-Version: 2.4
 Name: retry
 Version: 0.9.2
 Summary: Easy to use retry decorator.
@@ -21,8 +21,18 @@ Classifier: Topic :: Software Development
 Requires-Python: >=2.6
 License-File: LICENSE
 License-File: AUTHORS
-Requires-Dist: decorator >=3.4.2
-Requires-Dist: py <2.0.0,>=1.4.26
+Requires-Dist: decorator>=3.4.2
+Requires-Dist: py<2.0.0,>=1.4.26
+Dynamic: author
+Dynamic: author-email
+Dynamic: classifier
+Dynamic: description
+Dynamic: home-page
+Dynamic: license
+Dynamic: license-file
+Dynamic: requires-dist
+Dynamic: requires-python
+Dynamic: summary
 
 retry
 =====

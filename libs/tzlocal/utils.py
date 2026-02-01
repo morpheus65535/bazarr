@@ -4,11 +4,7 @@ import logging
 import os
 import time
 import warnings
-
-try:
-    import zoneinfo  # pragma: no cover
-except ImportError:
-    from backports import zoneinfo  # pragma: no cover
+import zoneinfo
 
 from tzlocal import windows_tz
 

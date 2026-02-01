@@ -10,7 +10,7 @@ from ..messages.cancel_invocation_message import CancelInvocationMessage  # 5
 from ..messages.ping_message import PingMessage  # 6
 from ..messages.close_message import CloseMessage  # 7
 from ..messages.message_type import MessageType
-from ..helpers import Helpers
+
 
 class BaseHubProtocol(object):
     def __init__(self, protocol, version, transfer_format, record_separator):
@@ -21,9 +21,10 @@ class BaseHubProtocol(object):
 
     @staticmethod
     def get_message(dict_message):
-        message_type =  MessageType.close\
-            if not "type" in dict_message.keys() else MessageType(dict_message["type"])
-        
+        message_type = MessageType.close\
+            if "type" not in dict_message.keys() else\
+            MessageType(dict_message["type"])
+
         dict_message["invocation_id"] = dict_message.get("invocationId", None)
         dict_message["headers"] = dict_message.get("headers", {})
         dict_message["error"] = dict_message.get("error", None)
@@ -45,16 +46,19 @@ class BaseHubProtocol(object):
 
     def decode_handshake(self, raw_message: str) -> HandshakeResponseMessage:
         messages = raw_message.split(self.record_separator)
-        messages = list(filter(lambda x: x != "", messages))        
+        messages = list(filter(lambda x: x != "", messages))
         data = json.loads(messages[0])
         idx = raw_message.index(self.record_separator)
-        return HandshakeResponseMessage(data.get("error", None)), self.parse_messages(raw_message[idx + 1 :]) if len(messages) > 1 else []
+        return (
+            HandshakeResponseMessage(data.get("error", None)),
+            self.parse_messages(raw_message[idx + 1:])
+            if len(messages) > 1 else [])
 
     def handshake_message(self) -> HandshakeRequestMessage:
         return HandshakeRequestMessage(self.protocol, self.version)
 
-    def parse_messages(self, raw_message: str):
-        raise ValueError("Protocol must implement this method")
+    def parse_messages(self, raw_message: str):  # pragma: no cover
+        raise NotImplementedError("Protocol must implement this method")
 
-    def write_message(self, hub_message):
-        raise ValueError("Protocol must implement this method")
+    def write_message(self, hub_message):  # pragma: no cover
+        raise NotImplementedError("Protocol must implement this method")

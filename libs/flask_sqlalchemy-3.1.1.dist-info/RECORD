@@ -1,9 +1,9 @@
 flask_sqlalchemy-3.1.1.dist-info/INSTALLER,sha256=zuuue4knoyJ-UwPPXg8fezS7VCrXJQrAP7zeNuwvFQg,4
-flask_sqlalchemy-3.1.1.dist-info/LICENSE.rst,sha256=SJqOEQhQntmKN7uYPhHg9-HTHwvY-Zp5yESOf_N9B-o,1475
-flask_sqlalchemy-3.1.1.dist-info/METADATA,sha256=lBxR1akBt7n9XBjIVTL2OV52OhCfFrb-Mqtoe0DCbR8,3432
+flask_sqlalchemy-3.1.1.dist-info/METADATA,sha256=b5E6EZXv0xSAfQYsvu8GoerzijMK9DNllxOQ5KA_sug,3458
 flask_sqlalchemy-3.1.1.dist-info/RECORD,,
 flask_sqlalchemy-3.1.1.dist-info/REQUESTED,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
-flask_sqlalchemy-3.1.1.dist-info/WHEEL,sha256=EZbGkh7Ie4PoZfRQ8I0ZuP9VklN_TvcZ6DSE5Uar4z4,81
+flask_sqlalchemy-3.1.1.dist-info/WHEEL,sha256=G2gURzTEtmeR8nrdXUJfNiB3VYVxigPQ-bEQujpNiNs,82
+flask_sqlalchemy-3.1.1.dist-info/licenses/LICENSE.rst,sha256=SJqOEQhQntmKN7uYPhHg9-HTHwvY-Zp5yESOf_N9B-o,1475
 flask_sqlalchemy/__init__.py,sha256=he_w4qQQVS2Z1ms5GCTptDTXNOXBXw0n8zSuWCp8n6Y,653
 flask_sqlalchemy/cli.py,sha256=pg3QDxP36GW2qnwe_CpPtkRhPchyVSGM6zlBNWuNCFE,484
 flask_sqlalchemy/extension.py,sha256=71tP_kNtb5VgZdafy_OH1sWdZOA6PaT7cJqX7tKgZ-k,38261

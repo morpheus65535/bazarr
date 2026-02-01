@@ -21,7 +21,30 @@ from trakit.config import Config
 from trakit.context import Context
 from trakit.converters.country import GuessCountryConverter
 from trakit.converters.language import GuessLanguageConverter
-from trakit.words import blank_match, blank_release_names, to_combinations, to_match, to_sentence, to_words
+from trakit.words import (
+    blank_base_name_and_extension,
+    blank_match,
+    blank_release_names,
+    to_combinations,
+    to_match,
+    to_sentence,
+    to_words)
+
+
+def _convert(value: str, context: Context):
+    if context.type == 'filename':
+        for conv in (Language.fromietf,
+                     Language.fromalpha3b,
+                     Language.fromalpha2):
+            try:
+                return conv(value)
+            except (ValueError, LanguageReverseError):
+                continue
+
+    try:
+        return Language.fromguess(value)
+    except LanguageReverseError:
+        return None
 
 
 class LanguageFinder:
@@ -104,7 +127,7 @@ class LanguageFinder:
         return string.lower() not in self.common_words and not string.isnumeric()
 
     def find_language(self, value: str, context: Context):
-        value = blank_release_names(value)
+        value = blank_base_name_and_extension(value) if context.type == 'filename' else blank_release_names(value)
         all_words = to_words(value, predicate=self.accept_word)
         combinations = to_combinations(all_words, self.language_max_words)
         implicit_lang = self._find_implicit_language(combinations)
@@ -119,9 +142,8 @@ class LanguageFinder:
 
         for c in combinations:
             language_sentence = to_sentence(c)
-            try:
-                lang = Language.fromguess(language_sentence)
-            except LanguageReverseError:
+            lang: typing.Optional[Language] = _convert(language_sentence, context)
+            if lang is None:
                 continue
 
             match_lang = to_match(c, lang)

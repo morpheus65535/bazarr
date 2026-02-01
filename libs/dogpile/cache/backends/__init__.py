@@ -50,3 +50,16 @@ register_backend(
     "dogpile.cache.backends.redis",
     "RedisClusterBackend",
 )
+register_backend(
+    "dogpile.cache.valkey", "dogpile.cache.backends.valkey", "ValkeyBackend"
+)
+register_backend(
+    "dogpile.cache.valkey_sentinel",
+    "dogpile.cache.backends.valkey",
+    "ValkeySentinelBackend",
+)
+register_backend(
+    "dogpile.cache.valkey_cluster",
+    "dogpile.cache.backends.valkey",
+    "ValkeyClusterBackend",
+)

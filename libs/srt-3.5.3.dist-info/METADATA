@@ -1,4 +1,4 @@
-Metadata-Version: 2.1
+Metadata-Version: 2.4
 Name: srt
 Version: 3.5.3
 Summary: A tiny library for parsing, modifying, and composing SRT files.
@@ -26,6 +26,16 @@ Classifier: Topic :: Software Development :: Libraries
 Classifier: Topic :: Text Processing
 Requires-Python: >=2.7
 License-File: LICENSE
+Dynamic: author
+Dynamic: author-email
+Dynamic: classifier
+Dynamic: description
+Dynamic: home-page
+Dynamic: keywords
+Dynamic: license
+Dynamic: license-file
+Dynamic: requires-python
+Dynamic: summary
 
 |ghactions| |coveralls|
 

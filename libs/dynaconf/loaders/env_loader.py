@@ -15,34 +15,50 @@ with suppress(ImportError, FileNotFoundError):
 
     DOTENV_IMPORTED = True
 
-IDENTIFIER = "env"
+IDENTIFIER_PREFIX = "env"
 
 
-def load(obj, env=None, silent=True, key=None, validate=False):
+def load(
+    obj, env=None, silent=True, key=None, validate=False, identifier="global"
+):
     """Loads envvars with prefixes:
 
     `DYNACONF_` (default global) or `$(ENVVAR_PREFIX_FOR_DYNACONF)_`
+
+    if envvar_prefix is set to:
+      str: -> load {str}_*
+      str,str1 -> load [{str}_, {str1}_]
+      False -> load *
+      None -> return not loading anything
+
     """
     global_prefix = obj.get("ENVVAR_PREFIX_FOR_DYNACONF")
+    if global_prefix is None:
+        return
+
     if global_prefix is False or global_prefix.upper() != "DYNACONF":
         load_from_env(
             obj,
             "DYNACONF",
             key,
             silent,
-            IDENTIFIER + "_global",
+            f"{IDENTIFIER_PREFIX}_{identifier}",
             validate=validate,
         )
 
     # Load the global env if exists and overwrite everything
-    load_from_env(
-        obj,
-        global_prefix,
-        key,
-        silent,
-        IDENTIFIER + "_global",
-        validate=validate,
-    )
+    # if the prefix is separated by comma then load all prefixes
+    # counting on the case where global_prefix is set to None, False or ""
+    prefixes = global_prefix.split(",") if global_prefix else [global_prefix]
+    for prefix in prefixes:
+        load_from_env(
+            obj,
+            prefix,
+            key,
+            silent,
+            f"{IDENTIFIER_PREFIX}_{identifier}",
+            validate=validate,
+        )
 
 
 def load_from_env(
@@ -50,7 +66,7 @@ def load_from_env(
     prefix=False,
     key=None,
     silent=False,
-    identifier=IDENTIFIER,
+    identifier=IDENTIFIER_PREFIX,
     env=False,  # backwards compatibility bc renamed param
     validate=False,
 ):
@@ -66,7 +82,7 @@ def load_from_env(
         env_ = f"{prefix}_"
 
     # set source metadata
-    source_metadata = SourceMetadata(identifier, "unique", "global")
+    source_metadata = SourceMetadata(identifier, prefix, "global")
 
     # Load a single environment variable explicitly.
     if key:

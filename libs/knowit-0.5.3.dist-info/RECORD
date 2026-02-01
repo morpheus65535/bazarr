@@ -1,11 +1,11 @@
-../../bin/knowit,sha256=VqcR7w0JoAIAiHTJ_VmoiEcl-TWfAD3N3AvwOmhVJ6w,240
+../../bin/knowit,sha256=Xf5xDBavuHsfju4MCh2x6_oimDYu_svjYykRXlbzTvE,190
 knowit-0.5.3.dist-info/INSTALLER,sha256=zuuue4knoyJ-UwPPXg8fezS7VCrXJQrAP7zeNuwvFQg,4
-knowit-0.5.3.dist-info/LICENSE,sha256=R8zPEs6FTm1j_QfmnmUjM63LiqD44a7-C6hWnoCh-8M,1061
-knowit-0.5.3.dist-info/METADATA,sha256=_fzw9UzG4zpVnYXbrwicSgdNcYfiT7TYOhvfwNlR08k,9132
+knowit-0.5.3.dist-info/METADATA,sha256=hgoz_mb1D8fL2ySQRwvAQ9zjBkVX_S2sFuT8H1UHEnQ,9268
 knowit-0.5.3.dist-info/RECORD,,
 knowit-0.5.3.dist-info/REQUESTED,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
-knowit-0.5.3.dist-info/WHEEL,sha256=sP946D7jFCHeNz5Iq4fL4Lu-PrWrFsgfLXbbkciIZwg,88
+knowit-0.5.3.dist-info/WHEEL,sha256=kJCRJT_g0adfAJzTx2GUMmS80rTJIVHRCfG0DQgLq3o,88
 knowit-0.5.3.dist-info/entry_points.txt,sha256=IuayIkjKpJlQRE1a7lN4axDUR6d13l5obIbpXuL3gsc,47
+knowit-0.5.3.dist-info/licenses/LICENSE,sha256=R8zPEs6FTm1j_QfmnmUjM63LiqD44a7-C6hWnoCh-8M,1061
 knowit/__init__.py,sha256=TxzHZ2jeocfO1t5sOLMEt5GJXT4FUJrSsUDM463oO0M,1269
 knowit/__main__.py,sha256=W-A3O0IO37SA5Tjsney8I2TGEfwaiwbgBxIcDPIguh4,6243
 knowit/api.py,sha256=LFaWZamIeBeNhEG6YNv8mJELqTV_Oo8TfifONWHQuXc,3890

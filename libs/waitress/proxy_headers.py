@@ -84,7 +84,8 @@ def parse_proxy_headers(
         try:
             forwarded_for = []
 
-            for forward_hop in environ["HTTP_X_FORWARDED_FOR"].split(","):
+            raw_forwarded_for = environ["HTTP_X_FORWARDED_FOR"].split(",")
+            for forward_hop in raw_forwarded_for:
                 forward_hop = forward_hop.strip()
                 forward_hop = undquote(forward_hop)
 
@@ -103,6 +104,9 @@ def parse_proxy_headers(
             client_addr = forwarded_for[0]
 
             untrusted_headers.remove("X_FORWARDED_FOR")
+            environ["HTTP_X_FORWARDED_FOR"] = ",".join(
+                raw_forwarded_for[-trusted_proxy_count:]
+            ).strip()
         except Exception as ex:
             raise MalformedProxyHeader(
                 "X-Forwarded-For", str(ex), environ["HTTP_X_FORWARDED_FOR"]
@@ -115,7 +119,8 @@ def parse_proxy_headers(
         try:
             forwarded_host_multiple = []
 
-            for forward_host in environ["HTTP_X_FORWARDED_HOST"].split(","):
+            raw_forwarded_host = environ["HTTP_X_FORWARDED_HOST"].split(",")
+            for forward_host in raw_forwarded_host:
                 forward_host = forward_host.strip()
                 forward_host = undquote(forward_host)
                 forwarded_host_multiple.append(forward_host)
@@ -124,6 +129,9 @@ def parse_proxy_headers(
             forwarded_host = forwarded_host_multiple[0]
 
             untrusted_headers.remove("X_FORWARDED_HOST")
+            environ["HTTP_X_FORWARDED_HOST"] = ",".join(
+                raw_forwarded_host[-trusted_proxy_count:]
+            ).strip()
         except Exception as ex:
             raise MalformedProxyHeader(
                 "X-Forwarded-Host", str(ex), environ["HTTP_X_FORWARDED_HOST"]
@@ -163,8 +171,9 @@ def parse_proxy_headers(
     # If the Forwarded header exists, it gets priority
     if forwarded:
         proxies = []
+        raw_forwarded = forwarded.split(",")
         try:
-            for forwarded_element in forwarded.split(","):
+            for forwarded_element in raw_forwarded:
                 # Remove whitespace that may have been introduced when
                 # appending a new entry
                 forwarded_element = forwarded_element.strip()
@@ -213,6 +222,9 @@ def parse_proxy_headers(
             raise MalformedProxyHeader("Forwarded", str(ex), environ["HTTP_FORWARDED"])
 
         proxies = proxies[-trusted_proxy_count:]
+        environ["HTTP_FORWARDED"] = ",".join(
+            raw_forwarded[-trusted_proxy_count:]
+        ).strip()
 
         # Iterate backwards and fill in some values, the oldest entry that
         # contains the information we expect is the one we use. We expect

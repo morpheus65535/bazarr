@@ -1,5 +1,5 @@
 # engine/default.py
-# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2026 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -77,10 +77,14 @@ if typing.TYPE_CHECKING:
     from .interfaces import _CoreSingleExecuteParams
     from .interfaces import _DBAPICursorDescription
     from .interfaces import _DBAPIMultiExecuteParams
+    from .interfaces import _DBAPISingleExecuteParams
     from .interfaces import _ExecuteOptions
     from .interfaces import _MutableCoreSingleExecuteParams
     from .interfaces import _ParamStyle
+    from .interfaces import ConnectArgsType
     from .interfaces import DBAPIConnection
+    from .interfaces import DBAPIModule
+    from .interfaces import DBAPIType
     from .interfaces import IsolationLevel
     from .row import Row
     from .url import URL
@@ -98,6 +102,7 @@ if typing.TYPE_CHECKING:
     from ..sql.type_api import _BindProcessorType
     from ..sql.type_api import _ResultProcessorType
     from ..sql.type_api import TypeEngine
+
 
 # When we're handed literal SQL, ensure it's a SELECT query
 SERVER_SIDE_CURSOR_RE = re.compile(r"\s*SELECT", re.I | re.UNICODE)
@@ -303,6 +308,7 @@ class DefaultDialect(Dialect):
         # Linting.NO_LINTING constant
         compiler_linting: Linting = int(compiler.NO_LINTING),  # type: ignore
         server_side_cursors: bool = False,
+        skip_autocommit_rollback: bool = False,
         **kwargs: Any,
     ):
         if server_side_cursors:
@@ -326,6 +332,8 @@ class DefaultDialect(Dialect):
         self._ischema = None
 
         self.dbapi = dbapi
+
+        self.skip_autocommit_rollback = skip_autocommit_rollback
 
         if paramstyle is not None:
             self.paramstyle = paramstyle
@@ -425,7 +433,7 @@ class DefaultDialect(Dialect):
     delete_executemany_returning = False
 
     @util.memoized_property
-    def loaded_dbapi(self) -> ModuleType:
+    def loaded_dbapi(self) -> DBAPIModule:
         if self.dbapi is None:
             raise exc.InvalidRequestError(
                 f"Dialect {self} does not have a Python DBAPI established "
@@ -437,7 +445,7 @@ class DefaultDialect(Dialect):
     def _bind_typing_render_casts(self):
         return self.bind_typing is interfaces.BindTyping.RENDER_CASTS
 
-    def _ensure_has_table_connection(self, arg):
+    def _ensure_has_table_connection(self, arg: Connection) -> None:
         if not isinstance(arg, Connection):
             raise exc.ArgumentError(
                 "The argument passed to Dialect.has_table() should be a "
@@ -474,7 +482,7 @@ class DefaultDialect(Dialect):
         return weakref.WeakKeyDictionary()
 
     @property
-    def dialect_description(self):
+    def dialect_description(self):  # type: ignore[override]
         return self.name + "+" + self.driver
 
     @property
@@ -515,7 +523,7 @@ class DefaultDialect(Dialect):
         else:
             return None
 
-    def initialize(self, connection):
+    def initialize(self, connection: Connection) -> None:
         try:
             self.server_version_info = self._get_server_version_info(
                 connection
@@ -551,7 +559,7 @@ class DefaultDialect(Dialect):
                 % (self.label_length, self.max_identifier_length)
             )
 
-    def on_connect(self):
+    def on_connect(self) -> Optional[Callable[[Any], None]]:
         # inherits the docstring from interfaces.Dialect.on_connect
         return None
 
@@ -610,18 +618,18 @@ class DefaultDialect(Dialect):
     ) -> bool:
         return schema_name in self.get_schema_names(connection, **kw)
 
-    def validate_identifier(self, ident):
+    def validate_identifier(self, ident: str) -> None:
         if len(ident) > self.max_identifier_length:
             raise exc.IdentifierError(
                 "Identifier '%s' exceeds maximum length of %d characters"
                 % (ident, self.max_identifier_length)
             )
 
-    def connect(self, *cargs, **cparams):
+    def connect(self, *cargs: Any, **cparams: Any) -> DBAPIConnection:
         # inherits the docstring from interfaces.Dialect.connect
-        return self.loaded_dbapi.connect(*cargs, **cparams)
+        return self.loaded_dbapi.connect(*cargs, **cparams)  # type: ignore[no-any-return]  # NOQA: E501
 
-    def create_connect_args(self, url):
+    def create_connect_args(self, url: URL) -> ConnectArgsType:
         # inherits the docstring from interfaces.Dialect.create_connect_args
         opts = url.translate_connect_args()
         opts.update(url.query)
@@ -697,6 +705,10 @@ class DefaultDialect(Dialect):
         pass
 
     def do_rollback(self, dbapi_connection):
+        if self.skip_autocommit_rollback and self.detect_autocommit_setting(
+            dbapi_connection
+        ):
+            return
         dbapi_connection.rollback()
 
     def do_commit(self, dbapi_connection):
@@ -736,8 +748,6 @@ class DefaultDialect(Dialect):
                 raise
 
     def do_ping(self, dbapi_connection: DBAPIConnection) -> bool:
-        cursor = None
-
         cursor = dbapi_connection.cursor()
         try:
             cursor.execute(self._dialect_specific_select_one)
@@ -944,7 +954,14 @@ class DefaultDialect(Dialect):
     def do_execute_no_params(self, cursor, statement, context=None):
         cursor.execute(statement)
 
-    def is_disconnect(self, e, connection, cursor):
+    def is_disconnect(
+        self,
+        e: DBAPIModule.Error,
+        connection: Union[
+            pool.PoolProxiedConnection, interfaces.DBAPIConnection, None
+        ],
+        cursor: Optional[interfaces.DBAPICursor],
+    ) -> bool:
         return False
 
     @util.memoized_instancemethod
@@ -1044,7 +1061,7 @@ class DefaultDialect(Dialect):
             name = name_upper
         return name
 
-    def get_driver_connection(self, connection):
+    def get_driver_connection(self, connection: DBAPIConnection) -> Any:
         return connection
 
     def _overrides_default(self, method):
@@ -1221,7 +1238,9 @@ class DefaultExecutionContext(ExecutionContext):
     # a hook for SQLite's translation of
     # result column names
     # NOTE: pyhive is using this hook, can't remove it :(
-    _translate_colname: Optional[Callable[[str], str]] = None
+    _translate_colname: Optional[
+        Callable[[str], Tuple[str, Optional[str]]]
+    ] = None
 
     _expanded_parameters: Mapping[str, List[str]] = util.immutabledict()
     """used by set_input_sizes().
@@ -1618,7 +1637,7 @@ class DefaultExecutionContext(ExecutionContext):
             return "unknown"
 
     @property
-    def executemany(self):
+    def executemany(self):  # type: ignore[override]
         return self.execute_style in (
             ExecuteStyle.EXECUTEMANY,
             ExecuteStyle.INSERTMANYVALUES,
@@ -1660,7 +1679,12 @@ class DefaultExecutionContext(ExecutionContext):
     def no_parameters(self):
         return self.execution_options.get("no_parameters", False)
 
-    def _execute_scalar(self, stmt, type_, parameters=None):
+    def _execute_scalar(
+        self,
+        stmt: str,
+        type_: Optional[TypeEngine[Any]],
+        parameters: Optional[_DBAPISingleExecuteParams] = None,
+    ) -> Any:
         """Execute a string statement on the current cursor, returning a
         scalar result.
 
@@ -1734,7 +1758,7 @@ class DefaultExecutionContext(ExecutionContext):
 
         return use_server_side
 
-    def create_cursor(self):
+    def create_cursor(self) -> DBAPICursor:
         if (
             # inlining initial preference checks for SS cursors
             self.dialect.supports_server_side_cursors
@@ -1755,10 +1779,10 @@ class DefaultExecutionContext(ExecutionContext):
     def fetchall_for_returning(self, cursor):
         return cursor.fetchall()
 
-    def create_default_cursor(self):
+    def create_default_cursor(self) -> DBAPICursor:
         return self._dbapi_connection.cursor()
 
-    def create_server_side_cursor(self):
+    def create_server_side_cursor(self) -> DBAPICursor:
         raise NotImplementedError()
 
     def pre_exec(self):
@@ -1772,7 +1796,9 @@ class DefaultExecutionContext(ExecutionContext):
     def post_exec(self):
         pass
 
-    def get_result_processor(self, type_, colname, coltype):
+    def get_result_processor(
+        self, type_: TypeEngine[Any], colname: str, coltype: DBAPIType
+    ) -> Optional[_ResultProcessorType[Any]]:
         """Return a 'result processor' for a given type as present in
         cursor.description.
 
@@ -1782,7 +1808,7 @@ class DefaultExecutionContext(ExecutionContext):
         """
         return type_._cached_result_processor(self.dialect, coltype)
 
-    def get_lastrowid(self):
+    def get_lastrowid(self) -> int:
         """return self.cursor.lastrowid, or equivalent, after an INSERT.
 
         This may involve calling special cursor functions, issuing a new SELECT
@@ -1827,9 +1853,10 @@ class DefaultExecutionContext(ExecutionContext):
         if self._rowcount is None and exec_opt.get("preserve_rowcount", False):
             self._rowcount = self.cursor.rowcount
 
+        yp: Optional[Union[int, bool]]
         if self.is_crud or self.is_text:
             result = self._setup_dml_or_text_result()
-            yp = sr = False
+            yp = False
         else:
             yp = exec_opt.get("yield_per", None)
             sr = self._is_server_side or exec_opt.get("stream_results", False)
@@ -2038,7 +2065,7 @@ class DefaultExecutionContext(ExecutionContext):
             getter(row, param) for row, param in zip(rows, compiled_params)
         ]
 
-    def lastrow_has_defaults(self):
+    def lastrow_has_defaults(self) -> bool:
         return (self.isinsert or self.isupdate) and bool(
             cast(SQLCompiler, self.compiled).postfetch
         )

@@ -1,5 +1,5 @@
 # orm/relationships.py
-# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2026 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -486,8 +486,7 @@ class RelationshipProperty(
         else:
             self._overlaps = ()
 
-        # mypy ignoring the @property setter
-        self.cascade = cascade  # type: ignore
+        self.cascade = cascade
 
         self.back_populates = back_populates
 
@@ -1758,8 +1757,6 @@ class RelationshipProperty(
         extracted_mapped_annotation: Optional[_AnnotationScanType],
         is_dataclass_field: bool,
     ) -> None:
-        argument = extracted_mapped_annotation
-
         if extracted_mapped_annotation is None:
             if self.argument is None:
                 self._raise_for_required(key, cls)
@@ -2912,9 +2909,6 @@ class JoinCondition:
     ) -> None:
         """Check the foreign key columns collected and emit error
         messages."""
-
-        can_sync = False
-
         foreign_cols = self._gather_columns_with_annotation(
             join_condition, "foreign"
         )

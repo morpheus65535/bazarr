@@ -1,5 +1,5 @@
 # orm/scoping.py
-# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2026 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -49,7 +49,6 @@ if TYPE_CHECKING:
     from .session import sessionmaker
     from .session import SessionTransaction
     from ..engine import Connection
-    from ..engine import CursorResult
     from ..engine import Engine
     from ..engine import Result
     from ..engine import Row
@@ -69,7 +68,6 @@ if TYPE_CHECKING:
     from ..sql._typing import _T7
     from ..sql._typing import _TypedColumnClauseArgument as _TCCA
     from ..sql.base import Executable
-    from ..sql.dml import UpdateBase
     from ..sql.elements import ClauseElement
     from ..sql.roles import TypedColumnsClauseRole
     from ..sql.selectable import ForUpdateParameter
@@ -550,7 +548,7 @@ class scoped_session(Generic[_S]):
             :meth:`_orm.Session.close` and :meth:`_orm.Session.reset`.
 
             :meth:`_orm.Session.close` - a similar method will additionally
-            prevent re-use of the Session when the parameter
+            prevent reuse of the Session when the parameter
             :paramref:`_orm.Session.close_resets_only` is set to ``False``.
 
         """  # noqa: E501
@@ -684,18 +682,6 @@ class scoped_session(Generic[_S]):
         _parent_execute_state: Optional[Any] = None,
         _add_event: Optional[Any] = None,
     ) -> Result[_T]: ...
-
-    @overload
-    def execute(
-        self,
-        statement: UpdateBase,
-        params: Optional[_CoreAnyExecuteParams] = None,
-        *,
-        execution_options: OrmExecuteOptionsParameter = util.EMPTY_DICT,
-        bind_arguments: Optional[_BindArguments] = None,
-        _parent_execute_state: Optional[Any] = None,
-        _add_event: Optional[Any] = None,
-    ) -> CursorResult[Any]: ...
 
     @overload
     def execute(
@@ -1086,8 +1072,7 @@ class scoped_session(Generic[_S]):
             Proxied for the :class:`_orm.Session` class on
             behalf of the :class:`_orm.scoping.scoped_session` class.
 
-        Raises ``sqlalchemy.orm.exc.NoResultFound`` if the query
-        selects no rows.
+        Raises :class:`_exc.NoResultFound` if the query selects no rows.
 
         For a detailed documentation of the arguments see the
         method :meth:`.Session.get`.

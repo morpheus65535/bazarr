@@ -6,7 +6,7 @@
 # See https://Python-Markdown.github.io/extensions/definition_lists
 # for documentation.
 
-# Original code Copyright 2008 [Waylan Limberg](http://achinghead.com)
+# Original code Copyright 2008 [Waylan Limberg](https://github.com/waylan)
 
 # All changes Copyright 2008-2014 The Python Markdown Project
 

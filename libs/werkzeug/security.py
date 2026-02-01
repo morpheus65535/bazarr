@@ -7,11 +7,22 @@ import posixpath
 import secrets
 
 SALT_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-DEFAULT_PBKDF2_ITERATIONS = 600000
+DEFAULT_PBKDF2_ITERATIONS = 1_000_000
 
 _os_alt_seps: list[str] = list(
     sep for sep in [os.sep, os.path.altsep] if sep is not None and sep != "/"
 )
+# https://chrisdenton.github.io/omnipath/Special%20Dos%20Device%20Names.html
+_windows_device_files = {
+    "AUX",
+    "CON",
+    "CONIN$",
+    "CONOUT$",
+    *(f"COM{c}" for c in "123456789¹²³"),
+    *(f"LPT{c}" for c in "123456789¹²³"),
+    "NUL",
+    "PRN",
+}
 
 
 def gen_salt(length: int) -> str:
@@ -92,6 +103,9 @@ def generate_password_hash(
     :param method: The key derivation function and parameters.
     :param salt_length: The number of characters to generate for the salt.
 
+    .. versionchanged:: 3.1
+        The default iterations for pbkdf2 was increased to 1,000,000.
+
     .. versionchanged:: 2.3
         Scrypt support was added.
 
@@ -136,6 +150,13 @@ def safe_join(directory: str, *pathnames: str) -> str | None:
     :param pathnames: The untrusted path components relative to the
         base directory.
     :return: A safe path, otherwise ``None``.
+
+    .. versionchanged:: 3.1.5
+        More special device names, regardless of extension or trailing spaces,
+        are not allowed on Windows.
+
+    .. versionchanged:: 3.1.4
+        Special device names are not allowed on Windows.
     """
     if not directory:
         # Ensure we end up with ./path if directory="" is given,
@@ -150,6 +171,10 @@ def safe_join(directory: str, *pathnames: str) -> str | None:
 
         if (
             any(sep in filename for sep in _os_alt_seps)
+            or (
+                os.name == "nt"
+                and filename.partition(".")[0].strip().upper() in _windows_device_files
+            )
             or os.path.isabs(filename)
             # ntpath.isabs doesn't catch this on Python < 3.11
             or filename.startswith("/")

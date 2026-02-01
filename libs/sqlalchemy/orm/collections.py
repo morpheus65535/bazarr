@@ -1,5 +1,5 @@
 # orm/collections.py
-# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2026 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -359,7 +359,7 @@ class collection:
         return fn
 
     @staticmethod
-    def adds(arg):
+    def adds(arg: int) -> Callable[[_FN], _FN]:
         """Mark the method as adding an entity to the collection.
 
         Adds "add to collection" handling to the method.  The decorator

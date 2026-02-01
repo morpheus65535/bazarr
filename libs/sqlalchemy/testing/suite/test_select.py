@@ -1,5 +1,5 @@
 # testing/suite/test_select.py
-# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2026 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -47,7 +47,7 @@ from ...exc import ProgrammingError
 
 
 class CollateTest(fixtures.TablesTest):
-    __backend__ = True
+    __sparse_driver_backend__ = True
 
     @classmethod
     def define_tables(cls, metadata):
@@ -93,7 +93,7 @@ class OrderByLabelTest(fixtures.TablesTest):
 
     """
 
-    __backend__ = True
+    __sparse_driver_backend__ = True
 
     @classmethod
     def define_tables(cls, metadata):
@@ -164,7 +164,7 @@ class OrderByLabelTest(fixtures.TablesTest):
 class ValuesExpressionTest(fixtures.TestBase):
     __requires__ = ("table_value_constructor",)
 
-    __backend__ = True
+    __sparse_driver_backend__ = True
 
     def test_tuples(self, connection):
         value_expr = values(
@@ -234,7 +234,9 @@ class FetchLimitOffsetTest(fixtures.TablesTest):
 
     def test_limit_render_multiple_times(self, connection):
         table = self.tables.some_table
-        stmt = select(table.c.id).limit(1).scalar_subquery()
+        stmt = (
+            select(table.c.id).order_by(table.c.id).limit(1).scalar_subquery()
+        )
 
         u = union(select(stmt), select(stmt)).subquery().select()
 
@@ -635,7 +637,7 @@ class FetchLimitOffsetTest(fixtures.TablesTest):
 class SameNamedSchemaTableTest(fixtures.TablesTest):
     """tests for #7471"""
 
-    __backend__ = True
+    __sparse_driver_backend__ = True
 
     __requires__ = ("schemas",)
 
@@ -732,7 +734,7 @@ class SameNamedSchemaTableTest(fixtures.TablesTest):
 
 
 class JoinTest(fixtures.TablesTest):
-    __backend__ = True
+    __sparse_driver_backend__ = True
 
     def _assert_result(self, select, result, params=()):
         with config.db.connect() as conn:
@@ -832,7 +834,7 @@ class JoinTest(fixtures.TablesTest):
 
 
 class CompoundSelectTest(fixtures.TablesTest):
-    __backend__ = True
+    __sparse_driver_backend__ = True
 
     @classmethod
     def define_tables(cls, metadata):
@@ -1493,7 +1495,7 @@ class ExpandingBoundInTest(fixtures.TablesTest):
 
 
 class LikeFunctionsTest(fixtures.TablesTest):
-    __backend__ = True
+    __sparse_driver_backend__ = True
 
     run_inserts = "once"
     run_deletes = None
@@ -1541,6 +1543,7 @@ class LikeFunctionsTest(fixtures.TablesTest):
         col = self.tables.some_table.c.data
         self._test(col.startswith("ab%c"), {1, 2, 3, 4, 5, 6, 7, 8, 9, 10})
 
+    @testing.requires.like_escapes
     def test_startswith_autoescape(self):
         col = self.tables.some_table.c.data
         self._test(col.startswith("ab%c", autoescape=True), {3})
@@ -1552,10 +1555,12 @@ class LikeFunctionsTest(fixtures.TablesTest):
             {1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
         )
 
+    @testing.requires.like_escapes
     def test_startswith_escape(self):
         col = self.tables.some_table.c.data
         self._test(col.startswith("ab##c", escape="#"), {7})
 
+    @testing.requires.like_escapes
     def test_startswith_autoescape_escape(self):
         col = self.tables.some_table.c.data
         self._test(col.startswith("ab%c", autoescape=True, escape="#"), {3})
@@ -1571,14 +1576,17 @@ class LikeFunctionsTest(fixtures.TablesTest):
             col.endswith(literal_column("'e%fg'")), {1, 2, 3, 4, 5, 6, 7, 8, 9}
         )
 
+    @testing.requires.like_escapes
     def test_endswith_autoescape(self):
         col = self.tables.some_table.c.data
         self._test(col.endswith("e%fg", autoescape=True), {6})
 
+    @testing.requires.like_escapes
     def test_endswith_escape(self):
         col = self.tables.some_table.c.data
         self._test(col.endswith("e##fg", escape="#"), {9})
 
+    @testing.requires.like_escapes
     def test_endswith_autoescape_escape(self):
         col = self.tables.some_table.c.data
         self._test(col.endswith("e%fg", autoescape=True, escape="#"), {6})
@@ -1588,14 +1596,17 @@ class LikeFunctionsTest(fixtures.TablesTest):
         col = self.tables.some_table.c.data
         self._test(col.contains("b%cde"), {1, 2, 3, 4, 5, 6, 7, 8, 9})
 
+    @testing.requires.like_escapes
     def test_contains_autoescape(self):
         col = self.tables.some_table.c.data
         self._test(col.contains("b%cde", autoescape=True), {3})
 
+    @testing.requires.like_escapes
     def test_contains_escape(self):
         col = self.tables.some_table.c.data
         self._test(col.contains("b##cde", escape="#"), {7})
 
+    @testing.requires.like_escapes
     def test_contains_autoescape_escape(self):
         col = self.tables.some_table.c.data
         self._test(col.contains("b%cd", autoescape=True, escape="#"), {3})
@@ -1629,7 +1640,7 @@ class LikeFunctionsTest(fixtures.TablesTest):
 
 
 class ComputedColumnTest(fixtures.TablesTest):
-    __backend__ = True
+    __sparse_driver_backend__ = True
     __requires__ = ("computed_columns",)
 
     @classmethod
@@ -1771,13 +1782,13 @@ class IdentityAutoincrementTest(fixtures.TablesTest):
         )
 
     def test_autoincrement_with_identity(self, connection):
-        res = connection.execute(self.tables.tbl.insert(), {"desc": "row"})
+        connection.execute(self.tables.tbl.insert(), {"desc": "row"})
         res = connection.execute(self.tables.tbl.select()).first()
         eq_(res, (1, "row"))
 
 
 class ExistsTest(fixtures.TablesTest):
-    __backend__ = True
+    __sparse_driver_backend__ = True
 
     @classmethod
     def define_tables(cls, metadata):
@@ -1824,7 +1835,7 @@ class ExistsTest(fixtures.TablesTest):
 
 
 class DistinctOnTest(AssertsCompiledSQL, fixtures.TablesTest):
-    __backend__ = True
+    __sparse_driver_backend__ = True
 
     @testing.fails_if(testing.requires.supports_distinct_on)
     def test_distinct_on(self):
@@ -1836,7 +1847,7 @@ class DistinctOnTest(AssertsCompiledSQL, fixtures.TablesTest):
 
 
 class IsOrIsNotDistinctFromTest(fixtures.TablesTest):
-    __backend__ = True
+    __sparse_driver_backend__ = True
     __requires__ = ("supports_is_distinct_from",)
 
     @classmethod
@@ -1891,7 +1902,7 @@ class IsOrIsNotDistinctFromTest(fixtures.TablesTest):
 class WindowFunctionTest(fixtures.TablesTest):
     __requires__ = ("window_functions",)
 
-    __backend__ = True
+    __sparse_driver_backend__ = True
 
     @classmethod
     def define_tables(cls, metadata):

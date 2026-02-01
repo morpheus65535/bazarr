@@ -1,4 +1,4 @@
-Metadata-Version: 2.1
+Metadata-Version: 2.4
 Name: cloudscraper
 Version: 1.2.58
 Summary: A Python module to bypass Cloudflare's anti-bot page.
@@ -22,9 +22,19 @@ Classifier: Topic :: Software Development :: Libraries :: Application Frameworks
 Classifier: Topic :: Software Development :: Libraries :: Python Modules
 Description-Content-Type: text/markdown
 License-File: LICENSE
-Requires-Dist: requests >=2.9.2
-Requires-Dist: requests-toolbelt >=0.9.1
-Requires-Dist: pyparsing >=2.4.7
+Requires-Dist: requests>=2.9.2
+Requires-Dist: requests_toolbelt>=0.9.1
+Requires-Dist: pyparsing>=2.4.7
+Dynamic: author
+Dynamic: author-email
+Dynamic: classifier
+Dynamic: description
+Dynamic: description-content-type
+Dynamic: home-page
+Dynamic: keywords
+Dynamic: license-file
+Dynamic: requires-dist
+Dynamic: summary
 
 # cloudscraper
 

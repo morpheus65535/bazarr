@@ -1,5 +1,5 @@
 # ext/asyncio/session.py
-# Copyright (C) 2020-2025 the SQLAlchemy authors and contributors
+# Copyright (C) 2020-2026 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -46,7 +46,6 @@ if TYPE_CHECKING:
     from .engine import AsyncConnection
     from .engine import AsyncEngine
     from ...engine import Connection
-    from ...engine import CursorResult
     from ...engine import Engine
     from ...engine import Result
     from ...engine import Row
@@ -67,7 +66,6 @@ if TYPE_CHECKING:
     from ...orm.session import _SessionBindKey
     from ...sql._typing import _InfoType
     from ...sql.base import Executable
-    from ...sql.dml import UpdateBase
     from ...sql.elements import ClauseElement
     from ...sql.selectable import ForUpdateParameter
     from ...sql.selectable import TypedReturnsRows
@@ -414,18 +412,6 @@ class AsyncSession(ReversibleProxy[Session]):
     @overload
     async def execute(
         self,
-        statement: UpdateBase,
-        params: Optional[_CoreAnyExecuteParams] = None,
-        *,
-        execution_options: OrmExecuteOptionsParameter = util.EMPTY_DICT,
-        bind_arguments: Optional[_BindArguments] = None,
-        _parent_execute_state: Optional[Any] = None,
-        _add_event: Optional[Any] = None,
-    ) -> CursorResult[Any]: ...
-
-    @overload
-    async def execute(
-        self,
         statement: Executable,
         params: Optional[_CoreAnyExecuteParams] = None,
         *,
@@ -628,8 +614,7 @@ class AsyncSession(ReversibleProxy[Session]):
         """Return an instance based on the given primary key identifier,
         or raise an exception if not found.
 
-        Raises ``sqlalchemy.orm.exc.NoResultFound`` if the query selects
-        no rows.
+        Raises :class:`_exc.NoResultFound` if the query selects no rows.
 
         ..versionadded: 2.0.22
 
@@ -812,7 +797,9 @@ class AsyncSession(ReversibleProxy[Session]):
         """
         trans = self.sync_session.get_transaction()
         if trans is not None:
-            return AsyncSessionTransaction._retrieve_proxy_for_target(trans)
+            return AsyncSessionTransaction._retrieve_proxy_for_target(
+                trans, async_session=self
+            )
         else:
             return None
 
@@ -828,7 +815,9 @@ class AsyncSession(ReversibleProxy[Session]):
 
         trans = self.sync_session.get_nested_transaction()
         if trans is not None:
-            return AsyncSessionTransaction._retrieve_proxy_for_target(trans)
+            return AsyncSessionTransaction._retrieve_proxy_for_target(
+                trans, async_session=self
+            )
         else:
             return None
 
@@ -1864,6 +1853,21 @@ class AsyncSessionTransaction(
         """Commit this :class:`_asyncio.AsyncTransaction`."""
 
         await greenlet_spawn(self._sync_transaction().commit)
+
+    @classmethod
+    def _regenerate_proxy_for_target(  # type: ignore[override]
+        cls,
+        target: SessionTransaction,
+        async_session: AsyncSession,
+        **additional_kw: Any,  # noqa: U100
+    ) -> AsyncSessionTransaction:
+        sync_transaction = target
+        nested = target.nested
+        obj = cls.__new__(cls)
+        obj.session = async_session
+        obj.sync_transaction = obj._assign_proxied(sync_transaction)
+        obj.nested = nested
+        return obj
 
     async def start(
         self, is_ctxmanager: bool = False

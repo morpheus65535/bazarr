@@ -1,9 +1,9 @@
-Metadata-Version: 2.1
+Metadata-Version: 2.4
 Name: ga4mp
 Version: 2.0.4
 Summary: Google Analytics 4 Measurement Protocol Python Module
-Home-page: https://github.com/adswerve/GA4-Measurement-Protocol-Python
 License: BSD
+License-File: LICENSE
 Author: Adswerve
 Author-email: analytics-help@adswerve.com
 Requires-Python: >=3.6,<4.0
@@ -17,6 +17,7 @@ Classifier: Programming Language :: Python :: 3.10
 Classifier: Programming Language :: Python :: 3.11
 Classifier: Programming Language :: Python :: 3.12
 Classifier: Programming Language :: Python :: 3.13
+Classifier: Programming Language :: Python :: 3.14
 Project-URL: Repository, https://github.com/adswerve/GA4-Measurement-Protocol-Python
 Description-Content-Type: text/markdown
 

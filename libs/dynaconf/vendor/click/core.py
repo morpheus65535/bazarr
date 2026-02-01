@@ -353,7 +353,7 @@ class MultiCommand(Command):
 			if split_opt(B)[0]:D.parse_args(A,A.args)
 			A.fail(f"No such command '{E}'.")
 		return B,C,args[1:]
-	def get_command(A,ctx,cmd_name):raise NotImplementedError()
+	def get_command(A,ctx,cmd_name):raise NotImplementedError
 	def list_commands(A,ctx):return[]
 class Group(MultiCommand):
 	def __init__(A,name=_A,commands=_A,**B):MultiCommand.__init__(A,name,**B);A.commands=commands or{}

@@ -417,7 +417,7 @@ class Markdown:
         # Read the source
         if input:
             if isinstance(input, str):
-                input_file = codecs.open(input, mode="r", encoding=encoding)
+                input_file = open(input, mode="r", encoding=encoding)
             else:
                 input_file = codecs.getreader(encoding)(input)
             text = input_file.read()

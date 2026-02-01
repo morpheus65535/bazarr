@@ -1,12 +1,10 @@
 # engine/base.py
-# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2026 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
 # the MIT License: https://www.opensource.org/licenses/mit-license.php
-"""Defines :class:`_engine.Connection` and :class:`_engine.Engine`.
-
-"""
+"""Defines :class:`_engine.Connection` and :class:`_engine.Engine`."""
 from __future__ import annotations
 
 import contextlib
@@ -70,12 +68,11 @@ if typing.TYPE_CHECKING:
     from ..sql._typing import _InfoType
     from ..sql.compiler import Compiled
     from ..sql.ddl import ExecutableDDLElement
-    from ..sql.ddl import SchemaDropper
-    from ..sql.ddl import SchemaGenerator
+    from ..sql.ddl import InvokeDDLBase
     from ..sql.functions import FunctionElement
     from ..sql.schema import DefaultGenerator
     from ..sql.schema import HasSchemaAttr
-    from ..sql.schema import SchemaItem
+    from ..sql.schema import SchemaVisitable
     from ..sql.selectable import TypedReturnsRows
 
 
@@ -1115,10 +1112,16 @@ class Connection(ConnectionEventsTarget, inspection.Inspectable["Inspector"]):
         if self._still_open_and_dbapi_connection_is_valid:
             if self._echo:
                 if self._is_autocommit_isolation():
-                    self._log_info(
-                        "ROLLBACK using DBAPI connection.rollback(), "
-                        "DBAPI should ignore due to autocommit mode"
-                    )
+                    if self.dialect.skip_autocommit_rollback:
+                        self._log_info(
+                            "ROLLBACK will be skipped by "
+                            "skip_autocommit_rollback"
+                        )
+                    else:
+                        self._log_info(
+                            "ROLLBACK using DBAPI connection.rollback(); "
+                            "set skip_autocommit_rollback to prevent fully"
+                        )
                 else:
                     self._log_info("ROLLBACK")
             try:
@@ -1134,7 +1137,7 @@ class Connection(ConnectionEventsTarget, inspection.Inspectable["Inspector"]):
             if self._is_autocommit_isolation():
                 self._log_info(
                     "COMMIT using DBAPI connection.commit(), "
-                    "DBAPI should ignore due to autocommit mode"
+                    "has no effect due to autocommit mode"
                 )
             else:
                 self._log_info("COMMIT")
@@ -2019,6 +2022,13 @@ class Connection(ConnectionEventsTarget, inspection.Inspectable["Inspector"]):
         else:
             do_execute_dispatch = ()
 
+        if engine_events:
+            _WORKAROUND_ISSUE_13018 = getattr(
+                self, "_WORKAROUND_ISSUE_13018", False
+            )
+        else:
+            _WORKAROUND_ISSUE_13018 = False
+
         if self._echo:
             stats = context._get_cache_stats() + " (insertmanyvalues)"
 
@@ -2133,8 +2143,9 @@ class Connection(ConnectionEventsTarget, inspection.Inspectable["Inspector"]):
                 self.dispatch.after_cursor_execute(
                     self,
                     cursor,
-                    str_statement,
-                    effective_parameters,
+                    # TODO: this will be fixed by #13018
+                    sub_stmt if _WORKAROUND_ISSUE_13018 else str_statement,
+                    sub_params if _WORKAROUND_ISSUE_13018 else parameters,
                     context,
                     context.executemany,
                 )
@@ -2428,9 +2439,7 @@ class Connection(ConnectionEventsTarget, inspection.Inspectable["Inspector"]):
                     break
 
             if sqlalchemy_exception and is_disconnect != ctx.is_disconnect:
-                sqlalchemy_exception.connection_invalidated = is_disconnect = (
-                    ctx.is_disconnect
-                )
+                sqlalchemy_exception.connection_invalidated = ctx.is_disconnect
 
         if newraise:
             raise newraise.with_traceback(exc_info[2]) from e
@@ -2443,8 +2452,8 @@ class Connection(ConnectionEventsTarget, inspection.Inspectable["Inspector"]):
 
     def _run_ddl_visitor(
         self,
-        visitorcallable: Type[Union[SchemaGenerator, SchemaDropper]],
-        element: SchemaItem,
+        visitorcallable: Type[InvokeDDLBase],
+        element: SchemaVisitable,
         **kwargs: Any,
     ) -> None:
         """run a DDL visitor.
@@ -2453,7 +2462,9 @@ class Connection(ConnectionEventsTarget, inspection.Inspectable["Inspector"]):
         options given to the visitor so that "checkfirst" is skipped.
 
         """
-        visitorcallable(self.dialect, self, **kwargs).traverse_single(element)
+        visitorcallable(
+            dialect=self.dialect, connection=self, **kwargs
+        ).traverse_single(element)
 
 
 class ExceptionContextImpl(ExceptionContext):
@@ -3241,8 +3252,8 @@ class Engine(
 
     def _run_ddl_visitor(
         self,
-        visitorcallable: Type[Union[SchemaGenerator, SchemaDropper]],
-        element: SchemaItem,
+        visitorcallable: Type[InvokeDDLBase],
+        element: SchemaVisitable,
         **kwargs: Any,
     ) -> None:
         with self.begin() as conn:

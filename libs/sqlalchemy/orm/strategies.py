@@ -1,5 +1,5 @@
 # orm/strategies.py
-# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2026 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -8,7 +8,7 @@
 
 
 """sqlalchemy.orm.interfaces.LoaderStrategy
-   implementations, and related MapperOptions."""
+implementations, and related MapperOptions."""
 
 from __future__ import annotations
 
@@ -1435,7 +1435,6 @@ class ImmediateLoader(PostLoader):
             alternate_effective_path = path._truncate_recursive()
             extra_options = (new_opt,)
         else:
-            new_opt = None
             alternate_effective_path = path
             extra_options = ()
 
@@ -1736,7 +1735,7 @@ class SubqueryLoader(PostLoader):
         loadopt,
     ):
         # note that because the subqueryload object
-        # does not re-use the cached query, instead always making
+        # does not reuse the cached query, instead always making
         # use of the current invoked query, while we have two queries
         # here (orig and context.query), they are both non-cached
         # queries and we can transfer the options as is without
@@ -2164,8 +2163,6 @@ class JoinedLoader(AbstractRelationshipLoader):
             compile_state.multi_row_eager_loaders = True
 
         path = path[self.parent_property]
-
-        with_polymorphic = None
 
         user_defined_adapter = (
             self._init_user_defined_eager_proc(

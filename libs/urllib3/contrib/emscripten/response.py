@@ -75,7 +75,7 @@ class EmscriptenHttpResponseWrapper(BaseHTTPResponse):
 
     def stream(
         self, amt: int | None = 2**16, decode_content: bool | None = None
-    ) -> typing.Generator[bytes, None, None]:
+    ) -> typing.Generator[bytes]:
         """
         A generator wrapper for the read() method. A call will block until
         ``amt`` bytes have been read from the connection or until the
@@ -160,32 +160,24 @@ class EmscriptenHttpResponseWrapper(BaseHTTPResponse):
                 # don't cache partial content
                 cache_content = False
                 data = self._response.body.read(amt)
-                if self.length_remaining is not None:
-                    self.length_remaining = max(self.length_remaining - len(data), 0)
-                if (self.length_is_certain and self.length_remaining == 0) or len(
-                    data
-                ) < amt:
-                    # definitely finished reading, close response stream
-                    self._response.body.close()
-                return typing.cast(bytes, data)
             else:  # read all we can (and cache it)
                 data = self._response.body.read()
                 if cache_content:
                     self._body = data
-                if self.length_remaining is not None:
-                    self.length_remaining = max(self.length_remaining - len(data), 0)
-                if len(data) == 0 or (
-                    self.length_is_certain and self.length_remaining == 0
-                ):
-                    # definitely finished reading, close response stream
-                    self._response.body.close()
-                return typing.cast(bytes, data)
+            if self.length_remaining is not None:
+                self.length_remaining = max(self.length_remaining - len(data), 0)
+            if len(data) == 0 or (
+                self.length_is_certain and self.length_remaining == 0
+            ):
+                # definitely finished reading, close response stream
+                self._response.body.close()
+            return typing.cast(bytes, data)
 
     def read_chunked(
         self,
         amt: int | None = None,
         decode_content: bool | None = None,
-    ) -> typing.Generator[bytes, None, None]:
+    ) -> typing.Generator[bytes]:
         # chunked is handled by browser
         while True:
             bytes = self.read(amt, decode_content)
@@ -241,7 +233,7 @@ class EmscriptenHttpResponseWrapper(BaseHTTPResponse):
             self._closed = True
 
     @contextmanager
-    def _error_catcher(self) -> typing.Generator[None, None, None]:
+    def _error_catcher(self) -> typing.Generator[None]:
         """
         Catch Emscripten specific exceptions thrown by fetch.py,
         instead re-raising urllib3 variants, so that low-level exceptions

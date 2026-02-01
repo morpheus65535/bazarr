@@ -27,12 +27,12 @@ from sqlalchemy.sql.elements import conv
 from . import batch
 from . import schemaobj
 from .. import util
+from ..ddl.base import _ServerDefaultType
 from ..util import sqla_compat
 from ..util.compat import formatannotation_fwdref
 from ..util.compat import inspect_formatargspec
 from ..util.compat import inspect_getfullargspec
 from ..util.sqla_compat import _literal_bindparam
-
 
 if TYPE_CHECKING:
     from typing import Literal
@@ -43,10 +43,7 @@ if TYPE_CHECKING:
     from sqlalchemy.sql.expression import ColumnElement
     from sqlalchemy.sql.expression import TableClause
     from sqlalchemy.sql.expression import TextClause
-    from sqlalchemy.sql.functions import Function
     from sqlalchemy.sql.schema import Column
-    from sqlalchemy.sql.schema import Computed
-    from sqlalchemy.sql.schema import Identity
     from sqlalchemy.sql.schema import SchemaItem
     from sqlalchemy.types import TypeEngine
 
@@ -203,19 +200,32 @@ class AbstractOperations(util.ModuleClsProxy):
         return register
 
     @classmethod
-    def implementation_for(cls, op_cls: Any) -> Callable[[_C], _C]:
+    def implementation_for(
+        cls, op_cls: Any, replace: bool = False
+    ) -> Callable[[_C], _C]:
         """Register an implementation for a given :class:`.MigrateOperation`.
+
+        :param replace: when True, allows replacement of an already
+         registered implementation for the given operation class. This
+         enables customization of built-in operations such as
+         :class:`.CreateTableOp` by providing an alternate implementation
+         that can augment, modify, or conditionally invoke the default
+         behavior.
+
+         .. versionadded:: 1.17.2
 
         This is part of the operation extensibility API.
 
         .. seealso::
 
-            :ref:`operation_plugins` - example of use
+            :ref:`operation_plugins`
+
+            :ref:`operations_extending_builtin`
 
         """
 
         def decorate(fn: _C) -> _C:
-            cls._to_impl.dispatch_for(op_cls)(fn)
+            cls._to_impl.dispatch_for(op_cls, replace=replace)(fn)
             return fn
 
         return decorate
@@ -236,7 +246,7 @@ class AbstractOperations(util.ModuleClsProxy):
         table_name: str,
         schema: Optional[str] = None,
         recreate: Literal["auto", "always", "never"] = "auto",
-        partial_reordering: Optional[Tuple[Any, ...]] = None,
+        partial_reordering: list[tuple[str, ...]] | None = None,
         copy_from: Optional[Table] = None,
         table_args: Tuple[Any, ...] = (),
         table_kwargs: Mapping[str, Any] = util.immutabledict(),
@@ -465,7 +475,7 @@ class AbstractOperations(util.ModuleClsProxy):
         names will be converted along conventions.  If the ``target_metadata``
         contains the naming convention
         ``{"ck": "ck_bool_%(table_name)s_%(constraint_name)s"}``, then the
-        output of the following:
+        output of the following::
 
             op.add_column("t", "x", Boolean(name="x"))
 
@@ -619,6 +629,8 @@ class Operations(AbstractOperations):
             column: Column[Any],
             *,
             schema: Optional[str] = None,
+            if_not_exists: Optional[bool] = None,
+            inline_references: Optional[bool] = None,
         ) -> None:
             """Issue an "add column" instruction using the current
             migration context.
@@ -637,21 +649,16 @@ class Operations(AbstractOperations):
 
             .. note::
 
-                With the exception of NOT NULL constraints or single-column FOREIGN
-                KEY constraints, other kinds of constraints such as PRIMARY KEY,
-                UNIQUE or CHECK constraints **cannot** be generated using this
-                method; for these constraints, refer to operations such as
-                :meth:`.Operations.create_primary_key` and
-                :meth:`.Operations.create_check_constraint`. In particular, the
-                following :class:`~sqlalchemy.schema.Column` parameters are
-                **ignored**:
+                Not all contraint types may be indicated with this directive.
+                PRIMARY KEY, NOT NULL, FOREIGN KEY, and CHECK are honored, UNIQUE
+                is currently not.
 
-                * :paramref:`~sqlalchemy.schema.Column.primary_key` - SQL databases
-                  typically do not support an ALTER operation that can add
-                  individual columns one at a time to an existing primary key
-                  constraint, therefore it's less ambiguous to use the
-                  :meth:`.Operations.create_primary_key` method, which assumes no
-                  existing primary key constraint is present.
+                .. versionadded:: 1.18.2 Added support for PRIMARY KEY to be
+                   emitted within :meth:`.Operations.add_column`.
+
+                As of 1.18.2, the following :class:`~sqlalchemy.schema.Column`
+                parameters are **ignored**:
+
                 * :paramref:`~sqlalchemy.schema.Column.unique` - use the
                   :meth:`.Operations.create_unique_constraint` method
                 * :paramref:`~sqlalchemy.schema.Column.index` - use the
@@ -660,9 +667,9 @@ class Operations(AbstractOperations):
 
             The provided :class:`~sqlalchemy.schema.Column` object may include a
             :class:`~sqlalchemy.schema.ForeignKey` constraint directive,
-            referencing a remote table name. For this specific type of constraint,
-            Alembic will automatically emit a second ALTER statement in order to
-            add the single-column FOREIGN KEY constraint separately::
+            referencing a remote table name. By default, Alembic will automatically
+            emit a second ALTER statement in order to add the single-column FOREIGN
+            KEY constraint separately::
 
                 from alembic import op
                 from sqlalchemy import Column, INTEGER, ForeignKey
@@ -670,6 +677,20 @@ class Operations(AbstractOperations):
                 op.add_column(
                     "organization",
                     Column("account_id", INTEGER, ForeignKey("accounts.id")),
+                )
+
+            To render the FOREIGN KEY constraint inline within the ADD COLUMN
+            directive, use the ``inline_references`` parameter. This can improve
+            performance on large tables since the constraint is marked as valid
+            immediately for nullable columns::
+
+                from alembic import op
+                from sqlalchemy import Column, INTEGER, ForeignKey
+
+                op.add_column(
+                    "organization",
+                    Column("account_id", INTEGER, ForeignKey("accounts.id")),
+                    inline_references=True,
                 )
 
             The column argument passed to :meth:`.Operations.add_column` is a
@@ -695,6 +716,18 @@ class Operations(AbstractOperations):
              quoting of the schema outside of the default behavior, use
              the SQLAlchemy construct
              :class:`~sqlalchemy.sql.elements.quoted_name`.
+            :param if_not_exists: If True, adds IF NOT EXISTS operator
+             when creating the new column for compatible dialects
+
+             .. versionadded:: 1.16.0
+
+            :param inline_references: If True, renders FOREIGN KEY constraints
+             inline within the ADD COLUMN directive using REFERENCES syntax,
+             rather than as a separate ALTER TABLE ADD CONSTRAINT statement.
+             This is supported by PostgreSQL, Oracle, MySQL 5.7+, and
+             MariaDB 10.5+.
+
+             .. versionadded:: 1.18.2
 
             """  # noqa: E501
             ...
@@ -706,14 +739,16 @@ class Operations(AbstractOperations):
             *,
             nullable: Optional[bool] = None,
             comment: Union[str, Literal[False], None] = False,
-            server_default: Any = False,
+            server_default: Union[
+                _ServerDefaultType, None, Literal[False]
+            ] = False,
             new_column_name: Optional[str] = None,
             type_: Union[TypeEngine[Any], Type[TypeEngine[Any]], None] = None,
             existing_type: Union[
                 TypeEngine[Any], Type[TypeEngine[Any]], None
             ] = None,
             existing_server_default: Union[
-                str, bool, Identity, Computed, None
+                _ServerDefaultType, None, Literal[False]
             ] = False,
             existing_nullable: Optional[bool] = None,
             existing_comment: Optional[str] = None,
@@ -1074,7 +1109,7 @@ class Operations(AbstractOperations):
             self,
             index_name: Optional[str],
             table_name: str,
-            columns: Sequence[Union[str, TextClause, Function[Any]]],
+            columns: Sequence[Union[str, TextClause, ColumnElement[Any]]],
             *,
             schema: Optional[str] = None,
             unique: bool = False,
@@ -1360,6 +1395,11 @@ class Operations(AbstractOperations):
              quoting of the schema outside of the default behavior, use
              the SQLAlchemy construct
              :class:`~sqlalchemy.sql.elements.quoted_name`.
+            :param if_exists: If True, adds IF EXISTS operator when
+             dropping the new column for compatible dialects
+
+             .. versionadded:: 1.16.0
+
             :param mssql_drop_check: Optional boolean.  When ``True``, on
              Microsoft SQL Server only, first
              drop the CHECK constraint on the column using a
@@ -1381,7 +1421,6 @@ class Operations(AbstractOperations):
              then exec's a separate DROP CONSTRAINT for that default.  Only
              works if the column has exactly one FK constraint which refers to
              it, at the moment.
-
             """  # noqa: E501
             ...
 
@@ -1392,6 +1431,7 @@ class Operations(AbstractOperations):
             type_: Optional[str] = None,
             *,
             schema: Optional[str] = None,
+            if_exists: Optional[bool] = None,
         ) -> None:
             r"""Drop a constraint of the given name, typically via DROP CONSTRAINT.
 
@@ -1403,6 +1443,10 @@ class Operations(AbstractOperations):
              quoting of the schema outside of the default behavior, use
              the SQLAlchemy construct
              :class:`~sqlalchemy.sql.elements.quoted_name`.
+            :param if_exists: If True, adds IF EXISTS operator when
+             dropping the constraint
+
+             .. versionadded:: 1.16.0
 
             """  # noqa: E501
             ...
@@ -1645,6 +1689,8 @@ class BatchOperations(AbstractOperations):
             *,
             insert_before: Optional[str] = None,
             insert_after: Optional[str] = None,
+            if_not_exists: Optional[bool] = None,
+            inline_references: Optional[bool] = None,
         ) -> None:
             """Issue an "add column" instruction using the current
             batch migration context.
@@ -1662,14 +1708,16 @@ class BatchOperations(AbstractOperations):
             *,
             nullable: Optional[bool] = None,
             comment: Union[str, Literal[False], None] = False,
-            server_default: Any = False,
+            server_default: Union[
+                _ServerDefaultType, None, Literal[False]
+            ] = False,
             new_column_name: Optional[str] = None,
             type_: Union[TypeEngine[Any], Type[TypeEngine[Any]], None] = None,
             existing_type: Union[
                 TypeEngine[Any], Type[TypeEngine[Any]], None
             ] = None,
             existing_server_default: Union[
-                str, bool, Identity, Computed, None
+                _ServerDefaultType, None, Literal[False]
             ] = False,
             existing_nullable: Optional[bool] = None,
             existing_comment: Optional[str] = None,

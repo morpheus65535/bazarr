@@ -1,9 +1,9 @@
 importlib_metadata-7.2.1.dist-info/INSTALLER,sha256=zuuue4knoyJ-UwPPXg8fezS7VCrXJQrAP7zeNuwvFQg,4
-importlib_metadata-7.2.1.dist-info/LICENSE,sha256=z8d0m5b2O9McPEK1xHG_dWgUBT6EfBDz6wA0F7xSPTA,11358
-importlib_metadata-7.2.1.dist-info/METADATA,sha256=hEvctiPIb3ke8xTdUeHrdh7Hwa4T-nC_ugLZyvSFLB0,4648
+importlib_metadata-7.2.1.dist-info/METADATA,sha256=i36K7jtn_3ETHXbBeNliQwqrtZLFV-Zk-XJofXOQga0,4635
 importlib_metadata-7.2.1.dist-info/RECORD,,
 importlib_metadata-7.2.1.dist-info/REQUESTED,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
-importlib_metadata-7.2.1.dist-info/WHEEL,sha256=OVMc5UfuAQiSplgO0_WdW7vXVGAt9Hdd6qtN4HotdyA,91
+importlib_metadata-7.2.1.dist-info/WHEEL,sha256=wUyA8OaulRlbfwMtmQsvNngGrxQHAvkKcvRmdizlJi0,92
+importlib_metadata-7.2.1.dist-info/licenses/LICENSE,sha256=z8d0m5b2O9McPEK1xHG_dWgUBT6EfBDz6wA0F7xSPTA,11358
 importlib_metadata-7.2.1.dist-info/top_level.txt,sha256=CO3fD9yylANiXkrMo4qHLV_mqXL2sC5JFKgt1yWAT-A,19
 importlib_metadata/__init__.py,sha256=tIqhoBxCohAGl-SpQsRoRiUo4rP_tt5vl5bgP0k_v80,34411
 importlib_metadata/_adapters.py,sha256=jZr_CmHrl8qTGatO0yMmuOdfFExOY64G8eEYf6Cnj9k,2455

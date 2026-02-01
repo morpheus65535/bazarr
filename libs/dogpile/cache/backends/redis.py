@@ -2,10 +2,11 @@
 Redis Backends
 ------------------
 
-Provides backends for talking to `Redis <http://redis.io>`_.
+Provides backends for talking to `Redis <http://redis.io>`__.
 
 """
 
+import re
 import typing
 import warnings
 
@@ -21,9 +22,12 @@ else:
 __all__ = ("RedisBackend", "RedisSentinelBackend", "RedisClusterBackend")
 
 
+RE_VALID_PREFIX = re.compile(r"^[\w\-\.\:]{2,10}$")
+
+
 class RedisBackend(BytesBackend):
-    r"""A `Redis <http://redis.io/>`_ backend, using the
-    `redis-py <http://pypi.python.org/pypi/redis/>`_ driver.
+    r"""A `Redis <http://redis.io/>`__ backend, using the
+    `redis-py <http://pypi.python.org/pypi/redis/>`__ driver.
 
     Example configuration::
 
@@ -73,6 +77,26 @@ class RedisBackend(BytesBackend):
      Redis should expire it.  This argument is only valid when
      ``distributed_lock`` is ``True``.
 
+    :param lock_sleep: integer, number of seconds to sleep when failed to
+     acquire a lock.  This argument is only valid when
+     ``distributed_lock`` is ``True``.
+
+    :param lock_blocking: bool, default ``True``. Passed to the Redis client's
+     lock constructor when ``distributed_lock`` is ``True``.
+
+     .. versionadded:: 1.4.1
+
+    :param lock_blocking_timeout: int or float, default ``None``. Passed to the
+     Redis client's lock constructor when ``distributed_lock`` is ``True``.
+
+     .. versionadded:: 1.4.1
+
+    :param lock_prefix: string. This prefix is used for generating the name of
+     locks. If customized, the prefix must be between 2 and 10 characters long,
+     and may contain any alphanumeric character and the symbols "_-.:".
+
+     .. versionadded:: 1.5.0
+
     :param socket_timeout: float, seconds for socket timeout.
      Default is None (no timeout).
 
@@ -91,10 +115,6 @@ class RedisBackend(BytesBackend):
 
      .. versionadded:: 1.3.2
 
-    :param lock_sleep: integer, number of seconds to sleep when failed to
-     acquire a lock.  This argument is only valid when
-     ``distributed_lock`` is ``True``.
-
     :param connection_pool: ``redis.ConnectionPool`` object.  If provided,
      this object supersedes other connection arguments passed to the
      ``redis.StrictRedis`` instance, including url and/or host as well as
@@ -106,6 +126,13 @@ class RedisBackend(BytesBackend):
      asynchronous runners, as they run in a different thread than the one
      used to create the lock.
 
+    :param ssl: boolean, default ``None``. If set, this is passed to the
+     ``redis.StrictRedis`` constructor as ``ssl``. All additional ``ssl_``
+     prefixed args should be submitted via the
+     :paramref:`.RedisBackend.connection_kwargs` dict.
+
+     .. versionadded:: 1.4.1
+
     :param connection_kwargs: dict, additional keyword arguments are passed
      along to the
      ``StrictRedis.from_url()`` method or ``StrictRedis()`` constructor
@@ -113,11 +140,9 @@ class RedisBackend(BytesBackend):
      ``charset``, etc.
 
      .. versionadded:: 1.1.6
-
-
-
-
     """
+
+    lock_template: str = "_lock{0}"
 
     def __init__(self, arguments):
         arguments = arguments.copy()
@@ -128,7 +153,6 @@ class RedisBackend(BytesBackend):
         self.password = arguments.pop("password", None)
         self.port = arguments.pop("port", 6379)
         self.db = arguments.pop("db", 0)
-        self.distributed_lock = arguments.pop("distributed_lock", False)
         self.socket_timeout = arguments.pop("socket_timeout", None)
         self.socket_connect_timeout = arguments.pop(
             "socket_connect_timeout", None
@@ -137,8 +161,19 @@ class RedisBackend(BytesBackend):
         self.socket_keepalive_options = arguments.pop(
             "socket_keepalive_options", None
         )
+
+        # additional ssl params should be submitted in `connection_kwargs`
+        self.ssl = arguments.pop("ssl", None)
+
+        # used by `get_mutex`
+        self.distributed_lock = arguments.pop("distributed_lock", False)
         self.lock_timeout = arguments.pop("lock_timeout", None)
         self.lock_sleep = arguments.pop("lock_sleep", 0.1)
+        self.lock_blocking = arguments.pop("lock_blocking", True)
+        self.lock_blocking_timeout = arguments.pop(
+            "lock_blocking_timeout", None
+        )
+
         self.thread_local_lock = arguments.pop("thread_local_lock", True)
         self.connection_kwargs = arguments.pop("connection_kwargs", {})
 
@@ -150,6 +185,17 @@ class RedisBackend(BytesBackend):
 
         self.redis_expiration_time = arguments.pop("redis_expiration_time", 0)
         self.connection_pool = arguments.pop("connection_pool", None)
+
+        lock_prefix = arguments.pop("lock_prefix", None)
+        if lock_prefix:
+            if (not isinstance(lock_prefix, str)) or (
+                not RE_VALID_PREFIX.match(lock_prefix)
+            ):
+                raise ValueError(
+                    "Invalid `lock_prefix` submitted: `%s`." % lock_prefix
+                )
+            self.lock_template = "%s{0}" % lock_prefix
+
         self._create_client()
 
     def _imports(self):
@@ -176,9 +222,11 @@ class RedisBackend(BytesBackend):
             if self.socket_keepalive:
                 args["socket_keepalive"] = True
                 if self.socket_keepalive_options is not None:
-                    args[
-                        "socket_keepalive_options"
-                    ] = self.socket_keepalive_options
+                    args["socket_keepalive_options"] = (
+                        self.socket_keepalive_options
+                    )
+            if self.ssl is not None:
+                args["ssl"] = self.ssl
 
             if self.url is not None:
                 args.update(url=self.url)
@@ -199,10 +247,12 @@ class RedisBackend(BytesBackend):
         if self.distributed_lock:
             return _RedisLockWrapper(
                 self.writer_client.lock(
-                    "_lock{0}".format(key),
+                    self.lock_template.format(key),
                     timeout=self.lock_timeout,
                     sleep=self.lock_sleep,
                     thread_local=self.thread_local_lock,
+                    blocking=self.lock_blocking,
+                    blocking_timeout=self.lock_blocking_timeout,
                 )
             )
         else:
@@ -259,10 +309,10 @@ class _RedisLockWrapper:
 
 
 class RedisSentinelBackend(RedisBackend):
-    """A `Redis <http://redis.io/>`_ backend, using the
-    `redis-py <http://pypi.python.org/pypi/redis/>`_ driver.
+    """A `Redis <http://redis.io/>`__ backend, using the
+    `redis-py <http://pypi.python.org/pypi/redis/>`__ driver.
     This backend is to be used when using
-    `Redis Sentinel <https://redis.io/docs/management/sentinel/>`_.
+    `Redis Sentinel <https://redis.io/docs/management/sentinel/>`__.
 
     .. versionadded:: 1.0.0
 
@@ -413,17 +463,17 @@ class RedisSentinelBackend(RedisBackend):
 
 
 class RedisClusterBackend(RedisBackend):
-    r"""A `Redis <http://redis.io/>`_ backend, using the
-    `redis-py <http://pypi.python.org/pypi/redis/>`_ driver.
+    r"""A `Redis <http://redis.io/>`__ backend, using the
+    `redis-py <http://pypi.python.org/pypi/redis/>`__ driver.
     This backend is to be used when connecting to a
-    `Redis Cluster <https://redis.io/docs/management/scaling/>`_ which
+    `Redis Cluster <https://redis.io/docs/management/scaling/>`__ which
     will use the
     `RedisCluster Client
-    <https://redis.readthedocs.io/en/stable/connections.html#cluster-client>`_.
+    <https://redis.readthedocs.io/en/stable/connections.html#cluster-client>`__.
 
     .. seealso::
 
-        `Clustering <https://redis.readthedocs.io/en/stable/clustering.html>`_
+        `Clustering <https://redis.readthedocs.io/en/stable/clustering.html>`__
         in the redis-py documentation.
 
     Requires redis-py version >=4.1.0.
@@ -565,5 +615,5 @@ class RedisClusterBackend(RedisBackend):
                 startup_nodes=self.startup_nodes,
                 **self.connection_kwargs,
             )
-        self.writer_client = typing.cast(redis.Redis[bytes], redis_cluster)
+        self.writer_client = typing.cast("redis.Redis[bytes]", redis_cluster)
         self.reader_client = self.writer_client

@@ -4,15 +4,18 @@ wsproto/utilities
 
 Utility functions that do not belong in a separate module.
 """
+from __future__ import annotations
+
 import base64
 import hashlib
 import os
-from typing import Dict, List, Optional, Union
+from typing import TYPE_CHECKING
 
-from h11._headers import Headers as H11Headers
+if TYPE_CHECKING:
+    from h11._headers import Headers as H11Headers
 
-from .events import Event
-from .typing import Headers
+    from .events import Event
+    from .typing import Headers
 
 # RFC6455, Section 1.3 - Opening Handshake
 ACCEPT_GUID = b"258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
@@ -23,7 +26,8 @@ class ProtocolError(Exception):
 
 
 class LocalProtocolError(ProtocolError):
-    """Indicates an error due to local/programming errors.
+    """
+    Indicates an error due to local/programming errors.
 
     This is raised when the connection is asked to do something that
     is either incompatible with the state or the websocket standard.
@@ -34,7 +38,8 @@ class LocalProtocolError(ProtocolError):
 
 
 class RemoteProtocolError(ProtocolError):
-    """Indicates an error due to the remote's actions.
+    """
+    Indicates an error due to the remote's actions.
 
     This is raised when processing the bytes from the remote if the
     remote has sent data that is incompatible with the websocket
@@ -47,18 +52,18 @@ class RemoteProtocolError(ProtocolError):
 
     """
 
-    def __init__(self, message: str, event_hint: Optional[Event] = None) -> None:
+    def __init__(self, message: str, event_hint: Event | None = None) -> None:
         self.event_hint = event_hint
         super().__init__(message)
 
 
 # Some convenience utilities for working with HTTP headers
-def normed_header_dict(h11_headers: Union[Headers, H11Headers]) -> Dict[bytes, bytes]:
+def normed_header_dict(h11_headers: Headers | H11Headers) -> dict[bytes, bytes]:
     # This mangles Set-Cookie headers. But it happens that we don't care about
     # any of those, so it's OK. For every other HTTP header, if there are
     # multiple instances then you're allowed to join them together with
     # commas.
-    name_to_values: Dict[bytes, List[bytes]] = {}
+    name_to_values: dict[bytes, list[bytes]] = {}
     for name, value in h11_headers:
         name_to_values.setdefault(name, []).append(value)
     name_to_normed_value = {}
@@ -72,7 +77,7 @@ def normed_header_dict(h11_headers: Union[Headers, H11Headers]) -> Dict[bytes, b
 # fine, because the ABNF is just 1#token. But for the extension lists, it's
 # wrong, because those can contain quoted strings, which can in turn contain
 # commas. XX FIXME
-def split_comma_header(value: bytes) -> List[str]:
+def split_comma_header(value: bytes) -> list[str]:
     return [piece.decode("ascii").strip() for piece in value.split(b",")]
 
 

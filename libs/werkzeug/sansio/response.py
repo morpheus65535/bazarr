@@ -134,7 +134,7 @@ class Response:
             self.headers["Content-Type"] = content_type
         if status is None:
             status = self.default_status
-        self.status = status  # type: ignore
+        self.status = status
 
     def __repr__(self) -> str:
         return f"<{type(self).__name__} [{self.status}]>"
@@ -146,7 +146,7 @@ class Response:
 
     @status_code.setter
     def status_code(self, code: int) -> None:
-        self.status = code  # type: ignore
+        self.status = code
 
     @property
     def status(self) -> str:
@@ -197,6 +197,7 @@ class Response:
         secure: bool = False,
         httponly: bool = False,
         samesite: str | None = None,
+        partitioned: bool = False,
     ) -> None:
         """Sets a cookie.
 
@@ -221,6 +222,10 @@ class Response:
         :param httponly: Disallow JavaScript access to the cookie.
         :param samesite: Limit the scope of the cookie to only be
             attached to requests that are "same-site".
+        :param partitioned: If ``True``, the cookie will be partitioned.
+
+        .. versionchanged:: 3.1
+            The ``partitioned`` parameter was added.
         """
         self.headers.add(
             "Set-Cookie",
@@ -235,6 +240,7 @@ class Response:
                 httponly=httponly,
                 max_size=self.max_cookie_size,
                 samesite=samesite,
+                partitioned=partitioned,
             ),
         )
 
@@ -246,6 +252,7 @@ class Response:
         secure: bool = False,
         httponly: bool = False,
         samesite: str | None = None,
+        partitioned: bool = False,
     ) -> None:
         """Delete a cookie.  Fails silently if key doesn't exist.
 
@@ -259,6 +266,7 @@ class Response:
         :param httponly: Disallow JavaScript access to the cookie.
         :param samesite: Limit the scope of the cookie to only be
             attached to requests that are "same-site".
+        :param partitioned: If ``True``, the cookie will be partitioned.
         """
         self.set_cookie(
             key,
@@ -269,6 +277,7 @@ class Response:
             secure=secure,
             httponly=httponly,
             samesite=samesite,
+            partitioned=partitioned,
         )
 
     @property
@@ -570,7 +579,7 @@ class Response:
         To unset this header, assign ``None`` or use ``del``.
 
         .. versionchanged:: 2.3
-            This attribute can be assigned to to set the header. A list can be assigned
+            This attribute can be assigned to set the header. A list can be assigned
             to set multiple header values. Use ``del`` to unset the header.
 
         .. versionchanged:: 2.3

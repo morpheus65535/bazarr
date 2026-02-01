@@ -26,7 +26,7 @@ class ParamType:
 class CompositeParamType(ParamType):
 	is_composite=_C
 	@property
-	def arity(self):raise NotImplementedError()
+	def arity(self):raise NotImplementedError
 class FuncParamType(ParamType):
 	def __init__(A,func):A.name=func.__name__;A.func=func
 	def convert(B,value,param,ctx):

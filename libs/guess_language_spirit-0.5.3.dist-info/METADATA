@@ -1,5 +1,5 @@
-Metadata-Version: 2.1
-Name: guess-language-spirit
+Metadata-Version: 2.4
+Name: guess_language-spirit
 Version: 0.5.3
 Summary: Guess the natural language of a text
 Home-page: https://bitbucket.org/spirit/guess_language
@@ -11,6 +11,13 @@ Classifier: License :: OSI Approved :: GNU Lesser General Public License v3 or l
 Classifier: Programming Language :: Python :: 2.7
 Classifier: Programming Language :: Python :: 3
 Classifier: Programming Language :: Python :: 3.2
+Dynamic: author
+Dynamic: author-email
+Dynamic: classifier
+Dynamic: description
+Dynamic: download-url
+Dynamic: home-page
+Dynamic: summary
 
 guess_language – Guess the natural language of a text
 =====================================================

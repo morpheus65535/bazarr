@@ -1,4 +1,4 @@
-Metadata-Version: 2.1
+Metadata-Version: 2.4
 Name: pyjsparser
 Version: 2.7.1
 Summary: Fast javascript parser (based on esprima.js)
@@ -6,4 +6,8 @@ Home-page: https://github.com/PiotrDabkowski/pyjsparser
 Author: Piotr Dabkowski
 Author-email: piodrus@gmail.com
 License: MIT
-
+Dynamic: author
+Dynamic: author-email
+Dynamic: home-page
+Dynamic: license
+Dynamic: summary

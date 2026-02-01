@@ -1,5 +1,5 @@
 # orm/bulk_persistence.py
-# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2026 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -445,10 +445,23 @@ class ORMDMLState(AbstractORMCompileState):
                 )
 
     @classmethod
-    def _get_multi_crud_kv_pairs(cls, statement, kv_iterator):
-        plugin_subject = statement._propagate_attrs["plugin_subject"]
+    def _get_dml_plugin_subject(cls, statement):
+        plugin_subject = statement.table._propagate_attrs.get("plugin_subject")
 
-        if not plugin_subject or not plugin_subject.mapper:
+        if (
+            not plugin_subject
+            or not plugin_subject.mapper
+            or plugin_subject
+            is not statement._propagate_attrs["plugin_subject"]
+        ):
+            return None
+        return plugin_subject
+
+    @classmethod
+    def _get_multi_crud_kv_pairs(cls, statement, kv_iterator):
+        plugin_subject = cls._get_dml_plugin_subject(statement)
+
+        if not plugin_subject:
             return UpdateDMLState._get_multi_crud_kv_pairs(
                 statement, kv_iterator
             )
@@ -468,13 +481,12 @@ class ORMDMLState(AbstractORMCompileState):
             needs_to_be_cacheable
         ), "no test coverage for needs_to_be_cacheable=False"
 
-        plugin_subject = statement._propagate_attrs["plugin_subject"]
+        plugin_subject = cls._get_dml_plugin_subject(statement)
 
-        if not plugin_subject or not plugin_subject.mapper:
+        if not plugin_subject:
             return UpdateDMLState._get_crud_kv_pairs(
                 statement, kv_iterator, needs_to_be_cacheable
             )
-
         return list(
             cls._get_orm_crud_kv_pairs(
                 plugin_subject.mapper,
@@ -1095,7 +1107,7 @@ class BulkUDCompileState(ORMDMLState):
         # call can_use_returning() before invoking the statement and get
         # answer?, why does this go through the whole execute phase using an
         # event?  Answer: because we are integrating with extensions such
-        # as the horizontal sharding extention that "multiplexes" an individual
+        # as the horizontal sharding extension that "multiplexes" an individual
         # statement run through multiple engines, and it uses
         # do_orm_execute() to do that.
 
@@ -1206,7 +1218,7 @@ class BulkORMInsert(ORMDMLState, InsertDMLState):
             # for ORM object loading, like ORMContext, we have to disable
             # result set adapt_to_context, because we will be generating a
             # new statement with specific columns that's cached inside of
-            # an ORMFromStatementCompileState, which we will re-use for
+            # an ORMFromStatementCompileState, which we will reuse for
             # each result.
             if not execution_options:
                 execution_options = context._orm_load_exec_options

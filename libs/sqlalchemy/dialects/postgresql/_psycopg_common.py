@@ -1,5 +1,5 @@
 # dialects/postgresql/_psycopg_common.py
-# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2026 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -170,8 +170,10 @@ class _PGDialect_common_psycopg(PGDialect):
     def _do_autocommit(self, connection, value):
         connection.autocommit = value
 
+    def detect_autocommit_setting(self, dbapi_connection):
+        return bool(dbapi_connection.autocommit)
+
     def do_ping(self, dbapi_connection):
-        cursor = None
         before_autocommit = dbapi_connection.autocommit
 
         if not before_autocommit:

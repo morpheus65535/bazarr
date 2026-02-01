@@ -1,6 +1,7 @@
 import asyncio
 from datetime import datetime, timezone
 import functools
+import inspect
 import os
 import socket
 import time
@@ -124,7 +125,7 @@ class InstrumentedAsyncServer:
             elif isinstance(self.auth, list):
                 authenticated = client_auth in self.auth
             else:
-                if asyncio.iscoroutinefunction(self.auth):
+                if inspect.iscoroutinefunction(self.auth):
                     authenticated = await self.auth(client_auth)
                 else:
                     authenticated = self.auth(client_auth)

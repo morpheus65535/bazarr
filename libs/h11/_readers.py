@@ -148,10 +148,9 @@ chunk_header_re = re.compile(chunk_header.encode("ascii"))
 class ChunkedReader:
     def __init__(self) -> None:
         self._bytes_in_chunk = 0
-        # After reading a chunk, we have to throw away the trailing \r\n; if
-        # this is >0 then we discard that many bytes before resuming regular
-        # de-chunkification.
-        self._bytes_to_discard = 0
+        # After reading a chunk, we have to throw away the trailing \r\n.
+        # This tracks the bytes that we need to match and throw away.
+        self._bytes_to_discard = b""
         self._reading_trailer = False
 
     def __call__(self, buf: ReceiveBuffer) -> Union[Data, EndOfMessage, None]:
@@ -160,15 +159,19 @@ class ChunkedReader:
             if lines is None:
                 return None
             return EndOfMessage(headers=list(_decode_header_lines(lines)))
-        if self._bytes_to_discard > 0:
-            data = buf.maybe_extract_at_most(self._bytes_to_discard)
+        if self._bytes_to_discard:
+            data = buf.maybe_extract_at_most(len(self._bytes_to_discard))
             if data is None:
                 return None
-            self._bytes_to_discard -= len(data)
-            if self._bytes_to_discard > 0:
+            if data != self._bytes_to_discard[: len(data)]:
+                raise LocalProtocolError(
+                    f"malformed chunk footer: {data!r} (expected {self._bytes_to_discard!r})"
+                )
+            self._bytes_to_discard = self._bytes_to_discard[len(data) :]
+            if self._bytes_to_discard:
                 return None
             # else, fall through and read some more
-        assert self._bytes_to_discard == 0
+        assert self._bytes_to_discard == b""
         if self._bytes_in_chunk == 0:
             # We need to refill our chunk count
             chunk_header = buf.maybe_extract_next_line()
@@ -194,7 +197,7 @@ class ChunkedReader:
             return None
         self._bytes_in_chunk -= len(data)
         if self._bytes_in_chunk == 0:
-            self._bytes_to_discard = 2
+            self._bytes_to_discard = b"\r\n"
             chunk_end = True
         else:
             chunk_end = False

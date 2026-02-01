@@ -4,10 +4,11 @@ wsproto/connection
 
 An implementation of a WebSocket connection.
 """
+from __future__ import annotations
 
 from collections import deque
 from enum import Enum
-from typing import Deque, Generator, List, Optional
+from typing import TYPE_CHECKING
 
 from .events import (
     BytesMessage,
@@ -18,9 +19,13 @@ from .events import (
     Pong,
     TextMessage,
 )
-from .extensions import Extension
 from .frame_protocol import CloseReason, FrameProtocol, Opcode, ParseFailed
 from .utilities import LocalProtocolError
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
+
+    from .extensions import Extension
 
 
 class ConnectionState(Enum):
@@ -63,21 +68,26 @@ class Connection:
     This wraps two other protocol objects, an HTTP/1.1 protocol object used
     to do the initial HTTP upgrade handshake and a WebSocket frame protocol
     object used to exchange messages and other control frames.
-
-    :param conn_type: Whether this object is on the client- or server-side of
-        a connection. To initialise as a client pass ``CLIENT`` otherwise
-        pass ``SERVER``.
-    :type conn_type: ``ConnectionType``
     """
 
     def __init__(
         self,
         connection_type: ConnectionType,
-        extensions: Optional[List[Extension]] = None,
+        extensions: list[Extension] | None = None,
         trailing_data: bytes = b"",
     ) -> None:
+        """
+        Constructor
+
+        :param wsproto.connection.ConnectionType connection_type: Whether this
+            object is on the client- or server-side of a connection.
+            To initialise as a client pass ``CLIENT`` otherwise pass ``SERVER``.
+        :param list extensions: The proposed extensions.
+        :param bytes trailing_data: Data that has been received, but not yet
+            processed.
+        """
         self.client = connection_type is ConnectionType.CLIENT
-        self._events: Deque[Event] = deque()
+        self._events: deque[Event] = deque()
         self._proto = FrameProtocol(self.client, extensions or [])
         self._state = ConnectionState.OPEN
         self.receive_data(trailing_data)
@@ -104,12 +114,13 @@ class Connection:
             else:
                 self._state = ConnectionState.LOCAL_CLOSING
         else:
+            msg = f"Event {event} cannot be sent in state {self.state}."
             raise LocalProtocolError(
-                f"Event {event} cannot be sent in state {self.state}."
+                msg,
             )
         return data
 
-    def receive_data(self, data: Optional[bytes]) -> None:
+    def receive_data(self, data: bytes | None) -> None:
         """
         Pass some received data to the connection for handling.
 
@@ -119,7 +130,6 @@ class Connection:
         :param data: The data received from the remote peer on the network.
         :type data: ``bytes``
         """
-
         if data is None:
             # "If _The WebSocket Connection is Closed_ and no Close control
             # frame was received by the endpoint (such as could occur if the
@@ -132,7 +142,8 @@ class Connection:
         if self.state in (ConnectionState.OPEN, ConnectionState.LOCAL_CLOSING):
             self._proto.receive_bytes(data)
         elif self.state is ConnectionState.CLOSED:
-            raise LocalProtocolError("Connection already closed.")
+            msg = "Connection already closed."
+            raise LocalProtocolError(msg)
         else:
             pass  # pragma: no cover
 
@@ -149,12 +160,14 @@ class Connection:
         try:
             for frame in self._proto.received_frames():
                 if frame.opcode is Opcode.PING:
-                    assert frame.frame_finished and frame.message_finished
+                    assert frame.frame_finished
+                    assert frame.message_finished
                     assert isinstance(frame.payload, (bytes, bytearray))
                     yield Ping(payload=frame.payload)
 
                 elif frame.opcode is Opcode.PONG:
-                    assert frame.frame_finished and frame.message_finished
+                    assert frame.frame_finished
+                    assert frame.message_finished
                     assert isinstance(frame.payload, (bytes, bytearray))
                     yield Pong(payload=frame.payload)
 

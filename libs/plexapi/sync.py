@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 You can work with Mobile Sync on other devices straight away, but if you'd like to use your app as a `sync-target` (when
 you can set items to be synced to your app) you need to init some variables.
@@ -63,7 +62,7 @@ class SyncItem(PlexObject):
         self.clientIdentifier = clientIdentifier
 
     def _loadData(self, data):
-        self._data = data
+        """ Load attribute values from Plex XML response. """
         self.id = plexapi.utils.cast(int, data.attrib.get('id'))
         self.version = plexapi.utils.cast(int, data.attrib.get('version'))
         self.rootTitle = data.attrib.get('rootTitle')
@@ -118,7 +117,7 @@ class SyncList(PlexObject):
     TAG = 'SyncList'
 
     def _loadData(self, data):
-        self._data = data
+        """ Load attribute values from Plex XML response. """
         self.clientId = data.attrib.get('clientIdentifier')
         self.items = []
 

@@ -8,7 +8,7 @@ from tempfile import gettempdir
 from typing import Type
 from urllib.parse import SplitResult, urlsplit
 
-from faker import Faker  # type: ignore
+from fake import FAKER
 
 from .. import defaults
 from ..base import BaseTLDSourceParser, Registry
@@ -36,7 +36,7 @@ from ..utils import (
 from .base import internet_available_only, log_info
 
 __author__ = "Artur Barseghyan"
-__copyright__ = "2013-2023 Artur Barseghyan"
+__copyright__ = "2013-2025 Artur Barseghyan"
 __license__ = "MPL-1.1 OR GPL-2.0-only OR LGPL-2.1-or-later"
 __all__ = ("TestCore",)
 
@@ -48,7 +48,6 @@ class TestCore(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.faker = Faker()
         cls.temp_dir = gettempdir()
 
     def setUp(self):
@@ -191,11 +190,11 @@ class TestCore(unittest.TestCase):
             },
             {
                 "url": "m.fr.blogspot.com.au",
-                "fld": "fr.blogspot.com.au",
-                "subdomain": "m",
-                "domain": "fr",
-                "suffix": "blogspot.com.au",
-                "tld": "blogspot.com.au",
+                "fld": "blogspot.com.au",
+                "subdomain": "m.fr",
+                "domain": "blogspot",
+                "suffix": "com.au",
+                "tld": "com.au",
                 "kwargs": {"fail_silently": True, "fix_protocol": True},
             },
             {
@@ -654,7 +653,7 @@ class TestCore(unittest.TestCase):
     @log_info
     def test_18_get_tld_names_and_reset_tld_names(self):
         """Test fail `get_tld_names` and repair using `reset_tld_names`."""
-        tmp_filename = join(gettempdir(), f"{self.faker.uuid4()}.dat.txt")
+        tmp_filename = join(gettempdir(), f"{FAKER.uuid()}.dat.txt")
         parser_class = self.get_custom_parser_class(
             source_url="i-do-not-exist", local_path=tmp_filename
         )
@@ -666,7 +665,7 @@ class TestCore(unittest.TestCase):
             with self.assertRaises(TldIOError):
                 get_tld_names(fail_silently=False, parser_class=parser_class)
 
-        tmp_filename = join(gettempdir(), f"{self.faker.uuid4()}.dat.txt")
+        tmp_filename = join(gettempdir(), f"{FAKER.uuid()}.dat.txt")
         parser_class_2 = self.get_custom_parser_class(
             source_url="i-do-not-exist-2", local_path=tmp_filename
         )

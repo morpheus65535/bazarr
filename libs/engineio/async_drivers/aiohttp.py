@@ -1,6 +1,5 @@
-import asyncio
+import inspect
 import sys
-from urllib.parse import urlsplit
 
 from aiohttp.web import Response, WebSocketResponse
 
@@ -22,12 +21,8 @@ def translate_request(request):
     """This function takes the arguments passed to the request handler and
     uses them to generate a WSGI compatible environ dictionary.
     """
-    message = request._message
-    payload = request._payload
-
-    uri_parts = urlsplit(message.path)
     environ = {
-        'wsgi.input': payload,
+        'wsgi.input': request.content,
         'wsgi.errors': sys.stderr,
         'wsgi.version': (1, 0),
         'wsgi.async': True,
@@ -35,10 +30,10 @@ def translate_request(request):
         'wsgi.multiprocess': False,
         'wsgi.run_once': False,
         'SERVER_SOFTWARE': 'aiohttp',
-        'REQUEST_METHOD': message.method,
-        'QUERY_STRING': uri_parts.query or '',
-        'RAW_URI': message.path,
-        'SERVER_PROTOCOL': 'HTTP/%s.%s' % message.version,
+        'REQUEST_METHOD': request.method,
+        'QUERY_STRING': request.query_string or '',
+        'RAW_URI': request.path_qs,
+        'SERVER_PROTOCOL': f'HTTP/{request.version[0]}.{request.version[1]}',
         'REMOTE_ADDR': '127.0.0.1',
         'REMOTE_PORT': '0',
         'SERVER_NAME': 'aiohttp',
@@ -46,7 +41,7 @@ def translate_request(request):
         'aiohttp.request': request
     }
 
-    for hdr_name, hdr_value in message.headers.items():
+    for hdr_name, hdr_value in request.headers.items():
         hdr_name = hdr_name.upper()
         if hdr_name == 'CONTENT-TYPE':
             environ['CONTENT_TYPE'] = hdr_value
@@ -63,9 +58,7 @@ def translate_request(request):
 
     environ['wsgi.url_scheme'] = environ.get('HTTP_X_FORWARDED_PROTO', 'http')
 
-    path_info = uri_parts.path
-
-    environ['PATH_INFO'] = path_info
+    environ['PATH_INFO'] = request.path
     environ['SCRIPT_NAME'] = ''
 
     return environ
@@ -105,7 +98,7 @@ class WebSocket:  # pragma: no cover
             f = self._sock.send_bytes
         else:
             f = self._sock.send_str
-        if asyncio.iscoroutinefunction(f):
+        if inspect.iscoroutinefunction(f):
             await f(message)
         else:
             f(message)

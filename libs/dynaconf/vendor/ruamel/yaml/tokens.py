@@ -1,19 +1,17 @@
 from __future__ import unicode_literals
-_F=', line: '
-_E='pre_done'
-_D=False
-_C='value'
+_D=', line: '
+_C=False
 _B='_comment'
 _A=None
-if _D:from typing import Text,Any,Dict,Optional,List;from.error import StreamMark
+if _C:from typing import Text,Any,Dict,Optional,List;from.error import StreamMark
 SHOWLINES=True
 class Token:
-	__slots__='start_mark','end_mark',_B
+	__slots__='start_mark','end_mark','_comment'
 	def __init__(A,start_mark,end_mark):A.start_mark=start_mark;A.end_mark=end_mark
 	def __repr__(A):
 		C=[A for A in A.__slots__ if not A.endswith('_mark')];C.sort();B=', '.join(['%s=%r'%(B,getattr(A,B))for B in C])
 		if SHOWLINES:
-			try:B+=_F+str(A.start_mark.line)
+			try:B+=_D+str(A.start_mark.line)
 			except:pass
 		try:B+=', comment: '+str(A._comment)
 		except:pass
@@ -27,7 +25,7 @@ class Token:
 	def get_comment(A):return getattr(A,_B,_A)
 	@property
 	def comment(self):return getattr(self,_B,_A)
-	def move_comment(C,target,empty=_D):
+	def move_comment(C,target,empty=_C):
 		D=target;A=C.comment
 		if A is _A:return
 		if isinstance(D,(StreamEndToken,DocumentStartToken)):return
@@ -46,7 +44,7 @@ class Token:
 		if A[1]is _A:delattr(B,_B)
 		return C
 class DirectiveToken(Token):
-	__slots__='name',_C;id='<directive>'
+	__slots__='name','value';id='<directive>'
 	def __init__(A,name,value,start_mark,end_mark):Token.__init__(A,start_mark,end_mark);A.name=name;A.value=value
 class DocumentStartToken(Token):__slots__=();id='<document start>'
 class DocumentEndToken(Token):__slots__=();id='<document end>'
@@ -66,32 +64,33 @@ class ValueToken(Token):__slots__=();id=':'
 class BlockEntryToken(Token):__slots__=();id='-'
 class FlowEntryToken(Token):__slots__=();id=','
 class AliasToken(Token):
-	__slots__=_C,;id='<alias>'
+	__slots__='value',;id='<alias>'
 	def __init__(A,value,start_mark,end_mark):Token.__init__(A,start_mark,end_mark);A.value=value
 class AnchorToken(Token):
-	__slots__=_C,;id='<anchor>'
+	__slots__='value',;id='<anchor>'
 	def __init__(A,value,start_mark,end_mark):Token.__init__(A,start_mark,end_mark);A.value=value
 class TagToken(Token):
-	__slots__=_C,;id='<tag>'
+	__slots__='value',;id='<tag>'
 	def __init__(A,value,start_mark,end_mark):Token.__init__(A,start_mark,end_mark);A.value=value
 class ScalarToken(Token):
-	__slots__=_C,'plain','style';id='<scalar>'
+	__slots__='value','plain','style';id='<scalar>'
 	def __init__(A,value,plain,start_mark,end_mark,style=_A):Token.__init__(A,start_mark,end_mark);A.value=value;A.plain=plain;A.style=style
 class CommentToken(Token):
-	__slots__=_C,_E;id='<comment>'
+	__slots__='value','pre_done';id='<comment>'
 	def __init__(A,value,start_mark,end_mark):Token.__init__(A,start_mark,end_mark);A.value=value
 	def reset(A):
-		if hasattr(A,_E):delattr(A,_E)
+		B='pre_done'
+		if hasattr(A,B):delattr(A,B)
 	def __repr__(A):
 		B='{!r}'.format(A.value)
 		if SHOWLINES:
-			try:B+=_F+str(A.start_mark.line);B+=', col: '+str(A.start_mark.column)
+			try:B+=_D+str(A.start_mark.line);B+=', col: '+str(A.start_mark.column)
 			except:pass
 		return'CommentToken({})'.format(B)
 	def __eq__(A,other):
 		B=other
-		if A.start_mark!=B.start_mark:return _D
-		if A.end_mark!=B.end_mark:return _D
-		if A.value!=B.value:return _D
+		if A.start_mark!=B.start_mark:return _C
+		if A.end_mark!=B.end_mark:return _C
+		if A.value!=B.value:return _C
 		return True
 	def __ne__(A,other):return not A.__eq__(other)

@@ -1,9 +1,9 @@
-Metadata-Version: 2.1
+Metadata-Version: 2.4
 Name: babelfish
 Version: 0.6.1
 Summary: A module to work with countries and languages
-Home-page: https://github.com/Diaoul/babelfish
 License: BSD-3-Clause
+License-File: LICENSE
 Keywords: language,country,locale
 Author: Antoine Bertin
 Author-email: ant.bertin@gmail.com
@@ -20,6 +20,7 @@ Classifier: Programming Language :: Python :: 3.10
 Classifier: Programming Language :: Python :: 3.11
 Classifier: Programming Language :: Python :: 3.12
 Classifier: Programming Language :: Python :: 3.13
+Classifier: Programming Language :: Python :: 3.14
 Classifier: Programming Language :: Python :: 3 :: Only
 Classifier: Topic :: Software Development :: Internationalization
 Classifier: Topic :: Software Development :: Libraries :: Python Modules

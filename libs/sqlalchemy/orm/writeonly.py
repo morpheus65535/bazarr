@@ -1,5 +1,5 @@
 # orm/writeonly.py
-# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2026 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -236,15 +236,11 @@ class WriteOnlyAttributeImpl(
         return DynamicCollectionAdapter(data)  # type: ignore[return-value]
 
     @util.memoized_property
-    def _append_token(  # type:ignore[override]
-        self,
-    ) -> attributes.AttributeEventToken:
+    def _append_token(self) -> attributes.AttributeEventToken:
         return attributes.AttributeEventToken(self, attributes.OP_APPEND)
 
     @util.memoized_property
-    def _remove_token(  # type:ignore[override]
-        self,
-    ) -> attributes.AttributeEventToken:
+    def _remove_token(self) -> attributes.AttributeEventToken:
         return attributes.AttributeEventToken(self, attributes.OP_REMOVE)
 
     def fire_append_event(
@@ -415,7 +411,7 @@ class WriteOnlyAttributeImpl(
         initiator: Optional[AttributeEventToken],
         passive: PassiveFlag = PassiveFlag.PASSIVE_NO_FETCH,
     ) -> None:
-        if initiator is not self:
+        if initiator is not self:  # type: ignore[comparison-overlap]
             self.fire_append_event(state, dict_, value, initiator)
 
     def remove(
@@ -426,7 +422,7 @@ class WriteOnlyAttributeImpl(
         initiator: Optional[AttributeEventToken],
         passive: PassiveFlag = PassiveFlag.PASSIVE_NO_FETCH,
     ) -> None:
-        if initiator is not self:
+        if initiator is not self:  # type: ignore[comparison-overlap]
             self.fire_remove_event(state, dict_, value, initiator)
 
     def pop(

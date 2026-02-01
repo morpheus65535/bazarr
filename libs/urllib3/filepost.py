@@ -11,7 +11,7 @@ from .fields import _TYPE_FIELD_VALUE_TUPLE, RequestField
 writer = codecs.lookup("utf-8")[3]
 
 _TYPE_FIELDS_SEQUENCE = typing.Sequence[
-    typing.Union[typing.Tuple[str, _TYPE_FIELD_VALUE_TUPLE], RequestField]
+    typing.Union[tuple[str, _TYPE_FIELD_VALUE_TUPLE], RequestField]
 ]
 _TYPE_FIELDS = typing.Union[
     _TYPE_FIELDS_SEQUENCE,

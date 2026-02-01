@@ -1,11 +1,11 @@
 import logging
-import pickle
 
 try:
     import kafka
 except ImportError:
     kafka = None
 
+from engineio import json
 from .pubsub_manager import PubSubManager
 
 logger = logging.getLogger('socketio')
@@ -53,7 +53,7 @@ class KafkaManager(PubSubManager):  # pragma: no cover
                                             bootstrap_servers=self.kafka_urls)
 
     def _publish(self, data):
-        self.producer.send(self.channel, value=pickle.dumps(data))
+        self.producer.send(self.channel, value=json.dumps(data))
         self.producer.flush()
 
     def _kafka_listen(self):
@@ -62,4 +62,4 @@ class KafkaManager(PubSubManager):  # pragma: no cover
     def _listen(self):
         for message in self._kafka_listen():
             if message.topic == self.channel:
-                yield pickle.loads(message.value)
+                yield message.value

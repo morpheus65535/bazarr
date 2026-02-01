@@ -20,6 +20,7 @@ from sqlalchemy.sql.elements import ClauseElement
 from .base import AddColumn
 from .base import alter_column
 from .base import alter_table
+from .base import ColumnComment
 from .base import ColumnDefault
 from .base import ColumnName
 from .base import ColumnNullable
@@ -45,7 +46,8 @@ if TYPE_CHECKING:
     from sqlalchemy.sql.selectable import TableClause
     from sqlalchemy.sql.type_api import TypeEngine
 
-    from .base import _ServerDefault
+    from .base import _ServerDefaultType
+    from .impl import _ReflectedConstraint
 
 
 class MSSQLImpl(DefaultImpl):
@@ -83,19 +85,22 @@ class MSSQLImpl(DefaultImpl):
         if self.as_sql and self.batch_separator:
             self.static_output(self.batch_separator)
 
-    def alter_column(  # type:ignore[override]
+    def alter_column(
         self,
         table_name: str,
         column_name: str,
+        *,
         nullable: Optional[bool] = None,
         server_default: Optional[
-            Union[_ServerDefault, Literal[False]]
+            Union[_ServerDefaultType, Literal[False]]
         ] = False,
         name: Optional[str] = None,
         type_: Optional[TypeEngine] = None,
         schema: Optional[str] = None,
         existing_type: Optional[TypeEngine] = None,
-        existing_server_default: Optional[_ServerDefault] = None,
+        existing_server_default: Union[
+            _ServerDefaultType, Literal[False], None
+        ] = None,
         existing_nullable: Optional[bool] = None,
         **kw: Any,
     ) -> None:
@@ -137,6 +142,27 @@ class MSSQLImpl(DefaultImpl):
             kw["server_default"] = server_default
             kw["existing_server_default"] = existing_server_default
 
+        # drop existing default constraints before changing type
+        # or default, see issue #1744
+        if (
+            server_default is not False
+            and used_default is False
+            and (
+                existing_server_default is not False or server_default is None
+            )
+        ):
+            self._exec(
+                _ExecDropConstraint(
+                    table_name,
+                    column_name,
+                    "sys.default_constraints",
+                    schema,
+                )
+            )
+
+        # TODO: see why these two alter_columns can't be called
+        # at once.   joining them works but some of the mssql tests
+        # seem to expect something different
         super().alter_column(
             table_name,
             column_name,
@@ -149,15 +175,6 @@ class MSSQLImpl(DefaultImpl):
         )
 
         if server_default is not False and used_default is False:
-            if existing_server_default is not False or server_default is None:
-                self._exec(
-                    _ExecDropConstraint(
-                        table_name,
-                        column_name,
-                        "sys.default_constraints",
-                        schema,
-                    )
-                )
             if server_default is not None:
                 super().alter_column(
                     table_name,
@@ -202,6 +219,7 @@ class MSSQLImpl(DefaultImpl):
         self,
         table_name: str,
         column: Column[Any],
+        *,
         schema: Optional[str] = None,
         **kw,
     ) -> None:
@@ -265,10 +283,10 @@ class MSSQLImpl(DefaultImpl):
         return diff, ignored, is_alter
 
     def adjust_reflected_dialect_options(
-        self, reflected_object: Dict[str, Any], kind: str
+        self, reflected_object: _ReflectedConstraint, kind: str
     ) -> Dict[str, Any]:
         options: Dict[str, Any]
-        options = reflected_object.get("dialect_options", {}).copy()
+        options = reflected_object.get("dialect_options", {}).copy()  # type: ignore[attr-defined]  # noqa: E501
         if not options.get("mssql_include"):
             options.pop("mssql_include", None)
         if not options.get("mssql_clustered"):
@@ -417,3 +435,89 @@ def visit_rename_table(
         format_table_name(compiler, element.table_name, element.schema),
         format_table_name(compiler, element.new_table_name, None),
     )
+
+
+def _add_column_comment(
+    compiler: MSDDLCompiler,
+    schema: Optional[str],
+    tname: str,
+    cname: str,
+    comment: str,
+) -> str:
+    schema_name = schema if schema else compiler.dialect.default_schema_name
+    assert schema_name
+    return (
+        "exec sp_addextendedproperty 'MS_Description', {}, "
+        "'schema', {}, 'table', {}, 'column', {}".format(
+            compiler.sql_compiler.render_literal_value(
+                comment, sqltypes.NVARCHAR()
+            ),
+            compiler.preparer.quote_schema(schema_name),
+            compiler.preparer.quote(tname),
+            compiler.preparer.quote(cname),
+        )
+    )
+
+
+def _update_column_comment(
+    compiler: MSDDLCompiler,
+    schema: Optional[str],
+    tname: str,
+    cname: str,
+    comment: str,
+) -> str:
+    schema_name = schema if schema else compiler.dialect.default_schema_name
+    assert schema_name
+    return (
+        "exec sp_updateextendedproperty 'MS_Description', {}, "
+        "'schema', {}, 'table', {}, 'column', {}".format(
+            compiler.sql_compiler.render_literal_value(
+                comment, sqltypes.NVARCHAR()
+            ),
+            compiler.preparer.quote_schema(schema_name),
+            compiler.preparer.quote(tname),
+            compiler.preparer.quote(cname),
+        )
+    )
+
+
+def _drop_column_comment(
+    compiler: MSDDLCompiler, schema: Optional[str], tname: str, cname: str
+) -> str:
+    schema_name = schema if schema else compiler.dialect.default_schema_name
+    assert schema_name
+    return (
+        "exec sp_dropextendedproperty 'MS_Description', "
+        "'schema', {}, 'table', {}, 'column', {}".format(
+            compiler.preparer.quote_schema(schema_name),
+            compiler.preparer.quote(tname),
+            compiler.preparer.quote(cname),
+        )
+    )
+
+
+@compiles(ColumnComment, "mssql")
+def visit_column_comment(
+    element: ColumnComment, compiler: MSDDLCompiler, **kw: Any
+) -> str:
+    if element.comment is not None:
+        if element.existing_comment is not None:
+            return _update_column_comment(
+                compiler,
+                element.schema,
+                element.table_name,
+                element.column_name,
+                element.comment,
+            )
+        else:
+            return _add_column_comment(
+                compiler,
+                element.schema,
+                element.table_name,
+                element.column_name,
+                element.comment,
+            )
+    else:
+        return _drop_column_comment(
+            compiler, element.schema, element.table_name, element.column_name
+        )

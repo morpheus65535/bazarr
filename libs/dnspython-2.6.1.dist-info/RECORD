@@ -142,8 +142,8 @@ dns/zone.py,sha256=lLAarSxPtpx4Sw29OQ0ifPshD4QauGu8RnPh2dEropA,52086
 dns/zonefile.py,sha256=9pgkO0pV8Js53Oq9ZKOSbpFkGS5r_orU-25tmufGP9M,27929
 dns/zonetypes.py,sha256=HrQNZxZ_gWLWI9dskix71msi9wkYK5pgrBBbPb1T74Y,690
 dnspython-2.6.1.dist-info/INSTALLER,sha256=zuuue4knoyJ-UwPPXg8fezS7VCrXJQrAP7zeNuwvFQg,4
-dnspython-2.6.1.dist-info/METADATA,sha256=93MjwRdAibIDnxyA4eYzHKDKbG1sUWeke-xJPhPeaUo,5808
+dnspython-2.6.1.dist-info/METADATA,sha256=uVBV7L2eMsRKZn_mAWmG93usr1pFIaOJkRG3iCoD9SE,5808
 dnspython-2.6.1.dist-info/RECORD,,
 dnspython-2.6.1.dist-info/REQUESTED,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
-dnspython-2.6.1.dist-info/WHEEL,sha256=1yFddiXMmvYK7QYTqtRNtX66WJ0Mz8PYEiEUoOUUxRY,87
+dnspython-2.6.1.dist-info/WHEEL,sha256=WLgqFyCfm_KASv4WHyYy0P3pM_m7J5L9k2skdKLirC8,87
 dnspython-2.6.1.dist-info/licenses/LICENSE,sha256=w-o_9WVLMpwZ07xfdIGvYjw93tSmFFWFSZ-EOtPXQc0,1526

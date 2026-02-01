@@ -1,0 +1,262 @@
+Metadata-Version: 2.1
+Name: pymediainfo
+Version: 7.0.1
+Summary: A Python wrapper for the MediaInfo library.
+Author-Email: Louis Sautier <sautier.louis@gmail.com>
+License: MIT
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: MacOS :: MacOS X
+Classifier: Operating System :: Microsoft :: Windows
+Classifier: Operating System :: POSIX :: Linux
+Classifier: Programming Language :: Python :: 3 :: Only
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Programming Language :: Python :: 3.13
+Classifier: Programming Language :: Python :: Implementation :: CPython
+Classifier: Programming Language :: Python :: Implementation :: PyPy
+Project-URL: Homepage, https://github.com/sbraz/pymediainfo
+Project-URL: Documentation, https://pymediainfo.readthedocs.io/
+Project-URL: Bugs, https://github.com/sbraz/pymediainfo/issues
+Requires-Python: >=3.9
+Provides-Extra: tests
+Requires-Dist: pytest>=6; extra == "tests"
+Requires-Dist: pytest-cov; extra == "tests"
+Requires-Dist: pytest-xdist; extra == "tests"
+Provides-Extra: docs
+Requires-Dist: alabaster; extra == "docs"
+Requires-Dist: myst-parser; extra == "docs"
+Requires-Dist: setuptools_scm; extra == "docs"
+Requires-Dist: sphinx; extra == "docs"
+Provides-Extra: dev
+Requires-Dist: ipython; extra == "dev"
+Requires-Dist: mypy>=1.0; extra == "dev"
+Requires-Dist: black; extra == "dev"
+Requires-Dist: isort; extra == "dev"
+Requires-Dist: flake8; extra == "dev"
+Requires-Dist: pylint; extra == "dev"
+Description-Content-Type: text/markdown
+
+# pymediainfo
+
+[![PyPI](https://img.shields.io/pypi/v/pymediainfo.svg)](https://pypi.org/project/pymediainfo)
+[![Supported Python versions](https://img.shields.io/pypi/pyversions/pymediainfo.svg)](https://pypi.org/project/pymediainfo)
+[![Repology info](https://repology.org/badge/tiny-repos/python%3Apymediainfo.svg)](https://repology.org/project/python%3Apymediainfo/versions)
+[![GitHub](https://img.shields.io/github/stars/sbraz/pymediainfo)](https://github.com/sbraz/pymediainfo)
+[![Build status](https://ci.appveyor.com/api/projects/status/g15a2daem1oub57n/branch/master?svg=true)](https://ci.appveyor.com/project/sbraz/pymediainfo)
+
+pymediainfo is a wrapper for [the MediaInfo library](https://mediaarea.net/en/MediaInfo). It makes it easy to
+extract detailed information from multimedia files.
+
+## Compatibility
+
+pymediainfo is compatible with the following:
+
+* **Platforms**: **Linux**, **macOS** and **Windows**.
+* **Python Versions**: Tested with Python **3.9** (the minimum required version) to **3.13**, as well as **PyPy3**.
+
+## Installation
+
+Please note that, without [the MediaInfo library](https://mediaarea.net/en/MediaInfo), pymediainfo
+**cannot parse media files**. This severely limits its functionality, allowing it to process
+only pre-generated XML output from MediaInfo.
+
+### Linux distribution Packages
+
+Packages are available for [most major Linux distributions](https://repology.org/project/python%3Apymediainfo/versions).
+They often depend on the MediaInfo library and are the preferred way to
+install pymediainfo on Linux, as they allow for independent updates to pymediainfo and the MediaInfo library itself.
+
+### PyPI on Linux, macOS and Windows
+
+If pymediainfo is not available for your Linux distribution, or if you're running macOS or Windows,
+you can install it from PyPI:
+```
+python -m pip install pymediainfo
+```
+
+**Wheels** containing a bundled version of the MediaInfo library are available for:
+
+* Linux x86-64 and ARM64.
+* macOS x86-64 and ARM64.
+* Windows x86-64 and x86.
+
+If you do not want to use the wheels (for instance if you want to use the system-wide
+MediaInfo library instead of the bundled one):
+```
+python -m pip install pymediainfo --no-binary pymediainfo
+```
+
+## Usage
+
+Here are a few examples demonstrating how to use pymediainfo.
+### Getting information from an image
+The `MediaInfo` class provides a `parse()` method which takes paths as input and returns `MediaInfo` objects.
+#### Example snippet
+
+```py
+from pymediainfo import MediaInfo
+
+media_info = MediaInfo.parse("/home/user/image.jpg")
+# Tracks can be accessed using the 'tracks' attribute or through shorthands
+# such as 'image_tracks', 'audio_tracks', 'video_tracks', etc.
+general_track = media_info.general_tracks[0]
+image_track = media_info.image_tracks[0]
+print(
+  f"{image_track.format} of {image_track.width}×{image_track.height} pixels"
+  f" and {general_track.file_size} bytes."
+)
+```
+
+#### Example output
+
+```text
+JPEG of 828×828 pixels and 19098 bytes.
+```
+
+### Getting information from a video
+
+In this example, we take advantage of the `to_data()` method, which returns a `dict` containing  all
+attributes from a `MediaInfo` or `Track` object. This makes it
+easier to inspect tracks even when their attributes are unknown.
+
+#### Example snippet
+
+```py
+from pprint import pprint
+from pymediainfo import MediaInfo
+
+media_info = MediaInfo.parse("my_video_file.mp4")
+for track in media_info.tracks:
+    if track.track_type == "Video":
+        print(f"Bit rate: {track.bit_rate}, Frame rate: {track.frame_rate}, Format: {track.format}")
+        print("Duration (raw value):", track.duration)
+        print("Duration (other values:")
+        pprint(track.other_duration)
+    elif track.track_type == "Audio":
+        print("Track data:")
+        pprint(track.to_data())
+```
+
+#### Example output
+
+```text
+Bit rate: 3117597, Frame rate: 23.976, Format: AVC
+Duration (raw value): 958
+Duration (other values):
+['958 ms',
+'958 ms',
+'958 ms',
+'00:00:00.958',
+'00:00:00;23',
+'00:00:00.958 (00:00:00;23)']
+Track data:
+{'bit_rate': 236392,
+'bit_rate_mode': 'VBR',
+'channel_layout': 'L R',
+'channel_positions': 'Front: L R',
+'channel_s': 2,
+'codec_id': 'mp4a-40-2',
+'commercial_name': 'AAC',
+'compression_mode': 'Lossy',
+…
+}
+```
+
+### Accessing Track attributes
+
+Since the attributes from a `Track` are dynamically created during parsing, there isn't a firm definition
+of what will be available at runtime.
+
+In order to make consuming objects easier, the `__getattribute__` method from `Track` objects
+has been overridden to return `None` when a non-existent attribute is accessed, instead of raising `AttributeError`.
+
+#### Example snippet
+```py
+from pymediainfo import MediaInfo
+
+media_info = MediaInfo.parse("my_video_file.mp4")
+for track in media_info.tracks:
+    if track.bit_rate is None:
+        print(f"{track.track_type} tracks do not have a bit rate associated with them")
+    else:
+        print(f"Track {track.track_id} of type {track.track_type} has a bit rate of {track.bit_rate} b/s")
+```
+
+#### Example output
+
+```text
+General tracks do not have a bit rate associated with them
+Track 1 of type Video has a bit rate of 4398075 b/s
+Track 2 of type Audio has a bit rate of 131413 b/s
+Menu tracks do not have a bit rate associated with them
+```
+
+
+### Parsing pre-generated MediaInfo XML output
+pymediainfo relies on MediaInfo's `OLDXML` output to create `MediaInfo` objects.
+
+It is possible to create a `MediaInfo` object from an existing XML string. For
+instance if someone sent you the output of `mediainfo --output=OLDXML`, you can
+call the `MediaInfo` constructor directly.
+
+#### Example snippet
+```py
+from pymediainfo import MediaInfo
+
+raw_xml_string = """<?xml version="1.0" encoding="UTF-8"?>
+<Mediainfo version="24.11">
+<File>
+<track type="General">
+<Complete_name>binary_file</Complete_name>
+<File_size>1.00 Byte</File_size>
+</track>
+</File>
+</Mediainfo>"""
+media_info = MediaInfo(raw_xml_string)
+print(f"File name is: {media_info.general_tracks[0].complete_name}")
+```
+
+#### Example output
+```text
+File name is: binary_file
+```
+
+### Text output (à la `mediainfo`)
+
+If you want a text report, similar to what `mediainfo my_video_file.mp4` outputs,
+use the `output="text"` argument with the `parse()` method. In this case, it
+will return a string, not a `MediaInfo` object.
+
+#### Example snippet
+```py
+from pymediainfo import MediaInfo
+
+# To mirror a simple call to "mediainfo" without the "--Full" or "-f" option, we
+# set "full=False". Leaving it at the default of "full=True" would result in
+# more verbose output.
+print(MediaInfo.parse("my_video_file.mp4", output="text", full=False))
+```
+
+#### Example output
+```text
+General
+Complete name                            : my_video_file.mp4
+Format                                   : MPEG-4
+Format profile                           : Base Media
+[…]
+```
+
+## Documentation
+
+For more detailed information, please refer to the reference documentation
+available at <https://pymediainfo.readthedocs.io/>.
+
+## Issues and Questions
+For feature requests and bug reports, please use the GitHub issue tracker at
+<https://github.com/sbraz/pymediainfo/issues>.
+
+If you have any questions, feel free to ask in the discussions at
+<https://github.com/sbraz/pymediainfo/discussions>.

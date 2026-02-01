@@ -291,7 +291,7 @@ class App(Scaffold):
         instance_path: str | None = None,
         instance_relative_config: bool = False,
         root_path: str | None = None,
-    ):
+    ) -> None:
         super().__init__(
             import_name=import_name,
             static_folder=static_folder,
@@ -423,7 +423,7 @@ class App(Scaffold):
             )
 
     @cached_property
-    def name(self) -> str:  # type: ignore
+    def name(self) -> str:
         """The name of the application.  This is usually the import name
         with the difference that it's guessed from the run file if the
         import name is main.  This name is used as a display name when
@@ -521,7 +521,7 @@ class App(Scaffold):
         return os.path.join(prefix, "var", f"{self.name}-instance")
 
     def create_global_jinja_loader(self) -> DispatchingJinjaLoader:
-        """Creates the loader for the Jinja2 environment.  Can be used to
+        """Creates the loader for the Jinja environment.  Can be used to
         override just the loader and keeping the rest unchanged.  It's
         discouraged to override this function.  Instead one should override
         the :meth:`jinja_loader` function instead.
@@ -628,7 +628,7 @@ class App(Scaffold):
         methods = {item.upper() for item in methods}
 
         # Methods that should always be added
-        required_methods = set(getattr(view_func, "required_methods", ()))
+        required_methods: set[str] = set(getattr(view_func, "required_methods", ()))
 
         # starting with Flask 0.8 the view_func object can disable and
         # force-enable the automatic options handling.
@@ -638,7 +638,7 @@ class App(Scaffold):
             )
 
         if provide_automatic_options is None:
-            if "OPTIONS" not in methods:
+            if "OPTIONS" not in methods and self.config["PROVIDE_AUTOMATIC_OPTIONS"]:
                 provide_automatic_options = True
                 required_methods.add("OPTIONS")
             else:

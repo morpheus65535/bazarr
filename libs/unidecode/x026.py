@@ -83,26 +83,32 @@ None,    # 0x18
 '',    # 0x51
 '',    # 0x52
 '',    # 0x53
-'',    # 0x54
-'',    # 0x55
-'',    # 0x56
-'',    # 0x57
-'',    # 0x58
-'',    # 0x59
-'',    # 0x5a
-'',    # 0x5b
-'',    # 0x5c
-'',    # 0x5d
-'',    # 0x5e
-'',    # 0x5f
-'',    # 0x60
-'',    # 0x61
-'',    # 0x62
-'',    # 0x63
-'',    # 0x64
-'',    # 0x65
-'',    # 0x66
-'',    # 0x67
+'white king',    # 0x54
+'white queen',    # 0x55
+'white rook',    # 0x56
+'white bishop',    # 0x57
+'white knight',    # 0x58
+'white pawn',    # 0x59
+'black king',    # 0x5a
+'black queen',    # 0x5b
+'black rook',    # 0x5c
+'black bishop',    # 0x5d
+'black knight',    # 0x5e
+'black pawn',    # 0x5f
+
+# Unicode standard doesn't give an explanation why card suits exist in black
+# and white variants. Adding "white ..." and "black ..." here isn't useful
+# since both variants can be used for either red or black suit color.
+#
+# See discussion at https://github.com/avian2/unidecode/pull/93
+'spades',    # 0x60
+'hearts',    # 0x61
+'diamonds',    # 0x62
+'clubs',    # 0x63
+'spades',    # 0x64
+'hearts',    # 0x65
+'diamonds',    # 0x66
+'clubs',    # 0x67
 '',    # 0x68
 '',    # 0x69
 '',    # 0x6a

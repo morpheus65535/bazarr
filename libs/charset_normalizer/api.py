@@ -369,14 +369,15 @@ def from_bytes(
             # Preparing those fallbacks in case we got nothing.
             if (
                 enable_fallback
-                and encoding_iana in ["ascii", "utf_8", specified_encoding]
+                and encoding_iana
+                in ["ascii", "utf_8", specified_encoding, "utf_16", "utf_32"]
                 and not lazy_str_hard_failure
             ):
                 fallback_entry = CharsetMatch(
                     sequences,
                     encoding_iana,
                     threshold,
-                    False,
+                    bom_or_sig_available,
                     [],
                     decoded_payload,
                     preemptive_declaration=specified_encoding,

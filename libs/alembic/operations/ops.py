@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from abc import abstractmethod
+import os
+import pathlib
 import re
 from typing import Any
 from typing import Callable
@@ -35,13 +37,10 @@ if TYPE_CHECKING:
     from sqlalchemy.sql.elements import conv
     from sqlalchemy.sql.elements import quoted_name
     from sqlalchemy.sql.elements import TextClause
-    from sqlalchemy.sql.functions import Function
     from sqlalchemy.sql.schema import CheckConstraint
     from sqlalchemy.sql.schema import Column
-    from sqlalchemy.sql.schema import Computed
     from sqlalchemy.sql.schema import Constraint
     from sqlalchemy.sql.schema import ForeignKeyConstraint
-    from sqlalchemy.sql.schema import Identity
     from sqlalchemy.sql.schema import Index
     from sqlalchemy.sql.schema import MetaData
     from sqlalchemy.sql.schema import PrimaryKeyConstraint
@@ -52,6 +51,7 @@ if TYPE_CHECKING:
     from sqlalchemy.sql.type_api import TypeEngine
 
     from ..autogenerate.rewriter import Rewriter
+    from ..ddl.base import _ServerDefaultType
     from ..runtime.migration import MigrationContext
     from ..script.revision import _RevIdType
 
@@ -141,12 +141,14 @@ class DropConstraintOp(MigrateOperation):
         type_: Optional[str] = None,
         *,
         schema: Optional[str] = None,
+        if_exists: Optional[bool] = None,
         _reverse: Optional[AddConstraintOp] = None,
     ) -> None:
         self.constraint_name = constraint_name
         self.table_name = table_name
         self.constraint_type = type_
         self.schema = schema
+        self.if_exists = if_exists
         self._reverse = _reverse
 
     def reverse(self) -> AddConstraintOp:
@@ -204,6 +206,7 @@ class DropConstraintOp(MigrateOperation):
         type_: Optional[str] = None,
         *,
         schema: Optional[str] = None,
+        if_exists: Optional[bool] = None,
     ) -> None:
         r"""Drop a constraint of the given name, typically via DROP CONSTRAINT.
 
@@ -215,10 +218,20 @@ class DropConstraintOp(MigrateOperation):
          quoting of the schema outside of the default behavior, use
          the SQLAlchemy construct
          :class:`~sqlalchemy.sql.elements.quoted_name`.
+        :param if_exists: If True, adds IF EXISTS operator when
+         dropping the constraint
+
+         .. versionadded:: 1.16.0
 
         """
 
-        op = cls(constraint_name, table_name, type_=type_, schema=schema)
+        op = cls(
+            constraint_name,
+            table_name,
+            type_=type_,
+            schema=schema,
+            if_exists=if_exists,
+        )
         return operations.invoke(op)
 
     @classmethod
@@ -933,7 +946,7 @@ class CreateIndexOp(MigrateOperation):
         operations: Operations,
         index_name: Optional[str],
         table_name: str,
-        columns: Sequence[Union[str, TextClause, Function[Any]]],
+        columns: Sequence[Union[str, TextClause, ColumnElement[Any]]],
         *,
         schema: Optional[str] = None,
         unique: bool = False,
@@ -1682,7 +1695,9 @@ class AlterColumnOp(AlterTableOp):
         *,
         schema: Optional[str] = None,
         existing_type: Optional[Any] = None,
-        existing_server_default: Any = False,
+        existing_server_default: Union[
+            _ServerDefaultType, None, Literal[False]
+        ] = False,
         existing_nullable: Optional[bool] = None,
         existing_comment: Optional[str] = None,
         modify_nullable: Optional[bool] = None,
@@ -1841,14 +1856,16 @@ class AlterColumnOp(AlterTableOp):
         *,
         nullable: Optional[bool] = None,
         comment: Optional[Union[str, Literal[False]]] = False,
-        server_default: Any = False,
+        server_default: Union[
+            _ServerDefaultType, None, Literal[False]
+        ] = False,
         new_column_name: Optional[str] = None,
         type_: Optional[Union[TypeEngine[Any], Type[TypeEngine[Any]]]] = None,
         existing_type: Optional[
             Union[TypeEngine[Any], Type[TypeEngine[Any]]]
         ] = None,
-        existing_server_default: Optional[
-            Union[str, bool, Identity, Computed]
+        existing_server_default: Union[
+            _ServerDefaultType, None, Literal[False]
         ] = False,
         existing_nullable: Optional[bool] = None,
         existing_comment: Optional[str] = None,
@@ -1964,14 +1981,16 @@ class AlterColumnOp(AlterTableOp):
         *,
         nullable: Optional[bool] = None,
         comment: Optional[Union[str, Literal[False]]] = False,
-        server_default: Any = False,
+        server_default: Union[
+            _ServerDefaultType, None, Literal[False]
+        ] = False,
         new_column_name: Optional[str] = None,
         type_: Optional[Union[TypeEngine[Any], Type[TypeEngine[Any]]]] = None,
         existing_type: Optional[
             Union[TypeEngine[Any], Type[TypeEngine[Any]]]
         ] = None,
-        existing_server_default: Optional[
-            Union[str, bool, Identity, Computed]
+        existing_server_default: Union[
+            _ServerDefaultType, None, Literal[False]
         ] = False,
         existing_nullable: Optional[bool] = None,
         existing_comment: Optional[str] = None,
@@ -2033,16 +2052,22 @@ class AddColumnOp(AlterTableOp):
         column: Column[Any],
         *,
         schema: Optional[str] = None,
+        if_not_exists: Optional[bool] = None,
+        inline_references: Optional[bool] = None,
         **kw: Any,
     ) -> None:
         super().__init__(table_name, schema=schema)
         self.column = column
+        self.if_not_exists = if_not_exists
+        self.inline_references = inline_references
         self.kw = kw
 
     def reverse(self) -> DropColumnOp:
-        return DropColumnOp.from_column_and_tablename(
+        op = DropColumnOp.from_column_and_tablename(
             self.schema, self.table_name, self.column
         )
+        op.if_exists = self.if_not_exists
+        return op
 
     def to_diff_tuple(
         self,
@@ -2073,6 +2098,8 @@ class AddColumnOp(AlterTableOp):
         column: Column[Any],
         *,
         schema: Optional[str] = None,
+        if_not_exists: Optional[bool] = None,
+        inline_references: Optional[bool] = None,
     ) -> None:
         """Issue an "add column" instruction using the current
         migration context.
@@ -2091,21 +2118,16 @@ class AddColumnOp(AlterTableOp):
 
         .. note::
 
-            With the exception of NOT NULL constraints or single-column FOREIGN
-            KEY constraints, other kinds of constraints such as PRIMARY KEY,
-            UNIQUE or CHECK constraints **cannot** be generated using this
-            method; for these constraints, refer to operations such as
-            :meth:`.Operations.create_primary_key` and
-            :meth:`.Operations.create_check_constraint`. In particular, the
-            following :class:`~sqlalchemy.schema.Column` parameters are
-            **ignored**:
+            Not all contraint types may be indicated with this directive.
+            PRIMARY KEY, NOT NULL, FOREIGN KEY, and CHECK are honored, UNIQUE
+            is currently not.
 
-            * :paramref:`~sqlalchemy.schema.Column.primary_key` - SQL databases
-              typically do not support an ALTER operation that can add
-              individual columns one at a time to an existing primary key
-              constraint, therefore it's less ambiguous to use the
-              :meth:`.Operations.create_primary_key` method, which assumes no
-              existing primary key constraint is present.
+            .. versionadded:: 1.18.2 Added support for PRIMARY KEY to be
+               emitted within :meth:`.Operations.add_column`.
+
+            As of 1.18.2, the following :class:`~sqlalchemy.schema.Column`
+            parameters are **ignored**:
+
             * :paramref:`~sqlalchemy.schema.Column.unique` - use the
               :meth:`.Operations.create_unique_constraint` method
             * :paramref:`~sqlalchemy.schema.Column.index` - use the
@@ -2114,9 +2136,9 @@ class AddColumnOp(AlterTableOp):
 
         The provided :class:`~sqlalchemy.schema.Column` object may include a
         :class:`~sqlalchemy.schema.ForeignKey` constraint directive,
-        referencing a remote table name. For this specific type of constraint,
-        Alembic will automatically emit a second ALTER statement in order to
-        add the single-column FOREIGN KEY constraint separately::
+        referencing a remote table name. By default, Alembic will automatically
+        emit a second ALTER statement in order to add the single-column FOREIGN
+        KEY constraint separately::
 
             from alembic import op
             from sqlalchemy import Column, INTEGER, ForeignKey
@@ -2124,6 +2146,20 @@ class AddColumnOp(AlterTableOp):
             op.add_column(
                 "organization",
                 Column("account_id", INTEGER, ForeignKey("accounts.id")),
+            )
+
+        To render the FOREIGN KEY constraint inline within the ADD COLUMN
+        directive, use the ``inline_references`` parameter. This can improve
+        performance on large tables since the constraint is marked as valid
+        immediately for nullable columns::
+
+            from alembic import op
+            from sqlalchemy import Column, INTEGER, ForeignKey
+
+            op.add_column(
+                "organization",
+                Column("account_id", INTEGER, ForeignKey("accounts.id")),
+                inline_references=True,
             )
 
         The column argument passed to :meth:`.Operations.add_column` is a
@@ -2149,10 +2185,28 @@ class AddColumnOp(AlterTableOp):
          quoting of the schema outside of the default behavior, use
          the SQLAlchemy construct
          :class:`~sqlalchemy.sql.elements.quoted_name`.
+        :param if_not_exists: If True, adds IF NOT EXISTS operator
+         when creating the new column for compatible dialects
+
+         .. versionadded:: 1.16.0
+
+        :param inline_references: If True, renders FOREIGN KEY constraints
+         inline within the ADD COLUMN directive using REFERENCES syntax,
+         rather than as a separate ALTER TABLE ADD CONSTRAINT statement.
+         This is supported by PostgreSQL, Oracle, MySQL 5.7+, and
+         MariaDB 10.5+.
+
+         .. versionadded:: 1.18.2
 
         """
 
-        op = cls(table_name, column, schema=schema)
+        op = cls(
+            table_name,
+            column,
+            schema=schema,
+            if_not_exists=if_not_exists,
+            inline_references=inline_references,
+        )
         return operations.invoke(op)
 
     @classmethod
@@ -2163,6 +2217,8 @@ class AddColumnOp(AlterTableOp):
         *,
         insert_before: Optional[str] = None,
         insert_after: Optional[str] = None,
+        if_not_exists: Optional[bool] = None,
+        inline_references: Optional[bool] = None,
     ) -> None:
         """Issue an "add column" instruction using the current
         batch migration context.
@@ -2183,6 +2239,8 @@ class AddColumnOp(AlterTableOp):
             operations.impl.table_name,
             column,
             schema=operations.impl.schema,
+            if_not_exists=if_not_exists,
+            inline_references=inline_references,
             **kw,
         )
         return operations.invoke(op)
@@ -2199,12 +2257,14 @@ class DropColumnOp(AlterTableOp):
         column_name: str,
         *,
         schema: Optional[str] = None,
+        if_exists: Optional[bool] = None,
         _reverse: Optional[AddColumnOp] = None,
         **kw: Any,
     ) -> None:
         super().__init__(table_name, schema=schema)
         self.column_name = column_name
         self.kw = kw
+        self.if_exists = if_exists
         self._reverse = _reverse
 
     def to_diff_tuple(
@@ -2224,9 +2284,11 @@ class DropColumnOp(AlterTableOp):
                 "original column is not present"
             )
 
-        return AddColumnOp.from_column_and_tablename(
+        op = AddColumnOp.from_column_and_tablename(
             self.schema, self.table_name, self._reverse.column
         )
+        op.if_not_exists = self.if_exists
+        return op
 
     @classmethod
     def from_column_and_tablename(
@@ -2273,6 +2335,11 @@ class DropColumnOp(AlterTableOp):
          quoting of the schema outside of the default behavior, use
          the SQLAlchemy construct
          :class:`~sqlalchemy.sql.elements.quoted_name`.
+        :param if_exists: If True, adds IF EXISTS operator when
+         dropping the new column for compatible dialects
+
+         .. versionadded:: 1.16.0
+
         :param mssql_drop_check: Optional boolean.  When ``True``, on
          Microsoft SQL Server only, first
          drop the CHECK constraint on the column using a
@@ -2294,7 +2361,6 @@ class DropColumnOp(AlterTableOp):
          then exec's a separate DROP CONSTRAINT for that default.  Only
          works if the column has exactly one FK constraint which refers to
          it, at the moment.
-
         """
 
         op = cls(table_name, column_name, schema=schema, **kw)
@@ -2709,7 +2775,7 @@ class MigrationScript(MigrateOperation):
         head: Optional[str] = None,
         splice: Optional[bool] = None,
         branch_label: Optional[_RevIdType] = None,
-        version_path: Optional[str] = None,
+        version_path: Union[str, os.PathLike[str], None] = None,
         depends_on: Optional[_RevIdType] = None,
     ) -> None:
         self.rev_id = rev_id
@@ -2718,7 +2784,9 @@ class MigrationScript(MigrateOperation):
         self.head = head
         self.splice = splice
         self.branch_label = branch_label
-        self.version_path = version_path
+        self.version_path = (
+            pathlib.Path(version_path).as_posix() if version_path else None
+        )
         self.depends_on = depends_on
         self.upgrade_ops = upgrade_ops
         self.downgrade_ops = downgrade_ops

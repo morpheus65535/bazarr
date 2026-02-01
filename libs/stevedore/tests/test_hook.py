@@ -10,12 +10,15 @@
 #  License for the specific language governing permissions and limitations
 #  under the License.
 
+from typing import Any
+
 from stevedore import hook
 from stevedore.tests import utils
 
 
 class TestHook(utils.TestCase):
     def test_hook(self):
+        em: hook.HookManager[Any]
         em = hook.HookManager(
             'stevedore.test.extension',
             't1',
@@ -27,6 +30,7 @@ class TestHook(utils.TestCase):
         self.assertEqual(em.names(), ['t1'])
 
     def test_get_by_name(self):
+        em: hook.HookManager[Any]
         em = hook.HookManager(
             'stevedore.test.extension',
             't1',
@@ -40,6 +44,7 @@ class TestHook(utils.TestCase):
         self.assertEqual(e.name, 't1')
 
     def test_get_by_name_missing(self):
+        em: hook.HookManager[Any]
         em = hook.HookManager(
             'stevedore.test.extension',
             't1',

@@ -1,4 +1,4 @@
-Metadata-Version: 2.1
+Metadata-Version: 2.4
 Name: requests-oauthlib
 Version: 2.0.0
 Summary: OAuthlib authentication support for Requests.
@@ -26,10 +26,22 @@ Classifier: Programming Language :: Python :: Implementation :: PyPy
 Requires-Python: >=3.4
 Description-Content-Type: text/x-rst
 License-File: LICENSE
-Requires-Dist: oauthlib >=3.0.0
-Requires-Dist: requests >=2.0.0
+Requires-Dist: oauthlib>=3.0.0
+Requires-Dist: requests>=2.0.0
 Provides-Extra: rsa
-Requires-Dist: oauthlib[signedtoken] >=3.0.0 ; extra == 'rsa'
+Requires-Dist: oauthlib[signedtoken]>=3.0.0; extra == "rsa"
+Dynamic: author
+Dynamic: author-email
+Dynamic: classifier
+Dynamic: description
+Dynamic: description-content-type
+Dynamic: home-page
+Dynamic: license
+Dynamic: license-file
+Dynamic: provides-extra
+Dynamic: requires-dist
+Dynamic: requires-python
+Dynamic: summary
 
 Requests-OAuthlib |build-status| |coverage-status| |docs|
 =========================================================

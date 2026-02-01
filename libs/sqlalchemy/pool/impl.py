@@ -1,14 +1,12 @@
 # pool/impl.py
-# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2026 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
 # the MIT License: https://www.opensource.org/licenses/mit-license.php
 
 
-"""Pool implementation classes.
-
-"""
+"""Pool implementation classes."""
 from __future__ import annotations
 
 import threading
@@ -62,7 +60,7 @@ class QueuePool(Pool):
 
     """
 
-    _is_asyncio = False  # type: ignore[assignment]
+    _is_asyncio = False
 
     _queue_class: Type[sqla_queue.QueueCommon[ConnectionPoolEntry]] = (
         sqla_queue.Queue
@@ -271,7 +269,7 @@ class AsyncAdaptedQueuePool(QueuePool):
 
     """
 
-    _is_asyncio = True  # type: ignore[assignment]
+    _is_asyncio = True
     _queue_class: Type[sqla_queue.QueueCommon[ConnectionPoolEntry]] = (
         sqla_queue.AsyncAdaptedQueue
     )
@@ -280,7 +278,7 @@ class AsyncAdaptedQueuePool(QueuePool):
 
 
 class FallbackAsyncAdaptedQueuePool(AsyncAdaptedQueuePool):
-    _queue_class = sqla_queue.FallbackAsyncAdaptedQueue
+    _queue_class = sqla_queue.FallbackAsyncAdaptedQueue  # type: ignore[assignment] # noqa: E501
 
 
 class NullPool(Pool):
@@ -358,7 +356,7 @@ class SingletonThreadPool(Pool):
 
     """
 
-    _is_asyncio = False  # type: ignore[assignment]
+    _is_asyncio = False
 
     def __init__(
         self,
@@ -385,6 +383,15 @@ class SingletonThreadPool(Pool):
             _dispatch=self.dispatch,
             dialect=self._dialect,
         )
+
+    def _transfer_from(
+        self, other_singleton_pool: SingletonThreadPool
+    ) -> None:
+        # used by the test suite to make a new engine / pool without
+        # losing the state of an existing SQLite :memory: connection
+        assert not hasattr(other_singleton_pool._fairy, "current")
+        self._conn = other_singleton_pool._conn
+        self._all_conns = other_singleton_pool._all_conns
 
     def dispose(self) -> None:
         """Dispose of this pool."""

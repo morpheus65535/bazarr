@@ -1,5 +1,5 @@
 # sql/coercions.py
-# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2026 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -52,6 +52,7 @@ if typing.TYPE_CHECKING:
     from ._typing import _DDLColumnArgument
     from ._typing import _DMLTableArgument
     from ._typing import _FromClauseArgument
+    from ._typing import _OnlyColumnArgument
     from .dml import _DMLTableElement
     from .elements import BindParameter
     from .elements import ClauseElement
@@ -75,7 +76,7 @@ _StringOnlyR = TypeVar("_StringOnlyR", bound=roles.StringRole)
 _T = TypeVar("_T", bound=Any)
 
 
-def _is_literal(element):
+def _is_literal(element: Any) -> bool:
     """Return whether or not the element is a "literal" in the context
     of a SQL expression construct.
 
@@ -212,7 +213,7 @@ def expect(
 @overload
 def expect(
     role: Type[roles.LabeledColumnExprRole[Any]],
-    element: _ColumnExpressionArgument[_T],
+    element: Union[_ColumnExpressionArgument[_T], _OnlyColumnArgument[_T]],
     **kw: Any,
 ) -> NamedColumn[_T]: ...
 
@@ -843,7 +844,7 @@ class InElementImpl(RoleImpl):
         )
 
     @util.preload_module("sqlalchemy.sql.elements")
-    def _literal_coercion(self, element, *, expr, operator, **kw):
+    def _literal_coercion(self, element, *, expr, operator, **kw):  # type: ignore[override] # noqa: E501
         if util.is_non_string_iterable(element):
             non_literal_expressions: Dict[
                 Optional[_ColumnExpressionArgument[Any]],
@@ -859,8 +860,6 @@ class InElementImpl(RoleImpl):
 
                     else:
                         non_literal_expressions[o] = o
-                elif o is None:
-                    non_literal_expressions[o] = elements.Null()
 
             if non_literal_expressions:
                 return elements.ClauseList(

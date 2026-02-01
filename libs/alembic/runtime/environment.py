@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import Any
 from typing import Callable
 from typing import Collection
-from typing import ContextManager
 from typing import Dict
 from typing import List
 from typing import Mapping
@@ -18,6 +17,7 @@ from typing import Union
 
 from sqlalchemy.sql.schema import Column
 from sqlalchemy.sql.schema import FetchedValue
+from typing_extensions import ContextManager
 from typing_extensions import Literal
 
 from .migration import _ProxyTransaction
@@ -338,7 +338,7 @@ class EnvironmentContext(util.ModuleClsProxy):
             line.
 
         """
-        return self.context_opts.get("tag", None)  # type: ignore[no-any-return]  # noqa: E501
+        return self.context_opts.get("tag", None)
 
     @overload
     def get_x_argument(self, as_dictionary: Literal[False]) -> List[str]: ...
@@ -441,6 +441,7 @@ class EnvironmentContext(util.ModuleClsProxy):
         sqlalchemy_module_prefix: str = "sa.",
         user_module_prefix: Optional[str] = None,
         on_version_apply: Optional[OnVersionApplyFn] = None,
+        autogenerate_plugins: Sequence[str] | None = None,
         **kw: Any,
     ) -> None:
         """Configure a :class:`.MigrationContext` within this
@@ -860,6 +861,25 @@ class EnvironmentContext(util.ModuleClsProxy):
 
              :paramref:`.command.revision.process_revision_directives`
 
+        :param autogenerate_plugins: A list of string names of "plugins" that
+         should participate in this autogenerate run.   Defaults to the list
+         ``["alembic.autogenerate.*"]``, which indicates that Alembic's default
+         autogeneration plugins will be used.
+
+         See the section :ref:`plugins_autogenerate` for complete background
+         on how to use this parameter.
+
+         .. versionadded:: 1.18.0 Added a new plugin system for autogenerate
+            compare directives.
+
+         .. seealso::
+
+            :ref:`plugins_autogenerate` - background on enabling/disabling
+            autogenerate plugins
+
+            :ref:`alembic.plugins.toplevel` - Introduction and documentation
+            to the plugin system
+
         Parameters specific to individual backends:
 
         :param mssql_batch_separator: The "batch separator" which will
@@ -902,6 +922,9 @@ class EnvironmentContext(util.ModuleClsProxy):
         opts["literal_binds"] = literal_binds
         opts["process_revision_directives"] = process_revision_directives
         opts["on_version_apply"] = util.to_tuple(on_version_apply, default=())
+
+        if autogenerate_plugins is not None:
+            opts["autogenerate_plugins"] = autogenerate_plugins
 
         if render_item is not None:
             opts["render_item"] = render_item
@@ -976,7 +999,7 @@ class EnvironmentContext(util.ModuleClsProxy):
 
     def begin_transaction(
         self,
-    ) -> Union[_ProxyTransaction, ContextManager[None]]:
+    ) -> Union[_ProxyTransaction, ContextManager[None, Optional[bool]]]:
         """Return a context manager that will
         enclose an operation within a "transaction",
         as defined by the environment's offline

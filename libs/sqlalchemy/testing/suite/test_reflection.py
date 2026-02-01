@@ -1,5 +1,5 @@
 # testing/suite/test_reflection.py
-# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2026 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -14,6 +14,7 @@ import sqlalchemy as sa
 from .. import config
 from .. import engines
 from .. import eq_
+from .. import eq_regex
 from .. import expect_raises
 from .. import expect_raises_message
 from .. import expect_warnings
@@ -23,6 +24,8 @@ from ..provision import get_temp_table_name
 from ..provision import temp_table_keyword_args
 from ..schema import Column
 from ..schema import Table
+from ... import Boolean
+from ... import DateTime
 from ... import event
 from ... import ForeignKey
 from ... import func
@@ -45,6 +48,7 @@ from ...sql.schema import BLANK_SCHEMA
 from ...testing import ComparesIndexes
 from ...testing import ComparesTables
 from ...testing import is_false
+from ...testing import is_none
 from ...testing import is_true
 from ...testing import mock
 
@@ -69,7 +73,9 @@ class OneConnectionTablesTest(fixtures.TablesTest):
 
 
 class HasTableTest(OneConnectionTablesTest):
-    __backend__ = True
+    __sparse_driver_backend__ = True
+
+    run_deletes = None
 
     @classmethod
     def define_tables(cls, metadata):
@@ -219,7 +225,8 @@ class HasTableTest(OneConnectionTablesTest):
 
 
 class HasIndexTest(fixtures.TablesTest):
-    __backend__ = True
+    __sparse_driver_backend__ = True
+    __requires__ = ("index_reflection",)
 
     @classmethod
     def define_tables(cls, metadata):
@@ -294,25 +301,36 @@ class HasIndexTest(fixtures.TablesTest):
         )
 
 
-class BizarroCharacterFKResolutionTest(fixtures.TestBase):
-    """tests for #10275"""
+class BizarroCharacterTest(fixtures.TestBase):
 
-    __backend__ = True
+    __sparse_driver_backend__ = True
 
-    @testing.combinations(
-        ("id",), ("(3)",), ("col%p",), ("[brack]",), argnames="columnname"
-    )
+    def column_names():
+        return testing.combinations(
+            ("plainname",),
+            ("(3)",),
+            ("col%p",),
+            ("[brack]",),
+            argnames="columnname",
+        )
+
+    def table_names():
+        return testing.combinations(
+            ("plain",),
+            ("(2)",),
+            ("per % cent",),
+            ("[brackets]",),
+            argnames="tablename",
+        )
+
     @testing.variation("use_composite", [True, False])
-    @testing.combinations(
-        ("plain",),
-        ("(2)",),
-        ("per % cent",),
-        ("[brackets]",),
-        argnames="tablename",
-    )
+    @column_names()
+    @table_names()
+    @testing.requires.foreign_key_constraint_reflection
     def test_fk_ref(
         self, connection, metadata, use_composite, tablename, columnname
     ):
+        """tests for #10275"""
         tt = Table(
             tablename,
             metadata,
@@ -352,10 +370,81 @@ class BizarroCharacterFKResolutionTest(fixtures.TestBase):
         if use_composite:
             assert o2.c.ref2.references(t1.c[1])
 
+    @column_names()
+    @table_names()
+    @testing.requires.identity_columns
+    def test_reflect_identity(
+        self, tablename, columnname, connection, metadata
+    ):
+        Table(
+            tablename,
+            metadata,
+            Column(columnname, Integer, Identity(), primary_key=True),
+        )
+        metadata.create_all(connection)
+        insp = inspect(connection)
+
+        eq_(insp.get_columns(tablename)[0]["identity"]["start"], 1)
+
+    @column_names()
+    @table_names()
+    @testing.requires.comment_reflection
+    def test_reflect_comments(
+        self, tablename, columnname, connection, metadata
+    ):
+        Table(
+            tablename,
+            metadata,
+            Column("id", Integer, primary_key=True),
+            Column(columnname, Integer, comment="some comment"),
+        )
+        metadata.create_all(connection)
+        insp = inspect(connection)
+
+        eq_(insp.get_columns(tablename)[1]["comment"], "some comment")
+
+
+class TempTableElementsTest(fixtures.TestBase):
+
+    __sparse_driver_backend__ = True
+
+    __requires__ = ("temp_table_reflection",)
+
+    @testing.fixture
+    def tablename(self):
+        return get_temp_table_name(
+            config, config.db, f"ident_tmp_{config.ident}"
+        )
+
+    @testing.requires.identity_columns
+    def test_reflect_identity(self, tablename, connection, metadata):
+        Table(
+            tablename,
+            metadata,
+            Column("id", Integer, Identity(), primary_key=True),
+        )
+        metadata.create_all(connection)
+        insp = inspect(connection)
+
+        eq_(insp.get_columns(tablename)[0]["identity"]["start"], 1)
+
+    @testing.requires.temp_table_comment_reflection
+    def test_reflect_comments(self, tablename, connection, metadata):
+        Table(
+            tablename,
+            metadata,
+            Column("id", Integer, primary_key=True),
+            Column("foobar", Integer, comment="some comment"),
+        )
+        metadata.create_all(connection)
+        insp = inspect(connection)
+
+        eq_(insp.get_columns(tablename)[1]["comment"], "some comment")
+
 
 class QuotedNameArgumentTest(fixtures.TablesTest):
     run_create_tables = "once"
-    __backend__ = True
+    __sparse_driver_backend__ = True
 
     @classmethod
     def define_tables(cls, metadata):
@@ -455,7 +544,7 @@ class QuotedNameArgumentTest(fixtures.TablesTest):
             is_true(isinstance(res, dict))
         else:
             with expect_raises(NotImplementedError):
-                res = insp.get_table_options(name)
+                insp.get_table_options(name)
 
     @quote_fixtures
     @testing.requires.view_column_reflection
@@ -474,11 +563,13 @@ class QuotedNameArgumentTest(fixtures.TablesTest):
         assert insp.get_pk_constraint(name)
 
     @quote_fixtures
+    @testing.requires.foreign_key_constraint_reflection
     def test_get_foreign_keys(self, name):
         insp = inspect(config.db)
         assert insp.get_foreign_keys(name)
 
     @quote_fixtures
+    @testing.requires.index_reflection
     def test_get_indexes(self, name):
         insp = inspect(config.db)
         assert insp.get_indexes(name)
@@ -535,7 +626,7 @@ def _multi_combination(fn):
 class ComponentReflectionTest(ComparesTables, OneConnectionTablesTest):
     run_inserts = run_deletes = None
 
-    __backend__ = True
+    __sparse_driver_backend__ = True
 
     @classmethod
     def define_tables(cls, metadata):
@@ -1733,6 +1824,37 @@ class ComponentReflectionTest(ComparesTables, OneConnectionTablesTest):
         )
 
     @testing.combinations(
+        "PK_test_table",
+        "pk_test_table",
+        "mixedCasePK",
+        "pk.with.dots",
+        argnames="pk_name",
+    )
+    @testing.requires.primary_key_constraint_reflection
+    @testing.requires.reflects_pk_names
+    def test_get_pk_constraint_quoted_name(
+        self, connection, metadata, pk_name
+    ):
+        """Test that primary key constraint names with various casing are
+        properly reflected."""
+
+        Table(
+            "test_table",
+            metadata,
+            Column("id", Integer),
+            Column("data", String(50)),
+            sa.PrimaryKeyConstraint("id", name=pk_name),
+        )
+
+        metadata.create_all(connection)
+
+        insp = inspect(connection)
+        pk_cons = insp.get_pk_constraint("test_table")
+
+        eq_(pk_cons["name"], pk_name)
+        eq_(pk_cons["constrained_columns"], ["id"])
+
+    @testing.combinations(
         (False,), (True, testing.requires.schemas), argnames="use_schema"
     )
     @testing.requires.foreign_key_constraint_reflection
@@ -1773,6 +1895,53 @@ class ComponentReflectionTest(ComparesTables, OneConnectionTablesTest):
 
         no_cst = self.tables.no_constraints.name
         eq_(insp.get_foreign_keys(no_cst, schema=schema), [])
+
+    @testing.combinations(
+        "FK_users_id",
+        "fk_users_id",
+        "mixedCaseName",
+        "fk.with.dots",
+        argnames="fk_name",
+    )
+    @testing.requires.foreign_key_constraint_reflection
+    def test_get_foreign_keys_quoted_name(self, connection, metadata, fk_name):
+        """Test that foreign key constraint names with various casing are
+        properly reflected."""
+
+        Table(
+            "users_ref",
+            metadata,
+            Column("user_id", Integer, primary_key=True),
+            test_needs_fk=True,
+        )
+
+        Table(
+            "user_orders",
+            metadata,
+            Column("order_id", Integer, primary_key=True),
+            Column("user_id", Integer),
+            sa.ForeignKeyConstraint(
+                ["user_id"],
+                ["users_ref.user_id"],
+                name=fk_name,
+            ),
+            test_needs_fk=True,
+        )
+
+        metadata.create_all(connection)
+
+        insp = inspect(connection)
+        fkeys = insp.get_foreign_keys("user_orders")
+
+        eq_(len(fkeys), 1)
+        fkey = fkeys[0]
+
+        with testing.requires.named_constraints.fail_if():
+            eq_(fkey["name"], fk_name)
+
+        eq_(fkey["referred_table"], "users_ref")
+        eq_(fkey["referred_columns"], ["user_id"])
+        eq_(fkey["constrained_columns"], ["user_id"])
 
     @testing.requires.cross_schema_fk_reflection
     @testing.requires.schemas
@@ -1859,6 +2028,38 @@ class ComponentReflectionTest(ComparesTables, OneConnectionTablesTest):
         eq_(len(t.indexes), 1)
         is_(list(t.indexes)[0].table, t)
         eq_(list(t.indexes)[0].name, ixname)
+
+    @testing.combinations(
+        "IX_test_data",
+        "ix_test_data",
+        "mixedCaseIndex",
+        "ix.with.dots",
+        argnames="idx_name",
+    )
+    @testing.requires.index_reflection
+    def test_get_indexes_quoted_name(self, connection, metadata, idx_name):
+        """Test that index names with various casing are properly reflected."""
+
+        t = Table(
+            "test_table",
+            metadata,
+            Column("id", Integer, primary_key=True),
+            Column("data", String(50)),
+        )
+        Index(idx_name, t.c.data)
+
+        metadata.create_all(connection)
+
+        insp = inspect(connection)
+        indexes = insp.get_indexes("test_table")
+
+        index_names = [idx["name"] for idx in indexes]
+        assert idx_name in index_names, f"Expected {idx_name} in {index_names}"
+
+        # Find the specific index
+        matching_idx = [idx for idx in indexes if idx["name"] == idx_name]
+        eq_(len(matching_idx), 1)
+        eq_(matching_idx[0]["column_names"], ["data"])
 
     @testing.requires.temp_table_reflection
     @testing.requires.unique_constraint_reflection
@@ -1947,6 +2148,8 @@ class ComponentReflectionTest(ComparesTables, OneConnectionTablesTest):
             if dupe:
                 names_that_duplicate_index.add(dupe)
             eq_(refl.pop("comment", None), None)
+            # ignore dialect_options
+            refl.pop("dialect_options", None)
             eq_(orig, refl)
 
         reflected_metadata = MetaData()
@@ -1975,6 +2178,37 @@ class ComponentReflectionTest(ComparesTables, OneConnectionTablesTest):
 
         no_cst = self.tables.no_constraints.name
         eq_(insp.get_unique_constraints(no_cst, schema=schema), [])
+
+    @testing.combinations(
+        "UQ_email",
+        "uq_email",
+        "mixedCaseUQ",
+        "uq.with.dots",
+        argnames="uq_name",
+    )
+    @testing.requires.unique_constraint_reflection
+    def test_get_unique_constraints_quoted_name(
+        self, connection, metadata, uq_name
+    ):
+        """Test that unique constraint names with various casing are
+        properly reflected."""
+
+        Table(
+            "test_table",
+            metadata,
+            Column("id", Integer, primary_key=True),
+            Column("email", String(50)),
+            sa.UniqueConstraint("email", name=uq_name),
+        )
+
+        metadata.create_all(connection)
+
+        insp = inspect(connection)
+        uq_cons = insp.get_unique_constraints("test_table")
+
+        eq_(len(uq_cons), 1)
+        eq_(uq_cons[0]["name"], uq_name)
+        eq_(uq_cons[0]["column_names"], ["email"])
 
     @testing.requires.view_reflection
     @testing.combinations(
@@ -2038,7 +2272,7 @@ class ComponentReflectionTest(ComparesTables, OneConnectionTablesTest):
             is_true(isinstance(res, dict))
         else:
             with expect_raises(NotImplementedError):
-                res = insp.get_table_options("users", schema=schema)
+                insp.get_table_options("users", schema=schema)
 
     @testing.combinations((True, testing.requires.schemas), False)
     def test_multi_get_table_options(self, use_schema):
@@ -2054,7 +2288,7 @@ class ComponentReflectionTest(ComparesTables, OneConnectionTablesTest):
             eq_(res, exp)
         else:
             with expect_raises(NotImplementedError):
-                res = insp.get_multi_table_options()
+                insp.get_multi_table_options()
 
     @testing.fixture
     def get_multi_exp(self, connection):
@@ -2398,10 +2632,33 @@ class ComponentReflectionTest(ComparesTables, OneConnectionTablesTest):
         c = insp.get_columns("unicode_comments")[0]
         eq_({c["name"]: c["comment"]}, {"emoji": "🐍🧙🝝🧙‍♂️🧙‍♀️"})
 
+    @testing.requires.column_collation_reflection
+    @testing.requires.order_by_collation
+    def test_column_collation_reflection(self, connection, metadata):
+        collation = testing.requires.get_order_by_collation(config)
+        Table(
+            "t",
+            metadata,
+            Column("collated", sa.String(collation=collation)),
+            Column("not_collated", sa.String()),
+        )
+        metadata.create_all(connection)
+
+        m2 = MetaData()
+        t2 = Table("t", m2, autoload_with=connection)
+
+        eq_(t2.c.collated.type.collation, collation)
+        is_none(t2.c.not_collated.type.collation)
+
+        insp = inspect(connection)
+        collated, not_collated = insp.get_columns("t")
+        eq_(collated["type"].collation, collation)
+        is_none(not_collated["type"].collation)
+
 
 class TableNoColumnsTest(fixtures.TestBase):
     __requires__ = ("reflect_tables_no_columns",)
-    __backend__ = True
+    __sparse_driver_backend__ = True
 
     @testing.fixture
     def table_no_columns(self, connection, metadata):
@@ -2453,7 +2710,7 @@ class TableNoColumnsTest(fixtures.TestBase):
 
 
 class ComponentReflectionTestExtra(ComparesIndexes, fixtures.TestBase):
-    __backend__ = True
+    __sparse_driver_backend__ = True
 
     @testing.fixture(params=[True, False])
     def use_schema_fixture(self, request):
@@ -2607,6 +2864,26 @@ class ComponentReflectionTestExtra(ComparesIndexes, fixtures.TestBase):
                 {"name": mock.ANY, "sqltext": "a > 1 and a < 5"},
             ],
         )
+
+    @testing.requires.indexes_check_column_order
+    def test_index_column_order(self, metadata, inspect_for_table):
+        """test for #12894"""
+        with inspect_for_table("sa_multi_index") as (schema, inspector):
+            test_table = Table(
+                "sa_multi_index",
+                metadata,
+                Column("Column1", Integer, primary_key=True),
+                Column("Column2", Integer),
+                Column("Column3", Integer),
+            )
+            Index(
+                "Index_Example",
+                test_table.c.Column3,
+                test_table.c.Column1,
+                test_table.c.Column2,
+            )
+        indexes = inspector.get_indexes("sa_multi_index")
+        eq_(indexes[0]["column_names"], ["Column3", "Column1", "Column2"])
 
     @testing.requires.indexes_with_expressions
     def test_reflect_expression_based_indexes(self, metadata, connection):
@@ -2762,12 +3039,25 @@ class ComponentReflectionTestExtra(ComparesIndexes, fixtures.TestBase):
             eq_(typ.scale, 5)
 
     @testing.requires.table_reflection
-    def test_varchar_reflection(self, connection, metadata):
-        typ = self._type_round_trip(
-            connection, metadata, sql_types.String(52)
-        )[0]
-        assert isinstance(typ, sql_types.String)
+    @testing.combinations(
+        sql_types.String,
+        sql_types.VARCHAR,
+        sql_types.CHAR,
+        (sql_types.NVARCHAR, testing.requires.nvarchar_types),
+        (sql_types.NCHAR, testing.requires.nvarchar_types),
+        argnames="type_",
+    )
+    def test_string_length_reflection(self, connection, metadata, type_):
+        typ = self._type_round_trip(connection, metadata, type_(52))[0]
+        if issubclass(type_, sql_types.VARCHAR):
+            assert isinstance(typ, sql_types.VARCHAR)
+        elif issubclass(type_, sql_types.CHAR):
+            assert isinstance(typ, sql_types.CHAR)
+        else:
+            assert isinstance(typ, sql_types.String)
+
         eq_(typ.length, 52)
+        assert isinstance(typ.length, int)
 
     @testing.requires.table_reflection
     def test_nullable_reflection(self, connection, metadata):
@@ -2879,10 +3169,51 @@ class ComponentReflectionTestExtra(ComparesIndexes, fixtures.TestBase):
         eq_(opts, expected)
         # eq_(dict((k, opts[k]) for k in opts if opts[k]), expected)
 
+    @testing.combinations(
+        (Integer, sa.text("10"), r"'?10'?"),
+        (Integer, "10", r"'?10'?"),
+        (Boolean, sa.true(), r"1|true"),
+        (
+            Integer,
+            sa.text("3 + 5"),
+            r"3\+5",
+            testing.requires.expression_server_defaults,
+        ),
+        (
+            Integer,
+            sa.text("(3 * 5)"),
+            r"3\*5",
+            testing.requires.expression_server_defaults,
+        ),
+        (DateTime, func.now(), r"current_timestamp|now|getdate"),
+        (
+            Integer,
+            sa.literal_column("3") + sa.literal_column("5"),
+            r"3\+5",
+            testing.requires.expression_server_defaults,
+        ),
+        argnames="datatype, default, expected_reg",
+    )
+    @testing.requires.server_defaults
+    def test_server_defaults(
+        self, metadata, connection, datatype, default, expected_reg
+    ):
+        t = Table(
+            "t",
+            metadata,
+            Column("id", Integer, primary_key=True),
+            Column("thecol", datatype, server_default=default),
+        )
+        t.create(connection)
+
+        reflected = inspect(connection).get_columns("t")[1]["default"]
+        reflected_sanitized = re.sub(r"[\(\) \']", "", reflected)
+        eq_regex(reflected_sanitized, expected_reg, flags=re.IGNORECASE)
+
 
 class NormalizedNameTest(fixtures.TablesTest):
     __requires__ = ("denormalized_names",)
-    __backend__ = True
+    __sparse_driver_backend__ = True
 
     @classmethod
     def define_tables(cls, metadata):
@@ -3023,7 +3354,7 @@ class ComputedReflectionTest(fixtures.ComputedReflectionFixtureTest):
 class IdentityReflectionTest(fixtures.TablesTest):
     run_inserts = run_deletes = None
 
-    __backend__ = True
+    __sparse_driver_backend__ = True
     __requires__ = ("identity_columns", "table_reflection")
 
     @classmethod
@@ -3162,7 +3493,7 @@ class IdentityReflectionTest(fixtures.TablesTest):
 
 
 class CompositeKeyReflectionTest(fixtures.TablesTest):
-    __backend__ = True
+    __sparse_driver_backend__ = True
 
     @classmethod
     def define_tables(cls, metadata):
@@ -3215,11 +3546,12 @@ __all__ = (
     "ComponentReflectionTestExtra",
     "TableNoColumnsTest",
     "QuotedNameArgumentTest",
-    "BizarroCharacterFKResolutionTest",
+    "BizarroCharacterTest",
     "HasTableTest",
     "HasIndexTest",
     "NormalizedNameTest",
     "ComputedReflectionTest",
     "IdentityReflectionTest",
     "CompositeKeyReflectionTest",
+    "TempTableElementsTest",
 )

@@ -21,7 +21,6 @@ from __future__ import annotations
 
 import sys
 import optparse
-import codecs
 import warnings
 import markdown
 try:
@@ -100,7 +99,7 @@ def parse_options(args=None, values=None):
 
     extension_configs = {}
     if options.configfile:
-        with codecs.open(
+        with open(
             options.configfile, mode="r", encoding=options.encoding
         ) as fp:
             try:

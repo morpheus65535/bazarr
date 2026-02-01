@@ -1,4 +1,4 @@
-Metadata-Version: 2.1
+Metadata-Version: 2.4
 Name: pydantic
 Version: 1.10.14
 Summary: Data validation and settings management using python type hints
@@ -30,11 +30,23 @@ Classifier: Topic :: Internet
 Requires-Python: >=3.7
 Description-Content-Type: text/markdown
 License-File: LICENSE
-Requires-Dist: typing-extensions >=4.2.0
-Provides-Extra: dotenv
-Requires-Dist: python-dotenv >=0.10.4 ; extra == 'dotenv'
+Requires-Dist: typing-extensions>=4.2.0
 Provides-Extra: email
-Requires-Dist: email-validator >=1.0.3 ; extra == 'email'
+Requires-Dist: email-validator>=1.0.3; extra == "email"
+Provides-Extra: dotenv
+Requires-Dist: python-dotenv>=0.10.4; extra == "dotenv"
+Dynamic: author
+Dynamic: author-email
+Dynamic: classifier
+Dynamic: description
+Dynamic: description-content-type
+Dynamic: home-page
+Dynamic: license
+Dynamic: license-file
+Dynamic: provides-extra
+Dynamic: requires-dist
+Dynamic: requires-python
+Dynamic: summary
 
 # pydantic
 

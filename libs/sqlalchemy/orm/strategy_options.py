@@ -1,14 +1,12 @@
 # orm/strategy_options.py
-# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2026 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
 # the MIT License: https://www.opensource.org/licenses/mit-license.php
 # mypy: allow-untyped-defs, allow-untyped-calls
 
-"""
-
-"""
+""" """
 
 from __future__ import annotations
 
@@ -224,7 +222,7 @@ class _AbstractLoad(traversals.GenerativeOnTraversal, LoaderOption):
 
         """
         cloned = self._set_column_strategy(
-            attrs,
+            _expand_column_strategy_attrs(attrs),
             {"deferred": False, "instrument": True},
         )
 
@@ -638,7 +636,9 @@ class _AbstractLoad(traversals.GenerativeOnTraversal, LoaderOption):
         strategy = {"deferred": True, "instrument": True}
         if raiseload:
             strategy["raiseload"] = True
-        return self._set_column_strategy((key,), strategy)
+        return self._set_column_strategy(
+            _expand_column_strategy_attrs((key,)), strategy
+        )
 
     def undefer(self, key: _AttrType) -> Self:
         r"""Indicate that the given column-oriented attribute should be
@@ -677,7 +677,8 @@ class _AbstractLoad(traversals.GenerativeOnTraversal, LoaderOption):
 
         """  # noqa: E501
         return self._set_column_strategy(
-            (key,), {"deferred": False, "instrument": True}
+            _expand_column_strategy_attrs((key,)),
+            {"deferred": False, "instrument": True},
         )
 
     def undefer_group(self, name: str) -> Self:
@@ -1103,7 +1104,6 @@ class Load(_AbstractLoad):
         """
         path = self.path
 
-        ezero = None
         for ent in mapper_entities:
             ezero = ent.entity_zero
             if ezero and orm_util._entity_corresponds_to(
@@ -1252,7 +1252,7 @@ class Load(_AbstractLoad):
             )
 
         elif path_is_property(self.path):
-            # re-use the lookup which will raise a nicely formatted
+            # reuse the lookup which will raise a nicely formatted
             # LoaderStrategyException
             if strategy:
                 self.path.prop._strategy_lookup(self.path.prop, strategy[0])
@@ -2395,6 +2395,23 @@ See :func:`_orm.{fn.__name__}` for usage examples.
     return fn
 
 
+def _expand_column_strategy_attrs(
+    attrs: Tuple[_AttrType, ...],
+) -> Tuple[_AttrType, ...]:
+    return cast(
+        "Tuple[_AttrType, ...]",
+        tuple(
+            a
+            for attr in attrs
+            for a in (
+                cast("QueryableAttribute[Any]", attr)._column_strategy_attrs()
+                if hasattr(attr, "_column_strategy_attrs")
+                else (attr,)
+            )
+        ),
+    )
+
+
 # standalone functions follow.  docstrings are filled in
 # by the ``@loader_unbound_fn`` decorator.
 
@@ -2408,6 +2425,7 @@ def contains_eager(*keys: _AttrType, **kw: Any) -> _AbstractLoad:
 def load_only(*attrs: _AttrType, raiseload: bool = False) -> _AbstractLoad:
     # TODO: attrs against different classes.  we likely have to
     # add some extra state to Load of some kind
+    attrs = _expand_column_strategy_attrs(attrs)
     _, lead_element, _ = _parse_attr_argument(attrs[0])
     return Load(lead_element).load_only(*attrs, raiseload=raiseload)
 

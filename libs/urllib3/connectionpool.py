@@ -170,9 +170,7 @@ class HTTPConnectionPool(ConnectionPool, RequestMethods):
     """
 
     scheme = "http"
-    ConnectionCls: (
-        type[BaseHTTPConnection] | type[BaseHTTPSConnection]
-    ) = HTTPConnection
+    ConnectionCls: type[BaseHTTPConnection] | type[BaseHTTPSConnection] = HTTPConnection
 
     def __init__(
         self,
@@ -544,13 +542,13 @@ class HTTPConnectionPool(ConnectionPool, RequestMethods):
         response._pool = self  # type: ignore[attr-defined]
 
         log.debug(
-            '%s://%s:%s "%s %s HTTP/%s" %s %s',
+            '%s://%s:%s "%s %s %s" %s %s',
             self.scheme,
             self.host,
             self.port,
             method,
             url,
-            response.version,
+            response.version_string,
             response.status,
             response.length_remaining,
         )
@@ -1137,13 +1135,11 @@ def connection_from_url(url: str, **kw: typing.Any) -> HTTPConnectionPool:
 
 
 @typing.overload
-def _normalize_host(host: None, scheme: str | None) -> None:
-    ...
+def _normalize_host(host: None, scheme: str | None) -> None: ...
 
 
 @typing.overload
-def _normalize_host(host: str, scheme: str | None) -> str:
-    ...
+def _normalize_host(host: str, scheme: str | None) -> str: ...
 
 
 def _normalize_host(host: str | None, scheme: str | None) -> str | None:

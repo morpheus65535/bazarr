@@ -1,5 +1,5 @@
 # dialects/oracle/oracledb.py
-# Copyright (C) 2005-2025 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2026 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -112,7 +112,7 @@ python-oracledb documentation `Oracle Net Services Connection Strings
 For example to use an `Easy Connect string
 <https://download.oracle.com/ocomdocs/global/Oracle-Net-Easy-Connect-Plus.pdf>`_
 with a timeout to prevent connection establishment from hanging if the network
-transport to the database cannot be establishd in 30 seconds, and also setting
+transport to the database cannot be established in 30 seconds, and also setting
 a keep-alive time of 60 seconds to stop idle network connections from being
 terminated by a firewall::
 
@@ -236,12 +236,8 @@ Typically ``config_dir`` and ``wallet_location`` are the same directory, which
 is where the Oracle Autonomous Database wallet zip file was extracted.  Note
 this directory should be protected.
 
-Connection Pooling
-------------------
-
-Applications with multiple concurrent users should use connection pooling. A
-minimal sized connection pool is also beneficial for long-running, single-user
-applications that do not frequently use a connection.
+Using python-oracledb Connection Pooling
+----------------------------------------
 
 The python-oracledb driver provides its own connection pool implementation that
 may be used in place of SQLAlchemy's pooling functionality.  The driver pool
@@ -736,6 +732,8 @@ class OracleDialect_oracledb(_cx_oracle.OracleDialect_cx_oracle):
 
 class AsyncAdapt_oracledb_cursor(AsyncAdapt_dbapi_cursor):
     _cursor: AsyncCursor
+    _awaitable_cursor_close: bool = False
+
     __slots__ = ()
 
     @property
@@ -748,10 +746,6 @@ class AsyncAdapt_oracledb_cursor(AsyncAdapt_dbapi_cursor):
 
     def var(self, *args, **kwargs):
         return self._cursor.var(*args, **kwargs)
-
-    def close(self):
-        self._rows.clear()
-        self._cursor.close()
 
     def setinputsizes(self, *args: Any, **kwargs: Any) -> Any:
         return self._cursor.setinputsizes(*args, **kwargs)

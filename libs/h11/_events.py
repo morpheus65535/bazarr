@@ -7,8 +7,8 @@
 
 import re
 from abc import ABC
-from dataclasses import dataclass, field
-from typing import Any, cast, Dict, List, Tuple, Union
+from dataclasses import dataclass
+from typing import List, Tuple, Union
 
 from ._abnf import method, request_target
 from ._headers import Headers, normalize_and_validate

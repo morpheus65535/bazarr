@@ -18,6 +18,7 @@ __all__ = [
     "MethodValue",
     "Action",
     "HookableSettings",
+    "post_hook",
 ]
 
 
@@ -312,7 +313,7 @@ class TempSettingsHolder:
             self._settings = Settings(
                 dynaconf_skip_loaders=True,
                 dynaconf_skip_validators=True,
-                _store=self._original_settings._store._safe_copy(),
+                _store=self._original_settings._store.copy(bypass_eval=True),
             )
 
     def __getattr__(self, attr):
@@ -341,3 +342,41 @@ class TempSettingsHolder:
         else:
             self._initialize()
             setattr(self._settings, attr, value)
+
+
+def post_hook(function: Callable) -> Callable:
+    """This decorator marks a function as a post hook.
+    This works by adding the _dynaconf_hook attribute to the function,
+    then the python loader, when reading the module, will look for
+    this attribute and register the function as a post_hook for the settings.
+
+    e.g: On a settings file with .py extension:
+
+    from dynaconf import post_hook
+    @post_hook
+    def set_log_handlers(settings) -> dict:
+        data = {}  # data to be merged into settings
+
+        # conditionals
+        if (logging := settings.get('LOGGING')) is not None:
+            # do something with logging
+            # add it back to data
+            data['LOGGING'] = logging
+        return data
+    """
+    try:
+        function._dynaconf_hook = True  # type: ignore
+        function._called = False  # type: ignore
+        function._dynaconf_hook_source = function.__module__  # type: ignore
+    except (AttributeError, TypeError):
+        raise TypeError(
+            "post_hook decorator must be applied to a function or method."
+        )
+    else:
+        # On the same scope where the decorated function is defined we
+        # add a variable with the same name as the function but prefixed
+        # with _dynaconf_hook_ this variable will be used by the loader
+        # to register the function as a post_hook
+        function.__globals__[f"_dynaconf_hook_{function.__name__}"] = function
+
+    return function

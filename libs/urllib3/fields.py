@@ -7,8 +7,8 @@ import typing
 _TYPE_FIELD_VALUE = typing.Union[str, bytes]
 _TYPE_FIELD_VALUE_TUPLE = typing.Union[
     _TYPE_FIELD_VALUE,
-    typing.Tuple[str, _TYPE_FIELD_VALUE],
-    typing.Tuple[str, _TYPE_FIELD_VALUE, str],
+    tuple[str, _TYPE_FIELD_VALUE],
+    tuple[str, _TYPE_FIELD_VALUE, str],
 ]
 
 

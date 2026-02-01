@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING
 from dynaconf import validator_conditions
 from dynaconf.utils import ensure_a_list
 from dynaconf.utils.functional import empty
+from dynaconf.utils.parse_conf import Lazy
 
 if TYPE_CHECKING:
     from dynaconf.base import LazySettings  # noqa: F401
@@ -128,6 +129,21 @@ class Validator:
         if condition is not None and not callable(condition):
             raise TypeError("condition must be callable")
 
+        # in the case that:
+        # * default is a Lazy object AND
+        # * there isnt any validate operation to perform (that would require knowing the lazy value)
+        # Then we shouldnt trigger the Lazy evaluation
+        self.should_call_lazy = not all(
+            (
+                default,
+                isinstance(default, Lazy),
+                not must_exist,
+                not required,
+                not cast,
+                not operations,
+            )
+        )
+
         self.names = names
         self.must_exist = must_exist if must_exist is not None else required
         self.condition = condition
@@ -243,11 +259,10 @@ class Validator:
                 continue
 
             if self.default is not empty:
-                default_value = (
-                    self.default(settings, self)
-                    if callable(self.default)
-                    else self.default
-                )
+                if callable(self.default) and self.should_call_lazy:
+                    default_value = self.default(settings, self)
+                else:
+                    default_value = self.default
             else:
                 default_value = empty
 
@@ -292,8 +307,11 @@ class Validator:
             # by settings.setdefault above
             # however we need to cast it
             # so we call .set again
-            value = self.cast(settings.get(name))
-            settings.set(name, value, validate=False)
+            if self.should_call_lazy:
+                value = self.cast(settings.get(name))
+            settings.set(
+                name, value, validate=False, loader_identifier="validator"
+            )
 
             # is there a callable condition?
             if self.condition is not None:

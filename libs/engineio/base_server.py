@@ -282,31 +282,38 @@ class BaseServer:
                 'response': message.encode('utf-8')}
 
     def _cors_allowed_origins(self, environ):
-        default_origins = []
-        if 'wsgi.url_scheme' in environ and 'HTTP_HOST' in environ:
-            default_origins.append('{scheme}://{host}'.format(
-                scheme=environ['wsgi.url_scheme'], host=environ['HTTP_HOST']))
-            if 'HTTP_X_FORWARDED_PROTO' in environ or \
-                    'HTTP_X_FORWARDED_HOST' in environ:
-                scheme = environ.get(
-                    'HTTP_X_FORWARDED_PROTO',
-                    environ['wsgi.url_scheme']).split(',')[0].strip()
-                default_origins.append('{scheme}://{host}'.format(
-                    scheme=scheme, host=environ.get(
-                        'HTTP_X_FORWARDED_HOST', environ['HTTP_HOST']).split(
-                            ',')[0].strip()))
         if self.cors_allowed_origins is None:
-            allowed_origins = default_origins
+            allowed_origins = []
+            if 'wsgi.url_scheme' in environ and 'HTTP_HOST' in environ:
+                allowed_origins.append('{scheme}://{host}'.format(
+                    scheme=environ['wsgi.url_scheme'],
+                    host=environ['HTTP_HOST']))
+                if 'HTTP_X_FORWARDED_PROTO' in environ or \
+                        'HTTP_X_FORWARDED_HOST' in environ:
+                    scheme = environ.get(
+                        'HTTP_X_FORWARDED_PROTO',
+                        environ['wsgi.url_scheme']).split(',')[0].strip()
+                    allowed_origins.append('{scheme}://{host}'.format(
+                        scheme=scheme, host=environ.get(
+                            'HTTP_X_FORWARDED_HOST',
+                            environ['HTTP_HOST']).split(
+                                ',')[0].strip()))
         elif self.cors_allowed_origins == '*':
             allowed_origins = None
         elif isinstance(self.cors_allowed_origins, str):
             allowed_origins = [self.cors_allowed_origins]
         elif callable(self.cors_allowed_origins):
             origin = environ.get('HTTP_ORIGIN')
-            allowed_origins = [origin] \
-                if self.cors_allowed_origins(origin) else []
+            try:
+                is_allowed = self.cors_allowed_origins(origin, environ)
+            except TypeError:
+                is_allowed = self.cors_allowed_origins(origin)
+            allowed_origins = [origin] if is_allowed else []
         else:
-            allowed_origins = self.cors_allowed_origins
+            if '*' in self.cors_allowed_origins:
+                allowed_origins = None
+            else:
+                allowed_origins = self.cors_allowed_origins
         return allowed_origins
 
     def _cors_headers(self, environ):
