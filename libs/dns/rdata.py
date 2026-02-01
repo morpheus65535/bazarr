@@ -21,10 +21,11 @@ import base64
 import binascii
 import inspect
 import io
+import ipaddress
 import itertools
 import random
 from importlib import import_module
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Dict, Tuple
 
 import dns.exception
 import dns.immutable
@@ -107,7 +108,7 @@ def _escapify(qstring):
         elif c >= 0x20 and c < 0x7F:
             text += chr(c)
         else:
-            text += "\\%03d" % c
+            text += f"\\{c:03d}"
     return text
 
 
@@ -132,7 +133,11 @@ class Rdata:
 
     __slots__ = ["rdclass", "rdtype", "rdcomment"]
 
-    def __init__(self, rdclass, rdtype):
+    def __init__(
+        self,
+        rdclass: dns.rdataclass.RdataClass,
+        rdtype: dns.rdatatype.RdataType,
+    ) -> None:
         """Initialize an rdata.
 
         *rdclass*, an ``int`` is the rdataclass of the Rdata.
@@ -197,7 +202,7 @@ class Rdata:
 
     def to_text(
         self,
-        origin: Optional[dns.name.Name] = None,
+        origin: dns.name.Name | None = None,
         relativize: bool = True,
         **kw: Dict[str, Any],
     ) -> str:
@@ -210,51 +215,55 @@ class Rdata:
 
     def _to_wire(
         self,
-        file: Optional[Any],
-        compress: Optional[dns.name.CompressType] = None,
-        origin: Optional[dns.name.Name] = None,
+        file: Any,
+        compress: dns.name.CompressType | None = None,
+        origin: dns.name.Name | None = None,
         canonicalize: bool = False,
-    ) -> bytes:
+    ) -> None:
         raise NotImplementedError  # pragma: no cover
 
     def to_wire(
         self,
-        file: Optional[Any] = None,
-        compress: Optional[dns.name.CompressType] = None,
-        origin: Optional[dns.name.Name] = None,
+        file: Any | None = None,
+        compress: dns.name.CompressType | None = None,
+        origin: dns.name.Name | None = None,
         canonicalize: bool = False,
-    ) -> bytes:
+    ) -> bytes | None:
         """Convert an rdata to wire format.
 
-        Returns a ``bytes`` or ``None``.
+        Returns a ``bytes`` if no output file was specified, or ``None`` otherwise.
         """
 
         if file:
-            return self._to_wire(file, compress, origin, canonicalize)
+            # We call _to_wire() and then return None explicitly instead of
+            # of just returning the None from _to_wire() as mypy's func-returns-value
+            # unhelpfully errors out with "error: "_to_wire" of "Rdata" does not return
+            # a value (it only ever returns None)"
+            self._to_wire(file, compress, origin, canonicalize)
+            return None
         else:
             f = io.BytesIO()
             self._to_wire(f, compress, origin, canonicalize)
             return f.getvalue()
 
-    def to_generic(
-        self, origin: Optional[dns.name.Name] = None
-    ) -> "dns.rdata.GenericRdata":
+    def to_generic(self, origin: dns.name.Name | None = None) -> "GenericRdata":
         """Creates a dns.rdata.GenericRdata equivalent of this rdata.
 
         Returns a ``dns.rdata.GenericRdata``.
         """
-        return dns.rdata.GenericRdata(
-            self.rdclass, self.rdtype, self.to_wire(origin=origin)
-        )
+        wire = self.to_wire(origin=origin)
+        assert wire is not None  # for type checkers
+        return GenericRdata(self.rdclass, self.rdtype, wire)
 
-    def to_digestable(self, origin: Optional[dns.name.Name] = None) -> bytes:
+    def to_digestable(self, origin: dns.name.Name | None = None) -> bytes:
         """Convert rdata to a format suitable for digesting in hashes.  This
         is also the DNSSEC canonical form.
 
         Returns a ``bytes``.
         """
-
-        return self.to_wire(origin=origin, canonicalize=True)
+        wire = self.to_wire(origin=origin, canonicalize=True)
+        assert wire is not None  # for mypy
+        return wire
 
     def __repr__(self):
         covers = self.covers()
@@ -292,6 +301,9 @@ class Rdata:
             In the future, all ordering comparisons for rdata with
             relative names will be disallowed.
         """
+        # the next two lines are for type checkers, so they are bound
+        our = b""
+        their = b""
         try:
             our = self.to_digestable()
             our_relative = False
@@ -396,9 +408,9 @@ class Rdata:
         rdclass: dns.rdataclass.RdataClass,
         rdtype: dns.rdatatype.RdataType,
         tok: dns.tokenizer.Tokenizer,
-        origin: Optional[dns.name.Name] = None,
+        origin: dns.name.Name | None = None,
         relativize: bool = True,
-        relativize_to: Optional[dns.name.Name] = None,
+        relativize_to: dns.name.Name | None = None,
     ) -> "Rdata":
         raise NotImplementedError  # pragma: no cover
 
@@ -408,7 +420,7 @@ class Rdata:
         rdclass: dns.rdataclass.RdataClass,
         rdtype: dns.rdatatype.RdataType,
         parser: dns.wire.Parser,
-        origin: Optional[dns.name.Name] = None,
+        origin: dns.name.Name | None = None,
     ) -> "Rdata":
         raise NotImplementedError  # pragma: no cover
 
@@ -434,15 +446,11 @@ class Rdata:
                 continue
             if key not in parameters:
                 raise AttributeError(
-                    "'{}' object has no attribute '{}'".format(
-                        self.__class__.__name__, key
-                    )
+                    f"'{self.__class__.__name__}' object has no attribute '{key}'"
                 )
             if key in ("rdclass", "rdtype"):
                 raise AttributeError(
-                    "Cannot overwrite '{}' attribute '{}'".format(
-                        self.__class__.__name__, key
-                    )
+                    f"Cannot overwrite '{self.__class__.__name__}' attribute '{key}'"
                 )
 
         # Construct the parameter list.  For each field, use the value in
@@ -474,7 +482,7 @@ class Rdata:
         cls,
         value: Any,
         encode: bool = False,
-        max_length: Optional[int] = None,
+        max_length: int | None = None,
         empty_ok: bool = True,
     ) -> bytes:
         if encode and isinstance(value, str):
@@ -550,6 +558,8 @@ class Rdata:
             return dns.ipv4.canonicalize(value)
         elif isinstance(value, bytes):
             return dns.ipv4.inet_ntoa(value)
+        elif isinstance(value, ipaddress.IPv4Address):
+            return dns.ipv4.inet_ntoa(value.packed)
         else:
             raise ValueError("not an IPv4 address")
 
@@ -559,6 +569,8 @@ class Rdata:
             return dns.ipv6.canonicalize(value)
         elif isinstance(value, bytes):
             return dns.ipv6.inet_ntoa(value)
+        elif isinstance(value, ipaddress.IPv6Address):
+            return dns.ipv6.inet_ntoa(value.packed)
         else:
             raise ValueError("not an IPv6 address")
 
@@ -608,17 +620,22 @@ class GenericRdata(Rdata):
 
     __slots__ = ["data"]
 
-    def __init__(self, rdclass, rdtype, data):
+    def __init__(
+        self,
+        rdclass: dns.rdataclass.RdataClass,
+        rdtype: dns.rdatatype.RdataType,
+        data: bytes,
+    ) -> None:
         super().__init__(rdclass, rdtype)
         self.data = data
 
     def to_text(
         self,
-        origin: Optional[dns.name.Name] = None,
+        origin: dns.name.Name | None = None,
         relativize: bool = True,
         **kw: Dict[str, Any],
     ) -> str:
-        return r"\# %d " % len(self.data) + _hexify(self.data, **kw)
+        return rf"\# {len(self.data)} " + _hexify(self.data, **kw)  # pyright: ignore
 
     @classmethod
     def from_text(
@@ -637,6 +654,9 @@ class GenericRdata(Rdata):
     def _to_wire(self, file, compress=None, origin=None, canonicalize=False):
         file.write(self.data)
 
+    def to_generic(self, origin: dns.name.Name | None = None) -> "GenericRdata":
+        return self
+
     @classmethod
     def from_wire_parser(cls, rdclass, rdtype, parser, origin=None):
         return cls(rdclass, rdtype, parser.get_remaining())
@@ -646,13 +666,14 @@ _rdata_classes: Dict[Tuple[dns.rdataclass.RdataClass, dns.rdatatype.RdataType], 
     {}
 )
 _module_prefix = "dns.rdtypes"
+_dynamic_load_allowed = True
 
 
-def get_rdata_class(rdclass, rdtype):
+def get_rdata_class(rdclass, rdtype, use_generic=True):
     cls = _rdata_classes.get((rdclass, rdtype))
     if not cls:
-        cls = _rdata_classes.get((dns.rdatatype.ANY, rdtype))
-        if not cls:
+        cls = _rdata_classes.get((dns.rdataclass.ANY, rdtype))
+        if not cls and _dynamic_load_allowed:
             rdclass_text = dns.rdataclass.to_text(rdclass)
             rdtype_text = dns.rdatatype.to_text(rdtype)
             rdtype_text = rdtype_text.replace("-", "_")
@@ -670,20 +691,44 @@ def get_rdata_class(rdclass, rdtype):
                     _rdata_classes[(rdclass, rdtype)] = cls
                 except ImportError:
                     pass
-    if not cls:
+    if not cls and use_generic:
         cls = GenericRdata
         _rdata_classes[(rdclass, rdtype)] = cls
     return cls
 
 
+def load_all_types(disable_dynamic_load=True):
+    """Load all rdata types for which dnspython has a non-generic implementation.
+
+    Normally dnspython loads DNS rdatatype implementations on demand, but in some
+    specialized cases loading all types at an application-controlled time is preferred.
+
+    If *disable_dynamic_load*, a ``bool``, is ``True`` then dnspython will not attempt
+    to use its dynamic loading mechanism if an unknown type is subsequently encountered,
+    and will simply use the ``GenericRdata`` class.
+    """
+    # Load class IN and ANY types.
+    for rdtype in dns.rdatatype.RdataType:
+        get_rdata_class(dns.rdataclass.IN, rdtype, False)
+    # Load the one non-ANY implementation we have in CH.  Everything
+    # else in CH is an ANY type, and we'll discover those on demand but won't
+    # have to import anything.
+    get_rdata_class(dns.rdataclass.CH, dns.rdatatype.A, False)
+    if disable_dynamic_load:
+        # Now disable dynamic loading so any subsequent unknown type immediately becomes
+        # GenericRdata without a load attempt.
+        global _dynamic_load_allowed
+        _dynamic_load_allowed = False
+
+
 def from_text(
-    rdclass: Union[dns.rdataclass.RdataClass, str],
-    rdtype: Union[dns.rdatatype.RdataType, str],
-    tok: Union[dns.tokenizer.Tokenizer, str],
-    origin: Optional[dns.name.Name] = None,
+    rdclass: dns.rdataclass.RdataClass | str,
+    rdtype: dns.rdatatype.RdataType | str,
+    tok: dns.tokenizer.Tokenizer | str,
+    origin: dns.name.Name | None = None,
     relativize: bool = True,
-    relativize_to: Optional[dns.name.Name] = None,
-    idna_codec: Optional[dns.name.IDNACodec] = None,
+    relativize_to: dns.name.Name | None = None,
+    idna_codec: dns.name.IDNACodec | None = None,
 ) -> Rdata:
     """Build an rdata object from text format.
 
@@ -723,9 +768,12 @@ def from_text(
     """
     if isinstance(tok, str):
         tok = dns.tokenizer.Tokenizer(tok, idna_codec=idna_codec)
+    if not isinstance(tok, dns.tokenizer.Tokenizer):
+        raise ValueError("tok must be a string or a Tokenizer")
     rdclass = dns.rdataclass.RdataClass.make(rdclass)
     rdtype = dns.rdatatype.RdataType.make(rdtype)
     cls = get_rdata_class(rdclass, rdtype)
+    assert cls is not None  # for type checkers
     with dns.exception.ExceptionWrapper(dns.exception.SyntaxError):
         rdata = None
         if cls != GenericRdata:
@@ -767,10 +815,10 @@ def from_text(
 
 
 def from_wire_parser(
-    rdclass: Union[dns.rdataclass.RdataClass, str],
-    rdtype: Union[dns.rdatatype.RdataType, str],
+    rdclass: dns.rdataclass.RdataClass | str,
+    rdtype: dns.rdatatype.RdataType | str,
     parser: dns.wire.Parser,
-    origin: Optional[dns.name.Name] = None,
+    origin: dns.name.Name | None = None,
 ) -> Rdata:
     """Build an rdata object from wire format
 
@@ -798,17 +846,18 @@ def from_wire_parser(
     rdclass = dns.rdataclass.RdataClass.make(rdclass)
     rdtype = dns.rdatatype.RdataType.make(rdtype)
     cls = get_rdata_class(rdclass, rdtype)
+    assert cls is not None  # for type checkers
     with dns.exception.ExceptionWrapper(dns.exception.FormError):
         return cls.from_wire_parser(rdclass, rdtype, parser, origin)
 
 
 def from_wire(
-    rdclass: Union[dns.rdataclass.RdataClass, str],
-    rdtype: Union[dns.rdatatype.RdataType, str],
+    rdclass: dns.rdataclass.RdataClass | str,
+    rdtype: dns.rdatatype.RdataType | str,
     wire: bytes,
     current: int,
     rdlen: int,
-    origin: Optional[dns.name.Name] = None,
+    origin: dns.name.Name | None = None,
 ) -> Rdata:
     """Build an rdata object from wire format
 
@@ -860,8 +909,8 @@ def register_type(
 ) -> None:
     """Dynamically register a module to handle an rdatatype.
 
-    *implementation*, a module implementing the type in the usual dnspython
-    way.
+    *implementation*, a subclass of ``dns.rdata.Rdata`` implementing the type,
+    or a module containing such a class named by its text form.
 
     *rdtype*, an ``int``, the rdatatype to register.
 
@@ -878,7 +927,9 @@ def register_type(
     existing_cls = get_rdata_class(rdclass, rdtype)
     if existing_cls != GenericRdata or dns.rdatatype.is_metatype(rdtype):
         raise RdatatypeExists(rdclass=rdclass, rdtype=rdtype)
-    _rdata_classes[(rdclass, rdtype)] = getattr(
-        implementation, rdtype_text.replace("-", "_")
-    )
+    if isinstance(implementation, type) and issubclass(implementation, Rdata):
+        impclass = implementation
+    else:
+        impclass = getattr(implementation, rdtype_text.replace("-", "_"))
+    _rdata_classes[(rdclass, rdtype)] = impclass
     dns.rdatatype.register_type(rdtype, rdtype_text, is_singleton)

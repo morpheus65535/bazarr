@@ -24,6 +24,7 @@ RuleConfig = typing.Mapping[str, RuleMap]
 class Provider:
     """Base class for all providers."""
 
+    executor: typing.Union["Executor", None]
     min_fps = 10
     max_fps = 200
 
@@ -37,6 +38,11 @@ class Provider:
         self.config = config
         self.mapping = mapping
         self.rules = rules or {}
+        self.executor = None
+
+    def loaded(self) -> bool:
+        """Whether or not this provider was loaded."""
+        raise NotImplementedError
 
     def accepts(self, target):
         """Whether or not the video is supported by this provider."""
@@ -120,10 +126,58 @@ class Provider:
 
         return props
 
+    def match_executor_location(self, suggested_path: typing.Union[str, None]) -> bool:
+        """Compare the suggested path to the path that was suggested when creating the provider."""
+        if self.executor is None:
+            return True
+        if self.executor.location == suggested_path:
+            return True
+        return False
+
     @property
     def version(self):
         """Return provider version information."""
         raise NotImplementedError
+
+
+class Executor:
+    """Abstraction to a library or executable to be used by a provider."""
+
+    def __init__(self, location, version):
+        """Initialize the object."""
+        self.location = location
+        self.version = version
+
+    def extract_info(self, filename):
+        """Extract media info."""
+        raise NotImplementedError
+
+    @classmethod
+    def create(cls, os_family=None, suggested_path=None):
+        """Create the executor instance."""
+        raise NotImplementedError
+
+    @classmethod
+    def get_executor_instance(cls, suggested_path=None) -> "Executor":
+        """Return executor instance."""
+        raise NotImplementedError
+
+
+class NotFoundExecutor(Executor):
+    """Executor with a library or executable that was not found."""
+
+    def __init__(self, location, version=None) -> None:
+        """Initialize the object."""
+        self.location = location
+        self.warned = False
+
+    def __bool__(self) -> bool:
+        """Executor not found is always False."""
+        return False
+
+    def extract_info(self, filename):
+        """Extract media info."""
+        return {}
 
 
 class ProviderError(Exception):

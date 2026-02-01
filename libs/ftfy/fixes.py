@@ -14,7 +14,8 @@ import codecs
 import html
 import re
 import warnings
-from typing import Any, List, Match, Tuple
+from re import Match
+from typing import Any
 
 import ftfy
 from ftfy.badness import is_bad
@@ -57,7 +58,7 @@ def fix_encoding(text: str) -> str:
     return ftfy.fix_encoding(text)
 
 
-def apply_plan(text: str, plan: List[Tuple[str, str]]) -> str:
+def apply_plan(text: str, plan: list[tuple[str, str]]) -> str:
     """
     Deprecated copy of `ftfy.apply_plan()`.
     """
@@ -474,7 +475,7 @@ def replace_lossy_sequences(byts: bytes) -> bytes:
 
     This is used as a transcoder within `fix_encoding`.
     """
-    return LOSSY_UTF8_RE.sub("\ufffd".encode("utf-8"), byts)
+    return LOSSY_UTF8_RE.sub("\ufffd".encode(), byts)
 
 
 def decode_inconsistent_utf8(text: str) -> str:

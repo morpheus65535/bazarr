@@ -86,6 +86,7 @@ class RdataType(dns.enum.IntEnum):
     ZONEMD = 63
     SVCB = 64
     HTTPS = 65
+    DSYNC = 66
     SPF = 99
     UNSPEC = 103
     NID = 104
@@ -105,6 +106,8 @@ class RdataType(dns.enum.IntEnum):
     CAA = 257
     AVC = 258
     AMTRELAY = 260
+    RESINFO = 261
+    WALLET = 262
     TA = 32768
     DLV = 32769
 
@@ -125,7 +128,7 @@ class RdataType(dns.enum.IntEnum):
         if text.find("-") >= 0:
             try:
                 return cls[text.replace("-", "_")]
-            except KeyError:
+            except KeyError:  # pragma: no cover
                 pass
         return _registered_by_text.get(text)
 
@@ -307,6 +310,7 @@ CSYNC = RdataType.CSYNC
 ZONEMD = RdataType.ZONEMD
 SVCB = RdataType.SVCB
 HTTPS = RdataType.HTTPS
+DSYNC = RdataType.DSYNC
 SPF = RdataType.SPF
 UNSPEC = RdataType.UNSPEC
 NID = RdataType.NID
@@ -326,6 +330,8 @@ URI = RdataType.URI
 CAA = RdataType.CAA
 AVC = RdataType.AVC
 AMTRELAY = RdataType.AMTRELAY
+RESINFO = RdataType.RESINFO
+WALLET = RdataType.WALLET
 TA = RdataType.TA
 DLV = RdataType.DLV
 

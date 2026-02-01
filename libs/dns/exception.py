@@ -22,7 +22,7 @@ always be subclasses of ``DNSException``.
 """
 
 
-from typing import Optional, Set
+from typing import Set
 
 
 class DNSException(Exception):
@@ -48,9 +48,9 @@ class DNSException(Exception):
     and ``fmt`` class variables to get nice parametrized messages.
     """
 
-    msg: Optional[str] = None  # non-parametrized message
+    msg: str | None = None  # non-parametrized message
     supp_kwargs: Set[str] = set()  # accepted parameters for _fmt_kwargs (sanity check)
-    fmt: Optional[str] = None  # message parametrized with results from _fmt_kwargs
+    fmt: str | None = None  # message parametrized with results from _fmt_kwargs
 
     def __init__(self, *args, **kwargs):
         self._check_params(*args, **kwargs)
@@ -81,7 +81,7 @@ class DNSException(Exception):
         if kwargs:
             assert (
                 set(kwargs.keys()) == self.supp_kwargs
-            ), "following set of keyword args is required: %s" % (self.supp_kwargs)
+            ), f"following set of keyword args is required: {self.supp_kwargs}"
         return kwargs
 
     def _fmt_kwargs(self, **kwargs):
@@ -92,7 +92,7 @@ class DNSException(Exception):
         """
         fmtargs = {}
         for kw, data in kwargs.items():
-            if isinstance(data, (list, set)):
+            if isinstance(data, list | set):
                 # convert list of <someobj> to list of str(<someobj>)
                 fmtargs[kw] = list(map(str, data))
                 if len(fmtargs[kw]) == 1:

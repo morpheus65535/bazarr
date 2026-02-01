@@ -17,6 +17,7 @@
 
 """Common DNSSEC-related functions and constants."""
 
+# pylint: disable=unused-import
 
 import base64
 import contextlib
@@ -25,10 +26,9 @@ import hashlib
 import struct
 import time
 from datetime import datetime
-from typing import Callable, Dict, List, Optional, Set, Tuple, Union, cast
+from typing import Callable, Dict, List, Set, Tuple, Union, cast
 
 import dns._features
-import dns.exception
 import dns.name
 import dns.node
 import dns.rdata
@@ -39,12 +39,8 @@ import dns.rrset
 import dns.transaction
 import dns.zone
 from dns.dnssectypes import Algorithm, DSDigest, NSEC3Hash
-from dns.exception import (  # pylint: disable=W0611
-    AlgorithmKeyMismatch,
-    DeniedByPolicy,
-    UnsupportedAlgorithm,
-    ValidationFailure,
-)
+from dns.exception import AlgorithmKeyMismatch as AlgorithmKeyMismatch
+from dns.exception import DeniedByPolicy, UnsupportedAlgorithm, ValidationFailure
 from dns.rdtypes.ANY.CDNSKEY import CDNSKEY
 from dns.rdtypes.ANY.CDS import CDS
 from dns.rdtypes.ANY.DNSKEY import DNSKEY
@@ -84,7 +80,7 @@ def algorithm_from_text(text: str) -> Algorithm:
     return Algorithm.from_text(text)
 
 
-def algorithm_to_text(value: Union[Algorithm, int]) -> str:
+def algorithm_to_text(value: Algorithm | int) -> str:
     """Convert a DNSSEC algorithm value to text
 
     *value*, a ``dns.dnssec.Algorithm``.
@@ -95,7 +91,7 @@ def algorithm_to_text(value: Union[Algorithm, int]) -> str:
     return Algorithm.to_text(value)
 
 
-def to_timestamp(value: Union[datetime, str, float, int]) -> int:
+def to_timestamp(value: datetime | str | float | int) -> int:
     """Convert various format to a timestamp"""
     if isinstance(value, datetime):
         return int(value.timestamp())
@@ -109,7 +105,7 @@ def to_timestamp(value: Union[datetime, str, float, int]) -> int:
         raise TypeError("Unsupported timestamp type")
 
 
-def key_id(key: Union[DNSKEY, CDNSKEY]) -> int:
+def key_id(key: DNSKEY | CDNSKEY) -> int:
     """Return the key id (a 16-bit number) for the specified key.
 
     *key*, a ``dns.rdtypes.ANY.DNSKEY.DNSKEY``
@@ -118,6 +114,7 @@ def key_id(key: Union[DNSKEY, CDNSKEY]) -> int:
     """
 
     rdata = key.to_wire()
+    assert rdata is not None  # for mypy
     if key.algorithm == Algorithm.RSAMD5:
         return (rdata[-3] << 8) + rdata[-2]
     else:
@@ -134,16 +131,16 @@ class Policy:
     def __init__(self):
         pass
 
-    def ok_to_sign(self, _: DNSKEY) -> bool:  # pragma: no cover
+    def ok_to_sign(self, key: DNSKEY) -> bool:  # pragma: no cover
         return False
 
-    def ok_to_validate(self, _: DNSKEY) -> bool:  # pragma: no cover
+    def ok_to_validate(self, key: DNSKEY) -> bool:  # pragma: no cover
         return False
 
-    def ok_to_create_ds(self, _: DSDigest) -> bool:  # pragma: no cover
+    def ok_to_create_ds(self, algorithm: DSDigest) -> bool:  # pragma: no cover
         return False
 
-    def ok_to_validate_ds(self, _: DSDigest) -> bool:  # pragma: no cover
+    def ok_to_validate_ds(self, algorithm: DSDigest) -> bool:  # pragma: no cover
         return False
 
 
@@ -182,11 +179,11 @@ default_policy = rfc_8624_policy
 
 
 def make_ds(
-    name: Union[dns.name.Name, str],
+    name: dns.name.Name | str,
     key: dns.rdata.Rdata,
-    algorithm: Union[DSDigest, str],
-    origin: Optional[dns.name.Name] = None,
-    policy: Optional[Policy] = None,
+    algorithm: DSDigest | str,
+    origin: dns.name.Name | None = None,
+    policy: Policy | None = None,
     validating: bool = False,
 ) -> DS:
     """Create a DS record for a DNSSEC key.
@@ -224,15 +221,15 @@ def make_ds(
         if isinstance(algorithm, str):
             algorithm = DSDigest[algorithm.upper()]
     except Exception:
-        raise UnsupportedAlgorithm('unsupported algorithm "%s"' % algorithm)
+        raise UnsupportedAlgorithm(f'unsupported algorithm "{algorithm}"')
     if validating:
         check = policy.ok_to_validate_ds
     else:
         check = policy.ok_to_create_ds
     if not check(algorithm):
         raise DeniedByPolicy
-    if not isinstance(key, (DNSKEY, CDNSKEY)):
-        raise ValueError("key is not a DNSKEY/CDNSKEY")
+    if not isinstance(key, DNSKEY | CDNSKEY):
+        raise ValueError("key is not a DNSKEY | CDNSKEY")
     if algorithm == DSDigest.SHA1:
         dshash = hashlib.sha1()
     elif algorithm == DSDigest.SHA256:
@@ -240,14 +237,15 @@ def make_ds(
     elif algorithm == DSDigest.SHA384:
         dshash = hashlib.sha384()
     else:
-        raise UnsupportedAlgorithm('unsupported algorithm "%s"' % algorithm)
+        raise UnsupportedAlgorithm(f'unsupported algorithm "{algorithm}"')
 
     if isinstance(name, str):
         name = dns.name.from_text(name, origin)
     wire = name.canonicalize().to_wire()
-    assert wire is not None
+    kwire = key.to_wire(origin=origin)
+    assert wire is not None and kwire is not None  # for mypy
     dshash.update(wire)
-    dshash.update(key.to_wire(origin=origin))
+    dshash.update(kwire)
     digest = dshash.digest()
 
     dsrdata = struct.pack("!HBB", key_id(key), key.algorithm, algorithm) + digest
@@ -258,10 +256,10 @@ def make_ds(
 
 
 def make_cds(
-    name: Union[dns.name.Name, str],
+    name: dns.name.Name | str,
     key: dns.rdata.Rdata,
-    algorithm: Union[DSDigest, str],
-    origin: Optional[dns.name.Name] = None,
+    algorithm: DSDigest | str,
+    origin: dns.name.Name | None = None,
 ) -> CDS:
     """Create a CDS record for a DNSSEC key.
 
@@ -294,8 +292,8 @@ def make_cds(
 
 
 def _find_candidate_keys(
-    keys: Dict[dns.name.Name, Union[dns.rdataset.Rdataset, dns.node.Node]], rrsig: RRSIG
-) -> Optional[List[DNSKEY]]:
+    keys: Dict[dns.name.Name, dns.rdataset.Rdataset | dns.node.Node], rrsig: RRSIG
+) -> List[DNSKEY] | None:
     value = keys.get(rrsig.signer)
     if isinstance(value, dns.node.Node):
         rdataset = value.get_rdataset(dns.rdataclass.IN, dns.rdatatype.DNSKEY)
@@ -314,7 +312,7 @@ def _find_candidate_keys(
 
 
 def _get_rrname_rdataset(
-    rrset: Union[dns.rrset.RRset, Tuple[dns.name.Name, dns.rdataset.Rdataset]],
+    rrset: dns.rrset.RRset | Tuple[dns.name.Name, dns.rdataset.Rdataset],
 ) -> Tuple[dns.name.Name, dns.rdataset.Rdataset]:
     if isinstance(rrset, tuple):
         return rrset[0], rrset[1]
@@ -323,6 +321,7 @@ def _get_rrname_rdataset(
 
 
 def _validate_signature(sig: bytes, data: bytes, key: DNSKEY) -> None:
+    # pylint: disable=possibly-used-before-assignment
     public_cls = get_algorithm_cls_from_dnskey(key).public_cls
     try:
         public_key = public_cls.from_dnskey(key)
@@ -332,12 +331,12 @@ def _validate_signature(sig: bytes, data: bytes, key: DNSKEY) -> None:
 
 
 def _validate_rrsig(
-    rrset: Union[dns.rrset.RRset, Tuple[dns.name.Name, dns.rdataset.Rdataset]],
+    rrset: dns.rrset.RRset | Tuple[dns.name.Name, dns.rdataset.Rdataset],
     rrsig: RRSIG,
-    keys: Dict[dns.name.Name, Union[dns.node.Node, dns.rdataset.Rdataset]],
-    origin: Optional[dns.name.Name] = None,
-    now: Optional[float] = None,
-    policy: Optional[Policy] = None,
+    keys: Dict[dns.name.Name, dns.node.Node | dns.rdataset.Rdataset],
+    origin: dns.name.Name | None = None,
+    now: float | None = None,
+    policy: Policy | None = None,
 ) -> None:
     """Validate an RRset against a single signature rdata, throwing an
     exception if validation is not successful.
@@ -387,6 +386,7 @@ def _validate_rrsig(
 
     data = _make_rrsig_signature_data(rrset, rrsig, origin)
 
+    # pylint: disable=possibly-used-before-assignment
     for candidate_key in candidate_keys:
         if not policy.ok_to_validate(candidate_key):
             continue
@@ -401,12 +401,12 @@ def _validate_rrsig(
 
 
 def _validate(
-    rrset: Union[dns.rrset.RRset, Tuple[dns.name.Name, dns.rdataset.Rdataset]],
-    rrsigset: Union[dns.rrset.RRset, Tuple[dns.name.Name, dns.rdataset.Rdataset]],
-    keys: Dict[dns.name.Name, Union[dns.node.Node, dns.rdataset.Rdataset]],
-    origin: Optional[dns.name.Name] = None,
-    now: Optional[float] = None,
-    policy: Optional[Policy] = None,
+    rrset: dns.rrset.RRset | Tuple[dns.name.Name, dns.rdataset.Rdataset],
+    rrsigset: dns.rrset.RRset | Tuple[dns.name.Name, dns.rdataset.Rdataset],
+    keys: Dict[dns.name.Name, dns.node.Node | dns.rdataset.Rdataset],
+    origin: dns.name.Name | None = None,
+    now: float | None = None,
+    policy: Policy | None = None,
 ) -> None:
     """Validate an RRset against a signature RRset, throwing an exception
     if none of the signatures validate.
@@ -474,16 +474,17 @@ def _validate(
 
 
 def _sign(
-    rrset: Union[dns.rrset.RRset, Tuple[dns.name.Name, dns.rdataset.Rdataset]],
+    rrset: dns.rrset.RRset | Tuple[dns.name.Name, dns.rdataset.Rdataset],
     private_key: PrivateKey,
     signer: dns.name.Name,
     dnskey: DNSKEY,
-    inception: Optional[Union[datetime, str, int, float]] = None,
-    expiration: Optional[Union[datetime, str, int, float]] = None,
-    lifetime: Optional[int] = None,
+    inception: datetime | str | int | float | None = None,
+    expiration: datetime | str | int | float | None = None,
+    lifetime: int | None = None,
     verify: bool = False,
-    policy: Optional[Policy] = None,
-    origin: Optional[dns.name.Name] = None,
+    policy: Policy | None = None,
+    origin: dns.name.Name | None = None,
+    deterministic: bool = True,
 ) -> RRSIG:
     """Sign RRset using private key.
 
@@ -522,6 +523,10 @@ def _sign(
     *origin*, a ``dns.name.Name`` or ``None``.  If ``None``, the default, then all
     names in the rrset (including its owner name) must be absolute; otherwise the
     specified origin will be used to make names absolute when signing.
+
+    *deterministic*, a ``bool``. If ``True``, the default, use deterministic
+    (reproducible) signatures when supported by the algorithm used for signing.
+    Currently, this only affects ECDSA.
 
     Raises ``DeniedByPolicy`` if the signature is denied by policy.
     """
@@ -578,8 +583,9 @@ def _sign(
         signature=b"",
     )
 
-    data = dns.dnssec._make_rrsig_signature_data(rrset, rrsig_template, origin)
+    data = _make_rrsig_signature_data(rrset, rrsig_template, origin)
 
+    # pylint: disable=possibly-used-before-assignment
     if isinstance(private_key, GenericPrivateKey):
         signing_key = private_key
     else:
@@ -589,15 +595,15 @@ def _sign(
         except UnsupportedAlgorithm:
             raise TypeError("Unsupported key algorithm")
 
-    signature = signing_key.sign(data, verify)
+    signature = signing_key.sign(data, verify, deterministic)
 
     return cast(RRSIG, rrsig_template.replace(signature=signature))
 
 
 def _make_rrsig_signature_data(
-    rrset: Union[dns.rrset.RRset, Tuple[dns.name.Name, dns.rdataset.Rdataset]],
+    rrset: dns.rrset.RRset | Tuple[dns.name.Name, dns.rdataset.Rdataset],
     rrsig: RRSIG,
-    origin: Optional[dns.name.Name] = None,
+    origin: dns.name.Name | None = None,
 ) -> bytes:
     """Create signature rdata.
 
@@ -629,7 +635,9 @@ def _make_rrsig_signature_data(
     rrname, rdataset = _get_rrname_rdataset(rrset)
 
     data = b""
-    data += rrsig.to_wire(origin=signer)[:18]
+    wire = rrsig.to_wire(origin=signer)
+    assert wire is not None  # for mypy
+    data += wire[:18]
     data += rrsig.signer.to_digestable(signer)
 
     # Derelativize the name before considering labels.
@@ -661,7 +669,7 @@ def _make_rrsig_signature_data(
 
 def _make_dnskey(
     public_key: PublicKey,
-    algorithm: Union[int, str],
+    algorithm: int | str,
     flags: int = Flag.ZONE,
     protocol: int = 3,
 ) -> DNSKEY:
@@ -686,6 +694,7 @@ def _make_dnskey(
 
     algorithm = Algorithm.make(algorithm)
 
+    # pylint: disable=possibly-used-before-assignment
     if isinstance(public_key, GenericPublicKey):
         return public_key.to_dnskey(flags=flags, protocol=protocol)
     else:
@@ -695,7 +704,7 @@ def _make_dnskey(
 
 def _make_cdnskey(
     public_key: PublicKey,
-    algorithm: Union[int, str],
+    algorithm: int | str,
     flags: int = Flag.ZONE,
     protocol: int = 3,
 ) -> CDNSKEY:
@@ -732,10 +741,10 @@ def _make_cdnskey(
 
 
 def nsec3_hash(
-    domain: Union[dns.name.Name, str],
-    salt: Optional[Union[str, bytes]],
+    domain: dns.name.Name | str,
+    salt: str | bytes | None,
     iterations: int,
-    algorithm: Union[int, str],
+    algorithm: int | str,
 ) -> str:
     """
     Calculate the NSEC3 hash, according to
@@ -793,9 +802,9 @@ def nsec3_hash(
 
 
 def make_ds_rdataset(
-    rrset: Union[dns.rrset.RRset, Tuple[dns.name.Name, dns.rdataset.Rdataset]],
-    algorithms: Set[Union[DSDigest, str]],
-    origin: Optional[dns.name.Name] = None,
+    rrset: dns.rrset.RRset | Tuple[dns.name.Name, dns.rdataset.Rdataset],
+    algorithms: Set[DSDigest | str],
+    origin: dns.name.Name | None = None,
 ) -> dns.rdataset.Rdataset:
     """Create a DS record from DNSKEY/CDNSKEY/CDS.
 
@@ -832,7 +841,7 @@ def make_ds_rdataset(
             if isinstance(algorithm, str):
                 algorithm = DSDigest[algorithm.upper()]
         except Exception:
-            raise UnsupportedAlgorithm('unsupported algorithm "%s"' % algorithm)
+            raise UnsupportedAlgorithm(f'unsupported algorithm "{algorithm}"')
         _algorithms.add(algorithm)
 
     if rdataset.rdtype == dns.rdatatype.CDS:
@@ -880,10 +889,10 @@ def cds_rdataset_to_ds_rdataset(
 
 
 def dnskey_rdataset_to_cds_rdataset(
-    name: Union[dns.name.Name, str],
+    name: dns.name.Name | str,
     rdataset: dns.rdataset.Rdataset,
-    algorithm: Union[DSDigest, str],
-    origin: Optional[dns.name.Name] = None,
+    algorithm: DSDigest | str,
+    origin: dns.name.Name | None = None,
 ) -> dns.rdataset.Rdataset:
     """Create a CDS record from DNSKEY/CDNSKEY.
 
@@ -945,11 +954,12 @@ def default_rrset_signer(
     signer: dns.name.Name,
     ksks: List[Tuple[PrivateKey, DNSKEY]],
     zsks: List[Tuple[PrivateKey, DNSKEY]],
-    inception: Optional[Union[datetime, str, int, float]] = None,
-    expiration: Optional[Union[datetime, str, int, float]] = None,
-    lifetime: Optional[int] = None,
-    policy: Optional[Policy] = None,
-    origin: Optional[dns.name.Name] = None,
+    inception: datetime | str | int | float | None = None,
+    expiration: datetime | str | int | float | None = None,
+    lifetime: int | None = None,
+    policy: Policy | None = None,
+    origin: dns.name.Name | None = None,
+    deterministic: bool = True,
 ) -> None:
     """Default RRset signer"""
 
@@ -965,7 +975,7 @@ def default_rrset_signer(
         keys = zsks
 
     for private_key, dnskey in keys:
-        rrsig = dns.dnssec.sign(
+        rrsig = sign(
             rrset=rrset,
             private_key=private_key,
             dnskey=dnskey,
@@ -975,22 +985,24 @@ def default_rrset_signer(
             signer=signer,
             policy=policy,
             origin=origin,
+            deterministic=deterministic,
         )
         txn.add(rrset.name, rrset.ttl, rrsig)
 
 
 def sign_zone(
     zone: dns.zone.Zone,
-    txn: Optional[dns.transaction.Transaction] = None,
-    keys: Optional[List[Tuple[PrivateKey, DNSKEY]]] = None,
+    txn: dns.transaction.Transaction | None = None,
+    keys: List[Tuple[PrivateKey, DNSKEY]] | None = None,
     add_dnskey: bool = True,
-    dnskey_ttl: Optional[int] = None,
-    inception: Optional[Union[datetime, str, int, float]] = None,
-    expiration: Optional[Union[datetime, str, int, float]] = None,
-    lifetime: Optional[int] = None,
-    nsec3: Optional[NSEC3PARAM] = None,
-    rrset_signer: Optional[RRsetSigner] = None,
-    policy: Optional[Policy] = None,
+    dnskey_ttl: int | None = None,
+    inception: datetime | str | int | float | None = None,
+    expiration: datetime | str | int | float | None = None,
+    lifetime: int | None = None,
+    nsec3: NSEC3PARAM | None = None,
+    rrset_signer: RRsetSigner | None = None,
+    policy: Policy | None = None,
+    deterministic: bool = True,
 ) -> None:
     """Sign zone.
 
@@ -1030,6 +1042,10 @@ def sign_zone(
     function requires two arguments: transaction and RRset. If the not specified,
     ``dns.dnssec.default_rrset_signer`` will be used.
 
+    *deterministic*, a ``bool``. If ``True``, the default, use deterministic
+    (reproducible) signatures when supported by the algorithm used for signing.
+    Currently, this only affects ECDSA.
+
     Returns ``None``.
     """
 
@@ -1056,6 +1072,9 @@ def sign_zone(
     else:
         cm = zone.writer()
 
+    if zone.origin is None:
+        raise ValueError("no zone origin")
+
     with cm as _txn:
         if add_dnskey:
             if dnskey_ttl is None:
@@ -1081,6 +1100,7 @@ def sign_zone(
                 lifetime=lifetime,
                 policy=policy,
                 origin=zone.origin,
+                deterministic=deterministic,
             )
             return _sign_zone_nsec(zone, _txn, _rrset_signer)
 
@@ -1088,17 +1108,17 @@ def sign_zone(
 def _sign_zone_nsec(
     zone: dns.zone.Zone,
     txn: dns.transaction.Transaction,
-    rrset_signer: Optional[RRsetSigner] = None,
+    rrset_signer: RRsetSigner | None = None,
 ) -> None:
     """NSEC zone signer"""
 
     def _txn_add_nsec(
         txn: dns.transaction.Transaction,
         name: dns.name.Name,
-        next_secure: Optional[dns.name.Name],
+        next_secure: dns.name.Name | None,
         rdclass: dns.rdataclass.RdataClass,
         ttl: int,
-        rrset_signer: Optional[RRsetSigner] = None,
+        rrset_signer: RRsetSigner | None = None,
     ) -> None:
         """NSEC zone signer helper"""
         mandatory_types = set(
@@ -1124,7 +1144,7 @@ def _sign_zone_nsec(
             if rrset_signer:
                 rrset_signer(txn, rrset)
 
-    rrsig_ttl = zone.get_soa().minimum
+    rrsig_ttl = zone.get_soa(txn).minimum
     delegation = None
     last_secure = None
 
@@ -1172,7 +1192,6 @@ def _need_pyca(*args, **kwargs):
 
 if dns._features.have("dnssec"):
     from cryptography.exceptions import InvalidSignature
-    from cryptography.hazmat.primitives.asymmetric import dsa  # pylint: disable=W0611
     from cryptography.hazmat.primitives.asymmetric import ec  # pylint: disable=W0611
     from cryptography.hazmat.primitives.asymmetric import ed448  # pylint: disable=W0611
     from cryptography.hazmat.primitives.asymmetric import rsa  # pylint: disable=W0611

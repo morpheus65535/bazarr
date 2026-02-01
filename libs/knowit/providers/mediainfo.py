@@ -6,6 +6,7 @@ from ctypes import c_void_p, c_wchar_p
 from decimal import Decimal
 from logging import DEBUG, NullHandler, getLogger
 from subprocess import CalledProcessError, check_output
+from typing import Any, Union
 
 from pymediainfo import MediaInfo
 from pymediainfo import __version__ as pymediainfo_version
@@ -32,7 +33,9 @@ from knowit.properties import (
     YesNo,
 )
 from knowit.provider import (
+    Executor,
     MalformedFileError,
+    NotFoundExecutor,
     Provider,
 )
 from knowit.rules import (
@@ -72,7 +75,7 @@ To load MediaInfo from a specific location, please define the location as follow
 '''
 
 
-class MediaInfoExecutor:
+class MediaInfoExecutor(Executor):
     """Media info executable knows how to execute media info: using ctypes or cli."""
 
     version_re = re.compile(r'\bv(?P<version>\d+(?:\.\d+)+)\b')
@@ -82,11 +85,6 @@ class MediaInfoExecutor:
         'windows': ('C:\\Program Files\\MediaInfo', 'C:\\Program Files (x86)\\MediaInfo', '__PATH__'),
         'macos': ('__PATH__', ),
     }
-
-    def __init__(self, location, version):
-        """Initialize the object."""
-        self.location = location
-        self.version = version
 
     def extract_info(self, filename):
         """Extract media info."""
@@ -103,7 +101,7 @@ class MediaInfoExecutor:
             return version
 
     @classmethod
-    def get_executor_instance(cls, suggested_path=None):
+    def get_executor_instance(cls, suggested_path=None) -> Union["MediaInfoExecutor", NotFoundExecutor]:
         """Return the executor instance."""
         os_family = detect_os()
         logger.debug('Detected os: %s', os_family)
@@ -111,6 +109,7 @@ class MediaInfoExecutor:
             executor = exec_cls.create(os_family, suggested_path)
             if executor:
                 return executor
+        return NotFoundExecutor(suggested_path)
 
 
 class MediaInfoCliExecutor(MediaInfoExecutor):
@@ -176,10 +175,21 @@ class MediaInfoCTypesExecutor(MediaInfoExecutor):
 
         return json.loads(data) if data else {}
 
+    @staticmethod
+    def _get_bundled_paths(os_family=None):
+        """Return a tuple with the paths of the library bundled with the pymediainfo package."""
+        os_is_nt = (os_family or detect_os()) == 'windows'
+        # Only return the absolute paths
+        return tuple(f for f in MediaInfo._get_library_paths(os_is_nt) if os.path.isfile(f))
+
     @classmethod
     def create(cls, os_family=None, suggested_path=None):
         """Create the executor instance."""
-        for candidate in define_candidate(cls.locations, cls.names, os_family, suggested_path):
+        candidates = (
+            *define_candidate(cls.locations, cls.names, os_family, suggested_path),
+            *cls._get_bundled_paths(os_family),
+        )
+        for candidate in candidates:
             if MediaInfo.can_parse(candidate):
                 lib, handle, lib_version_str, lib_version = MediaInfo._get_library(candidate)
                 lib.MediaInfo_Option.argtypes = [c_void_p, c_wchar_p, c_wchar_p]
@@ -294,16 +304,24 @@ class MediaInfoProvider(Provider):
         })
         self.executor = MediaInfoExecutor.get_executor_instance(suggested_path)
 
+    def loaded(self) -> bool:
+        """If library or executable was found."""
+        # if executor is None, print a warning and set to False to not repeat the warning
+        if isinstance(self.executor, NotFoundExecutor):
+            if not self.executor.warned:
+                logger.warning(WARN_MSG)
+                self.executor.warned = True
+        # check if loaded
+        return bool(self.executor)
+
     def accepts(self, video_path):
         """Accept any video when MediaInfo is available."""
-        if self.executor is None:
-            logger.warning(WARN_MSG)
-            self.executor = False
+        return self.loaded() and video_path.lower().endswith(VIDEO_EXTENSIONS)
 
-        return self.executor and video_path.lower().endswith(VIDEO_EXTENSIONS)
-
-    def describe(self, video_path, context):
+    def describe(self, video_path, context) -> dict[str, Any]:
         """Return video metadata."""
+        if not self.loaded() or self.executor is None:
+            return {}
         data = self.executor.extract_info(video_path)
 
         def debug_data():

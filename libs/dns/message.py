@@ -18,9 +18,10 @@
 """DNS Messages"""
 
 import contextlib
+import enum
 import io
 import time
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Tuple, cast
 
 import dns.edns
 import dns.entropy
@@ -34,9 +35,11 @@ import dns.rdata
 import dns.rdataclass
 import dns.rdatatype
 import dns.rdtypes.ANY.OPT
+import dns.rdtypes.ANY.SOA
 import dns.rdtypes.ANY.TSIG
 import dns.renderer
 import dns.rrset
+import dns.tokenizer
 import dns.tsig
 import dns.ttl
 import dns.wire
@@ -130,11 +133,11 @@ IndexKeyType = Tuple[
     dns.name.Name,
     dns.rdataclass.RdataClass,
     dns.rdatatype.RdataType,
-    Optional[dns.rdatatype.RdataType],
-    Optional[dns.rdataclass.RdataClass],
+    dns.rdatatype.RdataType | None,
+    dns.rdataclass.RdataClass | None,
 ]
 IndexType = Dict[IndexKeyType, dns.rrset.RRset]
-SectionType = Union[int, str, List[dns.rrset.RRset]]
+SectionType = int | str | List[dns.rrset.RRset]
 
 
 class Message:
@@ -142,25 +145,27 @@ class Message:
 
     _section_enum = MessageSection
 
-    def __init__(self, id: Optional[int] = None):
+    def __init__(self, id: int | None = None):
         if id is None:
             self.id = dns.entropy.random_16()
         else:
             self.id = id
         self.flags = 0
         self.sections: List[List[dns.rrset.RRset]] = [[], [], [], []]
-        self.opt: Optional[dns.rrset.RRset] = None
+        self.opt: dns.rrset.RRset | None = None
         self.request_payload = 0
         self.pad = 0
         self.keyring: Any = None
-        self.tsig: Optional[dns.rrset.RRset] = None
+        self.tsig: dns.rrset.RRset | None = None
+        self.want_tsig_sign = False
         self.request_mac = b""
         self.xfr = False
-        self.origin: Optional[dns.name.Name] = None
-        self.tsig_ctx: Optional[Any] = None
+        self.origin: dns.name.Name | None = None
+        self.tsig_ctx: Any | None = None
         self.index: IndexType = {}
         self.errors: List[MessageError] = []
         self.time = 0.0
+        self.wire: bytes | None = None
 
     @property
     def question(self) -> List[dns.rrset.RRset]:
@@ -206,7 +211,7 @@ class Message:
 
     def to_text(
         self,
-        origin: Optional[dns.name.Name] = None,
+        origin: dns.name.Name | None = None,
         relativize: bool = True,
         **kw: Dict[str, Any],
     ) -> str:
@@ -219,22 +224,25 @@ class Message:
         """
 
         s = io.StringIO()
-        s.write("id %d\n" % self.id)
-        s.write("opcode %s\n" % dns.opcode.to_text(self.opcode()))
-        s.write("rcode %s\n" % dns.rcode.to_text(self.rcode()))
-        s.write("flags %s\n" % dns.flags.to_text(self.flags))
+        s.write(f"id {self.id}\n")
+        s.write(f"opcode {dns.opcode.to_text(self.opcode())}\n")
+        s.write(f"rcode {dns.rcode.to_text(self.rcode())}\n")
+        s.write(f"flags {dns.flags.to_text(self.flags)}\n")
         if self.edns >= 0:
-            s.write("edns %s\n" % self.edns)
+            s.write(f"edns {self.edns}\n")
             if self.ednsflags != 0:
-                s.write("eflags %s\n" % dns.flags.edns_to_text(self.ednsflags))
-            s.write("payload %d\n" % self.payload)
+                s.write(f"eflags {dns.flags.edns_to_text(self.ednsflags)}\n")
+            s.write(f"payload {self.payload}\n")
         for opt in self.options:
-            s.write("option %s\n" % opt.to_text())
+            s.write(f"option {opt.to_text()}\n")
         for name, which in self._section_enum.__members__.items():
             s.write(f";{name}\n")
             for rrset in self.section_from_number(which):
                 s.write(rrset.to_text(origin, relativize, **kw))
                 s.write("\n")
+        if self.tsig is not None:
+            s.write(self.tsig.to_text(origin, relativize, **kw))
+            s.write("\n")
         #
         # We strip off the final \n so the caller can print the result without
         # doing weird things to get around eccentricities in Python print
@@ -344,10 +352,10 @@ class Message:
         rdclass: dns.rdataclass.RdataClass,
         rdtype: dns.rdatatype.RdataType,
         covers: dns.rdatatype.RdataType = dns.rdatatype.NONE,
-        deleting: Optional[dns.rdataclass.RdataClass] = None,
+        deleting: dns.rdataclass.RdataClass | None = None,
         create: bool = False,
         force_unique: bool = False,
-        idna_codec: Optional[dns.name.IDNACodec] = None,
+        idna_codec: dns.name.IDNACodec | None = None,
     ) -> dns.rrset.RRset:
         """Find the RRset with the given attributes in the specified section.
 
@@ -429,11 +437,11 @@ class Message:
         rdclass: dns.rdataclass.RdataClass,
         rdtype: dns.rdatatype.RdataType,
         covers: dns.rdatatype.RdataType = dns.rdatatype.NONE,
-        deleting: Optional[dns.rdataclass.RdataClass] = None,
+        deleting: dns.rdataclass.RdataClass | None = None,
         create: bool = False,
         force_unique: bool = False,
-        idna_codec: Optional[dns.name.IDNACodec] = None,
-    ) -> Optional[dns.rrset.RRset]:
+        idna_codec: dns.name.IDNACodec | None = None,
+    ) -> dns.rrset.RRset | None:
         """Get the RRset with the given attributes in the specified section.
 
         If the RRset is not found, None is returned.
@@ -527,7 +535,8 @@ class Message:
         # worry about that for now.  We also don't worry if there is an existing padding
         # option, as it is unlikely and probably harmless, as the worst case is that we
         # may add another, and this seems to be legal.
-        for option in self.opt[0].options:
+        opt_rdata = cast(dns.rdtypes.ANY.OPT.OPT, self.opt[0])
+        for option in opt_rdata.options:
             wire = option.to_wire()
             # We add 4 here to account for the option type and length
             size += len(wire) + 4
@@ -551,10 +560,10 @@ class Message:
 
     def to_wire(
         self,
-        origin: Optional[dns.name.Name] = None,
+        origin: dns.name.Name | None = None,
         max_size: int = 0,
         multi: bool = False,
-        tsig_ctx: Optional[Any] = None,
+        tsig_ctx: Any | None = None,
         prepend_length: bool = False,
         prefer_truncation: bool = False,
         **kw: Dict[str, Any],
@@ -629,22 +638,24 @@ class Message:
             r.add_opt(self.opt, self.pad, opt_reserve, tsig_reserve)
         r.write_header()
         if self.tsig is not None:
-            (new_tsig, ctx) = dns.tsig.sign(
-                r.get_wire(),
-                self.keyring,
-                self.tsig[0],
-                int(time.time()),
-                self.request_mac,
-                tsig_ctx,
-                multi,
-            )
-            self.tsig.clear()
-            self.tsig.add(new_tsig)
+            if self.want_tsig_sign:
+                (new_tsig, ctx) = dns.tsig.sign(
+                    r.get_wire(),
+                    self.keyring,
+                    self.tsig[0],
+                    int(time.time()),
+                    self.request_mac,
+                    tsig_ctx,
+                    multi,
+                )
+                self.tsig.clear()
+                self.tsig.add(new_tsig)
+                if multi:
+                    self.tsig_ctx = ctx
             r.add_rrset(dns.renderer.ADDITIONAL, self.tsig)
             r.write_header()
-            if multi:
-                self.tsig_ctx = ctx
         wire = r.get_wire()
+        self.wire = wire
         if prepend_length:
             wire = len(wire).to_bytes(2, "big") + wire
         return wire
@@ -669,18 +680,15 @@ class Message:
     def use_tsig(
         self,
         keyring: Any,
-        keyname: Optional[Union[dns.name.Name, str]] = None,
+        keyname: dns.name.Name | str | None = None,
         fudge: int = 300,
-        original_id: Optional[int] = None,
+        original_id: int | None = None,
         tsig_error: int = 0,
         other_data: bytes = b"",
-        algorithm: Union[dns.name.Name, str] = dns.tsig.default_algorithm,
+        algorithm: dns.name.Name | str = dns.tsig.default_algorithm,
     ) -> None:
         """When sending, a TSIG signature using the specified key
         should be added.
-
-        *key*, a ``dns.tsig.Key`` is the key to use.  If a key is specified,
-        the *keyring* and *algorithm* fields are not used.
 
         *keyring*, a ``dict``, ``callable`` or ``dns.tsig.Key``, is either
         the TSIG keyring or key to use.
@@ -739,32 +747,36 @@ class Message:
             tsig_error,
             other_data,
         )
+        self.want_tsig_sign = True
 
     @property
-    def keyname(self) -> Optional[dns.name.Name]:
+    def keyname(self) -> dns.name.Name | None:
         if self.tsig:
             return self.tsig.name
         else:
             return None
 
     @property
-    def keyalgorithm(self) -> Optional[dns.name.Name]:
+    def keyalgorithm(self) -> dns.name.Name | None:
         if self.tsig:
-            return self.tsig[0].algorithm
+            rdata = cast(dns.rdtypes.ANY.TSIG.TSIG, self.tsig[0])
+            return rdata.algorithm
         else:
             return None
 
     @property
-    def mac(self) -> Optional[bytes]:
+    def mac(self) -> bytes | None:
         if self.tsig:
-            return self.tsig[0].mac
+            rdata = cast(dns.rdtypes.ANY.TSIG.TSIG, self.tsig[0])
+            return rdata.mac
         else:
             return None
 
     @property
-    def tsig_error(self) -> Optional[int]:
+    def tsig_error(self) -> int | None:
         if self.tsig:
-            return self.tsig[0].error
+            rdata = cast(dns.rdtypes.ANY.TSIG.TSIG, self.tsig[0])
+            return rdata.error
         else:
             return None
 
@@ -779,11 +791,11 @@ class Message:
 
     def use_edns(
         self,
-        edns: Optional[Union[int, bool]] = 0,
+        edns: int | bool | None = 0,
         ednsflags: int = 0,
         payload: int = DEFAULT_EDNS_PAYLOAD,
-        request_payload: Optional[int] = None,
-        options: Optional[List[dns.edns.Option]] = None,
+        request_payload: int | None = None,
+        options: List[dns.edns.Option] | None = None,
         pad: int = 0,
     ) -> None:
         """Configure EDNS behavior.
@@ -854,14 +866,16 @@ class Message:
     @property
     def payload(self) -> int:
         if self.opt:
-            return self.opt[0].payload
+            rdata = cast(dns.rdtypes.ANY.OPT.OPT, self.opt[0])
+            return rdata.payload
         else:
             return 0
 
     @property
     def options(self) -> Tuple:
         if self.opt:
-            return self.opt[0].options
+            rdata = cast(dns.rdtypes.ANY.OPT.OPT, self.opt[0])
+            return rdata.options
         else:
             return ()
 
@@ -911,6 +925,14 @@ class Message:
         """
         self.flags &= 0x87FF
         self.flags |= dns.opcode.to_flags(opcode)
+
+    def get_options(self, otype: dns.edns.OptionType) -> List[dns.edns.Option]:
+        """Return the list of options of the specified type."""
+        return [option for option in self.options if option.otype == otype]
+
+    def extended_errors(self) -> List[dns.edns.EDEOption]:
+        """Return the list of Extended DNS Error (EDE) options in the message"""
+        return cast(List[dns.edns.EDEOption], self.get_options(dns.edns.OptionType.EDE))
 
     def _get_one_rr_per_rrset(self, value):
         # What the caller picked is fine.
@@ -963,7 +985,7 @@ class ChainingResult:
     def __init__(
         self,
         canonical_name: dns.name.Name,
-        answer: Optional[dns.rrset.RRset],
+        answer: dns.rrset.RRset | None,
         minimum_ttl: int,
         cnames: List[dns.rrset.RRset],
     ):
@@ -1040,7 +1062,8 @@ class QueryMessage(Message):
                     srrset = self.find_rrset(
                         self.authority, auname, question.rdclass, dns.rdatatype.SOA
                     )
-                    min_ttl = min(min_ttl, srrset.ttl, srrset[0].minimum)
+                    srdata = cast(dns.rdtypes.ANY.SOA.SOA, srrset[0])
+                    min_ttl = min(min_ttl, srrset.ttl, srdata.minimum)
                     break
                 except KeyError:
                     try:
@@ -1080,7 +1103,7 @@ def _message_factory_from_opcode(opcode):
         return QueryMessage
     elif opcode == dns.opcode.UPDATE:
         _maybe_import_update()
-        return dns.update.UpdateMessage
+        return dns.update.UpdateMessage  # pyright: ignore
     else:
         return Message
 
@@ -1184,7 +1207,10 @@ class _WireReader:
                 else:
                     with self.parser.restrict_to(rdlen):
                         rd = dns.rdata.from_wire_parser(
-                            rdclass, rdtype, self.parser, self.message.origin
+                            rdclass,  # pyright: ignore
+                            rdtype,
+                            self.parser,
+                            self.message.origin,
                         )
                     covers = rd.covers()
                 if self.message.xfr and rdtype == dns.rdatatype.SOA:
@@ -1192,36 +1218,38 @@ class _WireReader:
                 if rdtype == dns.rdatatype.OPT:
                     self.message.opt = dns.rrset.from_rdata(name, ttl, rd)
                 elif rdtype == dns.rdatatype.TSIG:
-                    if self.keyring is None:
+                    trd = cast(dns.rdtypes.ANY.TSIG.TSIG, rd)
+                    if self.keyring is None or self.keyring is True:
                         raise UnknownTSIGKey("got signed message without keyring")
-                    if isinstance(self.keyring, dict):
+                    elif isinstance(self.keyring, dict):
                         key = self.keyring.get(absolute_name)
                         if isinstance(key, bytes):
-                            key = dns.tsig.Key(absolute_name, key, rd.algorithm)
+                            key = dns.tsig.Key(absolute_name, key, trd.algorithm)
                     elif callable(self.keyring):
                         key = self.keyring(self.message, absolute_name)
                     else:
                         key = self.keyring
                     if key is None:
-                        raise UnknownTSIGKey("key '%s' unknown" % name)
-                    self.message.keyring = key
-                    self.message.tsig_ctx = dns.tsig.validate(
-                        self.parser.wire,
-                        key,
-                        absolute_name,
-                        rd,
-                        int(time.time()),
-                        self.message.request_mac,
-                        rr_start,
-                        self.message.tsig_ctx,
-                        self.multi,
-                    )
+                        raise UnknownTSIGKey(f"key '{name}' unknown")
+                    if key:
+                        self.message.keyring = key
+                        self.message.tsig_ctx = dns.tsig.validate(
+                            self.parser.wire,
+                            key,
+                            absolute_name,
+                            rd,
+                            int(time.time()),
+                            self.message.request_mac,
+                            rr_start,
+                            self.message.tsig_ctx,
+                            self.multi,
+                        )
                     self.message.tsig = dns.rrset.from_rdata(absolute_name, 0, rd)
                 else:
                     rrset = self.message.find_rrset(
                         section,
                         name,
-                        rdclass,
+                        rdclass,  # pyright: ignore
                         rdtype,
                         covers,
                         deleting,
@@ -1251,6 +1279,7 @@ class _WireReader:
         factory = _message_factory_from_opcode(dns.opcode.from_flags(flags))
         self.message = factory(id=id)
         self.message.flags = dns.flags.Flag(flags)
+        self.message.wire = self.parser.wire
         self.initialize_message(self.message)
         self.one_rr_per_rrset = self.message._get_one_rr_per_rrset(
             self.one_rr_per_rrset
@@ -1276,11 +1305,11 @@ class _WireReader:
 
 def from_wire(
     wire: bytes,
-    keyring: Optional[Any] = None,
-    request_mac: Optional[bytes] = b"",
+    keyring: Any | None = None,
+    request_mac: bytes | None = b"",
     xfr: bool = False,
-    origin: Optional[dns.name.Name] = None,
-    tsig_ctx: Optional[Union[dns.tsig.HMACTSig, dns.tsig.GSSTSig]] = None,
+    origin: dns.name.Name | None = None,
+    tsig_ctx: dns.tsig.HMACTSig | dns.tsig.GSSTSig | None = None,
     multi: bool = False,
     question_only: bool = False,
     one_rr_per_rrset: bool = False,
@@ -1290,8 +1319,10 @@ def from_wire(
 ) -> Message:
     """Convert a DNS wire format message into a message object.
 
-    *keyring*, a ``dns.tsig.Key`` or ``dict``, the key or keyring to use if the message
-    is signed.
+    *keyring*, a ``dns.tsig.Key``, ``dict``, ``bool``, or ``None``, the key or keyring
+    to use if the message is signed.  If ``None`` or ``True``, then trying to decode
+    a message with a TSIG will fail as it cannot be validated.  If ``False``, then
+    TSIG validation is disabled.
 
     *request_mac*, a ``bytes`` or ``None``.  If the message is a response to a
     TSIG-signed request, *request_mac* should be set to the MAC of that request.
@@ -1399,14 +1430,14 @@ class _TextReader:
 
     def __init__(
         self,
-        text,
-        idna_codec,
-        one_rr_per_rrset=False,
-        origin=None,
-        relativize=True,
-        relativize_to=None,
+        text: str,
+        idna_codec: dns.name.IDNACodec | None,
+        one_rr_per_rrset: bool = False,
+        origin: dns.name.Name | None = None,
+        relativize: bool = True,
+        relativize_to: dns.name.Name | None = None,
     ):
-        self.message = None
+        self.message: Message | None = None  # mypy: ignore
         self.tok = dns.tokenizer.Tokenizer(text, idna_codec=idna_codec)
         self.last_name = None
         self.one_rr_per_rrset = one_rr_per_rrset
@@ -1465,6 +1496,7 @@ class _TextReader:
     def _question_line(self, section_number):
         """Process one line from the text format question section."""
 
+        assert self.message is not None
         section = self.message.sections[section_number]
         token = self.tok.get(want_leading=True)
         if not token.is_whitespace():
@@ -1502,6 +1534,7 @@ class _TextReader:
         additional data sections.
         """
 
+        assert self.message is not None
         section = self.message.sections[section_number]
         # Name
         token = self.tok.get(want_leading=True)
@@ -1632,11 +1665,11 @@ class _TextReader:
 
 def from_text(
     text: str,
-    idna_codec: Optional[dns.name.IDNACodec] = None,
+    idna_codec: dns.name.IDNACodec | None = None,
     one_rr_per_rrset: bool = False,
-    origin: Optional[dns.name.Name] = None,
+    origin: dns.name.Name | None = None,
     relativize: bool = True,
-    relativize_to: Optional[dns.name.Name] = None,
+    relativize_to: dns.name.Name | None = None,
 ) -> Message:
     """Convert the text format message into a message object.
 
@@ -1680,7 +1713,7 @@ def from_text(
 
 def from_file(
     f: Any,
-    idna_codec: Optional[dns.name.IDNACodec] = None,
+    idna_codec: dns.name.IDNACodec | None = None,
     one_rr_per_rrset: bool = False,
 ) -> Message:
     """Read the next text format message from the specified file.
@@ -1705,7 +1738,7 @@ def from_file(
     """
 
     if isinstance(f, str):
-        cm: contextlib.AbstractContextManager = open(f)
+        cm: contextlib.AbstractContextManager = open(f, encoding="utf-8")
     else:
         cm = contextlib.nullcontext(f)
     with cm as f:
@@ -1714,17 +1747,17 @@ def from_file(
 
 
 def make_query(
-    qname: Union[dns.name.Name, str],
-    rdtype: Union[dns.rdatatype.RdataType, str],
-    rdclass: Union[dns.rdataclass.RdataClass, str] = dns.rdataclass.IN,
-    use_edns: Optional[Union[int, bool]] = None,
+    qname: dns.name.Name | str,
+    rdtype: dns.rdatatype.RdataType | str,
+    rdclass: dns.rdataclass.RdataClass | str = dns.rdataclass.IN,
+    use_edns: int | bool | None = None,
     want_dnssec: bool = False,
-    ednsflags: Optional[int] = None,
-    payload: Optional[int] = None,
-    request_payload: Optional[int] = None,
-    options: Optional[List[dns.edns.Option]] = None,
-    idna_codec: Optional[dns.name.IDNACodec] = None,
-    id: Optional[int] = None,
+    ednsflags: int | None = None,
+    payload: int | None = None,
+    request_payload: int | None = None,
+    options: List[dns.edns.Option] | None = None,
+    idna_codec: dns.name.IDNACodec | None = None,
+    id: int | None = None,
     flags: int = dns.flags.RD,
     pad: int = 0,
 ) -> QueryMessage:
@@ -1807,8 +1840,19 @@ def make_query(
     kwargs["edns"] = use_edns
     kwargs["pad"] = pad
     m.use_edns(**kwargs)
-    m.want_dnssec(want_dnssec)
+    if want_dnssec:
+        m.want_dnssec(want_dnssec)
     return m
+
+
+class CopyMode(enum.Enum):
+    """
+    How should sections be copied when making an update response?
+    """
+
+    NOTHING = 0
+    QUESTION = 1
+    EVERYTHING = 2
 
 
 def make_response(
@@ -1817,14 +1861,15 @@ def make_response(
     our_payload: int = 8192,
     fudge: int = 300,
     tsig_error: int = 0,
-    pad: Optional[int] = None,
+    pad: int | None = None,
+    copy_mode: CopyMode | None = None,
 ) -> Message:
     """Make a message which is a response for the specified query.
     The message returned is really a response skeleton; it has all of the infrastructure
     required of a response, but none of the content.
 
-    The response's question section is a shallow copy of the query's question section,
-    so the query's question RRsets should not be changed.
+    Response section(s) which are copied are shallow copies of the matching section(s)
+    in the query, so the query's RRsets should not be changed.
 
     *query*, a ``dns.message.Message``, the query to respond to.
 
@@ -1837,25 +1882,44 @@ def make_response(
     *tsig_error*, an ``int``, the TSIG error.
 
     *pad*, a non-negative ``int`` or ``None``.  If 0, the default, do not pad; otherwise
-    if not ``None`` add padding bytes to make the message size a multiple of *pad*.
-    Note that if padding is non-zero, an EDNS PADDING option will always be added to the
+    if not ``None`` add padding bytes to make the message size a multiple of *pad*. Note
+    that if padding is non-zero, an EDNS PADDING option will always be added to the
     message.  If ``None``, add padding following RFC 8467, namely if the request is
     padded, pad the response to 468 otherwise do not pad.
 
+    *copy_mode*, a ``dns.message.CopyMode`` or ``None``, determines how sections are
+    copied.  The default, ``None`` copies sections according to the default for the
+    message's opcode, which is currently ``dns.message.CopyMode.QUESTION`` for all
+    opcodes.   ``dns.message.CopyMode.QUESTION`` copies only the question section.
+    ``dns.message.CopyMode.EVERYTHING`` copies all sections other than OPT or TSIG
+    records, which are created appropriately if needed. ``dns.message.CopyMode.NOTHING``
+    copies no sections; note that this mode is for server testing purposes and is
+    otherwise not recommended for use.  In particular, ``dns.message.is_response()``
+    will be ``False`` if you create a response this way and the rcode is not
+    ``FORMERR``, ``SERVFAIL``, ``NOTIMP``, or ``REFUSED``.
+
     Returns a ``dns.message.Message`` object whose specific class is appropriate for the
-    query.  For example, if query is a ``dns.update.UpdateMessage``, response will be
-    too.
+    query.  For example, if query is a ``dns.update.UpdateMessage``, the response will
+    be one too.
     """
 
     if query.flags & dns.flags.QR:
         raise dns.exception.FormError("specified query message is not a query")
-    factory = _message_factory_from_opcode(query.opcode())
+    opcode = query.opcode()
+    factory = _message_factory_from_opcode(opcode)
     response = factory(id=query.id)
     response.flags = dns.flags.QR | (query.flags & dns.flags.RD)
     if recursion_available:
         response.flags |= dns.flags.RA
-    response.set_opcode(query.opcode())
-    response.question = list(query.question)
+    response.set_opcode(opcode)
+    if copy_mode is None:
+        copy_mode = CopyMode.QUESTION
+    if copy_mode != CopyMode.NOTHING:
+        response.question = list(query.question)
+    if copy_mode == CopyMode.EVERYTHING:
+        response.answer = list(query.answer)
+        response.authority = list(query.authority)
+        response.additional = list(query.additional)
     if query.edns >= 0:
         if pad is None:
             # Set response padding per RFC 8467
@@ -1864,7 +1928,9 @@ def make_response(
                 if option.otype == dns.edns.OptionType.PADDING:
                     pad = 468
         response.use_edns(0, 0, our_payload, query.payload, pad=pad)
-    if query.had_tsig:
+    if query.had_tsig and query.keyring:
+        assert query.mac is not None
+        assert query.keyalgorithm is not None
         response.use_tsig(
             query.keyring,
             query.keyname,

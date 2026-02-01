@@ -2,7 +2,7 @@
 
 import sys
 from itertools import filterfalse
-from typing import List, Tuple, Union
+from typing import Union
 
 
 class _lazyclassproperty:
@@ -25,7 +25,7 @@ class _lazyclassproperty:
         return cls._intern[attrname]
 
 
-UnicodeRangeList = List[Union[Tuple[int, int], Tuple[int]]]
+UnicodeRangeList = list[Union[tuple[int, int], tuple[int]]]
 
 
 class unicode_set:
@@ -53,9 +53,9 @@ class unicode_set:
     _ranges: UnicodeRangeList = []
 
     @_lazyclassproperty
-    def _chars_for_ranges(cls) -> List[str]:
-        ret: List[int] = []
-        for cc in cls.__mro__:
+    def _chars_for_ranges(cls) -> list[str]:
+        ret: list[int] = []
+        for cc in cls.__mro__:  # type: ignore[attr-defined]
             if cc is unicode_set:
                 break
             for rr in getattr(cc, "_ranges", ()):
@@ -103,7 +103,7 @@ class unicode_set:
         plus the digits 0-9, and · (Unicode MIDDLE DOT)
         """
         identifier_chars = set(
-            c for c in cls._chars_for_ranges if ("_" + c).isidentifier()
+            c for c in cls._chars_for_ranges if f"_{c}".isidentifier()
         )
         return "".join(
             sorted(identifier_chars | set(cls.identchars) | set("0123456789·"))

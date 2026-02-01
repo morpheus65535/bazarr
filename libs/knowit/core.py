@@ -148,17 +148,17 @@ class Configurable(Property[T]):
         """Return Variable or Constant."""
         key = self._extract_key(value)
         if key is False:
-            return
+            return None
 
         result = self._lookup(key, context)
         if result is False:
-            return
+            return None
 
         while not result and key:
             key = self._extract_fallback_key(value, key)
             result = self._lookup(key, context)
             if result is False:
-                return
+                return None
 
         if not result:
             self.report(value, context)
@@ -170,7 +170,9 @@ class MultiValue(Property):
     """Property with multiple values."""
 
     def __init__(self, prop: typing.Optional[Property] = None, delimiter='/', single=False,
-                 handler=None, name=None, **kwargs):
+                 handler: typing.Optional[
+                     typing.Callable[[typing.Optional[str], typing.MutableMapping], typing.Optional[str]]] = None,
+                 name=None, **kwargs):
         """Init method."""
         super().__init__(*(prop.names if prop else (name,)), **kwargs)
         self.prop = prop
@@ -182,13 +184,16 @@ class MultiValue(Property):
             self,
             value: str,
             context: typing.MutableMapping,
-    ) -> typing.Union[T, typing.List[T]]:
+    ) -> typing.Optional[typing.Union[str, typing.List[str]]]:
         """Handle properties with multiple values."""
         if self.handler:
             call = self.handler
         elif self.prop:
             call = self.prop.handle
         else:
+            call = None
+
+        if call is None:
             raise NotImplementedError('No handler available')
 
         result = call(value, context)
@@ -206,8 +211,8 @@ class MultiValue(Property):
         if values is None:
             return call(values, context)
         if len(values) > 1 and not self.single:
-            results = [call(item, context) if not _is_unknown(item) else None for item in values]
-            results = [r for r in results if r is not None]
+            part_results = [call(item, context) if not _is_unknown(item) else None for item in values]
+            results = [r for r in part_results if r is not None]
             if results:
                 return results
         return call(values[0], context)

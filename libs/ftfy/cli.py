@@ -48,28 +48,26 @@ def main() -> None:
     import argparse
 
     parser = argparse.ArgumentParser(
-        description="ftfy (fixes text for you), version %s" % __version__
+        description=f"ftfy (fixes text for you), version {__version__}"
     )
     parser.add_argument(
         "filename",
         default="-",
         nargs="?",
-        help="The file whose Unicode is to be fixed. Defaults "
-        "to -, meaning standard input.",
+        help="The file whose Unicode is to be fixed. Defaults to -, meaning standard input.",
     )
     parser.add_argument(
         "-o",
         "--output",
         type=str,
         default="-",
-        help="The file to output to. Defaults to -, meaning " "standard output.",
+        help="The file to output to. Defaults to -, meaning standard output.",
     )
     parser.add_argument(
         "-g",
         "--guess",
         action="store_true",
-        help="Ask ftfy to guess the encoding of your input. "
-        "This is risky. Overrides -e.",
+        help="Ask ftfy to guess the encoding of your input. This is risky. Overrides -e.",
     )
     parser.add_argument(
         "-e",
@@ -83,15 +81,13 @@ def main() -> None:
         "--normalization",
         type=str,
         default="NFC",
-        help="The normalization of Unicode to apply. "
-        'Defaults to NFC. Can be "none".',
+        help='The normalization of Unicode to apply. Defaults to NFC. Can be "none".',
     )
     parser.add_argument(
         "--preserve-entities",
         action="store_true",
         help="Leave HTML entities as they are. The default "
-        "is to decode them, as long as no HTML tags "
-        "have appeared in the file.",
+        "is to decode them, as long as no HTML tags have appeared in the file.",
     )
 
     args = parser.parse_args()

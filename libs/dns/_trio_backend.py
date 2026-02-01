@@ -30,13 +30,16 @@ _lltuple = dns.inet.low_level_address_tuple
 
 
 class DatagramSocket(dns._asyncbackend.DatagramSocket):
-    def __init__(self, socket):
-        super().__init__(socket.family)
-        self.socket = socket
+    def __init__(self, sock):
+        super().__init__(sock.family, socket.SOCK_DGRAM)
+        self.socket = sock
 
     async def sendto(self, what, destination, timeout):
         with _maybe_timeout(timeout):
-            return await self.socket.sendto(what, destination)
+            if destination is None:
+                return await self.socket.send(what)
+            else:
+                return await self.socket.sendto(what, destination)
         raise dns.exception.Timeout(
             timeout=timeout
         )  # pragma: no cover  lgtm[py/unreachable-statement]
@@ -61,7 +64,7 @@ class DatagramSocket(dns._asyncbackend.DatagramSocket):
 
 class StreamSocket(dns._asyncbackend.StreamSocket):
     def __init__(self, family, stream, tls=False):
-        self.family = family
+        super().__init__(family, socket.SOCK_STREAM)
         self.stream = stream
         self.tls = tls
 
@@ -118,7 +121,7 @@ if dns._features.have("doh"):
             self._family = family
 
         async def connect_tcp(
-            self, host, port, timeout, local_address, socket_options=None
+            self, host, port, timeout=None, local_address=None, socket_options=None
         ):  # pylint: disable=signature-differs
             addresses = []
             _, expiration = _compute_times(timeout)
@@ -148,13 +151,14 @@ if dns._features.have("doh"):
                     sock = await Backend().make_socket(
                         af, socket.SOCK_STREAM, 0, source, destination, timeout
                     )
+                    assert isinstance(sock, StreamSocket)
                     return _CoreTrioStream(sock.stream)
                 except Exception:
                     continue
             raise httpcore.ConnectError
 
         async def connect_unix_socket(
-            self, path, timeout, socket_options=None
+            self, path, timeout=None, socket_options=None
         ):  # pylint: disable=signature-differs
             raise NotImplementedError
 
@@ -171,7 +175,7 @@ if dns._features.have("doh"):
             family=socket.AF_UNSPEC,
             **kwargs,
         ):
-            if resolver is None:
+            if resolver is None and bootstrap_address is None:
                 # pylint: disable=import-outside-toplevel,redefined-outer-name
                 import dns.asyncresolver
 
@@ -205,9 +209,10 @@ class Backend(dns._asyncbackend.Backend):
         try:
             if source:
                 await s.bind(_lltuple(source, af))
-            if socktype == socket.SOCK_STREAM:
+            if socktype == socket.SOCK_STREAM or destination is not None:
                 connected = False
                 with _maybe_timeout(timeout):
+                    assert destination is not None
                     await s.connect(_lltuple(destination, af))
                     connected = True
                 if not connected:

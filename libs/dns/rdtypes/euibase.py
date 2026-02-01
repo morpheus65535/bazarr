@@ -16,6 +16,7 @@
 
 import binascii
 
+import dns.exception
 import dns.immutable
 import dns.rdata
 
@@ -27,7 +28,9 @@ class EUIBase(dns.rdata.Rdata):
     # see: rfc7043.txt
 
     __slots__ = ["eui"]
-    # define these in subclasses
+    # redefine these in subclasses
+    byte_len = 0
+    text_len = 0
     # byte_len = 6  # 0123456789ab (in hex)
     # text_len = byte_len * 3 - 1  # 01-23-45-67-89-ab
 
@@ -36,7 +39,7 @@ class EUIBase(dns.rdata.Rdata):
         self.eui = self._as_bytes(eui)
         if len(self.eui) != self.byte_len:
             raise dns.exception.FormError(
-                "EUI%s rdata has to have %s bytes" % (self.byte_len * 8, self.byte_len)
+                f"EUI{self.byte_len * 8} rdata has to have {self.byte_len} bytes"
             )
 
     def to_text(self, origin=None, relativize=True, **kw):
@@ -49,16 +52,16 @@ class EUIBase(dns.rdata.Rdata):
         text = tok.get_string()
         if len(text) != cls.text_len:
             raise dns.exception.SyntaxError(
-                "Input text must have %s characters" % cls.text_len
+                f"Input text must have {cls.text_len} characters"
             )
         for i in range(2, cls.byte_len * 3 - 1, 3):
             if text[i] != "-":
-                raise dns.exception.SyntaxError("Dash expected at position %s" % i)
+                raise dns.exception.SyntaxError(f"Dash expected at position {i}")
         text = text.replace("-", "")
         try:
             data = binascii.unhexlify(text.encode())
         except (ValueError, TypeError) as ex:
-            raise dns.exception.SyntaxError("Hex decoding error: %s" % str(ex))
+            raise dns.exception.SyntaxError(f"Hex decoding error: {str(ex)}")
         return cls(rdclass, rdtype, data)
 
     def _to_wire(self, file, compress=None, origin=None, canonicalize=False):

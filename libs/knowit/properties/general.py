@@ -5,10 +5,8 @@ from decimal import Decimal, InvalidOperation
 
 import babelfish
 
-from knowit.core import Configurable, Property
+from knowit.core import Configurable, Property, T
 from knowit.utils import round_decimal
-
-T = typing.TypeVar('T')
 
 
 class Basic(Property[T]):

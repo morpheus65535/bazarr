@@ -68,12 +68,19 @@ class PrivateDSA(CryptographyPrivateKey):
     key_cls = dsa.DSAPrivateKey
     public_cls = PublicDSA
 
-    def sign(self, data: bytes, verify: bool = False) -> bytes:
+    def sign(
+        self,
+        data: bytes,
+        verify: bool = False,
+        deterministic: bool = True,
+    ) -> bytes:
         """Sign using a private key per RFC 2536, section 3."""
         public_dsa_key = self.key.public_key()
         if public_dsa_key.key_size > 1024:
             raise ValueError("DSA key size overflow")
-        der_signature = self.key.sign(data, self.public_cls.chosen_hash)
+        der_signature = self.key.sign(
+            data, self.public_cls.chosen_hash  # pyright: ignore
+        )
         dsa_r, dsa_s = utils.decode_dss_signature(der_signature)
         dsa_t = (public_dsa_key.key_size // 8 - 64) // 8
         octets = 20

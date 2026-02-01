@@ -7,6 +7,8 @@ import struct
 import threading
 import time
 
+import aioquic.h3.connection  # type: ignore
+import aioquic.h3.events  # type: ignore
 import aioquic.quic.configuration  # type: ignore
 import aioquic.quic.connection  # type: ignore
 import aioquic.quic.events  # type: ignore
@@ -21,11 +23,9 @@ from dns.quic._common import (
     UnexpectedEOF,
 )
 
-# Avoid circularity with dns.query
-if hasattr(selectors, "PollSelector"):
-    _selector_class = selectors.PollSelector  # type: ignore
-else:
-    _selector_class = selectors.SelectSelector  # type: ignore
+# Function used to create a socket.  Can be overridden if needed in special
+# situations.
+socket_factory = socket.socket
 
 
 class SyncQuicStream(BaseQuicStream):
@@ -46,14 +46,29 @@ class SyncQuicStream(BaseQuicStream):
                     raise dns.exception.Timeout
             self._expecting = 0
 
+    def wait_for_end(self, expiration):
+        while True:
+            timeout = self._timeout_from_expiration(expiration)
+            with self._lock:
+                if self._buffer.seen_end():
+                    return
+            with self._wake_up:
+                if not self._wake_up.wait(timeout):
+                    raise dns.exception.Timeout
+
     def receive(self, timeout=None):
         expiration = self._expiration_from_timeout(timeout)
-        self.wait_for(2, expiration)
-        with self._lock:
-            (size,) = struct.unpack("!H", self._buffer.get(2))
-        self.wait_for(size, expiration)
-        with self._lock:
-            return self._buffer.get(size)
+        if self._connection.is_h3():
+            self.wait_for_end(expiration)
+            with self._lock:
+                return self._buffer.get_all()
+        else:
+            self.wait_for(2, expiration)
+            with self._lock:
+                (size,) = struct.unpack("!H", self._buffer.get(2))
+            self.wait_for(size, expiration)
+            with self._lock:
+                return self._buffer.get(size)
 
     def send(self, datagram, is_end=False):
         data = self._encapsulate(datagram)
@@ -81,7 +96,7 @@ class SyncQuicStream(BaseQuicStream):
 class SyncQuicConnection(BaseQuicConnection):
     def __init__(self, connection, address, port, source, source_port, manager):
         super().__init__(connection, address, port, source, source_port, manager)
-        self._socket = socket.socket(self._af, socket.SOCK_DGRAM, 0)
+        self._socket = socket_factory(self._af, socket.SOCK_DGRAM, 0)
         if self._source is not None:
             try:
                 self._socket.bind(
@@ -118,28 +133,35 @@ class SyncQuicConnection(BaseQuicConnection):
 
     def _worker(self):
         try:
-            sel = _selector_class()
-            sel.register(self._socket, selectors.EVENT_READ, self._read)
-            sel.register(self._receive_wakeup, selectors.EVENT_READ, self._drain_wakeup)
-            while not self._done:
-                (expiration, interval) = self._get_timer_values(False)
-                items = sel.select(interval)
-                for key, _ in items:
-                    key.data()
-                with self._lock:
-                    self._handle_timer(expiration)
-                self._handle_events()
-                with self._lock:
-                    datagrams = self._connection.datagrams_to_send(time.time())
-                for datagram, _ in datagrams:
-                    try:
-                        self._socket.send(datagram)
-                    except BlockingIOError:
-                        # we let QUIC handle any lossage
-                        pass
+            with selectors.DefaultSelector() as sel:
+                sel.register(self._socket, selectors.EVENT_READ, self._read)
+                sel.register(
+                    self._receive_wakeup, selectors.EVENT_READ, self._drain_wakeup
+                )
+                while not self._done:
+                    (expiration, interval) = self._get_timer_values(False)
+                    items = sel.select(interval)
+                    for key, _ in items:
+                        key.data()
+                    with self._lock:
+                        self._handle_timer(expiration)
+                    self._handle_events()
+                    with self._lock:
+                        datagrams = self._connection.datagrams_to_send(time.time())
+                    for datagram, _ in datagrams:
+                        try:
+                            self._socket.send(datagram)
+                        except BlockingIOError:
+                            # we let QUIC handle any lossage
+                            pass
+        except Exception:
+            # Eat all exceptions as we have no way to pass them back to the
+            # caller currently.  It might be nice to fix this in the future.
+            pass
         finally:
             with self._lock:
                 self._done = True
+            self._socket.close()
             # Ensure anyone waiting for this gets woken up.
             self._handshake_complete.set()
 
@@ -150,10 +172,30 @@ class SyncQuicConnection(BaseQuicConnection):
             if event is None:
                 return
             if isinstance(event, aioquic.quic.events.StreamDataReceived):
-                with self._lock:
-                    stream = self._streams.get(event.stream_id)
-                if stream:
-                    stream._add_input(event.data, event.end_stream)
+                if self.is_h3():
+                    assert self._h3_conn is not None
+                    h3_events = self._h3_conn.handle_event(event)
+                    for h3_event in h3_events:
+                        if isinstance(h3_event, aioquic.h3.events.HeadersReceived):
+                            with self._lock:
+                                stream = self._streams.get(event.stream_id)
+                            if stream:
+                                if stream._headers is None:
+                                    stream._headers = h3_event.headers
+                                elif stream._trailers is None:
+                                    stream._trailers = h3_event.headers
+                                if h3_event.stream_ended:
+                                    stream._add_input(b"", True)
+                        elif isinstance(h3_event, aioquic.h3.events.DataReceived):
+                            with self._lock:
+                                stream = self._streams.get(event.stream_id)
+                            if stream:
+                                stream._add_input(h3_event.data, h3_event.stream_ended)
+                else:
+                    with self._lock:
+                        stream = self._streams.get(event.stream_id)
+                    if stream:
+                        stream._add_input(event.data, event.end_stream)
             elif isinstance(event, aioquic.quic.events.HandshakeCompleted):
                 self._handshake_complete.set()
             elif isinstance(event, aioquic.quic.events.ConnectionTerminated):
@@ -169,6 +211,18 @@ class SyncQuicConnection(BaseQuicConnection):
         with self._lock:
             self._connection.send_stream_data(stream, data, is_end)
         self._send_wakeup.send(b"\x01")
+
+    def send_headers(self, stream_id, headers, is_end=False):
+        with self._lock:
+            super().send_headers(stream_id, headers, is_end)
+        if is_end:
+            self._send_wakeup.send(b"\x01")
+
+    def send_data(self, stream_id, data, is_end=False):
+        with self._lock:
+            super().send_data(stream_id, data, is_end)
+        if is_end:
+            self._send_wakeup.send(b"\x01")
 
     def run(self):
         if self._closed:
@@ -195,24 +249,34 @@ class SyncQuicConnection(BaseQuicConnection):
         with self._lock:
             if self._closed:
                 return
-            self._manager.closed(self._peer[0], self._peer[1])
+            if self._manager is not None:
+                self._manager.closed(self._peer[0], self._peer[1])
             self._closed = True
             self._connection.close()
             self._send_wakeup.send(b"\x01")
-        self._worker_thread.join()
+        if self._worker_thread is not None:
+            self._worker_thread.join()
 
 
 class SyncQuicManager(BaseQuicManager):
-    def __init__(self, conf=None, verify_mode=ssl.CERT_REQUIRED, server_name=None):
-        super().__init__(conf, verify_mode, SyncQuicConnection, server_name)
+    def __init__(
+        self, conf=None, verify_mode=ssl.CERT_REQUIRED, server_name=None, h3=False
+    ):
+        super().__init__(conf, verify_mode, SyncQuicConnection, server_name, h3)
         self._lock = threading.Lock()
 
     def connect(
-        self, address, port=853, source=None, source_port=0, want_session_ticket=True
+        self,
+        address,
+        port=853,
+        source=None,
+        source_port=0,
+        want_session_ticket=True,
+        want_token=True,
     ):
         with self._lock:
             (connection, start) = self._connect(
-                address, port, source, source_port, want_session_ticket
+                address, port, source, source_port, want_session_ticket, want_token
             )
             if start:
                 connection.run()
@@ -225,6 +289,10 @@ class SyncQuicManager(BaseQuicManager):
     def save_session_ticket(self, address, port, ticket):
         with self._lock:
             super().save_session_ticket(address, port, ticket)
+
+    def save_token(self, address, port, token):
+        with self._lock:
+            super().save_token(address, port, token)
 
     def __enter__(self):
         return self

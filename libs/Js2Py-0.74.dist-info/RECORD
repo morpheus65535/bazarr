@@ -1,10 +1,10 @@
-Js2Py-0.74.dist-info/INSTALLER,sha256=zuuue4knoyJ-UwPPXg8fezS7VCrXJQrAP7zeNuwvFQg,4
-Js2Py-0.74.dist-info/LICENSE.md,sha256=5HcnGlDEDJrDrVbQLnDH19l_ZscybPUk0TsS-IQsxOk,1088
-Js2Py-0.74.dist-info/METADATA,sha256=shZhquhN4nVuaurudCERGEnLk38BjT7grtZLNg4MABc,862
-Js2Py-0.74.dist-info/RECORD,,
-Js2Py-0.74.dist-info/REQUESTED,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
-Js2Py-0.74.dist-info/WHEEL,sha256=Xo9-1PvkuimrydujYJAjF7pCkriuXBpUPEjma1nZyJ0,92
-Js2Py-0.74.dist-info/top_level.txt,sha256=Me1vDvBnqRgA6Jf96euhHjsa-dYkaXpr3Sm0RGPoGn8,6
+js2py-0.74.dist-info/INSTALLER,sha256=zuuue4knoyJ-UwPPXg8fezS7VCrXJQrAP7zeNuwvFQg,4
+js2py-0.74.dist-info/METADATA,sha256=EsxDQrBB3A2LSeMzBE55q-4t-GTdP7AD1iLqykYiv2Q,1016
+js2py-0.74.dist-info/RECORD,,
+js2py-0.74.dist-info/REQUESTED,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
+js2py-0.74.dist-info/WHEEL,sha256=wUyA8OaulRlbfwMtmQsvNngGrxQHAvkKcvRmdizlJi0,92
+js2py-0.74.dist-info/licenses/LICENSE.md,sha256=5HcnGlDEDJrDrVbQLnDH19l_ZscybPUk0TsS-IQsxOk,1088
+js2py-0.74.dist-info/top_level.txt,sha256=Me1vDvBnqRgA6Jf96euhHjsa-dYkaXpr3Sm0RGPoGn8,6
 js2py/__init__.py,sha256=VlWswk9Sf3qBwxaJ1E9STDxUdTYh3PLKp6Kn1ws0STE,2886
 js2py/base.py,sha256=_h7HbsB30cybzGAU7XIX5tawMA4C7IHFsRi_ESRqzZc,115810
 js2py/constructors/__init__.py,sha256=isKbPQhm2gf7O6f4aW0F9J0yBlds8jYDq5xA4u08xrE,30

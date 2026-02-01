@@ -1,27 +1,18 @@
 Metadata-Version: 2.4
 Name: ftfy
-Version: 6.2.3
+Version: 6.3.1
 Summary: Fixes mojibake and other problems with Unicode, after the fact
+Project-URL: Homepage, https://ftfy.readthedocs.io/en/latest/
+Project-URL: Documentation, https://ftfy.readthedocs.io/en/latest/
+Project-URL: Repository, https://github.com/rspeer/python-ftfy
+Project-URL: Issues, https://github.com/rspeer/python-ftfy/issues/
+Project-URL: Changelog, https://github.com/rspeer/python-ftfy/blob/main/CHANGELOG.md
+Project-URL: Blog, https://posts.arborelia.net
+Author-email: Robyn Speer <rspeer@arborelia.net>
 License: Apache-2.0
 License-File: LICENSE.txt
-Author: Robyn Speer
-Author-email: rspeer@arborelia.net
-Requires-Python: >=3.8.1,<4
-Classifier: License :: OSI Approved :: Apache Software License
-Classifier: Programming Language :: Python :: 3
-Classifier: Programming Language :: Python :: 3.9
-Classifier: Programming Language :: Python :: 3.10
-Classifier: Programming Language :: Python :: 3.11
-Classifier: Programming Language :: Python :: 3.12
-Classifier: Programming Language :: Python :: 3.13
-Classifier: Programming Language :: Python :: 3.14
-Requires-Dist: wcwidth (>=0.2.12,<0.3.0)
-Project-URL: Changelog, https://github.com/rspeer/python-ftfy/blob/main/CHANGELOG.md
-Project-URL: Cohost, https://cohost.org/arborelia
-Project-URL: Documentation, https://ftfy.readthedocs.io/en/latest/
-Project-URL: Homepage, https://ftfy.readthedocs.io/en/latest/
-Project-URL: Issues, https://github.com/rspeer/python-ftfy/issues/
-Project-URL: Repository, https://github.com/rspeer/python-ftfy
+Requires-Python: >=3.9
+Requires-Dist: wcwidth
 Description-Content-Type: text/markdown
 
 # ftfy: fixes text for you
@@ -37,8 +28,7 @@ Description-Content-Type: text/markdown
 
 ```
 
-The full documentation of ftfy is available at [ftfy.readthedocs.org](https://ftfy.readthedocs.org). The documentation covers a lot more than this README, so here are
-some links into it:
+The full documentation of ftfy is available at [ftfy.readthedocs.org](https://ftfy.readthedocs.org). The documentation covers a lot more than this README, so here are some links into it:
 
 - [Fixing problems and getting explanations](https://ftfy.readthedocs.io/en/latest/explain.html)
 - [Configuring ftfy](https://ftfy.readthedocs.io/en/latest/config.html)
@@ -62,8 +52,6 @@ some links into it:
   — Brennan Young
 - “I have no idea when I’m gonna need this, but I’m definitely bookmarking it.”
   — [/u/ocrow](https://reddit.com/u/ocrow)
-- “9.2/10”
-  — [pylint](https://bitbucket.org/logilab/pylint/)
 
 ## What it does
 
@@ -109,7 +97,7 @@ The following text could be encoded in Windows-1252 and decoded in UTF-8, and it
 
 ## Installing
 
-ftfy is a Python 3 package that can be installed using `pip`:
+ftfy is a Python 3 package that can be installed using `pip` or `uv pip`:
 
     pip install ftfy
 
@@ -119,14 +107,12 @@ If you use `poetry`, you can use ftfy as a dependency in the usual way (such as 
 
 ### Local development
 
-ftfy is developed using `poetry`. Its `setup.py` is vestigial and is not the recommended way to install it.
-
-[Install Poetry](https://python-poetry.org/docs/master/#installing-with-the-official-installer), check out this repository, and run `poetry install` to install ftfy for local development, such as experimenting with the heuristic or running tests.
+ftfy is developed using [uv](https://github.com/astral-sh/uv). You can build a virtual environment with its local dependencies by running `uv venv`, and test it with `uv run pytest`.
 
 ## Who maintains ftfy?
 
-I'm Robyn Speer, also known as Elia Robyn Lake. You can find me
-[on GitHub](https://github.com/rspeer) or [Cohost](https://cohost.org/arborelia).
+I'm Robyn Speer, also known as Elia Robyn Lake. You can find my projects
+[on GitHub](https://github.com/rspeer) and my posts on [my own blog](https://posts.arborelia.net).
 
 ## Citing ftfy
 
@@ -134,8 +120,7 @@ ftfy has been used as a crucial data processing step in major NLP research.
 
 It's important to give credit appropriately to everyone whose work you build on in research. This includes software, not just high-status contributions such as mathematical models. All I ask when you use ftfy for research is that you cite it.
 
-ftfy has a citable record [on Zenodo](https://zenodo.org/record/2591652).
-A citation of ftfy may look like this:
+ftfy has a citable record [on Zenodo](https://zenodo.org/record/2591652). A citation of ftfy may look like this:
 
     Robyn Speer. (2019). ftfy (Version 5.5). Zenodo.
     http://doi.org/10.5281/zenodo.2591652
@@ -163,5 +148,4 @@ If you use or distribute ftfy, you must follow the terms of the [Apache license]
 You _may not_ make a derived work of ftfy that obscures its authorship, such as by putting its code in an AI training dataset, including the code in AI training at runtime, or using a generative AI that copies code from such a dataset.
 
 At my discretion, I may notify you of a license violation, and give you a chance to either remedy it or delete all copies of ftfy in your possession.
-
 

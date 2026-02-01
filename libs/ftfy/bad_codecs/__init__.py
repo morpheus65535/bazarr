@@ -32,9 +32,9 @@ A quick example of decoding text that's encoded in CESU-8:
 
 import codecs
 from encodings import normalize_encoding
-from typing import Dict, Optional
+from typing import Optional
 
-_CACHE: Dict[str, codecs.CodecInfo] = {}
+_CACHE: dict[str, codecs.CodecInfo] = {}
 
 # Define some aliases for 'utf-8-variants'. All hyphens get turned into
 # underscores, because of `normalize_encoding`.

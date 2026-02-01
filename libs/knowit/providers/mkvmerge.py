@@ -5,6 +5,7 @@ import re
 from decimal import Decimal
 from logging import NullHandler, getLogger
 from subprocess import check_output
+from typing import Union
 
 from knowit.core import Property
 from knowit.properties import (
@@ -18,7 +19,9 @@ from knowit.properties import (
     YesNo,
 )
 from knowit.provider import (
+    Executor,
     MalformedFileError,
+    NotFoundExecutor,
     Provider,
 )
 from knowit.rules import (
@@ -50,7 +53,7 @@ To load mkvmerge from a specific location, please define the location as follow:
 '''
 
 
-class MkvMergeExecutor:
+class MkvMergeExecutor(Executor):
     """Executor that knows how to execute mkvmerge."""
 
     version_re = re.compile(r'\bv(?P<version>[^\b\s]+)')
@@ -59,11 +62,6 @@ class MkvMergeExecutor:
         'windows': ('__PATH__', ),
         'macos': ('__PATH__', ),
     }
-
-    def __init__(self, location, version):
-        """Initialize the object."""
-        self.location = location
-        self.version = version
 
     def extract_info(self, filename):
         """Extract media info."""
@@ -81,7 +79,7 @@ class MkvMergeExecutor:
             return version
 
     @classmethod
-    def get_executor_instance(cls, suggested_path=None):
+    def get_executor_instance(cls, suggested_path=None) -> Union["MkvMergeExecutor", NotFoundExecutor]:
         """Return executor instance."""
         os_family = detect_os()
         logger.debug('Detected os: %s', os_family)
@@ -89,6 +87,7 @@ class MkvMergeExecutor:
             executor = exec_cls.create(os_family, suggested_path)
             if executor:
                 return executor
+        return NotFoundExecutor(suggested_path)
 
 
 class MkvMergeCliExecutor(MkvMergeExecutor):
@@ -185,13 +184,19 @@ class MkvMergeProvider(Provider):
         })
         self.executor = MkvMergeExecutor.get_executor_instance(suggested_path)
 
+    def loaded(self) -> bool:
+        """If library or executable was found."""
+        # if executor is None, print a warning and set to False to not repeat the warning
+        if isinstance(self.executor, NotFoundExecutor):
+            if not self.executor.warned:
+                logger.warning(WARN_MSG)
+                self.executor.warned = True
+        # check if loaded
+        return bool(self.executor)
+
     def accepts(self, video_path):
         """Accept Matroska videos when mkvmerge is available."""
-        if self.executor is None:
-            logger.warning(WARN_MSG)
-            self.executor = False
-
-        return self.executor and video_path.lower().endswith(('.mkv', '.mka', '.mks'))
+        return self.loaded() and video_path.lower().endswith(('.mkv', '.mka', '.mks'))
 
     @classmethod
     def extract_info(cls, video_path):

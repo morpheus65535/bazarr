@@ -17,11 +17,14 @@
 
 """TXT-like base class."""
 
-from typing import Any, Dict, Iterable, Optional, Tuple, Union
+from typing import Any, Dict, Iterable, Tuple
 
 import dns.exception
 import dns.immutable
+import dns.name
 import dns.rdata
+import dns.rdataclass
+import dns.rdatatype
 import dns.renderer
 import dns.tokenizer
 
@@ -36,7 +39,7 @@ class TXTBase(dns.rdata.Rdata):
         self,
         rdclass: dns.rdataclass.RdataClass,
         rdtype: dns.rdatatype.RdataType,
-        strings: Iterable[Union[bytes, str]],
+        strings: Iterable[bytes | str],
     ):
         """Initialize a TXT-like rdata.
 
@@ -50,17 +53,19 @@ class TXTBase(dns.rdata.Rdata):
         self.strings: Tuple[bytes] = self._as_tuple(
             strings, lambda x: self._as_bytes(x, True, 255)
         )
+        if len(self.strings) == 0:
+            raise ValueError("the list of strings must not be empty")
 
     def to_text(
         self,
-        origin: Optional[dns.name.Name] = None,
+        origin: dns.name.Name | None = None,
         relativize: bool = True,
         **kw: Dict[str, Any],
     ) -> str:
         txt = ""
         prefix = ""
         for s in self.strings:
-            txt += '{}"{}"'.format(prefix, dns.rdata._escapify(s))
+            txt += f'{prefix}"{dns.rdata._escapify(s)}"'
             prefix = " "
         return txt
 
@@ -70,9 +75,9 @@ class TXTBase(dns.rdata.Rdata):
         rdclass: dns.rdataclass.RdataClass,
         rdtype: dns.rdatatype.RdataType,
         tok: dns.tokenizer.Tokenizer,
-        origin: Optional[dns.name.Name] = None,
+        origin: dns.name.Name | None = None,
         relativize: bool = True,
-        relativize_to: Optional[dns.name.Name] = None,
+        relativize_to: dns.name.Name | None = None,
     ) -> dns.rdata.Rdata:
         strings = []
         for token in tok.get_remaining():

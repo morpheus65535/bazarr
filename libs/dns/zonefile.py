@@ -19,7 +19,7 @@
 
 import re
 import sys
-from typing import Any, Iterable, List, Optional, Set, Tuple, Union
+from typing import Any, Iterable, List, Set, Tuple, cast
 
 import dns.exception
 import dns.grange
@@ -68,9 +68,9 @@ def _check_cname_and_other_data(txn, name, rdataset):
 
 SavedStateType = Tuple[
     dns.tokenizer.Tokenizer,
-    Optional[dns.name.Name],  # current_origin
-    Optional[dns.name.Name],  # last_name
-    Optional[Any],  # current_file
+    dns.name.Name | None,  # current_origin
+    dns.name.Name | None,  # last_name
+    Any | None,  # current_file
     int,  # last_ttl
     bool,  # last_ttl_known
     int,  # default_ttl
@@ -94,12 +94,12 @@ class Reader:
         rdclass: dns.rdataclass.RdataClass,
         txn: dns.transaction.Transaction,
         allow_include: bool = False,
-        allow_directives: Union[bool, Iterable[str]] = True,
-        force_name: Optional[dns.name.Name] = None,
-        force_ttl: Optional[int] = None,
-        force_rdclass: Optional[dns.rdataclass.RdataClass] = None,
-        force_rdtype: Optional[dns.rdatatype.RdataType] = None,
-        default_ttl: Optional[int] = None,
+        allow_directives: bool | Iterable[str] = True,
+        force_name: dns.name.Name | None = None,
+        force_ttl: int | None = None,
+        force_rdclass: dns.rdataclass.RdataClass | None = None,
+        force_rdtype: dns.rdatatype.RdataType | None = None,
+        default_ttl: int | None = None,
     ):
         self.tok = tok
         (self.zone_origin, self.relativize, _) = txn.manager.origin_information()
@@ -118,7 +118,7 @@ class Reader:
         self.zone_rdclass = rdclass
         self.txn = txn
         self.saved_state: List[SavedStateType] = []
-        self.current_file: Optional[Any] = None
+        self.current_file: Any | None = None
         self.allowed_directives: Set[str]
         if allow_directives is True:
             self.allowed_directives = {"$GENERATE", "$ORIGIN", "$TTL"}
@@ -169,6 +169,9 @@ class Reader:
                     return
                 self.tok.unget(token)
             name = self.last_name
+            if name is None:
+                raise dns.exception.SyntaxError("the last used name is undefined")
+            assert self.zone_origin is not None
             if not name.is_subdomain(self.zone_origin):
                 self._eat_line()
                 return
@@ -230,7 +233,7 @@ class Reader:
             try:
                 rdtype = dns.rdatatype.from_text(token.value)
             except Exception:
-                raise dns.exception.SyntaxError("unknown rdatatype '%s'" % token.value)
+                raise dns.exception.SyntaxError(f"unknown rdatatype '{token.value}'")
 
         try:
             rd = dns.rdata.from_text(
@@ -251,19 +254,18 @@ class Reader:
             # We convert them to syntax errors so that we can emit
             # helpful filename:line info.
             (ty, va) = sys.exc_info()[:2]
-            raise dns.exception.SyntaxError(
-                "caught exception {}: {}".format(str(ty), str(va))
-            )
+            raise dns.exception.SyntaxError(f"caught exception {str(ty)}: {str(va)}")
 
         if not self.default_ttl_known and rdtype == dns.rdatatype.SOA:
             # The pre-RFC2308 and pre-BIND9 behavior inherits the zone default
             # TTL from the SOA minttl if no $TTL statement is present before the
             # SOA is parsed.
-            self.default_ttl = rd.minimum
+            soa_rd = cast(dns.rdtypes.ANY.SOA.SOA, rd)
+            self.default_ttl = soa_rd.minimum
             self.default_ttl_known = True
             if ttl is None:
                 # if we didn't have a TTL on the SOA, set it!
-                ttl = rd.minimum
+                ttl = soa_rd.minimum
 
         # TTL check.  We had to wait until now to do this as the SOA RR's
         # own TTL can be inferred from its minimum.
@@ -281,41 +283,41 @@ class Reader:
         # Sometimes there are modifiers in the hostname. These come after
         # the dollar sign. They are in the form: ${offset[,width[,base]]}.
         # Make names
+        mod = ""
+        sign = "+"
+        offset = "0"
+        width = "0"
+        base = "d"
         g1 = is_generate1.match(side)
         if g1:
             mod, sign, offset, width, base = g1.groups()
             if sign == "":
                 sign = "+"
-        g2 = is_generate2.match(side)
-        if g2:
-            mod, sign, offset = g2.groups()
-            if sign == "":
-                sign = "+"
-            width = 0
-            base = "d"
-        g3 = is_generate3.match(side)
-        if g3:
-            mod, sign, offset, width = g3.groups()
-            if sign == "":
-                sign = "+"
-            base = "d"
+        else:
+            g2 = is_generate2.match(side)
+            if g2:
+                mod, sign, offset = g2.groups()
+                if sign == "":
+                    sign = "+"
+                width = "0"
+                base = "d"
+            else:
+                g3 = is_generate3.match(side)
+                if g3:
+                    mod, sign, offset, width = g3.groups()
+                    if sign == "":
+                        sign = "+"
+                    base = "d"
 
-        if not (g1 or g2 or g3):
-            mod = ""
-            sign = "+"
-            offset = 0
-            width = 0
-            base = "d"
-
-        offset = int(offset)
-        width = int(width)
+        ioffset = int(offset)
+        iwidth = int(width)
 
         if sign not in ["+", "-"]:
-            raise dns.exception.SyntaxError("invalid offset sign %s" % sign)
+            raise dns.exception.SyntaxError(f"invalid offset sign {sign}")
         if base not in ["d", "o", "x", "X", "n", "N"]:
-            raise dns.exception.SyntaxError("invalid type %s" % base)
+            raise dns.exception.SyntaxError(f"invalid type {base}")
 
-        return mod, sign, offset, width, base
+        return mod, sign, ioffset, iwidth, base
 
     def _generate_line(self):
         # range lhs [ttl] [class] type rhs [ comment ]
@@ -358,6 +360,12 @@ class Reader:
                 ttl = self.default_ttl
             elif self.last_ttl_known:
                 ttl = self.last_ttl
+            else:
+                # We don't go to the extra "look at the SOA" level of effort for
+                # $GENERATE, because the user really ought to have defined a TTL
+                # somehow!
+                raise dns.exception.SyntaxError("Missing default TTL value")
+
         # Class
         try:
             rdclass = dns.rdataclass.from_text(token.value)
@@ -377,7 +385,7 @@ class Reader:
             if not token.is_identifier():
                 raise dns.exception.SyntaxError
         except Exception:
-            raise dns.exception.SyntaxError("unknown rdatatype '%s'" % token.value)
+            raise dns.exception.SyntaxError(f"unknown rdatatype '{token.value}'")
 
         # rhs (required)
         rhs = token.value
@@ -412,13 +420,14 @@ class Reader:
             lzfindex = _format_index(lindex, lbase, lwidth)
             rzfindex = _format_index(rindex, rbase, rwidth)
 
-            name = lhs.replace("$%s" % (lmod), lzfindex)
-            rdata = rhs.replace("$%s" % (rmod), rzfindex)
+            name = lhs.replace(f"${lmod}", lzfindex)
+            rdata = rhs.replace(f"${rmod}", rzfindex)
 
             self.last_name = dns.name.from_text(
                 name, self.current_origin, self.tok.idna_codec
             )
             name = self.last_name
+            assert self.zone_origin is not None
             if not name.is_subdomain(self.zone_origin):
                 self._eat_line()
                 return
@@ -445,7 +454,7 @@ class Reader:
                 # helpful filename:line info.
                 (ty, va) = sys.exc_info()[:2]
                 raise dns.exception.SyntaxError(
-                    "caught exception %s: %s" % (str(ty), str(va))
+                    f"caught exception {str(ty)}: {str(va)}"
                 )
 
             self.txn.add(name, ttl, rd)
@@ -506,7 +515,7 @@ class Reader:
                         token = self.tok.get()
                         filename = token.value
                         token = self.tok.get()
-                        new_origin: Optional[dns.name.Name]
+                        new_origin: dns.name.Name | None
                         if token.is_identifier():
                             new_origin = dns.name.from_text(
                                 token.value, self.current_origin, self.tok.idna_codec
@@ -528,7 +537,7 @@ class Reader:
                                 self.default_ttl_known,
                             )
                         )
-                        self.current_file = open(filename, "r")
+                        self.current_file = open(filename, encoding="utf-8")
                         self.tok = dns.tokenizer.Tokenizer(self.current_file, filename)
                         self.current_origin = new_origin
                     elif c == "$GENERATE":
@@ -544,9 +553,7 @@ class Reader:
             (filename, line_number) = self.tok.where()
             if detail is None:
                 detail = "syntax error"
-            ex = dns.exception.SyntaxError(
-                "%s:%d: %s" % (filename, line_number, detail)
-            )
+            ex = dns.exception.SyntaxError(f"{filename}:{line_number}: {detail}")
             tb = sys.exc_info()[2]
             raise ex.with_traceback(tb) from None
 
@@ -608,7 +615,7 @@ class RRsetsReaderTransaction(dns.transaction.Transaction):
                 )
                 rrset.update(rdataset)
                 rrsets.append(rrset)
-            self.manager.set_rrsets(rrsets)
+            self.manager.set_rrsets(rrsets)  # pyright: ignore
 
     def _set_origin(self, origin):
         pass
@@ -622,12 +629,15 @@ class RRsetsReaderTransaction(dns.transaction.Transaction):
 
 class RRSetsReaderManager(dns.transaction.TransactionManager):
     def __init__(
-        self, origin=dns.name.root, relativize=False, rdclass=dns.rdataclass.IN
+        self,
+        origin: dns.name.Name | None = dns.name.root,
+        relativize: bool = False,
+        rdclass: dns.rdataclass.RdataClass = dns.rdataclass.IN,
     ):
         self.origin = origin
         self.relativize = relativize
         self.rdclass = rdclass
-        self.rrsets = []
+        self.rrsets: List[dns.rrset.RRset] = []
 
     def reader(self):  # pragma: no cover
         raise NotImplementedError
@@ -646,20 +656,20 @@ class RRSetsReaderManager(dns.transaction.TransactionManager):
             effective = self.origin
         return (self.origin, self.relativize, effective)
 
-    def set_rrsets(self, rrsets):
+    def set_rrsets(self, rrsets: List[dns.rrset.RRset]) -> None:
         self.rrsets = rrsets
 
 
 def read_rrsets(
     text: Any,
-    name: Optional[Union[dns.name.Name, str]] = None,
-    ttl: Optional[int] = None,
-    rdclass: Optional[Union[dns.rdataclass.RdataClass, str]] = dns.rdataclass.IN,
-    default_rdclass: Union[dns.rdataclass.RdataClass, str] = dns.rdataclass.IN,
-    rdtype: Optional[Union[dns.rdatatype.RdataType, str]] = None,
-    default_ttl: Optional[Union[int, str]] = None,
-    idna_codec: Optional[dns.name.IDNACodec] = None,
-    origin: Optional[Union[dns.name.Name, str]] = dns.name.root,
+    name: dns.name.Name | str | None = None,
+    ttl: int | None = None,
+    rdclass: dns.rdataclass.RdataClass | str | None = dns.rdataclass.IN,
+    default_rdclass: dns.rdataclass.RdataClass | str = dns.rdataclass.IN,
+    rdtype: dns.rdatatype.RdataType | str | None = None,
+    default_ttl: int | str | None = None,
+    idna_codec: dns.name.IDNACodec | None = None,
+    origin: dns.name.Name | str | None = dns.name.root,
     relativize: bool = False,
 ) -> List[dns.rrset.RRset]:
     """Read one or more rrsets from the specified text, possibly subject

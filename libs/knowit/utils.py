@@ -5,10 +5,7 @@ from decimal import Decimal
 
 from knowit import VIDEO_EXTENSIONS
 
-if sys.version_info < (3, 8):
-    OS_FAMILY = str
-else:
-    OS_FAMILY = typing.Literal['windows', 'macos', 'unix']
+OS_FAMILY = typing.Literal['windows', 'macos', 'unix']
 
 OPTION_MAP = typing.Dict[str, typing.Tuple[str]]
 
@@ -119,6 +116,7 @@ def build_path_candidates(
             for path in paths
             for name in names
         )
+        yield from names
 
 
 def round_decimal(value: Decimal, min_digits=0, max_digits: typing.Optional[int] = None):

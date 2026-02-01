@@ -76,7 +76,6 @@ from __future__ import annotations
 
 import codecs
 from encodings import normalize_encoding
-from typing import Optional, Tuple
 
 REPLACEMENT_CHAR = "\ufffd"
 
@@ -121,14 +120,10 @@ def make_sloppy_codec(encoding: str) -> codecs.CodecInfo:
     # `encodings.cp1252` for comparison; this is almost exactly the same,
     # except I made it follow pep8.
     class Codec(codecs.Codec):
-        def encode(
-            self, input: str, errors: Optional[str] = "strict"
-        ) -> Tuple[bytes, int]:
+        def encode(self, input: str, errors: str | None = "strict") -> tuple[bytes, int]:
             return codecs.charmap_encode(input, errors, encoding_table)
 
-        def decode(
-            self, input: bytes, errors: Optional[str] = "strict"
-        ) -> Tuple[str, int]:
+        def decode(self, input: bytes, errors: str | None = "strict") -> tuple[str, int]:
             return codecs.charmap_decode(input, errors, decoding_table)  # type: ignore[arg-type]
 
     class IncrementalEncoder(codecs.IncrementalEncoder):
@@ -160,9 +155,9 @@ def make_sloppy_codec(encoding: str) -> codecs.CodecInfo:
 # can be used by the main module of ftfy.bad_codecs.
 CODECS = {}
 INCOMPLETE_ENCODINGS = (
-    ["windows-%s" % num for num in range(1250, 1259)]
-    + ["iso-8859-%s" % num for num in (3, 6, 7, 8, 11)]
-    + ["cp%s" % num for num in range(1250, 1259)]
+    [f"windows-{num}" for num in range(1250, 1259)]
+    + [f"iso-8859-{num}" for num in (3, 6, 7, 8, 11)]
+    + [f"cp{num}" for num in range(1250, 1259)]
     + ["cp874"]
 )
 

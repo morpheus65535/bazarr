@@ -31,6 +31,7 @@ __all__ = [
     "DNAME",
     "DNSKEY",
     "DS",
+    "DSYNC",
     "EUI48",
     "EUI64",
     "GPOS",
@@ -51,6 +52,7 @@ __all__ = [
     "OPENPGPKEY",
     "OPT",
     "PTR",
+    "RESINFO",
     "RP",
     "RRSIG",
     "RT",
@@ -63,6 +65,7 @@ __all__ = [
     "TSIG",
     "TXT",
     "URI",
+    "WALLET",
     "X25",
     "ZONEMD",
 ]

@@ -3,6 +3,7 @@
 import base64
 import enum
 import struct
+from typing import Any, Dict
 
 import dns.enum
 import dns.exception
@@ -35,6 +36,7 @@ class ParamKey(dns.enum.IntEnum):
     ECH = 5
     IPV6HINT = 6
     DOHPATH = 7
+    OHTTP = 8
 
     @classmethod
     def _maximum(cls):
@@ -92,13 +94,13 @@ def _escapify(qstring):
         elif c >= 0x20 and c < 0x7F:
             text += chr(c)
         else:
-            text += "\\%03d" % c
+            text += f"\\{c:03d}"
     return text
 
 
-def _unescape(value):
+def _unescape(value: str) -> bytes:
     if value == "":
-        return value
+        return b""
     unescaped = b""
     l = len(value)
     i = 0
@@ -158,7 +160,7 @@ class Param:
     """Abstract base class for SVCB parameters"""
 
     @classmethod
-    def emptiness(cls):
+    def emptiness(cls) -> Emptiness:
         return Emptiness.NEVER
 
 
@@ -396,7 +398,37 @@ class ECHParam(Param):
         file.write(self.ech)
 
 
-_class_for_key = {
+@dns.immutable.immutable
+class OHTTPParam(Param):
+    # We don't ever expect to instantiate this class, but we need
+    # a from_value() and a from_wire_parser(), so we just return None
+    # from the class methods when things are OK.
+
+    @classmethod
+    def emptiness(cls):
+        return Emptiness.ALWAYS
+
+    @classmethod
+    def from_value(cls, value):
+        if value is None or value == "":
+            return None
+        else:
+            raise ValueError("ohttp with non-empty value")
+
+    def to_text(self):
+        raise NotImplementedError  # pragma: no cover
+
+    @classmethod
+    def from_wire_parser(cls, parser, origin=None):  # pylint: disable=W0613
+        if parser.remaining() != 0:
+            raise dns.exception.FormError
+        return None
+
+    def to_wire(self, file, origin=None):  # pylint: disable=W0613
+        raise NotImplementedError  # pragma: no cover
+
+
+_class_for_key: Dict[ParamKey, Any] = {
     ParamKey.MANDATORY: MandatoryParam,
     ParamKey.ALPN: ALPNParam,
     ParamKey.NO_DEFAULT_ALPN: NoDefaultALPNParam,
@@ -404,6 +436,7 @@ _class_for_key = {
     ParamKey.IPV4HINT: IPv4HintParam,
     ParamKey.ECH: ECHParam,
     ParamKey.IPV6HINT: IPv6HintParam,
+    ParamKey.OHTTP: OHTTPParam,
 }
 
 
@@ -470,7 +503,7 @@ class SVCBBase(dns.rdata.Rdata):
             space = " "
         else:
             space = ""
-        return "%d %s%s%s" % (self.priority, target, space, " ".join(params))
+        return f"{self.priority} {target}{space}{' '.join(params)}"
 
     @classmethod
     def from_text(
@@ -539,10 +572,11 @@ class SVCBBase(dns.rdata.Rdata):
                 raise dns.exception.FormError("keys not in order")
             prior_key = key
             vlen = parser.get_uint16()
-            pcls = _class_for_key.get(key, GenericParam)
+            pkey = ParamKey.make(key)
+            pcls = _class_for_key.get(pkey, GenericParam)
             with parser.restrict_to(vlen):
                 value = pcls.from_wire_parser(parser, origin)
-            params[key] = value
+            params[pkey] = value
         return cls(rdclass, rdtype, priority, target, params)
 
     def _processing_priority(self):

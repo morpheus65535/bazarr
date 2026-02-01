@@ -1,4 +1,4 @@
-Metadata-Version: 2.1
+Metadata-Version: 2.4
 Name: Flask-Migrate
 Version: 4.1.0
 Summary: SQLAlchemy database migrations for Flask applications using Alembic.
@@ -14,15 +14,16 @@ Classifier: Operating System :: OS Independent
 Requires-Python: >=3.6
 Description-Content-Type: text/markdown
 License-File: LICENSE
-Requires-Dist: Flask >=0.9
-Requires-Dist: Flask-SQLAlchemy >=1.0
-Requires-Dist: alembic >=1.9.0
+Requires-Dist: Flask>=0.9
+Requires-Dist: Flask-SQLAlchemy>=1.0
+Requires-Dist: alembic>=1.9.0
 Provides-Extra: dev
-Requires-Dist: tox ; extra == 'dev'
-Requires-Dist: flake8 ; extra == 'dev'
-Requires-Dist: pytest ; extra == 'dev'
+Requires-Dist: tox; extra == "dev"
+Requires-Dist: flake8; extra == "dev"
+Requires-Dist: pytest; extra == "dev"
 Provides-Extra: docs
-Requires-Dist: sphinx ; extra == 'docs'
+Requires-Dist: sphinx; extra == "docs"
+Dynamic: license-file
 
 Flask-Migrate
 =============

@@ -101,6 +101,10 @@ class EnzymeProvider(Provider):
             }
         })
 
+    def loaded(self) -> bool:
+        """Return always True as enzyme is always imported."""
+        return True
+
     def accepts(self, video_path):
         """Accept only MKV files."""
         return video_path.lower().endswith('.mkv')

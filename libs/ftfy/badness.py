@@ -16,7 +16,7 @@ import warnings
 import re
 
 
-# There are only 403 characters that occur in known UTF-8 mojibake, and we can
+# There are only a few hundred characters that occur in known UTF-8 mojibake, and we can
 # characterize them:
 
 MOJIBAKE_CATEGORIES = {
@@ -42,8 +42,6 @@ MOJIBAKE_CATEGORIES = {
         "\N{DIAERESIS}"
         "\N{NOT SIGN}"
         "\N{MACRON}"
-        "\N{PILCROW SIGN}"
-        "\N{SECTION SIGN}"
         "\N{CEDILLA}"
         "\N{LATIN SMALL LETTER F WITH HOOK}"
         "\N{MODIFIER LETTER CIRCUMFLEX ACCENT}"  # it's not a modifier
@@ -61,6 +59,11 @@ MOJIBAKE_CATEGORIES = {
         # co-occur with other mojibake characters, it's not really ambiguous
         "\N{FEMININE ORDINAL INDICATOR}"
         "\N{MASCULINE ORDINAL INDICATOR}"
+    ),
+    # Characters used in legalese
+    "law": (
+        "\N{PILCROW SIGN}"
+        "\N{SECTION SIGN}"
     ),
     "currency": (
         "\N{CENT SIGN}"
@@ -132,6 +135,9 @@ MOJIBAKE_CATEGORIES = {
         "ò-ö"
         "ø-ü"
         "\N{LATIN CAPITAL LETTER O WITH DOUBLE ACUTE}"
+        "\N{LATIN CAPITAL LETTER O WITH MACRON}"
+        "\N{LATIN CAPITAL LETTER U WITH MACRON}"
+        "\N{LATIN CAPITAL LETTER U WITH OGONEK}"
         "\N{DEGREE SIGN}"
     ),
     "upper_accented": (
@@ -143,6 +149,7 @@ MOJIBAKE_CATEGORIES = {
         "\N{LATIN CAPITAL LETTER U WITH DIAERESIS}"
         "\N{LATIN CAPITAL LETTER Y WITH ACUTE}"
         "\N{LATIN CAPITAL LETTER A WITH BREVE}"
+        "\N{LATIN CAPITAL LETTER A WITH MACRON}"
         "\N{LATIN CAPITAL LETTER A WITH OGONEK}"
         "\N{LATIN CAPITAL LETTER C WITH ACUTE}"
         "\N{LATIN CAPITAL LETTER C WITH CARON}"
@@ -150,13 +157,20 @@ MOJIBAKE_CATEGORIES = {
         "\N{LATIN CAPITAL LETTER D WITH STROKE}"
         "\N{LATIN CAPITAL LETTER E WITH OGONEK}"
         "\N{LATIN CAPITAL LETTER E WITH CARON}"
+        "\N{LATIN CAPITAL LETTER E WITH MACRON}"
+        "\N{LATIN CAPITAL LETTER E WITH DOT ABOVE}"
         "\N{LATIN CAPITAL LETTER G WITH BREVE}"
+        "\N{LATIN CAPITAL LETTER G WITH CEDILLA}"
         "\N{LATIN CAPITAL LETTER I WITH DOT ABOVE}"
+        "\N{LATIN CAPITAL LETTER I WITH MACRON}"
+        "\N{LATIN CAPITAL LETTER K WITH CEDILLA}"
         "\N{LATIN CAPITAL LETTER L WITH ACUTE}"
         "\N{LATIN CAPITAL LETTER L WITH CARON}"
         "\N{LATIN CAPITAL LETTER L WITH STROKE}"
+        "\N{LATIN CAPITAL LETTER L WITH CEDILLA}"
         "\N{LATIN CAPITAL LETTER N WITH ACUTE}"
         "\N{LATIN CAPITAL LETTER N WITH CARON}"
+        "\N{LATIN CAPITAL LETTER N WITH CEDILLA}"
         "\N{LATIN CAPITAL LIGATURE OE}"
         "\N{LATIN CAPITAL LETTER R WITH CARON}"
         "\N{LATIN CAPITAL LETTER S WITH ACUTE}"
@@ -179,16 +193,24 @@ MOJIBAKE_CATEGORIES = {
         # skip o's and u's that could be used in kaomoji
         "\N{LATIN SMALL LETTER A WITH BREVE}"
         "\N{LATIN SMALL LETTER A WITH OGONEK}"
+        "\N{LATIN SMALL LETTER A WITH MACRON}"
         "\N{LATIN SMALL LETTER C WITH ACUTE}"
         "\N{LATIN SMALL LETTER C WITH CARON}"
         "\N{LATIN SMALL LETTER D WITH CARON}"
         "\N{LATIN SMALL LETTER D WITH STROKE}"
         "\N{LATIN SMALL LETTER E WITH OGONEK}"
         "\N{LATIN SMALL LETTER E WITH CARON}"
+        "\N{LATIN SMALL LETTER E WITH MACRON}"
+        "\N{LATIN SMALL LETTER E WITH DOT ABOVE}"
         "\N{LATIN SMALL LETTER G WITH BREVE}"
+        "\N{LATIN SMALL LETTER G WITH CEDILLA}"
+        "\N{LATIN SMALL LETTER I WITH OGONEK}"
+        "\N{LATIN SMALL LETTER I WITH MACRON}"
+        "\N{LATIN SMALL LETTER K WITH CEDILLA}"
         "\N{LATIN SMALL LETTER L WITH ACUTE}"
         "\N{LATIN SMALL LETTER L WITH CARON}"
         "\N{LATIN SMALL LETTER L WITH STROKE}"
+        "\N{LATIN SMALL LETTER L WITH CEDILLA}"
         "\N{LATIN SMALL LIGATURE OE}"
         "\N{LATIN SMALL LETTER R WITH ACUTE}"
         "\N{LATIN SMALL LETTER S WITH ACUTE}"
@@ -253,11 +275,11 @@ BADNESS_RE = re.compile(
     r"""
     [{c1}]
     |
-    [{bad}{lower_accented}{upper_accented}{box}{start_punctuation}{end_punctuation}{currency}{numeric}] [{bad}]
+    [{bad}{lower_accented}{upper_accented}{box}{start_punctuation}{end_punctuation}{currency}{numeric}{law}] [{bad}]
     |
     [a-zA-Z] [{lower_common}{upper_common}] [{bad}]
     |
-    [{bad}] [{lower_accented}{upper_accented}{box}{start_punctuation}{end_punctuation}{currency}{numeric}]
+    [{bad}] [{lower_accented}{upper_accented}{box}{start_punctuation}{end_punctuation}{currency}{numeric}{law}]
     |
     [{lower_accented}{lower_common}{box}{end_punctuation}{currency}{numeric}] [{upper_accented}]
     |
@@ -267,11 +289,11 @@ BADNESS_RE = re.compile(
     |
     \s [{upper_accented}] [{currency}]
     |
-    [{upper_accented}{box}] [{numeric}]
+    [{upper_accented}{box}] [{numeric}{law}]
     |
     [{lower_accented}{upper_accented}{box}{currency}{end_punctuation}] [{start_punctuation}] [{numeric}]
     |
-    [{lower_accented}{upper_accented}{currency}{numeric}{box}] [{end_punctuation}] [{start_punctuation}]
+    [{lower_accented}{upper_accented}{currency}{numeric}{box}{law}] [{end_punctuation}] [{start_punctuation}]
     |
     [{currency}{numeric}{box}] [{start_punctuation}]
     |
@@ -279,19 +301,23 @@ BADNESS_RE = re.compile(
     |
     [{box}] [{kaomoji}]
     |
-    [{lower_accented}{upper_accented}{currency}{numeric}{start_punctuation}{end_punctuation}] [{box}]
+    [{lower_accented}{upper_accented}{currency}{numeric}{start_punctuation}{end_punctuation}{law}] [{box}]
     |
     [{box}] [{end_punctuation}]
     |
-    [{lower_accented}{upper_accented}] [{end_punctuation}] \w
+    [{lower_accented}{upper_accented}] [{start_punctuation}{end_punctuation}] \w
     |
 
     # The ligature œ when not followed by an unaccented Latin letter
     [Œœ][^A-Za-z]
     |
 
+    # Degree signs after capital letters
+    [{upper_accented}]°
+    |
+
     # Common Windows-1252 2-character mojibake that isn't covered by the cases above
-    [ÂÃÎÐ][€Šš¢£Ÿž\xa0\xad®©°·»{start_punctuation}{end_punctuation}–—´]
+    [ÂÃÎÐ][€œŠš¢£Ÿž\xa0\xad®©°·»{start_punctuation}{end_punctuation}–—´]
     |
     × [²³]
     |
@@ -350,7 +376,13 @@ BADNESS_RE = re.compile(
 
     # Windows-1253 mojibake of Latin-1 characters and/or the Greek alphabet
     [ΒΓΞΟ][{c1}{bad}{start_punctuation}{end_punctuation}{currency}°][ΒΓΞΟ]
-""".format(**MOJIBAKE_CATEGORIES),
+    |
+
+    # Windows-1257 mojibake of characters in the U+2000 range
+    ā€
+    """.format(
+        **MOJIBAKE_CATEGORIES
+    ),
     re.VERBOSE,
 )
 

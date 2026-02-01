@@ -28,15 +28,19 @@ class KnowitException(Exception):
     """Exception raised when knowit encounters an internal error."""
 
 
-def initialize(context: typing.Optional[typing.Mapping] = None) -> None:
-    """Initialize knowit."""
-    if not available_providers:
-        context = context or {}
-        config = Config.build(context.get('config'))
-        for name, provider_cls in _provider_map.items():
-            general_config = getattr(config, 'general', {})
-            mapping = context.get(name) or general_config.get(name)
-            available_providers[name] = provider_cls(config, mapping)
+def initialize(context: typing.Optional[typing.Mapping] = None, *, force: bool = False) -> None:
+    """Initialize knowit, reload provider if a new suggested path is given."""
+    context = context or {}
+    config = Config.build(context.get('config'))
+    for name, provider_cls in _provider_map.items():
+        general_config = getattr(config, 'general', {})
+        suggested_path = context.get(name) or general_config.get(name)
+        # create provider if it is not initialized or if it is not loaded and suggesting a new path
+        p = available_providers.get(name)
+        if force or p is None or (
+            not p.loaded() and not p.match_executor_location(suggested_path)
+        ):
+            available_providers[name] = provider_cls(config, suggested_path)
 
 
 def know(
@@ -70,7 +74,7 @@ def dependencies(context: typing.Optional[typing.Mapping] = None) -> typing.Mapp
     deps = {}
     try:
         initialize(context)
-        for name, provider_cls in _provider_map.items():
+        for name in _provider_map:
             if name in available_providers:
                 deps[name] = available_providers[name].version
             else:
@@ -79,6 +83,15 @@ def dependencies(context: typing.Optional[typing.Mapping] = None) -> typing.Mapp
         pass
 
     return deps
+
+
+def loaded_providers(options: typing.Union[dict[str, typing.Any], None] = None) -> dict[str, bool]:
+    """Return a dict with each provider and if they are installed."""
+    # initialize providers with options
+    initialize(options)
+
+    # return a dict of providers and the loaded state
+    return {k: p.loaded() for k, p in available_providers.items()}
 
 
 def _centered(value: str) -> str:
@@ -97,7 +110,7 @@ def debug_info(
     ]
 
     first = True
-    for key, info in dependencies(context).items():
+    for info in dependencies(context).values():
         if not first:
             lines.append(_centered(''))
         first = False

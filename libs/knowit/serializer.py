@@ -77,17 +77,16 @@ def get_yaml_dumper(context):
 def get_yaml_loader(constructors=None):
     """Return a yaml loader that handles sequences as python lists."""
     constructors = constructors or {}
-    yaml_implicit_resolvers = dict(DefaultResolver.yaml_implicit_resolvers)
+    custom_yaml_implicit_resolvers = {
+        ch: [(tag, regexp) for tag, regexp in vs if not tag.endswith('float')]
+        for ch, vs in DefaultResolver.yaml_implicit_resolvers.items()
+    }
 
     class Resolver(DefaultResolver):
         """Custom YAML Resolver."""
 
-    Resolver.yaml_implicit_resolvers.clear()
-    for ch, vs in yaml_implicit_resolvers.items():
-        Resolver.yaml_implicit_resolvers.setdefault(ch, []).extend(
-            (tag, regexp) for tag, regexp in vs
-            if not tag.endswith('float')
-        )
+        yaml_implicit_resolvers = custom_yaml_implicit_resolvers
+
     Resolver.add_implicit_resolver(  # regex copied from yaml source
         '!decimal',
         re.compile(r'''^(?:

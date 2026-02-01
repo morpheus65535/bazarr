@@ -4,6 +4,7 @@ import logging
 import re
 from logging import NullHandler, getLogger
 from subprocess import check_output
+from typing import Any, Union
 
 from knowit import VIDEO_EXTENSIONS
 from knowit.core import Property
@@ -24,7 +25,9 @@ from knowit.properties import (
     YesNo,
 )
 from knowit.provider import (
+    Executor,
     MalformedFileError,
+    NotFoundExecutor,
     Provider,
 )
 from knowit.rules import (
@@ -60,7 +63,7 @@ To load FFmpeg (ffprobe) from a specific location, please define the location as
 '''
 
 
-class FFmpegExecutor:
+class FFmpegExecutor(Executor):
     """Executor that knows how to execute media info: using ctypes or cli."""
 
     version_re = re.compile(r'\bversion\s+(?P<version>[^\b\s]+)')
@@ -69,11 +72,6 @@ class FFmpegExecutor:
         'windows': ('__PATH__', ),
         'macos': ('__PATH__', ),
     }
-
-    def __init__(self, location, version):
-        """Initialize the object."""
-        self.location = location
-        self.version = version
 
     def extract_info(self, filename):
         """Extract media info."""
@@ -91,7 +89,7 @@ class FFmpegExecutor:
             return version
 
     @classmethod
-    def get_executor_instance(cls, suggested_path=None):
+    def get_executor_instance(cls, suggested_path=None) -> Union["FFmpegExecutor", NotFoundExecutor]:
         """Return executor instance."""
         os_family = detect_os()
         logger.debug('Detected os: %s', os_family)
@@ -99,6 +97,7 @@ class FFmpegExecutor:
             executor = exec_cls.create(os_family, suggested_path)
             if executor:
                 return executor
+        return NotFoundExecutor(suggested_path)
 
 
 class FFmpegCliExecutor(FFmpegExecutor):
@@ -209,16 +208,24 @@ class FFmpegProvider(Provider):
         })
         self.executor = FFmpegExecutor.get_executor_instance(suggested_path)
 
+    def loaded(self) -> bool:
+        """If library or executable was found."""
+        # if executor is None, print a warning and set to False to not repeat the warning
+        if isinstance(self.executor, NotFoundExecutor):
+            if not self.executor.warned:
+                logger.warning(WARN_MSG)
+                self.executor.warned = True
+        # check if loaded
+        return bool(self.executor)
+
     def accepts(self, video_path):
         """Accept any video when FFprobe is available."""
-        if self.executor is None:
-            logger.warning(WARN_MSG)
-            self.executor = False
+        return self.loaded() and video_path.lower().endswith(VIDEO_EXTENSIONS)
 
-        return self.executor and video_path.lower().endswith(VIDEO_EXTENSIONS)
-
-    def describe(self, video_path, context):
+    def describe(self, video_path, context) -> dict[str, Any]:
         """Return video metadata."""
+        if not self.loaded() or self.executor is None:
+            return {}
         data = self.executor.extract_info(video_path)
 
         def debug_data():

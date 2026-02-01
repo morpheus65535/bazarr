@@ -47,7 +47,7 @@ from encodings.utf_8 import (
 from encodings.utf_8 import (
     IncrementalEncoder as UTF8IncrementalEncoder,
 )
-from typing import Callable, Optional, Tuple
+from typing import Callable, Optional
 
 NAME = "utf-8-variants"
 
@@ -95,7 +95,7 @@ class IncrementalDecoder(UTF8IncrementalDecoder):
     @staticmethod
     def _buffer_decode(  # type: ignore[override]
         input: bytes, errors: Optional[str], final: bool
-    ) -> Tuple[str, int]:
+    ) -> tuple[str, int]:
         """
         Decode bytes that may be arriving in a stream, following the Codecs
         API.
@@ -137,9 +137,7 @@ class IncrementalDecoder(UTF8IncrementalDecoder):
         return "".join(decoded_segments), position
 
     @staticmethod
-    def _buffer_decode_step(
-        input: bytes, errors: Optional[str], final: bool
-    ) -> Tuple[str, int]:
+    def _buffer_decode_step(input: bytes, errors: Optional[str], final: bool) -> tuple[str, int]:
         """
         There are three possibilities for each decoding step:
 
@@ -178,17 +176,15 @@ class IncrementalDecoder(UTF8IncrementalDecoder):
                     return "", 0
         else:
             # Decode a possible six-byte sequence starting with 0xed.
-            return IncrementalDecoder._buffer_decode_surrogates(
-                sup, input, errors, final
-            )
+            return IncrementalDecoder._buffer_decode_surrogates(sup, input, errors, final)
 
     @staticmethod
     def _buffer_decode_surrogates(
-        sup: Callable[[bytes, Optional[str], bool], Tuple[str, int]],
+        sup: Callable[[bytes, Optional[str], bool], tuple[str, int]],
         input: bytes,
         errors: Optional[str],
         final: bool,
-    ) -> Tuple[str, int]:
+    ) -> tuple[str, int]:
         """
         When we have improperly encoded surrogates, we can still see the
         bits that they were meant to represent.
@@ -239,13 +235,13 @@ IncrementalEncoder = UTF8IncrementalEncoder
 
 class StreamWriter(codecs.StreamWriter):
     @staticmethod
-    def encode(input: str, errors: str = "strict") -> Tuple[bytes, int]:
+    def encode(input: str, errors: str = "strict") -> tuple[bytes, int]:
         return IncrementalEncoder(errors).encode(input, final=True), len(input)
 
 
 class StreamReader(codecs.StreamReader):
     @staticmethod
-    def decode(input: bytes, errors: str = "strict") -> Tuple[str, int]:
+    def decode(input: bytes, errors: str = "strict") -> tuple[str, int]:
         return IncrementalDecoder(errors).decode(input, final=True), len(input)
 
 
