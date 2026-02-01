@@ -37,12 +37,16 @@ const StateIcon: FunctionComponent<StateIconProps> = ({
 
   const isMobile = useMediaQuery(`(max-width: ${em(750)})`);
 
+  const itemSize = isMobile ? "sm" : "md";
+
+  const titleSize = isMobile ? "md" : "lg";
+
   const PopoverTarget: FunctionComponent = () => {
     if (isHistory) {
       return <FontAwesomeIcon icon={faListCheck} />;
     } else {
       return (
-        <Text c={hasIssues ? "yellow" : "green"} span>
+        <Text size={itemSize} c={hasIssues ? "yellow" : "green"} span>
           <FontAwesomeIcon
             icon={hasIssues ? faExclamationCircle : faCheckCircle}
           />
@@ -52,31 +56,37 @@ const StateIcon: FunctionComponent<StateIconProps> = ({
   };
 
   return (
-    <Popover position="left" opened={opened} width={360} withArrow withinPortal>
+    <Popover
+      position={isMobile ? "top" : "left"}
+      opened={opened}
+      width={360}
+      withArrow
+      withinPortal
+    >
       <Popover.Target>
-        <Text onMouseEnter={open} onMouseLeave={close}>
+        <Text
+          onMouseEnter={open}
+          onMouseLeave={close}
+          onClick={opened ? close : open}
+        >
           <PopoverTarget />
         </Text>
       </Popover.Target>
       <Popover.Dropdown>
-        <Text size="xl" ta="center">
+        <Text size={titleSize} fw="bold" c="white" ta="center">
           Scoring Criteria
         </Text>
-        {isMobile ? null : (
-          <Alert variant="light" color="blue" mb="sm">
-            Not matching attributes will not prevent the subtitle to be
-            downloaded and are strictly used for scoring the subtitle.
-          </Alert>
-        )}
         <Group justify="left" gap="xl" wrap="nowrap" grow>
           <Stack align="flex-start" justify="flex-start" gap="xs" mb="auto">
             <Flex gap="sm">
-              <Text c="green">
+              <Text size={itemSize} c="green">
                 <FontAwesomeIcon icon={faPlus}></FontAwesomeIcon>
               </Text>
-              <Text c="green">Matching</Text>
+              <Text size={itemSize} c="green">
+                Matching
+              </Text>
             </Flex>
-            <List>
+            <List size={itemSize} c="green">
               {matches.map((v, idx) => (
                 <List.Item key={BuildKey(idx, v, "match")}>{v}</List.Item>
               ))}
@@ -84,18 +94,27 @@ const StateIcon: FunctionComponent<StateIconProps> = ({
           </Stack>
           <Stack align="flex-start" justify="flex-start" gap="xs" mb="auto">
             <Flex gap="sm">
-              <Text c="yellow">
+              <Text size={itemSize} c="yellow">
                 <FontAwesomeIcon icon={faMinus}></FontAwesomeIcon>
               </Text>
-              <Text c="yellow">Not Matching</Text>
+              <Text size={itemSize} c="yellow">
+                Not Matching
+              </Text>
             </Flex>
-            <List>
+            <List size={itemSize} c="yellow">
               {dont.map((v, idx) => (
                 <List.Item key={BuildKey(idx, v, "miss")}>{v}</List.Item>
               ))}
             </List>
           </Stack>
         </Group>
+        <Alert variant="light" color="blue" mb="sm">
+          <Text size={itemSize}>
+            These criteria are used to determine relative rankings. They will
+            not prevent automatic downloading of a subtitle unless the score
+            falls below your set threshold.
+          </Text>
+        </Alert>
       </Popover.Dropdown>
     </Popover>
   );
