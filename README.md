@@ -87,6 +87,7 @@ If you need something that is not already part of Bazarr, feel free to create a 
 - Subtitrari-noi.ro
 - subtitri.id.lv
 - Subtitulamos.tv
+- SubX
 - Supersubtitles
 - Titlovi
 - Titrari.ro
