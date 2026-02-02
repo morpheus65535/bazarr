@@ -86,6 +86,8 @@ class SubxSubtitle(Subtitle):
         description,
         uploader,
         download_url,
+        season=None,
+        episode=None,
     ):
         super(SubxSubtitle, self).__init__(
             language,
@@ -96,6 +98,8 @@ class SubxSubtitle(Subtitle):
         self.video = video
         self.download_url = download_url
         self.uploader = uploader
+        self.season = season
+        self.episode = episode
 
         self.release_info = str(title).strip()
         if description:
@@ -110,7 +114,13 @@ class SubxSubtitle(Subtitle):
         matches = set()
 
         if isinstance(video, Episode):
-            matches.update({"title", "series", "season", "episode", "year"})
+            matches.update({"title", "series", "year"})
+            
+            # Match season and episode if they align
+            if self.season == video.season:
+                matches.add("season")
+            if self.episode == video.episode:
+                matches.add("episode")
         elif isinstance(video, Movie):
             matches.update({"title", "year"})
 
@@ -159,7 +169,7 @@ class SubxSubtitlesProvider(Provider):
         """Close session."""
         self.session.close()
 
-    def run_query(self, query, video, video_type):
+    def run_query(self, query, video, video_type, season=None, episode=None):
         """
         Execute a search on SubX API.
         
@@ -167,16 +177,24 @@ class SubxSubtitlesProvider(Provider):
             query: Search term
             video: Video object
             video_type: Video type ('episode' or 'movie')
+            season: Season number to filter (optional)
+            episode: Episode number to filter (optional)
             
         Returns:
             List of found subtitles
         """
         params = {
-            "query": query,
-            "limit": 100,
+            "limit": 200,
             "video_type": video_type,
         }
 
+        # Use IMDb ID if available (most precise)
+        if hasattr(video, 'imdb_id') and video.imdb_id:
+            params["imdb_id"] = video.imdb_id
+        else:
+            # Fallback to title search
+            params["title"] = query
+        
         if video.year:
             params["year"] = video.year
 
@@ -202,6 +220,15 @@ class SubxSubtitlesProvider(Provider):
 
         subtitles = []
         for item in data.get("items", []):
+            # Filter by season/episode if searching for TV shows
+            item_season = item.get("season")
+            item_episode = item.get("episode")
+            
+            if season is not None and item_season != season:
+                continue
+            if episode is not None and item_episode != episode:
+                continue
+
             # Build page URL
             page_url = item.get("page_url")
             if not page_url and item.get("id"):
@@ -213,8 +240,10 @@ class SubxSubtitlesProvider(Provider):
                 page_link=page_url,
                 title=item.get("title"),
                 description=item.get("description", ""),
-                uploader=item.get("uploader", "unknown"),
+                uploader=item.get("uploader_name", "unknown"),
                 download_url=f"{_SUBX_BASE_URL}/api/subtitles/{item['id']}/download",
+                season=item_season,
+                episode=item_episode,
             ))
 
         return subtitles
@@ -231,72 +260,63 @@ class SubxSubtitlesProvider(Provider):
             List of found subtitles
         """
         subtitles = []
-        seen_queries = set()
-
-        def query_once(q, vtype):
-            """Execute a unique query without repetition."""
-            if not q or q in seen_queries:
-                return []
-            seen_queries.add(q)
-            res = self.run_query(q, video, vtype)
-            time.sleep(5)  # Rate limiting
-            return res or []
 
         # ---------------------------
         # EPISODES
         # ---------------------------
         if isinstance(video, Episode):
-            titles = _collect_titles(video, episode=True, max_alts=5)
+            titles = _collect_titles(video, episode=True, max_alts=3)
             logger.debug("Titles to search: %s", titles)
 
             for raw_title in titles:
                 title = _series_sanitizer(raw_title)
 
-                # S00E00 search
-                subtitles += query_once(
-                    f"{title} S{video.season:02}E{video.episode:02}",
+                # Search with specific season and episode filter
+                logger.debug("Searching for %s S%02dE%02d", title, video.season, video.episode)
+                subtitles = self.run_query(
+                    title,
+                    video,
                     "episode",
+                    season=video.season,
+                    episode=video.episode,
                 )
                 
-                # Season search
-                subtitles += query_once(
-                    f"{title} S{video.season:02}",
-                    "episode",
-                )
-
-                # Series title only if few results
-                if len(subtitles) <= 5:
-                    subtitles += query_once(title, "episode")
-                else:
-                    break
-
-                # Episode title as last resort
-                if not subtitles and getattr(video, "title", None) and video.title != title:
-                    subtitles += query_once(video.title, "episode")
-
                 if subtitles:
+                    logger.debug("Found %d subtitles for S%02dE%02d", len(subtitles), video.season, video.episode)
                     break
+                
+                # If no exact match, try just the season
+                logger.debug("No exact match, trying season only: S%02d", video.season)
+                subtitles = self.run_query(
+                    title,
+                    video,
+                    "episode",
+                    season=video.season,
+                    episode=None,
+                )
+                
+                if subtitles:
+                    logger.debug("Found %d subtitles for season S%02d", len(subtitles), video.season)
+                    break
+                
+                time.sleep(2)  # Rate limiting between searches
 
         # ---------------------------
         # MOVIES
         # ---------------------------
         else:
-            titles = _collect_titles(video, episode=False, max_alts=5)
+            titles = _collect_titles(video, episode=False, max_alts=3)
             logger.debug("Titles to search: %s", titles)
 
-            for t in titles:
-                # Title search
-                res = query_once(t, "movie")
-                if res:
-                    subtitles += res
+            for title in titles:
+                logger.debug("Searching for movie: %s", title)
+                subtitles = self.run_query(title, video, "movie")
+                
+                if subtitles:
+                    logger.debug("Found %d subtitles for movie", len(subtitles))
                     break
-                    
-                # Search with year
-                if getattr(video, "year", None):
-                    res2 = query_once(f"{t} ({video.year})", "movie")
-                    if res2:
-                        subtitles += res2
-                        break
+                
+                time.sleep(2)  # Rate limiting
 
         return subtitles
 
