@@ -89,7 +89,7 @@ class SubxSubtitle(Subtitle):
         season=None,
         episode=None,
     ):
-        super(SubdivxSubtitle, self).__init__(
+        super(SubxSubtitle, self).__init__(
             language,
             hearing_impaired=False,
             page_link=page_link,
