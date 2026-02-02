@@ -89,7 +89,7 @@ class SubxSubtitle(Subtitle):
         season=None,
         episode=None,
     ):
-        super(SubxSubtitle, self).__init__(
+        super(SubdivxSubtitle, self).__init__(
             language,
             hearing_impaired=False,
             page_link=page_link,
@@ -200,16 +200,46 @@ class SubxSubtitlesProvider(Provider):
 
         logger.debug("SubX search params: %s", params)
 
-        try:
-            response = self.session.get(
-                f"{_SUBX_BASE_URL}/api/subtitles/search",
-                params=params,
-                timeout=30,
-            )
-            response.raise_for_status()
-            data = response.json()
-        except Exception as e:
-            logger.error("SubX API error: %s", e)
+        # Retry logic for rate limiting
+        max_retries = 3
+        data = None
+        
+        for attempt in range(max_retries):
+            try:
+                response = self.session.get(
+                    f"{_SUBX_BASE_URL}/api/subtitles/search",
+                    params=params,
+                    timeout=30,
+                )
+                
+                # Handle rate limiting
+                if response.status_code == 429:
+                    if attempt < max_retries - 1:
+                        wait_time = 2 ** attempt  # Exponential backoff: 1s, 2s, 4s
+                        logger.warning("Rate limit hit, waiting %ds before retry %d/%d", 
+                                     wait_time, attempt + 1, max_retries)
+                        time.sleep(wait_time)
+                        continue
+                    else:
+                        logger.error("Rate limit exceeded after %d retries", max_retries)
+                        return []
+                
+                response.raise_for_status()
+                data = response.json()
+                break  # Success, exit retry loop
+                
+            except Exception as e:
+                if attempt < max_retries - 1:
+                    logger.warning("SubX API error (attempt %d/%d): %s", 
+                                 attempt + 1, max_retries, e)
+                    time.sleep(1)
+                    continue
+                else:
+                    logger.error("SubX API error after %d retries: %s", max_retries, e)
+                    return []
+        
+        if data is None:
+            logger.error("No data received from SubX API")
             return []
 
         logger.debug(
@@ -219,14 +249,23 @@ class SubxSubtitlesProvider(Provider):
         )
 
         subtitles = []
+        filtered_count = 0
+        
         for item in data.get("items", []):
             # Filter by season/episode if searching for TV shows
             item_season = item.get("season")
             item_episode = item.get("episode")
             
+            logger.debug("Item: season=%s, episode=%s, title=%s", 
+                        item_season, item_episode, item.get("title"))
+            
             if season is not None and item_season != season:
+                logger.debug("Skipping - season mismatch (want %s, got %s)", season, item_season)
+                filtered_count += 1
                 continue
             if episode is not None and item_episode != episode:
+                logger.debug("Skipping - episode mismatch (want %s, got %s)", episode, item_episode)
+                filtered_count += 1
                 continue
 
             # Build page URL
@@ -245,6 +284,8 @@ class SubxSubtitlesProvider(Provider):
                 season=item_season,
                 episode=item_episode,
             ))
+        
+        logger.debug("After filtering: %d subtitles (filtered out %d)", len(subtitles), filtered_count)
 
         return subtitles
 
@@ -299,7 +340,7 @@ class SubxSubtitlesProvider(Provider):
                     logger.debug("Found %d subtitles for season S%02d", len(subtitles), video.season)
                     break
                 
-                time.sleep(2)  # Rate limiting between searches
+                time.sleep(1)  # Small delay between searches
 
         # ---------------------------
         # MOVIES
@@ -316,7 +357,7 @@ class SubxSubtitlesProvider(Provider):
                     logger.debug("Found %d subtitles for movie", len(subtitles))
                     break
                 
-                time.sleep(2)  # Rate limiting
+                time.sleep(1)  # Small delay between searches
 
         return subtitles
 
