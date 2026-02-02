@@ -129,11 +129,22 @@ class SubxSubtitle(Subtitle):
             else:
                 # Season pack - add episode match to allow Bazarr to accept it
                 matches.add("episode")
-                
+        
         elif isinstance(video, Movie):
             matches.update({"title", "year"})
 
+        # Update matches from release info, but preserve episode match for season packs
+        is_season_pack = isinstance(video, Episode) and self.episode is None
+        if is_season_pack:
+            # Temporarily store that this is a season pack
+            had_episode_match = "episode" in matches
+        
         update_matches(matches, video, self.release_info)
+        
+        # Restore episode match for season packs (it might be removed by update_matches)
+        if is_season_pack and had_episode_match:
+            matches.add("episode")
+        
         return matches
 
 
