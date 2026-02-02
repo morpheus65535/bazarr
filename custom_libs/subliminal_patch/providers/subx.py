@@ -250,6 +250,7 @@ class SubxSubtitlesProvider(Provider):
 
         subtitles = []
         filtered_count = 0
+        season_packs = []  # Store season packs as fallback
         
         for item in data.get("items", []):
             # Filter by season/episode if searching for TV shows
@@ -259,14 +260,27 @@ class SubxSubtitlesProvider(Provider):
             logger.debug("Item: season=%s, episode=%s, title=%s", 
                         item_season, item_episode, item.get("title"))
             
+            # Skip if season doesn't match
             if season is not None and item_season != season:
                 logger.debug("Skipping - season mismatch (want %s, got %s)", season, item_season)
                 filtered_count += 1
                 continue
-            if episode is not None and item_episode != episode:
-                logger.debug("Skipping - episode mismatch (want %s, got %s)", episode, item_episode)
-                filtered_count += 1
-                continue
+            
+            # If looking for specific episode
+            if episode is not None:
+                # Exact episode match - highest priority
+                if item_episode == episode:
+                    logger.debug("Found exact episode match")
+                # Season pack (episode=None) - save as fallback
+                elif item_episode is None and item_season == season:
+                    logger.debug("Found season pack - saving as fallback")
+                    season_packs.append(item)
+                    continue
+                # Different episode - skip
+                else:
+                    logger.debug("Skipping - episode mismatch (want %s, got %s)", episode, item_episode)
+                    filtered_count += 1
+                    continue
 
             # Build page URL
             page_url = item.get("page_url")
@@ -284,6 +298,26 @@ class SubxSubtitlesProvider(Provider):
                 season=item_season,
                 episode=item_episode,
             ))
+        
+        # If no exact episode matches found, use season packs as fallback
+        if episode is not None and not subtitles and season_packs:
+            logger.info("No exact episode matches, using %d season pack(s) as fallback", len(season_packs))
+            for item in season_packs:
+                page_url = item.get("page_url")
+                if not page_url and item.get("id"):
+                    page_url = f"{_SUBX_BASE_URL}/api/subtitles/{item['id']}"
+
+                subtitles.append(self.subtitle_class(
+                    language=Language.fromalpha2("es"),
+                    video=video,
+                    page_link=page_url,
+                    title=item.get("title"),
+                    description=item.get("description", ""),
+                    uploader=item.get("uploader_name", "unknown"),
+                    download_url=f"{_SUBX_BASE_URL}/api/subtitles/{item['id']}/download",
+                    season=item.get("season"),
+                    episode=item.get("episode"),
+                ))
         
         logger.debug("After filtering: %d subtitles (filtered out %d)", len(subtitles), filtered_count)
 
