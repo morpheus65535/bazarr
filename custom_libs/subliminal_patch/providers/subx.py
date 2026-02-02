@@ -204,7 +204,7 @@ class SubxSubtitlesProvider(Provider):
             List of found subtitles
         """
         params = {
-            "limit": 200,
+            "limit": 25,
             "video_type": video_type,
         }
 
