@@ -116,11 +116,20 @@ class SubxSubtitle(Subtitle):
         if isinstance(video, Episode):
             matches.update({"title", "series", "year"})
             
-            # Match season and episode if they align
+            # Match season if it aligns
             if self.season == video.season:
                 matches.add("season")
-            if self.episode == video.episode:
+                
+            # For episode matching:
+            # - If subtitle has specific episode, it must match
+            # - If subtitle is a season pack (episode=None), consider it a match
+            if self.episode is not None:
+                if self.episode == video.episode:
+                    matches.add("episode")
+            else:
+                # Season pack - add episode match to allow Bazarr to accept it
                 matches.add("episode")
+                
         elif isinstance(video, Movie):
             matches.update({"title", "year"})
 
