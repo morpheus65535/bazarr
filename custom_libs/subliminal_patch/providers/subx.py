@@ -366,10 +366,11 @@ class SubxSubtitlesProvider(Provider):
             for raw_title in titles:
                 title = _series_sanitizer(raw_title)
 
-                # Search with specific season and episode filter
+                # 1. First try: Exact episode (e.g., "TV Series S03E13")
                 logger.debug("Searching for %s S%02dE%02d", title, video.season, video.episode)
+                query = f"{title} S{video.season:02d}E{video.episode:02d}"
                 subtitles = self.run_query(
-                    title,
+                    query,
                     video,
                     "episode",
                     season=video.season,
@@ -377,11 +378,26 @@ class SubxSubtitlesProvider(Provider):
                 )
                 
                 if subtitles:
-                    logger.debug("Found %d subtitles for S%02dE%02d", len(subtitles), video.season, video.episode)
+                    logger.debug("Found %d subtitles for exact episode", len(subtitles))
                     break
                 
-                # If no exact match, try just the season
-                logger.debug("No exact match, trying season only: S%02d", video.season)
+                # 2. Second try: Season only (e.g., "TV Series S03")
+                logger.debug("No exact match, trying season: %s S%02d", title, video.season)
+                query = f"{title} S{video.season:02d}"
+                subtitles = self.run_query(
+                    query,
+                    video,
+                    "episode",
+                    season=video.season,
+                    episode=None,  # Accept any episode from this season
+                )
+                
+                if subtitles:
+                    logger.debug("Found %d subtitles for season", len(subtitles))
+                    break
+                
+                # 3. Last try: Series title only (fallback for poorly tagged content)
+                logger.debug("No season match, trying series title only: %s", title)
                 subtitles = self.run_query(
                     title,
                     video,
@@ -391,10 +407,10 @@ class SubxSubtitlesProvider(Provider):
                 )
                 
                 if subtitles:
-                    logger.debug("Found %d subtitles for season S%02d", len(subtitles), video.season)
+                    logger.debug("Found %d subtitles from series title search", len(subtitles))
                     break
                 
-                time.sleep(1)  # Small delay between searches
+                time.sleep(1)  # Small delay between different title attempts
 
         # ---------------------------
         # MOVIES
