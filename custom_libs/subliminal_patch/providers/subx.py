@@ -194,7 +194,7 @@ class SubxSubtitlesProvider(Provider):
         Execute a search on SubX API.
         
         Args:
-            query: Search term
+            query: Search term (or None if using imdb_id)
             video: Video object
             video_type: Video type ('episode' or 'movie')
             season: Season number to filter (optional)
@@ -203,24 +203,30 @@ class SubxSubtitlesProvider(Provider):
         Returns:
             List of found subtitles
         """
+        # Build search parameters
         params = {
-            "limit": 25,
+            "limit": 200,
             "video_type": video_type,
         }
 
-        # Use IMDb ID if available (most precise)
+        # Prefer IMDb ID for more accurate results (per API docs)
         if hasattr(video, 'imdb_id') and video.imdb_id:
             params["imdb_id"] = video.imdb_id
-        else:
+            logger.debug("Using IMDb ID for search: %s", video.imdb_id)
+        elif query:
             # Fallback to title search
             params["title"] = query
+        else:
+            logger.error("No search criteria provided (no imdb_id or query)")
+            return []
         
-        if video.year:
+        # Add year if available (helps narrow results)
+        if hasattr(video, 'year') and video.year:
             params["year"] = video.year
 
         logger.debug("SubX search params: %s", params)
 
-        # Retry logic for rate limiting
+        # Execute request with retry logic
         max_retries = 3
         data = None
         
@@ -229,30 +235,56 @@ class SubxSubtitlesProvider(Provider):
                 response = self.session.get(
                     f"{_SUBX_BASE_URL}/api/subtitles/search",
                     params=params,
-                    timeout=30,
+                    timeout=10,  # 10s timeout for search (per API docs)
                 )
                 
-                # Handle rate limiting
-                if response.status_code == 429:
+                # Handle specific HTTP status codes per API documentation
+                if response.status_code == 400:
+                    logger.error("Bad request to SubX API: %s", response.text)
+                    return []  # Don't retry on bad requests
+                
+                elif response.status_code == 401:
+                    logger.error("Invalid SubX API key")
+                    raise ConfigurationError("Invalid SubX API key")
+                
+                elif response.status_code == 404:
+                    logger.debug("No results found (404)")
+                    return []
+                
+                elif response.status_code == 429:
+                    # Rate limited - exponential backoff
                     if attempt < max_retries - 1:
-                        wait_time = 2 ** attempt  # Exponential backoff: 1s, 2s, 4s
+                        wait_time = 2 ** attempt
                         logger.warning("Rate limit hit, waiting %ds before retry %d/%d", 
                                      wait_time, attempt + 1, max_retries)
                         time.sleep(wait_time)
                         continue
                     else:
                         logger.error("Rate limit exceeded after %d retries", max_retries)
+                        raise APIThrottled("SubX rate limit exceeded")
+                
+                elif response.status_code >= 500:
+                    # Server error - retry with backoff
+                    if attempt < max_retries - 1:
+                        wait_time = 2 ** attempt
+                        logger.warning("Server error %d, retrying in %ds (attempt %d/%d)", 
+                                     response.status_code, wait_time, attempt + 1, max_retries)
+                        time.sleep(wait_time)
+                        continue
+                    else:
+                        logger.error("Server error persists after %d retries", max_retries)
                         return []
                 
+                # Success
                 response.raise_for_status()
                 data = response.json()
-                break  # Success, exit retry loop
+                break  # Exit retry loop
                 
             except Exception as e:
                 if attempt < max_retries - 1:
                     logger.warning("SubX API error (attempt %d/%d): %s", 
                                  attempt + 1, max_retries, e)
-                    time.sleep(1)
+                    time.sleep(2 ** attempt)
                     continue
                 else:
                     logger.error("SubX API error after %d retries: %s", max_retries, e)
@@ -366,7 +398,7 @@ class SubxSubtitlesProvider(Provider):
             for raw_title in titles:
                 title = _series_sanitizer(raw_title)
 
-                # 1. First try: Exact episode (e.g., "TV Series S03E13")
+                # 1. First try: Exact episode (e.g., "Breaking Bad S03E13")
                 logger.debug("Searching for %s S%02dE%02d", title, video.season, video.episode)
                 query = f"{title} S{video.season:02d}E{video.episode:02d}"
                 subtitles = self.run_query(
@@ -381,7 +413,7 @@ class SubxSubtitlesProvider(Provider):
                     logger.debug("Found %d subtitles for exact episode", len(subtitles))
                     break
                 
-                # 2. Second try: Season only (e.g., "TV Series S03")
+                # 2. Second try: Season only (e.g., "Breaking Bad S03")
                 logger.debug("No exact match, trying season: %s S%02d", title, video.season)
                 query = f"{title} S{video.season:02d}"
                 subtitles = self.run_query(
