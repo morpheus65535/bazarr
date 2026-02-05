@@ -78,6 +78,7 @@ def refine_from_db(path, video):
                    TableMovies.video_codec,
                    TableMovies.audio_codec,
                    TableMovies.imdbId,
+                   TableMovies.tmdbId,
                    TableMovies.radarrId)
             .where(TableMovies.path == path_mappings.path_replace_reverse_movie(path))) \
             .first()
@@ -92,6 +93,9 @@ def refine_from_db(path, video):
 
             if data.imdbId and not video.imdb_id:
                 video.imdb_id = data.imdbId
+            if data.tmdbId and not video.tmdb_id:
+                video.tmdb_id = data.tmdbId
+ 
             video.alternative_titles = ast.literal_eval(data.alternativeTitles)
             if not video.source:
                 if data.format:
