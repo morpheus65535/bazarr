@@ -287,7 +287,7 @@ const ProfileEditForm: FunctionComponent<Props> = ({
             <Action
               label="Remove"
               icon={faTrash}
-              c="red"
+              c="danger"
               onClick={() => action.remove(row.index)}
             ></Action>
           );

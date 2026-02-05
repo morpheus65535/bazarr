@@ -83,7 +83,7 @@ const TimeOffsetForm: FunctionComponent<Props> = ({ selections, onSubmit }) => {
       <Stack>
         <Group align="end" gap="xs" wrap="nowrap">
           <Button
-            color="gray"
+            color="secondary"
             variant="filled"
             style={{ overflow: "visible" }}
             onClick={() =>

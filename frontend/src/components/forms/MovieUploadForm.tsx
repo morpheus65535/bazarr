@@ -164,11 +164,11 @@ const MovieUploadForm: FunctionComponent<Props> = ({
     const color = useMemo<MantineColor | undefined>(() => {
       switch (validateResult?.state) {
         case "valid":
-          return "green";
+          return "success";
         case "warning":
-          return "yellow";
+          return "warning";
         case "error":
-          return "red";
+          return "danger";
         default:
           return undefined;
       }
@@ -285,7 +285,7 @@ const MovieUploadForm: FunctionComponent<Props> = ({
             <Action
               label="Remove"
               icon={faTrash}
-              c="red"
+              c="danger"
               onClick={() => action.remove(index)}
             ></Action>
           );

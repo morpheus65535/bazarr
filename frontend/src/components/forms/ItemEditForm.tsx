@@ -110,7 +110,7 @@ const ItemEditForm: FunctionComponent<Props> = ({
               onCancel?.();
               modals.closeSelf();
             }}
-            color="gray"
+            color="secondary"
             variant="subtle"
           >
             Cancel
