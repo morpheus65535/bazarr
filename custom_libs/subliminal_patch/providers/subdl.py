@@ -161,7 +161,7 @@ class SubdlProvider(ProviderRetryMixin, Provider):
             params = {
                        'api_key': self.api_key,
                        'film_name': title if not imdb_id else None,
-                       'imdb_id': imdb_id if imdb_id else None,
+                       'imdb_id': imdb_id,
                        'languages': langs,
                        'subs_per_page': 30,
                        'type': 'movie',
