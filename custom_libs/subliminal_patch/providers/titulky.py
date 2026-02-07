@@ -10,7 +10,6 @@ from urllib.parse import urljoin, urlparse, parse_qs, quote
 import rarfile
 from guessit import guessit
 from requests import Session
-from requests.adapters import HTTPAdapter
 from requests.exceptions import HTTPError
 
 from subliminal.cache import region as cache
@@ -21,6 +20,7 @@ from subliminal.video import Episode, Movie
 
 from subliminal_patch.providers import Provider
 from subliminal_patch.providers.mixins import ProviderSubtitleArchiveMixin
+from subliminal_patch.exceptions import TooManyRequests
 
 from subliminal_patch.subtitle import Subtitle, guess_matches
 
@@ -271,6 +271,8 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
     def fetch_page(self, url, ref=server_url, allow_redirects=False):
         res = self.get_request(url, ref=ref, allow_redirects=allow_redirects)
 
+        if res.status_code == 429:
+            raise TooManyRequests("Titulky.com: Too many requests, sleeping for 60 seconds.")
         if res.status_code != 200:
             raise HTTPError(f"Fetch failed with status code {res.status_code}")
         if not res.text:
@@ -511,6 +513,9 @@ class TitulkyProvider(Provider, ProviderSubtitleArchiveMixin):
 
     def download_subtitle(self, subtitle):
         res = self.get_request(subtitle.download_link, ref=subtitle.page_link)
+
+        if res.status_code == 429:
+            raise TooManyRequests("Titulky.com: Too many requests, sleeping for 60 seconds.")
 
         try:
             res.raise_for_status()

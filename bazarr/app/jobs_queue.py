@@ -504,16 +504,19 @@ class JobsQueue:
         """
         while True:
             try:
-                with self._queue_lock:
-                    can_run_job = (len(self.jobs_running_queue) < settings.general.concurrent_jobs
-                                   and len(self.jobs_pending_queue) > 0)
+                if self.jobs_pending_queue:
+                    with self._queue_lock:
+                        can_run_job = (len(self.jobs_running_queue) < settings.general.concurrent_jobs
+                                       and len(self.jobs_pending_queue) > 0)
 
-                if can_run_job:
-                    job_thread = Thread(target=self._run_job)
-                    job_thread.daemon = True
-                    job_thread.start()
+                    if can_run_job:
+                        job_thread = Thread(target=self._run_job)
+                        job_thread.daemon = True
+                        job_thread.start()
+                    else:
+                        sleep(0.5)
                 else:
-                    sleep(0.1)
+                    sleep(0.5)
             except (KeyboardInterrupt, SystemExit):
                 break
 

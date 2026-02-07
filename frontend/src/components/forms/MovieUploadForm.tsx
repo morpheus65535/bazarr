@@ -302,12 +302,12 @@ const MovieUploadForm: FunctionComponent<Props> = ({
       onSubmit={form.onSubmit(({ files }) => {
         const { radarrId } = movie;
 
-        files.forEach(async ({ file, language, hi, forced }) => {
+        files.forEach(({ file, language, hi, forced }) => {
           if (language === null) {
             throw new Error("Language is not selected");
           }
 
-          await upload.mutateAsync({
+          upload.mutate({
             radarrId,
             form: { file, language: language.code2, hi, forced },
           });

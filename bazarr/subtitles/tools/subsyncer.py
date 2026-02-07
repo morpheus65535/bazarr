@@ -2,11 +2,8 @@
 
 import logging
 import os
-import threading
-import time
 
 from ffsubsync.ffsubsync import run, make_parser
-from tqdm import tqdm
 
 from utilities.binaries import get_binary
 from radarr.history import history_log_movie
@@ -34,67 +31,7 @@ class SubSyncer:
         self.log_dir_path = os.path.join(args.config_dir, 'log')
         self.progress_callback = None
         self.sync_result = None
-        self.sync_exception = None
-        self._tqdm_instance = None
         self.job_id = None
-
-    @staticmethod
-    def _capture_tqdm_instance():
-        """Capture the tqdm instance from ffsubsync's VideoSpeechTransformer."""
-        try:
-            # Get all active tqdm instances
-            if hasattr(tqdm, '_instances'):
-                instances = list(tqdm._instances)
-                if instances:
-                    # Return the most recent instance
-                    return instances[-1]
-        except Exception as e:
-            logging.debug(f'BAZARR unable to capture tqdm instance: {e}')
-        return None
-
-    def _monitor_tqdm_progress(self, job_id):
-        """Monitor tqdm progress in a loop."""
-        last_n = 0
-        last_total = 0
-        
-        while self.sync_result is None and self.sync_exception is None:
-            try:
-                time.sleep(1)  # Check every 1s
-                
-                # Try to capture tqdm instance if we don't have it yet
-                if self._tqdm_instance is None:
-                    self._tqdm_instance = self._capture_tqdm_instance()
-                
-                if self._tqdm_instance is not None:
-                    # Access tqdm's internal state
-                    current_n = getattr(self._tqdm_instance, 'n', 0)
-                    total = getattr(self._tqdm_instance, 'total', 0)
-                    
-                    # Only send update if values changed
-                    if current_n != last_n or total != last_total:
-                        last_n = current_n
-                        last_total = total
-                        
-                        if self.progress_callback and total:
-                            # Convert to integer percentages for a cleaner display
-                            value = int(current_n)
-                            count = int(total)
-                            
-                            self.progress_callback({
-                                'job_id': job_id,
-                                'value': value,
-                                'count': count,
-                            })
-            except Exception as e:
-                logging.debug(f'BAZARR error monitoring tqdm progress: {e}')
-                time.sleep(1)  # Wait longer on error
-
-    def _run_sync_in_thread(self):
-        """Run the sync operation in a separate thread."""
-        try:
-            self.sync_result = run(self.args)
-        except Exception as e:
-            self.sync_exception = e
 
     def sync(self, video_path, srt_path, srt_lang, hi, forced,
              max_offset_seconds, no_fix_framerate, gss, reference=None, sonarr_series_id=None, sonarr_episode_id=None,
@@ -103,8 +40,7 @@ class SubSyncer:
         self.srtin = srt_path
         self.progress_callback = progress_callback
         self.sync_result = None
-        self.sync_exception = None
-        self._tqdm_instance = None
+
         if self.srtin.casefold().endswith('.ass'):
             # try to preserve the original subtitle style
             # ffmpeg will be able to handle this automatically as long as it has the libass filter
@@ -164,31 +100,7 @@ class SubSyncer:
                 os.remove(self.srtout)
                 logging.debug('BAZARR deleted the previous subtitles synchronization attempt file.')
 
-            # Start sync in a separate thread
-            sync_thread = threading.Thread(target=self._run_sync_in_thread, daemon=False)
-            sync_thread.start()
-
-            # Start progress monitoring if callback provided
-            if progress_callback:
-                # Give the sync thread a moment to start and create tqdm instance
-                time.sleep(0.5)
-                monitor_thread = threading.Thread(
-                    target=self._monitor_tqdm_progress,
-                    args=(job_id,),
-                    daemon=False
-                )
-                monitor_thread.start()
-
-                # Wait for both threads to complete
-                sync_thread.join()
-                monitor_thread.join()
-            else:
-                # Just wait for sync to complete
-                sync_thread.join()
-
-            # Check if an exception occurred
-            if self.sync_exception:
-                raise self.sync_exception
+            self.sync_result = run(self.args)
 
             result = self.sync_result
         except Exception:

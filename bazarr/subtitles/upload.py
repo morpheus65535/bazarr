@@ -163,7 +163,7 @@ def manual_upload_subtitle(path, language, forced, hi, media_type, subtitle, aud
     if media_type == 'series':
         sync_subtitles(video_path=path, srt_path=subtitle_path, srt_lang=uploaded_language_code2, percent_score=100,
                        sonarr_series_id=episode_metadata.sonarrSeriesId, forced=forced, hi=hi,
-                       sonarr_episode_id=episode_metadata.sonarrEpisodeId, job_id=job_id, job_sub_function=True,)
+                       sonarr_episode_id=episode_metadata.sonarrEpisodeId, job_id=job_id)
         reversed_path = path_mappings.path_replace_reverse(path)
         reversed_subtitles_path = path_mappings.path_replace_reverse(subtitle_path)
         notify_sonarr(episode_metadata.sonarrSeriesId)
@@ -171,7 +171,7 @@ def manual_upload_subtitle(path, language, forced, hi, media_type, subtitle, aud
         event_stream(type='episode-wanted', action='delete', payload=episode_metadata.sonarrEpisodeId)
     else:
         sync_subtitles(video_path=path, srt_path=subtitle_path, srt_lang=uploaded_language_code2, percent_score=100,
-                       radarr_id=movie_metadata.radarrId, forced=forced, hi=hi, job_id=job_id, job_sub_function=True,)
+                       radarr_id=movie_metadata.radarrId, forced=forced, hi=hi, job_id=job_id)
         reversed_path = path_mappings.path_replace_reverse_movie(path)
         reversed_subtitles_path = path_mappings.path_replace_reverse_movie(subtitle_path)
         notify_radarr(movie_metadata.radarrId)
