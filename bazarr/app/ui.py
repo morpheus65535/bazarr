@@ -66,56 +66,6 @@ def check_login(actual_method):
         actual_method(*args, **kwargs)
 
 
-@ui_bp.route('/', defaults={'path': ''})
-@ui_bp.route('/<path:path>')
-def catch_all(path):
-    if path.startswith('login') and settings.auth.type not in ['basic', 'form']:
-        # login page has been accessed when no authentication is enabled
-        return redirect(base_url or "/", code=302)
-
-    # PWA Assets are returned from frontend root folder
-    if path in pwa_assets or path.startswith('workbox-'):
-        return send_file(os.path.join(frontend_build_path, path))
-
-    auth = True
-    if settings.auth.type == 'basic':
-        auth = request.authorization
-        if not (auth and check_credentials(request.authorization.username, request.authorization.password, request,
-                                           log_success=False)):
-            return ('Unauthorized', 401, {
-                'WWW-Authenticate': 'Basic realm="Login Required"'
-            })
-    elif settings.auth.type == 'form':
-        if 'logged_in' not in session or not session['logged_in']:
-            auth = False
-
-    try:
-        updated = database.scalar(System.updated)
-    except Exception:
-        updated = '0'
-
-    try:
-        configured = database.scalar(System.configured)
-    except Exception:
-        configured = '0'
-
-    inject = dict()
-
-    if not path.startswith('api/'):
-        inject["baseUrl"] = base_url
-        inject["canUpdate"] = not args.no_update
-        inject["hasUpdate"] = updated != '0'
-        inject["isConfigured"] = configured != '0'
-
-        if auth:
-            inject["apiKey"] = settings.auth.apikey
-
-    template_url = base_url
-    if not template_url.endswith("/"):
-        template_url += "/"
-
-    return render_template("index.html", BAZARR_SERVER_INJECT=inject, baseUrl=template_url)
-
 
 @check_login
 @ui_bp.route('/' + FILE_LOG)
@@ -202,3 +152,54 @@ def proxy(protocol, url):
             return dict(status=False, error='Wrong URL Base.', code=result.status_code)
         else:
             return dict(status=False, error=result.raise_for_status(), code=result.status_code)
+
+
+@ui_bp.route('/', defaults={'path': ''})
+@ui_bp.route('/<path:path>')
+def catch_all(path):
+    if path.startswith('login') and settings.auth.type not in ['basic', 'form']:
+        # login page has been accessed when no authentication is enabled
+        return redirect(base_url or "/", code=302)
+
+    # PWA Assets are returned from frontend root folder
+    if path in pwa_assets or path.startswith('workbox-'):
+        return send_file(os.path.join(frontend_build_path, path))
+
+    auth = True
+    if settings.auth.type == 'basic':
+        auth = request.authorization
+        if not (auth and check_credentials(request.authorization.username, request.authorization.password, request,
+                                           log_success=False)):
+            return ('Unauthorized', 401, {
+                'WWW-Authenticate': 'Basic realm="Login Required"'
+            })
+    elif settings.auth.type == 'form':
+        if 'logged_in' not in session or not session['logged_in']:
+            auth = False
+
+    try:
+        updated = database.scalar(System.updated)
+    except Exception:
+        updated = '0'
+
+    try:
+        configured = database.scalar(System.configured)
+    except Exception:
+        configured = '0'
+
+    inject = dict()
+
+    if not path.startswith('api/'):
+        inject["baseUrl"] = base_url
+        inject["canUpdate"] = not args.no_update
+        inject["hasUpdate"] = updated != '0'
+        inject["isConfigured"] = configured != '0'
+
+        if auth:
+            inject["apiKey"] = settings.auth.apikey
+
+    template_url = base_url
+    if not template_url.endswith("/"):
+        template_url += "/"
+
+    return render_template("index.html", BAZARR_SERVER_INJECT=inject, baseUrl=template_url)
