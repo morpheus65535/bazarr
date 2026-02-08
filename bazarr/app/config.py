@@ -139,6 +139,7 @@ validators = [
     Validator('general.enabled_integrations', must_exist=True, default=[], is_type_of=list),
     Validator('general.multithreading', must_exist=True, default=True, is_type_of=bool),
     Validator('general.chmod_enabled', must_exist=True, default=False, is_type_of=bool),
+    Validator('general.enable_strm_support', must_exist=True, default=False, is_type_of=bool),
     Validator('general.chmod', must_exist=True, default='0640', is_type_of=str),
     Validator('general.subfolder', must_exist=True, default='current', is_type_of=str),
     Validator('general.subfolder_custom', must_exist=True, default='', is_type_of=str),

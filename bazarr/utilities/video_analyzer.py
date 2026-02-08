@@ -290,22 +290,33 @@ def parse_video_metadata(file, file_size, episode_file_id=None, movie_file_id=No
     elif embedded_subs_parser == 'mediainfo':
         mediainfo_path = get_binary("mediainfo")
 
+    video_path = file
+    if settings.general.enable_strm_support and file.lower().endswith('.strm') and os.path.exists(file):
+        try:
+            with open(file, 'r') as f:
+                content = f.read().strip()
+                if content:
+                    video_path = content
+                    logging.debug(f"Stream URL extracted from .strm file: {video_path}")
+        except Exception:
+            logging.exception(f"Failed to read content of .strm file: {file}")
+
     # see if file exists (perhaps offline)
-    if not os.path.exists(file):
-        logging.error(f'Video file "{file}" cannot be found for analysis')
+    if not video_path.lower().startswith('http') and not os.path.exists(video_path):
+        logging.error(f'Video file "{video_path}" cannot be found for analysis')
         return None
 
     # if we have ffprobe available
     if ffprobe_path:
         try:
-            data["ffprobe"] = know(video_path=file, context={"provider": "ffmpeg", "ffmpeg": ffprobe_path})
+            data["ffprobe"] = know(video_path=video_path, context={"provider": "ffmpeg", "ffmpeg": ffprobe_path})
         except KnowitException as e:
             logging.error(f"BAZARR ffprobe cannot analyze this video file {file}. Could it be corrupted? {e}")
             return None
     # or if we have mediainfo available
     elif mediainfo_path:
         try:
-            data["mediainfo"] = know(video_path=file, context={"provider": "mediainfo", "mediainfo": mediainfo_path})
+            data["mediainfo"] = know(video_path=video_path, context={"provider": "mediainfo", "mediainfo": mediainfo_path})
         except KnowitException as e:
             logging.error(f"BAZARR mediainfo cannot analyze this video file {file}. Could it be corrupted? {e}")
             return None
