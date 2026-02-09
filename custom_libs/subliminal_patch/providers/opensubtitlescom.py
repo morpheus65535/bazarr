@@ -599,8 +599,14 @@ def log_request_response(response, non_standard=True):
     else:
         redacted_request_body = None
 
-    redacted_response_body = json.loads(response.text)
-    if 'token' in redacted_response_body and isinstance(redacted_response_body['token'], str):
+    try:
+        redacted_response_body = json.loads(response.text)
+    except JSONDecodeError:
+        # Keep debug logging resilient when upstream returns HTML/plain-text bodies.
+        redacted_response_body = {'_non_json_response': response.text[:500]}
+
+    if isinstance(redacted_response_body, dict) and 'token' in redacted_response_body and \
+            isinstance(redacted_response_body['token'], str):
         redacted_response_body['token'] = redacted_response_body['token'][:-8] + 8 * 'x'
 
     if non_standard:
