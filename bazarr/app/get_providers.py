@@ -323,6 +323,9 @@ def get_providers_auth():
             'verify_ssl': settings.subf2m.verify_ssl,
             'user_agent': settings.subf2m.user_agent,
         },
+        'subdivx': {
+            'flaresolverr_url': settings.subdivx.flaresolverr_url,
+        },
         'whisperai': {
             'endpoint': settings.whisperai.endpoint,
             'response': settings.whisperai.response,
