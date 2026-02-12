@@ -2,6 +2,7 @@
 from __future__ import absolute_import
 
 import logging
+import os
 import re
 import time
 
@@ -111,42 +112,41 @@ class SubxSubtitle(Subtitle):
 
     def get_matches(self, video):
         """Determines which features match the video."""
-        matches = set()
-
+        self.matches = set()  # ← Cambiar de 'matches' a 'self.matches'
+    
         if isinstance(video, Episode):
-            matches.update({"title", "series", "year"})
+            self.matches.update({"title", "series", "year"})
             
             # Match season if it aligns
             if self.season == video.season:
-                matches.add("season")
+                self.matches.add("season")
                 
             # For episode matching:
             # - If subtitle has specific episode, it must match
             # - If subtitle is a season pack (episode=None), consider it a match
             if self.episode is not None:
                 if self.episode == video.episode:
-                    matches.add("episode")
+                    self.matches.add("episode")
             else:
                 # Season pack - add episode match to allow Bazarr to accept it
-                matches.add("episode")
+                self.matches.add("episode")
         
         elif isinstance(video, Movie):
-            matches.update({"title", "year"})
-
+            self.matches.update({"title", "year"})
+    
         # Update matches from release info, but preserve episode match for season packs
         is_season_pack = isinstance(video, Episode) and self.episode is None
         if is_season_pack:
             # Temporarily store that this is a season pack
-            had_episode_match = "episode" in matches
+            had_episode_match = "episode" in self.matches  # ← self.matches
         
-        update_matches(matches, video, self.release_info)
+        update_matches(self.matches, video, self.release_info)  # ← self.matches
         
         # Restore episode match for season packs (it might be removed by update_matches)
         if is_season_pack and had_episode_match:
-            matches.add("episode")
+            self.matches.add("episode")  # ← self.matches
         
-        return matches
-
+        return self.matches  # ← self.matches
 
 # ---------------------------
 # Provider Class
@@ -178,7 +178,7 @@ class SubxSubtitlesProvider(Provider):
         self.session = Session()
         self.session.headers.update({
             "Authorization": f"Bearer {api_key}",
-            "User-Agent": "Bazarr",
+            "User-Agent": os.environ.get("SZ_USER_AGENT", "Sub-Zero/2"),
         })
 
     def initialize(self):
