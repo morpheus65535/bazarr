@@ -513,8 +513,10 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
   {
     key: "subx",
     name: "SubX",
-    description: "SubX API is a search and download API for Subdivx, a LatAm Spanish / Spanish Subtitles Provider",
-    message: "API key required. Get your key from SubX website: https://subx-api.duckdns.org/",
+    description:
+      "SubX API is a search and download API for Subdivx, a LatAm Spanish / Spanish Subtitles Provider",
+    message:
+      "API key required. Get your key from SubX website: https://subx-api.duckdns.org/",
     inputs: [
       {
         type: "text",
