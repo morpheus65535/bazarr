@@ -70,18 +70,6 @@ class SubtisSubtitle(Subtitle):
         if isinstance(video, Movie):
             if self.search_method == "hash":
                 self.matches.add("hash")
-                self.matches.add("title")
-                self.matches.add("year")
-                if video.source:
-                    self.matches.add("source")
-                if video.video_codec:
-                    self.matches.add("video_codec")
-                if video.resolution:
-                    self.matches.add("resolution")
-                if video.audio_codec:
-                    self.matches.add("audio_codec")
-                if video.release_group:
-                    self.matches.add("release_group")
             else:
                 self.matches |= guess_matches(video, guessit(self._title, {"type": "movie"}))
 
