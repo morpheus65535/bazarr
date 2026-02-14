@@ -78,8 +78,8 @@ const SettingsGeneralView: FunctionComponent = () => {
           settingKey="settings-general-enable_strm_support"
         ></Check>
         <Message>
-          Enable support for .strm files. Bazarr will read the stream URL from the
-          file and analyze it for embedded tracks.
+          Enable support for .strm files. Bazarr will read the stream URL from
+          the file and analyze it for embedded tracks.
         </Message>
       </Section>
       <Section header="Security">
