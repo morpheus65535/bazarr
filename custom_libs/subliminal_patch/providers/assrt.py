@@ -94,6 +94,10 @@ class AssrtSubtitle(Subtitle):
             return False
         sub = result['sub']['subs'][0]
         if not len(sub['filelist']):
+            # Single-file subtitle: URL is directly in the sub entry
+            if 'url' in sub and sub['url']:
+                self._detail = sub
+                return sub
             logger.error('Can\'t get filelist from subtitle details')
             return False
         files = sub['filelist']
