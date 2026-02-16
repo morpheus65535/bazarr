@@ -128,10 +128,23 @@ class AssrtSubtitle(Subtitle):
     @property
     def download_link(self):
         detail = self._get_detail()
+        if not detail:
+            return None
         return detail['url']
 
     def get_matches(self, video):
         self.matches = guess_matches(video, guessit(self.video_name))
+        # If matching fails for series, retry after stripping leading CJK characters.
+        # Assrt often returns video names with Chinese titles prefixed to the English
+        # release name (e.g. "瑞克和莫蒂.Rick.and.Morty.S07E10..."), which causes
+        # guessit to produce a combined title that won't match the series name from
+        # Sonarr/Radarr.
+        if (isinstance(video, Episode) and self.video_name
+                and not {"series", "season", "episode"}.issubset(self.matches)):
+            cleaned = re.sub(r'^[\u4e00-\u9fff]+[.\s]+', '', self.video_name)
+            if cleaned != self.video_name:
+                fallback_matches = guess_matches(video, guessit(cleaned))
+                self.matches |= fallback_matches
         return self.matches
 
 
@@ -230,6 +243,10 @@ class AssrtProvider(Provider):
         return self.query(languages, video)
 
     def download_subtitle(self, subtitle):
+        if not subtitle.download_link:
+            logger.warning('No download link available for subtitle %s, skipping', subtitle.subtitle_id)
+            subtitle.content = None
+            return
         sleep(get_request_delay(self.max_request_per_minute))
         r = self.session.get(subtitle.download_link, timeout=15)
         check_status_code(r)
