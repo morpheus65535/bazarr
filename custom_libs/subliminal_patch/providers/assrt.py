@@ -149,6 +149,17 @@ class AssrtSubtitle(Subtitle):
             if cleaned != self.video_name:
                 fallback_matches = guess_matches(video, guessit(cleaned))
                 self.matches |= fallback_matches
+        # Season pack handling: assrt often returns season packs (e.g.
+        # "Rick.and.Morty.S06.1080p.BluRay.x264-STORiES") when searching for a
+        # specific episode.  guessit won't extract an episode number from such a
+        # name, so the subtitle gets skipped by Bazarr's "doesn't match our
+        # series/episode" filter even though _get_detail will pick the correct
+        # episode file from the pack's filelist at download time.
+        if (isinstance(video, Episode) and "series" in self.matches
+                and "season" in self.matches and "episode" not in self.matches):
+            guess = guessit(self.video_name) if self.video_name else {}
+            if "episode" not in guess:
+                self.matches.add("episode")
         return self.matches
 
 
