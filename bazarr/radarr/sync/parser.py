@@ -4,7 +4,7 @@ import os
 
 from app.config import settings
 from languages.get_languages import audio_language_from_name
-from radarr.info import get_radarr_info
+from radarr.info import get_radarr_info, is_radarr_instance_legacy
 from utilities.video_analyzer import embedded_audio_reader
 from utilities.path_mappings import path_mappings
 
@@ -21,7 +21,25 @@ def get_matching_profile(tags, language_profiles):
     return matching_profile
 
 
-def movieParser(movie, action, tags_dict, language_profiles, movie_default_profile, audio_profiles):
+def movieParser(movie, action, tags_dict, language_profiles, movie_default_profile, audio_profiles,
+                radarr_instance_id=1, instance=None):
+    """Parse a Radarr movie API response into a DB-ready dict.
+
+    Args:
+        movie: Raw movie dict from Radarr API.
+        action: 'insert' or 'update'.
+        tags_dict: Tags from Radarr API.
+        language_profiles: Language profiles from the DB.
+        movie_default_profile: Default profile ID (or None).
+        audio_profiles: Quality profiles from Radarr API.
+        radarr_instance_id: The instance ID this movie belongs to (default=1).
+        instance: instance dict (used to determine legacy status). If None, uses global radarr_info.
+    """
+    if instance is not None:
+        _is_legacy = is_radarr_instance_legacy(instance)
+    else:
+        _is_legacy = get_radarr_info.is_legacy()
+
     if 'movieFile' in movie:
         try:
             overview = str(movie['overview'])
@@ -43,7 +61,7 @@ def movieParser(movie, action, tags_dict, language_profiles, movie_default_profi
             sceneName = None
 
         alternativeTitles = None
-        if get_radarr_info.is_legacy():
+        if _is_legacy:
             if 'alternativeTitles' in movie:
                 alternativeTitles = str([item['title'] for item in movie['alternativeTitles']])
         else:
@@ -66,7 +84,7 @@ def movieParser(movie, action, tags_dict, language_profiles, movie_default_profi
 
         if 'mediaInfo' in movie['movieFile']:
             videoFormat = videoCodecID = videoCodecLibrary = None
-            if get_radarr_info.is_legacy():
+            if _is_legacy:
                 if 'videoFormat' in movie['movieFile']['mediaInfo']:
                     videoFormat = movie['movieFile']['mediaInfo']['videoFormat']
             else:
@@ -79,7 +97,7 @@ def movieParser(movie, action, tags_dict, language_profiles, movie_default_profi
             videoCodec = RadarrFormatVideoCodec(videoFormat, videoCodecID, videoCodecLibrary)
 
             audioFormat = audioCodecID = audioProfile = audioAdditionalFeatures = None
-            if get_radarr_info.is_legacy():
+            if _is_legacy:
                 if 'audioFormat' in movie['movieFile']['mediaInfo']:
                     audioFormat = movie['movieFile']['mediaInfo']['audioFormat']
             else:
@@ -103,7 +121,7 @@ def movieParser(movie, action, tags_dict, language_profiles, movie_default_profi
                                                    use_cache=True)
         else:
             audio_language = []
-            if get_radarr_info.is_legacy():
+            if _is_legacy:
                 if 'mediaInfo' in movie['movieFile']:
                     if 'audioLanguages' in movie['movieFile']['mediaInfo']:
                         audio_languages_list = movie['movieFile']['mediaInfo']['audioLanguages'].split('/')
@@ -122,6 +140,7 @@ def movieParser(movie, action, tags_dict, language_profiles, movie_default_profi
         tags = [d['label'] for d in tags_dict if d['id'] in movie['tags']]
 
         parsed_movie = {'radarrId': int(movie["id"]),
+                        'radarr_instance_id': radarr_instance_id,
                         'title': movie["title"],
                         'path': movie['movieFile']['path'],
                         'tmdbId': str(movie["tmdbId"]),

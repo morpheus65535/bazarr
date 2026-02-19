@@ -15,6 +15,28 @@ from constants import HEADERS
 region = make_region().configure('dogpile.cache.memory')
 
 
+def url_radarr_from_instance(instance):
+    """Build base URL for a Radarr instance dict (from TableRadarrInstances.to_dict())."""
+    protocol = "https" if instance.get('ssl') else "http"
+    base_url = instance.get('base_url', '/')
+    if not base_url:
+        base_url = "/"
+    if not base_url.startswith("/"):
+        base_url = f"/{base_url}"
+    if base_url.endswith("/"):
+        base_url = base_url[:-1]
+
+    port = instance.get('port')
+    port_str = f":{port}" if port not in empty_values else ""
+    return f"{protocol}://{instance['ip']}{port_str}{base_url}"
+
+
+def url_api_radarr_from_instance(instance, is_legacy=False):
+    """Build API URL for a Radarr instance dict."""
+    base = url_radarr_from_instance(instance)
+    return base + f'/api{"/v3" if not is_legacy else ""}/'
+
+
 class GetRadarrInfo:
     @staticmethod
     def version():
@@ -82,6 +104,43 @@ class GetRadarrInfo:
             return True
         else:
             return False
+
+
+def get_radarr_version_for_instance(instance):
+    """Return the Radarr version string for a given instance dict."""
+    cache_key = f"radarr_version_instance_{instance['id']}"
+    cached = region.get(cache_key, expiration_time=datetime.timedelta(seconds=60).total_seconds())
+    if cached:
+        return cached
+
+    apikey = instance.get('apikey', '')
+    timeout = int(instance.get('http_timeout', 60))
+    base = url_radarr_from_instance(instance)
+    version = 'unknown'
+
+    try:
+        rv = f"{base}/api/system/status?apikey={apikey}"
+        radarr_json = requests.get(rv, timeout=timeout, verify=False, headers=HEADERS).json()
+        if 'version' in radarr_json:
+            version = radarr_json['version']
+        else:
+            raise JSONDecodeError
+    except JSONDecodeError:
+        try:
+            rv = f"{base}/api/v3/system/status?apikey={apikey}"
+            version = requests.get(rv, timeout=timeout, verify=False, headers=HEADERS).json()['version']
+        except Exception:
+            pass
+    except Exception:
+        pass
+
+    region.set(cache_key, version)
+    return version
+
+
+def is_radarr_instance_legacy(instance):
+    """Return True if the instance is running a legacy version of Radarr."""
+    return get_radarr_version_for_instance(instance).startswith('0.')
 
 
 get_radarr_info = GetRadarrInfo()

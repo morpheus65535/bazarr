@@ -18,8 +18,8 @@ from sonarr.sync.episodes import sync_episodes, sync_one_episode
 from sonarr.sync.series import update_series, update_one_series
 from radarr.sync.movies import update_movies, update_one_movie
 from sonarr.info import get_sonarr_info, url_sonarr
-from radarr.info import url_radarr
-from app.database import TableShows, TableMovies, database, select
+from radarr.info import url_radarr, url_radarr_from_instance
+from app.database import TableShows, TableMovies, TableRadarrInstances, database, select
 from app.jobs_queue import jobs_queue
 
 from .config import settings
@@ -180,15 +180,38 @@ class SonarrSignalrClient:
 
 
 class RadarrSignalrClient:
-    def __init__(self):
+    """SignalR client for a single Radarr instance."""
+
+    def __init__(self, instance=None):
+        """
+        Args:
+            instance: dict from TableRadarrInstances.to_dict(). If None, uses primary settings.
+        """
         super(RadarrSignalrClient, self).__init__()
+        self.instance = instance
+        self.instance_id = instance['id'] if instance else 1
         self.apikey_radarr = None
         self.connection = None
         self.connected = False
 
+    def _get_base_url(self):
+        if self.instance:
+            return url_radarr_from_instance(self.instance)
+        return url_radarr()
+
+    def _get_apikey(self):
+        if self.instance:
+            return self.instance.get('apikey', settings.radarr.apikey)
+        return settings.radarr.apikey
+
+    def _get_movies_sync_on_live(self):
+        if self.instance:
+            return bool(self.instance.get('movies_sync_on_live', 1))
+        return settings.radarr.movies_sync_on_live
+
     def start(self):
         self.configure()
-        logging.info('BAZARR trying to connect to Radarr SignalR feed...')
+        logging.info(f'BAZARR trying to connect to Radarr SignalR feed (instance {self.instance_id})...')
         while self.connection.transport.state.value not in [0, 1, 2]:
             try:
                 self.connection.start()
@@ -196,7 +219,7 @@ class RadarrSignalrClient:
                 time.sleep(5)
 
     def stop(self):
-        logging.info('BAZARR SignalR client for Radarr is now disconnected.')
+        logging.info(f'BAZARR SignalR client for Radarr instance {self.instance_id} is now disconnected.')
         self.connection.stop()
 
     def restart(self):
@@ -210,25 +233,33 @@ class RadarrSignalrClient:
         radarr_queue.clear()
         self.connected = False
         event_stream(type='badges')
-        logging.error("BAZARR connection to Radarr SignalR feed has failed. We'll try to reconnect.")
+        logging.error(f"BAZARR connection to Radarr SignalR feed (instance {self.instance_id}) has failed. "
+                      f"We'll try to reconnect.")
         self.restart()
 
     def on_connect_handler(self):
         self.connected = True
         event_stream(type='badges')
-        logging.info('BAZARR SignalR client for Radarr is connected and waiting for events.')
-        if settings.radarr.movies_sync_on_live:
+        logging.info(f'BAZARR SignalR client for Radarr instance {self.instance_id} is connected and waiting for events.')
+        if self._get_movies_sync_on_live():
             scheduler.execute_job_now(taskid="update_movies")
 
     def on_reconnect_handler(self):
         self.connected = False
         event_stream(type='badges')
-        logging.error('BAZARR SignalR client for Radarr connection as been lost. Trying to reconnect...')
+        logging.error(f'BAZARR SignalR client for Radarr instance {self.instance_id} connection has been lost. '
+                      f'Trying to reconnect...')
 
     def configure(self):
-        self.apikey_radarr = settings.radarr.apikey
+        self.apikey_radarr = self._get_apikey()
+        base_url = self._get_base_url()
+        instance_id = self.instance_id
+
+        def _feed_queue_with_instance(data):
+            feed_queue(data, radarr_instance_id=instance_id)
+
         self.connection = HubConnectionBuilder() \
-            .with_url(f"{url_radarr()}/signalr/messages?access_token={self.apikey_radarr}",
+            .with_url(f"{base_url}/signalr/messages?access_token={self.apikey_radarr}",
                       options={
                           "verify_ssl": False,
                           "headers": HEADERS
@@ -241,16 +272,114 @@ class RadarrSignalrClient:
             }).build()
         self.connection.on_open(self.on_connect_handler)
         self.connection.on_reconnect(self.on_reconnect_handler)
-        self.connection.on_close(lambda: logging.debug('BAZARR SignalR client for Radarr is disconnected.'))
+        self.connection.on_close(lambda: logging.debug(
+            f'BAZARR SignalR client for Radarr instance {self.instance_id} is disconnected.'))
         self.connection.on_error(self.exception_handler)
-        self.connection.on("receiveMessage", feed_queue)
+        self.connection.on("receiveMessage", _feed_queue_with_instance)
+
+
+class RadarrSignalrManager:
+    """Manages multiple RadarrSignalrClient instances (one per Radarr instance).
+
+    Provides a backward-compatible interface with a single .connected property
+    and .start()/.restart() methods.
+    """
+
+    def __init__(self):
+        # dict mapping instance_id -> RadarrSignalrClient
+        self._clients: dict = {}
+
+    @property
+    def connected(self):
+        """True if any Radarr instance is connected."""
+        return any(client.connected for client in self._clients.values())
+
+    def _load_instances(self):
+        """Load all enabled Radarr instances from the database."""
+        try:
+            from app.database import get_radarr_instances
+            return get_radarr_instances()
+        except Exception as e:
+            logging.warning(f"BAZARR Could not load Radarr instances from DB: {e}. "
+                            f"Using primary instance from settings.")
+            return []
+
+    def start(self):
+        """Start SignalR clients for all enabled Radarr instances."""
+        instances = self._load_instances()
+
+        if not instances:
+            # Fallback: start single client using settings
+            client = RadarrSignalrClient(instance=None)
+            self._clients[1] = client
+            client.start()
+            return
+
+        for instance in instances:
+            instance_id = instance['id']
+            if instance_id not in self._clients:
+                client = RadarrSignalrClient(instance=instance)
+                self._clients[instance_id] = client
+                t = threading.Thread(target=client.start, daemon=True)
+                t.start()
+
+    def restart(self):
+        """Restart the primary Radarr SignalR client (called when settings change)."""
+        if settings.general.use_radarr:
+            # Stop and remove existing primary client
+            if 1 in self._clients:
+                try:
+                    self._clients[1].stop()
+                except Exception:
+                    pass
+                del self._clients[1]
+
+            # Reload all instances and restart
+            instances = self._load_instances()
+            if instances:
+                for instance in instances:
+                    instance_id = instance['id']
+                    if instance_id not in self._clients:
+                        client = RadarrSignalrClient(instance=instance)
+                        self._clients[instance_id] = client
+                        t = threading.Thread(target=client.start, daemon=True)
+                        t.start()
+            else:
+                client = RadarrSignalrClient(instance=None)
+                self._clients[1] = client
+                t = threading.Thread(target=client.start, daemon=True)
+                t.start()
+
+    def add_instance(self, instance):
+        """Start a SignalR client for a newly added Radarr instance."""
+        instance_id = instance['id']
+        if instance_id in self._clients:
+            try:
+                self._clients[instance_id].stop()
+            except Exception:
+                pass
+        client = RadarrSignalrClient(instance=instance)
+        self._clients[instance_id] = client
+        t = threading.Thread(target=client.start, daemon=True)
+        t.start()
+
+    def remove_instance(self, instance_id):
+        """Stop the SignalR client for a removed Radarr instance."""
+        if instance_id in self._clients:
+            try:
+                self._clients[instance_id].stop()
+            except Exception:
+                pass
+            del self._clients[instance_id]
 
 
 def dispatcher(data):
     try:
         series_title = series_year = episode_title = season_number = episode_number = movie_title = movie_year = None
 
-        #
+        # Extract the radarr instance id (injected by feed_queue)
+        radarr_instance_id = data.pop('_radarr_instance_id', 1)
+
         try:
             episodesChanged = False
             topic = data['name']
@@ -281,7 +410,8 @@ def dispatcher(data):
                 if action == 'deleted':
                     existing_movie_details = database.execute(
                         select(TableMovies.title, TableMovies.year)
-                        .where(TableMovies.radarrId == media_id)) \
+                        .where(TableMovies.radarrId == media_id)
+                        .where(TableMovies.radarr_instance_id == radarr_instance_id)) \
                         .first()
                     if existing_movie_details:
                         movie_title = existing_movie_details.title
@@ -297,7 +427,6 @@ def dispatcher(data):
         if topic == 'series':
             logging.debug(f'Event received from Sonarr for series: {series_title} ({series_year})')
             if episodesChanged:
-                # this will happen if a season's monitored status is changed.
                 sync_episodes(series_id=media_id, defer_search=settings.sonarr.defer_search_signalr, is_signalr=True)
             else:
                 update_one_series(series_id=media_id, action=action, is_signalr=True)
@@ -306,9 +435,12 @@ def dispatcher(data):
                           f'S{season_number:0>2}E{episode_number:0>2} - {episode_title}')
             sync_one_episode(episode_id=media_id, defer_search=settings.sonarr.defer_search_signalr, is_signalr=True)
         elif topic == 'movie':
-            logging.debug(f'Event received from Radarr for movie: {movie_title} ({movie_year})')
-            update_one_movie(movie_id=media_id, action=action, defer_search=settings.radarr.defer_search_signalr,
-                             is_signalr=True)
+            logging.debug(f'Event received from Radarr instance {radarr_instance_id} for movie: '
+                          f'{movie_title} ({movie_year})')
+            update_one_movie(movie_id=media_id, action=action,
+                             defer_search=settings.radarr.defer_search_signalr,
+                             is_signalr=True,
+                             radarr_instance_id=radarr_instance_id)
     except Exception as e:
         logging.debug(f'BAZARR an exception occurred while parsing SignalR feed: {repr(e)}')
     finally:
@@ -318,22 +450,7 @@ def dispatcher(data):
 
 def filter_nested_dict(data: dict) -> dict:
     """
-    Filters out specific keys from a nested dictionary structure, including any
-    nested dictionaries or lists that may contain dictionaries.
-
-    The function recursively processes the input dictionary to remove any key-value
-    pairs where the key matches the specified keys to exclude. For lists, it will
-    iterate through the items and apply the same filtering logic if the item is a
-    dictionary.
-
-    :param data: A dictionary that may contain nested dictionaries or lists. Values
-                 that are dictionaries will be recursively filtered, and lists
-                 within the dictionary will be traversed to check for and filter
-                 nested dictionaries within them.
-    :type data: dict
-    :return: A dictionary where specified keys are removed, including from any
-             nested dictionaries or dictionaries within lists.
-    :rtype: dict
+    Filters out specific keys from a nested dictionary structure.
     """
     keys_to_remove = ['statistics']
 
@@ -342,29 +459,24 @@ def filter_nested_dict(data: dict) -> dict:
     for key, value in data.items():
         if key not in keys_to_remove:
             if isinstance(value, dict):
-                # Recursively filter nested dictionaries
                 filtered_data[key] = filter_nested_dict(value)
             elif isinstance(value, list):
-                # Handle lists that might contain dictionaries
                 filtered_data[key] = [
                     filter_nested_dict(item) if isinstance(item, dict) else item
                     for item in value
                 ]
             else:
-                # Keep the value as is
                 filtered_data[key] = value
 
     return filtered_data
 
 
-def feed_queue(data):
+def feed_queue(data, radarr_instance_id=1):
     # some sonarr version sends events as a list of a single dict, we make it a dict
     if isinstance(data, list) and len(data):
         data = data[0]
 
     if isinstance(data, dict) and 'name' in data and data['name'] in ['series', 'episode', 'movie']:
-        # filter out some keys to reduce the size of the event data dictionary and prevent similar events from being
-        # added to the queue
         data = filter_nested_dict(data)
 
         # check if event is duplicate from the previous one
@@ -387,16 +499,16 @@ def feed_queue(data):
             else:
                 last_movie_event_data = data
 
-        # if data is a dict and contain an event for series, episode or movie, we add it to the event queue
         if isinstance(data, dict) and 'name' in data:
             if data['name'] in ['series', 'episode']:
                 sonarr_queue.append(data)
             elif data['name'] == 'movie':
+                # Embed the instance_id so dispatcher knows which Radarr sent this
+                data['_radarr_instance_id'] = radarr_instance_id
                 radarr_queue.append(data)
 
 
 def consume_queue(queue):
-    # get events data from queues one at a time and dispatch it
     while True:
         try:
             data = queue.popleft()
@@ -420,4 +532,4 @@ radarr_queue_thread.start()
 # instantiate proper SignalR client
 sonarr_signalr_client = SonarrSignalrClientLegacy() if get_sonarr_info.version().startswith(('0.', '2.', '3.')) else \
     SonarrSignalrClient()
-radarr_signalr_client = RadarrSignalrClient()
+radarr_signalr_client = RadarrSignalrManager()

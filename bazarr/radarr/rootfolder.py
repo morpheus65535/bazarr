@@ -6,20 +6,33 @@ import logging
 
 from app.config import settings
 from utilities.path_mappings import path_mappings
-from app.database import TableMoviesRootfolder, TableMovies, database, delete, update, insert, select
-from radarr.info import url_api_radarr
+from app.database import (TableMoviesRootfolder, TableMovies, TableRadarrInstances,
+                          database, delete, update, insert, select, get_radarr_instances)
+from radarr.info import url_api_radarr, url_api_radarr_from_instance, is_radarr_instance_legacy
 from constants import HEADERS
 
 
-def get_radarr_rootfolder():
-    apikey_radarr = settings.radarr.apikey
-    radarr_rootfolder = []
+def get_radarr_rootfolder(instance=None):
+    """Fetch and sync root folders for a Radarr instance.
 
-    # Get root folder data from Radarr
-    url_radarr_api_rootfolder = f"{url_api_radarr()}rootfolder?apikey={apikey_radarr}"
+    Args:
+        instance: dict from TableRadarrInstances.to_dict(). If None, uses primary instance from settings.
+    """
+    if instance is not None:
+        legacy = is_radarr_instance_legacy(instance)
+        api_url = url_api_radarr_from_instance(instance, is_legacy=legacy)
+        apikey = instance.get('apikey', '')
+        timeout = int(instance.get('http_timeout', 60))
+    else:
+        api_url = url_api_radarr()
+        apikey = settings.radarr.apikey
+        timeout = int(settings.radarr.http_timeout)
+
+    radarr_rootfolder = []
+    url = f"{api_url}rootfolder?apikey={apikey}"
 
     try:
-        rootfolder = requests.get(url_radarr_api_rootfolder, timeout=int(settings.radarr.http_timeout), verify=False, headers=HEADERS)
+        rootfolder = requests.get(url, timeout=timeout, verify=False, headers=HEADERS)
     except requests.exceptions.ConnectionError:
         logging.exception("BAZARR Error trying to get rootfolder from Radarr. Connection Error.")
         return []
@@ -61,7 +74,19 @@ def get_radarr_rootfolder():
 
 
 def check_radarr_rootfolder():
-    get_radarr_rootfolder()
+    """Check root folders for all enabled Radarr instances."""
+    instances = get_radarr_instances()
+    if instances:
+        for instance in instances:
+            try:
+                get_radarr_rootfolder(instance=instance)
+            except Exception:
+                logging.exception(
+                    f"BAZARR Error checking root folder for Radarr instance '{instance.get('name', instance['id'])}'")
+    else:
+        # Fallback: use primary instance from settings
+        get_radarr_rootfolder()
+
     rootfolder = database.execute(
         select(TableMoviesRootfolder.id, TableMoviesRootfolder.path))\
         .all()
@@ -79,17 +104,13 @@ def check_radarr_rootfolder():
                                             'Please check path mapping or if directory/drive is online.')
                 .where(TableMoviesRootfolder.id == item.id))
         else:
-            # Try os.access() first (fast, no disk I/O)
-            # Fall back to write test only if os.access() fails (e.g., NFS mounts)
             mapped_path = path_mappings.path_replace_movie(root_path)
             if os.access(mapped_path, os.W_OK):
-                # Path is writable according to os.access()
                 database.execute(
                     update(TableMoviesRootfolder)
                     .values(accessible=1, error='')
                     .where(TableMoviesRootfolder.id == item.id))
             else:
-                # os.access() failed, try actual write test (needed for NFS)
                 try:
                     test_file = os.path.join(mapped_path, '.bazarr_write_test')
                     with open(test_file, 'w') as f:

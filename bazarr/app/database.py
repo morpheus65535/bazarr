@@ -10,7 +10,8 @@ import signal
 from dogpile.cache import make_region
 from datetime import datetime
 
-from sqlalchemy import create_engine, inspect, DateTime, ForeignKey, Integer, LargeBinary, Text, func, text, BigInteger
+from sqlalchemy import create_engine, inspect, DateTime, ForeignKey, ForeignKeyConstraint, Integer, LargeBinary, \
+    PrimaryKeyConstraint, Text, UniqueConstraint, func, text, BigInteger
 # importing here to be indirectly imported in other modules later
 from sqlalchemy import update, delete, select, func  # noqa W0611
 from sqlalchemy.orm import scoped_session, sessionmaker, mapped_column, close_all_sessions
@@ -117,6 +118,33 @@ class System(Base):
     updated = mapped_column(Text)
 
 
+class TableRadarrInstances(Base):
+    __tablename__ = 'table_radarr_instances'
+
+    id = mapped_column(Integer, primary_key=True)
+    name = mapped_column(Text, nullable=False)
+    ip = mapped_column(Text, nullable=False)
+    port = mapped_column(Integer, nullable=False)
+    base_url = mapped_column(Text, nullable=False)
+    ssl = mapped_column(Integer, nullable=False, default=0)
+    apikey = mapped_column(Text, nullable=False, default='')
+    http_timeout = mapped_column(Integer, nullable=False, default=60)
+    enabled = mapped_column(Integer, nullable=False, default=1)
+    full_update = mapped_column(Text, nullable=False, default='Daily')
+    full_update_day = mapped_column(Integer, nullable=False, default=6)
+    full_update_hour = mapped_column(Integer, nullable=False, default=4)
+    movies_sync = mapped_column(Integer, nullable=False, default=60)
+    movies_sync_on_live = mapped_column(Integer, nullable=False, default=1)
+    only_monitored = mapped_column(Integer, nullable=False, default=0)
+    excluded_tags = mapped_column(Text, nullable=False, default='[]')
+    sync_only_monitored_movies = mapped_column(Integer, nullable=False, default=0)
+    defer_search_signalr = mapped_column(Integer, nullable=False, default=0)
+    use_ffprobe_cache = mapped_column(Integer, nullable=False, default=1)
+
+    def to_dict(self):
+        return {column.name: getattr(self, column.name) for column in self.__table__.columns}
+
+
 class TableAnnouncements(Base):
     __tablename__ = 'table_announcements'
 
@@ -140,11 +168,20 @@ class TableBlacklist(Base):
 
 class TableBlacklistMovie(Base):
     __tablename__ = 'table_blacklist_movie'
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ['radarr_id', 'radarr_instance_id'],
+            ['table_movies.radarrId', 'table_movies.radarr_instance_id'],
+            ondelete='CASCADE',
+            name='fk_radarrId_blacklist_movie'
+        ),
+    )
 
     id = mapped_column(Integer, primary_key=True)
     language = mapped_column(Text)
     provider = mapped_column(Text)
-    radarr_id = mapped_column(Integer, ForeignKey('table_movies.radarrId', ondelete='CASCADE'))
+    radarr_id = mapped_column(Integer)
+    radarr_instance_id = mapped_column(Integer, nullable=False, default=1)
     subs_id = mapped_column(Text)
     timestamp = mapped_column(DateTime, default=datetime.now)
 
@@ -201,13 +238,22 @@ class TableHistory(Base):
 
 class TableHistoryMovie(Base):
     __tablename__ = 'table_history_movie'
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ['radarrId', 'radarr_instance_id'],
+            ['table_movies.radarrId', 'table_movies.radarr_instance_id'],
+            ondelete='CASCADE',
+            name='fk_radarrId_history_movie'
+        ),
+    )
 
     id = mapped_column(Integer, primary_key=True)
     action = mapped_column(Integer, nullable=False)
     description = mapped_column(Text, nullable=False)
     language = mapped_column(Text)
     provider = mapped_column(Text)
-    radarrId = mapped_column(Integer, ForeignKey('table_movies.radarrId', ondelete='CASCADE'))
+    radarrId = mapped_column(Integer)
+    radarr_instance_id = mapped_column(Integer, nullable=False, default=1)
     score = mapped_column(Integer)
     subs_id = mapped_column(Text)
     subtitles_path = mapped_column(Text)
@@ -233,6 +279,23 @@ class TableLanguagesProfiles(Base):
 
 class TableMovies(Base):
     __tablename__ = 'table_movies'
+    __table_args__ = (
+        PrimaryKeyConstraint('radarrId', 'radarr_instance_id', name='pk_table_movies'),
+        UniqueConstraint('path', name='unique_table_movies_path'),
+        UniqueConstraint('tmdbId', 'radarr_instance_id', name='unique_table_movies_tmdbId_instance'),
+        ForeignKeyConstraint(
+            ['radarr_instance_id'],
+            ['table_radarr_instances.id'],
+            ondelete='CASCADE',
+            name='fk_movies_radarr_instance_id'
+        ),
+        ForeignKeyConstraint(
+            ['profileId'],
+            ['table_languages_profiles.profileId'],
+            ondelete='SET NULL',
+            name='fk_movies_profileId_languages_profiles'
+        ),
+    )
 
     alternativeTitles = mapped_column(Text)
     audio_codec = mapped_column(Text)
@@ -248,17 +311,18 @@ class TableMovies(Base):
     monitored = mapped_column(Text)
     movie_file_id = mapped_column(Integer)
     overview = mapped_column(Text)
-    path = mapped_column(Text, nullable=False, unique=True)
+    path = mapped_column(Text, nullable=False)
     poster = mapped_column(Text)
-    profileId = mapped_column(Integer, ForeignKey('table_languages_profiles.profileId', ondelete='SET NULL'))
-    radarrId = mapped_column(Integer, primary_key=True)
+    profileId = mapped_column(Integer)
+    radarrId = mapped_column(Integer, nullable=False)
+    radarr_instance_id = mapped_column(Integer, nullable=False, default=1)
     resolution = mapped_column(Text)
     sceneName = mapped_column(Text)
     sortTitle = mapped_column(Text)
     subtitles = mapped_column(Text)
     tags = mapped_column(Text)
     title = mapped_column(Text, nullable=False)
-    tmdbId = mapped_column(Text, nullable=False, unique=True)
+    tmdbId = mapped_column(Text, nullable=False)
     updated_at_timestamp = mapped_column(DateTime)
     video_codec = mapped_column(Text)
     year = mapped_column(Text)
@@ -323,6 +387,15 @@ class TableShowsRootfolder(Base):
     error = mapped_column(Text)
     id = mapped_column(Integer, primary_key=True)
     path = mapped_column(Text)
+
+
+def get_radarr_instances():
+    """Return all enabled Radarr instances as a list of dicts."""
+    return [row.to_dict() for row in database.execute(
+        select(TableRadarrInstances)
+        .where(TableRadarrInstances.enabled == 1)
+        .order_by(TableRadarrInstances.id)
+    ).scalars().all()]
 
 
 def init_db():
@@ -498,7 +571,7 @@ def get_audio_profile_languages(audio_languages_list_str):
     return audio_languages
 
 
-def get_profile_id(series_id=None, episode_id=None, movie_id=None):
+def get_profile_id(series_id=None, episode_id=None, movie_id=None, radarr_instance_id=1):
     if series_id:
         data = database.execute(
             select(TableShows.profileId)
@@ -519,7 +592,8 @@ def get_profile_id(series_id=None, episode_id=None, movie_id=None):
     elif movie_id:
         data = database.execute(
             select(TableMovies.profileId)
-            .where(TableMovies.radarrId == movie_id))\
+            .where(TableMovies.radarrId == movie_id)
+            .where(TableMovies.radarr_instance_id == radarr_instance_id))\
             .first()
         if data:
             return data.profileId
