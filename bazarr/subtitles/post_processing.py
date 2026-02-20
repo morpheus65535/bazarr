@@ -13,10 +13,10 @@ def postprocessing(command, path):
         encoding = getpreferredencoding()
         if os.name == 'nt':
             codepage = subprocess.Popen("chcp", shell=True, stdout=subprocess.PIPE,
-                                        stderr=subprocess.PIPE, encoding=getpreferredencoding())
-            # wait for the process to terminate
+                                        stderr=subprocess.PIPE)
             out_codepage, err_codepage = codepage.communicate()
-            encoding = out_codepage.split(':')[-1].strip()
+            enc_raw = out_codepage.decode('ascii', errors='ignore').split(':')[-1].strip().rstrip('.')
+            encoding = 'cp' + enc_raw if enc_raw.isdigit() else enc_raw
 
         process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,
                                    stderr=subprocess.PIPE, encoding=encoding)
