@@ -52,6 +52,7 @@ def subtitle():
             "version": "480p.AMZN.WEB-DL.NTb",
             "hearingImpaired": False,
             "downloadUri": "/subtitles/download/d28b4d5b-7dcc-47b3-8232-fb02f081d135",
+            "qualities": [],
         },
     )
 
@@ -60,6 +61,8 @@ def test_subtitle(subtitle):
     assert subtitle.language == Language.fromietf("fr")
     assert subtitle.id == "d28b4d5b-7dcc-47b3-8232-fb02f081d135"
     assert subtitle.hearing_impaired == False
+    assert subtitle.releases == ["480p.AMZN.WEB-DL.NTb"]
+    assert subtitle.qualities == []
 
 
 def test_subtitle_get_matches(subtitle, episodes):
@@ -67,6 +70,49 @@ def test_subtitle_get_matches(subtitle, episodes):
 
     assert matches.issuperset(("series", "title", "season", "episode", "source"))
     assert "resolution" not in matches
+
+
+def test_subtitle_multi_release_version():
+    sub = GestdownSubtitle(
+        Language.fromietf("en"),
+        {
+            "subtitleId": "abc",
+            "version": "HDTV, WEB",
+            "hearingImpaired": False,
+            "downloadUri": "/download/abc",
+        },
+    )
+    assert sub.releases == ["HDTV", "WEB"]
+    assert sub.release_info == "HDTV\nWEB"
+
+
+def test_subtitle_get_matches_release_group(episodes):
+    sub = GestdownSubtitle(
+        Language.fromietf("en"),
+        {
+            "subtitleId": "abc",
+            "version": "BluRay.720p.REWARD",
+            "hearingImpaired": False,
+            "downloadUri": "/download/abc",
+        },
+    )
+    matches = sub.get_matches(episodes["breaking_bad_s01e01"])
+    assert "release_group" in matches
+
+
+def test_subtitle_get_matches_resolution_from_qualities(episodes):
+    sub = GestdownSubtitle(
+        Language.fromietf("en"),
+        {
+            "subtitleId": "abc",
+            "version": "HDTV",
+            "hearingImpaired": False,
+            "downloadUri": "/download/abc",
+            "qualities": ["720p", "1080p"],
+        },
+    )
+    matches = sub.get_matches(episodes["breaking_bad_s01e01"])
+    assert "resolution" in matches
 
 
 def test_subtitle_download(subtitle):
