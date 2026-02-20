@@ -5,6 +5,8 @@ import time
 
 from requests import HTTPError
 from requests import Session
+from subliminal.score import get_equivalent_release_groups
+from subliminal.utils import sanitize_release_group
 from subliminal_patch.core import Episode
 from subliminal_patch.language import PatchedAddic7edConverter
 from subliminal_patch.providers import Provider
@@ -26,13 +28,35 @@ class GestdownSubtitle(Subtitle):
         super().__init__(language, hearing_impaired=data["hearingImpaired"])
         self.page_link = _BASE_URL + data["downloadUri"]
         self._id = data["subtitleId"]
-        self.release_info = data["version"]
+        self.releases = [v.strip() for v in data["version"].split(",")]
+        self.qualities = data.get("qualities") or []
+        self.release_info = "\n".join(self.releases)
         self.matches = set()
 
     def get_matches(self, video):
         self.matches = {"title", "series", "season", "episode", "tvdb_id"}
 
         update_matches(self.matches, video, self.release_info)
+
+        # release_group
+        if (
+            "release_group" not in self.matches
+            and video.release_group
+            and self.releases
+        ):
+            video_release_groups = get_equivalent_release_groups(
+                sanitize_release_group(video.release_group)
+            )
+            for release in self.releases:
+                if any(
+                    r in sanitize_release_group(release) for r in video_release_groups
+                ):
+                    self.matches.add("release_group")
+                    break
+
+        # resolution
+        if video.resolution and self.qualities and video.resolution in self.qualities:
+            self.matches.add("resolution")
 
         return self.matches
 
@@ -87,7 +111,9 @@ class GestdownProvider(Provider):
 
     def _subtitles_search(self, video, language: Language, show_id):
         lang = self._converter.convert(language.alpha3)
-        response = self._session.get(f"{_BASE_URL}/subtitles/get/{show_id}/{video.season}/{video.episode}/{lang}")
+        response = self._session.get(
+            f"{_BASE_URL}/subtitles/get/{show_id}/{video.season}/{video.episode}/{lang}"
+        )
 
         # TODO: implement rate limiting
         response.raise_for_status()
@@ -108,14 +134,15 @@ class GestdownProvider(Provider):
 
     def _search_show(self, video):
         try:
-            response = self._session.get(f"{_BASE_URL}/shows/external/tvdb/{video.series_tvdb_id}")
+            response = self._session.get(
+                f"{_BASE_URL}/shows/external/tvdb/{video.series_tvdb_id}"
+            )
             response.raise_for_status()
             return response.json()["shows"]
         except HTTPError as error:
             if error.response.status_code == 404:
                 return None
             raise
-
 
     @_retry_on_423
     def list_subtitles(self, video, languages):
