@@ -554,6 +554,9 @@ def upgrade_languages_profile_values():
             elif language['hi'] in ["also", "never"]:
                 language['hi'] = "False"
 
+            if 'audio_exclude' not in language:
+                language['audio_exclude'] = "False"
+
             if 'audio_only_include' not in language:
                 language['audio_only_include'] = "False"
         database.execute(
