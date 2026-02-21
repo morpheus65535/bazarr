@@ -124,7 +124,8 @@ def sync_episodes(series_id, defer_search=False, is_signalr=False):
                         continue
 
                 if (episode['episodeFile']['size'] > MINIMUM_VIDEO_SIZE or
-                        check_actual_file_size(episode['episodeFile']['path'])):
+                        check_actual_file_size(episode['episodeFile']['path']) or
+                        (settings.general.enable_strm_support and episode['episodeFile']['path'].lower().endswith('.strm'))):
                     # Add episodes in sonarr to current episode list
                     current_episodes_sonarr.append(episode['id'])
 

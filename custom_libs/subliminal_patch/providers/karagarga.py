@@ -29,6 +29,7 @@ class KaragargaSubtitle(Subtitle):
 
         self.release_info = release_info
         self.downloads = downloads
+        self.matches = set()
 
     def get_matches(self, video):
         self.matches = {"title", "year"}

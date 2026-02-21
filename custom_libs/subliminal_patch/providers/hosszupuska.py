@@ -78,6 +78,7 @@ class HosszupuskaSubtitle(Subtitle):
         self.page_link = page_link
         self.asked_for_release_group = asked_for_release_group
         self.asked_for_episode = asked_for_episode
+        self.matches = set()
 
     def __repr__(self):
         ep_addon = (" S%02dE%02d" % (self.season, self.episode)) if self.episode else ""

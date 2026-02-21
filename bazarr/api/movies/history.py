@@ -61,8 +61,6 @@ class MoviesHistory(Resource):
         length = args.get('length')
         radarrid = args.get('radarrid')
 
-        upgradable_movies_not_perfect = get_upgradable_movies_subtitles()
-
         blacklisted_subtitles = select(TableBlacklistMovie.provider,
                                        TableBlacklistMovie.subs_id) \
             .subquery()
@@ -122,6 +120,9 @@ class MoviesHistory(Resource):
             'blacklisted': bool(x.blacklisted),
         } for x in database.execute(stmt).all()]
 
+        upgradable_movies_not_perfect = get_upgradable_movies_subtitles(history_id_list=[x['id'] for x in
+                                                                                         movie_history])
+
         for item in movie_history:
             # is this language still desired or should we simply skip this subtitles from upgrade logic?
             still_desired = _language_still_desired(item['language'], item['profileId'])
@@ -130,7 +131,7 @@ class MoviesHistory(Resource):
 
             # Mark upgradable and get original_id
             item.update({'original_id': upgradable_movies_not_perfect.get(item['id'])})
-            item.update({'upgradable': bool(item['original_id'])})
+            item.update({'upgradable': item['id'] in upgradable_movies_not_perfect.keys()})
 
             # Mark not upgradable if video/subtitles file doesn't exist anymore or if language isn't desired anymore
             if item['upgradable']:

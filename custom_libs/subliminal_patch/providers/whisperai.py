@@ -4,6 +4,8 @@ import functools
 import logging
 import os
 import time
+import json
+import subprocess
 from datetime import timedelta
 import ffmpeg
 from babelfish.exceptions import LanguageReverseError
@@ -276,6 +278,7 @@ class WhisperAISubtitle(Subtitle):
         self.task = None
         self.audio_language = None
         self.force_audio_stream = None
+        self.matches = set()
 
     @property
     def id(self):
@@ -335,11 +338,111 @@ class WhisperAIProvider(Provider):
     def terminate(self):
         self.session.close()
 
+    def get_audio_delay(self, path, audio_stream_language=None):
+        """
+        Detects audio delay for the specific language track by inspecting the 
+        first packet's Presentation Timestamp (PTS).
+        """
+        try:
+            # Command: Get Stream Metadata and Packet Data (30s scan)
+            cmd = [
+                'ffprobe',
+                '-v', 'error',
+                '-select_streams', 'a', 
+                '-read_intervals', '%+30',
+                '-show_entries', 'stream=index:stream_tags=language:packet=stream_index,pts_time',
+                '-of', 'json',
+                path
+            ]
+            
+            # Avoid cmd prompt in Windows
+            if os.name == 'nt':
+                startupinfo = subprocess.STARTUPINFO()
+                startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+                res = subprocess.run(cmd, capture_output=True, text=True, startupinfo=startupinfo)
+            else:
+                res = subprocess.run(cmd, capture_output=True, text=True)
+                
+            if res.returncode != 0:
+                return 0
+
+            data = json.loads(res.stdout)
+            streams = data.get('streams', [])
+            packets = data.get('packets', [])
+            
+            if not streams:
+                return 0
+
+            # --- STEP 1: Find the correct Stream Index ---
+            target_index = None
+            log_prefix = "WhisperAI"
+            
+            if not audio_stream_language:
+                # Case A: No specific language requested
+                target_index = streams[0]['index']
+
+            else:
+                # Case B: Search for language
+                target_lang_short = audio_stream_language[:2].lower()
+                
+                for stream in streams:
+                    stream_lang = stream.get('tags', {}).get('language', 'und').lower()
+                    if target_lang_short in stream_lang:
+                        target_index = stream['index']
+                        logger.debug(f"{log_prefix}: Found audio track matching '{audio_stream_language}' at Stream Index {target_index} (Tag: '{stream_lang}').")
+                        break
+                
+                # Case C: Fallback
+                if target_index is None:
+                    target_index = streams[0]['index']
+                    logger.warning(f"{log_prefix}: Could not find audio track for '{audio_stream_language}'. Defaulting to first audio stream (Index {target_index}).")
+
+            # --- STEP 2: Find the First Packet for that Index ---
+            for packet in packets:
+                if packet.get('stream_index') == target_index:
+                    pts = packet.get('pts_time')
+                    if pts is None or pts == 'N/A':
+                        return 0
+                    
+                    # Convert seconds to ms
+                    delay_ms = int(float(pts) * 1000)
+                    
+                    if delay_ms != 0:
+                        logger.debug(f"{log_prefix}: Detected audio delay of {delay_ms}ms on Stream Index {target_index}.")
+                    
+                    return delay_ms
+
+            return 0
+
+        except Exception as e:
+            logger.debug(f"WhisperAI: FFprobe delay check failed: {e}")
+            return 0
+
     @functools.lru_cache(2)
     def encode_audio_stream(self, path, ffmpeg_path, audio_stream_language=None):
         logger.debug("Encoding audio stream to WAV with ffmpeg")
 
         try:
+            # 1. Detect Delay using FFprobe method
+            delay_ms = self.get_audio_delay(path, audio_stream_language)
+
+            # 2. Build Filter Chain
+            audio_filter = "aresample=async=1"
+            
+            # Ignore delays smaller than 20ms (close to 1 frame at 60fps)
+            # to avoid unnecessary FFmpeg filtering for imperceptible offsets.
+            SYNC_THRESHOLD = 20 
+
+            if delay_ms > SYNC_THRESHOLD:
+                # POSITIVE DELAY: Insert silence at start
+                audio_filter = f"adelay={delay_ms}|{delay_ms},{audio_filter}"
+            elif delay_ms < -SYNC_THRESHOLD:
+                # NEGATIVE DELAY: Trim start
+                trim_start = abs(delay_ms) / 1000.0
+                audio_filter = f"atrim=start={trim_start},asetpts=PTS-STARTPTS,{audio_filter}"
+            else:
+                logger.debug("No delay applied (0 or below threshold)")
+
             # This launches a subprocess to decode audio while down-mixing and resampling as necessary.
             inp = ffmpeg.input(path, threads=0)
             if audio_stream_language:
@@ -351,10 +454,10 @@ class WhisperAIProvider(Provider):
                 # otherwise ffmpeg will try to combine multiple streams, but our output format doesn't support that.
                 # The first stream is probably the correct one, as later streams are usually commentaries
                 lang_map = f"0:a:m:language:{audio_stream_language}"
-                out = inp.output("-", format="s16le", acodec="pcm_s16le", ac=1, ar=16000, af="aresample=async=1",
+                out = inp.output("-", format="s16le", acodec="pcm_s16le", ac=1, ar=16000, af=audio_filter,
                                  map=lang_map)
             else:
-                out = inp.output("-", format="s16le", acodec="pcm_s16le", ac=1, ar=16000, af="aresample=async=1")
+                out = inp.output("-", format="s16le", acodec="pcm_s16le", ac=1, ar=16000, af=audio_filter)
 
             start_time = time.time()
             out, _ = out.run(cmd=[ffmpeg_path, "-nostdin"], capture_stdout=True, capture_stderr=True) 

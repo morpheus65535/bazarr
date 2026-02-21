@@ -5,20 +5,20 @@ import time
 import datetime
 import json
 
-from requests import Session, ConnectionError, Timeout, ReadTimeout, RequestException
+from requests import Session, ConnectionError, Timeout, ReadTimeout
 from requests.exceptions import JSONDecodeError
 from subzero.language import Language
 
 from babelfish import language_converters
 from subliminal import Episode, Movie
 from subliminal.score import get_equivalent_release_groups
-from subliminal.utils import sanitize_release_group, sanitize
+from subliminal.utils import sanitize_release_group
 from subliminal_patch.exceptions import TooManyRequests, APIThrottled
 from subliminal.exceptions import DownloadLimitExceeded, AuthenticationError, ConfigurationError, ServiceUnavailable, \
     ProviderError
 from .mixins import ProviderRetryMixin
 from subliminal_patch.subtitle import Subtitle
-from subliminal.subtitle import fix_line_ending, SUBTITLE_EXTENSIONS
+from subliminal.subtitle import fix_line_ending
 from subliminal_patch.providers import Provider
 from subliminal_patch.subtitle import guess_matches
 from subliminal_patch.utils import fix_inconsistent_naming
@@ -96,7 +96,7 @@ class OpenSubtitlesComSubtitle(Subtitle):
         self.page_link = page_link
         self.download_link = None
         self.uploader = uploader
-        self.matches = None
+        self.matches = set()
         self.hash = file_hash
         self.encoding = 'utf-8'
         self.hash_matched = hash_matched
@@ -107,34 +107,33 @@ class OpenSubtitlesComSubtitle(Subtitle):
         return self.file_id
 
     def get_matches(self, video):
-        matches = set()
         type_ = "movie" if isinstance(video, Movie) else "episode"
 
         # handle movies and series separately
         if type_ == "episode":
             # series
-            matches.add('series')
+            self.matches.add('series')
             # season
             if video.season == self.season:
-                matches.add('season')
+                self.matches.add('season')
             # episode
             if video.episode == self.episode:
-                matches.add('episode')
+                self.matches.add('episode')
             # imdb
             if self.imdb_match:
-                matches.add('series_imdb_id')
+                self.matches.add('series_imdb_id')
         else:
             # title
-            matches.add('title')
+            self.matches.add('title')
             # imdb
             if self.imdb_match:
-                matches.add('imdb_id')
+                self.matches.add('imdb_id')
 
         # rest is same for both groups
 
         # year
         if video.year == self.year:
-            matches.add('year')
+            self.matches.add('year')
 
         # release_group
         if video.release_group and self.releases:
@@ -142,17 +141,15 @@ class OpenSubtitlesComSubtitle(Subtitle):
             guessed_subtitles_release = guessit(self.releases, options={'type': type_})
             subtitles_release = get_equivalent_release_groups(sanitize_release_group(guessed_subtitles_release.get('release_group', '')))
             if subtitles_release == video_release:
-                matches.add('release_group')
+                self.matches.add('release_group')
 
         if self.hash_matched:
-            matches.add('hash')
+            self.matches.add('hash')
 
         # other properties
-        matches |= guess_matches(video, guessit(self.releases, {"type": type_}))
+        self.matches |= guess_matches(video, guessit(self.releases, {"type": type_}))
 
-        self.matches = matches
-
-        return matches
+        return self.matches
 
 
 class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
@@ -273,15 +270,20 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
 
         # loop over results
         for result in results_dict:
+            try:
+                year = int(result['attributes']['year'])
+            except ValueError:
+                year = None
+
             if 'title' in result['attributes']:
                 if isinstance(self.video, Episode):
                     if fix_tv_naming(title).lower() == result['attributes']['title'].lower() and \
-                            (not self.video.year or self.video.year == int(result['attributes']['year'])):
+                            (not self.video.year or self.video.year == year):
                         title_id = result['id']
                         break
                 else:
                     if fix_movie_naming(title).lower() == result['attributes']['title'].lower() and \
-                            (not self.video.year or self.video.year == int(result['attributes']['year'])):
+                            (not self.video.year or self.video.year == year):
                         title_id = result['id']
                         break
             else:
@@ -302,26 +304,26 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
         self.video = video
         if self.use_hash:
             file_hash = self.video.hashes.get('opensubtitlescom')
-            logger.debug(f'Searching using this hash: {file_hash}')
         else:
             file_hash = None
+        logger.debug(f'Searching using this hash: {file_hash}')
 
-        if isinstance(self.video, Episode):
-            title = self.video.series
-        else:
-            title = self.video.title
-
-        imdb_id = None
-        if isinstance(self.video, Episode) and self.video.imdb_id:
-            imdb_id = self.sanitize_external_ids(self.video.imdb_id)
-        elif isinstance(self.video, Movie) and self.video.imdb_id:
-            imdb_id = self.sanitize_external_ids(self.video.imdb_id)
+        imdb_id = self.sanitize_external_ids(self.video.imdb_id) if self.video.imdb_id else None
+        logger.debug(f'Searching using this IMDB ID: {imdb_id}')
 
         title_id = None
-        if not imdb_id:
+        if ((isinstance(self.video, Episode) and not self.video.series_imdb_id) or
+                (isinstance(self.video, Movie) and not imdb_id)):
+            if isinstance(self.video, Episode):
+                title = self.video.series
+            else:
+                title = self.video.title
+            logger.debug(f'Searching for this title: {title}')
+
             title_id = self.search_titles(title)
-            if not title_id:
-                return []
+            logger.debug(f'Found this title ID: {title_id}')
+        else:
+            logger.debug(f"No need to search for a title ID. We'll use the IMDB ID instead.")
 
         # be sure to remove duplicates using list(set())
         langs_list = sorted(list(set([to_opensubtitlescom(lang.basename).lower() for lang in languages])))
@@ -331,31 +333,46 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
 
         # define the proper query parameters based on the video type
         # query parameters must be alphabetically ordered to prevent redirect
+        params: list[tuple[str, str | int]] = [('languages', langs)]
+        if file_hash:
+            params.append(('moviehash', file_hash))
+        if imdb_id:
+            params.append(('imdb_id', imdb_id))
+
         if isinstance(self.video, Episode):
-            params = [('episode_number', self.video.episode),
-                      ('imdb_id', imdb_id),
-                      ('languages', langs),
-                      ('moviehash', file_hash),
-                      ('parent_feature_id', title_id),
-                      ('parent_imdb_id', self.sanitize_external_ids(self.video.series_imdb_id) if
-                      self.video.series_imdb_id else None),
-                      ('season_number', self.video.season)]
+            if not imdb_id and not title_id and not self.video.series_imdb_id:
+                logger.debug("We don't have any ID to search for, returning empty list.")
+                return []
+
+            if self.video.episode:
+                params.append(('episode_number', self.video.episode))
+            if self.video.season:
+                params.append(('season_number', self.video.season))
+            if self.video.series_imdb_id:
+                params.append(('parent_imdb_id', self.sanitize_external_ids(self.video.series_imdb_id)))
+            if title_id:
+                params.append(('parent_feature_id', title_id))
         else:
-            params = [('id', title_id),
-                      ('imdb_id', imdb_id),
-                      ('languages', langs),
-                      ('moviehash', file_hash)]
+            if not imdb_id and not title_id:
+                logger.debug("We don't have any ID to search for, returning empty list.")
+                return []
+
+            if title_id:
+                params.append(('id', title_id))
 
         # append the 'exclude' parameter to the list of query parameters if we don't want AI translated subtitles'
         if not self.include_ai_translated:
+            logger.debug("Excluding AI translated subtitles from search results")
             params.append(('ai_translated', 'exclude'))
 
         # append the 'exclude' parameter to the list of query parameters if we want machine translated subtitles'
         if self.include_machine_translated:
+            logger.debug("Including machine translated subtitles in search results")
             params.append(('machine_translated', 'include'))
 
         # sort params alphabetically to prevent redirect
         params = sorted(params, key=lambda param: param[0])
+        logger.info(f'Query parameters used to query OpenSubtitles.com: {params}')
 
         # query the server
         res = self.retry(
@@ -592,25 +609,34 @@ def log_request_response(response, non_standard=True):
     if 'Authorization' in redacted_request_headers and isinstance(redacted_request_headers['Authorization'], str):
         redacted_request_headers['Authorization'] = redacted_request_headers['Authorization'][:-8]+8*'x'
 
+    redacted_request_body = None
     if response.request.body:
-        redacted_request_body = json.loads(response.request.body)
-        if 'password' in redacted_request_body:
-            redacted_request_body['password'] = 'redacted'
-    else:
-        redacted_request_body = None
+        try:
+            redacted_request_body = json.loads(response.request.body)
+        except json.JSONDecodeError:
+            logger.debug(f"Request body could not be parsed as JSON: {response.request.body!r}.")
+        else:
+            if 'password' in redacted_request_body:
+                redacted_request_body['password'] = 'redacted'
 
-    redacted_response_body = json.loads(response.text)
-    if 'token' in redacted_response_body and isinstance(redacted_response_body['token'], str):
-        redacted_response_body['token'] = redacted_response_body['token'][:-8] + 8 * 'x'
+    redacted_response_body = None
+    try:
+        redacted_response_body = json.loads(response.text)
+    except json.JSONDecodeError:
+        logger.debug(f"Response body could not be parsed as JSON: {response.text!r}.")
+    else:
+        if 'token' in redacted_response_body and isinstance(redacted_response_body['token'], str):
+            redacted_response_body['token'] = redacted_response_body['token'][:-8] + 8 * 'x'
 
     if non_standard:
         logger.debug("opensubtitlescom returned a non standard response. Logging request/response for debugging "
-                      "purpose.")
+                     "purpose.")
     else:
         logger.debug("opensubtitlescom returned a standard response. Logging request/response for debugging purpose.")
     logger.debug(f"Request URL: {response.request.url}")
     logger.debug(f"Request Headers: {redacted_request_headers}")
-    logger.debug(f"Request Body: {json.dumps(redacted_request_body)}")
+    logger.debug(f"Request Body: "
+                 f"{json.dumps(redacted_request_body) if redacted_request_body else response.request.body}")
     logger.debug(f"Response Status Code: {response.status_code}")
     logger.debug(f"Response Headers: {response.headers}")
-    logger.debug(f"Response Body: {json.dumps(redacted_response_body)}")
+    logger.debug(f"Response Body: {json.dumps(redacted_response_body) if redacted_response_body else response.text}")

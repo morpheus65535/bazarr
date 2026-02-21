@@ -46,6 +46,7 @@ class LegendasdivxSubtitle(Subtitle):
         self.wrong_fps = False
         self.skip_wrong_fps = skip_wrong_fps
         self.release_info = self.description
+        self.matches = set()
 
     @property
     def id(self):
@@ -116,7 +117,7 @@ class LegendasdivxSubtitle(Subtitle):
             # the legendasdivx backend it, so if there is a result, it matches, either inside of a pack or a specific
             # series and episode, so we can assume the season and episode matches.
             if video.series_imdb_id:
-                matches.update(['series', 'series_imdb_id', 'season', 'episode'])
+                self.matches.update(['series', 'series_imdb_id', 'season', 'episode'])
 
         # release_group
         if video.release_group and sanitize_release_group(video.release_group) in sanitize_release_group(description):

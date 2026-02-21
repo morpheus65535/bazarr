@@ -38,7 +38,7 @@ class SoustitreseuSubtitle(Subtitle):
         self.download_link = None
         self.data = data
         self.video = video
-        self.matches = None
+        self.matches = set()
         self.content = content
         self.hearing_impaired = None
         self.is_perfect_match = is_perfect_match

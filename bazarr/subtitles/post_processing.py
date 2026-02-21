@@ -12,12 +12,10 @@ def postprocessing(command, path):
     try:
         encoding = getpreferredencoding()
         if os.name == 'nt':
-            codepage = subprocess.Popen("chcp", shell=True, stdout=subprocess.PIPE,
-                                        stderr=subprocess.PIPE, encoding=getpreferredencoding())
-            # wait for the process to terminate
-            out_codepage, err_codepage = codepage.communicate()
-            encoding = out_codepage.split(':')[-1].strip()
-
+            from ctypes import windll
+            code_page = windll.kernel32.GetConsoleOutputCP()
+            encoding = f"cp{code_page}"
+            
         process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,
                                    stderr=subprocess.PIPE, encoding=encoding)
         # wait for the process to terminate

@@ -27,6 +27,7 @@ class GestdownSubtitle(Subtitle):
         self.page_link = _BASE_URL + data["downloadUri"]
         self._id = data["subtitleId"]
         self.release_info = data["version"]
+        self.matches = set()
 
     def get_matches(self, video):
         self.matches = {"title", "series", "season", "episode", "tvdb_id"}

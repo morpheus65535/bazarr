@@ -38,6 +38,7 @@ class YifySubtitle(Subtitle):
         self.release_info = release.replace('\n', ', ')
         self.uploader = uploader
         self.rating = rating
+        self.matches = set()
 
     @property
     def id(self):

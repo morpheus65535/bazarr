@@ -11,6 +11,7 @@ from glob import glob
 
 from app.get_args import args
 from app.config import settings
+from app.event_handler import event_stream
 from app.jobs_queue import jobs_queue
 from utilities.central import restart_bazarr
 
@@ -92,6 +93,7 @@ def backup_to_zip(job_id=None):
         backupZip.write(config_file, 'config.yaml')
 
     jobs_queue.update_job_name(job_id=job_id, new_job_name="Backed up Database and Configuration File")
+    event_stream(type='backup')
 
 
 def restore_from_backup():

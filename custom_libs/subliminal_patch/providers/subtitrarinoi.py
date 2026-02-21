@@ -5,6 +5,8 @@ from __future__ import absolute_import
 import logging
 import re
 
+from requests import Session
+
 from subliminal.providers import ParserBeautifulSoup
 from subliminal.video import Episode
 from subliminal.video import Movie
@@ -13,7 +15,6 @@ from subliminal_patch.providers.mixins import ProviderSubtitleArchiveMixin
 from subliminal_patch.providers.utils import get_archive_from_bytes
 from subliminal_patch.providers.utils import get_subtitle_from_archive
 from subliminal_patch.providers.utils import update_matches
-from subliminal_patch.subtitle import guess_matches
 from subliminal_patch.subtitle import Subtitle
 from subliminal_patch.utils import \
     fix_inconsistent_naming as _fix_inconsistent_naming
@@ -55,7 +56,7 @@ class SubtitrarinoiSubtitle(Subtitle):
         self.year = year
         self.download_count = download_count
         self.comments = self.releases = self.release_info = ",".join(comments.split(";"))
-        self.matches = None
+        self.matches = set()
         self.uploader = uploader
         self.page_link = page_link
         self.is_episode = is_episode

@@ -12,6 +12,7 @@ from datetime import datetime
 
 import configparser
 import yaml
+import platform
 
 from urllib.parse import quote_plus
 from utilities.binaries import BinaryNotFound, get_binary
@@ -85,6 +86,7 @@ validators = [
               is_type_of=str),
     Validator('general.ip', must_exist=True, default='*', is_type_of=str, condition=validate_ip_address),
     Validator('general.port', must_exist=True, default=6767, is_type_of=int, gte=1, lte=65535),
+    Validator('general.hostname', must_exist=True, default=platform.node(), is_type_of=str),
     Validator('general.base_url', must_exist=True, default='', is_type_of=str),
     Validator('general.instance_name', must_exist=True, default='Bazarr', is_type_of=str,
               apply_default_on_none=True),
@@ -139,6 +141,7 @@ validators = [
     Validator('general.enabled_integrations', must_exist=True, default=[], is_type_of=list),
     Validator('general.multithreading', must_exist=True, default=True, is_type_of=bool),
     Validator('general.chmod_enabled', must_exist=True, default=False, is_type_of=bool),
+    Validator('general.enable_strm_support', must_exist=True, default=False, is_type_of=bool),
     Validator('general.chmod', must_exist=True, default='0640', is_type_of=str),
     Validator('general.subfolder', must_exist=True, default='current', is_type_of=str),
     Validator('general.subfolder_custom', must_exist=True, default='', is_type_of=str),
@@ -466,6 +469,9 @@ validators = [
 
     # subsource section
     Validator('subsource.apikey', must_exist=True, default='', is_type_of=str),
+
+    # subx section
+    Validator('subx.api_key', must_exist=True, default='', is_type_of=str),
 ]
 
 

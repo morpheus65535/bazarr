@@ -40,6 +40,7 @@ class JimakuSubtitle(Subtitle):
         self.filename = filename
         self.release_info = filename
         self.is_archive = filename.endswith(accepted_archive_formats)
+        self.matches = set()
         
     @property
     def id(self):

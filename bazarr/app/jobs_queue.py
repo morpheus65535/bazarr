@@ -4,7 +4,6 @@ import logging
 import importlib
 import inspect
 import os
-import time
 
 from time import sleep
 from datetime import datetime
@@ -336,10 +335,9 @@ class JobsQueue:
                 return True
         return False
 
-    def add_job_from_function(self, job_name: str, is_progress: bool, progress_max: int = 0):
+    def add_job_from_function(self, job_name: str, is_progress: bool, progress_max: int = 0) -> int:
         """
-        Adds a job to the pending queue using the details of the calling function. The job is then executed, and the
-        method waits until the job is completed or has failed.
+        Adds a job to the pending queue using the details of the calling function. The job is then executed.
 
         :param job_name: Name of the job to be added.
         :type job_name: str
@@ -348,7 +346,7 @@ class JobsQueue:
         :param progress_max: Maximum progress value for the job, default is 0.
         :type progress_max: int
         :return: ID of the added job.
-        :rtype: Any
+        :rtype: int
         """
         # Get the current frame
         current_frame = inspect.currentframe()
@@ -381,10 +379,6 @@ class JobsQueue:
         # Feed the job to the pending queue
         job_id = self.feed_jobs_pending_queue(job_name=job_name, module=parent_function_path, func=parent_function_name,
                                               kwargs=arguments, is_progress=is_progress, progress_max=progress_max)
-
-        # Wait for the job to complete or fail
-        while jobs_queue.get_job_status(job_id=job_id) in ['pending', 'running']:
-            time.sleep(0.1)
 
         return job_id
 
@@ -504,16 +498,19 @@ class JobsQueue:
         """
         while True:
             try:
-                with self._queue_lock:
-                    can_run_job = (len(self.jobs_running_queue) < settings.general.concurrent_jobs
-                                   and len(self.jobs_pending_queue) > 0)
+                if self.jobs_pending_queue:
+                    with self._queue_lock:
+                        can_run_job = (len(self.jobs_running_queue) < settings.general.concurrent_jobs
+                                       and len(self.jobs_pending_queue) > 0)
 
-                if can_run_job:
-                    job_thread = Thread(target=self._run_job)
-                    job_thread.daemon = True
-                    job_thread.start()
+                    if can_run_job:
+                        job_thread = Thread(target=self._run_job)
+                        job_thread.daemon = True
+                        job_thread.start()
+                    else:
+                        sleep(0.5)
                 else:
-                    sleep(0.1)
+                    sleep(0.5)
             except (KeyboardInterrupt, SystemExit):
                 break
 

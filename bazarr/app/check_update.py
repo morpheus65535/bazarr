@@ -221,6 +221,7 @@ def update_cleaner(zipfile, bazarr_dir, config_dir):
     dir_to_ignore = [f'^.{separator}',
                      f'^bin{separator}',
                      f'^venv{separator}',
+                     f'^.venv{separator}',
                      f'^WinPython{separator}',
                      f'{separator}__pycache__{separator}$']
     if os.path.abspath(bazarr_dir).lower() == os.path.abspath(config_dir).lower():

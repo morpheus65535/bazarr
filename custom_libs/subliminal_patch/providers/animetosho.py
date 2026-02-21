@@ -55,6 +55,7 @@ class AnimeToshoSubtitle(Subtitle):
         self.meta = meta
         self.download_link = download_link
         self.release_info = release_info
+        self.matches = set()
 
     @property
     def id(self):

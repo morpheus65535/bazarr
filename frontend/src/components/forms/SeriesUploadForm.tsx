@@ -361,7 +361,7 @@ const SeriesUploadForm: FunctionComponent<Props> = ({
       onSubmit={form.onSubmit(({ files }) => {
         const { sonarrSeriesId: seriesId } = series;
 
-        files.forEach(async (value) => {
+        for (const value of files) {
           const { file, hi, forced, language, episode } = value;
 
           if (language === null || episode === null) {
@@ -373,7 +373,7 @@ const SeriesUploadForm: FunctionComponent<Props> = ({
           const { code2 } = language;
           const { sonarrEpisodeId: episodeId } = episode;
 
-          await upload.mutateAsync({
+          upload.mutate({
             seriesId,
             episodeId,
             form: {
@@ -383,7 +383,7 @@ const SeriesUploadForm: FunctionComponent<Props> = ({
               forced,
             },
           });
-        });
+        }
 
         onComplete?.();
         modals.closeSelf();

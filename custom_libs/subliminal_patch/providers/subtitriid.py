@@ -34,7 +34,7 @@ class SubtitriIdSubtitle(Subtitle):
         self.title = title
         self.year = year
         self.imdb_id = imdb_id
-        self.matches = None
+        self.matches = set()
         self.release_info = ''  # TODO Try to get the release info from parsing the page
 
     @property

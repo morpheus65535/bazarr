@@ -28,7 +28,7 @@ class SystemAccount(Resource):
     def post(self):
         """Login or logout from Bazarr UI when using form login"""
         args = self.post_request_parser.parse_args()
-        if settings.auth.type != 'form':
+        if settings.auth.type not in ['form', 'basic']:
             return 'Unknown authentication type define in config', 500
 
         action = args.get('action')

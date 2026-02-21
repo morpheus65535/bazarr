@@ -20,6 +20,7 @@ class TVsubtitlesSubtitle(_TVsubtitlesSubtitle):
         super(TVsubtitlesSubtitle, self).__init__(language, page_link, subtitle_id, series, season, episode,
                                                   year, rip, release)
         self.release_info = u"%s, %s" % (rip, release)
+        self.matches = set()
 
 
 class TVsubtitlesProvider(_TVsubtitlesProvider):

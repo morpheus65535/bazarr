@@ -68,7 +68,7 @@ class TitloviSubtitle(Subtitle):
         self.download_link = download_link
         self.rating = rating
         self.download_count = download_count
-        self.matches = None
+        self.matches = set()
         self.asked_for_release_group = asked_for_release_group
         self.asked_for_episode = asked_for_episode
         self.is_pack = is_pack

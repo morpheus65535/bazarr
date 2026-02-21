@@ -45,6 +45,7 @@ class EmbeddedSubtitle(Subtitle):
         self.page_link = self.container.path
         self.release_info = _get_pretty_release_name(stream, container)
         self.media_type = media_type
+        self.matches = matches or set()
 
     def get_matches(self, video):
         if self.language.hi:

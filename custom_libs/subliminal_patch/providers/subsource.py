@@ -59,7 +59,7 @@ class SubsourceSubtitle(Subtitle):
         self.page_link = page_link
         self.download_link = None
         self.uploader = uploader
-        self.matches = None
+        self.matches = set()
         self.season = season
         self.episode = episode
         self.asked_for_episode = asked_for_episode

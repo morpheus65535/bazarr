@@ -36,6 +36,7 @@ class BSPlayerSubtitle(Subtitle):
         self.video = video
         self.subid = subid
         self.release_info = filename
+        self.matches = set()
 
     @property
     def id(self):

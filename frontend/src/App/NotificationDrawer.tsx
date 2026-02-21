@@ -327,7 +327,7 @@ const NotificationDrawer: FunctionComponent<NotificationDrawerProps> = ({
                                       wrap="nowrap"
                                     >
                                       <Tooltip label={`Job ID: ${job?.job_id}`}>
-                                        <Text fw={500} size="sm" lineClamp={1}>
+                                        <Text fw={500} size="sm">
                                           {job?.job_name}
                                         </Text>
                                       </Tooltip>

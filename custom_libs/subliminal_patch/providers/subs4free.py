@@ -41,7 +41,7 @@ class Subs4FreeSubtitle(Subtitle):
         self.uploader = uploader
         self.hearing_impaired = None
         self.encoding = 'utf8'
-        self.matches = None
+        self.matches = set()
 
     @property
     def id(self):

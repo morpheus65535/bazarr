@@ -155,6 +155,14 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
       },
     },
     {
+      key: "backup",
+      any: () => {
+        void queryClient.invalidateQueries({
+          queryKey: [QueryKeys.System, QueryKeys.Backups],
+        });
+      },
+    },
+    {
       key: "movie-history",
       any: () => {
         void queryClient.invalidateQueries({

@@ -10,6 +10,7 @@ class ShooterSubtitle(_ShooterSubtitle):
         super(ShooterSubtitle, self).__init__(language, hash, download_link)
         self.release_info = hash
         self.page_link = download_link
+        self.matches = set()
 
 
 class ShooterProvider(_ShooterProvider):

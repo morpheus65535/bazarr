@@ -2,11 +2,10 @@
 
 import os
 import sys
-import gc
 
 from flask_restx import Resource, Namespace, reqparse, fields, marshal
 
-from app.database import TableEpisodes, TableMovies, database, select
+from app.database import TableShows, TableEpisodes, TableMovies, database, select
 from languages.get_languages import alpha3_from_alpha2
 from utilities.path_mappings import path_mappings
 from utilities.video_analyzer import subtitles_sync_references
@@ -18,6 +17,8 @@ from subtitles.indexer.movies import store_subtitles_movie
 from subtitles.sync import sync_subtitles
 from app.config import settings, empty_values, get_array_from
 from app.event_handler import event_stream
+from plex.operations import plex_refresh_item
+
 
 from ..utils import authenticate
 
@@ -122,7 +123,9 @@ class Subtitles(Resource):
 
         if media_type == 'episode':
             metadata = database.execute(
-                select(TableEpisodes.path, TableEpisodes.sonarrSeriesId, TableEpisodes.subtitles)
+                select(TableEpisodes.path, TableEpisodes.sonarrSeriesId, TableEpisodes.subtitles, TableEpisodes.season,
+                       TableEpisodes.episode, TableShows.imdbId)
+                .join(TableShows)
                 .where(TableEpisodes.sonarrEpisodeId == id)) \
                 .first()
 
@@ -132,7 +135,7 @@ class Subtitles(Resource):
             video_path = path_mappings.path_replace(metadata.path)
         else:
             metadata = database.execute(
-                select(TableMovies.path, TableMovies.subtitles)
+                select(TableMovies.path, TableMovies.subtitles, TableMovies.imdbId)
                 .where(TableMovies.radarrId == id))\
                 .first()
 
@@ -190,7 +193,6 @@ class Subtitles(Resource):
                 except OSError:
                     return 'Unable to edit subtitles file. Check logs.', 409
         else:
-            use_original_format = True if args.get('original_format') == 'true' else False
             try:
                 subtitles_apply_mods(language=language, subtitle_path=subtitles_path, mods=[action],
                                      video_path=video_path)
@@ -207,9 +209,16 @@ class Subtitles(Resource):
             store_subtitles(path_mappings.path_replace_reverse(video_path), video_path)
             event_stream(type='series', payload=metadata.sonarrSeriesId)
             event_stream(type='episode', payload=id)
+
+            if settings.general.use_plex and settings.plex.update_series_library:
+                plex_refresh_item(metadata.imdbId, is_movie=False, season=metadata.season,
+                                  episode=metadata.episode)
         else:
             store_subtitles_movie(path_mappings.path_replace_reverse_movie(video_path), video_path)
             event_stream(type='movie', payload=id)
+
+            if settings.general.use_plex and settings.plex.update_movie_library:
+                plex_refresh_item(metadata.imdbId, is_movie=True)
 
         return '', 204
 

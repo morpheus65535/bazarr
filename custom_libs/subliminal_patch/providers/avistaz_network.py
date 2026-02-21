@@ -223,7 +223,7 @@ class AvistazNetworkSubtitle(Subtitle):
         self.page_link = page_link
         self.download_link = download_link
         self.video = video
-        self.matches = None
+        self.matches = set()
         self.content = None
         self.uploader = uploader
         self.encoding = None

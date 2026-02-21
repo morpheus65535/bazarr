@@ -21,6 +21,7 @@ from subtitles.indexer.movies import store_subtitles_movie
 from subtitles.indexer.series import store_subtitles
 from utilities.path_mappings import path_mappings
 from .download import generate_subtitles
+from app.event_handler import event_stream
 
 
 def upgrade_subtitles():
@@ -90,7 +91,7 @@ def upgrade_episodes_subtitles(job_id=None):
 
         # Mark upgradable and get original_id
         item.update({'original_id': episodes_to_upgrade.get(item['id'])})
-        item.update({'upgradable': bool(item['original_id'])})
+        item.update({'upgradable': item['id'] in episodes_to_upgrade.keys()})
 
         # cleanup the unused attributes
         del item['path']
@@ -148,6 +149,7 @@ def upgrade_episodes_subtitles(job_id=None):
             history_log(3, episode['sonarrSeriesId'], episode['sonarrEpisodeId'], result,
                         upgraded_from_id=episode['original_id'])
             send_notifications(episode['sonarrSeriesId'], episode['sonarrEpisodeId'], result.message)
+            event_stream(type="episode-history")
     jobs_queue.update_job_name(job_id=job_id, new_job_name='Tried to upgrade episodes subtitles')
 
 
@@ -196,7 +198,7 @@ def upgrade_movies_subtitles(job_id=None):
 
         # Mark upgradable and get original_id
         item.update({'original_id': movies_to_upgrade.get(item['id'])})
-        item.update({'upgradable': bool(item['original_id'])})
+        item.update({'upgradable': item['id'] in movies_to_upgrade.keys()})
 
         # cleanup the unused attributes
         del item['path']
@@ -251,6 +253,7 @@ def upgrade_movies_subtitles(job_id=None):
                                   path_mappings.path_replace_movie(movie['video_path']))
             history_log_movie(3, movie['radarrId'], result, upgraded_from_id=movie['original_id'])
             send_notifications_movie(movie['radarrId'], result.message)
+            event_stream(type="movie-history")
     jobs_queue.update_job_name(job_id=job_id, new_job_name='Tried to upgrade movies subtitles')
 
 
@@ -283,7 +286,7 @@ def parse_language_string(language_string):
     return [language, is_forced, is_hi]
 
 
-def get_upgradable_episode_subtitles():
+def get_upgradable_episode_subtitles(history_id_list=None):
     if not settings.general.upgrade_subs:
         # return an empty set of rows
         logging.debug("Subtitles upgrade is disabled so we wont go further.")
@@ -323,51 +326,34 @@ def get_upgradable_episode_subtitles():
     logging.debug(f"{len(subtitles_to_upgrade)} subtitles are candidates and we've selected the latest timestamp for "
                   f"each of them.")
 
-    query_actions_without_upgrade = [x for x in query_actions if x != 3]
     upgradable_episode_subtitles = {}
     for subtitle_to_upgrade in subtitles_to_upgrade:
-        # exclude subtitles with ID that as been "upgraded from" and shouldn't be considered (should help prevent
-        # non-matching hi/non-hi bug)
-        if database.execute(select(TableHistory.id).where(TableHistory.upgradedFromId == subtitle_to_upgrade.id)).first():
-            logging.debug(f"Episode subtitle {subtitle_to_upgrade.id} has already been upgraded so we'll skip it.")
+        # exclude subtitles that are not in history_id_list if provided
+        if history_id_list and subtitle_to_upgrade.id not in history_id_list:
             continue
 
-        # check if we have the original subtitles id in database and use it instead of guessing
+        # exclude subtitles with ID that as been "upgraded from" and shouldn't be considered
+        if any(x.upgradedFromId == subtitle_to_upgrade.id for x in subtitles_to_upgrade):
+            logging.debug(f"TableHistory ID {subtitle_to_upgrade.id} is the original subtitles event and has already "
+                          f"been upgraded so we'll skip it.")
+            continue
+
+        # check if we have the original subtitles ID in database
         if subtitle_to_upgrade.upgradedFromId:
             upgradable_episode_subtitles.update({subtitle_to_upgrade.id: subtitle_to_upgrade.upgradedFromId})
             logging.debug(f"The original subtitles ID for TableHistory ID {subtitle_to_upgrade.id} stored in DB is: "
                           f"{subtitle_to_upgrade.upgradedFromId}")
             continue
-
-        # if not, we have to try to guess the original subtitles id
-        logging.debug("We don't have the original subtitles ID for this subtitle so we'll have to guess it.")
-        potential_parents = database.execute(
-            select(TableHistory.id, TableHistory.action)
-            .where(TableHistory.video_path == subtitle_to_upgrade.video_path,
-                   TableHistory.language == subtitle_to_upgrade.language,)
-            .order_by(TableHistory.timestamp.desc())
-        ).all()
-
-        logging.debug(f"The potential original subtitles IDs for TableHistory ID {subtitle_to_upgrade.id} are: "
-                      f"{[x.id for x in potential_parents]}")
-        confirmed_parent = None
-        for potential_parent in potential_parents:
-            if potential_parent.action in query_actions_without_upgrade:
-                confirmed_parent = potential_parent.id
-                logging.debug(f"This ID is the first one to match selected query actions so it's been selected as "
-                              f"original subtitles ID: {potential_parent.id}")
-                break
-
-        if confirmed_parent not in upgradable_episode_subtitles.values():
-            logging.debug("We haven't defined this ID as original subtitles ID for any other ID so we'll add it to "
-                          "upgradable episode subtitles.")
-            upgradable_episode_subtitles.update({subtitle_to_upgrade.id: confirmed_parent})
+        else:
+            upgradable_episode_subtitles.update({subtitle_to_upgrade.id: None})
+            logging.debug(f"It seems to be the first time we've seen this TableHistory ID {subtitle_to_upgrade.id}.")
+            continue
 
     logging.debug(f"We've found {len(upgradable_episode_subtitles)} episode subtitles IDs to be upgradable")
     return upgradable_episode_subtitles
 
 
-def get_upgradable_movies_subtitles():
+def get_upgradable_movies_subtitles(history_id_list=None):
     if not settings.general.upgrade_subs:
         # return an empty set of rows
         logging.debug("Subtitles upgrade is disabled so we won't go further.")
@@ -406,46 +392,29 @@ def get_upgradable_movies_subtitles():
     logging.debug(f"{len(subtitles_to_upgrade)} subtitles are candidates and we've selected the latest timestamp for "
                   f"each of them.")
 
-    query_actions_without_upgrade = [x for x in query_actions if x != 3]
     upgradable_movie_subtitles = {}
     for subtitle_to_upgrade in subtitles_to_upgrade:
-        # exclude subtitles with ID that as been "upgraded from" and shouldn't be considered (should help prevent
-        # non-matching hi/non-hi bug)
-        if database.execute(
-                select(TableHistoryMovie.id).where(TableHistoryMovie.upgradedFromId == subtitle_to_upgrade.id)).first():
-            logging.debug(f"Movie subtitle {subtitle_to_upgrade.id} has already been upgraded so we'll skip it.")
+        # exclude subtitles that are not in history_id_list if provided
+        if history_id_list and subtitle_to_upgrade.id not in history_id_list:
             continue
 
-        # check if we have the original subtitles id in database and use it instead of guessing
+        # exclude subtitles with ID that as been "upgraded from" and shouldn't be considered
+        if any(x.upgradedFromId == subtitle_to_upgrade.id for x in subtitles_to_upgrade):
+            logging.debug(f"TableHistoryMovie ID {subtitle_to_upgrade.id} is the original subtitles event and has "
+                          f"already been upgraded so we'll skip it.")
+            continue
+
+        # check if we have the original subtitles ID in database
         if subtitle_to_upgrade.upgradedFromId:
             upgradable_movie_subtitles.update({subtitle_to_upgrade.id: subtitle_to_upgrade.upgradedFromId})
             logging.debug(f"The original subtitles ID for TableHistoryMovie ID {subtitle_to_upgrade.id} stored in DB "
                           f"is: {subtitle_to_upgrade.upgradedFromId}")
             continue
-
-        # if not, we have to try to guess the original subtitles id
-        logging.debug("We don't have the original subtitles ID for this subtitle so we'll have to guess it.")
-        potential_parents = database.execute(
-            select(TableHistoryMovie.id, TableHistoryMovie.action)
-            .where(TableHistoryMovie.video_path == subtitle_to_upgrade.video_path,
-                   TableHistoryMovie.language == subtitle_to_upgrade.language, )
-            .order_by(TableHistoryMovie.timestamp.desc())
-        ).all()
-
-        logging.debug(f"The potential original subtitles IDs for TableHistoryMovie ID {subtitle_to_upgrade.id} are: "
-                      f"{[x.id for x in potential_parents]}")
-        confirmed_parent = None
-        for potential_parent in potential_parents:
-            if potential_parent.action in query_actions_without_upgrade:
-                confirmed_parent = potential_parent.id
-                logging.debug(f"This ID is the newest one to match selected query actions so it's been selected as "
-                              f"original subtitles ID: {potential_parent.id}")
-                break
-
-        if confirmed_parent not in upgradable_movie_subtitles.values():
-            logging.debug("We haven't defined this ID as original subtitles ID for any other ID so we'll add it to "
-                          "upgradable episode subtitles.")
-            upgradable_movie_subtitles.update({subtitle_to_upgrade.id: confirmed_parent})
+        else:
+            upgradable_movie_subtitles.update({subtitle_to_upgrade.id: None})
+            logging.debug(f"It seems to be the first time we've seen this TableHistoryMovie ID "
+                          f"{subtitle_to_upgrade.id}.")
+            continue
 
     logging.debug(f"We've found {len(upgradable_movie_subtitles)} movie subtitles IDs to be upgradable")
     return upgradable_movie_subtitles

@@ -20,7 +20,7 @@ class SubsCenterSubtitle(_SubsCenterSubtitle):
                                                  subtitle_version, downloaded, releases)
         self.release_info = u", ".join(releases)
         self.page_link = page_link
-        self.matches = None
+        self.matches = set()
 
     def get_matches(self, video):
         self.matches = super().get_matches(video)

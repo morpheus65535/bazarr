@@ -36,6 +36,7 @@ class WizdomSubtitle(Subtitle):
         self.subtitle_id = subtitle_id
         self.release = release
         self.release_info = release
+        self.matches = set()
 
     @property
     def id(self):
