@@ -23,7 +23,7 @@ class GetRadarrInfo:
         @return: str
         """
         radarr_version = region.get("radarr_version", expiration_time=datetime.timedelta(seconds=60).total_seconds())
-        if radarr_version:
+        if radarr_version and radarr_version != 'unknown':
             region.set("radarr_version", radarr_version)
             return radarr_version
         else:
