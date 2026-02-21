@@ -76,6 +76,8 @@ class AssrtSubtitle(Subtitle):
         self.release_info = video_name
         self.url = None
         self._detail = None
+        self._target_season = None
+        self._target_episode = None
 
     def _get_detail(self):
         if self._detail:
@@ -96,6 +98,17 @@ class AssrtSubtitle(Subtitle):
             logger.error('Can\'t get filelist from subtitle details')
             return False
         files = sub['filelist']
+
+        # zero pass: for season packs, narrow down to files matching the
+        # target episode before language selection, so the language passes
+        # don't accidentally pick a file from the wrong episode.
+        if self._target_episode is not None:
+            episode_files = [
+                f for f in files
+                if guessit(f['f']).get('episode') == self._target_episode
+            ]
+            if episode_files:
+                files = episode_files
 
         # first pass: guessit
         for f in files:
@@ -130,6 +143,9 @@ class AssrtSubtitle(Subtitle):
         return detail['url']
 
     def get_matches(self, video):
+        if isinstance(video, Episode):
+            self._target_season = video.season
+            self._target_episode = video.episode
         self.matches = guess_matches(video, guessit(self.video_name))
         return self.matches
 
