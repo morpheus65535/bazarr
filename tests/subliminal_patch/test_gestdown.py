@@ -96,6 +96,7 @@ def test_subtitle_get_matches_release_group(episodes):
             "hearingImpaired": False,
             "downloadUri": "/download/abc",
             "qualities": [],
+            "qualities": [],
         },
     )
     matches = sub.get_matches(episodes["breaking_bad_s01e01"])
