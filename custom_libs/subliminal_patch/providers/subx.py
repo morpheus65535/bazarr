@@ -27,6 +27,9 @@ logger = logging.getLogger(__name__)
 
 _SUBX_BASE_URL = "https://subx-api.duckdns.org"
 
+# Regex to detect Spain Spanish in descriptions (same as Subdivx provider)
+_SPANISH_RE = re.compile(r"españa|ib[eé]rico|castellano|gallego|castilla|europ[ae]", re.IGNORECASE)
+
 
 # ---------------------------
 # Helpers
@@ -112,8 +115,8 @@ class SubxSubtitle(Subtitle):
 
     def get_matches(self, video):
         """Determines which features match the video."""
-        self.matches = set()  # ← Cambiar de 'matches' a 'self.matches'
-    
+        self.matches = set()
+
         if isinstance(video, Episode):
             self.matches.update({"title", "series", "year"})
             
@@ -133,20 +136,21 @@ class SubxSubtitle(Subtitle):
         
         elif isinstance(video, Movie):
             self.matches.update({"title", "year"})
-    
+
         # Update matches from release info, but preserve episode match for season packs
         is_season_pack = isinstance(video, Episode) and self.episode is None
         if is_season_pack:
             # Temporarily store that this is a season pack
-            had_episode_match = "episode" in self.matches  # ← self.matches
+            had_episode_match = "episode" in self.matches
         
-        update_matches(self.matches, video, self.release_info)  # ← self.matches
+        update_matches(self.matches, video, self.release_info)
         
         # Restore episode match for season packs (it might be removed by update_matches)
         if is_season_pack and had_episode_match:
-            self.matches.add("episode")  # ← self.matches
+            self.matches.add("episode")
         
-        return self.matches  # ← self.matches
+        return self.matches
+
 
 # ---------------------------
 # Provider Class
@@ -339,12 +343,17 @@ class SubxSubtitlesProvider(Provider):
             if not page_url and item.get("id"):
                 page_url = f"{_SUBX_BASE_URL}/api/subtitles/{item['id']}"
 
+            # Detect language variant (Spain vs LATAM) from description
+            description = item.get("description", "")
+            spain = _SPANISH_RE.search(description.lower()) is not None
+            language = Language.fromalpha2("es") if spain else Language("spa", "MX")
+
             subtitles.append(self.subtitle_class(
-                language=Language.fromalpha2("es"),
+                language=language,
                 video=video,
                 page_link=page_url,
                 title=item.get("title"),
-                description=item.get("description", ""),
+                description=description,
                 uploader=item.get("uploader_name", "unknown"),
                 download_url=f"{_SUBX_BASE_URL}/api/subtitles/{item['id']}/download",
                 season=item_season,
@@ -359,12 +368,17 @@ class SubxSubtitlesProvider(Provider):
                 if not page_url and item.get("id"):
                     page_url = f"{_SUBX_BASE_URL}/api/subtitles/{item['id']}"
 
+                # Detect language variant from description
+                description = item.get("description", "")
+                spain = _SPANISH_RE.search(description.lower()) is not None
+                language = Language.fromalpha2("es") if spain else Language("spa", "MX")
+
                 subtitles.append(self.subtitle_class(
-                    language=Language.fromalpha2("es"),
+                    language=language,
                     video=video,
                     page_link=page_url,
                     title=item.get("title"),
-                    description=item.get("description", ""),
+                    description=description,
                     uploader=item.get("uploader_name", "unknown"),
                     download_url=f"{_SUBX_BASE_URL}/api/subtitles/{item['id']}/download",
                     season=item.get("season"),
