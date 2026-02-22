@@ -470,6 +470,9 @@ validators = [
     # subsource section
     Validator('subsource.apikey', must_exist=True, default='', is_type_of=str),
 
+    # kickasssubtitles section
+    Validator('kickasssubtitles.api_key', must_exist=True, default='', is_type_of=str, cast=str),
+
     # subx section
     Validator('subx.api_key', must_exist=True, default='', is_type_of=str),
 ]

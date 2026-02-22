@@ -345,6 +345,9 @@ def get_providers_auth():
             'api_key': settings.subsource.apikey,
         },
         'animesubinfo': {},
+        'kickasssubtitles': {
+            'api_key': settings.kickasssubtitles.api_key,
+        },
         'subx':
             {
                 'api_key': settings.subx.api_key,

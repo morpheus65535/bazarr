@@ -259,6 +259,20 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
   },
   { key: "hosszupuska", description: "Hungarian Subtitles Provider" },
   {
+    key: "kickasssubtitles",
+    name: "KickAssSubtitles",
+    description: "Multi-language Subtitles Provider with hash-based matching",
+    message:
+      "API key required. Uses OpenSubtitles hash for accurate subtitle matching.",
+    inputs: [
+      {
+        type: "password",
+        key: "api_key",
+        name: "API Key",
+      },
+    ],
+  },
+  {
     key: "karagarga",
     name: "Karagarga.in",
     description: "Movie Subtitles Provider (Private Tracker)",
