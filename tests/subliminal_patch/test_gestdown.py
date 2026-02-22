@@ -80,6 +80,7 @@ def test_subtitle_multi_release_version():
             "version": "HDTV, WEB",
             "hearingImpaired": False,
             "downloadUri": "/download/abc",
+            "qualities": [],
         },
     )
     assert sub.releases == ["HDTV", "WEB"]
@@ -94,6 +95,7 @@ def test_subtitle_get_matches_release_group(episodes):
             "version": "BluRay.720p.REWARD",
             "hearingImpaired": False,
             "downloadUri": "/download/abc",
+            "qualities": [],
         },
     )
     matches = sub.get_matches(episodes["breaking_bad_s01e01"])
@@ -127,10 +129,11 @@ def test_list_subtitles_423(episodes, requests_mock, mocker):
     requests_mock.get(
         "https://api.gestdown.info/shows/external/tvdb/81189",
         status_code=200,
-        text='{"shows":[{"id":"cd880e2e-ef44-47cd-9f3d-a03b343ba2d0","name":"Breaking Bad","nbSeasons":5,"seasons":[1,2,3,4,5]}]}'
+        text='{"shows":[{"id":"cd880e2e-ef44-47cd-9f3d-a03b343ba2d0","name":"Breaking Bad","nbSeasons":5,"seasons":[1,2,3,4,5]}]}',
     )
     requests_mock.get(
-        f"{_BASE_URL}/subtitles/get/cd880e2e-ef44-47cd-9f3d-a03b343ba2d0/1/1/English", status_code=423
+        f"{_BASE_URL}/subtitles/get/cd880e2e-ef44-47cd-9f3d-a03b343ba2d0/1/1/English",
+        status_code=423,
     )
 
     with GestdownProvider() as provider:
