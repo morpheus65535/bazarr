@@ -343,8 +343,8 @@ class SubxSubtitlesProvider(Provider):
             if not page_url and item.get("id"):
                 page_url = f"{_SUBX_BASE_URL}/api/subtitles/{item['id']}"
 
-            # Detect language variant (Spain vs LATAM) from description
-            description = item.get("description", "")
+            # Detect language variant (Spain vs LatAm) from description
+            description = item.get("description") or ""
             spain = _SPANISH_RE.search(description.lower()) is not None
             language = Language.fromalpha2("es") if spain else Language("spa", "MX")
 
@@ -369,7 +369,7 @@ class SubxSubtitlesProvider(Provider):
                     page_url = f"{_SUBX_BASE_URL}/api/subtitles/{item['id']}"
 
                 # Detect language variant from description
-                description = item.get("description", "")
+                description = item.get("description") or ""
                 spain = _SPANISH_RE.search(description.lower()) is not None
                 language = Language.fromalpha2("es") if spain else Language("spa", "MX")
 
