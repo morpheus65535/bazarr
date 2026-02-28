@@ -308,11 +308,7 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
             file_hash = None
         logger.debug(f'Searching using this hash: {file_hash}')
 
-        imdb_id = None
-        if isinstance(self.video, Episode) and self.video.series_imdb_id:
-            imdb_id = self.sanitize_external_ids(self.video.series_imdb_id)
-        elif isinstance(self.video, Movie) and self.video.imdb_id:
-            imdb_id = self.sanitize_external_ids(self.video.imdb_id)
+        imdb_id = self.sanitize_external_ids(self.video.imdb_id) if self.video.imdb_id else None
         logger.debug(f'Searching using this IMDB ID: {imdb_id}')
 
         title_id = None
