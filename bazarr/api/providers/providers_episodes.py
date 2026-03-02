@@ -94,7 +94,7 @@ class ProviderEpisodes(Resource):
     post_request_parser.add_argument('original_format', type=str, required=True,
                                      help='Use original subtitles format from ["True", "False"]')
     post_request_parser.add_argument('provider', type=str, required=True, help='Provider name')
-    post_request_parser.add_argument('subtitle', type=str, required=True, help='Pickled subtitles as return by GET')
+    post_request_parser.add_argument('subtitle', type=str, required=True, help='Subtitle ID as returned by GET')
 
     @authenticate
     @api_ns_providers_episodes.doc(parser=post_request_parser)

@@ -4,8 +4,6 @@
 import os
 import sys
 import logging
-import pickle
-import codecs
 import subliminal
 
 from subzero.language import Language
@@ -27,6 +25,7 @@ from subtitles.indexer.series import store_subtitles
 from subtitles.indexer.movies import store_subtitles_movie
 from subtitles.processing import ProcessSubtitlesResult
 
+from .cache import subtitle_cache
 from .pool import update_pools, _get_pool
 from .utils import get_video, _get_lang_obj, _get_scores, _set_forced_providers
 from .processing import process_subtitle
@@ -125,7 +124,7 @@ def manual_search(path, profile_id, providers, sceneName, title, media_type):
                          language=str(s.language.basename),
                          hearing_impaired=str(s.hearing_impaired),
                          provider=s.provider_name,
-                         subtitle=codecs.encode(pickle.dumps(s.make_picklable()), "base64").decode(),
+                         subtitle=subtitle_cache.store(s.make_picklable()),
                          url=s.page_link,
                          original_format=s.use_original_format,
                          matches=list(matches),
@@ -153,7 +152,10 @@ def manual_download_subtitle(path, audio_language, hi, forced, subtitle, provide
     else:
         os.environ["SZ_KEEP_ENCODING"] = "True"
 
-    subtitle = pickle.loads(codecs.decode(subtitle.encode(), "base64"))
+    subtitle = subtitle_cache.get(subtitle)
+    if subtitle is None:
+        logging.error("BAZARR Subtitle not found in cache (expired or invalid ID)")
+        return 'Subtitle not found in cache. Please search again.'
     if hi == 'True':
         subtitle.language.hi = True
     else:
