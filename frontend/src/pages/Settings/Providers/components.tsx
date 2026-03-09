@@ -216,7 +216,7 @@ const RequiredIntegrationAlert: FunctionComponent<{
     return (
       <Alert
         variant="light"
-        color="green"
+        color="success"
         icon={<FontAwesomeIcon icon={faCircleCheck} />}
       >
         This provider uses the {integrationName} integration, which is enabled
@@ -228,7 +228,7 @@ const RequiredIntegrationAlert: FunctionComponent<{
   return (
     <Alert
       variant="light"
-      color="yellow"
+      color="warning"
       title={`${integrationName} integration required`}
       icon={<FontAwesomeIcon icon={faTriangleExclamation} />}
     >
@@ -351,7 +351,7 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
       const options = value.options ?? [];
 
       const error = form.errors[`settings.settings-${itemKey}-${key}`] ? (
-        <MantineText c="red" component="span" size="xs">
+        <MantineText c="danger" component="span" size="xs">
           {form.errors[`settings.settings-${itemKey}-${key}`]}
         </MantineText>
       ) : null;
@@ -459,7 +459,7 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
           <Divider></Divider>
           <Group justify="right">
             {payload ? (
-              <Button color="red" onClick={deletePayload}>
+              <Button color="danger" onClick={deletePayload}>
                 Disable
               </Button>
             ) : null}
