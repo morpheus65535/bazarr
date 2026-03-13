@@ -123,6 +123,8 @@ class GeminiTranslatorService:
                             result=result)
             else:
                 history_log_movie(action=6, radarr_id=self.radarr_id, result=result)
+                
+            return self.dest_srt_file
 
     @staticmethod
     def get_instruction(language: str, description: str) -> str:
