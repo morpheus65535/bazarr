@@ -106,6 +106,7 @@ class Subtitles(Resource):
     @api_ns_subtitles.response(404, 'Episode/movie not found')
     @api_ns_subtitles.response(409, 'Unable to edit subtitles file. Check logs.')
     @api_ns_subtitles.response(500, 'Subtitles file not found. Path mapping issue?')
+    @api_ns_subtitles.response(502, 'Translation failed. Check logs for more details.')
     def patch(self):
         """Apply mods/tools on external subtitles"""
         args = self.patch_request_parser.parse_args()
