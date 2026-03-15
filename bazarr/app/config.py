@@ -93,7 +93,7 @@ validators = [
     Validator('general.path_mappings', must_exist=True, default=[], is_type_of=list),
     Validator('general.debug', must_exist=True, default=False, is_type_of=bool),
     Validator('general.branch', must_exist=True, default='master', is_type_of=str,
-              is_in=['master', 'development']),
+              is_in=['master', 'development', 'provider-subsarr']),
     Validator('general.auto_update', must_exist=True, default=True, is_type_of=bool),
     Validator('general.single_language', must_exist=True, default=False, is_type_of=bool),
     Validator('general.minimum_score', must_exist=True, default=90, is_type_of=int, gte=0, lte=100),
