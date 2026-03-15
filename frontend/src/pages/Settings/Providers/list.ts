@@ -461,6 +461,26 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     ],
   },
   {
+    key: "subsarr",
+    name: "Subsarr",
+    description: "Self-hosted Subscene subtitle provider",
+    inputs: [
+      {
+        type: "text",
+        key: "base_url",
+        name: "Base URL",
+      },
+      {
+        type: "text",
+        key: "email",
+      },
+      {
+        type: "password",
+        key: "password",
+      },
+    ],
+  },
+  {
     key: "subssabbz",
     name: "Subs.sab.bz",
     description: "Bulgarian Subtitles Provider",

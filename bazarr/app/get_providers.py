@@ -343,6 +343,11 @@ def get_providers_auth():
         'subsource': {
             'api_key': settings.subsource.apikey,
         },
+        'subsarr': {
+            'base_url': settings.subsarr.base_url,
+            'email': settings.subsarr.email,
+            'password': settings.subsarr.password,
+        },
         'animesubinfo': {},
         'subx':
             {
