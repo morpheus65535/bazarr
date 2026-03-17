@@ -55,7 +55,7 @@ class TurkceAltyaziOrgSubtitle(Subtitle):
         self.is_pack = is_pack
         self.download_link = page_link
         self.uploader = uploader
-        self.matches = None
+        self.matches = set()
         # Currently we only search by imdb_id, so this will always be True for now
         self.imdb_match = True
 

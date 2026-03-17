@@ -8,6 +8,7 @@ import logging
 from subzero.language import Language
 from subliminal_patch.core import save_subtitles
 from subliminal_patch.subtitle import Subtitle
+from subliminal_patch.score import MAX_SCORES
 from pysubs2.formats import get_format_identifier
 
 from languages.get_languages import language_from_alpha3, alpha2_from_alpha3, alpha3_from_alpha2
@@ -34,12 +35,12 @@ from .sync import sync_subtitles
 from .post_processing import postprocessing
 
 
-def manual_upload_subtitle(path, language, forced, hi, media_type, subtitle, audio_language, job_id=None,
+def manual_upload_subtitle(path, language, forced, hi, media_type, subtitle, filename, audio_language, job_id=None,
                            sonarrSeriesId=None, sonarrEpisodeId=None, radarrId=None):
     if not job_id:
-        return jobs_queue.add_job_from_function(f"Uploading {subtitle.filename}", is_progress=False)
+        return jobs_queue.add_job_from_function(f"Uploading {filename}", is_progress=False)
 
-    logging.debug(f'BAZARR Manually uploading subtitles: {subtitle.filename}')
+    logging.debug(f'BAZARR Manually uploading subtitles: {filename}')
 
     single = settings.general.single_language
 
@@ -100,16 +101,16 @@ def manual_upload_subtitle(path, language, forced, hi, media_type, subtitle, aud
         original_format=use_original_format
     )
 
-    sub.content = subtitle.read()
+    sub.content = subtitle.getvalue()
     if not sub.is_valid():
-        logging.exception(f'BAZARR Invalid subtitle file: {subtitle.filename}')
+        logging.exception(f'BAZARR Invalid subtitle file: {filename}')
         sub.mods = None
 
     if settings.general.utf8_encode:
         sub.set_encoding("utf-8")
 
     try:
-        sub.format = (get_format_identifier(os.path.splitext(subtitle.filename)[1]),)
+        sub.format = (get_format_identifier(os.path.splitext(filename)[1]),)
     except Exception:
         pass
 
@@ -197,14 +198,13 @@ def manual_upload_subtitle(path, language, forced, hi, media_type, subtitle, aud
             result = result[0]
         provider = "manual"
         if media_type == 'series':
-            score = 360
-            history_log(4, sonarrSeriesId, sonarrEpisodeId, result, fake_provider=provider, fake_score=score)
+            history_log(4, sonarrSeriesId, sonarrEpisodeId, result, fake_provider=provider,
+                        fake_score=MAX_SCORES['episode'])
             if not settings.general.dont_notify_manual_actions:
                 send_notifications(sonarrSeriesId, sonarrEpisodeId, result.message)
             store_subtitles(result.path, path)
         else:
-            score = 120
-            history_log_movie(4, radarrId, result, fake_provider=provider, fake_score=score)
+            history_log_movie(4, radarrId, result, fake_provider=provider, fake_score=MAX_SCORES['movie'])
             if not settings.general.dont_notify_manual_actions:
                 send_notifications_movie(radarrId, result.message)
             store_subtitles_movie(result.path, path)

@@ -30,7 +30,7 @@ class GreekSubsSubtitle(Subtitle):
         self.uploader = uploader
         self.referer = referer
         self.subtitle_id = subtitle_id
-        self.matches = None
+        self.matches = set()
 
     @property
     def id(self):

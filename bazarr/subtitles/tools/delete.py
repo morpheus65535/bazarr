@@ -6,6 +6,8 @@ import logging
 from subliminal.subtitle import SUBTITLE_EXTENSIONS
 
 from app.event_handler import event_stream
+from app.config import settings
+from app.database import database, TableShows, TableEpisodes, TableMovies, select
 from languages.get_languages import language_from_alpha2
 from utilities.path_mappings import path_mappings
 from utilities.autopulse_webhook import call_external_webhook
@@ -16,6 +18,7 @@ from sonarr.history import history_log
 from radarr.history import history_log_movie
 from sonarr.notify import notify_sonarr
 from radarr.notify import notify_radarr
+from plex.operations import plex_refresh_item
 
 
 def delete_subtitles(media_type, language, forced, hi, media_path, subtitles_path, sonarr_series_id=None,
@@ -40,9 +43,18 @@ def delete_subtitles(media_type, language, forced, hi, media_path, subtitles_pat
     if media_type == 'series':
         pr = path_mappings.path_replace
         prr = path_mappings.path_replace_reverse
+
+        metadata = database.execute(
+            select(TableEpisodes.season, TableEpisodes.episode, TableShows.imdbId)
+            .join(TableShows)
+            .where(TableEpisodes.sonarrEpisodeId == sonarr_episode_id)).first()
     else:
         pr = path_mappings.path_replace_movie
         prr = path_mappings.path_replace_reverse_movie
+
+        metadata = database.execute(
+            select(TableMovies.imdbId)
+            .where(TableMovies.radarrId == radarr_id)).first()
 
     result = ProcessSubtitlesResult(message=f"{language_string} subtitles deleted from disk.",
                                     reversed_path=prr(media_path),
@@ -67,6 +79,10 @@ def delete_subtitles(media_type, language, forced, hi, media_path, subtitles_pat
             notify_sonarr(sonarr_series_id)
             event_stream(type='series', action='update', payload=sonarr_series_id)
             event_stream(type='episode-wanted', action='update', payload=sonarr_episode_id)
+
+            if settings.general.use_plex and settings.plex.update_series_library:
+                plex_refresh_item(metadata.imdbId, is_movie=False, season=metadata.season,
+                                  episode=metadata.episode)
             
             # Call external webhook after all processing is complete
             call_external_webhook(
@@ -89,7 +105,10 @@ def delete_subtitles(media_type, language, forced, hi, media_path, subtitles_pat
             store_subtitles_movie(prr(media_path), media_path)
             notify_radarr(radarr_id)
             event_stream(type='movie-wanted', action='update', payload=radarr_id)
-            
+
+            if settings.general.use_plex and settings.plex.update_movie_library:
+                plex_refresh_item(metadata.imdbId, is_movie=True)
+
             # Call external webhook after all processing is complete
             call_external_webhook(
                 subtitle_path=subtitles_path,

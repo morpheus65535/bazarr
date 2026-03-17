@@ -39,7 +39,7 @@ class SubtisSubtitle(Subtitle):
     """
 
     provider_name: str = "subtis"
-    hash_verifiable: bool = False
+    hash_verifiable: bool = True
 
     def __init__(
         self,
@@ -49,12 +49,14 @@ class SubtisSubtitle(Subtitle):
         title: str,
         download_url: str,
         is_synced: bool = True,
+        search_method: str | None = None,
     ) -> None:
         super().__init__(language, hearing_impaired=False, page_link=page_link)
         self.video = video
         self.download_url = download_url
         self.is_synced = is_synced
         self._title = str(title).strip()
+        self.search_method = search_method
         sync_indicator = "" if is_synced else " [fuzzy match]"
         self.release_info = f"{self._title}{sync_indicator}"
 
@@ -66,7 +68,10 @@ class SubtisSubtitle(Subtitle):
         self.matches: set[str] = set()
 
         if isinstance(video, Movie):
-            self.matches |= guess_matches(video, guessit(self._title, {"type": "movie"}))
+            if self.search_method == "hash":
+                self.matches.add("hash")
+            else:
+                self.matches |= guess_matches(video, guessit(self._title, {"type": "movie"}))
 
         return self.matches
 
@@ -253,6 +258,7 @@ class SubtisProvider(Provider):
                         title=title_name,
                         download_url=subtitle_link,
                         is_synced=is_synced,
+                        search_method=method,
                     )
                 ]
 

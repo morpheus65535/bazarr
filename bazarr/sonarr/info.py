@@ -23,7 +23,7 @@ class GetSonarrInfo:
         @return: str
         """
         sonarr_version = region.get("sonarr_version", expiration_time=datetime.timedelta(seconds=60).total_seconds())
-        if sonarr_version:
+        if sonarr_version and sonarr_version != 'unknown':
             region.set("sonarr_version", sonarr_version)
             return sonarr_version
         else:

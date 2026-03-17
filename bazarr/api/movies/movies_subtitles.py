@@ -1,8 +1,8 @@
 # coding=utf-8
 
 import os
-import time
 
+from io import BytesIO
 from flask_restx import Resource, Namespace, reqparse
 from subliminal_patch.core import SUBTITLE_EXTENSIONS
 from werkzeug.datastructures import FileStorage
@@ -41,15 +41,11 @@ class MoviesSubtitles(Resource):
         """Download a movie subtitles"""
         args = self.patch_request_parser.parse_args()
 
-        job_id = movie_download_specific_subtitles(radarr_id=args.get('radarrid'), language=args.get('language'),
-                                                   hi=args.get('hi').capitalize(),
-                                                   forced=args.get('forced').capitalize(), job_id=None)
+        movie_download_specific_subtitles(radarr_id=args.get('radarrid'), language=args.get('language'),
+                                          hi=args.get('hi').capitalize(),
+                                          forced=args.get('forced').capitalize(), job_id=None)
 
-        # Wait for the job to complete or fail
-        while jobs_queue.get_job_status(job_id=job_id) in ['pending', 'running']:
-            time.sleep(1)
-
-        return jobs_queue.get_job_returned_value(job_id=job_id)
+        return '', 204
 
     # POST: Upload Subtitles
     post_request_parser = reqparse.RequestParser()
@@ -72,7 +68,8 @@ class MoviesSubtitles(Resource):
         # TODO: Support Multiply Upload
         args = self.post_request_parser.parse_args()
 
-        _, ext = os.path.splitext(args.get('file').filename)
+        uploaded_file = args.get('file')
+        _, ext = os.path.splitext(uploaded_file.filename)
 
         if not isinstance(ext, str) or ext.lower() not in SUBTITLE_EXTENSIONS:
             raise ValueError('A subtitle of an invalid format was uploaded.')
@@ -91,20 +88,19 @@ class MoviesSubtitles(Resource):
         if not os.path.exists(moviePath):
             return 'Movie file not found. Path mapping issue?', 500
 
-        job_id = manual_upload_subtitle(path=moviePath,
-                                        language=args.get('language'),
-                                        forced=True if args.get('forced') == 'true' else False,
-                                        hi=True if args.get('hi') == 'true' else False,
-                                        media_type='movie',
-                                        subtitle=args.get('file'),
-                                        audio_language=movieInfo.audio_language,
-                                        radarrId=radarrId)
+        subtitle_content = BytesIO(uploaded_file.read())
 
-        # Wait for the job to complete or fail
-        while jobs_queue.get_job_status(job_id=job_id) in ['pending', 'running']:
-            time.sleep(1)
+        manual_upload_subtitle(path=moviePath,
+                               language=args.get('language'),
+                               forced=True if args.get('forced') == 'true' else False,
+                               hi=True if args.get('hi') == 'true' else False,
+                               media_type='movie',
+                               subtitle=subtitle_content,
+                               filename=uploaded_file.filename,
+                               audio_language=movieInfo.audio_language,
+                               radarrId=radarrId)
 
-        return jobs_queue.get_job_returned_value(job_id=job_id)
+        return '', 204
 
     # DELETE: Delete Subtitles
     delete_request_parser = reqparse.RequestParser()

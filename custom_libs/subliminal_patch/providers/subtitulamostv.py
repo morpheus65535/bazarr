@@ -23,6 +23,7 @@ class SubtitulamosTVSubtitle(Subtitle):
         super(SubtitulamosTVSubtitle, self).__init__(language, hearing_impaired=False, page_link=page_link)
         self.download_link = download_link
         self.release_info = release_info
+        self.matches = set()
 
     @property
     def id(self):

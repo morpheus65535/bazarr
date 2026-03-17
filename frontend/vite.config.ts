@@ -30,9 +30,6 @@ export default defineConfig(({ mode, command }) => {
       react(),
       checker({
         typescript: true,
-        eslint: {
-          lintCommand: "eslint --ext .ts,.tsx src",
-        },
         enableBuild: false,
       }),
       VitePWA({

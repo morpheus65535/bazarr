@@ -34,7 +34,7 @@ function MutateAction<DATA, VAR>({
       } else {
         onError?.();
       }
-    } catch (error) {
+    } catch {
       onError?.();
     }
     setLoading(false);

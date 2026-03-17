@@ -10,9 +10,8 @@ import ast
 from subzero.language import Language
 from subliminal_patch.core import save_subtitles
 from subliminal_patch.core_persistent import download_best_subtitles
-from subliminal_patch.score import ComputeScore
 
-from app.config import settings, get_scores, get_array_from
+from app.config import settings, get_array_from
 from app.database import TableEpisodes, TableMovies, database, select, get_profiles_list
 from utilities.path_mappings import path_mappings
 from utilities.helper import get_target_folder, force_unicode
@@ -79,7 +78,6 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
                                                                        pool_instance=pool,
                                                                        min_score=int(min_score),
                                                                        hearing_impaired=hi_required,
-                                                                       compute_score=ComputeScore(get_scores()),
                                                                        use_original_format=original_format in (1, "1", "True", True))
                     except Exception as e:
                         logging.exception(f'BAZARR Error downloading Subtitles for this file {path}: {repr(e)}')
@@ -121,6 +119,10 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
                         else:
                             saved_any = True
                             for subtitle in saved_subtitles:
+                                if "hash" in subtitle.matches:
+                                    # make matches set cleaner for history purpose when hash matches
+                                    subtitle.matches = {match for match in subtitle.matches
+                                                        if match in ("hash", "hearing_impaired")}
                                 processed_subtitle = process_subtitle(subtitle=subtitle, media_type=media_type,
                                                                       audio_language=audio_language,
                                                                       is_upgrade=is_upgrade, is_manual=False,

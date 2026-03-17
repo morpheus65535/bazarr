@@ -42,7 +42,7 @@ class Subs4SeriesSubtitle(Subtitle):
         self.uploader = uploader
         self.hearing_impaired = None
         self.encoding = 'windows-1253'
-        self.matches = None
+        self.matches = set()
 
     @property
     def id(self):

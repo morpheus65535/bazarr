@@ -6,6 +6,8 @@ import io
 import logging
 import re
 
+from requests import Session
+
 from zipfile import ZipFile, is_zipfile
 from rarfile import RarFile, is_rarfile
 from guessit import guessit
@@ -57,7 +59,7 @@ class TitrariSubtitle(Subtitle):
         self.year = year
         self.download_count = download_count
         self.comments = self.releases = self.release_info = comments
-        self.matches = None
+        self.matches = set()
         self.is_episode = is_episode
         self.desired_episode = desired_episode
 

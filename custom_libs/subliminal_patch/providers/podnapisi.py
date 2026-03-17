@@ -64,7 +64,7 @@ class PodnapisiSubtitle(_PodnapisiSubtitle):
         self.release_info = u", ".join(releases)
         self.asked_for_release_group = asked_for_release_group
         self.asked_for_episode = asked_for_episode
-        self.matches = None
+        self.matches = set()
 
     def get_matches(self, video):
         """

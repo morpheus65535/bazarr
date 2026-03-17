@@ -30,6 +30,7 @@ class RegieLiveSubtitle(Subtitle):
         self.video = video
         self.rating = rating
         self.release_info = filename
+        self.matches = set()
 
     @property
     def id(self):

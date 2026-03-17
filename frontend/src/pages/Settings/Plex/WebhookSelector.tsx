@@ -79,7 +79,7 @@ const WebhookSelector: FunctionComponent<WebhookSelectorProps> = (props) => {
         color: "green",
       });
       await refetch();
-    } catch (error) {
+    } catch {
       notifications.show({
         title: "Error",
         message: "Failed to create webhook",
@@ -101,7 +101,7 @@ const WebhookSelector: FunctionComponent<WebhookSelectorProps> = (props) => {
         setSelectedWebhookUrl("");
       }
       await refetch();
-    } catch (error) {
+    } catch {
       notifications.show({
         title: "Error",
         message: "Failed to delete webhook",

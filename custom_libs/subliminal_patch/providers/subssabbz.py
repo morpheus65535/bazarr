@@ -5,12 +5,14 @@ import re
 import io
 import os
 import codecs
+import unicodedata
+import time
 from hashlib import sha1
 from random import randint
 from bs4 import BeautifulSoup
 from zipfile import ZipFile, is_zipfile
 from rarfile import RarFile, is_rarfile
-from requests import Session
+from requests import Session, HTTPError
 from guessit import guessit
 from dogpile.cache.api import NO_VALUE
 from subliminal_patch.providers import Provider
@@ -50,6 +52,27 @@ def fix_movie_naming(title):
                                            }, True)
 
 
+def _retry_on_403(method):
+    def retry(self, *args, **kwargs):
+        retries = 0
+        while 3 > retries:
+            try:
+                return method(self, *args, **kwargs)
+            except HTTPError as error:
+                if error.response.status_code != 403:
+                    raise
+
+                retries += 1
+
+                logger.debug("403 returned. Retrying in 10 seconds")
+                time.sleep(10)
+
+        logger.debug("Retries limit exceeded. Ignoring query")
+        return []
+
+    return retry
+
+
 class SubsSabBzSubtitle(Subtitle):
     """SubsSabBz Subtitle."""
     provider_name = 'subssabbz'
@@ -63,6 +86,7 @@ class SubsSabBzSubtitle(Subtitle):
         self.fps = fps
         self.num_cds = num_cds
         self.release_info = filename
+        self.matches = set()
         if fps:
             if video.fps and float(video.fps) == fps:
                 self.release_info += " <b>[{:.3f}]</b>".format(fps)
@@ -120,6 +144,8 @@ class SubsSabBzProvider(Provider):
     languages = {Language(l) for l in [
         'bul', 'eng'
     ]}
+    languages.update(set(Language.rebuild(l, hi=True) for l in languages))
+    languages.update(set(Language.rebuild(l, forced=True) for l in languages))
     video_types = (Episode, Movie)
 
     def initialize(self):
@@ -136,6 +162,7 @@ class SubsSabBzProvider(Provider):
     def terminate(self):
         self.session.close()
 
+    @_retry_on_403
     def query(self, language, video):
         subtitles = []
         isEpisode = isinstance(video, Episode)
@@ -150,16 +177,19 @@ class SubsSabBzProvider(Provider):
         }
 
         if isEpisode:
-            params['movie'] = "%s %02d %02d" % (sanitize(fix_tv_naming(video.series), {'\''}), video.season, video.episode)
+            title = sanitize(fix_tv_naming(video.series), {'\''})
         else:
             params['yr'] = video.year
-            params['movie'] = sanitize(fix_movie_naming(video.title), {'\''})
+            title = sanitize(fix_movie_naming(video.title), {'\''})
 
-        if language == 'en' or language == 'eng':
+        # Strip diacritics/accents (e.g. Shōgun -> Shogun) for search compatibility
+        params['movie'] = unicodedata.normalize('NFKD', title).encode('ascii', 'ignore').decode('ascii')
+
+        if language.alpha3 == 'eng':
             params['select-language'] = 1
 
         logger.info('Searching subtitle %r', params)
-        response = self.session.post('http://subs.sab.bz/index.php?', params=params, allow_redirects=False, timeout=10, headers={
+        response = self.session.post('http://subs.sab.bz/index.php?', params=params, allow_redirects=False, timeout=30, headers={
             'Referer': 'http://subs.sab.bz/',
             })
 
@@ -210,7 +240,11 @@ class SubsSabBzProvider(Provider):
                         imdb_id = None
 
                     logger.info('Found subtitle link %r', link)
-                    sub = self.download_archive_and_add_subtitle_files(link, language, video, fps, num_cds)
+                    try:
+                        sub = self.download_archive_and_add_subtitle_files(link, language, video, fps, num_cds)
+                    except Exception as e:
+                        logger.warning('Failed to download %s: %s', link, e)
+                        continue
                     for s in sub:
                         s.title = title
                         s.notes = notes

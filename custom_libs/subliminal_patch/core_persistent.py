@@ -49,7 +49,6 @@ def download_best_subtitles(
     min_score=0,
     hearing_impaired=False,
     only_one=False,
-    compute_score=None,
     use_original_format=False,
     **kwargs
 ):
@@ -77,7 +76,6 @@ def download_best_subtitles(
             min_score=min_score,
             hearing_impaired=hearing_impaired,
             only_one=only_one,
-            compute_score=compute_score,
             use_original_format=use_original_format,
         )
         logger.info("Downloaded %d subtitle(s)", len(subtitles))

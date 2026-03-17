@@ -1,8 +1,8 @@
 # coding=utf-8
 
 import os
-import time
 
+from io import BytesIO
 from flask_restx import Resource, Namespace, reqparse
 from subliminal_patch.core import SUBTITLE_EXTENSIONS
 from werkzeug.datastructures import FileStorage
@@ -42,16 +42,12 @@ class EpisodesSubtitles(Resource):
         """Download an episode subtitles"""
         args = self.patch_request_parser.parse_args()
 
-        job_id = episode_download_specific_subtitles(sonarr_series_id=args.get('seriesid'),
-                                                     sonarr_episode_id=args.get('episodeid'),
-                                                     language=args.get('language'), hi=args.get('hi').capitalize(),
-                                                     forced=args.get('forced').capitalize(), job_id=None)
+        episode_download_specific_subtitles(sonarr_series_id=args.get('seriesid'),
+                                            sonarr_episode_id=args.get('episodeid'),
+                                            language=args.get('language'), hi=args.get('hi').capitalize(),
+                                            forced=args.get('forced').capitalize(), job_id=None)
 
-        # Wait for the job to complete or fail
-        while jobs_queue.get_job_status(job_id=job_id) in ['pending', 'running']:
-            time.sleep(1)
-
-        return jobs_queue.get_job_returned_value(job_id=job_id)
+        return '', 204
 
     post_request_parser = reqparse.RequestParser()
     post_request_parser.add_argument('seriesid', type=int, required=True, help='Series ID')
@@ -73,7 +69,8 @@ class EpisodesSubtitles(Resource):
         """Upload an episode subtitles"""
         args = self.post_request_parser.parse_args()
 
-        _, ext = os.path.splitext(args.get('file').filename)
+        uploaded_file = args.get('file')
+        _, ext = os.path.splitext(uploaded_file.filename)
 
         if not isinstance(ext, str) or ext.lower() not in SUBTITLE_EXTENSIONS:
             raise ValueError('A subtitle of an invalid format was uploaded.')
@@ -94,21 +91,20 @@ class EpisodesSubtitles(Resource):
         if not os.path.exists(episodePath):
             return 'Episode file not found. Path mapping issue?', 500
 
-        job_id = manual_upload_subtitle(path=episodePath,
-                                        language=args.get('language'),
-                                        forced=True if args.get('forced') == 'true' else False,
-                                        hi=True if args.get('hi') == 'true' else False,
-                                        media_type='series',
-                                        subtitle=args.get('file'),
-                                        audio_language=episodeInfo.audio_language,
-                                        sonarrSeriesId=sonarrSeriesId,
-                                        sonarrEpisodeId=sonarrEpisodeId)
+        subtitle_content = BytesIO(uploaded_file.read())
 
-        # Wait for the job to complete or fail
-        while jobs_queue.get_job_status(job_id=job_id) in ['pending', 'running']:
-            time.sleep(1)
+        manual_upload_subtitle(path=episodePath,
+                               language=args.get('language'),
+                               forced=True if args.get('forced') == 'true' else False,
+                               hi=True if args.get('hi') == 'true' else False,
+                               media_type='series',
+                               subtitle=subtitle_content,
+                               filename=uploaded_file.filename,
+                               audio_language=episodeInfo.audio_language,
+                               sonarrSeriesId=sonarrSeriesId,
+                               sonarrEpisodeId=sonarrEpisodeId)
 
-        return jobs_queue.get_job_returned_value(job_id=job_id)
+        return '', 204
 
     delete_request_parser = reqparse.RequestParser()
     delete_request_parser.add_argument('seriesid', type=int, required=True, help='Series ID')

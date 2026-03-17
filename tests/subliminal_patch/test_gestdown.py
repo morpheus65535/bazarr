@@ -52,6 +52,7 @@ def subtitle():
             "version": "480p.AMZN.WEB-DL.NTb",
             "hearingImpaired": False,
             "downloadUri": "/subtitles/download/d28b4d5b-7dcc-47b3-8232-fb02f081d135",
+            "qualities": [],
         },
     )
 
@@ -60,6 +61,8 @@ def test_subtitle(subtitle):
     assert subtitle.language == Language.fromietf("fr")
     assert subtitle.id == "d28b4d5b-7dcc-47b3-8232-fb02f081d135"
     assert subtitle.hearing_impaired == False
+    assert subtitle.releases == ["480p.AMZN.WEB-DL.NTb"]
+    assert subtitle.qualities == []
 
 
 def test_subtitle_get_matches(subtitle, episodes):
@@ -67,6 +70,52 @@ def test_subtitle_get_matches(subtitle, episodes):
 
     assert matches.issuperset(("series", "title", "season", "episode", "source"))
     assert "resolution" not in matches
+
+
+def test_subtitle_multi_release_version():
+    sub = GestdownSubtitle(
+        Language.fromietf("en"),
+        {
+            "subtitleId": "abc",
+            "version": "HDTV, WEB",
+            "hearingImpaired": False,
+            "downloadUri": "/download/abc",
+            "qualities": [],
+        },
+    )
+    assert sub.releases == ["HDTV", "WEB"]
+    assert sub.release_info == "HDTV\nWEB"
+
+
+def test_subtitle_get_matches_release_group(episodes):
+    sub = GestdownSubtitle(
+        Language.fromietf("en"),
+        {
+            "subtitleId": "abc",
+            "version": "BluRay.720p.REWARD",
+            "hearingImpaired": False,
+            "downloadUri": "/download/abc",
+            "qualities": [],
+            "qualities": [],
+        },
+    )
+    matches = sub.get_matches(episodes["breaking_bad_s01e01"])
+    assert "release_group" in matches
+
+
+def test_subtitle_get_matches_resolution_from_qualities(episodes):
+    sub = GestdownSubtitle(
+        Language.fromietf("en"),
+        {
+            "subtitleId": "abc",
+            "version": "HDTV",
+            "hearingImpaired": False,
+            "downloadUri": "/download/abc",
+            "qualities": ["720p", "1080p"],
+        },
+    )
+    matches = sub.get_matches(episodes["breaking_bad_s01e01"])
+    assert "resolution" in matches
 
 
 def test_subtitle_download(subtitle):
@@ -81,10 +130,11 @@ def test_list_subtitles_423(episodes, requests_mock, mocker):
     requests_mock.get(
         "https://api.gestdown.info/shows/external/tvdb/81189",
         status_code=200,
-        text='{"shows":[{"id":"cd880e2e-ef44-47cd-9f3d-a03b343ba2d0","name":"Breaking Bad","nbSeasons":5,"seasons":[1,2,3,4,5]}]}'
+        text='{"shows":[{"id":"cd880e2e-ef44-47cd-9f3d-a03b343ba2d0","name":"Breaking Bad","nbSeasons":5,"seasons":[1,2,3,4,5]}]}',
     )
     requests_mock.get(
-        f"{_BASE_URL}/subtitles/get/cd880e2e-ef44-47cd-9f3d-a03b343ba2d0/1/1/English", status_code=423
+        f"{_BASE_URL}/subtitles/get/cd880e2e-ef44-47cd-9f3d-a03b343ba2d0/1/1/English",
+        status_code=423,
     )
 
     with GestdownProvider() as provider:

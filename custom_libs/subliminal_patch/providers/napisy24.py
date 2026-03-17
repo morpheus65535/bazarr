@@ -27,6 +27,7 @@ class Napisy24Subtitle(Subtitle):
         self.imdb_id = imdb_id
         self.napis_id = napis_id
         self.release_info = ''  # TODO Try to get the release info from parsing the page
+        self.matches = set()
 
     @property
     def id(self):

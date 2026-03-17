@@ -38,7 +38,7 @@ class NekurSubtitle(Subtitle):
         self.imdb_id = imdb_id
         self.fps = fps
         self.notes = notes
-        self.matches = None
+        self.matches = set()
         self.release_info = notes
 
     @property

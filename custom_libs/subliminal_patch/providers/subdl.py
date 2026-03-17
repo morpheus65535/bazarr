@@ -48,7 +48,7 @@ class SubdlSubtitle(Subtitle):
         self.page_link = page_link
         self.download_link = download_link
         self.uploader = uploader
-        self.matches = None
+        self.matches = set()
 
     @property
     def id(self):
@@ -74,6 +74,8 @@ class SubdlSubtitle(Subtitle):
             matches.add('title')
             # imdb
             matches.add('imdb_id')
+            # tmdb 
+            matches.add('tmdb_id')
 
         utils.update_matches(matches, video, self.release_info)
 
@@ -119,10 +121,14 @@ class SubdlProvider(ProviderRetryMixin, Provider):
             title = self.video.title
 
         imdb_id = None
+        tmdb_id = None
         if isinstance(self.video, Episode) and self.video.series_imdb_id:
             imdb_id = self.video.series_imdb_id
-        elif isinstance(self.video, Movie) and self.video.imdb_id:
-            imdb_id = self.video.imdb_id
+        elif isinstance(self.video, Movie):
+            if self.video.imdb_id:
+               imdb_id = self.video.imdb_id
+            if self.video.tmdb_id:
+               tmdb_id = self.video.tmdb_id
 
         # be sure to remove duplicates using list(set())
         langs_list = sorted(list(set([language_converters['subdl'].convert(lang.alpha3, lang.country, lang.script) for
@@ -152,22 +158,53 @@ class SubdlProvider(ProviderRetryMixin, Provider):
                 retry_timeout=retry_timeout
             )
         else:
+            params = {
+                       'api_key': self.api_key,
+                       'film_name': title if not imdb_id else None,
+                       'imdb_id': imdb_id,
+                       'languages': langs,
+                       'subs_per_page': 30,
+                       'type': 'movie',
+                       'comment': 1,
+                       'releases': 1,
+                       'bazarr': 1
+            }
             res = self.retry(
                 lambda: self.session.get(self.server_url() + 'subtitles',
-                                         params=(('api_key', self.api_key),
-                                                 ('film_name', title if not imdb_id else None),
-                                                 ('imdb_id', imdb_id if imdb_id else None),
-                                                 ('languages', langs),
-                                                 ('subs_per_page', 30),
-                                                 ('type', 'movie'),
-                                                 ('comment', 1),
-                                                 ('releases', 1),
-                                                 ('bazarr', 1)),  # this argument filter incompatible image based or
+                                         params=params, # this argument filter incompatible image based or
                                          # txt subtitles
                                          timeout=30),
                 amount=retry_amount,
                 retry_timeout=retry_timeout
             )
+
+            # subdl also allows searching by TMDB ID, and some movies don't always
+            # have the correct IMDB ID, or may not have it at all. We also search by TMDB ID
+            # if it's available for the movie.
+            if res.status_code == 200:
+                # if the previous request with IMDb ID reported errors
+                res_data=res.json()
+
+                if 'status' in res_data and not res_data['status']:
+                    if not tmdb_id:
+                        logger.debug("No subtitles found via IMDb id or film name. TMDB ID unavailable for fallback")
+
+                    # If the movie also has the TMDB ID code, we try to search
+                    # for subtitles using only the TMDB ID code
+                    else:
+                        logger.debug("No subtitles found via IMDb id or film name. Search instead with TMDB id")
+
+                        params.pop('film_name', None)
+                        params.pop('imdb_id', None)
+                        params['tmdb_id']=tmdb_id
+
+                        res = self.retry(
+                            lambda: self.session.get(self.server_url() + 'subtitles',
+                                                     params=params,
+                                                     timeout=30),
+                            amount=retry_amount,
+                            retry_timeout=retry_timeout
+                        )
 
         if res.status_code == 429:
             raise APIThrottled("Too many requests")
@@ -183,7 +220,11 @@ class SubdlProvider(ProviderRetryMixin, Provider):
         if ('success' in result and not result['success']) or ('status' in result and not result['status']):
             logger.debug(result)
             if 'error' in result:
-                raise ProviderError(result['error'])
+                error_msg = result['error']
+                if "can't find" in error_msg.lower():
+                    logger.debug(f"No subtitles found for {imdb_id or title}: {error_msg}")
+                    return subtitles
+                raise ProviderError(error_msg)
 
         logger.debug(f"Query returned {len(result['subtitles'])} subtitles")
 

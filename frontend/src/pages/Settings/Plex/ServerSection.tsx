@@ -80,7 +80,7 @@ const ServerSection = () => {
       // Save to Bazarr settings
       setValue(server.bestConnection.uri, "plex_server");
       setValue(server.name, "plex_server_name");
-    } catch (error) {
+    } catch {
       // Error is handled by the mutation hook
     } finally {
       setIsSelecting(false);

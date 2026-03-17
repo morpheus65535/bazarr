@@ -71,6 +71,21 @@ const SettingsGeneralView: FunctionComponent = () => {
           settingKey="settings-general-instance_name"
         ></Text>
         <Message>Have a custom instance name as browser's tab title</Message>
+        <Text label="Hostname" settingKey="settings-general-hostname"></Text>
+        <Message>
+          Hostname or IP address to access Bazarr (ie: bazarr.mydomain.local or
+          192.168.0.100). Required for webhook security.
+        </Message>
+      </Section>
+      <Section header="Media">
+        <Check
+          label="Enable .strm Support"
+          settingKey="settings-general-enable_strm_support"
+        ></Check>
+        <Message>
+          Enable support for .strm files. Bazarr will read the stream URL from
+          the file and analyze it for embedded tracks.
+        </Message>
       </Section>
       <Section header="Security">
         <Selector

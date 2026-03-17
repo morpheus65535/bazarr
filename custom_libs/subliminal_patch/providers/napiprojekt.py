@@ -27,7 +27,7 @@ class NapiProjektSubtitle(_NapiProjektSubtitle):
     def __init__(self, language, hash, release_info, matches=None):
         super(NapiProjektSubtitle, self).__init__(language, hash)
         self.release_info = release_info
-        self.matches = matches
+        self.matches = matches or set()
 
     def __repr__(self):
         return '<%s %r [%s]>' % (

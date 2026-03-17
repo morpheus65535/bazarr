@@ -73,7 +73,7 @@ class TitulkySubtitle(Subtitle):
         self.fps = fps if skip_wrong_fps else None # This attribute should be ignored if skip_wrong_fps is false
         self.skip_wrong_fps = skip_wrong_fps
         self.asked_for_episode = asked_for_episode
-        self.matches = None
+        self.matches = set()
 
     @property
     def id(self):

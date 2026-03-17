@@ -25,7 +25,7 @@ class RequestUtils {
       } else {
         throw new Error("Cannot get response, fallback to v3 api");
       }
-    } catch (e) {
+    } catch {
       const result = await client.axios.get<UrlTestResponse>(
         `../test/${protocol}/${url}api/v3/system/status`,
         { params },

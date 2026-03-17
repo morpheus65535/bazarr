@@ -39,6 +39,7 @@ class AnimesubinfoSubtitle(Subtitle):
         self.uploader = author  # Store author as uploader for Bazarr UI
         self.page_link = f'http://animesub.info/'
         self.release_info = f'{title_org} - {title_eng}'
+        self.matches = set()
 
         # Parse episode and season from titles
         self.season = None

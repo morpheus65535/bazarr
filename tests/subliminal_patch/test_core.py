@@ -23,7 +23,7 @@ def test_scan_video_episode(tmpdir):
 
 @pytest.fixture
 def pool_instance():
-    yield core.SZProviderPool({"subdivx"}, {})
+    yield core.SZProviderPool({"opensubtitlescom"}, {})
 
 
 def test_pool_update_w_nothing(pool_instance):
@@ -33,35 +33,35 @@ def test_pool_update_w_nothing(pool_instance):
 
 
 def test_pool_update_w_multiple_providers(pool_instance):
-    assert pool_instance.providers == {"subdivx"}
-    pool_instance.update({"subdivx", "subf2m"}, {}, [], {})
-    assert pool_instance.providers == {"subdivx", "subf2m"}
+    assert pool_instance.providers == {"opensubtitlescom"}
+    pool_instance.update({"opensubtitlescom", "subf2m"}, {}, [], {})
+    assert pool_instance.providers == {"opensubtitlescom", "subf2m"}
 
 
 def test_pool_update_discarded_providers(pool_instance):
-    assert pool_instance.providers == {"subdivx"}
+    assert pool_instance.providers == {"opensubtitlescom"}
 
     # Provider was discarded internally
-    pool_instance.discarded_providers = {"subdivx"}
+    pool_instance.discarded_providers = {"opensubtitlescom"}
 
-    assert pool_instance.discarded_providers == {"subdivx"}
+    assert pool_instance.discarded_providers == {"opensubtitlescom"}
 
     # Provider is set to be used again
-    pool_instance.update({"subdivx", "subf2m"}, {}, [], {})
+    pool_instance.update({"opensubtitlescom", "subf2m"}, {}, [], {})
 
-    assert pool_instance.providers == {"subf2m", "subdivx"}
+    assert pool_instance.providers == {"subf2m", "opensubtitlescom"}
 
     # Provider should disappear from discarded providers
     assert pool_instance.discarded_providers == set()
 
 
 def test_pool_update_discarded_providers_2(pool_instance):
-    assert pool_instance.providers == {"subdivx"}
+    assert pool_instance.providers == {"opensubtitlescom"}
 
     # Provider was discarded internally
-    pool_instance.discarded_providers = {"subdivx"}
+    pool_instance.discarded_providers = {"opensubtitlescom"}
 
-    assert pool_instance.discarded_providers == {"subdivx"}
+    assert pool_instance.discarded_providers == {"opensubtitlescom"}
 
     # Provider is not set to be used again
     pool_instance.update({"subf2m"}, {}, [], {})
@@ -69,7 +69,7 @@ def test_pool_update_discarded_providers_2(pool_instance):
     assert pool_instance.providers == {"subf2m"}
 
     # Provider should not disappear from discarded providers
-    assert pool_instance.discarded_providers == {"subdivx"}
+    assert pool_instance.discarded_providers == {"opensubtitlescom"}
 
 
 def test_language_equals_init():
@@ -116,7 +116,7 @@ def test_language_equals_check_set_do_nothing_w_forced():
 @pytest.fixture
 def language_equals_pool_intance():
     equals = [(core.Language("spa"), core.Language("spa", "MX"))]
-    yield core.SZProviderPool({"subdivx"}, language_equals=equals)
+    yield core.SZProviderPool({"opensubtitlescom"}, language_equals=equals)
 
 
 def test_language_equals_pool_intance_list_subtitles(
@@ -132,7 +132,7 @@ def test_language_equals_pool_intance_list_subtitles(
 def test_language_equals_pool_intance_list_subtitles_reversed(movies):
     equals = [(core.Language("spa", "MX"), core.Language("spa"))]
     language_equals_pool_intance = core.SZProviderPool(
-        {"subdivx"}, language_equals=equals
+        {"opensubtitlescom"}, language_equals=equals
     )
     subs = language_equals_pool_intance.list_subtitles(
         movies["dune"], {core.Language("spa")}
@@ -143,7 +143,7 @@ def test_language_equals_pool_intance_list_subtitles_reversed(movies):
 
 def test_language_equals_pool_intance_list_subtitles_empty_lang_equals(movies):
     language_equals_pool_intance = core.SZProviderPool(
-        {"subdivx"}, language_equals=None
+        {"opensubtitlescom"}, language_equals=None
     )
     subs = language_equals_pool_intance.list_subtitles(
         movies["dune"], {core.Language("spa")}
@@ -158,7 +158,7 @@ def test_language_equals_pool_intance_list_subtitles_return_nothing(movies):
         (core.Language("spa"), core.Language("eng")),
     ]
     language_equals_pool_intance = core.SZProviderPool(
-        {"subdivx"}, language_equals=equals
+        {"opensubtitlescom"}, language_equals=equals
     )
     subs = language_equals_pool_intance.list_subtitles(
         movies["dune"], {core.Language("spa")}

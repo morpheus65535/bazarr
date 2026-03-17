@@ -75,7 +75,10 @@ class AssrtSubtitle(Subtitle):
         self.video_name = video_name
         self.release_info = video_name
         self.url = None
+        self.matches = set()
         self._detail = None
+        self._target_season = None
+        self._target_episode = None
 
     def _get_detail(self):
         if self._detail:
@@ -93,9 +96,24 @@ class AssrtSubtitle(Subtitle):
             return False
         sub = result['sub']['subs'][0]
         if not len(sub['filelist']):
+            # Single-file subtitle: URL is directly in the sub entry
+            if 'url' in sub and sub['url']:
+                self._detail = sub
+                return sub
             logger.error('Can\'t get filelist from subtitle details')
             return False
         files = sub['filelist']
+
+        # zero pass: for season packs, narrow down to files matching the
+        # target episode before language selection, so the language passes
+        # don't accidentally pick a file from the wrong episode.
+        if self._target_episode is not None:
+            episode_files = [
+                f for f in files
+                if guessit(f['f']).get('episode') == self._target_episode
+            ]
+            if episode_files:
+                files = episode_files
 
         # first pass: guessit
         for f in files:
@@ -127,10 +145,37 @@ class AssrtSubtitle(Subtitle):
     @property
     def download_link(self):
         detail = self._get_detail()
+        if not detail:
+            return None
         return detail['url']
 
     def get_matches(self, video):
+        if isinstance(video, Episode):
+            self._target_season = video.season
+            self._target_episode = video.episode
         self.matches = guess_matches(video, guessit(self.video_name))
+        # If matching fails for series, retry after stripping leading CJK characters.
+        # Assrt often returns video names with Chinese titles prefixed to the English
+        # release name (e.g. "瑞克和莫蒂.Rick.and.Morty.S07E10..."), which causes
+        # guessit to produce a combined title that won't match the series name from
+        # Sonarr/Radarr.
+        if (isinstance(video, Episode) and self.video_name
+                and not {"series", "season", "episode"}.issubset(self.matches)):
+            cleaned = re.sub(r'^[\u4e00-\u9fff]+[.\s]+', '', self.video_name)
+            if cleaned != self.video_name:
+                fallback_matches = guess_matches(video, guessit(cleaned))
+                self.matches |= fallback_matches
+        # Season pack handling: assrt often returns season packs (e.g.
+        # "Rick.and.Morty.S06.1080p.BluRay.x264-STORiES") when searching for a
+        # specific episode.  guessit won't extract an episode number from such a
+        # name, so the subtitle gets skipped by Bazarr's "doesn't match our
+        # series/episode" filter even though _get_detail will pick the correct
+        # episode file from the pack's filelist at download time.
+        if (isinstance(video, Episode) and "series" in self.matches
+                and "season" in self.matches and "episode" not in self.matches):
+            guess = guessit(self.video_name) if self.video_name else {}
+            if "episode" not in guess:
+                self.matches.add("episode")
         return self.matches
 
 
@@ -229,6 +274,10 @@ class AssrtProvider(Provider):
         return self.query(languages, video)
 
     def download_subtitle(self, subtitle):
+        if not subtitle.download_link:
+            logger.warning('No download link available for subtitle %s, skipping', subtitle.subtitle_id)
+            subtitle.content = None
+            return
         sleep(get_request_delay(self.max_request_per_minute))
         r = self.session.get(subtitle.download_link, timeout=15)
         check_status_code(r)

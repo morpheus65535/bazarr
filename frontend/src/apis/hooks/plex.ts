@@ -14,7 +14,7 @@ export const usePlexAuthValidationQuery = () => {
       try {
         const result = await api.plex.validateAuth();
         return result;
-      } catch (error) {
+      } catch {
         // Return a default value when API is not available
         return {
           valid: false,

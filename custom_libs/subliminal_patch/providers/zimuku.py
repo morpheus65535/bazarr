@@ -56,6 +56,7 @@ class ZimukuSubtitle(Subtitle):
         self.encoding = "utf-8"
         self.session = session
         self.year = year
+        self.matches = set()
 
     @property
     def id(self):

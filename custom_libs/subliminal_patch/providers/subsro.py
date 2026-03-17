@@ -40,7 +40,7 @@ class SubsRoSubtitle(Subtitle):
         self.title = title
         self.page_link = download_link
         self.imdb_id = imdb_id
-        self.matches = None
+        self.matches = set()
         self.asked_for_episode = is_episode
         self.episode = episode_number
         self.year = year

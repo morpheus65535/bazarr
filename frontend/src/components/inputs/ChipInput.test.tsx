@@ -43,6 +43,6 @@ describe("ChipInput", () => {
 
     await userEvent.click(createBtn);
 
-    expect(mockedFn).toBeCalledTimes(1);
+    expect(mockedFn).toHaveBeenCalledTimes(1);
   });
 });

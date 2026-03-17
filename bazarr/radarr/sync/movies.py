@@ -137,7 +137,8 @@ def update_movies(job_id=None):
             current_movies_radarr = [movie['id'] for movie in movies if movie['hasFile'] and
                                      'movieFile' in movie and
                                      (movie['movieFile']['size'] > MINIMUM_VIDEO_SIZE or
-                                      get_movie_file_size_from_db(movie['movieFile']['path']) > MINIMUM_VIDEO_SIZE)]
+                                      get_movie_file_size_from_db(movie['movieFile']['path']) > MINIMUM_VIDEO_SIZE or
+                                      (settings.general.enable_strm_support and movie['movieFile']['path'].lower().endswith('.strm')))]
 
             # Remove movies from DB that either no longer exist in Radarr or exist and Radarr says do not have a movie file
             movies_to_delete = list(set(current_movies_id_db) - set(current_movies_radarr))
@@ -175,7 +176,8 @@ def update_movies(job_id=None):
                                 continue
 
                         if (movie['movieFile']['size'] > MINIMUM_VIDEO_SIZE or
-                                get_movie_file_size_from_db(movie['movieFile']['path']) > MINIMUM_VIDEO_SIZE):
+                                get_movie_file_size_from_db(movie['movieFile']['path']) > MINIMUM_VIDEO_SIZE or
+                                (settings.general.enable_strm_support and movie['movieFile']['path'].lower().endswith('.strm'))):
                             # Add/update movies from Radarr that have a movie file to current movies list
                             trace(f"{i}: (Processing) {movie['title']}")
                             if movie['id'] in current_movies_id_db:

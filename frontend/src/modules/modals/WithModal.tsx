@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/ban-types */
-
 import { createContext, FunctionComponent } from "react";
 import { ContextModalProps } from "@mantine/modals";
 import { ModalSettings } from "@mantine/modals/lib/context";

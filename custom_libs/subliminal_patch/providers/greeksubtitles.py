@@ -29,7 +29,7 @@ class GreekSubtitlesSubtitle(Subtitle):
         self.hearing_impaired = None
         self.encoding = 'windows-1253'
         self.release_info = version
-        self.matches = None
+        self.matches = set()
 
     @property
     def id(self):

@@ -12,6 +12,7 @@ from datetime import datetime
 
 import configparser
 import yaml
+import platform
 
 from urllib.parse import quote_plus
 from utilities.binaries import BinaryNotFound, get_binary
@@ -85,6 +86,7 @@ validators = [
               is_type_of=str),
     Validator('general.ip', must_exist=True, default='*', is_type_of=str, condition=validate_ip_address),
     Validator('general.port', must_exist=True, default=6767, is_type_of=int, gte=1, lte=65535),
+    Validator('general.hostname', must_exist=True, default=platform.node(), is_type_of=str),
     Validator('general.base_url', must_exist=True, default='', is_type_of=str),
     Validator('general.instance_name', must_exist=True, default='Bazarr', is_type_of=str,
               apply_default_on_none=True),
@@ -139,6 +141,7 @@ validators = [
     Validator('general.enabled_integrations', must_exist=True, default=[], is_type_of=list),
     Validator('general.multithreading', must_exist=True, default=True, is_type_of=bool),
     Validator('general.chmod_enabled', must_exist=True, default=False, is_type_of=bool),
+    Validator('general.enable_strm_support', must_exist=True, default=False, is_type_of=bool),
     Validator('general.chmod', must_exist=True, default='0640', is_type_of=str),
     Validator('general.subfolder', must_exist=True, default='current', is_type_of=str),
     Validator('general.subfolder_custom', must_exist=True, default='', is_type_of=str),
@@ -424,33 +427,6 @@ validators = [
     Validator('subsync.max_offset_seconds', must_exist=True, default=60, is_type_of=int,
               is_in=[60, 120, 300, 600]),
 
-    # series_scores section
-    Validator('series_scores.hash', must_exist=True, default=359, is_type_of=int),
-    Validator('series_scores.series', must_exist=True, default=180, is_type_of=int),
-    Validator('series_scores.year', must_exist=True, default=90, is_type_of=int),
-    Validator('series_scores.season', must_exist=True, default=30, is_type_of=int),
-    Validator('series_scores.episode', must_exist=True, default=30, is_type_of=int),
-    Validator('series_scores.release_group', must_exist=True, default=14, is_type_of=int),
-    Validator('series_scores.source', must_exist=True, default=7, is_type_of=int),
-    Validator('series_scores.audio_codec', must_exist=True, default=3, is_type_of=int),
-    Validator('series_scores.resolution', must_exist=True, default=2, is_type_of=int),
-    Validator('series_scores.video_codec', must_exist=True, default=2, is_type_of=int),
-    Validator('series_scores.streaming_service', must_exist=True, default=1, is_type_of=int),
-    Validator('series_scores.hearing_impaired', must_exist=True, default=1, is_type_of=int),
-
-    # movie_scores section
-    Validator('movie_scores.hash', must_exist=True, default=119, is_type_of=int),
-    Validator('movie_scores.title', must_exist=True, default=60, is_type_of=int),
-    Validator('movie_scores.year', must_exist=True, default=30, is_type_of=int),
-    Validator('movie_scores.release_group', must_exist=True, default=13, is_type_of=int),
-    Validator('movie_scores.source', must_exist=True, default=7, is_type_of=int),
-    Validator('movie_scores.audio_codec', must_exist=True, default=3, is_type_of=int),
-    Validator('movie_scores.resolution', must_exist=True, default=2, is_type_of=int),
-    Validator('movie_scores.video_codec', must_exist=True, default=2, is_type_of=int),
-    Validator('movie_scores.streaming_service', must_exist=True, default=1, is_type_of=int),
-    Validator('movie_scores.edition', must_exist=True, default=1, is_type_of=int),
-    Validator('movie_scores.hearing_impaired', must_exist=True, default=1, is_type_of=int),
-
     # postgresql section
     Validator('postgresql.enabled', must_exist=True, default=False, is_type_of=bool),
     Validator('postgresql.host', must_exist=True, default='localhost', is_type_of=str),
@@ -466,6 +442,9 @@ validators = [
 
     # subsource section
     Validator('subsource.apikey', must_exist=True, default='', is_type_of=str),
+
+    # subx section
+    Validator('subx.api_key', must_exist=True, default='', is_type_of=str),
 ]
 
 
@@ -597,6 +576,13 @@ if hasattr(settings.embeddedsubtitles, 'unknown_as_english'):
         settings.embeddedsubtitles.unknown_as_fallback = True
         settings.embeddedsubtitles.fallback_lang = 'en'
     del settings.embeddedsubtitles.unknown_as_english
+
+# delete custom scores sections since we don't use this anymore
+if hasattr(settings, 'series_scores'):
+    settings.unset('SERIES_SCORES')
+if hasattr(settings, 'movie_scores'):
+    settings.unset('MOVIE_SCORES')
+
 # save updated settings to file
 write_config()
 
@@ -961,11 +947,6 @@ def configure_proxy_func():
         os.environ['HTTPS_PROXY'] = str(proxy)
         exclude = ','.join(settings.proxy.exclude)
         os.environ['NO_PROXY'] = exclude
-
-
-def get_scores():
-    settings = get_settings()
-    return {"movie": settings["movie_scores"], "episode": settings["series_scores"]}
 
 
 def sync_checker(subtitle):

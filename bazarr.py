@@ -8,7 +8,7 @@ import sys
 import time
 
 from bazarr.app.get_args import args
-from bazarr.literals import EXIT_PYTHON_UPGRADE_NEEDED, EXIT_NORMAL, FILE_RESTART, FILE_STOP, ENV_RESTARTFILE, ENV_STOPFILE, EXIT_INTERRUPT
+from bazarr.literals import EXIT_PYTHON_UPGRADE_NEEDED, EXIT_NORMAL, FILE_RESTART, FILE_STOP, ENV_RESTARTFILE, ENV_STOPFILE, EXIT_INTERRUPT, EXIT_UNEXPECTED_ERROR
 
 # always flush print statements
 sys.stdout.reconfigure(line_buffering=True)
@@ -110,23 +110,18 @@ def check_status():
             terminate_child()
             print("Bazarr is restarting...")
             child_process = start_bazarr()
+            return
+        
+    if not is_process_running(child_process):
+        print("Bazarr child process has stopped unexpectedly. Shutting down...")
+        exit_program(EXIT_UNEXPECTED_ERROR)
 
 
-def is_process_running(pid):
-    commands = {
-        "win": ["tasklist", "/FI", f"PID eq {pid}"],
-        "linux": ["ps", "-eo", "pid"],
-        "darwin": ["ps", "-ax", "-o", "pid"]
-    }
+def is_process_running(child_process):
+    status = child_process.poll()
+    # status is exit code if process has stopped, or None if it's still running
+    return status is None
 
-    # Determine OS and execute corresponding command
-    for key in commands:
-        if sys.platform.startswith(key):
-            result = subprocess.run(commands[key], capture_output=True, text=True)
-            return str(pid) in result.stdout.split()
-
-    print("Unsupported OS")
-    return False
 
 def interrupt_handler(signum, frame):
     # catch and ignore keyboard interrupt Ctrl-C
@@ -137,7 +132,7 @@ def interrupt_handler(signum, frame):
         interrupted = True
         print('Handling keyboard interrupt...')
     else:
-        if not is_process_running(child_process.pid):
+        if not is_process_running(child_process):
             # this will be caught by the main loop below
             raise SystemExit(EXIT_INTERRUPT)
 

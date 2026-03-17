@@ -52,6 +52,7 @@ class KtuvitSubtitle(Subtitle):
         self.subtitle_id = subtitle_id
         self.release = release
         self.release_info = release
+        self.matches = set()
 
     def __repr__(self):
         return "<%s [%s] %r [%s:%s]>" % (

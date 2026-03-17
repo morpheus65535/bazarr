@@ -8,11 +8,11 @@ import json
 from subzero.language import Language
 from subzero.video import parse_video
 from guessit.jsonutils import GuessitEncoder
+from subliminal_patch.score import MAX_SCORES, DEFAULT_SCORES
 
 from app.config import settings
 from languages.custom_lang import CustomLanguage
 from app.database import get_profiles_list
-from subtitles.tools.score import movie_score, series_score
 
 from .refiners import registered as registered_refiners
 
@@ -72,11 +72,19 @@ def _get_lang_obj(alpha3):
 
 def _get_scores(media_type, min_movie=None, min_ep=None):
     series = "series" == media_type
-    handler = series_score if series else movie_score
-    min_movie = min_movie or (60 * 100 / handler.max_score)
-    min_ep = min_ep or (240 * 100 / handler.max_score)
-    min_score_ = int(min_ep if series else min_movie)
-    return handler.get_scores(min_score_)
+    handler = DEFAULT_SCORES['episode'] if series else DEFAULT_SCORES['movie']
+
+    max_score = MAX_SCORES['episode' if series else 'movie']
+
+    min_movie = min_movie or (max_score / 2)
+    min_ep = min_ep or (2/3 * max_score)
+    min_score = int(min_ep if series else min_movie)
+
+    return (
+        max_score * min_score / 100,
+        max_score,
+        handler.keys(),
+    )
 
 
 def get_ban_list(profile_id):

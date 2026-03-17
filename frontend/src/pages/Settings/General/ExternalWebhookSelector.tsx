@@ -22,7 +22,7 @@ const ExternalWebhookSelector: FunctionComponent = () => {
         message: result.data.message,
         color: result.data.success ? "green" : "red",
       });
-    } catch (error) {
+    } catch {
       notifications.show({
         title: "Error",
         message: "Failed to test external webhook connection",

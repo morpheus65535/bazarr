@@ -9,6 +9,7 @@ from typing import Union
 
 from app.config import settings
 from subzero.language import Language
+from subliminal_patch.score import MAX_SCORES
 from languages.custom_lang import CustomLanguage
 from languages.get_languages import alpha3_from_alpha2, language_from_alpha2, language_from_alpha3
 from subtitles.processing import ProcessSubtitlesResult
@@ -56,10 +57,10 @@ def create_process_result(message, video_path, orig_to_lang, forced, hi, dest_sr
     """Create a ProcessSubtitlesResult object with common parameters."""
     if media_type == 'series':
         prr = path_mappings.path_replace_reverse
-        score = int((settings.translator.default_score / 100) * 360)
+        score = int((settings.translator.default_score / 100) * MAX_SCORES['episode'])
     else:
         prr = path_mappings.path_replace_reverse_movie
-        score = int((settings.translator.default_score / 100) * 120)
+        score = int((settings.translator.default_score / 100) * MAX_SCORES['movie'])
 
     return ProcessSubtitlesResult(
         message=message,

@@ -420,7 +420,6 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     name: "Sous-Titres.eu",
     description: "Mostly French Subtitles Provider",
   },
-  { key: "subdivx", description: "LATAM Spanish / Spanish Subtitles Provider" },
   {
     key: "subdl",
     inputs: [
@@ -509,6 +508,21 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     key: "subtitulamostv",
     name: "Subtitulamos.tv",
     description: "Spanish Subtitles Provider",
+  },
+  {
+    key: "subx",
+    name: "SubX",
+    description:
+      "SubX API is a search and download API for Subdivx, a LatAm Spanish / Spanish Subtitles Provider",
+    message:
+      "API key required. Get your key from SubX website: https://subx-api.duckdns.org/",
+    inputs: [
+      {
+        type: "text",
+        key: "api_key",
+        name: "API Key",
+      },
+    ],
   },
   { key: "supersubtitles" },
   {

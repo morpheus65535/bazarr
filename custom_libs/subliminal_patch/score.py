@@ -31,31 +31,36 @@ def framerate_equal(source, check):
 DEFAULT_SCORES = {
     "episode": {
         "hash": 359,
-        "series": 180,
+        "series": 160,
         "year": 90,
         "season": 30,
         "episode": 30,
-        "release_group": 14,
-        "source": 7,
-        "audio_codec": 3,
-        "resolution": 2,
-        "video_codec": 2,
-        "streaming_service": 1,
+        "source": 25,
+        "release_group": 20,
+        "audio_codec": 1,
+        "resolution": 1,
+        "video_codec": 1,
         "hearing_impaired": 1,
+        "streaming_service": 1,
     },
     "movie": {
-        "hash": 119,
+        "hash": 179,
         "title": 60,
-        "year": 30,
-        "release_group": 13,
-        "source": 7,
-        "audio_codec": 3,
-        "resolution": 2,
-        "video_codec": 2,
-        "streaming_service": 1,
-        "edition": 1,
+        "year": 40,
+        "source": 30,
+        "edition": 30,
+        "release_group": 15,
+        "audio_codec": 1,
+        "resolution": 1,
+        "video_codec": 1,
         "hearing_impaired": 1,
+        "streaming_service": 1,
     },
+}
+
+MAX_SCORES = {
+    "episode": sum(v for k, v in DEFAULT_SCORES["episode"].items() if k != "hash"),
+    "movie": sum(v for k, v in DEFAULT_SCORES["movie"].items() if k != "hash"),
 }
 
 

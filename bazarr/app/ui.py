@@ -63,7 +63,8 @@ def check_login(actual_method):
         elif settings.auth.type == 'form':
             if 'logged_in' not in session:
                 return abort(401, message="Unauthorized")
-        actual_method(*args, **kwargs)
+        return actual_method(*args, **kwargs)
+    return wrapper
 
 
 @ui_bp.route('/', defaults={'path': ''})

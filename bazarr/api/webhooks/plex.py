@@ -171,14 +171,34 @@ class WebHooksPlex(Resource):
 
         if media_type == 'episode':
             try:
-                episode_imdb_id = [x['imdb'] for x in ids if 'imdb' in x][0]
-                r = requests.get(f'https://imdb.com/title/{episode_imdb_id}',
-                                 headers={"User-Agent": os.environ["SZ_USER_AGENT"]})
-                soup = bso(r.content, "html.parser")
-                script_tag = soup.find(id='__NEXT_DATA__')
-                script_tag_json = script_tag.string
-                show_metadata_dict = json.loads(script_tag_json)
-                series_imdb_id = show_metadata_dict['props']['pageProps']['aboveTheFoldData']['series']['series']['id']
+                series_imdb_id = None
+
+                # Try TVDB ID first — no external request needed
+                tvdb_id = next((x['tvdb'] for x in ids if 'tvdb' in x), None)
+                if tvdb_id:
+                    show = database.execute(
+                        select(TableShows.imdbId)
+                        .where(TableShows.tvdbId == int(tvdb_id))) \
+                        .first()
+                    if show:
+                        series_imdb_id = show.imdbId
+
+                # Fallback to IMDb scraping if TVDB lookup fails
+                if not series_imdb_id:
+                    episode_imdb_id = next((x['imdb'] for x in ids if 'imdb' in x), None)
+                    if episode_imdb_id:
+                        r = requests.get(f'https://imdb.com/title/{episode_imdb_id}',
+                                         headers={"User-Agent": os.environ["SZ_USER_AGENT"]})
+                        soup = bso(r.content, "html.parser")
+                        script_tag = soup.find(id='__NEXT_DATA__')
+                        script_tag_json = script_tag.string
+                        show_metadata_dict = json.loads(script_tag_json)
+                        series_imdb_id = \
+                            show_metadata_dict['props']['pageProps']['aboveTheFoldData']['series']['series']['id']
+
+                if not series_imdb_id:
+                    logger.debug("Could not find series IMDB id from TVDB or IMDb ids.")
+                    return 'IMDB series ID not found', 404
             except Exception:
                 logger.debug('BAZARR is unable to get series IMDB id.')
                 return 'IMDB series ID not found', 404

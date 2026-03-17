@@ -954,7 +954,16 @@ class PlexWebhookCreate(Resource):
             instance_param = quote_plus(instance_name)
             
             scheme = 'https' if request.is_secure else 'http'
-            host = request.host
+
+            host = settings.general.get('hostname', None)
+            if not host:
+                logger.error("Hostname must be configured in General Settings before creating webhooks. This prevents "
+                             "host header poisoning attacks.")
+                return {
+                    'error': 'Hostname must be configured in General Settings before creating webhooks. '
+                             'This prevents host header poisoning attacks.'
+                }, 400
+
             if configured_base_url:
                 webhook_url = f"{scheme}://{host}{configured_base_url}/api/webhooks/plex?apikey={apikey}&instance={instance_param}"
                 logger.info(f"Using configured base URL for webhook: {scheme}://{host}{configured_base_url}/api/webhooks/plex (instance: {instance_name})")

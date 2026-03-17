@@ -44,7 +44,7 @@ class LegendasNetSubtitle(Subtitle):
         self.page_link = page_link
         self.download_link = download_link
         self.uploader = uploader
-        self.matches = None
+        self.matches = set()
 
     @property
     def id(self):
@@ -107,9 +107,19 @@ class LegendasNetProvider(ProviderRetryMixin, Provider):
             "password": self.password
         })
 
-        response = self.session.request("POST", self.server_url() + 'login', data=payload, headers=headersList)
-        if response.status_code != 200:
-            raise ConfigurationError('Failed to login and retrieve access token')
+        response = self.retry(
+            lambda: self.session.request("POST", self.server_url() + 'login', data=payload, headers=headersList, timeout=30),
+            amount=retry_amount,
+            retry_timeout=retry_timeout
+        )
+
+        if response.status_code == 429:
+            raise APIThrottled('Too many requests')
+        elif response.status_code in (401, 403):
+            raise ConfigurationError('Invalid username or password')
+        elif response.status_code != 200:
+            response.raise_for_status()
+
         self.access_token = response.json().get('access_token')
         if not self.access_token:
             raise ConfigurationError('Access token not found in login response')
@@ -164,7 +174,7 @@ class LegendasNetProvider(ProviderRetryMixin, Provider):
             raise ProviderError("Endpoint not found")
         elif res.status_code == 429:
             raise APIThrottled("Too many requests")
-        elif res.status_code == 403:
+        elif res.status_code in (401, 403):
             raise ConfigurationError("Invalid access token")
         elif res.status_code != 200:
             res.raise_for_status()
@@ -241,7 +251,7 @@ class LegendasNetProvider(ProviderRetryMixin, Provider):
 
         if r.status_code == 429:
             raise DownloadLimitExceeded("Daily download limit exceeded")
-        elif r.status_code == 403:
+        elif r.status_code in (401, 403):
             raise ConfigurationError("Invalid access token")
         elif r.status_code != 200:
             r.raise_for_status()

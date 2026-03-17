@@ -56,6 +56,7 @@ class YavkaNetSubtitle(Subtitle):
         self.subs_form_data = subs_form_data
         self.content = None
         self._is_valid = False
+        self.matches = set()
         if fps:
             if video.fps and float(video.fps) == fps:
                 self.release_info += " [{:.3f}]".format(fps)

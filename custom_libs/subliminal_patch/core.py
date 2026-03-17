@@ -24,7 +24,7 @@ from concurrent.futures import as_completed
 
 from .extensions import provider_registry
 from .exceptions import MustGetBlacklisted
-from .score import compute_score as default_compute_score
+from .score import compute_score, MAX_SCORES
 from subliminal.utils import hash_napiprojekt, hash_opensubtitles, hash_shooter, hash_thesubdb
 from subliminal.video import VIDEO_EXTENSIONS, Video, Episode, Movie
 from subliminal.core import guessit, ProviderPool, io, is_windows_special_path, \
@@ -524,7 +524,7 @@ class SZProviderPool(ProviderPool):
         return True
 
     def download_best_subtitles(self, subtitles, video, languages, min_score=0, hearing_impaired=False, only_one=False,
-                                compute_score=None, use_original_format=False):
+                                use_original_format=False):
         """Download the best matching subtitles.
 
         patch:
@@ -541,18 +541,15 @@ class SZProviderPool(ProviderPool):
         :param int min_score: minimum score for a subtitle to be downloaded.
         :param bool hearing_impaired: hearing impaired preference.
         :param bool only_one: download only one subtitle, not one per language.
-        :param compute_score: function that takes `subtitle` and `video` as positional arguments,
-            `hearing_impaired` as keyword argument and returns the score.
         :param bool use_original_format: preserve original subtitles format
         :return: downloaded subtitles.
         :rtype: list of :class:`~subliminal.subtitle.Subtitle`
 
         """
-        compute_score = compute_score or default_compute_score
         use_hearing_impaired = hearing_impaired in ("prefer", "force HI")
 
         is_episode = isinstance(video, Episode)
-        max_score = sum(val for key, val in compute_score._scores['episode' if is_episode else 'movie'].items() if key != "hash")
+        max_score = MAX_SCORES['episode' if is_episode else 'movie']
 
         # sort subtitles by score
         unsorted_subtitles = []
@@ -564,7 +561,9 @@ class SZProviderPool(ProviderPool):
                 continue
 
             try:
-                matches = s.get_matches(video)
+                matches = s.matches if hasattr(s, 'matches') and isinstance(s.matches, set) and len(s.matches) \
+                        else s.get_matches(video)
+
             except AttributeError:
                 logger.error("%r: Match computation failed: %s", s, traceback.format_exc())
                 continue
@@ -1085,7 +1084,7 @@ def download_subtitles(subtitles, pool_class=ProviderPool, **kwargs):
             pool.download_subtitle(subtitle)
 
 
-def download_best_subtitles(videos, languages, min_score=0, hearing_impaired=False, only_one=False, compute_score=None,
+def download_best_subtitles(videos, languages, min_score=0, hearing_impaired=False, only_one=False,
                             pool_class=ProviderPool, throttle_time=0, **kwargs):
     r"""List and download the best matching subtitles.
 
@@ -1098,8 +1097,6 @@ def download_best_subtitles(videos, languages, min_score=0, hearing_impaired=Fal
     :param int min_score: minimum score for a subtitle to be downloaded.
     :param bool hearing_impaired: hearing impaired preference.
     :param bool only_one: download only one subtitle, not one per language.
-    :param compute_score: function that takes `subtitle` and `video` as positional arguments,
-        `hearing_impaired` as keyword argument and returns the score.
     :param pool_class: class to use as provider pool.
     :type pool_class: :class:`ProviderPool`, :class:`AsyncProviderPool` or similar
     :param \*\*kwargs: additional parameters for the provided `pool_class` constructor.

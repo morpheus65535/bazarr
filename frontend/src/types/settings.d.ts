@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-empty-interface */
 interface Settings {
   general: Settings.General;
   log: Settings.Log;

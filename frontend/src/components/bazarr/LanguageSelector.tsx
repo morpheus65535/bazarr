@@ -3,8 +3,10 @@ import { useLanguages } from "@/apis/hooks";
 import { Selector, SelectorProps } from "@/components/inputs";
 import { useSelectorOptions } from "@/utilities";
 
-interface LanguageSelectorProps
-  extends Omit<SelectorProps<Language.Server>, "options" | "getkey"> {
+interface LanguageSelectorProps extends Omit<
+  SelectorProps<Language.Server>,
+  "options" | "getkey"
+> {
   enabled?: boolean;
 }
 

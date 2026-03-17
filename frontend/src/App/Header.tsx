@@ -10,7 +10,7 @@ import {
   Menu,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { faBell } from "@fortawesome/free-regular-svg-icons/faBell";
+import { faListCheck } from "@fortawesome/free-solid-svg-icons";
 import {
   faArrowRotateLeft,
   faGear,
@@ -71,7 +71,7 @@ const AppHeader: FunctionComponent = () => {
           <Action
             label="Jobs Manager"
             tooltip={{ position: "left", openDelay: 2000 }}
-            icon={faBell}
+            icon={faListCheck}
             size="sm"
             isLoading={Boolean(
               jobs?.filter((job) => job.status === "running").length,

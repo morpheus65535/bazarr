@@ -2,6 +2,8 @@
 
 from datetime import datetime
 
+from subliminal_patch.score import MAX_SCORES
+
 from app.database import TableHistory, database, insert
 from app.event_handler import event_stream
 
@@ -30,6 +32,7 @@ def history_log(action, sonarr_series_id, sonarr_episode_id, result, fake_provid
             language=language,
             provider=provider,
             score=score,
+            score_out_of=MAX_SCORES['episode'] if score else None,
             subs_id=subs_id,
             subtitles_path=subtitles_path,
             matched=str(matched) if matched else None,

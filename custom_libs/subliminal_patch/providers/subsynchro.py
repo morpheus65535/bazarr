@@ -44,7 +44,7 @@ class SubsynchroSubtitle(Subtitle):
         self.release_info = (
             release_info if len(release_info) > len(filename) else filename
         )
-        self.matches = matches
+        self.matches = matches or set()
 
     @property
     def id(self):

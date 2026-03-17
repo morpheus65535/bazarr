@@ -116,7 +116,7 @@ def movies_download_subtitles(no, job_id=None, job_sub_function=False):
 
 def movie_download_specific_subtitles(radarr_id, language, hi, forced, job_id=None):
     if not job_id:
-        return jobs_queue.add_job_from_function("Searching subtitles", progress_max=1, is_progress=True)
+        return jobs_queue.add_job_from_function("Searching subtitles", progress_max=1, is_progress=False)
 
     movieInfo = database.execute(
         select(
@@ -146,7 +146,7 @@ def movie_download_specific_subtitles(radarr_id, language, hi, forced, job_id=No
     else:
         language_str = language
 
-    jobs_queue.update_job_progress(job_id=job_id, progress_message=f"Searching {language_str.upper()} for {title}")
+    jobs_queue.update_job_name(job_id=job_id, new_job_name=f"Searching {language_str.upper()} for {title}")
 
     audio_language_list = get_audio_profile_languages(movieInfo.audio_language)
     if len(audio_language_list) > 0:
@@ -167,13 +167,9 @@ def movie_download_specific_subtitles(radarr_id, language, hi, forced, job_id=No
             store_subtitles_movie(result.path, moviePath)
         else:
             event_stream(type='movie', payload=radarr_id)
-            jobs_queue.update_job_progress(job_id=job_id, progress_value='max',
-                                           progress_message=f'No {language_str.upper()} subtitles found for {title}')
             return '', 204
     except OSError:
         return 'Unable to save subtitles file. Permission or path mapping issue?', 409
     else:
-        jobs_queue.update_job_progress(job_id=job_id, progress_value='max',
-                                       progress_message=f"Searched {language_str.upper()} for {title}")
-        jobs_queue.update_job_name(job_id=job_id, new_job_name="Searched subtitles")
+        jobs_queue.update_job_name(job_id=job_id, new_job_name=f"Searched {language_str.upper()} for {title}")
         return '', 204

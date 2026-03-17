@@ -65,6 +65,7 @@ class SubsUnacsSubtitle(Subtitle):
         self.fps = fps
         self.num_cds = num_cds
         self.release_info = filename
+        self.matches = set()
         if fps:
             if video.fps and float(video.fps) == fps:
                 self.release_info += " <b>[{:.3f}]</b>".format(fps)

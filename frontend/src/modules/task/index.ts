@@ -46,7 +46,7 @@ class TaskDispatcher {
 
             try {
               await task(...task.parameters);
-            } catch (error) {
+            } catch {
               // TODO
             }
           }

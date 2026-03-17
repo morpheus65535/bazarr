@@ -1,7 +1,6 @@
 # coding=utf-8
 
 import os
-import time
 
 from flask_restx import Resource, Namespace, reqparse, fields, marshal
 
@@ -93,7 +92,7 @@ class ProviderMovies(Resource):
     post_request_parser.add_argument('original_format', type=str, required=True,
                                      help='Use original subtitles format from ["True", "False"]')
     post_request_parser.add_argument('provider', type=str, required=True, help='Provider name')
-    post_request_parser.add_argument('subtitle', type=str, required=True, help='Pickled subtitles as return by GET')
+    post_request_parser.add_argument('subtitle', type=str, required=True, help='Subtitle ID as returned by GET')
 
     @authenticate
     @api_ns_providers_movies.doc(parser=post_request_parser)
@@ -105,16 +104,12 @@ class ProviderMovies(Resource):
         """Manually download a movie subtitles"""
         args = self.post_request_parser.parse_args()
 
-        job_id = movie_manually_download_specific_subtitle(radarr_id=args.get('radarrid'),
-                                                           hi=args.get('hi').capitalize(),
-                                                           forced=args.get('forced').capitalize(),
-                                                           use_original_format=args.get('original_format').capitalize(),
-                                                           selected_provider=args.get('provider'),
-                                                           subtitle=args.get('subtitle'),
-                                                           job_id=None)
+        movie_manually_download_specific_subtitle(radarr_id=args.get('radarrid'),
+                                                  hi=args.get('hi').capitalize(),
+                                                  forced=args.get('forced').capitalize(),
+                                                  use_original_format=args.get('original_format').capitalize(),
+                                                  selected_provider=args.get('provider'),
+                                                  subtitle=args.get('subtitle'),
+                                                  job_id=None)
 
-        # Wait for the job to complete or fail
-        while jobs_queue.get_job_status(job_id=job_id) in ['pending', 'running']:
-            time.sleep(1)
-
-        return jobs_queue.get_job_returned_value(job_id=job_id)
+        return '', 204

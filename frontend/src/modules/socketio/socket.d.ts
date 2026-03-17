@@ -19,6 +19,7 @@ declare namespace SocketIO {
     | "reset-episode-wanted"
     | "reset-movie-wanted"
     | "badges"
+    | "backup"
     | "task"
     | "settings"
     | "languages";

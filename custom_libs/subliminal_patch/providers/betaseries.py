@@ -29,7 +29,7 @@ class BetaSeriesSubtitle(Subtitle):
         self.subtitle_id = subtitle_id
         self.video_name = video_name
         self.download_url = url
-        self.matches = matches
+        self.matches = matches or set()
         self.source = source
         self.video_release_group = video_release_group
         self.release_info = video_name
