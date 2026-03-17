@@ -256,9 +256,9 @@ class SubxSubtitlesProvider(Provider):
                     return []
                 
                 elif response.status_code == 429:
-                    # Rate limited - exponential backoff
+                    # Rate limited - use Retry-After header if available
                     if attempt < max_retries - 1:
-                        wait_time = 2 ** attempt
+                        wait_time = int(response.headers.get("Retry-After", 60 * (attempt + 1)))
                         logger.warning("Rate limit hit, waiting %ds before retry %d/%d", 
                                      wait_time, attempt + 1, max_retries)
                         time.sleep(wait_time)
@@ -282,6 +282,33 @@ class SubxSubtitlesProvider(Provider):
                 # Success
                 response.raise_for_status()
                 data = response.json()
+
+                # Proactively slow down if approaching rate limit
+                remaining = response.headers.get("X-RateLimit-Remaining")
+                limit = response.headers.get("X-RateLimit-Limit")
+                reset = response.headers.get("X-RateLimit-Reset")
+
+                if remaining is not None and limit is not None:
+                    try:
+                        remaining_int = int(remaining)
+                        limit_int = int(limit)
+                        
+                        # Slow down when below 20% of quota
+                        if remaining_int < limit_int * 0.2:
+                            if reset is not None:
+                                # Wait exactly until the window resets
+                                wait_time = max(0, int(reset) - int(time.time()))
+                            else:
+                                wait_time = 2  # Fallback
+                            
+                            logger.warning(
+                                "Approaching SubX rate limit (%d/%d remaining), waiting %ds",
+                                remaining_int, limit_int, wait_time
+                            )
+                            time.sleep(wait_time)
+                    except ValueError:
+                        pass
+
                 break  # Exit retry loop
                 
             except Exception as e:
