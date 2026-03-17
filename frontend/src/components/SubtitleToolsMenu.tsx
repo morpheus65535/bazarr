@@ -104,7 +104,7 @@ export function useTools() {
       {
         key: "two_point_fit",
         icon: faAlignJustify,
-        name: "Two Point Fit...",
+        name: "Two-Point Fit...",
         modal: TwoPointFitModal,
       },
       {

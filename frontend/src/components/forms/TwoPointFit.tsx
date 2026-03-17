@@ -1,11 +1,10 @@
-import { FunctionComponent, useMemo } from "react";
+import { FunctionComponent, useEffect, useMemo } from "react";
 import {
   Alert,
   Button,
   Card,
   Divider,
   Group,
-  // InputLabel,
   LoadingOverlay,
   NumberInput,
   Stack,
@@ -17,7 +16,7 @@ import { useModals, withModal } from "@/modules/modals";
 import { task } from "@/modules/task";
 import { useSelectorOptions } from "@/utilities";
 
-const TaskName = "Two Point Fit";
+const TaskName = "Two-Point Fit";
 
 function convertToAction(
   r: { hour: number; min: number; sec: number; ms: number }, // offset to zero
@@ -29,6 +28,16 @@ function convertToAction(
 
 const totalMs = (t: { hour: number; min: number; sec: number; ms: number }) =>
   t.hour * 3600000 + t.min * 60000 + t.sec * 1000 + t.ms;
+
+const lineStartMs = (t: SubtitleContents.LineTime) =>
+  t.total_seconds * 1000 + Math.round(t.microseconds / 1000);
+
+const lineStartToTime = (t: SubtitleContents.LineTime) => ({
+  hour: t.hours,
+  min: t.minutes,
+  sec: t.seconds,
+  ms: Math.round(t.microseconds / 1000),
+});
 
 interface Props {
   selections: FormType.ModifySubtitle[];
@@ -56,11 +65,44 @@ const TwoPointFitForm: FunctionComponent<Props> = ({
         to: { hour: 0, min: 0, sec: 0, ms: 0 },
       },
     },
-    // validate: {
-    //   first: { line: FormUtils.validation(isObject, "Please select a line") },
-    //   last: { line: FormUtils.validation(isObject, "Please select a line") },
-    // },
+    validate: {
+      first: {
+        line: (v) => (v == null ? "Please select a line" : null),
+      },
+      last: {
+        line: (v, values) => {
+          if (v == null) return "Please select a line";
+          if (
+            values.first.line != null &&
+            v.index === values.first.line.index
+          )
+            return "Must be a different line than the first";
+          return null;
+        },
+      },
+    },
   });
+
+  // Preselect default lines when data loads
+  useEffect(() => {
+    if (lines.length === 0) return;
+
+    const firstLine = lines.length < 50 ? lines[0] : lines[9];
+    const lastLine =
+      lines.length < 50 ? lines[lines.length - 1] : lines[lines.length - 10];
+
+    form.setFieldValue("first.line", firstLine);
+    form.setFieldValue("first.to", lineStartToTime(firstLine.start));
+    form.setFieldValue("last.line", lastLine);
+    form.setFieldValue("last.to", lineStartToTime(lastLine.start));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lines]);
+
+  const wrongOrder = useMemo(() => {
+    const { first, last } = form.values;
+    if (first.line == null || last.line == null) return false;
+    return lineStartMs(first.line.start) >= lineStartMs(last.line.start);
+  }, [form.values]);
 
   const decimals = lines.length.toString().length;
   const options = useSelectorOptions(
@@ -73,12 +115,21 @@ const TwoPointFitForm: FunctionComponent<Props> = ({
   return (
     <form
       onSubmit={form.onSubmit(({ first, last }) => {
-        const scale = {
-          from: totalMs(last.to) - totalMs(first.to),
-          to: totalMs(first.to) - totalMs(last.to),
+        if (first.line == null || last.line == null) return;
+
+        const r = {
+          hour: first.line.start.hours,
+          min: first.line.start.minutes,
+          sec: first.line.start.seconds,
+          ms: Math.round(first.line.start.microseconds / 1000),
         };
 
-        const action: string = convertToAction(first.to, first.to, scale);
+        const scale = {
+          from: totalMs(last.to) - totalMs(first.to),
+          to: lineStartMs(last.line.start) - lineStartMs(first.line.start),
+        };
+
+        const action = convertToAction(r, first.to, scale);
 
         selections.forEach((s) =>
           task.create(s.path, TaskName, mutateAsync, {
@@ -101,6 +152,12 @@ const TwoPointFitForm: FunctionComponent<Props> = ({
           Select two sentences and the time for when they should appear. This
           will fit (offset and scale) every sentence.
         </Alert>
+        {wrongOrder && (
+          <Alert color="yellow" variant="filled">
+            The first sentence appears after the last sentence in the subtitle
+            file. Are the selections correct?
+          </Alert>
+        )}
         <Card>
           <Stack gap="md">
             <header>First sentence</header>
@@ -112,11 +169,19 @@ const TwoPointFitForm: FunctionComponent<Props> = ({
                 {...options}
                 disabled={query.isLoading}
                 {...form.getInputProps("first.line")}
+                onChange={(line: SubtitleContents.Line | null) => {
+                  form.setFieldValue("first.line", line);
+                  if (line) {
+                    form.setFieldValue(
+                      "first.to",
+                      lineStartToTime(line.start),
+                    );
+                  }
+                }}
               ></Selector>
             </Stack>
 
             <Stack gap="0">
-              {/* <InputLabel>When it should appear</InputLabel> */}
               <Group align="end" gap="xs" wrap="nowrap">
                 <NumberInput
                   label="hour"
@@ -152,11 +217,19 @@ const TwoPointFitForm: FunctionComponent<Props> = ({
                 {...options}
                 disabled={query.isLoading}
                 {...form.getInputProps("last.line")}
+                onChange={(line: SubtitleContents.Line | null) => {
+                  form.setFieldValue("last.line", line);
+                  if (line) {
+                    form.setFieldValue(
+                      "last.to",
+                      lineStartToTime(line.start),
+                    );
+                  }
+                }}
               ></Selector>
             </Stack>
 
             <Stack gap="0">
-              {/* <InputLabel>When it should appear</InputLabel> */}
               <Group align="end" gap="xs" wrap="nowrap">
                 <NumberInput
                   min={0}
@@ -196,7 +269,7 @@ export const TwoPointFitModal = withModal(
   TwoPointFitForm,
   "two-point-alignment",
   {
-    title: "Two Point Fit",
+    title: "Two-Point Fit",
   },
 );
 
