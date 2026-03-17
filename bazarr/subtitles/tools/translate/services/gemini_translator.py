@@ -28,6 +28,7 @@ from languages.get_languages import alpha3_from_alpha2, language_from_alpha2, la
 from ..core.translator_utils import add_translator_info, get_description, create_process_result
 
 logger = logging.getLogger(__name__)
+DEFAULT_GEMINI_BATCH_SIZE = 300
 
 
 class SubtitleObject(typing.TypedDict):
@@ -67,11 +68,9 @@ class GeminiTranslatorService:
         self.start_line = 1
         self.description = None
         self.model_name = "gemini-2.0-flash"
-        self.batch_size = 100
+        self.batch_size = DEFAULT_GEMINI_BATCH_SIZE
         self.free_quota = True
         self.error_log = False
-        self.token_limit = 0
-        self.token_count = 0
         self.interrupt_flag = False
         self.progress_file = None
         self.current_progress = 0
@@ -92,10 +91,8 @@ class GeminiTranslatorService:
             self.input_file = self.source_srt_file
             self.output_file = self.dest_srt_file
             self.model_name = settings.translator.gemini_model
+            self.batch_size = self._get_batch_size()
             self.description = get_description(self.media_type, self.radarr_id, self.sonarr_series_id)
-
-            if "2.5-flash" in self.model_name or "pro" in self.model_name:
-                self.batch_size = 300
 
             if self.input_file:
                 self.progress_file = os.path.join(os.path.dirname(self.input_file), f".{os.path.basename(self.input_file)}.progress")
@@ -208,31 +205,33 @@ class GeminiTranslatorService:
             return True
         return False
 
-    def _get_token_limit(self) -> int:
-        """
-        Get the token limit for the current model.
+    def _get_batch_size(self) -> int:
+        try:
+            batch_size = int(settings.translator.gemini_batch_size)
+        except (AttributeError, TypeError, ValueError):
+            batch_size = DEFAULT_GEMINI_BATCH_SIZE
+        return max(1, batch_size)
 
-        Returns:
-            int: Token limit for the current model according to https://cloud.google.com/vertex-ai/generative-ai/docs/models/gemini/2-5-flash
-        """
-        if "2.0-flash" in self.model_name:
-            return 7000
-        elif "2.5-flash" in self.model_name or "pro" in self.model_name:
-            return 50000
-        else:
-            return 7000
-
-    def _validate_token_size(self, contents: str) -> bool:
-        """
-        Validate the token size of the input contents.
-
-        Args:
-            contents (str): Input contents to validate
-
-        Returns:
-            bool: True if token size is valid, False otherwise
-        """
-        return True
+    def _build_generate_payload(self, batch: List[SubtitleObject]) -> dict:
+        return {
+            "system_instruction": {
+                "parts": [
+                    {
+                        "text": self.get_instruction(self.target_language, self.description)
+                    }
+                ]
+            },
+            "contents": [
+                {
+                    "role": "user",
+                    "parts": [
+                        {
+                            "text": json.dumps(batch, ensure_ascii=False)
+                        }
+                    ]
+                }
+            ]
+        }
 
     current_progress = 0
 
@@ -254,25 +253,7 @@ class GeminiTranslatorService:
 
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.model_name}:generateContent?key={self.current_api_key}"
 
-        payload = json.dumps({
-            "system_instruction": {
-                "parts": [
-                    {
-                        "text": self.get_instruction(self.target_language, self.description)
-                    }
-                ]
-            },
-            "contents": [
-                {
-                    "role": "user",
-                    "parts": [
-                        {
-                            "text": json.dumps(batch, ensure_ascii=False)
-                        }
-                    ]
-                }
-            ]
-        })
+        payload = json.dumps(self._build_generate_payload(batch), ensure_ascii=False)
         headers = {
             'Content-Type': 'application/json'
         }
@@ -374,8 +355,6 @@ class GeminiTranslatorService:
             jobs_queue.update_job_progress(job_id=self.job_id, progress_message="Please provide a subtitle file.")
             return
 
-        self.token_limit = self._get_token_limit()
-
         try:
             with open(self.input_file, "r", encoding="utf-8") as original_file:
                 original_text = original_file.read()
@@ -397,7 +376,6 @@ class GeminiTranslatorService:
                     i = self.start_line - 1
                     total = len(original_subtitle)
                     batch = [SubtitleObject(index=str(i), content=original_subtitle[i].content)]
-
                     i += 1
 
                     # Save initial progress
@@ -413,35 +391,6 @@ class GeminiTranslatorService:
                             continue
 
                         try:
-                            if not self._validate_token_size(json.dumps(batch, ensure_ascii=False)):
-                                jobs_queue.update_job_progress(
-                                    job_id=self.job_id,
-                                    progress_message=f"Token size ({int(self.token_count / 0.9)}) exceeds limit ("
-                                                     f"{self.token_limit}) for {self.model_name}."
-                                )
-                                user_prompt = "0"
-                                while not user_prompt.isdigit() or int(user_prompt) <= 0:
-                                    user_prompt = jobs_queue.update_job_progress(
-                                        job_id=self.job_id,
-                                        progress_message=f"Please enter a new batch size (current: {self.batch_size}): "
-                                    )
-                                    if user_prompt.isdigit() and int(user_prompt) > 0:
-                                        new_batch_size = int(user_prompt)
-                                        decrement = self.batch_size - new_batch_size
-                                        if decrement > 0:
-                                            for _ in range(decrement):
-                                                i -= 1
-                                                batch.pop()
-                                        self.batch_size = new_batch_size
-                                        jobs_queue.update_job_progress(job_id=self.job_id,
-                                                                       progress_message=f"Batch size updated to "
-                                                                                        f"{self.batch_size}.")
-                                    else:
-                                        jobs_queue.update_job_progress(job_id=self.job_id,
-                                                                       progress_message="Invalid input. Batch size must"
-                                                                                        " be a positive integer.")
-                                continue
-
                             start_time = time.time()
                             self._process_batch(batch, translated_subtitle, total)
                             end_time = time.time()

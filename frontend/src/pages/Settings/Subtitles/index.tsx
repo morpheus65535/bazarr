@@ -6,6 +6,7 @@ import {
   Layout,
   Message,
   MultiSelector,
+  Number,
   Section,
   Selector,
   Slider,
@@ -548,6 +549,18 @@ const SettingsSubtitlesView: FunctionComponent = () => {
             label="Gemini model"
             settingKey="settings-translator-gemini_model"
           />
+          <Number
+            label="Gemini batch size"
+            settingKey="settings-translator-gemini_batch_size"
+            min={1}
+          />
+          <Message>
+            Number of subtitle lines sent in each Gemini request. Higher values
+            reduce the number of API calls and can speed up translation, but may
+            increase timeout or response-size errors. Start with 300 (default),
+            then lower it if requests fail or raise it gradually if your model
+            handles larger batches reliably.
+          </Message>
           <Text
             label="Gemini API key"
             settingKey="settings-translator-gemini_key"

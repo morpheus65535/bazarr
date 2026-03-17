@@ -182,6 +182,7 @@ declare namespace Settings {
     default_score: number;
     gemini_key: string;
     gemini_model: string;
+    gemini_batch_size: number;
     lingarr_url: string;
     lingarr_token: string;
     translator_info: boolean;
