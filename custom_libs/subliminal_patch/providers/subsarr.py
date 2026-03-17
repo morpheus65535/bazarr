@@ -16,6 +16,9 @@ logger = logging.getLogger(__name__)
 
 language_converters.register('subsarr = subliminal_patch.converters.subsarr:SubsarrConverter')
 
+# Case-insensitive reverse lookup for subsarr language names
+_LANG_LOWER = {k.lower(): k for k in language_converters['subsarr'].from_subsource.keys()}
+
 
 class SubsarrSubtitle(Subtitle):
     provider_name = 'subsarr'
@@ -76,6 +79,9 @@ class SubsarrProvider(ProviderRetryMixin, Provider):
     def __init__(self, base_url=None, email=None, password=None):
         if not base_url:
             raise ConfigurationError('Base URL must be specified')
+
+        if not base_url.startswith(('http://', 'https://')):
+            raise ConfigurationError('Base URL must include scheme (http:// or https://)')
 
         self.base_url = base_url.rstrip('/')
         self.email = email
@@ -157,7 +163,8 @@ class SubsarrProvider(ProviderRetryMixin, Provider):
 
             for item in items:
                 try:
-                    lang_obj = Language(*language_converters['subsarr'].reverse(item['language']))
+                    lang_name = _LANG_LOWER.get(item['language'].lower(), item['language'])
+                    lang_obj = Language(*language_converters['subsarr'].reverse(lang_name))
                 except (ConfigurationError, KeyError):
                     logger.debug('Skipping unsupported language: %s', item.get('language'))
                     continue
