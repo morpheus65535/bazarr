@@ -1,7 +1,7 @@
 # BSD 2-Clause License
 #
 # Apprise - Push Notification Library.
-# Copyright (c) 2025, Chris Caron <lead2gold@gmail.com>
+# Copyright (c) 2026, Chris Caron <lead2gold@gmail.com>
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -42,11 +42,8 @@ charset.add_charset("utf-8", charset.QP, charset.QP, "utf-8")
 
 __all__ = [
     "EMAIL_TEMPLATES",
-    "PGP_SUPPORT",
     "SECURE_MODES",
     "AppriseEmailException",
-    "ApprisePGPController",
-    "ApprisePGPException",
     "EmailMessage",
     "NotifyEmail",
     "SecureMailMode",

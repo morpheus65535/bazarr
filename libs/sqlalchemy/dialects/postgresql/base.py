@@ -2195,10 +2195,11 @@ class PGCompiler(compiler.SQLCompiler):
                 for c in clause.inferred_target_elements
             )
             if clause.inferred_target_whereclause is not None:
+                whereclause_kw = dict(kw)
+                whereclause_kw.update(include_table=False, use_schema=False)
                 target_text += " WHERE %s" % self.process(
                     clause.inferred_target_whereclause,
-                    include_table=False,
-                    use_schema=False,
+                    **whereclause_kw,
                 )
         else:
             target_text = ""
@@ -2225,6 +2226,8 @@ class PGCompiler(compiler.SQLCompiler):
 
         insert_statement = self.stack[-1]["selectable"]
         cols = insert_statement.table.c
+        set_kw = dict(kw)
+        set_kw.update(use_schema=False)
         for c in cols:
             col_key = c.key
 
@@ -2247,7 +2250,9 @@ class PGCompiler(compiler.SQLCompiler):
                 ):
                     value = value._clone()
                     value.type = c.type
-            value_text = self.process(value.self_group(), use_schema=False)
+            value_text = self.process(
+                value.self_group(), is_upsert_set=True, **set_kw
+            )
 
             key_text = self.preparer.quote(c.name)
             action_set_ops.append("%s = %s" % (key_text, value_text))
@@ -2270,14 +2275,17 @@ class PGCompiler(compiler.SQLCompiler):
                 )
                 value_text = self.process(
                     coercions.expect(roles.ExpressionElementRole, v),
-                    use_schema=False,
+                    is_upsert_set=True,
+                    **set_kw,
                 )
                 action_set_ops.append("%s = %s" % (key_text, value_text))
 
         action_text = ", ".join(action_set_ops)
         if clause.update_whereclause is not None:
+            where_kw = dict(kw)
+            where_kw.update(include_table=True, use_schema=False)
             action_text += " WHERE %s" % self.process(
-                clause.update_whereclause, include_table=True, use_schema=False
+                clause.update_whereclause, **where_kw
             )
 
         return "ON CONFLICT %s DO UPDATE SET %s" % (target_text, action_text)
@@ -4506,13 +4514,57 @@ class PGDialect(default.DefaultDialect):
             r"FOREIGN KEY \((.*?)\) "
             rf"REFERENCES (?:({qtoken})\.)?({qtoken})\(((?:{qtoken}(?: *, *)?)+)\)"  # noqa: E501
             r"[\s]?(MATCH (FULL|PARTIAL|SIMPLE)+)?"
-            r"[\s]?(ON UPDATE "
-            r"(CASCADE|RESTRICT|NO ACTION|SET NULL|SET DEFAULT)+)?"
-            r"[\s]?(ON DELETE "
+            r"[\s]?(?:ON (UPDATE|DELETE) "
+            r"(CASCADE|RESTRICT|NO ACTION|"
+            r"SET (?:NULL|DEFAULT)(?:\s\(.+\))?)+)?"
+            r"[\s]?(?:ON (UPDATE|DELETE) "
             r"(CASCADE|RESTRICT|NO ACTION|"
             r"SET (?:NULL|DEFAULT)(?:\s\(.+\))?)+)?"
             r"[\s]?(DEFERRABLE|NOT DEFERRABLE)?"
             r"[\s]?(INITIALLY (DEFERRED|IMMEDIATE)+)?"
+        )
+
+    def _parse_fk(self, condef):
+        FK_REGEX = self._fk_regex_pattern
+        m = re.search(FK_REGEX, condef).groups()
+
+        (
+            constrained_columns,
+            referred_schema,
+            referred_table,
+            referred_columns,
+            _,
+            match,
+            upddelkey1,
+            upddelval1,
+            upddelkey2,
+            upddelval2,
+            deferrable,
+            _,
+            initially,
+        ) = m
+
+        onupdate = (
+            upddelval1
+            if upddelkey1 == "UPDATE"
+            else upddelval2 if upddelkey2 == "UPDATE" else None
+        )
+        ondelete = (
+            upddelval1
+            if upddelkey1 == "DELETE"
+            else upddelval2 if upddelkey2 == "DELETE" else None
+        )
+
+        return (
+            constrained_columns,
+            referred_schema,
+            referred_table,
+            referred_columns,
+            match,
+            onupdate,
+            ondelete,
+            deferrable,
+            initially,
         )
 
     def get_multi_foreign_keys(
@@ -4531,8 +4583,6 @@ class PGDialect(default.DefaultDialect):
         query = self._foreing_key_query(schema, has_filter_names, scope, kind)
         result = connection.execute(query, params)
 
-        FK_REGEX = self._fk_regex_pattern
-
         fkeys = defaultdict(list)
         default = ReflectionDefaults.foreign_keys
         for table_name, conname, condef, conschema, comment in result:
@@ -4542,23 +4592,18 @@ class PGDialect(default.DefaultDialect):
                 fkeys[(schema, table_name)] = default()
                 continue
             table_fks = fkeys[(schema, table_name)]
-            m = re.search(FK_REGEX, condef).groups()
 
             (
                 constrained_columns,
                 referred_schema,
                 referred_table,
                 referred_columns,
-                _,
                 match,
-                _,
                 onupdate,
-                _,
                 ondelete,
                 deferrable,
-                _,
                 initially,
-            ) = m
+            ) = self._parse_fk(condef)
 
             if deferrable is not None:
                 deferrable = True if deferrable == "DEFERRABLE" else False

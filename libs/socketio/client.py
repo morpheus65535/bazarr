@@ -39,10 +39,11 @@ class Client(base_client.BaseClient):
                        of the ``encode()`` and ``decode()`` methods can be
                        provided. Client and server must use compatible
                        serializers.
-    :param json: An alternative json module to use for encoding and decoding
+    :param json: An alternative JSON module to use for encoding and decoding
                  packets. Custom json modules must have ``dumps`` and ``loads``
                  functions that are compatible with the standard library
-                 versions.
+                 versions. This is a process-wide setting, all instantiated
+                 servers and clients must use the same JSON module.
     :param handle_sigint: Set to ``True`` to automatically handle disconnection
                           when the process is interrupted, or to ``False`` to
                           leave interrupt handling to the calling application.

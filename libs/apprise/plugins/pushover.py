@@ -1,7 +1,7 @@
 # BSD 2-Clause License
 #
 # Apprise - Push Notification Library.
-# Copyright (c) 2025, Chris Caron <lead2gold@gmail.com>
+# Copyright (c) 2026, Chris Caron <lead2gold@gmail.com>
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -411,24 +411,24 @@ class NotifyPushover(NotifyBase):
 
         if attach and self.attachment_support:
             # Create a copy of our payload
-            _payload = payload.copy()
+            payload_ = payload.copy()
 
             # Send with attachments
             for no, attachment in enumerate(attach):
                 if no or not body:
                     # To handle multiple attachments, clean up our message
-                    _payload["message"] = attachment.name
+                    payload_["message"] = attachment.name
 
-                if not self._send(_payload, attachment):
+                if not self._send(payload_, attachment):
                     # Mark our failure
                     return False
 
                 # Clear our title if previously set
-                _payload["title"] = ""
+                payload_["title"] = ""
 
                 # No need to alarm for each consecutive attachment uploaded
                 # afterwards
-                _payload["sound"] = PushoverSound.NONE
+                payload_["sound"] = PushoverSound.NONE
 
         else:
             # Simple send

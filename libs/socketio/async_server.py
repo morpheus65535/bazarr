@@ -28,10 +28,11 @@ class AsyncServer(base_server.BaseServer):
     :param logger: To enable logging set to ``True`` or pass a logger object to
                    use. To disable logging set to ``False``. Note that fatal
                    errors are logged even when ``logger`` is ``False``.
-    :param json: An alternative json module to use for encoding and decoding
+    :param json: An alternative JSON module to use for encoding and decoding
                  packets. Custom json modules must have ``dumps`` and ``loads``
                  functions that are compatible with the standard library
-                 versions.
+                 versions. This is a process-wide setting, all instantiated
+                 servers and clients must use the same JSON module.
     :param async_handlers: If set to ``True``, event handlers for a client are
                            executed in separate threads. To run handlers for a
                            client synchronously, set to ``False``. The default

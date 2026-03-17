@@ -1,6 +1,5 @@
 import asyncio
 
-from engineio import json
 from .async_pubsub_manager import AsyncPubSubManager
 
 try:
@@ -32,18 +31,29 @@ class AsyncAioPikaManager(AsyncPubSubManager):  # pragma: no cover
                     in rabbitmq
     :param write_only: If set to ``True``, only initialize to emit events. The
                        default of ``False`` initializes the class for emitting
-                       and receiving.
+                       and receiving. A write-only instance can be used
+                       independently of the server to emit to clients from an
+                       external process.
+    :param logger: a custom logger to log it. If not given, the server logger
+                   is used.
+    :param json: An alternative JSON module to use for encoding and decoding
+                 packets. Custom json modules must have ``dumps`` and ``loads``
+                 functions that are compatible with the standard library
+                 versions. This setting is only used when ``write_only`` is set
+                 to ``True``. Otherwise the JSON module configured in the
+                 server is used.
     """
 
     name = 'asyncaiopika'
 
     def __init__(self, url='amqp://guest:guest@localhost:5672//',
-                 channel='socketio', write_only=False, logger=None):
+                 channel='socketio', write_only=False, logger=None, json=None):
         if aio_pika is None:
             raise RuntimeError('aio_pika package is not installed '
                                '(Run "pip install aio_pika" in your '
                                'virtualenv).')
-        super().__init__(channel=channel, write_only=write_only, logger=logger)
+        super().__init__(channel=channel, write_only=write_only, logger=logger,
+                         json=json)
         self.url = url
         self._lock = asyncio.Lock()
         self.publisher_connection = None
@@ -82,7 +92,7 @@ class AsyncAioPikaManager(AsyncPubSubManager):  # pragma: no cover
             try:
                 await self.publisher_exchange.publish(
                     aio_pika.Message(
-                        body=json.dumps(data).encode(),
+                        body=self.json.dumps(data).encode(),
                         delivery_mode=aio_pika.DeliveryMode.PERSISTENT
                     ), routing_key='*',
                 )

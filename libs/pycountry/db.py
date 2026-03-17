@@ -1,7 +1,8 @@
 import json
 import logging
 import threading
-from typing import Any, Iterator, List, Optional, Type, Union
+from collections.abc import Callable, Iterator
+from typing import Any, Generic, TypeVar, cast
 
 logger = logging.getLogger("pycountry.db")
 
@@ -10,7 +11,7 @@ class Data:
     def __init__(self, **fields: str):
         self._fields = fields
 
-    def __getattr__(self, key):
+    def __getattr__(self, key: str) -> str:
         if key in self._fields:
             return self._fields[key]
         raise AttributeError(key)
@@ -25,7 +26,7 @@ class Data:
         fields = ", ".join("%s=%r" % i for i in sorted(self._fields.items()))
         return f"{cls_name}({fields})"
 
-    def __dir__(self) -> List[str]:
+    def __dir__(self) -> list[str]:
         return dir(self.__class__) + list(self._fields)
 
     def __iter__(self):
@@ -42,20 +43,27 @@ class Subdivision(Data):
     pass
 
 
-def lazy_load(f):
+F = TypeVar("F", bound=Callable[..., Any])
+
+
+def lazy_load(f: F) -> F:
     def load_if_needed(self, *args, **kw):
         if not self._is_loaded:
             with self._load_lock:
                 self._load()
         return f(self, *args, **kw)
 
-    return load_if_needed
+    return cast(F, load_if_needed)
 
 
-class Database:
-    data_class: Union[Type, str]
-    root_key: Optional[str] = None
-    no_index: List[str] = []
+T = TypeVar("T", bound=Data)
+
+
+class Database(Generic[T]):
+    data_class: type | str
+    root_key: str | None = None
+    no_index: list[str] = []
+    special_index: list[str] = []
 
     def __init__(self, filename: str) -> None:
         self.filename = filename
@@ -70,8 +78,44 @@ class Database:
     def _clear(self):
         self._is_loaded = False
         self.objects = []
-        self.index_names = set()
         self.indices = {}
+
+    def _special_index(self, obj, key) -> None:
+        raise NotImplementedError("Must be implemented in subclass")
+
+    def _special_deindex(self, obj, key) -> None:
+        raise NotImplementedError("Must be implemented in subclass")
+
+    def _index_object(self, obj) -> None:
+        for key, value in obj._fields.items():
+            if key in self.no_index:
+                continue
+            if key in self.special_index:
+                self._special_index(obj, key)
+                continue
+            # Lookups and searches are case insensitive. Normalize
+            # here.
+            index = self.indices.setdefault(key, {})
+            value = value.lower()
+            if value in index:
+                logger.debug(
+                    "%s %r already taken in index %r and will be "
+                    "ignored. This is an error in the databases."
+                    % (self.factory.__name__, value, key)
+                )
+            index[value] = obj
+
+    def _deindex_object(self, obj) -> None:
+        for key, value in obj._fields.items():
+            if key in self.no_index:
+                continue
+            if key in self.special_index:
+                self._special_deindex(obj, key)
+                continue
+            value = value.lower()
+            index = self.indices.setdefault(key, {})
+            if value in index:
+                del index[value]
 
     def _load(self) -> None:
         if self._is_loaded:
@@ -86,22 +130,8 @@ class Database:
         for entry in tree[self.root_key]:
             obj = self.factory(**entry)
             self.objects.append(obj)
-            # Inject into index.
-            for key, value in entry.items():
-                if key in self.no_index:
-                    continue
-                # Lookups and searches are case insensitive. Normalize
-                # here.
-                index = self.indices.setdefault(key, {})
-                value = value.lower()
-                if value in index:
-                    logger.debug(
-                        "%s %r already taken in index %r and will be "
-                        "ignored. This is an error in the databases."
-                        % (self.factory.__name__, value, key)
-                    )
-                index[value] = obj
-
+            # Inject into indices
+            self._index_object(obj)
         self._is_loaded = True
 
     # Public API
@@ -115,18 +145,12 @@ class Database:
         self.objects.append(obj)
 
         # update indices
-        for key, value in kw.items():
-            if key in self.no_index:
-                continue
-            value = value.lower()
-            index = self.indices.setdefault(key, {})
-            index[value] = obj
+        self._index_object(obj)
 
     @lazy_load
     def remove_entry(self, **kw):
         # make sure that we receive None if no entry found
-        if "default" in kw:
-            del kw["default"]
+        kw.pop("default", None)
         obj = self.get(**kw)
         if not obj:
             raise KeyError(
@@ -137,16 +161,10 @@ class Database:
         self.objects.remove(obj)
 
         # update indices
-        for key, value in obj:
-            if key in self.no_index:
-                continue
-            value = value.lower()
-            index = self.indices.setdefault(key, {})
-            if value in index:
-                del index[value]
+        self._deindex_object(obj)
 
     @lazy_load
-    def __iter__(self) -> Iterator["Database"]:
+    def __iter__(self) -> Iterator[T]:
         return iter(self.objects)
 
     @lazy_load
@@ -154,9 +172,7 @@ class Database:
         return len(self.objects)
 
     @lazy_load
-    def get(
-        self, *, default: Optional[Any] = None, **kw: Optional[str]
-    ) -> Optional[Any]:
+    def get(self, *, default: T | None = None, **kw: str | None) -> T | None:
         if len(kw) != 1:
             raise TypeError("Only one criteria may be given")
         field, value = kw.popitem()
@@ -174,7 +190,7 @@ class Database:
             return default
 
     @lazy_load
-    def lookup(self, value: str) -> Type:
+    def lookup(self, value: str) -> T:
         if not isinstance(value, str):
             raise LookupError()
 

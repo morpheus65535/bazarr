@@ -21,11 +21,6 @@
       "numeric": "051"
     },
     {
-      "alpha_3": "ANG",
-      "name": "Netherlands Antillean Guilder",
-      "numeric": "532"
-    },
-    {
       "alpha_3": "AOA",
       "name": "Kwanza",
       "numeric": "973"
@@ -64,11 +59,6 @@
       "alpha_3": "BDT",
       "name": "Taka",
       "numeric": "050"
-    },
-    {
-      "alpha_3": "BGN",
-      "name": "Bulgarian Lev",
-      "numeric": "975"
     },
     {
       "alpha_3": "BHD",
@@ -186,11 +176,6 @@
       "numeric": "188"
     },
     {
-      "alpha_3": "CUC",
-      "name": "Peso Convertible",
-      "numeric": "931"
-    },
-    {
       "alpha_3": "CUP",
       "name": "Cuban Peso",
       "numeric": "192"
@@ -304,11 +289,6 @@
       "alpha_3": "HNL",
       "name": "Lempira",
       "numeric": "340"
-    },
-    {
-      "alpha_3": "HRK",
-      "name": "Kuna",
-      "numeric": "191"
     },
     {
       "alpha_3": "HTG",
@@ -651,11 +631,6 @@
       "numeric": "925"
     },
     {
-      "alpha_3": "SLL",
-      "name": "Leone",
-      "numeric": "694"
-    },
-    {
       "alpha_3": "SOS",
       "name": "Somali Shilling",
       "numeric": "706"
@@ -801,6 +776,11 @@
       "numeric": "882"
     },
     {
+      "alpha_3": "XAD",
+      "name": "Arab Accounting Dinar",
+      "numeric": "396"
+    },
+    {
       "alpha_3": "XAF",
       "name": "CFA Franc BEAC",
       "numeric": "950"
@@ -839,6 +819,11 @@
       "alpha_3": "XCD",
       "name": "East Caribbean Dollar",
       "numeric": "951"
+    },
+    {
+      "alpha_3": "XCG",
+      "name": "Caribbean Guilder",
+      "numeric": "532"
     },
     {
       "alpha_3": "XDR",
@@ -901,9 +886,9 @@
       "numeric": "967"
     },
     {
-      "alpha_3": "ZWL",
-      "name": "Zimbabwe Dollar",
-      "numeric": "932"
+      "alpha_3": "ZWG",
+      "name": "Zimbabwe Gold",
+      "numeric": "924"
     }
   ]
 }

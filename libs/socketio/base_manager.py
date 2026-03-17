@@ -1,5 +1,6 @@
 import itertools
 import logging
+import json
 
 from bidict import bidict, ValueDuplicationError
 
@@ -14,9 +15,11 @@ class BaseManager:
         self.eio_to_sid = {}
         self.callbacks = {}
         self.pending_disconnect = {}
+        self.json = json
 
     def set_server(self, server):
         self.server = server
+        self.json = self.server.packet_class.json  # use the global JSON module
 
     def initialize(self):
         """Invoked before the first request is received. Subclasses can add

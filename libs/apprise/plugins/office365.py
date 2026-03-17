@@ -1,7 +1,7 @@
 # BSD 2-Clause License
 #
 # Apprise - Push Notification Library.
-# Copyright (c) 2025, Chris Caron <lead2gold@gmail.com>
+# Copyright (c) 2026, Chris Caron <lead2gold@gmail.com>
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -507,13 +507,13 @@ class NotifyOffice365(NotifyBase):
                 # Prepare our CC list
                 payload["message"]["ccRecipients"] = []
                 for addr in cc:
-                    _payload = {"address": addr}
+                    payload_ = {"address": addr}
                     if self.names.get(addr):
-                        _payload["name"] = self.names[addr]
+                        payload_["name"] = self.names[addr]
 
                     # Store our address in our payload
                     payload["message"]["ccRecipients"].append(
-                        {"emailAddress": _payload}
+                        {"emailAddress": payload_}
                     )
 
                 self.logger.debug(
@@ -537,13 +537,13 @@ class NotifyOffice365(NotifyBase):
                 # Prepare our CC list
                 payload["message"]["bccRecipients"] = []
                 for addr in bcc:
-                    _payload = {"address": addr}
+                    payload_ = {"address": addr}
                     if self.names.get(addr):
-                        _payload["name"] = self.names[addr]
+                        payload_["name"] = self.names[addr]
 
                     # Store our address in our payload
                     payload["message"]["bccRecipients"].append(
-                        {"emailAddress": _payload}
+                        {"emailAddress": payload_}
                     )
 
                 self.logger.debug(

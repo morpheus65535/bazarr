@@ -1,7 +1,7 @@
 # BSD 2-Clause License
 #
 # Apprise - Push Notification Library.
-# Copyright (c) 2025, Chris Caron <lead2gold@gmail.com>
+# Copyright (c) 2026, Chris Caron <lead2gold@gmail.com>
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -239,10 +239,10 @@ class NotifyFlock(NotifyBase):
                 target = targets.pop(0)
 
                 # Copy and update our payload
-                _payload = payload.copy()
-                _payload["to"] = target
+                payload_ = payload.copy()
+                payload_["to"] = target
 
-                if not self._post(self.notify_api, headers, _payload):
+                if not self._post(self.notify_api, headers, payload_):
                     has_error = True
 
         else:

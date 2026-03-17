@@ -1,5 +1,5 @@
 __author__ = "Artur Barseghyan"
-__copyright__ = "2013-2025 Artur Barseghyan"
+__copyright__ = "2013-2026 Artur Barseghyan"
 __license__ = "MPL-1.1 OR GPL-2.0-only OR LGPL-2.1-or-later"
 __all__ = (
     "Trie",
@@ -37,7 +37,6 @@ class Trie(object):
         tld_split = tld.split(".")
         tld_split.reverse()
         for part in tld_split:
-
             if part.startswith("!"):
                 node.exception = part[1:]
                 break

@@ -1,7 +1,7 @@
 # BSD 2-Clause License
 #
 # Apprise - Push Notification Library.
-# Copyright (c) 2025, Chris Caron <lead2gold@gmail.com>
+# Copyright (c) 2026, Chris Caron <lead2gold@gmail.com>
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -251,12 +251,12 @@ class ApprisePGPController:
             emails = [self.email, *emails]
 
         for email in emails:
-            _entry = email.split("@")[0].lower()
-            fnames.insert(0, f"{_entry}-pub.asc")
+            entry = email.split("@")[0].lower()
+            fnames.insert(0, f"{entry}-pub.asc")
 
             # Lowercase email (Highest Priority)
-            _entry = email.lower()
-            fnames.insert(0, f"{_entry}-pub.asc")
+            entry = email.lower()
+            fnames.insert(0, f"{entry}-pub.asc")
 
         return next(
             (

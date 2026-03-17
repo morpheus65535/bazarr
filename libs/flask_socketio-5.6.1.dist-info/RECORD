@@ -1,0 +1,10 @@
+flask_socketio-5.6.1.dist-info/INSTALLER,sha256=zuuue4knoyJ-UwPPXg8fezS7VCrXJQrAP7zeNuwvFQg,4
+flask_socketio-5.6.1.dist-info/METADATA,sha256=UxUoj5w97Okq7Da_t5eNKjqKPePH8742sKIKz7sApz4,2650
+flask_socketio-5.6.1.dist-info/RECORD,,
+flask_socketio-5.6.1.dist-info/REQUESTED,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
+flask_socketio-5.6.1.dist-info/WHEEL,sha256=wUyA8OaulRlbfwMtmQsvNngGrxQHAvkKcvRmdizlJi0,92
+flask_socketio-5.6.1.dist-info/licenses/LICENSE,sha256=aNCWbkgKjS_T1cJtACyZbvCM36KxWnfQ0LWTuavuYKQ,1082
+flask_socketio-5.6.1.dist-info/top_level.txt,sha256=C1ugzQBJ3HHUJsWGzyt70XRVOX-y4CUAR8MWKjwJOQ8,15
+flask_socketio/__init__.py,sha256=jM_b0DUuMVqujMJDqknjaUgAOagdgGlbNILdAX4rKuw,56423
+flask_socketio/namespace.py,sha256=UkVryJvFYgnCMKWSF35GVfGdyh2cXRDyRbfmEPPchVA,2329
+flask_socketio/test_client.py,sha256=pyvjNemWok8WuvEMDu8KYxc0U5Hdyvek4_vbxKsLCdU,11348

@@ -194,6 +194,8 @@ class InstrumentedServer:
         if self.stats_task:  # pragma: no branch
             self.stop_stats_event.set()
             self.stats_task.join()
+            self.stop_stats_event.clear()
+            self.stats_task = None
 
     def _trigger_event(self, event, namespace, *args):
         t = time.time()
@@ -206,6 +208,9 @@ class InstrumentedServer:
                 serialized_socket,
                 datetime.fromtimestamp(t, timezone.utc).isoformat(),
             ), namespace=self.admin_namespace)
+            if not self.sio.eio._get_socket(eio_sid).upgraded:
+                self.sio.start_background_task(
+                    self._check_for_upgrade, eio_sid, sid, namespace)
         elif event == 'disconnect':
             del self.sio.manager._timestamps[sid]
             reason = args[1]
@@ -283,6 +288,7 @@ class InstrumentedServer:
     def _handle_eio_connect(self, eio_sid, environ):
         if self.stop_stats_event is None:
             self.stop_stats_event = self.sio.eio.create_event()
+        if self.stats_task is None:
             self.stats_task = self.sio.start_background_task(
                 self._emit_server_stats)
 

@@ -7,7 +7,7 @@ from .exceptions import TldImproperlyConfigured, TldIOError
 from .helpers import project_dir
 
 __author__ = "Artur Barseghyan"
-__copyright__ = "2013-2025 Artur Barseghyan"
+__copyright__ = "2013-2026 Artur Barseghyan"
 __license__ = "MPL-1.1 OR GPL-2.0-only OR LGPL-2.1-or-later"
 __all__ = (
     "BaseTLDSourceParser",
@@ -18,7 +18,6 @@ LOGGER = logging.getLogger(__name__)
 
 
 class Registry(type):
-
     REGISTRY: Dict[str, "BaseTLDSourceParser"] = {}
 
     def __new__(mcs, name, bases, attrs):

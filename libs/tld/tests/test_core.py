@@ -29,14 +29,15 @@ from ..utils import (
     get_tld_names_container,
     is_tld,
     parse_tld,
+    protocol_re,
     reset_tld_names,
     update_tld_names,
     update_tld_names_cli,
 )
-from .base import internet_available_only, log_info
+from .base import internet_available_only
 
 __author__ = "Artur Barseghyan"
-__copyright__ = "2013-2025 Artur Barseghyan"
+__copyright__ = "2013-2026 Artur Barseghyan"
 __license__ = "MPL-1.1 OR GPL-2.0-only OR LGPL-2.1-or-later"
 __all__ = ("TestCore",)
 
@@ -305,6 +306,24 @@ class TestCore(unittest.TestCase):
                 "tld": "com",
                 "kwargs": {"fail_silently": True},
             },
+            {
+                "url": "sftp://sftp.test.com",
+                "fld": "test.com",
+                "subdomain": "sftp",
+                "domain": "test",
+                "suffix": "com",
+                "tld": "com",
+                "kwargs": {"fail_silently": True, "fix_protocol": True},
+            },
+            {
+                "url": "Http://www.google.co.uk",
+                "fld": "google.co.uk",
+                "subdomain": "www",
+                "domain": "google",
+                "suffix": "co.uk",
+                "tld": "co.uk",
+                "kwargs": {"fail_silently": True, "fix_protocol": True},
+            },
         ]
 
         self.bad_patterns = {
@@ -406,46 +425,37 @@ class TestCore(unittest.TestCase):
         )
         return parser_class
 
-    @log_info
-    def test_0_tld_names_loaded(self):
+    def test_tld_names_loaded(self):
         """Test if tld names are loaded."""
         get_fld("http://www.google.co.uk")
         from ..utils import tld_names
 
         res = len(tld_names) > 0
         self.assertTrue(res)
-        return res
 
     @internet_available_only
-    @log_info
-    def test_1_update_tld_names(self):
+    def test_update_tld_names(self):
         """Test updating the tld names (re-fetch mozilla source)."""
         res = update_tld_names(fail_silently=False)
         self.assertTrue(res)
-        return res
 
-    @log_info
-    def test_2_fld_good_patterns_pass(self):
+    def test_fld_good_patterns_pass(self):
         """Test good URL patterns."""
         res = []
         for data in self.good_patterns:
             _res = get_fld(data["url"], **data["kwargs"])
             self.assertEqual(_res, data["fld"])
             res.append(_res)
-        return res
 
-    @log_info
-    def test_3_fld_bad_patterns_pass(self):
+    def test_fld_bad_patterns_pass(self):
         """Test bad URL patterns."""
         res = []
         for url, params in self.bad_patterns.items():
             _res = get_fld(url, fail_silently=True)
-            self.assertEqual(_res, None)
+            self.assertIsNone(_res)
             res.append(_res)
-        return res
 
-    @log_info
-    def test_4_override_settings(self):
+    def test_override_settings(self):
         """Testing settings override."""
 
         def override_settings():
@@ -456,14 +466,10 @@ class TestCore(unittest.TestCase):
 
         set_setting("DEBUG", True)
 
-        self.assertEqual(True, override_settings())
+        self.assertTrue(override_settings())
 
-        return override_settings()
-
-    @log_info
-    def test_5_tld_good_patterns_pass_parsed_object(self):
+    def test_tld_good_patterns_pass_parsed_object(self):
         """Test good URL patterns."""
-        res = []
         for data in self.good_patterns:
             kwargs = copy.copy(data["kwargs"])
             kwargs["as_object"] = True
@@ -489,11 +495,7 @@ class TestCore(unittest.TestCase):
                 },
             )
 
-            res.append(_res)
-        return res
-
-    @log_info
-    def test_6_override_full_names_path(self):
+    def test_override_full_names_path(self):
         default = project_dir("dummy.txt")
         override_base = "/tmp/test"
         set_setting("NAMES_LOCAL_PATH_PARENT", override_base)
@@ -501,15 +503,14 @@ class TestCore(unittest.TestCase):
         self.assertNotEqual(default, modified)
         self.assertEqual(modified, abspath("/tmp/test/dummy.txt"))
 
-    @log_info
-    def test_7_public_private(self):
+    def test_public_private(self):
         res = get_fld(
             "http://silly.cc.ua",
             fail_silently=True,
             search_private=False,
             parser_class=MozillaTLDSourceParser,
         )
-        self.assertEqual(res, None)
+        self.assertIsNone(res)
 
         res = get_fld(
             "http://silly.cc.ua", fail_silently=True, search_private=False
@@ -528,7 +529,7 @@ class TestCore(unittest.TestCase):
             fix_protocol=True,
             parser_class=MozillaTLDSourceParser,
         )
-        self.assertEqual(res, None)
+        self.assertIsNone(res)
 
         res = get_fld(
             "mercy.compute.amazonaws.com",
@@ -541,66 +542,47 @@ class TestCore(unittest.TestCase):
         res = get_fld(
             "http://whatever.com", fail_silently=True, search_public=False
         )
-        self.assertEqual(res, None)
+        self.assertIsNone(res)
 
-    @log_info
-    def test_8_fld_bad_patterns_exceptions(self):
+    def test_fld_bad_patterns_exceptions(self):
         """Test exceptions."""
-        res = []
         for url, params in self.bad_patterns.items():
             kwargs = params["kwargs"] if "kwargs" in params else {}
             kwargs["fail_silently"] = False
             with self.assertRaises(params["exception"]):
                 _res = get_fld(url, **kwargs)
-                res.append(_res)
-        return res
 
-    @log_info
-    def test_9_tld_good_patterns_pass(self):
+    def test_tld_good_patterns_pass(self):
         """Test `get_tld` good URL patterns."""
-        res = []
         for data in self.good_patterns:
             _res = get_tld(data["url"], **data["kwargs"])
             self.assertEqual(_res, data["tld"])
-            res.append(_res)
-        return res
 
-    @log_info
-    def test_10_tld_bad_patterns_pass(self):
+    def test_tld_bad_patterns_pass(self):
         """Test `get_tld` bad URL patterns."""
-        res = []
         for url, params in self.bad_patterns.items():
             _res = get_tld(url, fail_silently=True)
-            self.assertEqual(_res, None)
-            res.append(_res)
-        return res
+            self.assertIsNone(_res)
 
-    @log_info
-    def test_11_parse_tld_good_patterns(self):
+    def test_parse_tld_good_patterns(self):
         """Test `parse_tld` good URL patterns."""
-        res = []
         for data in self.good_patterns:
             _res = parse_tld(data["url"], **data["kwargs"])
             self.assertEqual(
                 _res, (data["tld"], data["domain"], data["subdomain"])
             )
-            res.append(_res)
-        return res
 
-    @log_info
-    def test_12_is_tld_good_patterns(self):
+    def test_is_tld_good_patterns(self):
         """Test `is_tld` good URL patterns."""
         for data in self.good_patterns:
             self.assertTrue(is_tld(data["tld"]))
 
-    @log_info
-    def test_13_is_tld_bad_patterns(self):
+    def test_is_tld_bad_patterns(self):
         """Test `is_tld` bad URL patterns."""
         for _tld in self.invalid_tlds:
             self.assertFalse(is_tld(_tld))
 
-    @log_info
-    def test_14_fail_update_tld_names(self):
+    def test_fail_update_tld_names(self):
         """Test fail `update_tld_names`."""
         parser_class = self.get_custom_parser_class(
             uid="custom_mozilla_2", source_url="i-do-not-exist"
@@ -614,8 +596,7 @@ class TestCore(unittest.TestCase):
             update_tld_names(fail_silently=True, parser_uid=parser_class.uid)
         )
 
-    @log_info
-    def test_15_fail_get_tld_names(self):
+    def test_fail_get_tld_names(self):
         """Test fail `update_tld_names`."""
         parser_class = self.get_custom_parser_class(
             uid="custom_mozilla_3",
@@ -632,14 +613,12 @@ class TestCore(unittest.TestCase):
             with self.assertRaises(TldIOError):
                 get_tld(**kwargs)
 
-    @log_info
-    def test_16_fail_get_fld_wrong_kwargs(self):
+    def test_fail_get_fld_wrong_kwargs(self):
         """Test fail `get_fld` with wrong kwargs."""
         with self.assertRaises(TldImproperlyConfigured):
             get_fld(self.good_url, as_object=True)
 
-    @log_info
-    def test_17_fail_parse_tld(self):
+    def test_fail_parse_tld(self):
         """Test fail `parse_tld`.
 
         Assert raise TldIOError on wrong `NAMES_SOURCE_URL` for `parse_tld`.
@@ -650,8 +629,7 @@ class TestCore(unittest.TestCase):
         )
         self.assertEqual(parsed_tld, (None, None, None))
 
-    @log_info
-    def test_18_get_tld_names_and_reset_tld_names(self):
+    def test_get_tld_names_and_reset_tld_names(self):
         """Test fail `get_tld_names` and repair using `reset_tld_names`."""
         tmp_filename = join(gettempdir(), f"{FAKER.uuid()}.dat.txt")
         parser_class = self.get_custom_parser_class(
@@ -678,18 +656,14 @@ class TestCore(unittest.TestCase):
             )
 
     @internet_available_only
-    @log_info
-    def test_19_update_tld_names_cli(self):
+    def test_update_tld_names_cli(self):
         """Test the return code of the CLI version of `update_tld_names`."""
         reset_tld_names()
-        res = update_tld_names_cli()
+        res = update_tld_names_cli([])
         self.assertEqual(res, 0)
 
-    @log_info
-    def test_20_parse_tld_custom_tld_names_good_patterns(self):
+    def test_parse_tld_custom_tld_names_good_patterns(self):
         """Test `parse_tld` good URL patterns for custom tld names."""
-        res = []
-
         for data in self.good_patterns_custom_parser:
             kwargs = copy.copy(data["kwargs"])
             kwargs["parser_class"] = self.get_custom_parser_class()
@@ -697,13 +671,9 @@ class TestCore(unittest.TestCase):
             self.assertEqual(
                 _res, (data["tld"], data["domain"], data["subdomain"])
             )
-            res.append(_res)
-        return res
 
-    @log_info
-    def test_21_tld_custom_tld_names_good_patterns_pass_parsed_object(self):
+    def test_tld_custom_tld_names_good_patterns_pass_parsed_object(self):
         """Test `get_tld` good URL patterns for custom tld names."""
-        res = []
         for data in self.good_patterns_custom_parser:
             kwargs = copy.copy(data["kwargs"])
             kwargs.update(
@@ -734,13 +704,8 @@ class TestCore(unittest.TestCase):
                 },
             )
 
-            res.append(_res)
-        return res
-
-    @log_info
-    def test_22_reset_tld_names_for_custom_parser(self):
+    def test_reset_tld_names_for_custom_parser(self):
         """Test `reset_tld_names` for `tld_names_local_path`."""
-        res = []
         parser_class = self.get_custom_parser_class()
         for data in self.good_patterns_custom_parser:
             kwargs = copy.copy(data["kwargs"])
@@ -772,24 +737,18 @@ class TestCore(unittest.TestCase):
                 },
             )
 
-            res.append(_res)
-
         tld_names = get_tld_names_container()
         self.assertIn(parser_class.local_path, tld_names)
         reset_tld_names(parser_class.local_path)
         self.assertNotIn(parser_class.local_path, tld_names)
 
-        return res
-
-    @log_info
-    def test_23_fail_define_custom_parser_class_without_uid(self):
+    def test_fail_define_custom_parser_class_without_uid(self):
         """Test fail define custom parser class without `uid`."""
 
         class CustomParser(BaseTLDSourceParser):
             pass
 
         class AnotherCustomParser(BaseTLDSourceParser):
-
             uid = "another-custom-parser"
 
         # Assert raise TldImproperlyConfigured
@@ -800,21 +759,18 @@ class TestCore(unittest.TestCase):
         with self.assertRaises(NotImplementedError):
             AnotherCustomParser.get_tld_names()
 
-    @log_info
-    def test_24_len_trie_nodes(self):
+    def test_len_trie_nodes(self):
         """Test len of the trie nodes."""
         get_tld("http://delusionalinsanity.com")
         tld_names = get_tld_names_container()
         self.assertGreater(len(tld_names[MozillaTLDSourceParser.local_path]), 0)
 
-    @log_info
-    def test_25_get_tld_names_no_arguments(self):
+    def test_get_tld_names_no_arguments(self):
         """Test len of the trie nodes."""
         tld_names = get_tld_names()
         self.assertGreater(len(tld_names), 0)
 
-    @log_info
-    def test_26_case(self):
+    def test_case(self):
         res = get_tld(
             "https://MyDomain.com/AsDrFt?QUeRY=12aA",
             fail_silently=True,
@@ -836,15 +792,46 @@ class TestCore(unittest.TestCase):
             ),
         )
 
-    @log_info
-    def test_27_tld_fail_silently_pass(self):
+    def test_tld_fail_silently_pass(self):
         """Test `get_tld` bad URL patterns that would raise exception
         if `fail_silently` isn't `True`.
         """
-        res = []
         bad_url = ["https://user:password[@host.com", "https://user[@host.com"]
         for url in bad_url:
             _res = get_tld(url, fail_silently=True)
-            self.assertEqual(_res, None)
-            res.append(_res)
-        return res
+            self.assertIsNone(_res)
+
+    def test_protocols(self):
+        """Test `protocol_re` with common protocols."""
+        # Should match (have a protocol)
+        should_match_urls = [
+            "http://example.com",
+            "https://example.com",
+            "ftp://example.com",
+            "sftp://example.com",
+            "ftps://example.com",
+            "ws://example.com",
+            "wss://example.com",
+            "smtp://example.com",
+            "imap://example.com",
+            "pop3://example.com",
+            "ldap://example.com",
+            "ldaps://example.com",
+            "svn+ssh://example.com",
+            "git+https://example.com",
+            "coap+tcp://example.com",
+            "//example.com",  # protocol-relative
+        ]
+        for url in should_match_urls:
+            matched = bool(protocol_re.match(url.lower()))
+            self.assertTrue(matched)
+
+        # Should NOT match (no protocol -> fix_protocol would prepend https://)
+        test_should_not_match_urls = [
+            "example.com",
+            "example.com/path",
+            "sub.example.com",
+        ]
+        for url in test_should_not_match_urls:
+            matched = bool(protocol_re.match(url.lower()))
+            self.assertFalse(matched)

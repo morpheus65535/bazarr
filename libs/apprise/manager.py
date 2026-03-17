@@ -1,7 +1,7 @@
 # BSD 2-Clause License
 #
 # Apprise - Push Notification Library.
-# Copyright (c) 2025, Chris Caron <lead2gold@gmail.com>
+# Copyright (c) 2026, Chris Caron <lead2gold@gmail.com>
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -283,7 +283,7 @@ class PluginManager(metaclass=Singleton):
             self._loaded.add(module_path)
 
             logger.debug(
-                f"{self.name} {len(self._module_map) - module_count}(s) and"
+                f"{len(self._module_map) - module_count} {self.name}(s) and"
                 f" {len(self._schema_map) - schema_count} Schema(s) loaded in"
                 f" {time.time() - t_start:.4f}s"
             )
@@ -341,7 +341,7 @@ class PluginManager(metaclass=Singleton):
             module = import_module(path, module_pyname)
             if not module:
                 # No problem, we can't use this object
-                logger.warning("Failed to load custom module: %s", _path)
+                logger.warning("Failed to load custom module: %s", path_)
                 return
 
             # Print our loaded modules if any
@@ -349,7 +349,7 @@ class PluginManager(metaclass=Singleton):
                 logger.debug(
                     "Custom module %s - %d schema(s) (name=%s) "
                     "loaded in %.6fs",
-                    _path,
+                    path_,
                     len(self._custom_module_map[module_pyname]["notify"]),
                     module_name,
                     (time.time() - t_start),
@@ -384,8 +384,8 @@ class PluginManager(metaclass=Singleton):
             # end of _import_module()
             return
 
-        for _path in paths:
-            path = path_decode(_path)
+        for path_ in paths:
+            path = path_decode(path_)
             if (
                 cache and path in self._paths_previously_scanned
             ) or not os.path.exists(path):

@@ -6,7 +6,6 @@ try:
 except ImportError:
     kombu = None
 
-from engineio import json
 from .pubsub_manager import PubSubManager
 
 
@@ -34,7 +33,17 @@ class KombuManager(PubSubManager):  # pragma: no cover
                     notifications. Must be the same in all the servers.
     :param write_only: If set to ``True``, only initialize to emit events. The
                        default of ``False`` initializes the class for emitting
-                       and receiving.
+                       and receiving. A write-only instance can be used
+                       independently of the server to emit to clients from an
+                       external process.
+    :param logger: a custom logger to log it. If not given, the server logger
+                   is used.
+    :param json: An alternative JSON module to use for encoding and decoding
+                 packets. Custom json modules must have ``dumps`` and ``loads``
+                 functions that are compatible with the standard library
+                 versions. This setting is only used when ``write_only`` is set
+                 to ``True``. Otherwise the JSON module configured in the
+                 server is used.
     :param connection_options: additional keyword arguments to be passed to
                                ``kombu.Connection()``.
     :param exchange_options: additional keyword arguments to be passed to
@@ -47,14 +56,15 @@ class KombuManager(PubSubManager):  # pragma: no cover
     name = 'kombu'
 
     def __init__(self, url='amqp://guest:guest@localhost:5672//',
-                 channel='socketio', write_only=False, logger=None,
+                 channel='socketio', write_only=False, logger=None, json=None,
                  connection_options=None, exchange_options=None,
                  queue_options=None, producer_options=None):
         if kombu is None:
             raise RuntimeError('Kombu package is not installed '
                                '(Run "pip install kombu" in your '
                                'virtualenv).')
-        super().__init__(channel=channel, write_only=write_only, logger=logger)
+        super().__init__(channel=channel, write_only=write_only, logger=logger,
+                         json=json)
         self.url = url
         self.connection_options = connection_options or {}
         self.exchange_options = exchange_options or {}
@@ -102,7 +112,7 @@ class KombuManager(PubSubManager):  # pragma: no cover
             try:
                 producer_publish = self._producer_publish(
                     self.publisher_connection)
-                producer_publish(json.dumps(data))
+                producer_publish(self.json.dumps(data))
                 break
             except (OSError, kombu.exceptions.KombuError):
                 if retry:

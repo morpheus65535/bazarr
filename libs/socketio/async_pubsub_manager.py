@@ -3,8 +3,6 @@ import base64
 from functools import partial
 import uuid
 
-from engineio import json
-
 from .async_manager import AsyncManager
 from .packet import Packet
 
@@ -22,15 +20,31 @@ class AsyncPubSubManager(AsyncManager):
 
     :param channel: The channel name on which the server sends and receives
                     notifications.
+    :param write_only: If set to ``True``, only initialize to emit events. The
+                       default of ``False`` initializes the class for emitting
+                       and receiving. A write-only instance can be used
+                       independently of the server to emit to clients from an
+                       external process.
+    :param logger: a custom logger to log it. If not given, the server logger
+                   is used.
+    :param json: An alternative JSON module to use for encoding and decoding
+                 packets. Custom json modules must have ``dumps`` and ``loads``
+                 functions that are compatible with the standard library
+                 versions. This setting is only used when ``write_only`` is set
+                 to ``True``. Otherwise the JSON module configured in the
+                 server is used.
     """
     name = 'asyncpubsub'
 
-    def __init__(self, channel='socketio', write_only=False, logger=None):
+    def __init__(self, channel='socketio', write_only=False, logger=None,
+                 json=None):
         super().__init__()
         self.channel = channel
         self.write_only = write_only
         self.host_id = uuid.uuid4().hex
         self.logger = logger
+        if json is not None:
+            self.json = json
 
     def initialize(self):
         super().initialize()
@@ -221,7 +235,7 @@ class AsyncPubSubManager(AsyncManager):
                         data = message
                     else:
                         try:
-                            data = json.loads(message)
+                            data = self.json.loads(message)
                         except:
                             pass
                     if data and 'method' in data:

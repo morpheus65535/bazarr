@@ -1,7 +1,7 @@
 # BSD 2-Clause License
 #
 # Apprise - Push Notification Library.
-# Copyright (c) 2025, Chris Caron <lead2gold@gmail.com>
+# Copyright (c) 2026, Chris Caron <lead2gold@gmail.com>
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -200,7 +200,6 @@ class NotifySIGNL4(NotifyBase):
             notify_url, self.verify_certificate)
         self.logger.debug("SIGNL4 Payload: %r", payload)
 
-
         # Always call throttle before any remote server i/o is made
         self.throttle()
 
@@ -240,7 +239,7 @@ class NotifySIGNL4(NotifyBase):
             self.logger.warning(
                 "A Connection error occurred sending SIGNL4 "
                 "notification to %s", self.host)
-            self.logger.debug("Socket Exception: %s", str(e))
+            self.logger.debug("Socket Exception: %s", e)
 
             # Return; we're done
             return False

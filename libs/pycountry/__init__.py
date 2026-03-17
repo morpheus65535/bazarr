@@ -3,28 +3,19 @@
 import os.path
 import unicodedata
 from importlib import metadata as _importlib_metadata
-from typing import Dict, List, Optional, Type
+from importlib import resources as _importlib_resources
+from typing import cast
 
 import pycountry.db
-
-# We prioritise importing the backported `importlib_resources`
-# because the function we use (`importlib.resources.files`) is only
-# available from Python 3.9, but the module itself exists since 3.7.
-# We install `importlib_resources` on Python < 3.9.
-# TODO: Remove usage of importlib_resources once support for Python 3.8 is dropped
-try:
-    import importlib_resources  # type: ignore
-except ModuleNotFoundError:
-    from importlib import resources as importlib_resources  # type: ignore
 
 
 def resource_filename(package_or_requirement: str, resource_name: str) -> str:
     return str(
-        importlib_resources.files(package_or_requirement) / resource_name
+        _importlib_resources.files(package_or_requirement) / resource_name
     )
 
 
-def get_version(distribution_name: str) -> Optional[str]:
+def get_version(distribution_name: str) -> str | None:
     try:
         return _importlib_metadata.version(distribution_name)
     except _importlib_metadata.PackageNotFoundError:
@@ -34,7 +25,7 @@ def get_version(distribution_name: str) -> Optional[str]:
 # Variable annotations
 LOCALES_DIR: str = resource_filename("pycountry", "locales")
 DATABASE_DIR: str = resource_filename("pycountry", "databases")
-__version__: Optional[str] = get_version("pycountry")
+__version__: str | None = get_version("pycountry")
 
 
 def remove_accents(input_str: str) -> str:
@@ -48,13 +39,13 @@ def remove_accents(input_str: str) -> str:
     return output_str
 
 
-class ExistingCountries(pycountry.db.Database):
+class ExistingCountries(pycountry.db.Database[pycountry.db.Country]):
     """Provides access to an ISO 3166 database (Countries)."""
 
     data_class = pycountry.db.Country
     root_key = "3166-1"
 
-    def search_fuzzy(self, query: str) -> List[Type["ExistingCountries"]]:
+    def search_fuzzy(self, query: str) -> list[pycountry.db.Country]:
         query = remove_accents(query.strip().lower())
 
         # A country-code to points mapping for later sorting countries
@@ -87,6 +78,11 @@ class ExistingCountries(pycountry.db.Database):
                 candidate._fields.get("comment"),
             ]:
                 if v is not None:
+                    # Check for initials match
+                    initials = "".join([c for c in v if c.isupper()])
+                    if query == remove_accents(initials.lower()):
+                        add_result(candidate, 40)
+                        break
                     v = remove_accents(v.lower())
                     if query in v:
                         # This prefers countries with a match early in their name
@@ -118,7 +114,7 @@ class ExistingCountries(pycountry.db.Database):
             # points but ascending on the country code.
             for x in sorted(results.items(), key=lambda x: (-x[1], x[0]))
         ]
-        return sorted_results
+        return cast(list[pycountry.db.Country], sorted_results)
 
 
 class HistoricCountries(ExistingCountries):
@@ -192,18 +188,18 @@ class Subdivisions(pycountry.db.Database):
 
     data_class = SubdivisionHierarchy
     no_index = ["name", "parent_code", "parent", "type"]
+    special_index = ["country_code"]
     root_key = "3166-2"
 
-    def _load(self, *args, **kw):
-        super()._load(*args, **kw)
+    def _special_index(self, obj, key):
+        index = self.indices.setdefault(key, {})
+        divs = index.setdefault(getattr(obj, key).lower(), set())
+        divs.add(obj)
 
-        # Add index for the country code.
-        self.indices["country_code"] = {}
-        for subdivision in self:
-            divs = self.indices["country_code"].setdefault(
-                subdivision.country_code.lower(), set()
-            )
-            divs.add(subdivision)
+    def _special_deindex(self, obj, key):
+        index = self.indices.get(key)
+        divs = index.get(getattr(obj, key).lower(), set())
+        divs.discard(obj)
 
     def get(self, **kw):
         default = kw.setdefault("default", None)
@@ -243,7 +239,7 @@ class Subdivisions(pycountry.db.Database):
 
         return matching_candidates
 
-    def search_fuzzy(self, query: str) -> List[Type["Subdivisions"]]:
+    def search_fuzzy(self, query: str) -> list[type["Subdivisions"]]:
         query = remove_accents(query.strip().lower())
 
         # A Subdivision's code to points mapping for later sorting subdivisions

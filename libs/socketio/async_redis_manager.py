@@ -19,7 +19,6 @@ except ImportError:  # pragma: no cover
     aiovalkey = None
     ValkeyError = None
 
-from engineio import json
 from .async_pubsub_manager import AsyncPubSubManager
 from .redis_manager import parse_redis_sentinel_url
 
@@ -47,18 +46,29 @@ class AsyncRedisManager(AsyncPubSubManager):
                     notifications. Must be the same in all the servers.
     :param write_only: If set to ``True``, only initialize to emit events. The
                        default of ``False`` initializes the class for emitting
-                       and receiving.
+                       and receiving. A write-only instance can be used
+                       independently of the server to emit to clients from an
+                       external process.
+    :param logger: a custom logger to log it. If not given, the server logger
+                   is used.
+    :param json: An alternative JSON module to use for encoding and decoding
+                 packets. Custom json modules must have ``dumps`` and ``loads``
+                 functions that are compatible with the standard library
+                 versions. This setting is only used when ``write_only`` is set
+                 to ``True``. Otherwise the JSON module configured in the
+                 server is used.
     :param redis_options: additional keyword arguments to be passed to
                           ``Redis.from_url()`` or ``Sentinel()``.
     """
     name = 'aioredis'
 
     def __init__(self, url='redis://localhost:6379/0', channel='socketio',
-                 write_only=False, logger=None, redis_options=None):
+                 write_only=False, logger=None, json=None, redis_options=None):
         if aioredis and \
                 not hasattr(aioredis.Redis, 'from_url'):  # pragma: no cover
             raise RuntimeError('Version 2 of aioredis package is required.')
-        super().__init__(channel=channel, write_only=write_only, logger=logger)
+        super().__init__(channel=channel, write_only=write_only, logger=logger,
+                         json=json)
         self.redis_url = url
         self.redis_options = redis_options or {}
         self.connected = False
@@ -117,7 +127,7 @@ class AsyncRedisManager(AsyncPubSubManager):
                 if not self.connected:
                     self._redis_connect()
                 return await self.redis.publish(
-                    self.channel, json.dumps(data))
+                    self.channel, self.json.dumps(data))
             except error as exc:
                 if retries_left > 0:
                     self._get_logger().error(

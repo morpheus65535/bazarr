@@ -36,7 +36,7 @@ OnMissingEntrypointsCallbackT = Callable[[Iterable[str]], None]
 
 
 def warning_on_missing_entrypoint(missing_names: Iterable[str]) -> None:
-    LOG.warning('Could not load {}'.format(', '.join(missing_names)))
+    LOG.warning('Could not load %s', ', '.join(missing_names))
 
 
 class NamedExtensionManager(ExtensionManager[T]):

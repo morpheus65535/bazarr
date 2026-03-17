@@ -2864,17 +2864,17 @@
     },
     {
       "code": "BY-HM",
-      "name": "Gorod Minsk",
+      "name": "Horad Minsk",
       "type": "City"
     },
     {
       "code": "BY-HO",
-      "name": "Gomel'skaja oblast'",
+      "name": "Homieĺskaja voblasć",
       "type": "Oblast"
     },
     {
       "code": "BY-HR",
-      "name": "Grodnenskaja oblast'",
+      "name": "Hrodzienskaja voblasć",
       "type": "Oblast"
     },
     {
@@ -2884,7 +2884,7 @@
     },
     {
       "code": "BY-MI",
-      "name": "Minskaja oblast'",
+      "name": "Minskaja voblasć",
       "type": "Oblast"
     },
     {
@@ -4206,12 +4206,12 @@
     },
     {
       "code": "CY-05",
-      "name": "Baf",
+      "name": "Pafos",
       "type": "District"
     },
     {
       "code": "CY-06",
-      "name": "Girne",
+      "name": "Keryneia",
       "type": "District"
     },
     {
@@ -6268,7 +6268,7 @@
     },
     {
       "code": "ER-DK",
-      "name": "Debubawi K’eyyĭḥ Baḥri",
+      "name": "Janūbī al Baḩrī al Aḩmar",
       "type": "Region"
     },
     {
@@ -6278,7 +6278,7 @@
     },
     {
       "code": "ER-GB",
-      "name": "Gash-Barka",
+      "name": "Qāsh-Barkah",
       "type": "Region"
     },
     {
@@ -6288,12 +6288,12 @@
     },
     {
       "code": "ER-SK",
-      "name": "Semienawi K’eyyĭḥ Baḥri",
+      "name": "Shimālī al Baḩrī al Aḩmar",
       "type": "Region"
     },
     {
       "code": "ES-A",
-      "name": "Alacant*",
+      "name": "Alicante",
       "parent": "ES-VC",
       "type": "Province"
     },
@@ -6411,7 +6411,7 @@
     },
     {
       "code": "ES-CS",
-      "name": "Castelló*",
+      "name": "Castellón",
       "parent": "ES-VC",
       "type": "Province"
     },
@@ -6542,13 +6542,13 @@
     },
     {
       "code": "ES-NA",
-      "name": "Nafarroa*",
+      "name": "Navarra",
       "parent": "ES-NC",
       "type": "Province"
     },
     {
       "code": "ES-NC",
-      "name": "Nafarroako Foru Komunitatea*",
+      "name": "Navarra, Comunidad Foral de",
       "type": "Autonomous community"
     },
     {
@@ -6583,7 +6583,7 @@
     },
     {
       "code": "ES-PV",
-      "name": "Euskal Herria",
+      "name": "País Vasco",
       "type": "Autonomous community"
     },
     {
@@ -6670,7 +6670,7 @@
     },
     {
       "code": "ES-VI",
-      "name": "Araba*",
+      "name": "Álava",
       "parent": "ES-PV",
       "type": "Province"
     },
@@ -10790,7 +10790,7 @@
     },
     {
       "code": "IL-HA",
-      "name": "H̱efa",
+      "name": "Ḩayfā",
       "type": "District"
     },
     {
@@ -11047,7 +11047,7 @@
     },
     {
       "code": "IQ-KR",
-      "name": "Herêm-î Kurdistan",
+      "name": "Iqlīm Kūrdistān",
       "type": "Region"
     },
     {
@@ -11677,7 +11677,7 @@
     },
     {
       "code": "IT-23",
-      "name": "Val d'Aoste",
+      "name": "Valle d'Aosta",
       "type": "Autonomous region"
     },
     {
@@ -13013,7 +13013,7 @@
     },
     {
       "code": "KG-C",
-      "name": "Chuyskaya oblast'",
+      "name": "Chüy",
       "type": "Region"
     },
     {
@@ -13023,12 +13023,12 @@
     },
     {
       "code": "KG-GO",
-      "name": "Gorod Osh",
+      "name": "Osh Shaary",
       "type": "City"
     },
     {
       "code": "KG-J",
-      "name": "Dzhalal-Abadskaya oblast'",
+      "name": "Jalal-Abad",
       "type": "Region"
     },
     {
@@ -13048,7 +13048,7 @@
     },
     {
       "code": "KG-Y",
-      "name": "Issyk-Kul'skaja oblast'",
+      "name": "Ysyk-Köl",
       "type": "Region"
     },
     {
@@ -13103,7 +13103,7 @@
     },
     {
       "code": "KH-19",
-      "name": "Stoĕng Trêng",
+      "name": "Stueng Traeng",
       "type": "Province"
     },
     {
@@ -13302,32 +13302,32 @@
     },
     {
       "code": "KP-01",
-      "name": "P'yǒngyang",
+      "name": "Phyeongyang",
       "type": "Capital city"
     },
     {
       "code": "KP-02",
-      "name": "P'yǒngan-namdo",
+      "name": "Phyeongannamto",
       "type": "Province"
     },
     {
       "code": "KP-03",
-      "name": "P'yǒngan-bukto",
+      "name": "Phyeonganpukto",
       "type": "Province"
     },
     {
       "code": "KP-04",
-      "name": "Chagang-do",
+      "name": "Jakangto",
       "type": "Province"
     },
     {
       "code": "KP-05",
-      "name": "Hwanghae-namdo",
+      "name": "Hwanghainamto",
       "type": "Province"
     },
     {
       "code": "KP-06",
-      "name": "Hwanghae-bukto",
+      "name": "Hwanghaipukto",
       "type": "Province"
     },
     {
@@ -13337,17 +13337,17 @@
     },
     {
       "code": "KP-08",
-      "name": "Hamgyǒng-namdo",
+      "name": "Hamkyeongnamto",
       "type": "Province"
     },
     {
       "code": "KP-09",
-      "name": "Hamgyǒng-bukto",
+      "name": "Hamkyeongpukto",
       "type": "Province"
     },
     {
       "code": "KP-10",
-      "name": "Ryanggang-do",
+      "name": "Ryangkangto",
       "type": "Province"
     },
     {
@@ -13482,27 +13482,27 @@
     },
     {
       "code": "KZ-10",
-      "name": "Abajskaja oblast’",
+      "name": "Abay oblysy",
       "type": "Region"
     },
     {
       "code": "KZ-11",
-      "name": "Akmolinskaja oblast'",
+      "name": "Aqmola oblysy",
       "type": "Region"
     },
     {
       "code": "KZ-15",
-      "name": "Aktjubinskaja oblast'",
+      "name": "Aqtöbe oblysy",
       "type": "Region"
     },
     {
       "code": "KZ-19",
-      "name": "Almatinskaja oblast'",
+      "name": "Almaty oblysy",
       "type": "Region"
     },
     {
       "code": "KZ-23",
-      "name": "Atyrauskaja oblast'",
+      "name": "Atyraū oblysy",
       "type": "Region"
     },
     {
@@ -13522,17 +13522,17 @@
     },
     {
       "code": "KZ-35",
-      "name": "Karagandinskaja oblast'",
+      "name": "Qaraghandy oblysy",
       "type": "Region"
     },
     {
       "code": "KZ-39",
-      "name": "Kostanajskaja oblast'",
+      "name": "Qostanay oblysy",
       "type": "Region"
     },
     {
       "code": "KZ-43",
-      "name": "Kyzylordinskaja oblast'",
+      "name": "Qyzylorda oblysy",
       "type": "Region"
     },
     {
@@ -13547,17 +13547,17 @@
     },
     {
       "code": "KZ-59",
-      "name": "Severo-Kazahstanskaja oblast'",
+      "name": "Soltüstik Qazaqstan oblysy",
       "type": "Region"
     },
     {
       "code": "KZ-61",
-      "name": "Turkestankaya oblast'",
+      "name": "Türkistan oblysy",
       "type": "Region"
     },
     {
       "code": "KZ-62",
-      "name": "Ulytauskaja oblast’",
+      "name": "Ulytaū oblysy",
       "type": "Region"
     },
     {
@@ -13672,7 +13672,7 @@
     },
     {
       "code": "LB-AK",
-      "name": "Aakkâr",
+      "name": "‘Akkār",
       "type": "Governorate"
     },
     {
@@ -13687,7 +13687,7 @@
     },
     {
       "code": "LB-BH",
-      "name": "Baalbek-Hermel",
+      "name": "B‘alabak-Al Hirmil",
       "type": "Governorate"
     },
     {
@@ -18244,12 +18244,12 @@
     },
     {
       "code": "NO-50",
-      "name": "Trööndelage",
+      "name": "Trøndelag",
       "type": "County"
     },
     {
       "code": "NO-54",
-      "name": "Romssa ja Finnmárkku",
+      "name": "Troms og Finnmark",
       "type": "County"
     },
     {
@@ -18569,7 +18569,7 @@
     },
     {
       "code": "PE-AMA",
-      "name": "Amarumayu",
+      "name": "Amazonas",
       "type": "Region"
     },
     {
@@ -18579,7 +18579,7 @@
     },
     {
       "code": "PE-APU",
-      "name": "Apurimaq",
+      "name": "Apurímac",
       "type": "Region"
     },
     {
@@ -18624,7 +18624,7 @@
     },
     {
       "code": "PE-JUN",
-      "name": "Hunin",
+      "name": "Junín",
       "type": "Region"
     },
     {
@@ -18644,7 +18644,7 @@
     },
     {
       "code": "PE-LMA",
-      "name": "Lima hatun llaqta",
+      "name": "Municipalidad Metropolitana de Lima",
       "type": "Municipality"
     },
     {
@@ -18679,7 +18679,7 @@
     },
     {
       "code": "PE-SAM",
-      "name": "San Martin",
+      "name": "San Martín",
       "type": "Region"
     },
     {
@@ -20273,32 +20273,32 @@
     },
     {
       "code": "RU-AD",
-      "name": "Adygeja, Respublika",
+      "name": "Adygeya, Respublika",
       "type": "Republic"
     },
     {
       "code": "RU-AL",
-      "name": "Altaj, Respublika",
+      "name": "Altay, Respublika",
       "type": "Republic"
     },
     {
       "code": "RU-ALT",
-      "name": "Altajskij kraj",
+      "name": "Altayskiy kray",
       "type": "Administrative territory"
     },
     {
       "code": "RU-AMU",
-      "name": "Amurskaja oblast'",
+      "name": "Amurskaya oblast'",
       "type": "Administrative region"
     },
     {
       "code": "RU-ARK",
-      "name": "Arhangel'skaja oblast'",
+      "name": "Arkhangel'skaya oblast'",
       "type": "Administrative region"
     },
     {
       "code": "RU-AST",
-      "name": "Astrahanskaja oblast'",
+      "name": "Astrakhanskaya oblast'",
       "type": "Administrative region"
     },
     {
@@ -20308,17 +20308,17 @@
     },
     {
       "code": "RU-BEL",
-      "name": "Belgorodskaja oblast'",
+      "name": "Belgorodskaya oblast'",
       "type": "Administrative region"
     },
     {
       "code": "RU-BRY",
-      "name": "Brjanskaja oblast'",
+      "name": "Bryanskaya oblast'",
       "type": "Administrative region"
     },
     {
       "code": "RU-BU",
-      "name": "Burjatija, Respublika",
+      "name": "Buryatiya, Respublika",
       "type": "Republic"
     },
     {
@@ -20353,12 +20353,12 @@
     },
     {
       "code": "RU-IRK",
-      "name": "Irkutskaja oblast'",
+      "name": "Irkutskaya oblast'",
       "type": "Administrative region"
     },
     {
       "code": "RU-IVA",
-      "name": "Ivanovskaja oblast'",
+      "name": "Ivanovskaya oblast'",
       "type": "Administrative region"
     },
     {
@@ -20368,7 +20368,7 @@
     },
     {
       "code": "RU-KB",
-      "name": "Kabardino-Balkarskaja Respublika",
+      "name": "Kabardino-Balkarskaya Respublika",
       "type": "Republic"
     },
     {
@@ -20378,47 +20378,47 @@
     },
     {
       "code": "RU-KDA",
-      "name": "Krasnodarskij kraj",
+      "name": "Krasnodarskiy kray",
       "type": "Administrative territory"
     },
     {
       "code": "RU-KEM",
-      "name": "Kemerovskaja oblast'",
+      "name": "Kemerovskaya oblast'",
       "type": "Administrative region"
     },
     {
       "code": "RU-KGD",
-      "name": "Kaliningradskaja oblast'",
+      "name": "Kaliningradskaya oblast'",
       "type": "Administrative region"
     },
     {
       "code": "RU-KGN",
-      "name": "Kurganskaja oblast'",
+      "name": "Kurganskaya oblast'",
       "type": "Administrative region"
     },
     {
       "code": "RU-KHA",
-      "name": "Habarovskij kraj",
+      "name": "Khabarovskiy kray",
       "type": "Administrative territory"
     },
     {
       "code": "RU-KHM",
-      "name": "Hanty-Mansijskij avtonomnyj okrug",
+      "name": "Khanty-Mansiyskiy avtonomnyy okrug",
       "type": "Autonomous district"
     },
     {
       "code": "RU-KIR",
-      "name": "Kirovskaja oblast'",
+      "name": "Kirovskaya oblast'",
       "type": "Administrative region"
     },
     {
       "code": "RU-KK",
-      "name": "Hakasija, Respublika",
+      "name": "Khakasiya, Respublika",
       "type": "Republic"
     },
     {
       "code": "RU-KL",
-      "name": "Kalmykija, Respublika",
+      "name": "Kalmykiya, Respublika",
       "type": "Republic"
     },
     {
@@ -20433,52 +20433,52 @@
     },
     {
       "code": "RU-KOS",
-      "name": "Kostromskaja oblast'",
+      "name": "Kostromskaya oblast'",
       "type": "Administrative region"
     },
     {
       "code": "RU-KR",
-      "name": "Karelija, Respublika",
+      "name": "Kareliya, Respublika",
       "type": "Republic"
     },
     {
       "code": "RU-KRS",
-      "name": "Kurskaja oblast'",
+      "name": "Kurskaya oblast'",
       "type": "Administrative region"
     },
     {
       "code": "RU-KYA",
-      "name": "Krasnojarskij kraj",
+      "name": "Krasnoyarskiy kray",
       "type": "Administrative territory"
     },
     {
       "code": "RU-LEN",
-      "name": "Leningradskaja oblast'",
+      "name": "Leningradskaya oblast'",
       "type": "Administrative region"
     },
     {
       "code": "RU-LIP",
-      "name": "Lipeckaja oblast'",
+      "name": "Lipetskaya oblast'",
       "type": "Administrative region"
     },
     {
       "code": "RU-MAG",
-      "name": "Magadanskaja oblast'",
+      "name": "Magadanskaya oblast'",
       "type": "Administrative region"
     },
     {
       "code": "RU-ME",
-      "name": "Marij Èl, Respublika",
+      "name": "Mariy El, Respublika",
       "type": "Republic"
     },
     {
       "code": "RU-MO",
-      "name": "Mordovija, Respublika",
+      "name": "Mordoviya, Respublika",
       "type": "Republic"
     },
     {
       "code": "RU-MOS",
-      "name": "Moskovskaja oblast'",
+      "name": "Moskovskaya oblast'",
       "type": "Administrative region"
     },
     {
@@ -20488,17 +20488,17 @@
     },
     {
       "code": "RU-MUR",
-      "name": "Murmanskaja oblast'",
+      "name": "Murmanskaya oblast'",
       "type": "Administrative region"
     },
     {
       "code": "RU-NEN",
-      "name": "Neneckij avtonomnyj okrug",
+      "name": "Nenetskiy avtonomnyy okrug",
       "type": "Autonomous district"
     },
     {
       "code": "RU-NGR",
-      "name": "Novgorodskaja oblast'",
+      "name": "Novgorodskaya oblast'",
       "type": "Administrative region"
     },
     {
@@ -20508,52 +20508,52 @@
     },
     {
       "code": "RU-NVS",
-      "name": "Novosibirskaja oblast'",
+      "name": "Novosibirskaya oblast'",
       "type": "Administrative region"
     },
     {
       "code": "RU-OMS",
-      "name": "Omskaja oblast'",
+      "name": "Omskaya oblast'",
       "type": "Administrative region"
     },
     {
       "code": "RU-ORE",
-      "name": "Orenburgskaja oblast'",
+      "name": "Orenburgskaya oblast'",
       "type": "Administrative region"
     },
     {
       "code": "RU-ORL",
-      "name": "Orlovskaja oblast'",
+      "name": "Orlovskaya oblast'",
       "type": "Administrative region"
     },
     {
       "code": "RU-PER",
-      "name": "Permskij kraj",
+      "name": "Permskiy kray",
       "type": "Administrative territory"
     },
     {
       "code": "RU-PNZ",
-      "name": "Penzenskaja oblast'",
+      "name": "Penzenskaya oblast'",
       "type": "Administrative region"
     },
     {
       "code": "RU-PRI",
-      "name": "Primorskij kraj",
+      "name": "Primorskiy kray",
       "type": "Administrative territory"
     },
     {
       "code": "RU-PSK",
-      "name": "Pskovskaja oblast'",
+      "name": "Pskovskaya oblast'",
       "type": "Administrative region"
     },
     {
       "code": "RU-ROS",
-      "name": "Rostovskaja oblast'",
+      "name": "Rostovskaya oblast'",
       "type": "Administrative region"
     },
     {
       "code": "RU-RYA",
-      "name": "Rjazanskaja oblast'",
+      "name": "Ryazanskaya oblast'",
       "type": "Administrative region"
     },
     {
@@ -20563,27 +20563,27 @@
     },
     {
       "code": "RU-SAK",
-      "name": "Sahalinskaja oblast'",
+      "name": "Sakhalinskaya oblast'",
       "type": "Administrative region"
     },
     {
       "code": "RU-SAM",
-      "name": "Samarskaja oblast'",
+      "name": "Samarskaya oblast'",
       "type": "Administrative region"
     },
     {
       "code": "RU-SAR",
-      "name": "Saratovskaja oblast'",
+      "name": "Saratovskaya oblast'",
       "type": "Administrative region"
     },
     {
       "code": "RU-SE",
-      "name": "Severnaja Osetija, Respublika",
+      "name": "Severnaya Osetiya, Respublika",
       "type": "Republic"
     },
     {
       "code": "RU-SMO",
-      "name": "Smolenskaja oblast'",
+      "name": "Smolenskaya oblast'",
       "type": "Administrative region"
     },
     {
@@ -20593,12 +20593,12 @@
     },
     {
       "code": "RU-STA",
-      "name": "Stavropol'skij kraj",
+      "name": "Stavropol'skiy kray",
       "type": "Administrative territory"
     },
     {
       "code": "RU-SVE",
-      "name": "Sverdlovskaja oblast'",
+      "name": "Sverdlovskaya oblast'",
       "type": "Administrative region"
     },
     {
@@ -20608,22 +20608,22 @@
     },
     {
       "code": "RU-TAM",
-      "name": "Tambovskaja oblast'",
+      "name": "Tambovskaya oblast'",
       "type": "Administrative region"
     },
     {
       "code": "RU-TOM",
-      "name": "Tomskaja oblast'",
+      "name": "Tomskaya oblast'",
       "type": "Administrative region"
     },
     {
       "code": "RU-TUL",
-      "name": "Tul'skaja oblast'",
+      "name": "Tul'skaya oblast'",
       "type": "Administrative region"
     },
     {
       "code": "RU-TVE",
-      "name": "Tverskaja oblast'",
+      "name": "Tverskaya oblast'",
       "type": "Administrative region"
     },
     {
@@ -20633,32 +20633,32 @@
     },
     {
       "code": "RU-TYU",
-      "name": "Tjumenskaja oblast'",
+      "name": "Tyumenskaya oblast'",
       "type": "Administrative region"
     },
     {
       "code": "RU-UD",
-      "name": "Udmurtskaja Respublika",
+      "name": "Udmurtskaya Respublika",
       "type": "Republic"
     },
     {
       "code": "RU-ULY",
-      "name": "Ul'janovskaja oblast'",
+      "name": "Ul'yanovskaya oblast'",
       "type": "Administrative region"
     },
     {
       "code": "RU-VGG",
-      "name": "Volgogradskaja oblast'",
+      "name": "Volgogradskaya oblast'",
       "type": "Administrative region"
     },
     {
       "code": "RU-VLA",
-      "name": "Vladimirskaja oblast'",
+      "name": "Vladimirskaya oblast'",
       "type": "Administrative region"
     },
     {
       "code": "RU-VLG",
-      "name": "Vologodskaja oblast'",
+      "name": "Vologodskaya oblast'",
       "type": "Administrative region"
     },
     {
@@ -20668,22 +20668,22 @@
     },
     {
       "code": "RU-YAN",
-      "name": "Jamalo-Neneckij avtonomnyj okrug",
+      "name": "Yamalo-Nenetskiy avtonomnyy okrug",
       "type": "Autonomous district"
     },
     {
       "code": "RU-YAR",
-      "name": "Jaroslavskaja oblast'",
+      "name": "Yaroslavskaya oblast'",
       "type": "Administrative region"
     },
     {
       "code": "RU-YEV",
-      "name": "Evrejskaja avtonomnaja oblast'",
+      "name": "Yevreyskaya avtonomnaya oblast'",
       "type": "Autonomous region"
     },
     {
       "code": "RU-ZAB",
-      "name": "Zabajkal'skij kraj",
+      "name": "Zabaykal'skiy kray",
       "type": "Administrative territory"
     },
     {
@@ -23413,12 +23413,12 @@
     },
     {
       "code": "TL-LA",
-      "name": "Lautein",
+      "name": "Lautém",
       "type": "Municipality"
     },
     {
       "code": "TL-LI",
-      "name": "Likisá",
+      "name": "Liquiça",
       "type": "Municipality"
     },
     {
@@ -23433,12 +23433,12 @@
     },
     {
       "code": "TL-OE",
-      "name": "Oekusi-Ambenu",
+      "name": "Oé-Cusse Ambeno",
       "type": "Special administrative region"
     },
     {
       "code": "TL-VI",
-      "name": "Vikeke",
+      "name": "Viqueque",
       "type": "Municipality"
     },
     {

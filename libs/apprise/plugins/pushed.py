@@ -1,7 +1,7 @@
 # BSD 2-Clause License
 #
 # Apprise - Push Notification Library.
-# Copyright (c) 2025, Chris Caron <lead2gold@gmail.com>
+# Copyright (c) 2026, Chris Caron <lead2gold@gmail.com>
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -214,31 +214,31 @@ class NotifyPushed(NotifyBase):
         users = list(self.users)
 
         # Copy our payload
-        _payload = dict(payload)
-        _payload["target_type"] = "channel"
+        payload_ = dict(payload)
+        payload_["target_type"] = "channel"
 
         while len(channels) > 0:
             # Get Channel
-            _payload["target_alias"] = channels.pop(0)
+            payload_["target_alias"] = channels.pop(0)
 
             if not self._send(
-                payload=_payload, notify_type=notify_type, **kwargs
+                payload=payload_, notify_type=notify_type, **kwargs
             ):
 
                 # toggle flag
                 has_error = True
 
         # Copy our payload
-        _payload = dict(payload)
-        _payload["target_type"] = "pushed_id"
+        payload_ = dict(payload)
+        payload_["target_type"] = "pushed_id"
 
         # Send all our defined User Pushed ID's
         while len(users):
             # Get User's Pushed ID
-            _payload["pushed_id"] = users.pop(0)
+            payload_["pushed_id"] = users.pop(0)
 
             if not self._send(
-                payload=_payload, notify_type=notify_type, **kwargs
+                payload=payload_, notify_type=notify_type, **kwargs
             ):
 
                 # toggle flag

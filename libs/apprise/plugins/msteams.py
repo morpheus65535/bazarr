@@ -1,7 +1,7 @@
 # BSD 2-Clause License
 #
 # Apprise - Push Notification Library.
-# Copyright (c) 2025, Chris Caron <lead2gold@gmail.com>
+# Copyright (c) 2026, Chris Caron <lead2gold@gmail.com>
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -268,7 +268,7 @@ class NotifyMSTeams(NotifyBase):
             NotifyBase.logger.deprecate(
                 "Apprise requires you to identify your Microsoft Team name as "
                 "part of the URL. e.g.: "
-                "msteams://TEAM-NAME/{token_a}/{token_b}/{token_c}"
+                f"msteams://TEAM-NAME/{token_a}/{token_b}/{token_c}"
             )
 
             # Fallback

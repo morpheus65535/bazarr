@@ -1,7 +1,7 @@
 # BSD 2-Clause License
 #
 # Apprise - Push Notification Library.
-# Copyright (c) 2025, Chris Caron <lead2gold@gmail.com>
+# Copyright (c) 2026, Chris Caron <lead2gold@gmail.com>
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -186,7 +186,7 @@ class AttachHTTP(AttachBase):
 
                     d = r.headers.get("Content-Disposition", "")
                     result = re.search(
-                        "filename=['\"]?(?P<name>[^'\"]+)['\"]?", d, re.I
+                        r"filename=['\"]?(?P<name>[^'\"]+)['\"]?", d, re.I
                     )
                     if result:
                         self.detected_name = result.group("name").strip()

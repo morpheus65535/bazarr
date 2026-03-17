@@ -17,6 +17,13 @@ def countries():
     pycountry.countries._clear()
 
 
+@pytest.fixture
+def subdivisions():
+    pycountry.subdivisions._clear()
+    yield pycountry.subdivisions
+    pycountry.subdivisions._clear()
+
+
 def test_country_list(countries):
     assert len(pycountry.countries) == 249
     assert isinstance(list(pycountry.countries)[0], pycountry.db.Data)
@@ -61,6 +68,12 @@ def test_country_fuzzy_search(countries):
     results = pycountry.countries.search_fuzzy("united states of america")
     assert len(results) == 1
     assert results[0] == pycountry.countries.get(alpha_2="US")
+
+    # bug #231, try initials
+    results = pycountry.countries.search_fuzzy("UK")
+    # There are a lot of matches, but United Kingdom should be one of the top
+    assert len(results) >= 4
+    assert pycountry.countries.get(alpha_2="GB") in results[:4]
 
 
 def test_historic_country_fuzzy_search(countries):
@@ -131,7 +144,7 @@ def test_query_subdivisions_of_country():
 
 
 def test_scripts():
-    assert len(pycountry.scripts) == 182
+    assert len(pycountry.scripts) == 226
     assert isinstance(list(pycountry.scripts)[0], pycountry.db.Data)
 
     latin = pycountry.scripts.get(name="Latin")
@@ -141,7 +154,7 @@ def test_scripts():
 
 
 def test_currencies():
-    assert len(pycountry.currencies) == 181
+    assert len(pycountry.currencies) == 178
     assert isinstance(list(pycountry.currencies)[0], pycountry.db.Data)
 
     argentine_peso = pycountry.currencies.get(alpha_3="ARS")
@@ -151,7 +164,7 @@ def test_currencies():
 
 
 def test_languages():
-    assert len(pycountry.languages) == 7910
+    assert len(pycountry.languages) == 7923
     assert isinstance(list(pycountry.languages)[0], pycountry.db.Data)
 
     aragonese = pycountry.languages.get(alpha_2="an")
@@ -301,7 +314,7 @@ def test_is_instance_of_country(countries):
     assert class_name == "Country"
 
 
-def test_is_instance_of_subdivision():
+def test_is_instance_of_subdivision(subdivisions):
     assert isinstance(pycountry.subdivisions, pycountry.Subdivisions)
 
 
@@ -313,7 +326,7 @@ def test_is_instance_of_currency():
     assert isinstance(pycountry.currencies, pycountry.Currencies)
 
 
-def test_add_entry(countries):
+def test_country_add_entry(countries):
     assert pycountry.countries.get(alpha_2="XK") is None
 
     pycountry.countries.add_entry(
@@ -324,7 +337,7 @@ def test_add_entry(countries):
     assert isinstance(country, pycountry.countries.data_class)
 
 
-def test_remove_entry(countries):
+def test_country_remove_entry(countries):
     assert pycountry.countries.get(alpha_2="DE") is not None
 
     pycountry.countries.remove_entry(alpha_2="DE")
@@ -332,9 +345,58 @@ def test_remove_entry(countries):
     assert pycountry.countries.get(alpha_2="DE") is None
 
 
-def test_remove_non_existent_entry():
+def test_country_remove_non_existent_entry(countries):
     with pytest.raises(KeyError, match="not found"):
         pycountry.countries.remove_entry(name="Not A Real Country")
+
+
+def test_subdivision_add_entry(subdivisions):
+    assert subdivisions.get(code="IT-A0") is None
+    it_subdivs = sorted(
+        subdivisions.get(country_code="IT"),
+        key=lambda s: s.code,
+    )
+    assert len(it_subdivs) == 126
+    assert it_subdivs[0] == subdivisions.get(code="IT-21")
+
+    subdivisions.add_entry(
+        code="IT-A0",
+        country_code="IT",
+        name="Valle d'Aosta",
+        parent="23",
+        parent_code="IT-23",
+        type="Province",
+    )
+
+    it_a0 = subdivisions.get(code="IT-A0")
+    assert isinstance(it_a0, subdivisions.data_class)
+
+    # Confirm that indexes were not destroyed
+    it_subdivs = sorted(
+        subdivisions.get(country_code="IT"),
+        key=lambda s: s.code,
+    )
+    assert len(it_subdivs) == 127
+    assert it_subdivs[0] == subdivisions.get(code="IT-21")
+
+
+def test_subdivision_remove_entry(subdivisions):
+    assert subdivisions.get(code="IT-21") is not None
+
+    subdivisions.remove_entry(code="IT-21")
+
+    assert subdivisions.get(code="IT-21") is None
+
+    # Confirm that indexes were not destroyed
+    it_subdivs = sorted(
+        subdivisions.get(country_code="IT"),
+        key=lambda s: s.code,
+    )
+    assert len(it_subdivs) == 125
+    assert it_subdivs[0] == subdivisions.get(code="IT-23")
+
+    # Removing an entry does not remove its children
+    assert subdivisions.match("IT-21")[0].parent_code == "IT-21"
 
 
 def test_no_results_lookup_error(countries):
@@ -358,25 +420,25 @@ def test_no_results_lookup_error(countries):
         countries.search_fuzzy(query)
 
 
-def test_subdivision_fuzzy_search_match():
+def test_subdivision_fuzzy_search_match(subdivisions):
     results = pycountry.subdivisions.search_fuzzy("Alabama")
     assert len(results) == 1
     assert results[0].name == "Alabama"
 
 
-def test_subdivision_fuzzy_search_partial_match():
+def test_subdivision_fuzzy_search_partial_match(subdivisions):
     results = pycountry.subdivisions.search_fuzzy("Massachusett")
     assert len(results) == 1
     assert results[0].name == "Massachusetts"
 
 
-def test_subdivision_match():
+def test_subdivision_match(subdivisions):
     results = pycountry.subdivisions.match("Alabama")
     assert len(results) == 1
     assert results[0].name == "Alabama"
 
 
-def test_subdivision_partial_match():
+def test_subdivision_partial_match(subdivisions):
     results = pycountry.subdivisions.partial_match("Massachusett")
     assert len(results) == 1
     assert results[0].name == "Massachusetts"
@@ -421,17 +483,17 @@ def test_unicode_characters():
     )  # Japanese characters
 
 
-def test_subdivision_search_fuzzy_non_existent_subdivision():
+def test_subdivision_search_fuzzy_non_existent_subdivision(subdivisions):
     with pytest.raises(LookupError):
         pycountry.subdivisions.search_fuzzy("Non Existent Subdivision")
 
 
-def test_subdivision_partial_match_non():
+def test_subdivision_partial_match_non(subdivisions):
     result = pycountry.subdivisions.partial_match("Non Existent Subdivision")
     assert len(result) == 0
 
 
-def test_subdivision_match_non():
+def test_subdivision_match_non(subdivisions):
     result = pycountry.subdivisions.match("Non Existent Subdivision")
     assert len(result) == 0
 
@@ -449,8 +511,7 @@ def test_get_version_with_package_not_found():
         assert result == "n/a"
 
 
-def test_all_subdivisions_have_name_attribute():
-    subdivisions = pycountry.subdivisions
+def test_all_subdivisions_have_name_attribute(subdivisions):
     has_name_attr = [
         hasattr(subdivision, "name") for subdivision in subdivisions
     ]
@@ -459,7 +520,7 @@ def test_all_subdivisions_have_name_attribute():
     assert all_have_name_attr
 
 
-def test_subdivisions_with_missing_parents():
+def test_subdivisions_with_missing_parents(subdivisions):
     result = [
         (i.code, i.parent_code)
         for i in pycountry.subdivisions

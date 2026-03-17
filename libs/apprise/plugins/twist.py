@@ -1,7 +1,7 @@
 # BSD 2-Clause License
 #
 # Apprise - Push Notification Library.
-# Copyright (c) 2025, Chris Caron <lead2gold@gmail.com>
+# Copyright (c) 2026, Chris Caron <lead2gold@gmail.com>
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -794,9 +794,9 @@ class NotifyTwist(NotifyBase):
             # For the purpose of apprise simplifying this for us, we need to
             # swap these arguments when we prepare the email.
 
-            _password = results["user"]
+            password = results["user"]
             results["user"] = results["password"]
-            results["password"] = _password
+            results["password"] = password
 
         # The 'to' makes it easier to use yaml configuration
         if "to" in results["qsd"] and len(results["qsd"]["to"]):

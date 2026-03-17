@@ -157,9 +157,6 @@ class InstrumentedAsyncServer:
                                     namespace=self.admin_namespace)
 
         self.sio.start_background_task(config, sid)
-        self.stop_stats_event = self.sio.eio.create_event()
-        self.stats_task = self.sio.start_background_task(
-            self._emit_server_stats)
 
     async def admin_emit(self, _, namespace, room_filter, event, *data):
         await self.sio.emit(event, data, to=room_filter, namespace=namespace)
@@ -183,6 +180,8 @@ class InstrumentedAsyncServer:
         if self.stats_task:  # pragma: no branch
             self.stop_stats_event.set()
             await asyncio.gather(self.stats_task)
+            self.stats_task = None
+            self.stop_stats_event.clear()
 
     async def _trigger_event(self, event, namespace, *args):
         t = time.time()
@@ -195,6 +194,9 @@ class InstrumentedAsyncServer:
                 serialized_socket,
                 datetime.fromtimestamp(t, timezone.utc).isoformat(),
             ), namespace=self.admin_namespace)
+            if not self.sio.eio._get_socket(eio_sid).upgraded:
+                self.sio.start_background_task(
+                    self._check_for_upgrade, eio_sid, sid, namespace)
         elif event == 'disconnect':
             del self.sio.manager._timestamps[sid]
             reason = args[1]
@@ -273,6 +275,7 @@ class InstrumentedAsyncServer:
     async def _handle_eio_connect(self, eio_sid, environ):
         if self.stop_stats_event is None:
             self.stop_stats_event = self.sio.eio.create_event()
+        if self.stats_task is None:
             self.stats_task = self.sio.start_background_task(
                 self._emit_server_stats)
 

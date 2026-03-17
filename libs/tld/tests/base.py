@@ -5,38 +5,11 @@ import socket
 from functools import lru_cache
 
 __author__ = "Artur Barseghyan"
-__copyright__ = "2013-2025 Artur Barseghyan"
+__copyright__ = "2013-2026 Artur Barseghyan"
 __license__ = "MPL-1.1 OR GPL-2.0-only OR LGPL-2.1-or-later"
-__all__ = (
-    "internet_available_only",
-    "log_info",
-)
+__all__ = ("internet_available_only",)
 
-LOG_INFO = True
 LOGGER = logging.getLogger(__name__)
-
-
-def log_info(func):
-    """Log some useful info."""
-    if not LOG_INFO:
-        return func
-
-    def inner(self, *args, **kwargs):
-        """Inner."""
-        result = func(self, *args, **kwargs)
-
-        LOGGER.debug("\n\n%s", func.__name__)
-        LOGGER.debug("============================")
-        if func.__doc__:
-            LOGGER.debug('""" %s """', func.__doc__.strip())
-        LOGGER.debug("----------------------------")
-        if result is not None:
-            LOGGER.debug(result)
-        LOGGER.debug("\n++++++++++++++++++++++++++++")
-
-        return result
-
-    return inner
 
 
 @lru_cache(maxsize=32)

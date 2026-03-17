@@ -1,6 +1,5 @@
 import re
 
-from engineio import json
 from .pubsub_manager import PubSubManager
 
 
@@ -23,7 +22,17 @@ class ZmqManager(PubSubManager):  # pragma: no cover
                     notifications. Must be the same in all the servers.
     :param write_only: If set to ``True``, only initialize to emit events. The
                        default of ``False`` initializes the class for emitting
-                       and receiving.
+                       and receiving. A write-only instance can be used
+                       independently of the server to emit to clients from an
+                       external process.
+    :param logger: a custom logger to log it. If not given, the server logger
+                   is used.
+    :param json: An alternative JSON module to use for encoding and decoding
+                 packets. Custom json modules must have ``dumps`` and ``loads``
+                 functions that are compatible with the standard library
+                 versions. This setting is only used when ``write_only`` is set
+                 to ``True``. Otherwise the JSON module configured in the
+                 server is used.
 
     A zmq message broker must be running for the zmq_manager to work.
     you can write your own or adapt one from the following simple broker
@@ -42,10 +51,8 @@ class ZmqManager(PubSubManager):  # pragma: no cover
     """
     name = 'zmq'
 
-    def __init__(self, url='zmq+tcp://localhost:5555+5556',
-                 channel='socketio',
-                 write_only=False,
-                 logger=None):
+    def __init__(self, url='zmq+tcp://localhost:5555+5556', channel='socketio',
+                 write_only=False, logger=None, json=None):
         try:
             from eventlet.green import zmq
         except ImportError:
@@ -57,7 +64,8 @@ class ZmqManager(PubSubManager):  # pragma: no cover
         if not (url.startswith('zmq+tcp://') and r.search(url)):
             raise RuntimeError('unexpected connection string: ' + url)
 
-        super().__init__(channel=channel, write_only=write_only, logger=logger)
+        super().__init__(channel=channel, write_only=write_only, logger=logger,
+                         json=json)
         url = url.replace('zmq+', '')
         (sink_url, sub_port) = url.split('+')
         sink_port = sink_url.split(':')[-1]
@@ -75,7 +83,7 @@ class ZmqManager(PubSubManager):  # pragma: no cover
         self.channel = channel
 
     def _publish(self, data):
-        packed_data = json.dumps(
+        packed_data = self.json.dumps(
             {
                 'type': 'message',
                 'channel': self.channel,
@@ -94,7 +102,7 @@ class ZmqManager(PubSubManager):  # pragma: no cover
         for message in self.zmq_listen():
             if isinstance(message, bytes):
                 try:
-                    message = json.loads(message)
+                    message = self.json.loads(message)
                 except Exception:
                     pass
             if isinstance(message, dict) and \

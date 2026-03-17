@@ -91,7 +91,7 @@ class ListPluginsDirective(rst.Directive):
 
     def run(self) -> Sequence[nodes.Node]:
         namespace = ' '.join(self.content).strip()
-        LOG.info(f'documenting plugins from {namespace!r}')
+        LOG.info('documenting plugins from %r', namespace)
         overline_style = self.options.get('overline-style', '')
         underline_style = self.options.get('underline-style', '=')
 
@@ -100,7 +100,7 @@ class ListPluginsDirective(rst.Directive):
             ep: importlib.metadata.EntryPoint,
             err: BaseException,
         ) -> None:
-            LOG.warning(f'Failed to load {ep.module}: {err}')
+            LOG.warning('Failed to load %s: %s', ep.module, err)
 
         mgr: extension.ExtensionManager[Any]
         mgr = extension.ExtensionManager(

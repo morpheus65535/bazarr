@@ -1,7 +1,7 @@
 # BSD 2-Clause License
 #
 # Apprise - Push Notification Library.
-# Copyright (c) 2025, Chris Caron <lead2gold@gmail.com>
+# Copyright (c) 2026, Chris Caron <lead2gold@gmail.com>
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -121,6 +121,22 @@ EMAIL_TEMPLATES = (
         {
             "port": 465,
             "smtp_host": "smtp.mail.yahoo.com",
+            "secure": True,
+            "secure_mode": SecureMailMode.STARTTLS,
+            "login_type": (WebBaseLogin.EMAIL,),
+        },
+    ),
+    # GMX Mail
+    (
+        "GMX Mail",
+        re.compile(
+            r"^((?P<label>[^+]+)\+)?(?P<id>[^@]+)@"
+            r"(?P<domain>gmx\.(com|net|de|at|ch|fr))$",
+            re.I,
+        ),
+        {
+            "port": 587,
+            "smtp_host": "mail.gmx.com",
             "secure": True,
             "secure_mode": SecureMailMode.STARTTLS,
             "login_type": (WebBaseLogin.EMAIL,),
