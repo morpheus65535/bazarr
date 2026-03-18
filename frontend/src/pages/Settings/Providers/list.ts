@@ -470,14 +470,6 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
         key: "base_url",
         name: "Base URL",
       },
-      {
-        type: "text",
-        key: "email",
-      },
-      {
-        type: "password",
-        key: "password",
-      },
     ],
   },
   {

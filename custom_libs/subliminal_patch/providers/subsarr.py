@@ -3,7 +3,6 @@ import logging
 
 from babelfish import language_converters
 from requests import Session
-from requests.auth import HTTPBasicAuth
 from subzero.language import Language
 from subliminal import Episode, Movie
 from subliminal.exceptions import ConfigurationError, ProviderError
@@ -15,9 +14,6 @@ from .mixins import ProviderRetryMixin
 logger = logging.getLogger(__name__)
 
 language_converters.register('subsarr = subliminal_patch.converters.subsarr:SubsarrConverter')
-
-# Case-insensitive reverse lookup for subsarr language names
-_LANG_LOWER = {k.lower(): k for k in language_converters['subsarr'].from_subsource.keys()}
 
 
 class SubsarrSubtitle(Subtitle):
@@ -70,13 +66,13 @@ class SubsarrProvider(ProviderRetryMixin, Provider):
     """Subsarr Provider — self-hosted Subscene subtitle provider."""
     provider_name = 'subsarr'
 
-    languages = {Language(*lang) for lang in list(language_converters['subsarr'].to_subsource.keys())}
+    languages = {Language(*lang) for lang in list(language_converters['subsarr'].to_subsarr.keys())}
     languages.update(set(Language.rebuild(lang, hi=True) for lang in languages))
 
     video_types = (Episode, Movie)
     subtitle_class = SubsarrSubtitle
 
-    def __init__(self, base_url=None, email=None, password=None):
+    def __init__(self, base_url=None):
         if not base_url:
             raise ConfigurationError('Base URL must be specified')
 
@@ -84,21 +80,17 @@ class SubsarrProvider(ProviderRetryMixin, Provider):
             raise ConfigurationError('Base URL must include scheme (http:// or https://)')
 
         self.base_url = base_url.rstrip('/')
-        self.email = email
-        self.password = password
         self.session = None
 
     def initialize(self):
         self.session = Session()
         self.session.headers['User-Agent'] = 'Subliminal/2 Bazarr/1'
-        if self.email and self.password:
-            self.session.auth = HTTPBasicAuth(self.email, self.password)
 
     def terminate(self):
         self.session.close()
 
     def _url(self, path):
-        return f'{self.base_url}{path}'
+        return f'{self.base_url}/api/v1{path}'
 
     def ping(self):
         try:
@@ -121,6 +113,7 @@ class SubsarrProvider(ProviderRetryMixin, Provider):
         imdb_id = None
         season = None
         episode = None
+        year = None
 
         if isinstance(video, Episode):
             title = video.series
@@ -130,6 +123,7 @@ class SubsarrProvider(ProviderRetryMixin, Provider):
         else:
             title = video.title
             imdb_id = video.imdb_id
+            year = getattr(video, 'year', None)
 
         subtitles = []
         lang_names = set()
@@ -146,25 +140,26 @@ class SubsarrProvider(ProviderRetryMixin, Provider):
             lang_names.add(lang_name)
 
         for lang_name in lang_names:
+            params = {'language': lang_name, 'per_page': 100}
+            if season is not None:
+                params['season'] = season
+            if episode is not None:
+                params['episode'] = episode
+
+            items = []
             if imdb_id:
-                params = {'imdb_id': imdb_id, 'language': lang_name, 'per_page': 100}
-                if season is not None:
-                    params['season'] = season
-                if episode is not None:
-                    params['episode'] = episode
-                items = self._search(params)
-            else:
-                params = {'query': title, 'language': lang_name, 'per_page': 100}
-                if season is not None:
-                    params['season'] = season
-                if episode is not None:
-                    params['episode'] = episode
-                items = self._search(params)
+                imdb_params = {**params, 'imdb_id': imdb_id}
+                if year is not None:
+                    imdb_params['year'] = year
+                items = self._search(imdb_params)
+
+            # Fall back to title query if IMDB search returned nothing
+            if not items and title:
+                items = self._search({**params, 'query': title})
 
             for item in items:
                 try:
-                    lang_name = _LANG_LOWER.get(item['language'].lower(), item['language'])
-                    lang_obj = Language(*language_converters['subsarr'].reverse(lang_name))
+                    lang_obj = Language(*language_converters['subsarr'].reverse(item['language']))
                 except (ConfigurationError, KeyError):
                     logger.debug('Skipping unsupported language: %s', item.get('language'))
                     continue
@@ -176,13 +171,16 @@ class SubsarrProvider(ProviderRetryMixin, Provider):
                 if lang_obj not in languages:
                     continue
 
+                raw_releases = item.get('releases')
+                releases = raw_releases if isinstance(raw_releases, list) else []
+
                 subtitle = SubsarrSubtitle(
                     language=lang_obj,
                     hearing_impaired=hi,
                     record_id=item['id'],
                     download_url=item['download_url'],
                     title=item.get('title', ''),
-                    releases=item.get('releases', []),
+                    releases=releases,
                     filename=item.get('filename', ''),
                     season=season,
                     episode=episode,

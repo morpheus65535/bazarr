@@ -445,8 +445,6 @@ validators = [
 
     # subsarr section
     Validator('subsarr.base_url', must_exist=True, default='', is_type_of=str),
-    Validator('subsarr.email', must_exist=True, default='', is_type_of=str),
-    Validator('subsarr.password', must_exist=True, default='', is_type_of=str),
 
     # subx section
     Validator('subx.api_key', must_exist=True, default='', is_type_of=str),
@@ -578,7 +576,7 @@ if settings.general.wanted_search_frequency_movie == 3:
 # initialize subsarr section as a proper nested dict if absent
 # (validators only set flat dotted keys which don't create a top-level section)
 if not settings.get('subsarr'):
-    settings.set('SUBSARR', {'base_url': '', 'email': '', 'password': ''})
+    settings.set('SUBSARR', {'base_url': ''})
 
 # backward compatibility embeddedsubtitles provider
 if hasattr(settings.embeddedsubtitles, 'unknown_as_english'):
