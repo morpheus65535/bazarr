@@ -93,7 +93,7 @@ validators = [
     Validator('general.path_mappings', must_exist=True, default=[], is_type_of=list),
     Validator('general.debug', must_exist=True, default=False, is_type_of=bool),
     Validator('general.branch', must_exist=True, default='master', is_type_of=str,
-              is_in=['master', 'development', 'provider-subsarr']),
+              is_in=['master', 'development']),
     Validator('general.auto_update', must_exist=True, default=True, is_type_of=bool),
     Validator('general.single_language', must_exist=True, default=False, is_type_of=bool),
     Validator('general.minimum_score', must_exist=True, default=90, is_type_of=int, gte=0, lte=100),
@@ -572,11 +572,6 @@ if settings.general.wanted_search_frequency == 3:
     settings.general.wanted_search_frequency = 6
 if settings.general.wanted_search_frequency_movie == 3:
     settings.general.wanted_search_frequency_movie = 6
-
-# initialize subsarr section as a proper nested dict if absent
-# (validators only set flat dotted keys which don't create a top-level section)
-if not settings.get('subsarr'):
-    settings.set('SUBSARR', {'base_url': ''})
 
 # backward compatibility embeddedsubtitles provider
 if hasattr(settings.embeddedsubtitles, 'unknown_as_english'):

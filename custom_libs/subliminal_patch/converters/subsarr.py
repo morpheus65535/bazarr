@@ -1,90 +1,36 @@
 # coding=utf-8
-from __future__ import absolute_import
-import logging
-
-from babelfish import LanguageReverseConverter
 from subliminal.exceptions import ConfigurationError
+from subliminal_patch.converters.subsource import SubsourceConverter
 
-logger = logging.getLogger(__name__)
+# Subsarr stores Subscene language names as lowercase slugs (spaces become hyphens).
+# A few names differ from what SubsourceConverter uses.
+_NAME_OVERRIDES = {
+    'Khmer': 'cambodian-khmer',
+    'Pushto': 'pashto',
+    'Espranto': 'esperanto',
+    'Ukrainian': 'ukranian',  # Subscene's original misspelling
+}
 
 
-class SubsarrConverter(LanguageReverseConverter):
-    """Language converter for subsarr's lowercase/slugified language names."""
+def _to_subsarr_name(subscene_name):
+    return _NAME_OVERRIDES.get(subscene_name, subscene_name.lower().replace(' ', '-'))
+
+
+class SubsarrConverter(SubsourceConverter):
+    """Derives from SubsourceConverter, transforming names to subsarr's lowercase/slugified format."""
+
+    # Languages present in subsarr but missing from SubsourceConverter
+    _EXTRA_LANGUAGES = {
+        'kinyarwanda': ('kin',),
+        'punjabi': ('pan',),
+        'sundanese': ('sun',),
+        'yoruba': ('yor',),
+    }
 
     def __init__(self):
-        self.from_subsarr = {
-            'english': ('eng',),
-            'arabic': ('ara',),
-            'farsi_persian': ('fas',),
-            'indonesian': ('ind',),
-            'french': ('fra',),
-            'vietnamese': ('vie',),
-            'danish': ('dan',),
-            'italian': ('ita',),
-            'spanish': ('spa',),
-            'brazillian-portuguese': ('por', 'BR'),
-            'swedish': ('swe',),
-            'norwegian': ('nor',),
-            'korean': ('kor',),
-            'turkish': ('tur',),
-            'dutch': ('nld',),
-            'finnish': ('fin',),
-            'malay': ('msa',),
-            'hebrew': ('heb',),
-            'thai': ('tha',),
-            'chinese-bg-code': ('zho',),
-            'portuguese': ('por',),
-            'greek': ('ell',),
-            'romanian': ('ron',),
-            'german': ('deu',),
-            'czech': ('ces',),
-            'polish': ('pol',),
-            'japanese': ('jpn',),
-            'bengali': ('ben',),
-            'russian': ('rus',),
-            'bulgarian': ('bul',),
-            'croatian': ('hrv',),
-            'hungarian': ('hun',),
-            'serbian': ('srp',),
-            'sinhala': ('sin',),
-            'slovak': ('slk',),
-            'ukranian': ('ukr',),
-            'burmese': ('mya',),
-            'slovenian': ('slv',),
-            'hindi': ('hin',),
-            'icelandic': ('isl',),
-            'estonian': ('est',),
-            'malayalam': ('mal',),
-            'urdu': ('urd',),
-            'tamil': ('tam',),
-            'telugu': ('tel',),
-            'lithuanian': ('lit',),
-            'tagalog': ('tgl',),
-            'albanian': ('sqi',),
-            'cambodian-khmer': ('khm',),
-            'latvian': ('lav',),
-            'kurdish': ('kur',),
-            'macedonian': ('mkd',),
-            'bosnian': ('bos',),
-            'catalan': ('cat',),
-            'nepali': ('nep',),
-            'basque': ('eus',),
-            'swahili': ('swa',),
-            'pashto': ('pus',),
-            'kannada': ('kan',),
-            'mongolian': ('mon',),
-            'azerbaijani': ('aze',),
-            'armenian': ('hye',),
-            'esperanto': ('epo',),
-            'belarusian': ('bel',),
-            'georgian': ('kat',),
-            'somali': ('som',),
-            'punjabi': ('pan',),
-            'kinyarwanda': ('kin',),
-            'yoruba': ('yor',),
-            'sundanese': ('sun',),
-            'afrikaans': ('afr',),
-        }
+        super().__init__()
+        self.from_subsarr = {_to_subsarr_name(k): v for k, v in self.from_subsource.items()}
+        self.from_subsarr.update(self._EXTRA_LANGUAGES)
         self.to_subsarr = {v: k for k, v in self.from_subsarr.items()}
         self.codes = set(self.from_subsarr.keys())
 
