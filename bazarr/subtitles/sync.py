@@ -23,7 +23,8 @@ def sync_subtitles(video_path,
                    gss=settings.subsync.gss,
                    no_fix_framerate=settings.subsync.no_fix_framerate,
                    reference=None,
-                   force_sync=False):
+                   force_sync=False,
+                   callback=None):
     if not settings.subsync.use_subsync and not force_sync:
         logging.debug('BAZARR automatic syncing is disabled in settings. Skipping sync routine.')
         return False
@@ -66,6 +67,8 @@ def sync_subtitles(video_path,
             }
             try:
                 subsync.sync(**sync_kwargs)
+                if callback:
+                    callback()
             except Exception:
                 logging.exception(f'BAZARR an unhandled exception occurs during the synchronization process for this '
                                   f'subtitle file: {srt_path}')
