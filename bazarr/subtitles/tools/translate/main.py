@@ -3,6 +3,7 @@
 import logging
 import os
 
+
 from subliminal_patch.core import get_subtitle_path
 from subzero.language import Language
 
@@ -15,7 +16,7 @@ from subtitles.indexer.utils import get_external_subtitles_path
 
 
 def translate_subtitles_file(video_path, source_srt_file, from_lang, to_lang, forced, hi,
-                             media_type, sonarr_series_id, sonarr_episode_id, radarr_id, job_id=None):
+                             media_type, sonarr_series_id, sonarr_episode_id, radarr_id, metadata, job_id=None):
     if not job_id:
         jobs_queue.add_job_from_function(f'Translating from {from_lang.upper()} to {to_lang.upper()} using '
                                          f'{settings.translator.translator_type.replace("_", " ").title()}',
@@ -69,6 +70,9 @@ def translate_subtitles_file(video_path, source_srt_file, from_lang, to_lang, fo
         logging.debug(f'Created translator instance: {translator.__class__.__name__}')
         result = translator.translate(job_id=job_id)
         logging.debug(f'BAZARR saved translated subtitles to {dest_srt_file}')
+        from api.subtitles.subtitles import postprocess_subtitles
+        # Call postprocess_subtitles after translation
+        postprocess_subtitles(dest_srt_file, video_path, media_type, metadata, sonarr_episode_id if media_type == 'series' else radarr_id)
         return result
 
     except Exception as e:
