@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import logging
-
 from babelfish import language_converters
 from requests import Session
 from subzero.language import Language
@@ -43,23 +42,22 @@ class SubsarrSubtitle(Subtitle):
         return self.record_id
 
     def get_matches(self, video):
-        matches = set()
+        self.matches = set()
 
         if isinstance(video, Episode):
             if video.series and self.title and video.series.lower() == self.title.lower():
-                matches.add('series')
+                self.matches.add('series')
             if video.season and self.season == video.season:
-                matches.add('season')
+                self.matches.add('season')
             if video.episode and self.episode == video.episode:
-                matches.add('episode')
+                self.matches.add('episode')
         else:
             if video.title and self.title and video.title.lower() == self.title.lower():
-                matches.add('title')
+                self.matches.add('title')
 
-        utils.update_matches(matches, video, self.release_info)
+        utils.update_matches(self.matches, video, self.release_info)
 
-        self.matches = matches
-        return matches
+        return self.matches
 
 
 class SubsarrProvider(ProviderRetryMixin, Provider):
