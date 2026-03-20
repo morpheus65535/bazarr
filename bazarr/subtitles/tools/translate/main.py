@@ -69,6 +69,8 @@ def translate_subtitles_file(video_path, source_srt_file, from_lang, to_lang, fo
 
         logging.debug(f'Created translator instance: {translator.__class__.__name__}')
         result = translator.translate(job_id=job_id)
+        if result is False:
+            raise RuntimeError(f'{translator.__class__.__name__} returned a failed translation result')
         logging.debug(f'BAZARR saved translated subtitles to {dest_srt_file}')
         from api.subtitles.subtitles import postprocess_subtitles
         # Call postprocess_subtitles after translation
@@ -77,7 +79,7 @@ def translate_subtitles_file(video_path, source_srt_file, from_lang, to_lang, fo
 
     except Exception as e:
         logging.error(f'Translation failed: {str(e)}', exc_info=True)
-        return False
+        raise
 
     finally:
         jobs_queue.update_job_name(job_id=job_id,

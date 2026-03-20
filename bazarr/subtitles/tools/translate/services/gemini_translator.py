@@ -110,10 +110,11 @@ class GeminiTranslatorService:
                 add_translator_info(self.dest_srt_file, f"# Subtitles translated with {settings.translator.gemini_model} # ")
             except Exception as e:
                 jobs_queue.update_job_progress(job_id=job_id, progress_message=f'Gemini translation error: {str(e)}')
+                raise
 
         except Exception as e:
             logger.error(f'BAZARR encountered an error translating with Gemini: {str(e)}')
-            return False
+            raise
 
         else:
             message = (f"{language_from_alpha2(self.from_lang)} subtitles translated to "

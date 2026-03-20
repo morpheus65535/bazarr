@@ -95,7 +95,7 @@ class GoogleTranslatorService:
                     jobs_queue.update_job_progress(job_id=job_id,
                                                    progress_message=f'Translation failed: Unable to translate '
                                                                     f'malformed subtitles for {self.source_srt_file}')
-                    return False
+                    raise
 
             try:
                 subs.save(self.dest_srt_file)
@@ -121,7 +121,7 @@ class GoogleTranslatorService:
             logger.error(f'BAZARR encountered an error during translation: {str(e)}')
             jobs_queue.update_job_progress(job_id=job_id,
                                            progress_message=f'Google translation failed: {str(e)}')
-            return False
+            raise
 
     @retry(exceptions=(TooManyRequests, RequestError), tries=6, delay=1, backoff=2, jitter=(0, 1))
     def _translate_text(self, text, job_id):
