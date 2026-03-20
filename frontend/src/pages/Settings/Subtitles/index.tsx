@@ -2,6 +2,7 @@ import React, { FunctionComponent } from "react";
 import { Code, Space, Table, Text as MantineText } from "@mantine/core";
 import {
   Check,
+  Chips,
   CollapseBox,
   Layout,
   Message,
@@ -561,12 +562,19 @@ const SettingsSubtitlesView: FunctionComponent = () => {
             then lower it if requests fail or raise it gradually if your model
             handles larger batches reliably.
           </Message>
-          <Text
-            label="Gemini API key"
-            settingKey="settings-translator-gemini_key"
-          ></Text>
+          <Chips
+            label="Gemini API keys"
+            settingKey="settings-translator-gemini_keys"
+            sanitizeFn={(values) => {
+              const uniqueKeys = new Set(
+                (values ?? []).map((value) => value.trim()).filter(Boolean),
+              );
+              return Array.from(uniqueKeys);
+            }}
+          ></Chips>
           <Message>
-            You can generate it here: https://aistudio.google.com/apikey
+            You can generate keys here: https://aistudio.google.com/apikey. Add
+            as many keys as needed; Bazarr rotates across available keys.
           </Message>
         </CollapseBox>
         <CollapseBox

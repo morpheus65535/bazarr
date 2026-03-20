@@ -29,6 +29,9 @@ from ..core.translator_utils import add_translator_info, get_description, create
 
 logger = logging.getLogger(__name__)
 DEFAULT_GEMINI_BATCH_SIZE = 300
+DEFAULT_GEMINI_KEY_COOLDOWN_SECONDS = 60
+_GEMINI_KEY_COOLDOWNS = {}
+_GEMINI_KEY_COOLDOWNS_LOCK = threading.Lock()
 
 
 class SubtitleObject(typing.TypedDict):
@@ -59,7 +62,9 @@ class GeminiTranslatorService:
         self.orig_to_lang = orig_to_lang
 
         self.gemini_api_key = None
+        self.api_keys = []
         self.current_api_key = None
+        self.current_api_index = -1
         self.current_api_number = 1
         self.backup_api_number = 2
         self.target_language = None
@@ -85,8 +90,9 @@ class GeminiTranslatorService:
             logger.debug(f'BAZARR is sending subtitle file to Gemini for translation')
             logger.info(f"BAZARR is sending subtitle file to Gemini for translation " + self.source_srt_file)
 
-            self.gemini_api_key = settings.translator.gemini_key
-            self.current_api_key = self.gemini_api_key
+            self.api_keys = self._get_configured_api_keys()
+            self.current_api_key = self._select_next_api_key()
+            self.gemini_api_key = self.current_api_key
             self.target_language = language_from_alpha3(self.to_lang)
             self.input_file = self.source_srt_file
             self.output_file = self.dest_srt_file
@@ -212,6 +218,104 @@ class GeminiTranslatorService:
             batch_size = DEFAULT_GEMINI_BATCH_SIZE
         return max(1, batch_size)
 
+    def _get_configured_api_keys(self) -> List[str]:
+        keys = []
+        seen_keys = set()
+        configured_keys = getattr(settings.translator, "gemini_keys", [])
+
+        if not isinstance(configured_keys, list):
+            configured_keys = [configured_keys]
+
+        for raw_key in configured_keys:
+            key = str(raw_key).strip()
+            if key and key not in seen_keys:
+                keys.append(key)
+                seen_keys.add(key)
+
+        return keys
+
+    @staticmethod
+    def _is_key_on_cooldown(api_key: str) -> bool:
+        now = time.time()
+        with _GEMINI_KEY_COOLDOWNS_LOCK:
+            expires_at = _GEMINI_KEY_COOLDOWNS.get(api_key)
+            if expires_at is None:
+                return False
+            if expires_at <= now:
+                _GEMINI_KEY_COOLDOWNS.pop(api_key, None)
+                return False
+            return True
+
+    def _select_next_api_key(self):
+        if not self.api_keys:
+            self.current_api_key = None
+            return None
+
+        total_keys = len(self.api_keys)
+        start_index = self.current_api_index if self.current_api_index >= 0 else -1
+
+        for offset in range(1, total_keys + 1):
+            candidate_index = (start_index + offset) % total_keys
+            candidate_key = self.api_keys[candidate_index]
+            if not self._is_key_on_cooldown(candidate_key):
+                self.current_api_index = candidate_index
+                self.current_api_key = candidate_key
+                return candidate_key
+
+        self.current_api_key = None
+        return None
+
+    @staticmethod
+    def _is_rate_limited_response(response) -> bool:
+        if response is None:
+            return False
+
+        if response.status_code == 429:
+            return True
+
+        try:
+            error_body = response.json().get("error", {})
+        except Exception:
+            return False
+
+        error_status = str(error_body.get("status", "")).upper()
+        error_message = str(error_body.get("message", "")).lower()
+        return error_status == "RESOURCE_EXHAUSTED" or "rate limit" in error_message or "quota" in error_message
+
+    @staticmethod
+    def _get_retry_after_seconds(response) -> int:
+        if response is not None:
+            retry_after = response.headers.get("Retry-After")
+            if retry_after:
+                try:
+                    return max(1, int(float(retry_after)))
+                except (TypeError, ValueError):
+                    pass
+
+        return DEFAULT_GEMINI_KEY_COOLDOWN_SECONDS
+
+    @staticmethod
+    def _set_key_cooldown(api_key: str, cooldown_seconds: int):
+        with _GEMINI_KEY_COOLDOWNS_LOCK:
+            _GEMINI_KEY_COOLDOWNS[api_key] = time.time() + max(1, cooldown_seconds)
+
+    def _handle_rate_limited_key(self, response):
+        if not self.current_api_key:
+            raise RuntimeError("All Gemini API keys are currently rate limited. Please wait before retrying.")
+
+        cooldown_seconds = self._get_retry_after_seconds(response)
+        self._set_key_cooldown(self.current_api_key, cooldown_seconds)
+
+        rotated_key = self._select_next_api_key()
+        if not rotated_key:
+            raise RuntimeError("All Gemini API keys are currently rate limited. Please wait before retrying.")
+
+        if self.job_id is not None:
+            jobs_queue.update_job_progress(
+                job_id=self.job_id,
+                progress_message="Gemini key rate limited. Rotating to another configured key.",
+            )
+
     def _build_generate_payload(self, batch: List[SubtitleObject]) -> dict:
         return {
             "system_instruction": {
@@ -296,6 +400,12 @@ class GeminiTranslatorService:
             return self.current_progress
 
         except Exception as e:
+            response = getattr(e, "response", None)
+            if self._is_rate_limited_response(response):
+                self._handle_rate_limited_key(response)
+                if retry_num > 0:
+                    return self._process_batch(batch, translated_subtitle, total, retry_num - 1)
+
             if retry_num > 0:
                 return self._process_batch(batch, translated_subtitle, total, retry_num - 1)
             else:
@@ -343,8 +453,18 @@ class GeminiTranslatorService:
                 translated_subtitle[int(line["index"])].content = line["content"]
 
     def _translate_with_gemini(self):
+        if not self.api_keys:
+            jobs_queue.update_job_progress(
+                job_id=self.job_id,
+                progress_message="Please provide at least one valid Gemini API key.",
+            )
+            return
+
         if not self.current_api_key:
-            jobs_queue.update_job_progress(job_id=self.job_id, progress_message="Please provide a valid Gemini API key.")
+            jobs_queue.update_job_progress(
+                job_id=self.job_id,
+                progress_message="All Gemini API keys are currently rate limited. Please wait before retrying.",
+            )
             return
 
         if not self.target_language:
@@ -407,7 +527,8 @@ class GeminiTranslatorService:
                             raise e
 
                     # Check if we exited the loop due to an interrupt
-                    jobs_queue.update_job_progress(job_id=self.job_id, progress_value=total)
+                    jobs_queue.update_job_progress(job_id=self.job_id, progress_value=total,
+                                                   progress_message=self.source_srt_file)
                     if self.interrupt_flag:
                         # File will be automatically closed by the with statement
                         self._clear_progress()
