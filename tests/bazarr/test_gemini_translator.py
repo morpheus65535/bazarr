@@ -129,3 +129,34 @@ def test_handle_rate_limited_key_raises_when_all_keys_unavailable():
 
     with pytest.raises(RuntimeError, match="All Gemini API keys are currently rate limited"):
         service._handle_rate_limited_key(_RateLimitedResponse())
+
+
+def test_translate_with_gemini_does_not_leave_output_file_on_failure(tmp_path, mocker):
+    input_file = tmp_path / "input.srt"
+    output_file = tmp_path / "output.srt"
+    input_file.write_text(
+        "1\n00:00:00,000 --> 00:00:02,000\nHello world\n\n",
+        encoding="utf-8",
+    )
+
+    service = _build_service()
+    service.input_file = str(input_file)
+    service.output_file = str(output_file)
+    service.api_keys = ["key-1"]
+    service.current_api_key = "key-1"
+    service.target_language = "English"
+    service.batch_size = 1
+    service.job_id = "job-1"
+
+    def _fail_after_output_file_created(*args, **kwargs):
+        # Translation output file should be opened before batch processing starts.
+        assert output_file.exists()
+        raise RuntimeError("boom")
+
+    mocker.patch.object(service, "_process_batch", side_effect=_fail_after_output_file_created)
+    mocker.patch.object(gemini_translator.jobs_queue, "update_job_progress")
+
+    with pytest.raises(RuntimeError, match="boom"):
+        service._translate_with_gemini()
+
+    assert not output_file.exists()

@@ -544,4 +544,10 @@ class GeminiTranslatorService:
             jobs_queue.update_job_progress(job_id=self.job_id, progress_value=total,
                                            progress_message=f'Gemini translation failed: {str(e)}')
             self._clear_progress()
+            if self.output_file and os.path.exists(self.output_file):
+                try:
+                    if os.path.getsize(self.output_file) == 0:
+                        os.remove(self.output_file)
+                except OSError:
+                    pass
             raise e
