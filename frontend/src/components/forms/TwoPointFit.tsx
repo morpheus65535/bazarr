@@ -72,10 +72,7 @@ const TwoPointFitForm: FunctionComponent<Props> = ({
       last: {
         line: (v, values) => {
           if (v == null) return "Please select a line";
-          if (
-            values.first.line != null &&
-            v.index === values.first.line.index
-          )
+          if (values.first.line != null && v.index === values.first.line.index)
             return "Must be a different line than the first";
           return null;
         },
@@ -108,7 +105,9 @@ const TwoPointFitForm: FunctionComponent<Props> = ({
   const options = useSelectorOptions(
     lines,
     (v) =>
-      `${String(v.index).padStart(decimals, "0")}: ${String(v.content).replaceAll("\n", " ")}`,
+      `${String(v.index).padStart(decimals, "0")}: ${String(
+        v.content,
+      ).replaceAll("\n", " ")}`,
     (v) => String(v.index),
   );
 
@@ -172,10 +171,7 @@ const TwoPointFitForm: FunctionComponent<Props> = ({
                 onChange={(line: SubtitleContents.Line | null) => {
                   form.setFieldValue("first.line", line);
                   if (line) {
-                    form.setFieldValue(
-                      "first.to",
-                      lineStartToTime(line.start),
-                    );
+                    form.setFieldValue("first.to", lineStartToTime(line.start));
                   }
                 }}
               ></Selector>
@@ -220,10 +216,7 @@ const TwoPointFitForm: FunctionComponent<Props> = ({
                 onChange={(line: SubtitleContents.Line | null) => {
                   form.setFieldValue("last.line", line);
                   if (line) {
-                    form.setFieldValue(
-                      "last.to",
-                      lineStartToTime(line.start),
-                    );
+                    form.setFieldValue("last.to", lineStartToTime(line.start));
                   }
                 }}
               ></Selector>
