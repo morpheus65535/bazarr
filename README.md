@@ -77,6 +77,7 @@ If you need something that is not already part of Bazarr, feel free to create a 
 - Subs.sab.bz
 - Subs4Free
 - Subs4Series
+- Subsarr (self-hosted, requires [slimcdk/subsarr](https://github.com/slimcdk/subsarr))
 - Subscene
 - Subscenter
 - SubsRo
