@@ -50,6 +50,7 @@ def series_download_subtitles(no, job_id=None, job_sub_function=False):
         .join(TableShows)
         .where(reduce(operator.and_, conditions))) \
         .all()
+    throttled = False
     if not episodes_details:
         logging.debug(f"BAZARR no episode for that sonarrSeriesId have been found in database or they have all been "
                       f"ignored because of monitored status, series type or series tags: {no}")
@@ -70,8 +71,12 @@ def series_download_subtitles(no, job_id=None, job_sub_function=False):
             else:
                 jobs_queue.update_job_progress(job_id=job_id, progress_value=count_episodes_details)
                 logging.info("BAZARR All providers are throttled")
+                throttled = True
                 break
 
+    outcome_msg = ("All providers throttled" if throttled
+                   else "Search completed")
+    jobs_queue.update_job_progress(job_id=job_id, progress_message=outcome_msg)
     jobs_queue.update_job_name(job_id=job_id, new_job_name=f"Downloaded missing subtitles for {series_row.title}")
 
 
@@ -126,6 +131,7 @@ def episode_download_subtitles(no, job_id=None, job_sub_function=False, provider
     if not providers_list:
         providers_list = get_providers()
 
+    downloaded_count = 0
     if providers_list:
         audio_language_list = get_audio_profile_languages(episode.audio_language)
         if len(audio_language_list) > 0:
@@ -162,11 +168,16 @@ def episode_download_subtitles(no, job_id=None, job_sub_function=False, provider
                     store_subtitles(episode.path, path_mappings.path_replace(episode.path))
                     history_log(1, episode.sonarrSeriesId, episode.sonarrEpisodeId, result)
                     send_notifications(episode.sonarrSeriesId, episode.sonarrEpisodeId, result.message)
+                    downloaded_count += 1
+        outcome_msg = (f"{downloaded_count} subtitle(s) downloaded"
+                       if downloaded_count else "No subtitles found")
     else:
         logging.info("BAZARR All providers are throttled")
+        outcome_msg = "All providers throttled"
 
     if not job_sub_function and job_id:
-        jobs_queue.update_job_progress(job_id=job_id, progress_value='max')
+        jobs_queue.update_job_progress(job_id=job_id, progress_value='max',
+                                       progress_message=outcome_msg)
         jobs_queue.update_job_name(job_id=job_id, new_job_name=f"Downloaded missing subtitles for {episode.title}")
 
 
