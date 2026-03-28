@@ -1,7 +1,9 @@
 import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { showNotification } from "@mantine/notifications";
 import { QueryKeys } from "@/apis/queries/keys";
 import api from "@/apis/raw";
+import { notification } from "@/modules/task";
 import { Environment } from "@/utilities";
 import { setAuthenticated } from "@/utilities/event";
 
@@ -90,6 +92,19 @@ export function useSettingsMutation() {
       void client.invalidateQueries({
         queryKey: [QueryKeys.Plex, "libraries"],
       });
+
+      showNotification(
+        notification.info("Settings saved", "Your changes have been saved"),
+      );
+    },
+
+    onError: () => {
+      showNotification(
+        notification.error(
+          "Save failed",
+          "An error occurred while saving settings",
+        ),
+      );
     },
   });
 }
