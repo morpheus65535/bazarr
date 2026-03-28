@@ -1,7 +1,16 @@
 /* eslint-disable camelcase */
 import { FunctionComponent } from "react";
-import { Alert, Button, Checkbox, Divider, Stack, Text } from "@mantine/core";
+import {
+  Alert,
+  Button,
+  Checkbox,
+  Divider,
+  LoadingOverlay,
+  Stack,
+  Text,
+} from "@mantine/core";
 import { useForm } from "@mantine/form";
+import { showNotification } from "@mantine/notifications";
 import { faInfoCircle } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -15,6 +24,7 @@ import {
   Selector,
 } from "@/components/inputs";
 import { useModals, withModal } from "@/modules/modals";
+import { notification } from "@/modules/task";
 import { syncMaxOffsetSecondsOptions } from "@/pages/Settings/Subtitles/options";
 import { fromPython, toPython } from "@/utilities";
 
@@ -118,7 +128,7 @@ const SyncSubtitleForm: FunctionComponent<Props> = ({
     throw new Error("You need to select at least 1 media to sync");
   }
 
-  const { mutateAsync } = useSubtitleAction();
+  const { mutateAsync, isPending } = useSubtitleAction();
   const modals = useModals();
 
   const subtitle = selections[0];
@@ -140,24 +150,40 @@ const SyncSubtitleForm: FunctionComponent<Props> = ({
 
   return (
     <form
-      onSubmit={form.onSubmit((parameters) => {
-        selections.forEach(async (s) => {
-          const form: FormType.ModifySubtitle = {
-            ...s,
-            reference: parameters.reference,
-            max_offset_seconds: parameters.maxOffsetSeconds,
-            no_fix_framerate: toPython(parameters.noFixFramerate),
-            gss: toPython(parameters.gss),
-          };
-
-          await mutateAsync({ action: "sync", form });
-        });
-
-        onSubmit?.();
-        modals.closeSelf();
+      onSubmit={form.onSubmit(async (parameters) => {
+        try {
+          await Promise.all(
+            selections.map((s) => {
+              const form: FormType.ModifySubtitle = {
+                ...s,
+                reference: parameters.reference,
+                max_offset_seconds: parameters.maxOffsetSeconds,
+                no_fix_framerate: toPython(parameters.noFixFramerate),
+                gss: toPython(parameters.gss),
+              };
+              return mutateAsync({ action: "sync", form });
+            }),
+          );
+          showNotification(
+            notification.info(
+              "Subtitles synced",
+              `${selections.length} subtitle(s) synced successfully`,
+            ),
+          );
+          onSubmit?.();
+          modals.closeSelf();
+        } catch {
+          showNotification(
+            notification.error(
+              "Sync failed",
+              "An error occurred while syncing subtitles",
+            ),
+          );
+        }
       })}
     >
-      <Stack>
+      <Stack pos="relative">
+        <LoadingOverlay visible={isPending} />
         <Alert
           title="Subtitles"
           color="gray"
@@ -189,7 +215,9 @@ const SyncSubtitleForm: FunctionComponent<Props> = ({
           {...form.getInputProps("gss")}
         ></Checkbox>
         <Divider></Divider>
-        <Button type="submit">Sync</Button>
+        <Button type="submit" loading={isPending}>
+          Sync
+        </Button>
       </Stack>
     </form>
   );

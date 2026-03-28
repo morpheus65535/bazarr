@@ -1,11 +1,13 @@
 import { FunctionComponent, useMemo } from "react";
-import { Alert, Button, Divider, Stack } from "@mantine/core";
+import { Alert, Button, Divider, LoadingOverlay, Stack } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { isObject } from "lodash";
 import { useSubtitleAction } from "@/apis/hooks";
 import { useSystemSettings } from "@/apis/hooks";
 import { Selector } from "@/components/inputs";
 import { useModals, withModal } from "@/modules/modals";
+import { notification } from "@/modules/task";
+import { showNotification } from "@mantine/notifications";
 import { useSelectorOptions } from "@/utilities";
 import FormUtils from "@/utilities/form";
 import { useEnabledLanguages } from "@/utilities/languages";
@@ -134,7 +136,7 @@ const TranslationForm: FunctionComponent<Props> = ({
   onSubmit,
 }) => {
   const settings = useSystemSettings();
-  const { mutateAsync } = useSubtitleAction();
+  const { mutateAsync, isPending } = useSubtitleAction();
   const modals = useModals();
 
   const { data: languages } = useEnabledLanguages();
@@ -199,25 +201,38 @@ const TranslationForm: FunctionComponent<Props> = ({
 
   return (
     <form
-      onSubmit={form.onSubmit(({ language }) => {
+      onSubmit={form.onSubmit(async ({ language }) => {
         if (language) {
-          selections.forEach(
-            async (s) =>
-              await mutateAsync({
-                action: "translate",
-                form: {
-                  ...s,
-                  language: language.code2,
-                },
-              }),
-          );
-
-          onSubmit?.();
-          modals.closeSelf();
+          try {
+            await Promise.all(
+              selections.map((s) =>
+                mutateAsync({
+                  action: "translate",
+                  form: { ...s, language: language.code2 },
+                }),
+              ),
+            );
+            showNotification(
+              notification.info(
+                "Translation started",
+                `${selections.length} subtitle(s) submitted for translation`,
+              ),
+            );
+            onSubmit?.();
+            modals.closeSelf();
+          } catch {
+            showNotification(
+              notification.error(
+                "Translation failed",
+                "An error occurred while translating subtitles",
+              ),
+            );
+          }
         }
       })}
     >
-      <Stack>
+      <Stack pos="relative">
+        <LoadingOverlay visible={isPending} />
         <Alert>
           <div>
             {translatorService}
@@ -235,7 +250,9 @@ const TranslationForm: FunctionComponent<Props> = ({
         )}
         <Selector {...options} {...form.getInputProps("language")}></Selector>
         <Divider></Divider>
-        <Button type="submit">Start</Button>
+        <Button type="submit" loading={isPending}>
+          Start
+        </Button>
       </Stack>
     </form>
   );
