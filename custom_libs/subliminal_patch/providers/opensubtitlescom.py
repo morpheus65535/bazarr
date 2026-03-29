@@ -571,7 +571,7 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
                                                 f"downloaded. Quota will be reset in {quota_reset_time}.")
             elif status_code == 410:
                 log_request_response(response)
-                raise ProviderError("Download as expired")
+                raise ProviderError("Download link has expired")
             elif status_code == 429:
                 log_request_response(response)
                 raise TooManyRequests()

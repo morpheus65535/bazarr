@@ -80,6 +80,7 @@ def provider_throttle_map():
         "opensubtitlescom": {
             TooManyRequests: (datetime.timedelta(minutes=1), "1 minute"),
             DownloadLimitExceeded: (datetime.timedelta(hours=6), "6 hours"),
+            ProviderError: (datetime.timedelta(minutes=1), "1 minute"),
         },
         "addic7ed": {
             DownloadLimitExceeded: (datetime.timedelta(hours=3), "3 hours"),
