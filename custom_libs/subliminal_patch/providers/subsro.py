@@ -126,7 +126,6 @@ class SubsRoProvider(Provider, ProviderSubtitleArchiveMixin):
             download_link = item.get("downloadLink")
 
             season = None
-            # Try from title first e.g. "Fallout - Sezonul 2"
             if title:
                 t_match = re.search(r"[Ss]ezon(?:ul)?\s*(\d{1,2})", title)
                 if t_match:
