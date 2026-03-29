@@ -130,7 +130,6 @@ class SubsRoProvider(Provider, ProviderSubtitleArchiveMixin):
                 t_match = re.search(r"[Ss]ezon(?:ul)?\s*(\d{1,2})", title)
                 if t_match:
                     season = int(t_match.group(1))
-            # Fall back to description e.g. "Sezonul 2 complet" or "S02E01" style
             if season is None and release_info:
                 s_match = re.search(r"[Ss]ezon(?:ul)?\s*(\d{1,2})|[Ss](\d{1,2})[Ee]\d+", release_info)
                 if s_match:
