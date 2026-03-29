@@ -446,6 +446,9 @@ validators = [
 
     # subx section
     Validator('subx.api_key', must_exist=True, default='', is_type_of=str),
+    
+    # subsro section
+    Validator('subsro.api_key', must_exist=True, default='', is_type_of=str, cast=str),
 ]
 
 
