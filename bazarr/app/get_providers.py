@@ -347,7 +347,10 @@ def get_providers_auth():
         'subx':
             {
                 'api_key': settings.subx.api_key,
-            }
+            },
+        'subsro': {
+            'api_key': settings.subsro.api_key,
+        }
     }
 
 
