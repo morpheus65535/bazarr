@@ -19,6 +19,7 @@ from utilities.video_analyzer import embedded_subs_reader
 from app.event_handler import event_stream
 from subtitles.indexer.utils import guess_external_subtitles, get_external_subtitles_path
 from app.jobs_queue import jobs_queue
+from app.notifier import send_notifications_movie
 
 gc.enable()
 
@@ -143,6 +144,29 @@ def store_subtitles_movie(original_path, reversed_path, use_cache=True):
             if movie:
                 logging.debug(f"BAZARR storing those languages to DB: {actual_subtitles}")
                 list_missing_subtitles_movies(no=movie.radarrId)
+
+                # 2. odczytaj z DB
+                item = database.execute(
+                    select(TableMovies.missing_subtitles, TableMovies.radarrId)
+                    .where(TableMovies.path == original_path)
+                ).first()
+
+                missing = []
+                movie_id = None
+
+                if item:
+                    movie_id = item.radarrId
+                    if item.missing_subtitles:
+                        missing = ast.literal_eval(item.missing_subtitles)
+
+                # 3. warunek na powiadomienie
+                if missing == [] and settings.general.use_embedded_subs:
+                    if not settings.general.dont_notify_manual_actions:
+                        send_notifications_movie(
+                            movie_id,
+                            "Embedded subtitles satisfy profile... no download needed"
+                        )
+
             else:
                 logging.debug(f"BAZARR haven't been able to update existing subtitles to DB: {actual_subtitles}")
     else:
