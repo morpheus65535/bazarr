@@ -5,6 +5,7 @@ from rarfile import RarFile, is_rarfile
 from requests import Session
 import logging
 from guessit import guessit
+from subliminal.exceptions import ConfigurationError
 from subliminal_patch.providers import Provider
 from subliminal_patch.providers.mixins import ProviderSubtitleArchiveMixin
 from subliminal_patch.subtitle import Subtitle, guess_matches
@@ -72,7 +73,7 @@ class SubsRoProvider(Provider, ProviderSubtitleArchiveMixin):
 
     def __init__(self, api_key=None):
         if not api_key:
-            raise ValueError("SubsRo requires an API Key.")
+            raise ConfigurationError("SubsRo requires an API Key.")
         self.api_keys = [k.strip() for k in api_key.split(",") if k.strip()]
         self.current_key_index = 0
         self.session = None
