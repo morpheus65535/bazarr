@@ -31,23 +31,20 @@ def _wanted_episode(episode, job_id=None):
         audio_language = 'None'
 
     languages = []
+    languages_to_stamp = []
     for language in ast.literal_eval(episode.missing_subtitles):
         if is_search_active(desired_language=language, attempt_string=episode.failedAttempts):
-            database.execute(
-                update(TableEpisodes)
-                .values(failedAttempts=updateFailedAttempts(desired_language=language,
-                                                            attempt_string=episode.failedAttempts))
-                .where(TableEpisodes.sonarrEpisodeId == episode.sonarrEpisodeId))
-
             hi_ = "True" if language.endswith(':hi') else "False"
             forced_ = "True" if language.endswith(':forced') else "False"
             languages.append((language.split(":")[0], hi_, forced_))
+            languages_to_stamp.append(language)
 
         else:
             logging.debug(
                 f"BAZARR Search is throttled by adaptive search for this episode {episode.path} and "
                 f"language: {language}")
 
+    found_any = False
     for result in generate_subtitles(path_mappings.path_replace(episode.path),
                                      languages,
                                      audio_language,
@@ -58,6 +55,7 @@ def _wanted_episode(episode, job_id=None):
                                      check_if_still_required=True,
                                      job_id=job_id):
         if result:
+            found_any = True
             if isinstance(result, tuple) and len(result):
                 result = result[0]
             store_subtitles(episode.path, path_mappings.path_replace(episode.path))
@@ -65,6 +63,17 @@ def _wanted_episode(episode, job_id=None):
             event_stream(type='series', action='update', payload=episode.sonarrSeriesId)
             event_stream(type='episode-wanted', action='delete', payload=episode.sonarrEpisodeId)
             send_notifications(episode.sonarrSeriesId, episode.sonarrEpisodeId, result.message)
+
+    if not found_any and get_providers():
+        for language in languages_to_stamp:
+            updated = updateFailedAttempts(
+                desired_language=language,
+                attempt_string=episode.failedAttempts)
+            database.execute(
+                update(TableEpisodes)
+                .values(failedAttempts=updated)
+                .where(TableEpisodes.sonarrEpisodeId ==
+                       episode.sonarrEpisodeId))
 
 
 def wanted_download_subtitles(sonarr_episode_id, job_id=None):
