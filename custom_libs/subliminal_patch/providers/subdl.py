@@ -33,13 +33,14 @@ class SubdlSubtitle(Subtitle):
     hearing_impaired_verifiable = True
 
     def __init__(self, language, forced, hearing_impaired, page_link, download_link, file_id, release_names, uploader,
-                 season=None, episode=None, absolute_episode=None):
+                 season=None, episode=None, absolute_episode=None, is_pack=False):
         super().__init__(language)
         language = Language.rebuild(language, hi=hearing_impaired, forced=forced)
 
         self.season = season
         self.episode = episode
         self.absolute_episode = absolute_episode
+        self.is_pack = is_pack
         self.releases = release_names
         self.release_info = ', '.join(release_names)
         self.language = language
@@ -65,11 +66,14 @@ class SubdlSubtitle(Subtitle):
             # season
             if video.season == self.season:
                 matches.add('season')
-            # episode — match by standard episode or absolute episode number
+            # episode — match by standard episode, absolute episode, or pack range
             if video.episode == self.episode:
                 matches.add('episode')
             elif (getattr(video, 'absolute_episode', None) and
                   video.absolute_episode == self.episode):
+                matches.add('episode')
+            elif self.is_pack:
+                # Pack was already validated to contain the target episode
                 matches.add('episode')
             # imdb — IMDB match also confirms the year
             matches.add('series_imdb_id')
@@ -310,10 +314,22 @@ class SubdlProvider(ProviderRetryMixin, Provider):
 
         if len(all_items):
             for item in all_items:
-                if (isinstance(self.video, Episode) and
-                        item.get('episode_from', False) != item.get('episode_end', False)):
-                    # ignore season packs
-                    continue
+                is_pack = False
+                if isinstance(self.video, Episode):
+                    ep_from = item.get('episode_from')
+                    ep_end = item.get('episode_end')
+                    if ep_from and ep_end and ep_from != ep_end:
+                        # Multi-episode pack: allow if target episode is within range
+                        target_ep = self.video.episode
+                        if absolute_episode:
+                            # Check both standard and absolute episode against the range
+                            if not ((ep_from <= target_ep <= ep_end) or
+                                    (ep_from <= absolute_episode <= ep_end)):
+                                continue
+                        else:
+                            if not (ep_from <= target_ep <= ep_end):
+                                continue
+                        is_pack = True
 
                 subtitle = SubdlSubtitle(
                     language=Language.fromsubdl(item['language']),
@@ -327,6 +343,7 @@ class SubdlProvider(ProviderRetryMixin, Provider):
                     season=item.get('season', None),
                     episode=item.get('episode', None),
                     absolute_episode=absolute_episode,
+                    is_pack=is_pack,
                 )
                 subtitle.get_matches(self.video)
                 if subtitle.language in languages:  # make sure only desired subtitles variants are returned
@@ -395,11 +412,35 @@ class SubdlProvider(ProviderRetryMixin, Provider):
             archive_stream = io.BytesIO(r.content)
             if is_zipfile(archive_stream):
                 archive = ZipFile(archive_stream)
-                for name in archive.namelist():
-                    # TODO when possible, deal with season pack / multiple files archive
-                    subtitle_content = archive.read(name)
-                    subtitle.content = fix_line_ending(subtitle_content)
-                    return
+                if subtitle.is_pack and self.video and isinstance(self.video, Episode):
+                    # Use smart extraction for packs: match by episode number
+                    target_episode = self.video.episode
+                    absolute_episode = getattr(self.video, 'absolute_episode', None)
+                    content = utils.get_subtitle_from_archive(
+                        archive,
+                        episode=target_episode,
+                        episode_title=getattr(self.video, 'title', None),
+                    )
+                    # Fallback: try absolute episode number
+                    if content is None and absolute_episode:
+                        content = utils.get_subtitle_from_archive(
+                            archive,
+                            episode=absolute_episode,
+                        )
+                    if content is not None:
+                        subtitle.content = content
+                    else:
+                        logger.warning(f'Could not find episode {target_episode} in pack archive {download_link}')
+                        subtitle.content = None
+                else:
+                    # Single episode: prefer subtitle file extensions, fallback to first file
+                    for name in archive.namelist():
+                        if name.endswith(('.srt', '.sub', '.ssa', '.ass')):
+                            subtitle.content = fix_line_ending(archive.read(name))
+                            return
+                    for name in archive.namelist():
+                        subtitle.content = fix_line_ending(archive.read(name))
+                        return
             else:
                 logger.error(f'Could not unzip subtitle from {download_link}')
                 subtitle.content = None
