@@ -187,8 +187,31 @@ class SubdlProvider(ProviderRetryMixin, Provider):
                 )
             else:
                 res_absolute = None
+
+            # Fallback: search by season only (no episode filter) to catch subtitles that use
+            # split-season / cour-based internal numbering (e.g. Fire Force S3 split into two cours
+            # where episode 25 is stored internally as cour-2 episode 13).
+            # The release name matching in get_matches() will identify the correct episode.
+            logger.debug(f'Also searching by season only (no episode filter) for season {self.video.season}')
+            res_season = self.retry(
+                lambda: self.session.get(self.server_url() + 'subtitles',
+                                         params=(('api_key', self.api_key),
+                                                 ('film_name', title if not imdb_id else None),
+                                                 ('imdb_id', imdb_id if imdb_id else None),
+                                                 ('languages', langs),
+                                                 ('season_number', self.video.season),
+                                                 ('subs_per_page', 30),
+                                                 ('type', 'tv'),
+                                                 ('comment', 1),
+                                                 ('releases', 1),
+                                                 ('bazarr', 1)),
+                                         timeout=30),
+                amount=retry_amount,
+                retry_timeout=retry_timeout
+            )
         else:
             res_absolute = None
+            res_season = None
             params = {
                        'api_key': self.api_key,
                        'film_name': title if not imdb_id else None,
@@ -269,6 +292,17 @@ class SubdlProvider(ProviderRetryMixin, Provider):
                         all_items.append(item)
                         seen_ids.add(item['name'])
                 logger.debug(f'Absolute episode search added {len(abs_result.get("subtitles", []))} more subtitles')
+
+        if res_season and res_season.status_code == 200:
+            season_result = res_season.json()
+            if ('success' in season_result and season_result['success']) or ('status' in season_result and season_result['status']):
+                added = 0
+                for item in season_result.get('subtitles', []):
+                    if item['name'] not in seen_ids:
+                        all_items.append(item)
+                        seen_ids.add(item['name'])
+                        added += 1
+                logger.debug(f'Season-only search added {added} more subtitles')
 
         logger.debug(f"Query returned {len(all_items)} subtitles")
 
