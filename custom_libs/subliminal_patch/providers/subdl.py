@@ -314,6 +314,38 @@ class SubdlProvider(ProviderRetryMixin, Provider):
                         added += 1
                 logger.debug(f'Season-only search added {added} more subtitles')
 
+        # Last resort: if all season-filtered searches returned nothing, search by title only
+        # (no season/episode filter). This catches anime stored as season 0 on subdl (full series
+        # blocks) where season_number filtering silently excludes all results.
+        if not all_items and isinstance(self.video, Episode):
+            logger.debug('All season-filtered searches returned 0 results, falling back to title-only search')
+            res_title = self.retry(
+                lambda: self.session.get(self.server_url() + 'subtitles',
+                                         params=(('api_key', self.api_key),
+                                                 ('film_name', title if not imdb_id else None),
+                                                 ('imdb_id', imdb_id if imdb_id else None),
+                                                 ('languages', langs),
+                                                 ('subs_per_page', 30),
+                                                 ('type', 'tv'),
+                                                 ('comment', 1),
+                                                 ('releases', 1),
+                                                 ('bazarr', 1)),
+                                         timeout=30),
+                amount=retry_amount,
+                retry_timeout=retry_timeout
+            )
+            if res_title.status_code == 200:
+                title_result = res_title.json()
+                if ('success' in title_result and title_result['success']) or \
+                        ('status' in title_result and title_result['status']):
+                    added = 0
+                    for item in title_result.get('subtitles', []):
+                        if item['name'] not in seen_ids:
+                            all_items.append(item)
+                            seen_ids.add(item['name'])
+                            added += 1
+                    logger.debug(f'Title-only fallback search added {added} subtitles')
+
         logger.debug(f"Query returned {len(all_items)} subtitles")
 
         absolute_episode = getattr(self.video, 'absolute_episode', None)
