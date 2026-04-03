@@ -463,7 +463,8 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
   {
     key: "subsarr",
     name: "Subsarr",
-    description: "Self-hosted Subscene subtitle provider. (requires slimcdk/subsarr https://github.com/slimcdk/subsarr)",
+    description:
+      "Self-hosted Subscene subtitle provider. (requires slimcdk/subsarr https://github.com/slimcdk/subsarr)",
     inputs: [
       {
         type: "text",
