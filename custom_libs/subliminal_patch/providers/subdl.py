@@ -77,7 +77,7 @@ class SubdlSubtitle(Subtitle):
             # tmdb 
             matches.add('tmdb_id')
 
-        utils.update_matches(matches, video, self.release_info)
+        utils.update_matches(matches, video, self.releases)
 
         self.matches = matches
 
