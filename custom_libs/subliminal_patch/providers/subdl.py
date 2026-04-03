@@ -67,8 +67,10 @@ class SubdlSubtitle(Subtitle):
             # episode
             if video.episode == self.episode:
                 matches.add('episode')
-            # imdb
+            # imdb — IMDB match also confirms the year
             matches.add('series_imdb_id')
+            if video.year:
+                matches.add('year')
         else:
             # title
             matches.add('title')
