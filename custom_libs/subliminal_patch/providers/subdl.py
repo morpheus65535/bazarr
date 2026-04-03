@@ -7,6 +7,7 @@ import io
 from zipfile import ZipFile, is_zipfile
 from urllib.parse import urljoin
 from requests import Session
+from guessit import guessit
 
 from babelfish import language_converters
 from subzero.language import Language
@@ -65,6 +66,11 @@ class SubdlSubtitle(Subtitle):
             matches.add('series')
             # season
             if video.season == self.season:
+                matches.add('season')
+            elif self.is_pack and self.absolute_episode:
+                # Arc-based season numbering (e.g. subdl's Enies Lobby = S09) differs from
+                # Sonarr's sequential numbering (S11). When a pack is validated via absolute
+                # episode range, trust the match regardless of season number discrepancy.
                 matches.add('season')
             # episode — match by standard episode, absolute episode, or pack range
             if video.episode == self.episode:
@@ -318,6 +324,18 @@ class SubdlProvider(ProviderRetryMixin, Provider):
                 if isinstance(self.video, Episode):
                     ep_from = item.get('episode_from')
                     ep_end = item.get('episode_end')
+                    # Fallback: parse episode range from release names when the API
+                    # does not provide episode_from/episode_end fields.
+                    if not (ep_from and ep_end and ep_from != ep_end):
+                        ep_from_parsed, ep_end_parsed = self._parse_episode_range_from_releases(
+                            item.get('releases', [])
+                        )
+                        if ep_from_parsed and ep_end_parsed and ep_from_parsed != ep_end_parsed:
+                            ep_from = ep_from_parsed
+                            ep_end = ep_end_parsed
+                            logger.debug(
+                                f'Parsed episode range {ep_from}-{ep_end} from release names'
+                            )
                     if ep_from and ep_end and ep_from != ep_end:
                         # Multi-episode pack: allow if target episode is within range
                         target_ep = self.video.episode
@@ -383,6 +401,23 @@ class SubdlProvider(ProviderRetryMixin, Provider):
 
         # nothing match so we consider it as normal subtitles
         return False
+
+    @staticmethod
+    def _parse_episode_range_from_releases(release_names):
+        """Parse episode range (ep_from, ep_end) from release name strings.
+
+        Used as a fallback when the subdl API does not populate episode_from/
+        episode_end for a pack. Guessit expands patterns like 'EP0264-0336'
+        into a list of integers; we extract the first and last as the range.
+
+        Returns (ep_from, ep_end) as ints, or (None, None) if not found.
+        """
+        for name in release_names:
+            guess = guessit(name, {'type': 'episode'})
+            ep = guess.get('episode')
+            if isinstance(ep, list) and len(ep) >= 2:
+                return ep[0], ep[-1]
+        return None, None
 
     def list_subtitles(self, video, languages):
         return self.query(languages, video)
