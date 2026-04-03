@@ -33,12 +33,13 @@ class SubdlSubtitle(Subtitle):
     hearing_impaired_verifiable = True
 
     def __init__(self, language, forced, hearing_impaired, page_link, download_link, file_id, release_names, uploader,
-                 season=None, episode=None):
+                 season=None, episode=None, absolute_episode=None):
         super().__init__(language)
         language = Language.rebuild(language, hi=hearing_impaired, forced=forced)
 
         self.season = season
         self.episode = episode
+        self.absolute_episode = absolute_episode
         self.releases = release_names
         self.release_info = ', '.join(release_names)
         self.language = language
@@ -64,8 +65,11 @@ class SubdlSubtitle(Subtitle):
             # season
             if video.season == self.season:
                 matches.add('season')
-            # episode
+            # episode — match by standard episode or absolute episode number
             if video.episode == self.episode:
+                matches.add('episode')
+            elif (getattr(video, 'absolute_episode', None) and
+                  video.absolute_episode == self.episode):
                 matches.add('episode')
             # imdb — IMDB match also confirms the year
             matches.add('series_imdb_id')
@@ -159,7 +163,32 @@ class SubdlProvider(ProviderRetryMixin, Provider):
                 amount=retry_amount,
                 retry_timeout=retry_timeout
             )
+
+            # For anime with absolute episode numbering, also search by absolute episode number
+            # so we can find subtitles that are only indexed by absolute number on subdl
+            absolute_episode = getattr(self.video, 'absolute_episode', None)
+            if absolute_episode and absolute_episode != self.video.episode:
+                logger.debug(f'Also searching by absolute episode number: {absolute_episode}')
+                res_absolute = self.retry(
+                    lambda: self.session.get(self.server_url() + 'subtitles',
+                                             params=(('api_key', self.api_key),
+                                                     ('episode_number', absolute_episode),
+                                                     ('film_name', title if not imdb_id else None),
+                                                     ('imdb_id', imdb_id if imdb_id else None),
+                                                     ('languages', langs),
+                                                     ('subs_per_page', 30),
+                                                     ('type', 'tv'),
+                                                     ('comment', 1),
+                                                     ('releases', 1),
+                                                     ('bazarr', 1)),
+                                             timeout=30),
+                    amount=retry_amount,
+                    retry_timeout=retry_timeout
+                )
+            else:
+                res_absolute = None
         else:
+            res_absolute = None
             params = {
                        'api_key': self.api_key,
                        'film_name': title if not imdb_id else None,
@@ -228,30 +257,46 @@ class SubdlProvider(ProviderRetryMixin, Provider):
                     return subtitles
                 raise ProviderError(error_msg)
 
-        logger.debug(f"Query returned {len(result['subtitles'])} subtitles")
+        # Merge absolute episode search results if available
+        all_items = list(result.get('subtitles', []))
+        seen_ids = {item['name'] for item in all_items}
 
-        if len(result['subtitles']):
-            for item in result['subtitles']:
+        if res_absolute and res_absolute.status_code == 200:
+            abs_result = res_absolute.json()
+            if ('success' in abs_result and abs_result['success']) or ('status' in abs_result and abs_result['status']):
+                for item in abs_result.get('subtitles', []):
+                    if item['name'] not in seen_ids:
+                        all_items.append(item)
+                        seen_ids.add(item['name'])
+                logger.debug(f'Absolute episode search added {len(abs_result.get("subtitles", []))} more subtitles')
+
+        logger.debug(f"Query returned {len(all_items)} subtitles")
+
+        absolute_episode = getattr(self.video, 'absolute_episode', None)
+
+        if len(all_items):
+            for item in all_items:
                 if (isinstance(self.video, Episode) and
                         item.get('episode_from', False) != item.get('episode_end', False)):
                     # ignore season packs
                     continue
-                else:
-                    subtitle = SubdlSubtitle(
-                        language=Language.fromsubdl(item['language']),
-                        forced=self._is_forced(item),
-                        hearing_impaired=item.get('hi', False) or self._is_hi(item),
-                        page_link=urljoin("https://subdl.com", item.get('subtitlePage', '')),
-                        download_link=item['url'],
-                        file_id=item['name'],
-                        release_names=item.get('releases', []),
-                        uploader=item.get('author', ''),
-                        season=item.get('season', None),
-                        episode=item.get('episode', None),
-                    )
-                    subtitle.get_matches(self.video)
-                    if subtitle.language in languages:  # make sure only desired subtitles variants are returned
-                        subtitles.append(subtitle)
+
+                subtitle = SubdlSubtitle(
+                    language=Language.fromsubdl(item['language']),
+                    forced=self._is_forced(item),
+                    hearing_impaired=item.get('hi', False) or self._is_hi(item),
+                    page_link=urljoin("https://subdl.com", item.get('subtitlePage', '')),
+                    download_link=item['url'],
+                    file_id=item['name'],
+                    release_names=item.get('releases', []),
+                    uploader=item.get('author', ''),
+                    season=item.get('season', None),
+                    episode=item.get('episode', None),
+                    absolute_episode=absolute_episode,
+                )
+                subtitle.get_matches(self.video)
+                if subtitle.language in languages:  # make sure only desired subtitles variants are returned
+                    subtitles.append(subtitle)
 
         return subtitles
 
