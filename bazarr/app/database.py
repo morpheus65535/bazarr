@@ -172,6 +172,7 @@ class TableEpisodes(Base):
     sonarrSeriesId = mapped_column(Integer, ForeignKey('table_shows.sonarrSeriesId', ondelete='CASCADE'))
     subtitles = mapped_column(Text)
     title = mapped_column(Text, nullable=False)
+    tvdbId = mapped_column(Integer)
     updated_at_timestamp = mapped_column(DateTime)
     video_codec = mapped_column(Text)
 

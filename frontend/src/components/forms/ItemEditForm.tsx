@@ -1,10 +1,12 @@
 import { FunctionComponent, useMemo } from "react";
 import { Button, Divider, Group, LoadingOverlay, Stack } from "@mantine/core";
 import { useForm } from "@mantine/form";
+import { showNotification } from "@mantine/notifications";
 import { UseMutationResult } from "@tanstack/react-query";
 import { useLanguageProfiles } from "@/apis/hooks";
 import { MultiSelector, Selector } from "@/components/inputs";
 import { useModals, withModal } from "@/modules/modals";
+import { notification } from "@/modules/task";
 import { GetItemId, useSelectorOptions } from "@/utilities";
 
 interface Props {
@@ -56,9 +58,29 @@ const ItemEditForm: FunctionComponent<Props> = ({
         if (item) {
           const itemId = GetItemId(item);
           if (itemId) {
-            mutate({ id: [itemId], profileid: [profile?.profileId ?? null] });
-            onComplete?.();
-            modals.closeSelf();
+            mutate(
+              { id: [itemId], profileid: [profile?.profileId ?? null] },
+              {
+                onSuccess: () => {
+                  showNotification(
+                    notification.info(
+                      "Profile Saved",
+                      "Languages profile updated successfully",
+                    ),
+                  );
+                  onComplete?.();
+                  modals.closeSelf();
+                },
+                onError: () => {
+                  showNotification(
+                    notification.error(
+                      "Save Failed",
+                      "Could not update languages profile",
+                    ),
+                  );
+                },
+              },
+            );
             return;
           }
         }

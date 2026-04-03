@@ -103,9 +103,10 @@ def wanted_download_subtitles(sonarr_episode_id, job_id=None):
         logging.info("BAZARR All providers are throttled")
 
 
-def wanted_search_missing_subtitles_series(job_id=None):
+def wanted_search_missing_subtitles_series(job_id=None, wait_for_completion=False):
     if not job_id:
-        jobs_queue.add_job_from_function("Searching for missing series subtitles", is_progress=True)
+        jobs_queue.add_job_from_function("Searching for missing series subtitles", is_progress=True,
+                                         wait_for_completion=wait_for_completion)
         return
 
     conditions = [(TableEpisodes.missing_subtitles.is_not(None)),
@@ -132,6 +133,7 @@ def wanted_search_missing_subtitles_series(job_id=None):
     if count_episodes == 0:
         jobs_queue.update_job_progress(job_id=job_id, progress_value='max')
 
+    throttled = False
     for i, episode in enumerate(episodes, start=1):
         jobs_queue.update_job_progress(job_id=job_id, progress_value=i,
                                        progress_message=f'{episode.title} - S{episode.season:02d}E{episode.episode:02d}'
@@ -145,8 +147,12 @@ def wanted_search_missing_subtitles_series(job_id=None):
             jobs_queue.update_job_progress(job_id=job_id, progress_value=i, progress_max=count_episodes)
         else:
             logging.info("BAZARR All providers are throttled")
+            throttled = True
             break
 
+    outcome_msg = ("All providers throttled" if throttled
+                   else "Search completed")
+    jobs_queue.update_job_progress(job_id=job_id, progress_message=outcome_msg)
     jobs_queue.update_job_name(job_id=job_id, new_job_name="Searched for missing series subtitles")
     logging.info('BAZARR Finished searching for missing Series Subtitles. Check History for more information.')
 

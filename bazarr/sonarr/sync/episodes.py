@@ -175,6 +175,15 @@ def sync_episodes(series_id, defer_search=False, is_signalr=False):
     if len(episodes_to_update):
         for updated_episode in episodes_to_update:
             try:
+                previous_episode_data = database.execute(
+                    select(TableEpisodes.episode_file_id, TableEpisodes.path)
+                    .where(TableEpisodes.sonarrEpisodeId == updated_episode['sonarrEpisodeId'])
+                ).first()
+
+                previous_episode_id = updated_episode['sonarrEpisodeId']
+                previous_episode_file_id = previous_episode_data.episode_file_id
+                previous_episode_path = previous_episode_data.path
+
                 updated_episode['updated_at_timestamp'] = datetime.now()
                 database.execute(update(TableEpisodes)
                                  .values(updated_episode)
@@ -182,8 +191,15 @@ def sync_episodes(series_id, defer_search=False, is_signalr=False):
             except IntegrityError as e:
                 logging.error(f"BAZARR cannot update episodes because of {e}")
             else:
-                store_subtitles(updated_episode['path'], path_mappings.path_replace(updated_episode['path']))
-                event_stream(type='episode', action='update', payload=updated_episode['sonarrEpisodeId'])
+                if (previous_episode_file_id != updated_episode['episode_file_id'] or
+                        previous_episode_path != updated_episode['path']):
+                    # Store subtitles for updated episode where path or episode_file_id changed
+                    logging.debug(f'BAZARR updating subtitles for episode {updated_episode["path"]}')
+                    store_subtitles(updated_episode['path'], path_mappings.path_replace(updated_episode['path']))
+                else:
+                    logging.debug(f'BAZARR skipping subtitle update for episode {updated_episode["path"]} as path '
+                                  f'and episode_file_id unchanged')
+                event_stream(type='episode', action='update', payload=previous_episode_id)
 
     # Downloading missing subtitles
     series_data = database.execute(

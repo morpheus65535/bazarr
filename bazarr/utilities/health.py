@@ -14,9 +14,9 @@ from sonarr.rootfolder import check_sonarr_rootfolder
 from radarr.rootfolder import check_radarr_rootfolder
 
 
-def check_health(job_id=None):
+def check_health(job_id=None, wait_for_completion=False):
     if not job_id:
-        jobs_queue.add_job_from_function("Checking Health", is_progress=False)
+        jobs_queue.add_job_from_function("Checking Health", is_progress=False, wait_for_completion=wait_for_completion)
         return
 
     if settings.general.use_sonarr:

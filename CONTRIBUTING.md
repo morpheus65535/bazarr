@@ -7,6 +7,47 @@
 - Git.
 - UI testing must be done using Chrome latest version.
 
+## Development Setup
+
+### Option 1: Full local environment (Docker)
+
+The recommended path for backend or full-stack changes. Runs both the Python backend
+and the Vite frontend in Docker containers with live reloading — no local Node.js or
+Python required on your host.
+
+See **[dev-setup/README.md](dev-setup/README.md)** for setup instructions.
+
+### Option 2: Local frontend against a running Bazarr instance
+
+Useful when you're making frontend-only changes and already have Bazarr running
+elsewhere (a home server, NAS, etc.). Runs the Vite dev server locally and proxies
+API calls to your existing instance.
+
+**Prerequisites:** Node.js 20.x
+
+1. Create `frontend/.env.local` (this file is gitignored):
+
+   ```
+   VITE_PROXY_URL=http://<your-bazarr-host>:<port>
+   VITE_PROXY_SECURE=false
+   VITE_ALLOW_WEBSOCKET=true
+   VITE_API_KEY=<your API key from Settings > General > Security>
+   ```
+
+2. Start the dev server:
+
+   ```bash
+   cd frontend
+   npm install
+   npm start
+   ```
+
+   The Vite server opens at `http://localhost:5173` by default. All `/api/*`
+   requests are proxied to `VITE_PROXY_URL`.
+
+> **Note:** `VITE_API_KEY` is required. Without it, the frontend attempts to read
+> a local `config.yaml` that doesn't exist in a dev checkout and will fail to load.
+
 ## Warning
 
 As we're using Git in the development process, you better disable automatic update of Bazarr in UI or you may get your changes overwritten. Alternatively, you can completely disable the update module by running Bazarr with `--no-update` command line argument.

@@ -11,9 +11,10 @@ from app.get_args import args
 from app.jobs_queue import jobs_queue
 
 
-def cache_maintenance(job_id=None):
+def cache_maintenance(job_id=None, wait_for_completion=False):
     if not job_id:
-        jobs_queue.add_job_from_function("Performing Cache Maintenance", is_progress=False)
+        jobs_queue.add_job_from_function("Performing Cache Maintenance", is_progress=False,
+                                         wait_for_completion=wait_for_completion)
         return
 
     main_cache_validity = 14  # days

@@ -178,7 +178,9 @@ class WebHooksPlex(Resource):
                 if tvdb_id:
                     show = database.execute(
                         select(TableShows.imdbId)
-                        .where(TableShows.tvdbId == int(tvdb_id))) \
+                        .select_from(TableShows)
+                        .join(TableEpisodes)
+                        .where(TableEpisodes.tvdbId == int(tvdb_id))) \
                         .first()
                     if show:
                         series_imdb_id = show.imdbId

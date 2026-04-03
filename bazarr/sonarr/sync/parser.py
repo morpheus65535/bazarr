@@ -184,4 +184,5 @@ def episodeParser(episode):
                             'episode_file_id': episode['episodeFile']['id'],
                             'audio_language': str(audio_language),
                             'file_size': episode['episodeFile']['size'],
-                            'absoluteEpisode': episode.get('absoluteEpisodeNumber')}
+                            'absoluteEpisode': episode.get('absoluteEpisodeNumber'),
+                            'tvdbId': episode.get('tvdbId')}

@@ -85,9 +85,10 @@ def add_movie(added_movie):
         event_stream(type='movie', action='update', payload=int(added_movie['radarrId']))
 
 
-def update_movies(job_id=None):
+def update_movies(job_id=None, wait_for_completion=False):
     if not job_id:
-        jobs_queue.add_job_from_function("Syncing movies with Radarr", is_progress=True)
+        jobs_queue.add_job_from_function("Syncing movies with Radarr", is_progress=True,
+                                         wait_for_completion=wait_for_completion)
         return
 
     check_radarr_rootfolder()

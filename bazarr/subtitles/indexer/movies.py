@@ -277,9 +277,10 @@ def list_missing_subtitles_movies(no=None):
     event_stream(type='badges')
 
 
-def movies_full_scan_subtitles(job_id=None, use_cache=None):
+def movies_full_scan_subtitles(job_id=None, use_cache=None, wait_for_completion=False):
     if not job_id:
-        jobs_queue.add_job_from_function("Indexing all existing movies subtitles", is_progress=True)
+        jobs_queue.add_job_from_function("Indexing all existing movies subtitles", is_progress=True,
+                                         wait_for_completion=wait_for_completion)
         return
 
     if use_cache is None:

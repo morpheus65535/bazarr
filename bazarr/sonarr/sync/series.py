@@ -42,9 +42,10 @@ def get_series_monitored_table():
     return series_dict
 
 
-def update_series(job_id=None):
+def update_series(job_id=None, wait_for_completion=False):
     if not job_id:
-        jobs_queue.add_job_from_function("Syncing series with Sonarr", is_progress=True)
+        jobs_queue.add_job_from_function("Syncing series with Sonarr", is_progress=True,
+                                         wait_for_completion=wait_for_completion)
         return
 
     # Update root folders and update their health status

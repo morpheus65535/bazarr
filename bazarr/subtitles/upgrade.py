@@ -24,22 +24,23 @@ from .download import generate_subtitles
 from app.event_handler import event_stream
 
 
-def upgrade_subtitles():
+def upgrade_subtitles(wait_for_completion=False):
     use_sonarr = settings.general.use_sonarr
     use_radarr = settings.general.use_radarr
 
     if use_sonarr:
-        upgrade_episodes_subtitles()
+        upgrade_episodes_subtitles(wait_for_completion=wait_for_completion)
 
     if use_radarr:
-        upgrade_movies_subtitles()
+        upgrade_movies_subtitles(wait_for_completion=wait_for_completion)
 
     logging.info('BAZARR Finished searching for Subtitles to upgrade. Check History for more information.')
 
 
-def upgrade_episodes_subtitles(job_id=None):
+def upgrade_episodes_subtitles(job_id=None, wait_for_completion=False):
     if not job_id:
-        jobs_queue.add_job_from_function("Trying to upgrade episodes subtitles", is_progress=True)
+        jobs_queue.add_job_from_function("Trying to upgrade episodes subtitles", is_progress=True,
+                                         wait_for_completion=wait_for_completion)
         return
 
     episodes_to_upgrade = get_upgradable_episode_subtitles()
@@ -153,9 +154,10 @@ def upgrade_episodes_subtitles(job_id=None):
     jobs_queue.update_job_name(job_id=job_id, new_job_name='Tried to upgrade episodes subtitles')
 
 
-def upgrade_movies_subtitles(job_id=None):
+def upgrade_movies_subtitles(job_id=None, wait_for_completion=False):
     if not job_id:
-        jobs_queue.add_job_from_function("Trying to upgrade movies subtitles", is_progress=True)
+        jobs_queue.add_job_from_function("Trying to upgrade movies subtitles", is_progress=True,
+                                         wait_for_completion=wait_for_completion)
         return
 
     movies_to_upgrade = get_upgradable_movies_subtitles()

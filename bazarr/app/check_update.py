@@ -21,10 +21,11 @@ def deprecated_python_version():
     return sys.version_info.major == 2 or (sys.version_info.major == 3 and sys.version_info.minor < 10)
 
 
-def check_releases(job_id=None, startup=False):
+def check_releases(job_id=None, startup=False, wait_for_completion=False):
     # startup is used to prevent trying to create a job before the jobs queue is initialized
     if not startup and not job_id:
-        jobs_queue.add_job_from_function("Updating Release Info", is_progress=False)
+        jobs_queue.add_job_from_function("Updating Release Info", is_progress=False,
+                                         wait_for_completion=wait_for_completion)
         return
 
     releases = []
@@ -58,7 +59,7 @@ def check_releases(job_id=None, startup=False):
             json.dump(releases, f)
         logging.debug(f'BAZARR saved {len(r.json())} releases to releases.txt')
     finally:
-        if not startup:
+        if job_id:
             jobs_queue.update_job_name(job_id=job_id, new_job_name="Updated Release Info")
 
 

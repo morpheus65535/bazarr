@@ -180,8 +180,9 @@ declare namespace Settings {
 
   interface Translator {
     default_score: number;
-    gemini_key: string;
+    gemini_keys: string[];
     gemini_model: string;
+    gemini_batch_size: number;
     lingarr_url: string;
     lingarr_token: string;
     translator_info: boolean;

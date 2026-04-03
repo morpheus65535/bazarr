@@ -202,22 +202,24 @@ class Scheduler:
             self.aps_scheduler.add_job(
                 update_series, 'interval', minutes=int(settings.sonarr.series_sync), max_instances=1,
                 coalesce=True, misfire_grace_time=15, id='update_series', name='Sync with Sonarr',
-                replace_existing=True)
+                replace_existing=True, kwargs=dict(wait_for_completion=True))
 
     def __radarr_update_task(self):
         if settings.general.use_radarr:
             self.aps_scheduler.add_job(
                 update_movies, 'interval', minutes=int(settings.radarr.movies_sync), max_instances=1,
                 coalesce=True, misfire_grace_time=15, id='update_movies', name='Sync with Radarr',
-                replace_existing=True)
+                replace_existing=True, kwargs=dict(wait_for_completion=True))
 
     def __cache_cleanup_task(self):
         self.aps_scheduler.add_job(cache_maintenance, 'interval', hours=24, max_instances=1, coalesce=True,
-                                   misfire_grace_time=15, id='cache_cleanup', name='Cache Maintenance')
+                                   misfire_grace_time=15, id='cache_cleanup', name='Cache Maintenance',
+                                   kwargs=dict(wait_for_completion=True))
 
     def __check_health_task(self):
         self.aps_scheduler.add_job(check_health, 'interval', hours=6, max_instances=1, coalesce=True,
-                                   misfire_grace_time=15, id='check_health', name='Check Health')
+                                   misfire_grace_time=15, id='check_health', name='Check Health',
+                                   kwargs=dict(wait_for_completion=True))
 
     def __automatic_backup(self):
         backup = settings.backup.frequency
@@ -229,7 +231,8 @@ class Scheduler:
             trigger = {'year': in_a_century()}
         self.aps_scheduler.add_job(backup_to_zip, 'cron', **trigger,
                                    max_instances=1, coalesce=True, misfire_grace_time=15, id='backup',
-                                   name='Backup Database and Configuration File', replace_existing=True)
+                                   name='Backup Database and Configuration File', replace_existing=True,
+                                   kwargs=dict(wait_for_completion=True))
 
     def __sonarr_full_update_task(self):
         if settings.general.use_sonarr:
@@ -238,17 +241,18 @@ class Scheduler:
                 self.aps_scheduler.add_job(
                     series_full_scan_subtitles, 'cron', hour=settings.sonarr.full_update_hour, max_instances=1,
                     coalesce=True, misfire_grace_time=15, id='series_full_scan_subtitles',
-                    name='Index All Existing Episodes Subtitles', replace_existing=True)
+                    name='Index All Existing Episodes Subtitles', replace_existing=True,
+                    kwargs=dict(wait_for_completion=True))
             elif full_update == "Weekly":
                 self.aps_scheduler.add_job(
                     series_full_scan_subtitles, 'cron', day_of_week=settings.sonarr.full_update_day,
                     hour=settings.sonarr.full_update_hour, max_instances=1, coalesce=True, misfire_grace_time=15,
                     id='series_full_scan_subtitles', name='Index All Existing Episodes Subtitles',
-                    replace_existing=True)
+                    replace_existing=True, kwargs=dict(wait_for_completion=True))
             elif full_update == "Manually":
                 self.aps_scheduler.add_job(
                     series_full_scan_subtitles, 'cron', year=in_a_century(), max_instances=1, coalesce=True,
-                    misfire_grace_time=15, id='series_full_scan_subtitles',
+                    misfire_grace_time=15, id='series_full_scan_subtitles', kwargs=dict(wait_for_completion=True),
                     name='Index All Existing Episodes Subtitles', replace_existing=True)
 
     def __radarr_full_update_task(self):
@@ -257,22 +261,23 @@ class Scheduler:
             if full_update == "Daily":
                 self.aps_scheduler.add_job(
                     movies_full_scan_subtitles, 'cron', hour=settings.radarr.full_update_hour, max_instances=1,
-                    coalesce=True, misfire_grace_time=15,
+                    coalesce=True, misfire_grace_time=15, kwargs=dict(wait_for_completion=True),
                     id='movies_full_scan_subtitles', name='Index All Existing Movies Subtitles', replace_existing=True)
             elif full_update == "Weekly":
                 self.aps_scheduler.add_job(
                     movies_full_scan_subtitles,
                     'cron', day_of_week=settings.radarr.full_update_day, hour=settings.radarr.full_update_hour,
                     max_instances=1, coalesce=True, misfire_grace_time=15, id='movies_full_scan_subtitles',
-                    name='Index All Existing Movies Subtitles', replace_existing=True)
+                    name='Index All Existing Movies Subtitles', replace_existing=True,
+                    kwargs=dict(wait_for_completion=True))
             elif full_update == "Manually":
                 self.aps_scheduler.add_job(
                     movies_full_scan_subtitles, 'cron', year=in_a_century(), max_instances=1, coalesce=True,
                     misfire_grace_time=15, id='movies_full_scan_subtitles', name='Index All Existing Movies Subtitles',
-                    replace_existing=True)
+                    replace_existing=True, kwargs=dict(wait_for_completion=True))
 
     def __update_bazarr_task(self):
-        if not args.no_update and os.environ["BAZARR_VERSION"] != '':
+        if not args.no_update and os.environ["BAZARR_VERSION"] not in ['', 'unknown']:
             task_name = 'Update Bazarr'
 
             if settings.general.auto_update:
@@ -285,35 +290,40 @@ class Scheduler:
                     replace_existing=True)
                 self.aps_scheduler.add_job(
                     check_releases, 'interval', hours=3, max_instances=1, coalesce=True, misfire_grace_time=15,
-                    id='update_release', name='Update Release Info', replace_existing=True)
+                    id='update_release', name='Update Release Info', replace_existing=True,
+                    kwargs=dict(wait_for_completion=True))
 
         else:
             self.aps_scheduler.add_job(
                 check_releases, 'interval', hours=3, max_instances=1, coalesce=True, misfire_grace_time=15,
-                id='update_release', name='Update Release Info', replace_existing=True)
+                id='update_release', name='Update Release Info', replace_existing=True,
+                kwargs=dict(wait_for_completion=True))
 
         self.aps_scheduler.add_job(
             get_announcements_to_file, 'interval', hours=6, max_instances=1, coalesce=True, misfire_grace_time=15,
-            id='update_announcements', name='Update Announcements File', replace_existing=True)
+            id='update_announcements', name='Update Announcements File', replace_existing=True,
+            kwargs=dict(wait_for_completion=True))
 
     def __search_wanted_subtitles_task(self):
         if settings.general.use_sonarr:
             self.aps_scheduler.add_job(
                 wanted_search_missing_subtitles_series, 'interval', hours=int(settings.general.wanted_search_frequency),
                 max_instances=1, coalesce=True, misfire_grace_time=15, id='wanted_search_missing_subtitles_series',
-                replace_existing=True, name='Search for Missing Series Subtitles')
+                replace_existing=True, name='Search for Missing Series Subtitles',
+                kwargs=dict(wait_for_completion=True))
         if settings.general.use_radarr:
             self.aps_scheduler.add_job(
                 wanted_search_missing_subtitles_movies, 'interval',
                 hours=int(settings.general.wanted_search_frequency_movie), max_instances=1, coalesce=True,
                 misfire_grace_time=15, id='wanted_search_missing_subtitles_movies',
-                name='Search for Missing Movies Subtitles', replace_existing=True)
+                name='Search for Missing Movies Subtitles', replace_existing=True,
+                kwargs=dict(wait_for_completion=True))
 
     def __upgrade_subtitles_task(self):
         if settings.general.use_sonarr or settings.general.use_radarr:
             self.aps_scheduler.add_job(
                 upgrade_subtitles, 'interval', hours=int(settings.general.upgrade_frequency), max_instances=1,
-                coalesce=True, misfire_grace_time=15, id='upgrade_subtitles',
+                coalesce=True, misfire_grace_time=15, id='upgrade_subtitles', kwargs=dict(wait_for_completion=True),
                 name='Upgrade Previously Downloaded Subtitles', replace_existing=True)
 
     def __randomize_interval_task(self):

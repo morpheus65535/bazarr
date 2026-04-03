@@ -84,6 +84,7 @@ def movies_download_subtitles(no, job_id=None, job_sub_function=False):
 
     providers_list = get_providers()
 
+    downloaded_count = 0
     if providers_list:
         for language in ast.literal_eval(movie.missing_subtitles):
             if language is not None:
@@ -107,10 +108,15 @@ def movies_download_subtitles(no, job_id=None, job_sub_function=False):
                     store_subtitles_movie(movie.path, moviePath)
                     history_log_movie(1, no, result)
                     send_notifications_movie(no, result.message)
+                    downloaded_count += 1
+        outcome_msg = (f"{downloaded_count} subtitle(s) downloaded"
+                       if downloaded_count else "No subtitles found")
     else:
         logging.info("BAZARR All providers are throttled")
+        outcome_msg = "All providers throttled"
 
-    jobs_queue.update_job_progress(job_id=job_id, progress_value="max")
+    jobs_queue.update_job_progress(job_id=job_id, progress_value="max",
+                                   progress_message=outcome_msg)
     jobs_queue.update_job_name(job_id=job_id, new_job_name=f"Downloaded missing subtitles for {movie.title} ({movie.year})")
 
 

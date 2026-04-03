@@ -64,7 +64,7 @@ class LingarrTranslatorService:
                 logger.error(f'Translation failed for {self.source_srt_file}')
                 jobs_queue.update_job_progress(job_id=job_id,
                                                progress_message=f'Translation failed for {self.source_srt_file}')
-                return False
+                raise RuntimeError(f'Translation failed for {self.source_srt_file}')
 
             logger.debug(f'BAZARR saving Lingarr translated subtitles to {self.dest_srt_file}')
             translation_map = {}
@@ -108,7 +108,7 @@ class LingarrTranslatorService:
         except Exception as e:
             logger.error(f'BAZARR encountered an error during Lingarr translation: {str(e)}')
             jobs_queue.update_job_progress(job_id=job_id, progress_message=f'Lingarr translation failed: {str(e)}')
-            return False
+            raise
 
     @retry(exceptions=(TooManyRequests, RequestError, requests.exceptions.RequestException), tries=3, delay=1,
            backoff=2, jitter=(0, 1))

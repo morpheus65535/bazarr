@@ -1153,20 +1153,21 @@ def get_subtitle_path(video_path, language=None, extension='.srt', forced_tag=Fa
 
     """
     subtitle_root = os.path.splitext(video_path)[0]
-    tags = tags or []
-    hi_extension = os.environ.get("SZ_HI_EXTENSION", "hi")
-
-    if forced_tag:
-        tags.append("forced")
-
-    elif hi_tag:
-        tags.append(hi_extension)
 
     if language:
         subtitle_root += '.' + str(language.basename)
 
-    if tags:
-        subtitle_root += ".%s" % "-".join(tags)
+        tags = tags or []
+        hi_extension = os.environ.get("SZ_HI_EXTENSION", "hi")
+
+        if forced_tag:
+            tags.append("forced")
+
+        elif hi_tag:
+            tags.append(hi_extension)
+
+        if tags:
+            subtitle_root += ".%s" % "-".join(tags)
 
     return subtitle_root + extension
 

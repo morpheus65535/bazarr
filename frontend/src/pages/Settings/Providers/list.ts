@@ -479,8 +479,17 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
   { key: "subscenter", description: "Hebrew Subtitles Provider" },
   {
     key: "subsro",
-    name: "subs.ro",
+    name: "Subs.ro",
     description: "Romanian Subtitles Provider",
+    message:
+      "API key required. Get your key from Subs.ro website: https://subs.ro/api",
+    inputs: [
+      {
+        type: "text",
+        key: "api_key",
+        name: "API Key",
+      },
+    ],
   },
   {
     key: "subsunacs",

@@ -47,9 +47,10 @@ def get_backup_files(fullpath=True):
         } for x in file_list]
 
 
-def backup_to_zip(job_id=None):
+def backup_to_zip(job_id=None, wait_for_completion=False):
     if not job_id:
-        jobs_queue.add_job_from_function("Backing up Database and Configuration File", is_progress=False)
+        jobs_queue.add_job_from_function("Backing up Database and Configuration File", is_progress=False,
+                                         wait_for_completion=wait_for_completion)
         return
 
     now = datetime.now()

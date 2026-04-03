@@ -1,13 +1,11 @@
-# coding=utf-8
-
 import io
 import re
 from zipfile import ZipFile, is_zipfile
 from rarfile import RarFile, is_rarfile
 from requests import Session
-from bs4 import BeautifulSoup
 import logging
 from guessit import guessit
+from subliminal.exceptions import ConfigurationError
 from subliminal_patch.providers import Provider
 from subliminal_patch.providers.mixins import ProviderSubtitleArchiveMixin
 from subliminal_patch.subtitle import Subtitle, guess_matches
@@ -17,25 +15,11 @@ from subliminal_patch.exceptions import APIThrottled, TooManyRequests
 
 logger = logging.getLogger(__name__)
 
-
 class SubsRoSubtitle(Subtitle):
-    """SubsRo Subtitle."""
-
     provider_name = "subsro"
     hash_verifiable = False
 
-    def __init__(
-        self,
-        language,
-        title,
-        download_link,
-        imdb_id,
-        is_episode=False,
-        episode_number=None,
-        year=None,
-        release_info=None,
-        season=None,
-    ):
+    def __init__(self, language, title, download_link, imdb_id, is_episode=False, episode_number=None, year=None, release_info=None, season=None, sub_id=None):
         super().__init__(language)
         self.title = title
         self.page_link = download_link
@@ -46,79 +30,63 @@ class SubsRoSubtitle(Subtitle):
         self.year = year
         self.release_info = self.releases = release_info
         self.season = season
+        self.sub_id = sub_id
 
     @property
     def id(self):
-        logger.info("Getting ID for SubsRo subtitle: %s. ID: %s", self, self.page_link)
-        return self.page_link
+        return self.sub_id or self.page_link
 
     def get_matches(self, video):
         matches = set()
-
         if video.year and self.year == video.year:
             matches.add("year")
-
         if isinstance(video, Movie):
-            # title
             if video.title:
                 matches.add("title")
-
-            # imdb
             if video.imdb_id and self.imdb_id == video.imdb_id:
                 matches.add("imdb_id")
-
-            # guess match others
             matches |= guess_matches(
                 video,
-                guessit(
-                    f"{self.title} {self.season} {self.year} {self.release_info}",
-                    {"type": "movie"},
-                ),
+                guessit(f"{self.title} {self.season or ''} {self.year or ''} {self.release_info or ''}", {"type": "movie"}),
             )
-
         else:
-            # title
             if video.series:
                 matches.add("series")
-
-            # imdb
             if video.series_imdb_id and self.imdb_id == video.series_imdb_id:
                 matches.add("imdb_id")
-
-            # season
             if video.season == self.season:
                 matches.add("season")
-
-            # episode
             if {"imdb_id", "season"}.issubset(matches):
                 matches.add("episode")
-
-            # guess match others
             matches |= guess_matches(
                 video,
-                guessit(
-                    f"{self.title} {self.year} {self.release_info}", {"type": "episode"}
-                ),
+                guessit(f"{self.title} {self.year or ''} {self.release_info or ''}", {"type": "episode"}),
             )
-
         self.matches = matches
         return matches
 
 
 class SubsRoProvider(Provider, ProviderSubtitleArchiveMixin):
-    """SubsRo Provider."""
-
     languages = {Language(lang) for lang in ["ron", "eng"]}
     video_types = (Episode, Movie)
     hash_verifiable = False
 
-    def __init__(self):
+    def __init__(self, api_key=None):
+        if not api_key:
+            raise ConfigurationError("SubsRo requires an API Key.")
+        self.api_keys = [k.strip() for k in api_key.split(",") if k.strip()]
+        self.current_key_index = 0
         self.session = None
 
     def initialize(self):
         self.session = Session()
-        # Placeholder, update with real API if available
-        self.url = "https://subs.ro/api/search"
+        self.base_url = "https://api.subs.ro/v1.0"
+        self.session.headers.update({"Accept": "application/json"})
+        self._update_api_key_header()
+
+    def _update_api_key_header(self):
+        current_key = self.api_keys[self.current_key_index]
+        self.session.headers.update({"X-Subs-Api-Key": current_key})
 
     def terminate(self):
         self.session.close()
@@ -128,73 +96,53 @@ class SubsRoProvider(Provider, ProviderSubtitleArchiveMixin):
         return isinstance(video, (Episode, Movie))
 
     def query(self, language, imdb_id, video):
-        logger.info("Querying SubsRo for %s subtitles of %s", language, imdb_id)
+        logger.info("Querying SubsRo API for %s subtitles of %s", language, imdb_id)
         if not imdb_id:
             return []
 
-        url = f"https://subs.ro/subtitrari/imdbid/{imdb_id}"
-        response = self._request("get", url)
+        lang_code = "ro" if language.alpha3 == "ron" else "en"
+        url = f"{self.base_url}/search/imdbid/{imdb_id}"
+        params = {"language": lang_code}
+
+        response = self._request("get", url, params=params)
+
+        try:
+            data = response.json()
+        except ValueError:
+            logger.error("SubsRo: Invalid JSON response")
+            return []
+
+        if data.get("status") != 200:
+            logger.warning("SubsRo API returned status %s", data.get("status"))
+            return []
 
         results = []
-        soup = BeautifulSoup(response.text, "html.parser")
-        for item in soup.find_all("div", class_="md:col-span-6"):
-            if (
-                "flag-rom" in item.find("img")["src"] and language != Language("ron")
-            ) or (
-                "flag-eng" in item.find("img")["src"] and language != Language("eng")
-            ):
-                continue  # Skip if English flag and language is not English or Romanian flag and language is not Romanian
+        items = data.get("items", [])
+
+        for item in items:
+            sub_id = item.get("id")
+            title = item.get("title")
+            year = item.get("year")
+            release_info = item.get("description", "")
+            download_link = item.get("downloadLink")
+
+            season = None
+            if title:
+                t_match = re.search(r"[Ss]ezon(?:ul)?\s*(\d{1,2})", title)
+                if t_match:
+                    season = int(t_match.group(1))
+            if season is None and release_info:
+                s_match = re.search(r"[Ss]ezon(?:ul)?\s*(\d{1,2})|[Ss](\d{1,2})[Ee]\d+", release_info)
+                if s_match:
+                    season = int(next(g for g in s_match.groups() if g is not None))
 
             episode_number = video.episode if isinstance(video, Episode) else None
 
-            div_tag = item.find("div", class_="col-span-2 lg:col-span-1")
-            download_link = None
-            if div_tag:
-                a_tag = div_tag.find("a")
-                if a_tag and a_tag.has_attr("href"):
-                    download_link = a_tag["href"]
-
-            h1_tag = item.find(
-                "h1",
-                class_="leading-tight text-base font-semibold mb-1 border-b border-dashed border-gray-300 text-[#7f431e] hover:text-red-800",
-            )
-            title = None
-            year = None
-            if h1_tag:
-                a_tag = h1_tag.find("a")
-                if a_tag and a_tag.text:
-                    title_raw = a_tag.text.strip()
-                    title = re.sub(
-                        r"\s*(-\s*Sezonul\s*\d+)?\s*\(\d{4}\).*$", "", title_raw
-                    ).strip()
-                    year = re.search(r"\((\d{4})\)", title_raw).group(1)
-                    season = re.search(r"\s*Sezonul\s *\d?", title_raw)
-                    if season:
-                        season = int(season.group(0).replace("Sezonul", "").strip())
-
-            release_info = None
-            p_tag = item.find(
-                "p", class_="text-sm font-base overflow-auto h-auto lg:h-16"
-            )
-            if p_tag:
-                span_blue = p_tag.find("span", style=lambda s: s and "color: blue" in s)
-                if span_blue:
-                    release_info = span_blue.get_text(strip=True)
-                else:
-                    release_info = p_tag.get_text(separator="\n", strip=True)
-
-            if download_link and title and year:
+            if download_link and title:
                 results.append(
                     SubsRoSubtitle(
-                        language,
-                        title,
-                        download_link,
-                        f"tt{imdb_id}",
-                        isinstance(video, Episode),
-                        episode_number,
-                        year,
-                        release_info,
-                        season,
+                        language, title, download_link, f"tt{imdb_id}",
+                        isinstance(video, Episode), episode_number, year, release_info, season, sub_id
                     )
                 )
         return results
@@ -206,24 +154,20 @@ class SubsRoProvider(Provider, ProviderSubtitleArchiveMixin):
                 imdb_id = video.series_imdb_id[2:]
             else:
                 imdb_id = video.imdb_id[2:]
-        except:
-            logger.error(
-                "Error parsing imdb_id from video object {}".format(str(video))
-            )
+        except Exception:
+            logger.error(f"Error parsing imdb_id from video object {video}")
 
         subtitles = [s for lang in languages for s in self.query(lang, imdb_id, video)]
         return subtitles
 
     def download_subtitle(self, subtitle):
-        logger.info("Downloading subtitle from SubsRo: %s", subtitle.page_link)
+        logger.info("Downloading subtitle archive from SubsRo API: %s", subtitle.page_link)
         response = self._request("get", subtitle.page_link)
-
         archive_stream = io.BytesIO(response.content)
+
         if is_rarfile(archive_stream):
-            logger.debug("Archive identified as RAR")
             archive = RarFile(archive_stream)
         elif is_zipfile(archive_stream):
-            logger.debug("Archive identified as ZIP")
             archive = ZipFile(archive_stream)
         else:
             if subtitle.is_valid():
@@ -237,22 +181,34 @@ class SubsRoProvider(Provider, ProviderSubtitleArchiveMixin):
         return True
 
     def _request(self, method, url, **kwargs):
-        try:
-            response = self.session.request(method, url, **kwargs)
-        except Exception as e:
-            logger.error("SubsRo request error: %s", e)
-            raise APIThrottled(f"SubsRo request failed: {e}")
+        attempts = 0
+        max_attempts = len(self.api_keys)
 
-        if response.status_code == 429:
-            logger.warning("SubsRo: Too many requests (HTTP 429) for %s", url)
-            raise TooManyRequests("SubsRo: Too many requests (HTTP 429)")
-        if response.status_code >= 500:
-            logger.warning("SubsRo: Server error %s for %s", response.status_code, url)
-            raise APIThrottled(f"SubsRo: Server error {response.status_code}")
-        if response.status_code != 200:
-            logger.warning(
-                "SubsRo: Unexpected status %s for %s", response.status_code, url
-            )
-            raise APIThrottled(f"SubsRo: Unexpected status {response.status_code}")
+        while attempts < max_attempts:
+            try:
+                response = self.session.request(method, url, **kwargs)
+            except Exception as e:
+                logger.error("SubsRo request error: %s", e)
+                raise APIThrottled(f"SubsRo request failed: {e}")
 
-        return response
+            if response.status_code == 429:
+                logger.warning("SubsRo: API Key #%d hit the rate limit (HTTP 429).", self.current_key_index + 1)
+                attempts += 1
+                if attempts < max_attempts:
+                    self.current_key_index = (self.current_key_index + 1) % len(self.api_keys)
+                    logger.info("SubsRo: Switching to API Key #%d and retrying...", self.current_key_index + 1)
+                    self._update_api_key_header()
+                    continue
+                else:
+                    logger.error("SubsRo: All provided API keys have reached their rate limit.")
+                    raise TooManyRequests("SubsRo: Too many requests (All keys exhausted)")
+
+            if response.status_code == 401:
+                logger.error("SubsRo: Unauthorized (401). API Key #%d is invalid.", self.current_key_index + 1)
+                raise ValueError(f"SubsRo: Invalid API Key (Key #{self.current_key_index + 1})")
+
+            if response.status_code >= 500:
+                logger.warning("SubsRo: Server error %s for %s", response.status_code, url)
+                raise APIThrottled(f"SubsRo: Server error {response.status_code}")
+
+            return response

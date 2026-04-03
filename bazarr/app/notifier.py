@@ -37,7 +37,8 @@ def update_notifier():
 
     database.execute(
         insert(TableSettingsNotifier)
-        .values(notifiers_added))
+        .values(notifiers_added)
+        .on_conflict_do_nothing())
 
 
 def get_notifier_providers():

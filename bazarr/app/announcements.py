@@ -49,9 +49,10 @@ def parse_announcement_dict(announcement_dict):
     return announcement_dict
 
 
-def get_announcements_to_file(job_id=None, startup=False):
+def get_announcements_to_file(job_id=None, startup=False, wait_for_completion=False):
     if not startup and not job_id:
-        jobs_queue.add_job_from_function("Updating Announcements File", is_progress=False)
+        jobs_queue.add_job_from_function("Updating Announcements File", is_progress=False,
+                                         wait_for_completion=wait_for_completion)
         return
 
     try:
