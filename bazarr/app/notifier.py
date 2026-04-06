@@ -2,6 +2,8 @@
 
 from apprise import Apprise, AppriseAsset
 import logging
+import re
+from urllib.parse import quote
 
 from .database import (
     TableSettingsNotifier,
@@ -68,28 +70,38 @@ def send_notifications(sonarr_series_id, sonarr_episode_id, message):
     providers = get_notifier_providers()
     if not len(providers):
         return
-    series = database.execute(
-        select(TableShows.title, TableShows.year)
-        .where(
-            TableShows.sonarrSeriesId == sonarr_series_id
+    series = (
+        database.execute(
+            select(TableShows)
+            .where(TableShows.sonarrSeriesId == sonarr_series_id)
         )
-    ).first()
+        .scalars()
+        .first()
+    )
     if not series:
         return
+
     series_title = series.title
     series_year = series.year
+
     if series_year not in [None, '', '0']:
         series_year = f' ({series_year})'
     else:
         series_year = ''
-    episode = database.execute(
-        select(TableEpisodes.title, TableEpisodes.season, TableEpisodes.episode)
-        .where(
-            TableEpisodes.sonarrEpisodeId == sonarr_episode_id
+    episode = (
+        database.execute(
+            select(TableEpisodes)
+            .where(TableEpisodes.sonarrEpisodeId == sonarr_episode_id)
         )
-    ).first()
+        .scalars()
+        .first()
+    )
     if not episode:
         return
+
+    media_variables = {}
+    media_variables.update(_build_media_variables(series, 'series'))
+    media_variables.update(_build_media_variables(episode, 'episode'))
 
     asset = AppriseAsset(async_mode=False)
 
@@ -97,7 +109,7 @@ def send_notifications(sonarr_series_id, sonarr_episode_id, message):
 
     for provider in providers:
         if provider.url is not None:
-            apobj.add(provider.url)
+            apobj.add(_expand_notifier_url(provider.url, media_variables))
 
     apobj.notify(
         title='Bazarr notification',
@@ -109,20 +121,26 @@ def send_notifications_movie(radarr_id, message):
     providers = get_notifier_providers()
     if not len(providers):
         return
-    movie = database.execute(
-        select(TableMovies.title, TableMovies.year)
-        .where(
-            TableMovies.radarrId == radarr_id
+    movie = (
+        database.execute(
+            select(TableMovies)
+            .where(TableMovies.radarrId == radarr_id)
         )
-    ).first()
+        .scalars()
+        .first()
+    )
     if not movie:
         return
+
     movie_title = movie.title
     movie_year = movie.year
+
     if movie_year not in [None, '', '0']:
         movie_year = f' ({movie_year})'
     else:
         movie_year = ''
+
+    media_variables = _build_media_variables(movie, 'movie')
 
     asset = AppriseAsset(async_mode=False)
 
@@ -130,9 +148,27 @@ def send_notifications_movie(radarr_id, message):
 
     for provider in providers:
         if provider.url is not None:
-            apobj.add(provider.url)
+            apobj.add(_expand_notifier_url(provider.url, media_variables))
 
     apobj.notify(
         title='Bazarr notification',
         body=f'{movie_title}{movie_year} : {message}',
     )
+
+
+def _build_media_variables(record, prefix):
+    media_variables = {}
+    if record is None:
+        return media_variables
+
+    for column in record.__table__.columns:
+        media_variables[f'bazarr_{prefix}_{column.name}'] = getattr(record, column.name)
+
+    return media_variables
+
+
+def _expand_notifier_url(url, media_variables):
+    if url is None or not media_variables:
+        return url
+
+    # TODO: add substitutions
