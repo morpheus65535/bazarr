@@ -268,6 +268,9 @@ class TableMovies(Base):
     video_codec = mapped_column(Text)
     year = mapped_column(Text)
 
+    def to_dict(self):
+        return {column.name: getattr(self, column.name) for column in self.__table__.columns}
+
 
 class TableMoviesRootfolder(Base):
     __tablename__ = 'table_movies_rootfolder'
@@ -319,6 +322,9 @@ class TableShows(Base):
     title = mapped_column(Text, nullable=False)
     updated_at_timestamp = mapped_column(DateTime)
     year = mapped_column(Text)
+
+    def to_dict(self):
+        return {column.name: getattr(self, column.name) for column in self.__table__.columns}
 
 
 class TableShowsRootfolder(Base):

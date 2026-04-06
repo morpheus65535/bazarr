@@ -68,6 +68,7 @@ def send_notifications(sonarr_series_id, sonarr_episode_id, message):
     providers = get_notifier_providers()
     if not len(providers):
         return
+
     series = (
         database.execute(
             select(TableShows)
@@ -86,6 +87,7 @@ def send_notifications(sonarr_series_id, sonarr_episode_id, message):
         series_year = f' ({series_year})'
     else:
         series_year = ''
+
     episode = (
         database.execute(
             select(TableEpisodes)
@@ -119,6 +121,7 @@ def send_notifications_movie(radarr_id, message):
     providers = get_notifier_providers()
     if not len(providers):
         return
+
     movie = (
         database.execute(
             select(TableMovies)
@@ -155,20 +158,16 @@ def send_notifications_movie(radarr_id, message):
 
 
 def _build_media_variables(record, prefix):
-    media_variables = {}
-    if record is None:
-        return media_variables
+    if record is None or not prefix:
+        return {}
 
-    for column in record.__table__.columns:
-        media_variables[f'bazarr_{prefix}_{column.name}'] = getattr(record, column.name)
-
-    return media_variables
+    return {f'bazarr_{prefix}_{key}': value for key, value in record.to_dict().items()}
 
 
 def _expand_notifier_url(url, media_variables):
     if url is None or not media_variables:
         return url
-
+    
     # Looks for {bazarr_*} placeholders in the URL string
     placeholder_pattern = re.compile(r'\{(bazarr_[A-Za-z0-9_]+)\}')
 
