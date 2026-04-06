@@ -60,9 +60,7 @@ def update_notifier():
 def get_notifier_providers():
     return database.execute(
         select(TableSettingsNotifier.name, TableSettingsNotifier.url)
-        .where(
-            TableSettingsNotifier.enabled == 1
-        )
+        .where(TableSettingsNotifier.enabled == 1)
     ).all()
 
 
@@ -171,4 +169,18 @@ def _expand_notifier_url(url, media_variables):
     if url is None or not media_variables:
         return url
 
-    # TODO: add substitutions
+    # Looks for {bazarr_*} placeholders in the URL string
+    placeholder_pattern = re.compile(r'\{(bazarr_[A-Za-z0-9_]+)\}')
+
+    def replace(match):
+        key = match.group(1)
+        if key not in media_variables:
+            return match.group(0)
+
+        value = media_variables[key]
+        if value is None:
+            return ''
+
+        return quote(str(value), safe='')
+
+    return placeholder_pattern.sub(replace, url)
