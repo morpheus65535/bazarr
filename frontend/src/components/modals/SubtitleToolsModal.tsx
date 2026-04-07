@@ -56,10 +56,6 @@ function getLocalisedValues(item: SupportType): LocalisedType {
   }
 }
 
-const CanSelectSubtitle = (item: TableColumnType) => {
-  return item.path.endsWith(".srt");
-};
-
 interface SubtitleToolViewProps {
   payload: SupportType[];
 }
@@ -171,7 +167,7 @@ const SubtitleToolView: FunctionComponent<SubtitleToolViewProps> = ({
     <Stack>
       <SimpleTable
         tableStyles={{ emptyText: "No external subtitles found" }}
-        enableRowSelection={(row) => CanSelectSubtitle(row.original)}
+        enableRowSelection={true}
         onRowSelectionChanged={(rows) =>
           setSelections(rows.map((r) => r.original))
         }
