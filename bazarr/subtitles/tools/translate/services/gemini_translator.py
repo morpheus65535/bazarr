@@ -94,7 +94,7 @@ class GeminiTranslatorService:
             self.model_name = settings.translator.gemini_model
             self.description = get_description(self.media_type, self.radarr_id, self.sonarr_series_id)
 
-            if "2.5-flash" in self.model_name or "pro" in self.model_name:
+            if "2.5-flash" in self.model_name or "3-flash" in self.model_name or "3.1-flash" in self.model_name or "pro" in self.model_name:
                 self.batch_size = 300
 
             if self.input_file:
@@ -215,8 +215,8 @@ class GeminiTranslatorService:
         """
         if "2.0-flash" in self.model_name:
             return 7000
-        elif "2.5-flash" in self.model_name or "pro" in self.model_name:
-            return 50000
+        elif "2.5-flash" in self.model_name or "3-flash" in self.model_name or "3.1-flash" in self.model_name or "pro" in self.model_name:
+            return 60000
         else:
             return 7000
 
