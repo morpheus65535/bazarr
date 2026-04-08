@@ -113,6 +113,7 @@ validators = [
     Validator('general.use_sonarr', must_exist=True, default=False, is_type_of=bool),
     Validator('general.use_radarr', must_exist=True, default=False, is_type_of=bool),
     Validator('general.use_plex', must_exist=True, default=False, is_type_of=bool),
+    Validator('general.use_jellyfin', must_exist=True, default=False, is_type_of=bool),
     Validator('general.path_mappings_movie', must_exist=True, default=[], is_type_of=list),
     Validator('general.serie_tag_enabled', must_exist=True, default=False, is_type_of=bool),
     Validator('general.movie_tag_enabled', must_exist=True, default=False, is_type_of=bool),
@@ -279,6 +280,18 @@ validators = [
     Validator('plex.migration_timestamp', must_exist=True, default='', is_type_of=(int, float, str)),
     Validator('plex.disable_auto_migration', must_exist=True, default=False, is_type_of=bool),
     Validator('plex.client_identifier', must_exist=True, default='', is_type_of=str),
+
+    # jellyfin section
+    Validator('jellyfin.url', must_exist=True, default='', is_type_of=str),
+    Validator('jellyfin.apikey', must_exist=True, default='', is_type_of=str),
+    Validator('jellyfin.movie_library', must_exist=True, default=[], is_type_of=list),
+    Validator('jellyfin.series_library', must_exist=True, default=[], is_type_of=list),
+    Validator('jellyfin.movie_library_ids', must_exist=True, default=[], is_type_of=list),
+    Validator('jellyfin.series_library_ids', must_exist=True, default=[], is_type_of=list),
+    Validator('jellyfin.update_movie_library', must_exist=True, default=False, is_type_of=bool),
+    Validator('jellyfin.update_series_library', must_exist=True, default=False, is_type_of=bool),
+    Validator('jellyfin.refresh_method', must_exist=True, default='immediate', is_type_of=str,
+              is_in=['immediate', 'async']),
 
     # proxy section
     Validator('proxy.type', must_exist=True, default=None, is_type_of=(NoneType, str),

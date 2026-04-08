@@ -13,6 +13,7 @@ from utilities.analytics import event_tracker
 from radarr.notify import notify_radarr
 from sonarr.notify import notify_sonarr
 from plex.operations import plex_set_movie_added_date_now, plex_update_library, plex_set_episode_added_date_now, plex_refresh_item
+from jellyfin.operations import jellyfin_refresh_item
 from app.event_handler import event_stream
 
 from .utils import _get_download_code3
@@ -79,8 +80,8 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
 
     if media_type == 'series':
         episode_metadata = database.execute(
-            select(TableShows.imdbId, TableEpisodes.sonarrSeriesId, TableEpisodes.sonarrEpisodeId,
-                   TableEpisodes.season, TableEpisodes.episode)
+            select(TableShows.imdbId, TableShows.tvdbId, TableEpisodes.sonarrSeriesId,
+                   TableEpisodes.sonarrEpisodeId, TableEpisodes.season, TableEpisodes.episode)
                 .join(TableShows)\
                 .where(TableEpisodes.path == path_mappings.path_replace_reverse(path)))\
             .first()
@@ -101,7 +102,7 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
                            job_id=job_id)
     else:
         movie_metadata = database.execute(
-            select(TableMovies.radarrId, TableMovies.imdbId)
+            select(TableMovies.radarrId, TableMovies.imdbId, TableMovies.tmdbId)
                 .where(TableMovies.path == path_mappings.path_replace_reverse_movie(path)))\
             .first()
         if not movie_metadata:
@@ -154,6 +155,11 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
                                 season=episode_metadata.season, episode=episode_metadata.episode)
             if settings.plex.set_episode_added is True:
                 plex_set_episode_added_date_now(episode_metadata)
+        if settings.general.use_jellyfin is True:
+            if settings.jellyfin.update_series_library is True:
+                jellyfin_refresh_item(episode_metadata.imdbId, is_movie=False,
+                                      season=episode_metadata.season, episode=episode_metadata.episode,
+                                      tvdb_id=episode_metadata.tvdbId)
 
     else:
         reversed_path = path_mappings.path_replace_reverse_movie(path)
@@ -166,6 +172,10 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
             if settings.plex.update_movie_library is True:
                 # Use specific item refresh instead of full library scan
                 plex_refresh_item(movie_metadata.imdbId, is_movie=True)
+        if settings.general.use_jellyfin is True:
+            if settings.jellyfin.update_movie_library is True:
+                jellyfin_refresh_item(movie_metadata.imdbId, is_movie=True,
+                                      tmdb_id=movie_metadata.tmdbId)
 
     # Call external webhook after all processing is complete if enabled
     call_external_webhook(

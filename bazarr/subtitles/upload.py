@@ -33,6 +33,8 @@ from subtitles.processing import ProcessSubtitlesResult
 
 from .sync import sync_subtitles
 from .post_processing import postprocessing
+from plex.operations import plex_set_movie_added_date_now, plex_set_episode_added_date_now, plex_refresh_item
+from jellyfin.operations import jellyfin_refresh_item
 
 
 def manual_upload_subtitle(path, language, forced, hi, media_type, subtitle, filename, audio_language, job_id=None,
@@ -68,7 +70,11 @@ def manual_upload_subtitle(path, language, forced, hi, media_type, subtitle, fil
         episode_metadata = database.execute(
             select(TableEpisodes.sonarrSeriesId,
                    TableEpisodes.sonarrEpisodeId,
-                   TableShows.profileId)
+                   TableEpisodes.season,
+                   TableEpisodes.episode,
+                   TableShows.profileId,
+                   TableShows.imdbId,
+                   TableShows.tvdbId)
             .select_from(TableEpisodes)
             .join(TableShows)
             .where(TableEpisodes.sonarrEpisodeId == sonarrEpisodeId)) \
@@ -80,7 +86,8 @@ def manual_upload_subtitle(path, language, forced, hi, media_type, subtitle, fil
             return
     else:
         movie_metadata = database.execute(
-            select(TableMovies.radarrId, TableMovies.profileId)
+            select(TableMovies.radarrId, TableMovies.profileId,
+                   TableMovies.imdbId, TableMovies.tmdbId)
             .where(TableMovies.radarrId == radarrId)) \
             .first()
 
@@ -203,10 +210,28 @@ def manual_upload_subtitle(path, language, forced, hi, media_type, subtitle, fil
             if not settings.general.dont_notify_manual_actions:
                 send_notifications(sonarrSeriesId, sonarrEpisodeId, result.message)
             store_subtitles(result.path, path)
+            if settings.general.use_plex:
+                if settings.plex.update_series_library:
+                    plex_refresh_item(episode_metadata.imdbId, is_movie=False,
+                                      season=episode_metadata.season, episode=episode_metadata.episode)
+                if settings.plex.set_episode_added:
+                    plex_set_episode_added_date_now(episode_metadata)
+            if settings.general.use_jellyfin and settings.jellyfin.update_series_library:
+                jellyfin_refresh_item(episode_metadata.imdbId, is_movie=False,
+                                      season=episode_metadata.season, episode=episode_metadata.episode,
+                                      tvdb_id=episode_metadata.tvdbId)
         else:
             history_log_movie(4, radarrId, result, fake_provider=provider, fake_score=MAX_SCORES['movie'])
             if not settings.general.dont_notify_manual_actions:
                 send_notifications_movie(radarrId, result.message)
             store_subtitles_movie(result.path, path)
+            if settings.general.use_plex:
+                if settings.plex.update_movie_library:
+                    plex_refresh_item(movie_metadata.imdbId, is_movie=True)
+                if settings.plex.set_movie_added:
+                    plex_set_movie_added_date_now(movie_metadata)
+            if settings.general.use_jellyfin and settings.jellyfin.update_movie_library:
+                jellyfin_refresh_item(movie_metadata.imdbId, is_movie=True,
+                                      tmdb_id=movie_metadata.tmdbId)
 
     return '', 204

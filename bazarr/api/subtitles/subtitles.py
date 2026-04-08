@@ -18,6 +18,7 @@ from subtitles.sync import sync_subtitles
 from app.config import settings, empty_values, get_array_from
 from app.event_handler import event_stream
 from plex.operations import plex_refresh_item
+from jellyfin.operations import jellyfin_refresh_item
 
 
 from ..utils import authenticate
@@ -125,7 +126,7 @@ class Subtitles(Resource):
         if media_type == 'episode':
             metadata = database.execute(
                 select(TableEpisodes.path, TableEpisodes.sonarrSeriesId, TableEpisodes.subtitles, TableEpisodes.season,
-                       TableEpisodes.episode, TableShows.imdbId)
+                       TableEpisodes.episode, TableShows.imdbId, TableShows.tvdbId)
                 .join(TableShows)
                 .where(TableEpisodes.sonarrEpisodeId == id)) \
                 .first()
@@ -136,7 +137,7 @@ class Subtitles(Resource):
             video_path = path_mappings.path_replace(metadata.path)
         else:
             metadata = database.execute(
-                select(TableMovies.path, TableMovies.subtitles, TableMovies.imdbId)
+                select(TableMovies.path, TableMovies.subtitles, TableMovies.imdbId, TableMovies.tmdbId)
                 .where(TableMovies.radarrId == id))\
                 .first()
 
@@ -222,12 +223,18 @@ def postprocess_subtitles(subtitles_path, video_path, media_type, metadata, id):
         if settings.general.use_plex and settings.plex.update_series_library:
             plex_refresh_item(metadata.imdbId, is_movie=False, season=metadata.season,
                               episode=metadata.episode)
+        if settings.general.use_jellyfin and settings.jellyfin.update_series_library:
+            jellyfin_refresh_item(metadata.imdbId, is_movie=False, season=metadata.season,
+                                  episode=metadata.episode, tvdb_id=metadata.tvdbId)
     else:
         store_subtitles_movie(path_mappings.path_replace_reverse_movie(video_path), video_path)
         event_stream(type='movie', payload=id)
 
         if settings.general.use_plex and settings.plex.update_movie_library:
             plex_refresh_item(metadata.imdbId, is_movie=True)
+        if settings.general.use_jellyfin and settings.jellyfin.update_movie_library:
+            jellyfin_refresh_item(metadata.imdbId, is_movie=True,
+                                  tmdb_id=metadata.tmdbId)
 
 
 def subtitles_lang_from_filename(path):

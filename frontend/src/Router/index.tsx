@@ -32,6 +32,7 @@ import MovieMassEditor from "@/pages/Movies/Editor";
 import SeriesView from "@/pages/Series";
 import SeriesMassEditor from "@/pages/Series/Editor";
 import SettingsGeneralView from "@/pages/Settings/General";
+import SettingsJellyfinView from "@/pages/Settings/Jellyfin";
 import SettingsLanguagesView from "@/pages/Settings/Languages";
 import SettingsNotificationsView from "@/pages/Settings/Notifications";
 import SettingsPlexView from "@/pages/Settings/Plex";
@@ -227,6 +228,11 @@ function useRoutes(): CustomRouteObject[] {
                 path: "plex",
                 name: "Plex",
                 element: <SettingsPlexView></SettingsPlexView>,
+              },
+              {
+                path: "jellyfin",
+                name: "Jellyfin",
+                element: <SettingsJellyfinView></SettingsJellyfinView>,
               },
               {
                 path: "notifications",

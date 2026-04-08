@@ -112,10 +112,16 @@ def store_subtitles(original_path, reversed_path, use_cache=True):
 
                 subtitle_path = get_external_subtitles_path(reversed_path, subtitle)
 
+                try:
+                    subtitle_size = os.stat(subtitle_path).st_size
+                except FileNotFoundError:
+                    logging.debug(f"BAZARR skipping missing subtitle file: {subtitle_path}")
+                    continue
+
                 custom = CustomLanguage.found_external(subtitle, subtitle_path)
                 if custom is not None:
                     actual_subtitles.append([custom, path_mappings.path_replace_reverse(subtitle_path),
-                                             os.stat(subtitle_path).st_size])
+                                             subtitle_size])
 
                 elif str(language.basename) != 'und':
                     if language.forced:
@@ -126,7 +132,7 @@ def store_subtitles(original_path, reversed_path, use_cache=True):
                         language_str = str(language)
                     logging.debug(f"BAZARR external subtitles detected: {language_str}")
                     actual_subtitles.append([language_str, path_mappings.path_replace_reverse(subtitle_path),
-                                             os.stat(subtitle_path).st_size])
+                                             subtitle_size])
 
         database.execute(
             update(TableEpisodes)

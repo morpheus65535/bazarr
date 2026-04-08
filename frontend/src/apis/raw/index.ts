@@ -2,6 +2,7 @@ import badges from "./badges";
 import episodes from "./episodes";
 import files from "./files";
 import history from "./history";
+import jellyfin from "./jellyfin";
 import movies from "./movies";
 import plex from "./plex";
 import providers from "./providers";
@@ -14,6 +15,7 @@ const api = {
   badges,
   episodes,
   files,
+  jellyfin,
   movies,
   series,
   providers,

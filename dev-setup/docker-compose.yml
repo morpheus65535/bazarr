@@ -28,6 +28,8 @@ services:
       
       # Mount data directory for persistence
       - ./data:/app/bazarr/data
+      # Mount media directory
+      - /Volumes/media:/media
     environment:
       - SZ_USER_AGENT=bazarr-dev
       - BAZARR_VERSION=dev
