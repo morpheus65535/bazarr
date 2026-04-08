@@ -110,7 +110,6 @@ signal.signal(signal.SIGTERM, lambda signal_no, frame: close_database())
 Base = declarative_base()
 metadata = Base.metadata
 
-
 class System(Base):
     __tablename__ = 'system'
 
@@ -335,6 +334,9 @@ def init_db():
 
     # Create tables if they don't exist.
     metadata.create_all(engine)
+
+    # Apply any missing index
+    ensure_indexes()
 
 
 def create_db_revision(app):
@@ -598,3 +600,27 @@ def fix_languages_profiles_with_duplicate_ids():
                 .values({"items": json.dumps(languages_profile_items)})
                 .where(TableLanguagesProfiles.profileId == languages_profile.profileId)
             )
+
+def ensure_indexes():
+    """Create indexes needed for fast look‑ups (no‑op if they exist)."""
+    index_ddl = [
+        # Series history
+        "CREATE INDEX IF NOT EXISTS idx_table_history_timestamp  ON table_history (timestamp)",
+        "CREATE INDEX IF NOT EXISTS idx_table_history_action     ON table_history (action)",
+        "CREATE INDEX IF NOT EXISTS idx_table_history_provider   ON table_history (provider)",
+        "CREATE INDEX IF NOT EXISTS idx_table_history_language   ON table_history (language)",
+
+        # Movie history
+        "CREATE INDEX IF NOT EXISTS idx_table_history_movie_timestamp  ON table_history_movie (timestamp)",
+        "CREATE INDEX IF NOT EXISTS idx_table_history_movie_action     ON table_history_movie (action)",
+        "CREATE INDEX IF NOT EXISTS idx_table_history_movie_provider   ON table_history_movie (provider)",
+        "CREATE INDEX IF NOT EXISTS idx_table_history_movie_language   ON table_history_movie (language)",
+
+        # Episodes
+        "CREATE INDEX IF NOT EXISTS idx_table_episodes_episodeid ON table_episodes (sonarrEpisodeId)",
+        "CREATE INDEX IF NOT EXISTS idx_table_episodes_seriesid_season_episode ON table_episodes (sonarrSeriesId, season DESC, episode DESC)",
+    ]
+
+    with engine.begin() as conn:
+        for ddl in index_ddl:
+            conn.execute(text(ddl))
