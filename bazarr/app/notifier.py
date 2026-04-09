@@ -167,14 +167,14 @@ def _build_media_variables(record, prefix):
 def _expand_notifier_url(url, media_variables):
     if url is None or not media_variables:
         return url
-    
+
     # Looks for {bazarr_*} placeholders in the URL string
     placeholder_pattern = re.compile(r'\{(bazarr_[A-Za-z0-9_]+)\}')
 
     def replace(match):
         key = match.group(1)
         if key not in media_variables:
-            return match.group(0)
+            return ''
 
         value = media_variables[key]
         if value is None:
