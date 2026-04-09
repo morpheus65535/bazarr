@@ -27,11 +27,10 @@ def update_notifier():
     notifiers_added = []
     notifiers_kept = []
 
-    notifiers_in_db = [
-        row.name for row in database.execute(
-            select(TableSettingsNotifier.name)
-        ).all()
-    ]
+    notifiers_in_db = [row.name for row in
+                       database.execute(
+                           select(TableSettingsNotifier.name))
+                       .all()]
 
     for x in results['schemas']:
         if x['service_name'] not in notifiers_in_db:
@@ -40,28 +39,24 @@ def update_notifier():
         else:
             notifiers_kept.append(x['service_name'])
 
-    notifiers_to_delete = [
-        item for item in notifiers_in_db if item not in notifiers_kept
-    ]
+    notifiers_to_delete = [item for item in notifiers_in_db if item not in notifiers_kept]
 
     for item in notifiers_to_delete:
         database.execute(
             delete(TableSettingsNotifier)
-            .where(TableSettingsNotifier.name == item)
-        )
+            .where(TableSettingsNotifier.name == item))
 
     database.execute(
         insert(TableSettingsNotifier)
         .values(notifiers_added)
-        .on_conflict_do_nothing()
-    )
+        .on_conflict_do_nothing())
 
 
 def get_notifier_providers():
     return database.execute(
         select(TableSettingsNotifier.name, TableSettingsNotifier.url)
-        .where(TableSettingsNotifier.enabled == 1)
-    ).all()
+        .where(TableSettingsNotifier.enabled == 1))\
+        .all()
 
 
 def send_notifications(sonarr_series_id, sonarr_episode_id, message):
@@ -69,14 +64,11 @@ def send_notifications(sonarr_series_id, sonarr_episode_id, message):
     if not len(providers):
         return
 
-    series = (
-        database.execute(
-            select(TableShows)
-            .where(TableShows.sonarrSeriesId == sonarr_series_id)
-        )
-        .scalars()
+    series = database.execute(
+        select(TableShows)
+        .where(TableShows.sonarrSeriesId == sonarr_series_id))\
+        .scalars()\
         .first()
-    )
     if not series:
         return
 
@@ -88,14 +80,11 @@ def send_notifications(sonarr_series_id, sonarr_episode_id, message):
     else:
         series_year = ''
 
-    episode = (
-        database.execute(
-            select(TableEpisodes)
-            .where(TableEpisodes.sonarrEpisodeId == sonarr_episode_id)
-        )
-        .scalars()
+    episode = database.execute(
+        select(TableEpisodes)
+        .where(TableEpisodes.sonarrEpisodeId == sonarr_episode_id))\
+        .scalars()\
         .first()
-    )
     if not episode:
         return
 
@@ -122,14 +111,11 @@ def send_notifications_movie(radarr_id, message):
     if not len(providers):
         return
 
-    movie = (
-        database.execute(
-            select(TableMovies)
-            .where(TableMovies.radarrId == radarr_id)
-        )
-        .scalars()
+    movie = database.execute(
+        select(TableMovies)
+        .where(TableMovies.radarrId == radarr_id))\
+        .scalars()\
         .first()
-    )
     if not movie:
         return
 
