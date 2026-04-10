@@ -46,7 +46,10 @@ def update_notifier():
 def get_notifier_providers():
     return database.execute(
         select(TableSettingsNotifier.name, TableSettingsNotifier.url)
-        .where(TableSettingsNotifier.enabled == 1))\
+        .where(
+            TableSettingsNotifier.enabled == 1,
+            TableSettingsNotifier.url.is_not(None),
+        ))\
         .all()
 
 
@@ -84,8 +87,10 @@ def send_notifications(sonarr_series_id, sonarr_episode_id, message):
     apobj = Apprise(asset=asset)
 
     for provider in providers:
-        if provider.url is not None:
+        if provider.name in {"Form", "XML", "JSON"}:
             apobj.add(_expand_notifier_url(provider.url, media_variables))
+        else:
+            apobj.add(provider.url)
 
     apobj.notify(
         title='Bazarr notification',
@@ -118,8 +123,10 @@ def send_notifications_movie(radarr_id, message):
     apobj = Apprise(asset=asset)
 
     for provider in providers:
-        if provider.url is not None:
+        if provider.name in {"Form", "XML", "JSON"}:
             apobj.add(_expand_notifier_url(provider.url, media_variables))
+        else:
+            apobj.add(provider.url)
 
     apobj.notify(
         title='Bazarr notification',
