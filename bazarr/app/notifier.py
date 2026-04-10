@@ -5,16 +5,7 @@ import logging
 import re
 from urllib.parse import quote
 
-from .database import (
-    TableSettingsNotifier,
-    TableEpisodes,
-    TableShows,
-    TableMovies,
-    database,
-    insert,
-    delete,
-    select,
-)
+from .database import TableSettingsNotifier, TableEpisodes, TableShows, TableMovies, database, insert, delete, select
 
 
 def update_notifier():
@@ -63,7 +54,6 @@ def send_notifications(sonarr_series_id, sonarr_episode_id, message):
     providers = get_notifier_providers()
     if not len(providers):
         return
-
     series = database.execute(
         select(TableShows)
         .where(TableShows.sonarrSeriesId == sonarr_series_id))\
@@ -71,7 +61,6 @@ def send_notifications(sonarr_series_id, sonarr_episode_id, message):
         .first()
     if not series:
         return
-
     series_title = series.title
     series_year = series.year
 
@@ -79,7 +68,6 @@ def send_notifications(sonarr_series_id, sonarr_episode_id, message):
         series_year = f' ({series_year})'
     else:
         series_year = ''
-
     episode = database.execute(
         select(TableEpisodes)
         .where(TableEpisodes.sonarrEpisodeId == sonarr_episode_id))\
@@ -102,7 +90,7 @@ def send_notifications(sonarr_series_id, sonarr_episode_id, message):
 
     apobj.notify(
         title='Bazarr notification',
-        body=f'{series_title}{series_year} - S{episode.season:02d}E{episode.episode:02d} - {episode.title} : {message}',
+        body=f"{series_title}{series_year} - S{episode.season:02d}E{episode.episode:02d} - {episode.title} : {message}",
     )
 
 
@@ -110,7 +98,6 @@ def send_notifications_movie(radarr_id, message):
     providers = get_notifier_providers()
     if not len(providers):
         return
-
     movie = database.execute(
         select(TableMovies)
         .where(TableMovies.radarrId == radarr_id))\
@@ -118,10 +105,8 @@ def send_notifications_movie(radarr_id, message):
         .first()
     if not movie:
         return
-
     movie_title = movie.title
     movie_year = movie.year
-
     if movie_year not in [None, '', '0']:
         movie_year = f' ({movie_year})'
     else:
@@ -139,7 +124,7 @@ def send_notifications_movie(radarr_id, message):
 
     apobj.notify(
         title='Bazarr notification',
-        body=f'{movie_title}{movie_year} : {message}',
+        body=f"{movie_title}{movie_year} : {message}",
     )
 
 
