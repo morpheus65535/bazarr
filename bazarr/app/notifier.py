@@ -63,7 +63,6 @@ def send_notifications(sonarr_series_id, sonarr_episode_id, message):
         return
     series_title = series.title
     series_year = series.year
-
     if series_year not in [None, '', '0']:
         series_year = f' ({series_year})'
     else:
