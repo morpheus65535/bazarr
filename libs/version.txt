@@ -35,7 +35,7 @@ rarfile==4.2
 referencing<=0.23.0  # newer version requires other compiled dependency
 requests==2.32.5
 semver==3.0.4
-signalrcore<=0.9.5  # newer version are unstable with Sonarr and Radarr SignalR implementation
+# signalrcore — moved to custom_libs (patched for WebSocket FD leak in pinned 0.9.5)
 simple-websocket==1.1.0
 sqlalchemy==2.0.48
 textdistance==4.6.3
@@ -99,7 +99,7 @@ bidict==0.23.1
 # Required-by: signalr-client-threads
 websocket-client==1.9.0
 
-# Required-by: signalrcore
+# Required-by: signalrcore (in custom_libs)
 msgpack==1.1.2
 
 # Required-by: subliminal

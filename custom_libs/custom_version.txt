@@ -4,6 +4,7 @@ subzero
 py-pretty==1  # modified version to support Python 3
 
 # Bazarr modified dependencies
+signalrcore<=0.9.5  # Patched WebSocket FD leak in stop() — fixed upstream in 0.9.7 but Bazarr pins <=0.9.5 for Sonarr/Radarr compatibility
 signalr-client-threads==0.0.12  # Modified to work with Sonarr v3. Not used anymore with v4
 Flask-Compress==1.14  # modified to import brotli only if required
 
