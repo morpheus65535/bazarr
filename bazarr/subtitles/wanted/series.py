@@ -23,7 +23,7 @@ from ..adaptive_searching import is_search_active, updateFailedAttempts
 from ..download import generate_subtitles
 
 
-def _wanted_episode(episode, job_id=None):
+def _wanted_episode(episode, providers_list, job_id=None):
     audio_language_list = get_audio_profile_languages(episode.audio_language)
     if len(audio_language_list) > 0:
         audio_language = audio_language_list[0]['name']
@@ -64,7 +64,7 @@ def _wanted_episode(episode, job_id=None):
             event_stream(type='episode-wanted', action='delete', payload=episode.sonarrEpisodeId)
             send_notifications(episode.sonarrSeriesId, episode.sonarrEpisodeId, result.message)
 
-    if not found_any and get_providers():
+    if not found_any and providers_list:
         for language in languages_to_stamp:
             updated = updateFailedAttempts(
                 desired_language=language,
@@ -107,7 +107,7 @@ def wanted_download_subtitles(sonarr_episode_id, job_id=None):
     providers_list = get_providers()
 
     if providers_list:
-        _wanted_episode(episode_details, job_id=job_id)
+        _wanted_episode(episode_details, providers_list, job_id=job_id)
     else:
         logging.info("BAZARR All providers are throttled")
 
