@@ -147,7 +147,7 @@ const ServerSection = () => {
         <Title order={4}>Plex Servers</Title>
 
         {serversError && (
-          <Alert color="red" variant="light">
+          <Alert color="danger" variant="light">
             Failed to load servers: {serversError.message}
           </Alert>
         )}
@@ -160,7 +160,7 @@ const ServerSection = () => {
             <Button
               onClick={() => refetchServers()}
               variant="light"
-              color="gray"
+              color="secondary"
             >
               Refresh
             </Button>
@@ -176,11 +176,11 @@ const ServerSection = () => {
                     {servers[0].version})
                   </Text>
                   {isSaved ? (
-                    <Badge color="green" size="sm">
+                    <Badge color="success" size="sm">
                       Connected
                     </Badge>
                   ) : !servers[0].bestConnection ? (
-                    <Badge color="red" size="sm">
+                    <Badge color="danger" size="sm">
                       Unavailable
                     </Badge>
                   ) : null}
@@ -188,7 +188,7 @@ const ServerSection = () => {
               </Stack>
               <ActionIcon
                 variant="light"
-                color="gray"
+                color="secondary"
                 size="lg"
                 onClick={() => refetchServers()}
                 title="Refresh server list"
@@ -238,7 +238,7 @@ const ServerSection = () => {
               </Button>
               <ActionIcon
                 variant="light"
-                color="gray"
+                color="secondary"
                 size="lg"
                 onClick={() => refetchServers()}
                 className={styles.refreshButton}

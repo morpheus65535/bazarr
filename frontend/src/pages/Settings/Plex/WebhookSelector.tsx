@@ -76,14 +76,14 @@ const WebhookSelector: FunctionComponent<WebhookSelectorProps> = (props) => {
       notifications.show({
         title: "Success",
         message: "Plex webhook created successfully",
-        color: "green",
+        color: "success",
       });
       await refetch();
     } catch {
       notifications.show({
         title: "Error",
         message: "Failed to create webhook",
-        color: "red",
+        color: "danger",
       });
     }
   };
@@ -94,7 +94,7 @@ const WebhookSelector: FunctionComponent<WebhookSelectorProps> = (props) => {
       notifications.show({
         title: "Success",
         message: "Webhook deleted successfully",
-        color: "green",
+        color: "success",
       });
       // Clear selection if we deleted the currently selected webhook
       if (webhookUrl === currentValue) {
@@ -105,7 +105,7 @@ const WebhookSelector: FunctionComponent<WebhookSelectorProps> = (props) => {
       notifications.show({
         title: "Error",
         message: "Failed to delete webhook",
-        color: "red",
+        color: "danger",
       });
     }
   };
@@ -140,7 +140,7 @@ const WebhookSelector: FunctionComponent<WebhookSelectorProps> = (props) => {
   if (error) {
     return (
       <Stack gap="xs" className={styles.webhookSelector}>
-        <Alert color="red" variant="light" className={styles.alertMessage}>
+        <Alert color="danger" variant="light" className={styles.alertMessage}>
           Failed to load webhooks:{" "}
           {(error as Error)?.message || "Unknown error"}
         </Alert>

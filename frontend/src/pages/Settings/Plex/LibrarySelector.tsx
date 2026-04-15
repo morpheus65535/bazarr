@@ -115,12 +115,16 @@ const LibrarySelector: FunctionComponent<LibrarySelectorProps> = (props) => {
           </Alert>
         )}
         {error && !isLoading && (
-          <Alert color="red" variant="light" className={styles.alertMessage}>
+          <Alert color="danger" variant="light" className={styles.alertMessage}>
             Failed to load libraries from Plex. Saved selections shown above.
           </Alert>
         )}
         {!error && !isLoading && selectData.length === 0 && (
-          <Alert color="gray" variant="light" className={styles.alertMessage}>
+          <Alert
+            color="secondary"
+            variant="light"
+            className={styles.alertMessage}
+          >
             No {libraryType} libraries found on your Plex server.
           </Alert>
         )}

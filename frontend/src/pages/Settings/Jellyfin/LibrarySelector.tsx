@@ -94,12 +94,16 @@ const LibrarySelector: FunctionComponent<LibrarySelectorProps> = (props) => {
           </Alert>
         )}
         {error && !isLoading && (
-          <Alert color="red" variant="light" className={styles.alertMessage}>
+          <Alert color="danger" variant="light" className={styles.alertMessage}>
             Failed to load libraries from Jellyfin.
           </Alert>
         )}
         {!error && !isLoading && selectData.length === 0 && (
-          <Alert color="gray" variant="light" className={styles.alertMessage}>
+          <Alert
+            color="secondary"
+            variant="light"
+            className={styles.alertMessage}
+          >
             No {libraryType === "movies" ? "movie" : "TV show"} libraries found.
           </Alert>
         )}

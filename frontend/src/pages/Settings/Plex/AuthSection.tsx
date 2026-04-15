@@ -76,7 +76,7 @@ const AuthSection = () => {
         notifications.show({
           title: "Disconnected from Plex",
           message: "All settings related to Plex were removed",
-          color: "green",
+          color: "success",
         });
       },
     });
@@ -117,7 +117,7 @@ const AuthSection = () => {
             <Button
               onClick={handleCancelAuth}
               variant="light"
-              color="gray"
+              color="secondary"
               size="sm"
               className={styles.actionButton}
             >
@@ -144,7 +144,7 @@ const AuthSection = () => {
               if OAuth is not suitable.
             </Text>
             {authError && (
-              <Alert color="red" variant="light">
+              <Alert color="danger" variant="light">
                 {authError.message || "Authentication failed"}
               </Alert>
             )}
@@ -174,7 +174,7 @@ const AuthSection = () => {
         <Button
           onClick={handleLogout}
           variant="light"
-          color="gray"
+          color="secondary"
           size="sm"
           className={styles.actionButton}
           loading={isLoggingOut}
