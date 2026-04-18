@@ -14,7 +14,7 @@ export const Section: FunctionComponent<Props> = ({
   children,
 }) => {
   return (
-    <Stack style={hidden ? { display: "none" } : undefined} gap="xs" my="lg">
+    <Stack display={hidden ? "none" : undefined} gap="xs" my="lg">
       <Title order={4}>{header}</Title>
       <Divider></Divider>
       {children}
