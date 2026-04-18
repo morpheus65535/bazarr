@@ -158,11 +158,13 @@ class ReverseRTL(SubtitleModification):
                        "Physically swap punctuation. Applicable to languages: hebrew, arabic, farsi, persian"
 
     processors = [
-        # new? (?u)(^([\s.!?]*)(.+?)(\s*)(-?\s*)$); \5\4\3\2
-        #NReProcessor(re.compile(r"(?u)((?=(?<=\b|^)|(?<=\s))([.!?-]+)([^.!?-]+)(?=\b|$|\s))"), r"\3\2",
-        #             name="CM_RTL_reverse")
-        NReProcessor(re.compile(r"(?u)(^([\s.!?:,'-]*)(.+?)(\s*)(-?\s*)$)"), r"\5\4\3\2",
-                     name="CM_RTL_reverse")
+        # Groups: \1=leading-ws \2=open-tag \3=leading-punct \4=text \5=trail-ws \6=trail-hyphen \7=close-tag
+        # Moves leading punctuation to after text, preserving HTML tags and trailing dialogue dash
+        NReProcessor(
+            re.compile(r"(?u)^(\s*)((?:<[a-zA-Z][^>]*>)?)([\s.!?:,'-]+)?(.+?)(\s*)(-?\s*)(</[a-zA-Z]+>)?\s*$"),
+            r"\1\2\4\3\5\6\7",
+            name="CM_RTL_reverse"
+        )
     ]
 
 
