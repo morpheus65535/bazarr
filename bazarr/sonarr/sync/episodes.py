@@ -60,17 +60,12 @@ def sync_episodes(series_id, defer_search=False, is_signalr=False):
 
     # Get current episodes id in DB
     if series_id:
-        current_episodes_id_db_list = [row.sonarrEpisodeId for row in
-                                       database.execute(
-                                           select(TableEpisodes.sonarrEpisodeId,
-                                                  TableEpisodes.path,
-                                                  TableEpisodes.sonarrSeriesId)
-                                           .where(TableEpisodes.sonarrSeriesId == series_id)).all()]
         current_episodes_in_db_row_as_dict = {row[0].sonarrEpisodeId: row[0].to_dict() for row in
                                               database.execute(
                                                   select(TableEpisodes)
                                                   .where(TableEpisodes.sonarrSeriesId == series_id))
                                               .all()}
+        current_episodes_id_db_list = list(current_episodes_in_db_row_as_dict)
     else:
         return
 
