@@ -183,6 +183,16 @@ def update_one_series(series_id, action, is_signalr=False, sync_episodes_after_u
                               language_profiles=language_profiles,
                               serie_default_profile=serie_default_profile,
                               audio_profiles=audio_profiles)
+        existing_series_model = existing_series[0]
+        existing_series_values = {
+            column.name: getattr(existing_series_model, column.name)
+            for column in existing_series_model.__table__.columns
+        }
+        if series.items() <= existing_series_values.items():
+            if sync_episodes_after_update and not is_signalr:
+                sync_episodes(series_id=int(series_id))
+            return
+
         try:
             series['updated_at_timestamp'] = datetime.now()
             database.execute(
