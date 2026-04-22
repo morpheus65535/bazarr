@@ -107,7 +107,10 @@ def profile_id_to_language(id_, profiles):
     return profiles_to_return
 
 
-def episodeParser(episode):
+def episodeParser(episode, parse_embedded_audio_track=None):
+    if parse_embedded_audio_track is None:
+        parse_embedded_audio_track = settings.general.parse_embedded_audio_track
+
     if 'hasFile' in episode:
         if episode['hasFile'] is True:
             if 'episodeFile' in episode:
@@ -124,7 +127,7 @@ def episodeParser(episode):
                     else:
                         sceneName = None
 
-                    if settings.general.parse_embedded_audio_track:
+                    if parse_embedded_audio_track:
                         audio_language = embedded_audio_reader(path_mappings.path_replace(episode['episodeFile']
                                                                                           ['path']),
                                                                file_size=episode['episodeFile']['size'],

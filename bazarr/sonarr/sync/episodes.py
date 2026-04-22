@@ -72,6 +72,7 @@ def sync_episodes(series_id, defer_search=False, is_signalr=False):
     current_episodes_sonarr = []
     episodes_to_update = []
     episodes_to_add = []
+    parse_embedded_audio_track = settings.general.parse_embedded_audio_track
 
     # Get episodes data for a series from Sonarr
     episodes = get_episodes_from_sonarr_api(apikey_sonarr=apikey_sonarr, series_id=series_id)
@@ -127,11 +128,14 @@ def sync_episodes(series_id, defer_search=False, is_signalr=False):
 
                     # Parse episode data
                     if episode['id'] in current_episodes_in_db_row_as_dict:
-                        parsed_episode = episodeParser(episode)
+                        parsed_episode = episodeParser(
+                            episode, parse_embedded_audio_track=parse_embedded_audio_track)
                         if not set(parsed_episode.items()).issubset(set(current_episodes_in_db_row_as_dict[episode['id']].items())):
                             episodes_to_update.append(parsed_episode)
                     else:
-                        episodes_to_add.append(episodeParser(episode))
+                        episodes_to_add.append(
+                            episodeParser(
+                                episode, parse_embedded_audio_track=parse_embedded_audio_track))
     else:
         return
 
