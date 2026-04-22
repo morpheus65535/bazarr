@@ -105,7 +105,7 @@ def update_series(job_id=None, wait_for_completion=False):
             current_shows_sonarr.append(show['id'])
 
             # Update series in DB
-            update_one_series(show['id'], action='updated')
+            update_one_series(show['id'], action='updated', sync_episodes_after_update=False)
 
             # Update episodes in DB
             sync_episodes(series_id=show['id'])
@@ -127,7 +127,7 @@ def update_series(job_id=None, wait_for_completion=False):
     gc.collect()
 
 
-def update_one_series(series_id, action, is_signalr=False):
+def update_one_series(series_id, action, is_signalr=False, sync_episodes_after_update=True):
     logging.debug(f'BAZARR syncing this specific series from Sonarr: {series_id}')
 
     # Check if there's a row in database for this series ID
@@ -181,7 +181,7 @@ def update_one_series(series_id, action, is_signalr=False):
                 except IntegrityError as e:
                     logging.error(f"BAZARR cannot update series {series['path']} because of {e}")
                 else:
-                    if not is_signalr:
+                    if sync_episodes_after_update and not is_signalr:
                         # Sonarr emit two SignalR events when episodes must be refreshed.
                         # The one that gets there doesn't include the episodeChanged flag.
                         # The episodes are synced only when this function is called from the
