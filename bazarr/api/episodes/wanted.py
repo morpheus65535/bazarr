@@ -51,7 +51,7 @@ class EpisodesWanted(Resource):
         wanted_conditions = [(TableEpisodes.missing_subtitles.is_not(None)),
                              (TableEpisodes.missing_subtitles != '[]')]
         if len(episodeid) > 0:
-            wanted_conditions.append((TableEpisodes.sonarrEpisodeId in episodeid))
+            wanted_conditions.append((TableEpisodes.sonarrEpisodeId.in_(episodeid)))
             start = 0
             length = 0
         else:
