@@ -144,14 +144,14 @@ def update_movies(job_id=None, wait_for_completion=False):
             movies_count = len(movies)
             jobs_queue.update_job_progress(job_id=job_id, progress_max=movies_count)
             # Get current movies in DB
-            current_movies_id_db = [x.radarrId for x in
-                                    database.execute(
-                                        select(TableMovies.radarrId))
-                                    .all()]
-            current_movies_db_kv = [x.items() for x in [y._asdict()['TableMovies'].__dict__ for y in
-                                                        database.execute(
-                                                            select(TableMovies))
-                                                        .all()]]
+            current_movies_in_db = {
+                row[0].radarrId: {
+                    column.name: getattr(row[0], column.name)
+                    for column in row[0].__table__.columns
+                }
+                for row in database.execute(select(TableMovies)).all()
+            }
+            current_movies_id_db = set(current_movies_in_db)
 
             current_movies_radarr = [movie['id'] for movie in movies if movie['hasFile'] and
                                      'movieFile' in movie and
@@ -205,7 +205,7 @@ def update_movies(job_id=None, wait_for_completion=False):
                                                            language_profiles=language_profiles,
                                                            movie_default_profile=movie_default_profile,
                                                            audio_profiles=audio_profiles)
-                                if not any([parsed_movie.items() <= x for x in current_movies_db_kv]):
+                                if not parsed_movie.items() <= current_movies_in_db[movie['id']].items():
                                     update_movie(parsed_movie)
                                     movies_updated.append(parsed_movie['title'])
                             else:
