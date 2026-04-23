@@ -14,7 +14,8 @@ from knowit.api import know, KnowitException
 
 
 def _handle_alpha3(detected_language: dict):
-    alpha3 = detected_language["language"].alpha3
+    language = detected_language["language"]
+    alpha3 = language.alpha3 if hasattr(language, "alpha3") else str(language)
     custom = CustomLanguage.from_value(alpha3, "official_alpha3")
 
     if not custom:
@@ -92,11 +93,6 @@ def embedded_audio_reader(file, file_size, episode_file_id=None, movie_file_id=N
         for detected_language in data[cache_provider]["audio"]:
             if "language" not in detected_language:
                 audio_list.append(None)
-                continue
-
-            if isinstance(detected_language['language'], str):
-                logging.error(f"Cannot identify audio track language for this file: {file}. Value detected is "
-                              f"{detected_language['language']}.")
                 continue
 
             alpha3 = _handle_alpha3(detected_language)

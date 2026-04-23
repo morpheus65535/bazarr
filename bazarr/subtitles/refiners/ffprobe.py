@@ -76,11 +76,9 @@ def refine_from_ffprobe(path, video):
                 video.audio_codec = parser_data['audio'][0]['codec']
         for track in parser_data['audio']:
             if 'language' in track:
-                if isinstance(track['language'], str):
-                    logging.debug(
-                        'BAZARR ffprobe returned a string for audio language,'
-                        ' skipping: %s', track['language'])
-                    continue
-                video.audio_languages.add(track['language'].alpha3)
+                language = track['language']
+                video.audio_languages.add(
+                    language.alpha3 if hasattr(language, 'alpha3') else str(language)
+                )
 
     return video

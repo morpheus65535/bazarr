@@ -245,3 +245,21 @@ def test_embedded_audio_reader(mocker, mediainfo_data, video_file):
     )
     result = video_analyzer.embedded_audio_reader(1e6, video_file)
     assert {"pob", "por"} == set(result)
+
+
+def test_handle_alpha3_accepts_string_language():
+    assert video_analyzer._handle_alpha3({"language": "jpn"}) == "jpn"
+
+
+def test_embedded_audio_reader_accepts_string_language(mocker, video_file):
+    mocker.patch(
+        "bazarr.utilities.video_analyzer.parse_video_metadata",
+        return_value={"ffprobe": {"audio": [{"language": "jpn"}]}},
+    )
+    mocker.patch(
+        "bazarr.utilities.video_analyzer.language_from_alpha3", lambda alpha3: alpha3
+    )
+
+    result = video_analyzer.embedded_audio_reader(1e6, video_file)
+
+    assert result == ["jpn"]
