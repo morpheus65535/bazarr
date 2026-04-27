@@ -392,6 +392,18 @@ const SettingsSubtitlesView: FunctionComponent = () => {
           Use the audio track as reference for syncing, instead of the embedded
           subtitle.
         </Message>
+        <CollapseBox indent settingKey="settings-subsync-force_audio">
+          <Check
+            label="Prefer Original Language Audio Track"
+            settingKey="settings-subsync-use_original_language"
+          ></Check>
+          <Message>
+            When enabled, subsync looks at the show or movie's original language
+            (from Sonarr/Radarr metadata) and aligns to the matching audio
+            track. Falls back to the default audio track if the original
+            language is not present in the file (e.g. dubbed-only release).
+          </Message>
+        </CollapseBox>
         <Check
           label="Do Not Fix Framerate Mismatch"
           settingKey="settings-subsync-no_fix_framerate"
@@ -425,6 +437,17 @@ const SettingsSubtitlesView: FunctionComponent = () => {
           Enable automatic audio synchronization after downloading subtitles.
         </Message>
         <CollapseBox indent settingKey="settings-subsync-use_subsync">
+          <Check
+            label="Prefer Original Language Audio Track"
+            settingKey="settings-subsync-auto_use_original_language"
+          ></Check>
+          <Message>
+            When enabled, automatic synchronization aligns to the audio track
+            matching the show or movie's original language (from Sonarr/Radarr
+            metadata). Independent of the force-audio setting above. Falls back
+            to ffsubsync's default reference if the original language is not
+            present in the file.
+          </Message>
           <MultiSelector
             placeholder="Select providers..."
             label="Do not sync subtitles downloaded from those providers"

@@ -434,6 +434,8 @@ validators = [
     Validator('subsync.subsync_movie_threshold', must_exist=True, default=70, is_type_of=int, gte=0, lte=100),
     Validator('subsync.debug', must_exist=True, default=False, is_type_of=bool),
     Validator('subsync.force_audio', must_exist=True, default=False, is_type_of=bool),
+    Validator('subsync.use_original_language', must_exist=True, default=False, is_type_of=bool),
+    Validator('subsync.auto_use_original_language', must_exist=True, default=False, is_type_of=bool),
     Validator('subsync.checker', must_exist=True, default={}, is_type_of=dict),
     Validator('subsync.checker.blacklisted_providers', must_exist=True, default=[], is_type_of=list),
     Validator('subsync.checker.blacklisted_languages', must_exist=True, default=[], is_type_of=list),
