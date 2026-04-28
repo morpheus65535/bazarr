@@ -17,6 +17,7 @@ from app.database import (get_exclusion_clause, get_audio_profile_languages, Tab
                           select, get_profile_id)
 from app.jobs_queue import jobs_queue
 from app.event_handler import event_stream
+from app.config import settings
 
 from ..download import generate_subtitles
 
@@ -64,10 +65,10 @@ def series_download_subtitles(no, job_id=None, job_sub_function=False):
                                                             f'{episode.episode:02d} - {episode.episodeTitle}')
 
             providers_list = get_providers()
-
+            fallback_allowed = settings.general.use_whisper_fallback and settings.general.use_whisper_fallback_series
             if providers_list:
                 episode_download_subtitles(no=episode.sonarrEpisodeId, job_id=job_id, job_sub_function=True,
-                                           providers_list=providers_list)
+                                           providers_list=providers_list, fallback_allowed=fallback_allowed)
             else:
                 jobs_queue.update_job_progress(job_id=job_id, progress_value=count_episodes_details)
                 logging.info("BAZARR All providers are throttled")
@@ -80,7 +81,7 @@ def series_download_subtitles(no, job_id=None, job_sub_function=False):
     jobs_queue.update_job_name(job_id=job_id, new_job_name=f"Downloaded missing subtitles for {series_row.title}")
 
 
-def episode_download_subtitles(no, job_id=None, job_sub_function=False, providers_list=None):
+def episode_download_subtitles(no, job_id=None, job_sub_function=False, providers_list=None, fallback_allowed=False):
     if not job_sub_function and not job_id:
         jobs_queue.add_job_from_function(f"""Downloading missing subtitles for {database.scalar(
             select(TableShows.title).where(TableShows.sonarrSeriesId == no)) or 'Unknown Series'}""", is_progress=True)
@@ -161,7 +162,8 @@ def episode_download_subtitles(no, job_id=None, job_sub_function=False, provider
                                              'series',
                                              episode.profileId,
                                              check_if_still_required=True,
-                                             job_id=job_id):
+                                             job_id=job_id,
+                                             fallback_allowed=fallback_allowed):
                 if result:
                     if isinstance(result, tuple) and len(result):
                         result = result[0]
