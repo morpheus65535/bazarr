@@ -33,6 +33,7 @@ class PrijevodiOnlineSubtitle(Subtitle):
     """Prijevodi-Online Subtitle."""
     provider_name = 'prijevodionline'
     hash_verifiable = False
+    hearing_impaired_verifiable = False
 
     def __init__(self, language, page_link, subtitle_id, series, season, episode, release_info, verified):
         super(PrijevodiOnlineSubtitle, self).__init__(language, page_link=page_link)
@@ -270,3 +271,16 @@ class PrijevodiOnlineProvider(Provider):
                 subtitle.content = fix_line_ending(zf.read(names[0]))
         else:
             raise ProviderError('Unrecognized archive format for subtitle {}'.format(subtitle.id))
+
+@functools.lru_cache(2048)
+def _memoized_episode_guess(content):
+    # Use include to save time from unnecessary checks
+    return guessit(
+        content,
+        {
+            "type": "episode",
+            # Add codec keys to avoid matching x264, 5.1, etc as episode info
+            "includes": ["season", "episode", "video_codec", "audio_codec"],
+            "enforce_list": True,
+        },
+    )
