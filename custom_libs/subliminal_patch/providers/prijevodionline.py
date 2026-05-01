@@ -32,6 +32,7 @@ logger = logging.getLogger(__name__)
 class PrijevodiOnlineSubtitle(Subtitle):
     """Prijevodi-Online Subtitle."""
     provider_name = 'prijevodionline'
+    hash_verifiable = False
 
     def __init__(self, language, page_link, subtitle_id, series, season, episode, release_info, verified):
         super(PrijevodiOnlineSubtitle, self).__init__(language, page_link=page_link)
