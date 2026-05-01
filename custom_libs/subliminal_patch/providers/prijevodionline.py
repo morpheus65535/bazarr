@@ -272,15 +272,3 @@ class PrijevodiOnlineProvider(Provider):
         else:
             raise ProviderError('Unrecognized archive format for subtitle {}'.format(subtitle.id))
 
-@functools.lru_cache(2048)
-def _memoized_episode_guess(content):
-    # Use include to save time from unnecessary checks
-    return guessit(
-        content,
-        {
-            "type": "episode",
-            # Add codec keys to avoid matching x264, 5.1, etc as episode info
-            "includes": ["season", "episode", "video_codec", "audio_codec"],
-            "enforce_list": True,
-        },
-    )
