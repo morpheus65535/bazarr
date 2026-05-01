@@ -71,6 +71,7 @@ If you need something that is not already part of Bazarr, feel free to create a 
 - OpenSubtitles.com
 - OpenSubtitles.org (VIP users only)
 - Podnapisi
+- Prijevodi-Online
 - RegieLive
 - Sous-Titres.eu
 - subf2m.co

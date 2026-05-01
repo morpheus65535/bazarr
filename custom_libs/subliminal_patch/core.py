@@ -364,7 +364,7 @@ class SZProviderPool(ProviderPool):
         # check supported languages
         provider_languages = self.lang_equals.check_set(set(provider_registry[provider].languages)) & use_languages
         if not provider_languages:
-            logger.info('Skipping provider %r: no language to search for', provider)
+            logger.info('Skipping provider %r: no language to search for. Provider languages: %r', provider, provider_registry[provider].languages)
             return []
 
         # list subtitles
