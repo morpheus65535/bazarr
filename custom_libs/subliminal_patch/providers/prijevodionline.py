@@ -215,6 +215,13 @@ class PrijevodiOnlineProvider(Provider):
             )
             subtitles.append(subtitle)
 
+            if Language('hbs') in languages:
+                subtitles.append(self.subtitle_class(
+                    Language('hbs'), self.server_url + href,
+                    sub_id, series, season, episode,
+                    release_info, verified,
+                ))
+
         # Verified subtitles first
         subtitles.sort(key=lambda s: s.verified, reverse=True)
         return subtitles
