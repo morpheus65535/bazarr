@@ -54,10 +54,7 @@ const TwoPointFitForm: FunctionComponent<Props> = ({
   const query = useSubtitleContents(selections[0].path);
   const lines = useMemo(() => query.data ?? [], [query]);
 
-  const form = useForm<{
-    first: { line: SubtitleContents.Line | null; to: { hour: number; min: number; sec: number; ms: number } };
-    last: { line: SubtitleContents.Line | null; to: { hour: number; min: number; sec: number; ms: number } };
-  }>({
+  const form = useForm({
     initialValues: {
       first: {
         line: null as SubtitleContents.Line | null,
