@@ -150,8 +150,8 @@ class PrijevodiOnlineProvider(Provider):
 
         return None, None, None
 
-    def _fetch_subtitles(self, episode_id, series, season, episode, language, key, series_url):
-        """Fetch and parse the subtitle list for an episode. Returns list of subtitles."""
+    def _fetch_subtitles(self, episode_id, series, season, episode, languages, key, series_url):
+        """POST to the episode subtitle list once and return subtitles for all requested languages."""
         url = '{}/prijevod/get/{}'.format(self.server_url, episode_id)
         r = self.session.post(
             url,
@@ -195,7 +195,7 @@ class PrijevodiOnlineProvider(Provider):
             else:
                 continue
 
-            if sub_lang != language:
+            if sub_lang not in languages:
                 continue
 
             status_td = row.select_one('td.status')
@@ -219,7 +219,7 @@ class PrijevodiOnlineProvider(Provider):
         subtitles.sort(key=lambda s: s.verified, reverse=True)
         return subtitles
 
-    def query(self, language, series, season, episode):
+    def query(self, languages, series, season, episode):
         series_id, slug = self._find_series(series)
         if not series_id:
             logger.debug('Series %r not found on prijevodi-online', series)
@@ -230,7 +230,7 @@ class PrijevodiOnlineProvider(Provider):
             logger.debug('S%02dE%02d not found for series %r', season, episode, series)
             return []
 
-        subtitles = self._fetch_subtitles(episode_id, series, season, episode, language, key, series_url)
+        subtitles = self._fetch_subtitles(episode_id, series, season, episode, languages, key, series_url)
         logger.debug('Found %d subtitle(s) for %r S%02dE%02d', len(subtitles), series, season, episode)
         return subtitles
 
@@ -238,10 +238,8 @@ class PrijevodiOnlineProvider(Provider):
         if not isinstance(video, Episode):
             return []
 
-        titles = [video.series] + video.alternative_series
-        for title in titles:
-            subtitles = [s for l in languages
-                         for s in self.query(l, title, video.season, video.episode)]
+        for title in [video.series] + video.alternative_series:
+            subtitles = self.query(languages, title, video.season, video.episode)
             if subtitles:
                 return subtitles
 
