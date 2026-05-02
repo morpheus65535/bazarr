@@ -198,6 +198,9 @@ class PrijevodiOnlineProvider(Provider):
             if sub_lang not in languages and Language('hbs') not in languages:
                 continue
 
+            if Language('hbs') in languages
+                sub_lang = Language('hbs')
+
             status_td = row.select_one('td.status')
             verified = bool(status_td and 'provjereno' in status_td.get_text())
 
@@ -214,13 +217,6 @@ class PrijevodiOnlineProvider(Provider):
                 release_info, verified,
             )
             subtitles.append(subtitle)
-
-            if Language('hbs') in languages:
-                subtitles.append(self.subtitle_class(
-                    Language('hbs'), self.server_url + href,
-                    sub_id, series, season, episode,
-                    release_info, verified,
-                ))
 
         # Verified subtitles first
         subtitles.sort(key=lambda s: s.verified, reverse=True)
