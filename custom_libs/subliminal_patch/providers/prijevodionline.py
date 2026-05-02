@@ -71,7 +71,7 @@ class PrijevodiOnlineSubtitle(Subtitle):
 
 class PrijevodiOnlineProvider(Provider):
     """Prijevodi-Online Provider."""
-    languages = {Language('hrv'), Language('mne'), Language('srp'), Language('hbs')}
+    languages = {Language('hrv'), Language('mne'), Language('srp')}
     video_types = (Episode,)
     server_url = 'https://www.prijevodi-online.org'
     subtitle_class = PrijevodiOnlineSubtitle
@@ -195,11 +195,8 @@ class PrijevodiOnlineProvider(Provider):
             else:
                 continue
 
-            if sub_lang not in languages and Language('hbs') not in languages:
+            if sub_lang not in languages:
                 continue
-
-            if Language('hbs') in languages:
-                sub_lang = Language('hbs')
 
             status_td = row.select_one('td.status')
             verified = bool(status_td and 'provjereno' in status_td.get_text())
