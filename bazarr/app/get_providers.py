@@ -267,6 +267,10 @@ def get_providers_auth():
             'username': settings.legendasnet.username,
             'password': settings.legendasnet.password,
         },
+        'pipocas': {
+            'username': settings.pipocas.username,
+            'password': settings.pipocas.password,
+        },
         'xsubs': {
             'username': settings.xsubs.username,
             'password': settings.xsubs.password,

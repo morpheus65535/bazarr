@@ -364,6 +364,10 @@ validators = [
     Validator('legendasnet.username', must_exist=True, default='', is_type_of=str, cast=str),
     Validator('legendasnet.password', must_exist=True, default='', is_type_of=str, cast=str),
 
+    # pipocas section
+    Validator('pipocas.username', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('pipocas.password', must_exist=True, default='', is_type_of=str, cast=str),
+
     # ktuvit section
     Validator('ktuvit.email', must_exist=True, default='', is_type_of=str),
     Validator('ktuvit.hashed_password', must_exist=True, default='', is_type_of=str, cast=str),

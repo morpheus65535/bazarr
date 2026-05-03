@@ -70,6 +70,7 @@ If you need something that is not already part of Bazarr, feel free to create a 
 - Nekur
 - OpenSubtitles.com
 - OpenSubtitles.org (VIP users only)
+- Pipocas.tv
 - Podnapisi
 - Prijevodi-Online
 - RegieLive
