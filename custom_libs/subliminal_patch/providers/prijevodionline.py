@@ -35,13 +35,14 @@ class PrijevodiOnlineSubtitle(Subtitle):
     hash_verifiable = False
     hearing_impaired_verifiable = False
 
-    def __init__(self, language, page_link, subtitle_id, series, season, episode, release_info, verified):
+    def __init__(self, language, page_link, subtitle_id, series, season, episode, releases, verified):
         super(PrijevodiOnlineSubtitle, self).__init__(language, page_link=page_link)
         self.subtitle_id = subtitle_id
         self.series = series
         self.season = season
         self.episode = episode
-        self.release_info = release_info
+        self.releases = releases
+        self.release_info = u", ".join(releases)
         self.verified = verified
 
     @property
@@ -62,16 +63,14 @@ class PrijevodiOnlineSubtitle(Subtitle):
                 matches.add('season')
             if video.episode and self.episode == video.episode:
                 matches.add('episode')
-            if self.release_info:
-                # Use the release identifier portion before any " / " separator
-                release_name = self.release_info.split(' / ')[0].strip()
-                matches |= guess_matches(video, guessit(release_name, {'type': 'episode'}))
+            for release in self.releases:
+                matches |= guess_matches(video, guessit(release, {'type': 'episode'}))
         return matches
 
 
 class PrijevodiOnlineProvider(Provider):
     """Prijevodi-Online Provider."""
-    languages = {Language('hrv'), Language('mne'), Language('srp')}
+    languages = {Language('hrv'), Language('mne'), Language('srp'), Language('hbs')}
     video_types = (Episode,)
     server_url = 'https://www.prijevodi-online.org'
     subtitle_class = PrijevodiOnlineSubtitle
@@ -195,23 +194,27 @@ class PrijevodiOnlineProvider(Provider):
             else:
                 continue
 
-            if sub_lang not in languages:
+            if sub_lang not in languages and Language('hbs') not in languages:
                 continue
+
+            if Language('hbs') in languages:
+                sub_lang = Language('hbs')
 
             status_td = row.select_one('td.status')
             verified = bool(status_td and 'provjereno' in status_td.get_text())
 
-            release_info = ''
+            releases = []
             opis_row = soup.find('tr', id='prijevod-opis-{}'.format(sub_id))
             if opis_row:
                 opis_td = opis_row.select_one('td.opis') or opis_row.find('td')
                 if opis_td:
                     release_info = opis_td.get_text(strip=True)
+                    releases = [r.strip() for r in release_info.split("/")] if release_info else []
 
             subtitle = self.subtitle_class(
                 sub_lang, self.server_url + href,
                 sub_id, series, season, episode,
-                release_info, verified,
+                releases, verified,
             )
             subtitles.append(subtitle)
 
