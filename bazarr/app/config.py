@@ -775,54 +775,54 @@ def save_settings(settings_items):
 
         if key in ['settings-sonarr-excluded_tags', 'settings-sonarr-only_monitored',
                    'settings-sonarr-excluded_series_types', 'settings-sonarr-exclude_season_zero',
-                   'settings.radarr.excluded_tags', 'settings-radarr-only_monitored']:
+                   'settings-radarr-excluded_tags', 'settings-radarr-only_monitored']:
             exclusion_updated = True
 
         if key in ['settings-sonarr-excluded_tags', 'settings-sonarr-only_monitored',
                    'settings-sonarr-excluded_series_types', 'settings-sonarr-exclude_season_zero']:
             sonarr_exclusion_updated = True
 
-        if key in ['settings.radarr.excluded_tags', 'settings-radarr-only_monitored']:
+        if key in ['settings-radarr-excluded_tags', 'settings-radarr-only_monitored']:
             radarr_exclusion_updated = True
 
         if key == 'settings-addic7ed-username':
-            if key != settings.addic7ed.username:
+            if value != settings.addic7ed.username:
                 reset_providers = True
                 region.delete('addic7ed_data')
         elif key == 'settings-addic7ed-password':
-            if key != settings.addic7ed.password:
+            if value != settings.addic7ed.password:
                 reset_providers = True
                 region.delete('addic7ed_data')
 
         if key == 'settings-legendasdivx-username':
-            if key != settings.legendasdivx.username:
+            if value != settings.legendasdivx.username:
                 reset_providers = True
                 region.delete('legendasdivx_cookies2')
         elif key == 'settings-legendasdivx-password':
-            if key != settings.legendasdivx.password:
+            if value != settings.legendasdivx.password:
                 reset_providers = True
                 region.delete('legendasdivx_cookies2')
 
         if key == 'settings-opensubtitlescom-username':
-            if key != settings.opensubtitlescom.username:
+            if value != settings.opensubtitlescom.username:
                 reset_providers = True
                 region.delete('oscom_token')
         elif key == 'settings-opensubtitlescom-password':
-            if key != settings.opensubtitlescom.password:
+            if value != settings.opensubtitlescom.password:
                 reset_providers = True
                 region.delete('oscom_token')
 
         if key == 'settings-titlovi-username':
-            if key != settings.titlovi.username:
+            if value != settings.titlovi.username:
                 reset_providers = True
                 region.delete('titlovi_token')
         elif key == 'settings-titlovi-password':
-            if key != settings.titlovi.password:
+            if value != settings.titlovi.password:
                 reset_providers = True
                 region.delete('titlovi_token')
 
         if key == 'settings-subsource-apikey':
-            if key != settings.subsource.apikey:
+            if value != settings.subsource.apikey:
                 reset_providers = True
 
         if reset_providers:

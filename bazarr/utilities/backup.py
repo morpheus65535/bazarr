@@ -4,6 +4,7 @@ import os
 import sqlite3
 import shutil
 import logging
+import re
 
 from datetime import datetime, timedelta, timezone
 from zipfile import ZipFile, BadZipFile, ZIP_DEFLATED
@@ -14,6 +15,30 @@ from app.config import settings
 from app.event_handler import event_stream
 from app.jobs_queue import jobs_queue
 from utilities.central import restart_bazarr
+
+_BACKUP_FILENAME_RE = re.compile(r'^bazarr_backup_v[\w.\-]+\.zip$')
+
+
+def _validate_backup_filename(filename):
+    """Return a safe filename if `filename` is a plain backup file name, else None."""
+    if not filename:
+        return None
+    safe_name = os.path.basename(filename)
+    if safe_name != filename:
+        return None
+    if not _BACKUP_FILENAME_RE.match(safe_name):
+        return None
+    return safe_name
+
+
+def _safe_extract(zip_obj, dest_path):
+    """Extract a ZIP archive while rejecting entries that escape `dest_path`."""
+    dest_real = os.path.realpath(dest_path)
+    for member in zip_obj.namelist():
+        member_real = os.path.realpath(os.path.join(dest_real, member))
+        if member_real != dest_real and not member_real.startswith(dest_real + os.sep):
+            raise BadZipFile(f'Unsafe path in backup archive: {member}')
+    zip_obj.extractall(path=dest_path)
 
 
 def get_backup_path():
@@ -162,6 +187,10 @@ def restore_from_backup():
 
 
 def prepare_restore(filename):
+    filename = _validate_backup_filename(filename)
+    if filename is None:
+        logging.error('Invalid backup filename refused for restore.')
+        return False
     src_zip_file_path = os.path.join(get_backup_path(), filename)
     dest_zip_file_path = os.path.join(get_restore_path(), filename)
     success = False
@@ -172,7 +201,7 @@ def prepare_restore(filename):
     else:
         try:
             with ZipFile(dest_zip_file_path, 'r') as zipObj:
-                zipObj.extractall(path=get_restore_path())
+                _safe_extract(zipObj, get_restore_path())
         except BadZipFile:
             logging.exception(f'Unable to extract files from backup archive {dest_zip_file_path}')
         else:
@@ -216,6 +245,10 @@ def backup_rotation():
 
 
 def delete_backup_file(filename):
+    filename = _validate_backup_filename(filename)
+    if filename is None:
+        logging.error('Invalid backup filename refused for deletion.')
+        return False
     backup_file_path = os.path.join(get_backup_path(), filename)
     try:
         os.remove(backup_file_path)
