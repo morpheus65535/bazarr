@@ -431,7 +431,7 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
   {
     key: "prijevodionline",
     name: "Prijevodi Online",
-    description: "Prijevodi Online website. No need for login or cookies."
+    description: "Prijevodi Online website. No need for login or cookies.",
   },
   {
     key: "regielive",
