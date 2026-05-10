@@ -13,6 +13,7 @@ from languages.get_languages import audio_language_from_name, language_from_alph
 from utilities.path_mappings import path_mappings
 from utilities.video_analyzer import subtitles_sync_references
 from app.config import settings
+from app.database import TableMovies, TableShows, database, select
 from app.get_args import args
 
 
@@ -36,27 +37,24 @@ class SubSyncer:
 
     @staticmethod
     def _original_language_name(sonarr_series_id, radarr_id):
-        """Fetch originalLanguage.name from Sonarr/Radarr API for the given media. Returns None on any failure."""
+        """Read originalLanguage from the local DB. The column is populated by the regular
+        Sonarr/Radarr series/movies sync. Returns None if the row is missing or the column
+        hasn't been backfilled yet (next series/movies sync will populate it)."""
         try:
             if sonarr_series_id:
-                from sonarr.sync.utils import get_series_from_sonarr_api
-                data = get_series_from_sonarr_api(apikey_sonarr=settings.sonarr.apikey,
-                                                  sonarr_series_id=int(sonarr_series_id))
-                if isinstance(data, list) and data and isinstance(data[0], dict):
-                    ol = data[0].get('originalLanguage')
-                    if isinstance(ol, dict):
-                        return ol.get('name')
-            elif radarr_id:
-                from radarr.sync.utils import get_movies_from_radarr_api
-                data = get_movies_from_radarr_api(apikey_radarr=settings.radarr.apikey,
-                                                  radarr_id=int(radarr_id))
-                movie = data[0] if isinstance(data, list) and data else data
-                if isinstance(movie, dict):
-                    ol = movie.get('originalLanguage')
-                    if isinstance(ol, dict):
-                        return ol.get('name')
+                row = database.execute(
+                    select(TableShows.originalLanguage)
+                    .where(TableShows.sonarrSeriesId == int(sonarr_series_id))
+                ).first()
+                return row.originalLanguage if row else None
+            if radarr_id:
+                row = database.execute(
+                    select(TableMovies.originalLanguage)
+                    .where(TableMovies.radarrId == int(radarr_id))
+                ).first()
+                return row.originalLanguage if row else None
         except Exception:
-            logging.exception('BAZARR could not retrieve originalLanguage from Sonarr/Radarr.')
+            logging.exception('BAZARR could not retrieve originalLanguage from database.')
         return None
 
     @classmethod

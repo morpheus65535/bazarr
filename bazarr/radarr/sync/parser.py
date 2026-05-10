@@ -121,6 +121,8 @@ def movieParser(movie, action, tags_dict, language_profiles, movie_default_profi
 
         tags = [d['label'] for d in tags_dict if d['id'] in movie['tags']]
 
+        original_language = movie['originalLanguage'].get('name') if isinstance(movie.get('originalLanguage'), dict) else None
+
         parsed_movie = {'radarrId': int(movie["id"]),
                         'title': movie["title"],
                         'path': movie['movieFile']['path'],
@@ -141,7 +143,8 @@ def movieParser(movie, action, tags_dict, language_profiles, movie_default_profi
                         'imdbId': imdbId,
                         'movie_file_id': int(movie['movieFile']['id']),
                         'tags': str(tags),
-                        'file_size': movie['movieFile']['size']}
+                        'file_size': movie['movieFile']['size'],
+                        'originalLanguage': original_language}
 
         if action == 'insert':
             parsed_movie['subtitles'] = '[]'
