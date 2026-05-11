@@ -450,10 +450,10 @@ class WhisperAIProvider(Provider):
                 # Use the ISO 639-2 code if available
                 audio_stream_language = wlm.get_ISO_639_2_code(audio_stream_language)
                 logger.debug(f"Whisper will use the '{audio_stream_language}' audio stream for {path}")
-                # 0 = Pick first stream in case there are multiple language streams of the same language,
-                # otherwise ffmpeg will try to combine multiple streams, but our output format doesn't support that.
+                # Pick the first stream matching the language, as ffmpeg's format s16le doesn't support multiple audio streams.
+                # Using language filter without :m: (multiple) to select only the first matching stream.
                 # The first stream is probably the correct one, as later streams are usually commentaries
-                lang_map = f"0:a:m:language:{audio_stream_language}"
+                lang_map = f"0:a:language:{audio_stream_language}"
                 out = inp.output("-", format="s16le", acodec="pcm_s16le", ac=1, ar=16000, af=audio_filter,
                                  map=lang_map)
             else:
