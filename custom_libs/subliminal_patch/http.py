@@ -1,6 +1,8 @@
 # coding=utf-8
 from __future__ import absolute_import
 import json
+import math
+import time
 from collections import OrderedDict
 
 import certifi
@@ -18,7 +20,8 @@ from six import PY3
 from requests import exceptions
 from urllib3.util import connection
 from retry.api import retry_call
-from .exceptions import APIThrottled
+from .exceptions import APIThrottled, TooManyRequests
+from .global_rate_limiter import get_throttler
 from dogpile.cache.api import NO_VALUE
 from subliminal.cache import region
 from subliminal_patch.pitcher import pitchers
@@ -46,7 +49,47 @@ except AttributeError:
     default_ssl_context = None
 
 
-class TimeoutSession(requests.Session):
+class RateLimiting(object):
+    """
+    Intercepts every request to apply https://ietf-wg-httpapi.github.io/ratelimit-headers/draft-ietf-httpapi-ratelimit-headers.html rate-limit throttling.
+
+    - Before each request: proactively delays when the remaining quota for the
+      target domain is running low (< 25 %) or exhausted.
+    - After each response: updates the per-domain window state from the
+      Ratelimit / Ratelimit-Policy response headers.
+    - On HTTP 429: sleeps for retry-after seconds then retries.
+    """
+
+    def request(self, method, url, *args, **kwargs):
+        domain = urlparse(url).netloc
+        throttler = get_throttler()
+
+        throttler.throttle(domain)
+
+        response = super(RateLimiting, self).request(method, url, *args, **kwargs)
+
+        throttler.on_response(domain, response)
+
+        if response.status_code == 429:
+            retry_after = response.headers.get("retry-after") or response.headers.get("Retry-After")
+            if retry_after:
+                try:
+                    wait = math.ceil(float(retry_after))
+                    logger.warning("[%s] rate limited (429), retrying in %ds (retry-after)", domain, wait)
+                    time.sleep(wait)
+                    throttler.clear(domain)
+                    response = super(RateLimiting, self).request(method, url, *args, **kwargs)
+                    throttler.on_response(domain, response)
+                except (ValueError, TypeError):
+                    pass
+
+            if response.status_code == 429:
+                raise TooManyRequests()
+
+        return response
+
+
+class TimeoutSession(RateLimiting, requests.Session):
     timeout = 10
 
     def __init__(self, timeout=None):
