@@ -331,6 +331,45 @@ class WhisperAIProvider(Provider):
         self.ambiguous_language_codes = whisper_ambiguous_language_codes
         logger.debug(f"Using ambiguous language codes: {self.ambiguous_language_codes}")
 
+    def _find_matching_audio_index(self, path, audio_stream_language):
+        try:
+            probe_cmd = [
+                'ffprobe',
+                '-v', 'error',
+                '-select_streams', 'a',
+                '-show_entries', 'stream=index:stream_tags=language',
+                '-of', 'json',
+                path
+            ]
+
+            if os.name == 'nt':
+                startupinfo = subprocess.STARTUPINFO()
+                startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+                res = subprocess.run(probe_cmd, capture_output=True, text=True, startupinfo=startupinfo)
+            else:
+                res = subprocess.run(probe_cmd, capture_output=True, text=True)
+
+            if res.returncode != 0:
+                return None
+
+            data = json.loads(res.stdout)
+            streams = data.get('streams', [])
+            if not streams:
+                return None
+
+            target_prefix = audio_stream_language[:2].lower()
+
+            for stream in streams:
+                lang = stream.get('tags', {}).get('language', 'und').lower()
+                if target_prefix in lang:
+                    return stream['index']
+
+            return streams[0]['index']
+
+        except Exception as e:
+            logger.debug(f"WhisperAI: ffprobe stream detection failed: {e}")
+            return None
+
     def initialize(self):
         self.session = Session()
         self.session.headers['User-Agent'] = 'Subliminal/%s' % __short_version__
@@ -451,9 +490,12 @@ class WhisperAIProvider(Provider):
                 audio_stream_language = wlm.get_ISO_639_2_code(audio_stream_language)
                 logger.debug(f"Whisper will use the '{audio_stream_language}' audio stream for {path}")
                 # Pick the first stream matching the language, as ffmpeg's format s16le doesn't support multiple audio streams.
-                # Using language filter without :m: (multiple) to select only the first matching stream.
-                # The first stream is probably the correct one, as later streams are usually commentaries
-                lang_map = f"0:a:language:{audio_stream_language}"
+                # Probe for the exact stream index to avoid matching multiple streams with the same language.
+                stream_index = self._find_matching_audio_index(path, audio_stream_language)
+                if stream_index is not None:
+                    lang_map = f"0:{stream_index}"
+                else:
+                    lang_map = "0:a:0"
                 out = inp.output("-", format="s16le", acodec="pcm_s16le", ac=1, ar=16000, af=audio_filter,
                                  map=lang_map)
             else:
