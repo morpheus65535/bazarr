@@ -128,7 +128,7 @@ def _parse_x_ratelimit_state(headers) -> Optional["_WindowState"]:
         return None
 
 
-class CloudflareThrottler:
+class DomainThrottler:
     """
     Global per-domain rate limit state tracker.
 
@@ -214,8 +214,8 @@ class CloudflareThrottler:
 
 
 # Module-level singleton shared across all providers / sessions
-_throttler = CloudflareThrottler()
+_throttler = DomainThrottler()
 
 
-def get_throttler() -> CloudflareThrottler:
+def get_throttler() -> DomainThrottler:
     return _throttler
