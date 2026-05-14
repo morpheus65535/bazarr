@@ -35,6 +35,8 @@ const defaultCutoffOptions: SelectorOption<Language.ProfileItem>[] = [
       forced: "False",
       hi: "False",
       language: "any",
+      // eslint-disable-next-line camelcase
+      translate_from: null,
     },
   },
 ];
@@ -165,6 +167,8 @@ const ProfileEditForm: FunctionComponent<Props> = ({
         audio_only_include: "False",
         hi: "False",
         forced: "False",
+        // eslint-disable-next-line camelcase
+        translate_from: null,
       };
 
       const list = [...form.values.items, item];
@@ -260,6 +264,48 @@ const ProfileEditForm: FunctionComponent<Props> = ({
     },
   );
 
+  const TranslateFromCell = React.memo(
+    ({ item, index }: { item: Language.ProfileItem; index: number }) => {
+      // Exclude the item's own language from the source list (can't translate
+      // a language to itself). Treat undefined translate_from as null for
+      // backward compatibility with profile rows persisted before this field.
+      const translateFromValue = item.translate_from ?? null;
+
+      const filteredOptions = useMemo(
+        () =>
+          languageOptions.options.filter(
+            (l) => l.value.code2 !== item.language,
+          ),
+        [item.language],
+      );
+
+      const selected = useMemo(
+        () =>
+          filteredOptions.find((l) => l.value.code2 === translateFromValue)
+            ?.value ?? null,
+        [filteredOptions, translateFromValue],
+      );
+
+      return (
+        <Selector
+          {...languageOptions}
+          options={filteredOptions}
+          className="table-select"
+          clearable
+          placeholder="None"
+          value={selected}
+          onChange={(value) => {
+            action.mutate(index, {
+              ...item,
+              // eslint-disable-next-line camelcase
+              translate_from: value?.code2 ?? null,
+            });
+          }}
+        ></Selector>
+      );
+    },
+  );
+
   const columns = useMemo<ColumnDef<Language.ProfileItem>[]>(
     () => [
       {
@@ -288,6 +334,13 @@ const ProfileEditForm: FunctionComponent<Props> = ({
         },
       },
       {
+        header: "Translate From",
+        accessorKey: "translate_from",
+        cell: ({ row: { original: item, index } }) => {
+          return <TranslateFromCell item={item} index={index} />;
+        },
+      },
+      {
         id: "action",
         cell: ({ row }) => {
           return (
@@ -301,7 +354,7 @@ const ProfileEditForm: FunctionComponent<Props> = ({
         },
       },
     ],
-    [action, LanguageCell, SubtitleTypeCell, InclusionCell],
+    [action, LanguageCell, SubtitleTypeCell, InclusionCell, TranslateFromCell],
   );
 
   return (

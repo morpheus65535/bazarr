@@ -31,6 +31,7 @@ declare namespace Language {
     forced: PythonBoolean;
     hi: PythonBoolean;
     language: CodeType;
+    translate_from: CodeType | null;
   }
 
   interface Profile {

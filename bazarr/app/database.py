@@ -633,6 +633,9 @@ def upgrade_languages_profile_values():
 
             if 'audio_only_include' not in language:
                 language['audio_only_include'] = "False"
+
+            if "translate_from" not in language:
+                language["translate_from"] = None
         database.execute(
             update(TableLanguagesProfiles)
             .values({"items": json.dumps(items)})

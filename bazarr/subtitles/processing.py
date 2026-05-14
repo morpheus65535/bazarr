@@ -41,6 +41,92 @@ class ProcessSubtitlesResult:
             self.language_code = downloaded_language_code2
 
 
+def _trigger_auto_translation(downloaded_lang, subtitle_path, video_path, media_type,
+                              series_id=None, episode_id=None, radarr_id=None):
+    """
+    After a subtitle is downloaded, check if any profile language is configured to
+    auto-translate from the just-downloaded language. If so, queue translation.
+    Providers are still searched first (translation fires as a parallel fallback).
+    """
+    try:
+        from app.database import get_profile_id, get_profiles_list
+        from subtitles.tools.translate.main import translate_subtitles_file
+        from subtitles.download import check_missing_languages
+
+        if not subtitle_path or not downloaded_lang:
+            return
+
+        # Forced subtitles: don't auto-translate from forced sources
+        if subtitle_path and ':forced' in str(downloaded_lang):
+            return
+
+        # Get the profile for this media item
+        if media_type == 'series' and episode_id:
+            profile_id = get_profile_id(episode_id=episode_id)
+        elif media_type == 'series' and series_id:
+            profile_id = get_profile_id(series_id=series_id)
+        else:
+            profile_id = get_profile_id(movie_id=radarr_id)
+
+        if not profile_id:
+            return
+
+        profile = get_profiles_list(profile_id=profile_id)
+        if not profile:
+            return
+
+        for item in profile.get('items', []):
+            target_lang = item.get('language')
+            translate_from = item.get('translate_from')
+
+            # Only trigger if this item has translate_from set to the downloaded language
+            if not translate_from or translate_from != downloaded_lang:
+                continue
+            # Don't translate a language to itself
+            if target_lang == downloaded_lang:
+                continue
+
+            # Check if target language subtitle is still needed.
+            # check_missing_languages returns a set of subzero Language objects
+            # (alpha3 with .hi/.forced flags). Convert to alpha2 codes for comparison.
+            missing = check_missing_languages(path=video_path, media_type=media_type)
+            missing_codes = set()
+            for lang_obj in missing or []:
+                try:
+                    code2 = alpha2_from_alpha3(lang_obj.alpha3)
+                except Exception:
+                    code2 = None
+                if not code2:
+                    continue
+                if getattr(lang_obj, 'hi', False):
+                    missing_codes.add(f'{code2}:hi')
+                elif getattr(lang_obj, 'forced', False):
+                    missing_codes.add(f'{code2}:forced')
+                else:
+                    missing_codes.add(code2)
+
+            target_codes = {target_lang, f'{target_lang}:hi', f'{target_lang}:forced'}
+            if not (missing_codes & target_codes):
+                logging.debug(f'BAZARR auto-translate skipped: {target_lang} already satisfied for {video_path}')
+                continue
+
+            logging.info(f'BAZARR auto-translate queuing {downloaded_lang} -> {target_lang} for {video_path}')
+            translate_subtitles_file(
+                video_path=video_path,
+                source_srt_file=subtitle_path,
+                from_lang=downloaded_lang,
+                to_lang=target_lang,
+                forced=item.get('forced') == 'True',
+                hi=item.get('hi') == 'True',
+                media_type=media_type,
+                sonarr_series_id=series_id,
+                sonarr_episode_id=episode_id,
+                radarr_id=radarr_id,
+            )
+    except Exception:
+        logging.exception('BAZARR error in _trigger_auto_translation')
+
+
 def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_upgrade=False, is_manual=False,
                      job_id=None):
     use_postprocessing = settings.general.use_postprocessing
@@ -183,6 +269,17 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
         media_path=path,
         language=downloaded_language,
         media_type=media_type
+    )
+
+    # Auto-translate: trigger translation to any profile language configured with translate_from
+    _trigger_auto_translation(
+        downloaded_lang=downloaded_language_code2,
+        subtitle_path=subtitle.storage_path,
+        video_path=path,
+        media_type=media_type,
+        series_id=series_id if media_type == 'series' else None,
+        episode_id=episode_id if media_type == 'series' else None,
+        radarr_id=movie_metadata.radarrId if media_type != 'series' else None,
     )
 
     event_tracker.track_subtitles(provider=downloaded_provider, action=action, language=downloaded_language)
