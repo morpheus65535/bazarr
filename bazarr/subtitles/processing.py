@@ -111,6 +111,8 @@ def _trigger_auto_translation(downloaded_lang, subtitle_path, video_path, media_
                 continue
 
             logging.info(f'BAZARR auto-translate queuing {downloaded_lang} -> {target_lang} for {video_path}')
+            # Normalize media_type to match translate_subtitles_file convention
+            translate_media_type = 'series' if media_type == 'series' else 'movies'
             translate_subtitles_file(
                 video_path=video_path,
                 source_srt_file=subtitle_path,
@@ -118,7 +120,7 @@ def _trigger_auto_translation(downloaded_lang, subtitle_path, video_path, media_
                 to_lang=target_lang,
                 forced=item.get('forced') == 'True',
                 hi=item.get('hi') == 'True',
-                media_type=media_type,
+                media_type=translate_media_type,
                 sonarr_series_id=series_id,
                 sonarr_episode_id=episode_id,
                 radarr_id=radarr_id,
