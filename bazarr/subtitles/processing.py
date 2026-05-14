@@ -42,11 +42,16 @@ class ProcessSubtitlesResult:
 
 
 def _trigger_auto_translation(downloaded_lang, subtitle_path, video_path, media_type,
-                              series_id=None, episode_id=None, radarr_id=None):
+                              series_id=None, episode_id=None, radarr_id=None,
+                              source_score_percent=None):
     """
     After a subtitle is downloaded, check if any profile language is configured to
     auto-translate from the just-downloaded language. If so, queue translation.
     Providers are still searched first (translation fires as a parallel fallback).
+
+    source_score_percent: 0-100 score of the just-downloaded source subtitle. If
+    provided and below settings.translator.min_source_score, translation is
+    skipped (poorly-matched sources shouldn't seed translations).
     """
     try:
         from app.database import get_profile_id, get_profiles_list
@@ -58,6 +63,15 @@ def _trigger_auto_translation(downloaded_lang, subtitle_path, video_path, media_
 
         # Forced subtitles: don't auto-translate from forced sources
         if subtitle_path and ':forced' in str(downloaded_lang):
+            return
+
+        # Quality gate: only translate from sufficiently good source subtitles.
+        min_score = settings.translator.min_source_score
+        if source_score_percent is not None and source_score_percent < min_score:
+            logging.info(
+                f'BAZARR auto-translate skipped: source score {source_score_percent:.1f}% '
+                f'below threshold {min_score}% for {video_path}'
+            )
             return
 
         # Get the profile for this media item
@@ -124,6 +138,7 @@ def _trigger_auto_translation(downloaded_lang, subtitle_path, video_path, media_
                 sonarr_series_id=series_id,
                 sonarr_episode_id=episode_id,
                 radarr_id=radarr_id,
+                metadata=None,
             )
     except Exception:
         logging.exception('BAZARR error in _trigger_auto_translation')
@@ -282,6 +297,7 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
         series_id=series_id if media_type == 'series' else None,
         episode_id=episode_id if media_type == 'series' else None,
         radarr_id=movie_metadata.radarrId if media_type != 'series' else None,
+        source_score_percent=percent_score,
     )
 
     event_tracker.track_subtitles(provider=downloaded_provider, action=action, language=downloaded_language)

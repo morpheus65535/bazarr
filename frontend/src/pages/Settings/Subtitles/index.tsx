@@ -629,6 +629,17 @@ const SettingsSubtitlesView: FunctionComponent = () => {
           label="Score for Translated Episode and Movie Subtitles"
           settingKey="settings-translator-default_score"
         ></Slider>
+        <Slider
+          label="Minimum Source Subtitle Score for Auto-Translation"
+          settingKey="settings-translator-min_source_score"
+        ></Slider>
+        <Message>
+          When auto-translating from an existing subtitle (via a language
+          profile's "translate from" setting), only sources whose quality score
+          meets or exceeds this threshold will be used. Lower-scoring subtitles
+          are likely badly synced or poorly matched and won't make good
+          translation sources.
+        </Message>
         <Selector
           label="Translator"
           clearable

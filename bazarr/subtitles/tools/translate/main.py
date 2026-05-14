@@ -76,9 +76,28 @@ def translate_subtitles_file(video_path, source_srt_file, from_lang, to_lang, fo
         if result is False:
             raise RuntimeError(f'{translator.__class__.__name__} returned a failed translation result')
         logging.debug(f'BAZARR saved translated subtitles to {dest_srt_file}')
-        from api.subtitles.subtitles import postprocess_subtitles
-        # Call postprocess_subtitles after translation
-        postprocess_subtitles(dest_srt_file, media_type, metadata, sonarr_episode_id if media_type == 'episode' else radarr_id)
+        if metadata is not None:
+            from api.subtitles.subtitles import postprocess_subtitles
+            # Full post-processing (chmod, re-index, event streams, Plex/Jellyfin refresh)
+            postprocess_subtitles(dest_srt_file, media_type, metadata,
+                                  sonarr_episode_id if media_type == 'episode' else radarr_id)
+        elif result:
+            # Auto-translation path: no metadata available; do minimal re-indexing
+            try:
+                from utilities.path_mappings import path_mappings
+                if media_type == 'series':
+                    from subtitles.indexer.series import store_subtitles, list_missing_subtitles
+                    store_subtitles(sonarr_episode_id)
+                    if sonarr_episode_id:
+                        list_missing_subtitles(epno=sonarr_episode_id)
+                else:
+                    from subtitles.indexer.movies import store_subtitles_movie, list_missing_subtitles_movies
+                    store_subtitles_movie(radarr_id)
+                    if radarr_id:
+                        list_missing_subtitles_movies(no=radarr_id)
+            except Exception as e:
+                logging.warning(f'BAZARR failed to re-index after translation: {e}')
+
         return result
 
     except Exception as e:

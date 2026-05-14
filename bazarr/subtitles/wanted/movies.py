@@ -4,6 +4,7 @@
 import ast
 import logging
 import operator
+import os
 
 from functools import reduce
 
@@ -12,14 +13,44 @@ from subtitles.indexer.movies import store_subtitles_movie, list_missing_subtitl
 from radarr.history import history_log_movie
 from app.notifier import send_notifications_movie
 from app.get_providers import get_providers
-from app.database import (get_exclusion_clause, get_audio_profile_languages, TableMovies, database, update, select,
-                          get_subtitles)
+from app.config import settings
+from app.database import (get_exclusion_clause, get_audio_profile_languages, get_profiles_list, TableMovies,
+                          TableHistoryMovie, database, update, select, get_subtitles)
 from app.event_handler import event_stream
 from app.jobs_queue import jobs_queue
-from app.config import settings
+from subtitles.tools.score import movie_score
 
 from ..adaptive_searching import is_search_active, updateFailedAttempts
 from ..download import generate_subtitles
+
+
+def _find_existing_subtitle_path(subtitles_field, source_lang):
+    """Return on-disk path of an existing external subtitle for source_lang
+    (ignoring :hi / :forced variants), or None. subtitles_field is the raw
+    DB value (a python-literal list of [code, path, length] tuples)."""
+    if not subtitles_field:
+        return None
+    try:
+        entries = ast.literal_eval(subtitles_field)
+    except (ValueError, SyntaxError):
+        return None
+    # First pass: prefer plain (non-HI, non-forced) source language
+    for entry in entries:
+        if not entry or len(entry) < 2:
+            continue
+        code = (entry[0] or '')
+        path = entry[1]
+        if code == source_lang and path and os.path.exists(path):
+            return path
+    # Fallback: accept any source-language variant
+    for entry in entries:
+        if not entry or len(entry) < 2:
+            continue
+        code = (entry[0] or '').split(':')[0]
+        path = entry[1]
+        if code == source_lang and path and os.path.exists(path):
+            return path
+    return None
 
 
 def _wanted_movie(movie, providers_list, job_id=None):
@@ -29,10 +60,80 @@ def _wanted_movie(movie, providers_list, job_id=None):
     else:
         audio_language = 'None'
 
+    # Pre-resolve which missing languages can be satisfied by translating an
+    # existing on-disk subtitle. For those, queue the translation directly and
+    # skip the provider search to avoid wasting a provider call.
+    profile = get_profiles_list(profile_id=movie.profileId) if movie.profileId else None
+    translate_from_map = {}
+    if profile:
+        for prof_item in profile.get('items', []):
+            src = prof_item.get('translate_from')
+            if src:
+                translate_from_map[prof_item.get('language')] = {
+                    'from': src,
+                    'hi': prof_item.get('hi') == 'True',
+                    'forced': prof_item.get('forced') == 'True',
+                }
+
     languages = []
     languages_to_stamp = []
+    video_path = path_mappings.path_replace_movie(movie.path)
 
     for language in ast.literal_eval(movie.missing_subtitles):
+        lang_code = language.split(':')[0]
+
+        # If this language is configured to translate_from another, and the
+        # source subtitle exists on disk, queue translation instead of search.
+        translate_cfg = translate_from_map.get(lang_code)
+        if translate_cfg:
+            source_srt = _find_existing_subtitle_path(movie.subtitles, translate_cfg['from'])
+            if source_srt:
+                # Quality gate: only auto-translate from sources whose history score
+                # meets the configured minimum. Falls through to provider search
+                # when score is unknown or below threshold.
+                min_score = settings.translator.min_source_score
+                history = database.execute(
+                    select(TableHistoryMovie.score)
+                    .where(TableHistoryMovie.radarrId == movie.radarrId)
+                    .where(TableHistoryMovie.language == translate_cfg['from'])
+                    .where(TableHistoryMovie.score.is_not(None))
+                    .order_by(TableHistoryMovie.timestamp.desc())
+                    .limit(1)
+                ).first()
+                source_score_pct = (
+                    round((history.score / movie_score.max_score) * 100, 1)
+                    if history and history.score else 0
+                )
+                if source_score_pct < min_score:
+                    logging.debug(
+                        f"BAZARR auto-translate (wanted-scan) skipped for {video_path}: "
+                        f"source score {source_score_pct}% < threshold {min_score}% "
+                        f"(falling back to provider search)"
+                    )
+                else:
+                    try:
+                        from subtitles.tools.translate.main import translate_subtitles_file
+                        logging.info(f"BAZARR auto-translate (wanted-scan) queuing "
+                                     f"{translate_cfg['from']} -> {lang_code} for {video_path}")
+                        translate_subtitles_file(
+                            video_path=video_path,
+                            source_srt_file=source_srt,
+                            from_lang=translate_cfg['from'],
+                            to_lang=lang_code,
+                            forced=language.endswith(':forced') or translate_cfg['forced'],
+                            hi=language.endswith(':hi') or translate_cfg['hi'],
+                            media_type='movies',
+                            sonarr_series_id=None,
+                            sonarr_episode_id=None,
+                            radarr_id=movie.radarrId,
+                            metadata=None,
+                        )
+                        # Skip provider search for this language — translation queued.
+                        continue
+                    except Exception:
+                        logging.exception(f"BAZARR failed to queue auto-translate for {video_path} "
+                                          f"language {lang_code}; falling back to provider search")
+
         if is_search_active(desired_language=language, attempt_string=movie.failedAttempts):
             hi_ = "True" if language.endswith(':hi') else "False"
             forced_ = "True" if language.endswith(':forced') else "False"
