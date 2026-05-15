@@ -41,3 +41,14 @@ export const colorSchemeOptions: SelectorOption<string>[] = [
     value: "dark",
   },
 ];
+
+export const showLiveBadgeOption: SelectorOption<string>[] = [
+  {
+    label: "Show Live Badge When SignalR is Connected",
+    value: "true",
+  },
+  {
+    label: "Don't Show Live Badge When SignalR is Connected",
+    value: "false",
+  },
+];
