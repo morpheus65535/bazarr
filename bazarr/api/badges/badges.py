@@ -69,8 +69,8 @@ class Badges(Resource):
             "movies": missing_movies_count,
             "providers": throttled_providers,
             "status": health_issues,
-            'sonarr_signalr': "LIVE" if sonarr_signalr_client.connected else "",
-            'radarr_signalr': "LIVE" if radarr_signalr_client.connected else "",
+            'sonarr_signalr': "DOWN" if not sonarr_signalr_client.connected else "",
+            'radarr_signalr': "DOWN" if not radarr_signalr_client.connected else "",
             'announcements': len(get_all_announcements()),
         }
         return marshal(result, self.get_model)
