@@ -51,6 +51,8 @@ def seriesParser(show, action, tags_dict, language_profiles, serie_default_profi
 
     lastAired = parser.parse(show['lastAired']).strftime("%Y-%m-%d") if 'lastAired' in show and show['lastAired'] else None
 
+    original_language = show['originalLanguage'].get('name') if isinstance(show.get('originalLanguage'), dict) else None
+
     audio_language = []
     if not settings.general.parse_embedded_audio_track:
         if get_sonarr_info.is_legacy():
@@ -79,6 +81,7 @@ def seriesParser(show, action, tags_dict, language_profiles, serie_default_profi
         'monitored': str(bool(show['monitored'])),
         'ended': ended,
         'lastAired': lastAired,
+        'originalLanguage': original_language,
     }
 
     if action == 'insert':

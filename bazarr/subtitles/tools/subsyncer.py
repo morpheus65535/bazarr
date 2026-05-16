@@ -9,9 +9,11 @@ from utilities.binaries import get_binary
 from radarr.history import history_log_movie
 from sonarr.history import history_log
 from subtitles.processing import ProcessSubtitlesResult
-from languages.get_languages import language_from_alpha2
+from languages.get_languages import audio_language_from_name, language_from_alpha2
 from utilities.path_mappings import path_mappings
+from utilities.video_analyzer import subtitles_sync_references
 from app.config import settings
+from app.database import TableMovies, TableShows, database, select
 from app.get_args import args
 
 
@@ -32,6 +34,68 @@ class SubSyncer:
         self.progress_callback = None
         self.sync_result = None
         self.job_id = None
+
+    @staticmethod
+    def _original_language_name(sonarr_series_id, radarr_id):
+        """Read originalLanguage from the local DB. The column is populated by the regular
+        Sonarr/Radarr series/movies sync. Returns None if the row is missing or the column
+        hasn't been backfilled yet (next series/movies sync will populate it)."""
+        try:
+            if sonarr_series_id:
+                row = database.execute(
+                    select(TableShows.originalLanguage)
+                    .where(TableShows.sonarrSeriesId == int(sonarr_series_id))
+                ).first()
+                return row.originalLanguage if row else None
+            if radarr_id:
+                row = database.execute(
+                    select(TableMovies.originalLanguage)
+                    .where(TableMovies.radarrId == int(radarr_id))
+                ).first()
+                return row.originalLanguage if row else None
+        except Exception:
+            logging.exception('BAZARR could not retrieve originalLanguage from database.')
+        return None
+
+    @classmethod
+    def _audio_stream_for_original_language(cls, sonarr_series_id=None, sonarr_episode_id=None, radarr_id=None):
+        """Return the ffmpeg audio stream specifier (e.g. 'a:1') matching the show/movie's
+        original language as reported by Sonarr/Radarr, or None if not found."""
+        logging.debug(f"BAZARR subsync: looking up original language "
+                     f"(sonarr_series_id={sonarr_series_id}, sonarr_episode_id={sonarr_episode_id}, "
+                     f"radarr_id={radarr_id})")
+        target_name = cls._original_language_name(sonarr_series_id=sonarr_series_id, radarr_id=radarr_id)
+        logging.debug(f"BAZARR subsync: original language reported by Sonarr/Radarr = {target_name!r}")
+        if not target_name:
+            return None
+        try:
+            refs = subtitles_sync_references(subtitles_path='',
+                                             sonarr_episode_id=sonarr_episode_id,
+                                             radarr_movie_id=radarr_id)
+        except Exception:
+            logging.exception('BAZARR could not enumerate audio tracks for original-language matching.')
+            return None
+        audio_tracks = refs.get('audio_tracks', []) if isinstance(refs, dict) else []
+        logging.debug(f"BAZARR subsync: file audio tracks = "
+                     f"{[(t.get('stream'), t.get('language')) for t in audio_tracks]}")
+        # Direct name match (covers most cases)
+        for track in audio_tracks:
+            if track.get('language') == target_name:
+                logging.debug(f"BAZARR subsync: matched original language {target_name!r} to audio track "
+                             f"{track.get('stream')}")
+                return track.get('stream')
+        # Bazarr renames a couple of languages internally (Chinese -> Chinese Simplified, Modern Greek -> Greek);
+        # try the normalized form as a fallback.
+        normalized = audio_language_from_name(target_name)
+        if normalized and normalized != target_name:
+            for track in audio_tracks:
+                if track.get('language') == normalized:
+                    logging.debug(f"BAZARR subsync: matched normalized original language {normalized!r} "
+                                 f"(from {target_name!r}) to audio track {track.get('stream')}")
+                    return track.get('stream')
+        logging.debug(f"BAZARR subsync: original language {target_name!r} not found in audio tracks; "
+                     f"falling back")
+        return None
 
     def sync(self, video_path, srt_path, srt_lang, hi, forced,
              max_offset_seconds, no_fix_framerate, gss, reference=None, sonarr_series_id=None, sonarr_episode_id=None,
@@ -81,14 +145,43 @@ class SubSyncer:
             if gss:
                 unparsed_args.append('--gss')
 
+            logging.debug(f"BAZARR subsync: settings — force_audio={settings.subsync.force_audio} "
+                         f"use_original_language={settings.subsync.use_original_language} "
+                         f"auto_use_original_language={settings.subsync.auto_use_original_language} "
+                         f"force_sync={force_sync}")
             if reference and isinstance(reference, str) and len(reference) == 3 and reference[:2] in ['a:', 's:']:
                 # audio or subtitles track id provided
                 unparsed_args.append('--reference-stream')
                 unparsed_args.append(reference)
             elif settings.subsync.force_audio and not force_sync:
-                # nothing else match and force audio settings is enabled
+                # auto-sync with force_audio: use a:0, optionally overridden by original-language match
+                stream_spec = 'a:0'
+                if settings.subsync.use_original_language:
+                    matched = self._audio_stream_for_original_language(
+                        sonarr_series_id=sonarr_series_id,
+                        sonarr_episode_id=sonarr_episode_id,
+                        radarr_id=radarr_id,
+                    )
+                    if matched:
+                        stream_spec = matched
+                logging.debug(f"BAZARR subsync: using --reference-stream {stream_spec}")
                 unparsed_args.append('--reference-stream')
-                unparsed_args.append('a:0')
+                unparsed_args.append(stream_spec)
+            elif settings.subsync.use_original_language or settings.subsync.auto_use_original_language:
+                # original-language preference active. Applies to both manual and
+                # automatic sync; does NOT change Bazarr's existing force_audio
+                # behavior (which only fires during auto-sync).
+                matched = self._audio_stream_for_original_language(
+                    sonarr_series_id=sonarr_series_id,
+                    sonarr_episode_id=sonarr_episode_id,
+                    radarr_id=radarr_id,
+                )
+                if matched:
+                    logging.debug(f"BAZARR subsync: using --reference-stream {matched}")
+                    unparsed_args.append('--reference-stream')
+                    unparsed_args.append(matched)
+                else:
+                    logging.debug("BAZARR subsync: no original-language match; using ffsubsync default reference")
 
             if settings.subsync.debug:
                 unparsed_args.append('--make-test-case')
