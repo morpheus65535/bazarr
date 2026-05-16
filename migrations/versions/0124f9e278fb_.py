@@ -14,7 +14,7 @@ from app.database import TableEpisodesSubtitles, TableMoviesSubtitles
 
 # revision identifiers, used by Alembic.
 revision = '0124f9e278fb'
-down_revision = '309dc062d2e4'
+down_revision = '7e9a2b1c4d5f'
 branch_labels = None
 depends_on = None
 
