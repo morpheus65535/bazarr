@@ -524,7 +524,7 @@ class SZProviderPool(ProviderPool):
         return True
 
     def download_best_subtitles(self, subtitles, video, languages, min_score=0, hearing_impaired=False, only_one=False,
-                                use_original_format=False):
+                                use_original_format=False, fallback_allowed=False):
         """Download the best matching subtitles.
 
         patch:
@@ -634,6 +634,24 @@ class SZProviderPool(ProviderPool):
             if only_one:
                 logger.debug('Only one subtitle downloaded')
                 break
+
+        # --- WHISPER FALLBACK PRECONDITIONS ---
+        # 1. No regular provider results with at least minimum score
+        # 2. We are in a Bulk Task or Single Series search
+        # 3. User enabled the Whisper fallback setting
+        # 4. Whisper is actually in the active providers list
+        if (not downloaded_subtitles and 
+            fallback_allowed and 
+            'whisperai' in self.providers):
+            
+            for subtitle, score, score_without_hash, matches, orig_matches in scored_subtitles:
+                if subtitle.provider_name == 'whisperai':
+                    logger.info('BAZARR Bulk Task: Falling back to Whisper for %r', video.name)
+                    subtitle.use_original_format = use_original_format
+                    if self.download_subtitle(subtitle):
+                        subtitle.score = score
+                        downloaded_subtitles.append(subtitle)
+                        break
 
         return downloaded_subtitles
 

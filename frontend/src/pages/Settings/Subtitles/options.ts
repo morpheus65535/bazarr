@@ -197,3 +197,14 @@ export const translatorOption: SelectorOption<string>[] = [
     value: "lingarr",
   },
 ];
+
+export const forceAudioOption: SelectorOption<string>[] = [
+  {
+    label: "Use Audio Track as Reference",
+    value: "true",
+  },
+  {
+    label: "Use Embedded Subtitles as Reference",
+    value: "false",
+  },
+];

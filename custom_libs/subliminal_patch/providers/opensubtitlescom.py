@@ -494,11 +494,11 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
             subtitle_content = r.content
             subtitle.content = fix_line_ending(subtitle_content)
 
-    @staticmethod
-    def reset_token():
+    def reset_token(self):
         logger.debug('Authentication failed: clearing cache and attempting to login.')
         region.delete("oscom_token")
         region.delete("oscom_server")
+        self.session.headers.pop('Authorization', None)
         return
 
     def checked(self, fn, raise_api_limit=False, validate_json=False, json_key_name=None, validate_content=False,

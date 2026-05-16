@@ -50,6 +50,15 @@ def get_movie_file_size_from_db(movie_path):
 # Update movies in DB
 def update_movie(updated_movie):
     try:
+        previous_movie_data = database.execute(
+            select(TableMovies.movie_file_id, TableMovies.path)
+            .where(TableMovies.radarrId == updated_movie['radarrId'])
+        ).first()
+
+        previous_movie_id = updated_movie['radarrId']
+        previous_movie_file_id = previous_movie_data.movie_file_id
+        previous_movie_path = previous_movie_data.path
+
         updated_movie['updated_at_timestamp'] = datetime.now()
         database.execute(
             update(TableMovies).values(updated_movie)
@@ -57,8 +66,16 @@ def update_movie(updated_movie):
     except IntegrityError as e:
         logging.error(f"BAZARR cannot update movie {updated_movie['path']} because of {e}")
     else:
-        store_subtitles_movie(updated_movie['path'], path_mappings.path_replace_movie(updated_movie['path']))
-        event_stream(type='movie', action='update', payload=updated_movie['radarrId'])
+        if (previous_movie_file_id != updated_movie['movie_file_id'] or
+                previous_movie_path != updated_movie['path']):
+            # Store subtitles for updated movie where path or movie_file_id changed
+            logging.debug(f'BAZARR updating subtitles for movie {updated_movie["path"]}')
+            store_subtitles_movie(updated_movie['path'], path_mappings.path_replace_movie(updated_movie['path']))
+        else:
+            logging.debug(f'BAZARR skipping subtitle update for movie {updated_movie["path"]} as path '
+                          f'and movie_file_id unchanged')
+
+        event_stream(type='movie', action='update', payload=previous_movie_id)
 
 
 def get_movie_monitored_status(movie_id):

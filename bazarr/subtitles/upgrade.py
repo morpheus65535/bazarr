@@ -299,11 +299,25 @@ def get_upgradable_episode_subtitles(history_id_list=None):
     logging.debug(f"These actions are considered for subtitles upgrade: {query_actions}")
 
     logging.debug("Determining upgradable episode subtitles")
+    last_since_delete_subquery = (
+        select(TableHistory.video_path,
+               TableHistory.language,
+               func.max(TableHistory.id).label('last_delete_id'))
+        .group_by(TableHistory.video_path, TableHistory.language)
+        .where(TableHistory.action == 0)
+        .subquery()
+    )
+
     max_id_timestamp = select(TableHistory.video_path,
                               TableHistory.language,
                               func.max(TableHistory.timestamp).label('timestamp')) \
+        .outerjoin(last_since_delete_subquery, onclause=and_(
+            TableHistory.video_path == last_since_delete_subquery.c.video_path,
+            TableHistory.language == last_since_delete_subquery.c.language)) \
         .group_by(TableHistory.video_path, TableHistory.language) \
-        .where(TableHistory.action.in_(query_actions)) \
+        .where(and_(TableHistory.action.in_(query_actions),
+                    or_(last_since_delete_subquery.c.last_delete_id.is_(None),
+                        TableHistory.id > last_since_delete_subquery.c.last_delete_id))) \
         .distinct() \
         .subquery()
 
@@ -367,11 +381,25 @@ def get_upgradable_movies_subtitles(history_id_list=None):
     logging.debug(f"These actions are considered for subtitles upgrade: {query_actions}")
 
     logging.debug("Determining upgradable movie subtitles")
+    last_since_delete_subquery = (
+        select(TableHistoryMovie.video_path,
+               TableHistoryMovie.language,
+               func.max(TableHistoryMovie.id).label('last_delete_id'))
+        .group_by(TableHistoryMovie.video_path, TableHistoryMovie.language)
+        .where(TableHistoryMovie.action == 0)
+        .subquery()
+    )
+
     max_id_timestamp = select(TableHistoryMovie.video_path,
                               TableHistoryMovie.language,
                               func.max(TableHistoryMovie.timestamp).label('timestamp')) \
+        .outerjoin(last_since_delete_subquery, onclause=and_(
+            TableHistoryMovie.video_path == last_since_delete_subquery.c.video_path,
+            TableHistoryMovie.language == last_since_delete_subquery.c.language)) \
         .group_by(TableHistoryMovie.video_path, TableHistoryMovie.language) \
-        .where(TableHistoryMovie.action.in_(query_actions)) \
+        .where(and_(TableHistoryMovie.action.in_(query_actions),
+                    or_(last_since_delete_subquery.c.last_delete_id.is_(None),
+                        TableHistoryMovie.id > last_since_delete_subquery.c.last_delete_id))) \
         .distinct() \
         .subquery()
 
