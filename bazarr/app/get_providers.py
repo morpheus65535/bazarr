@@ -112,7 +112,7 @@ def provider_throttle_map():
                 f"{legendasdivx_limit_reset_timedelta().seconds // 3600 + 1} hours"),
         },
         "whisperai": {
-            ConnectionError: (datetime.timedelta(hours=24), "24 hours"),
+            ConnectionError: (datetime.timedelta(minutes=5), "5 minutes"),
         },
         "regielive": {
             APIThrottled: (datetime.timedelta(hours=1), "1 hour"),
