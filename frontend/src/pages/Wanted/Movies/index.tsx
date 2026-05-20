@@ -46,7 +46,7 @@ const WantedMoviesView: FunctionComponent = () => {
             <Group gap="sm">
               {missingSubtitles.map((item, idx) => (
                 <Badge
-                  color={download.isPending ? "gray" : undefined}
+                  color={download.isPending ? "secondary" : undefined}
                   leftSection={<FontAwesomeIcon icon={faSearch} />}
                   key={BuildKey(idx, item.code2)}
                   style={{ cursor: "pointer" }}

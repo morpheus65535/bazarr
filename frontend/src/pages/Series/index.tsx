@@ -84,7 +84,7 @@ const SeriesView: FunctionComponent = () => {
                     ? 0
                     : (1.0 - episodeMissingCount / episodeFileCount) * 100.0
                 }
-                color={episodeMissingCount === 0 ? "brand" : "yellow"}
+                color={episodeMissingCount === 0 ? "brand" : "warning"}
               >
                 <Progress.Label>{label}</Progress.Label>
               </Progress.Section>

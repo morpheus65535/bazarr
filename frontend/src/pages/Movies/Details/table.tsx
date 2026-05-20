@@ -143,7 +143,7 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
         cell: ({ row }) => {
           if (row.original.path === missingText) {
             return (
-              <Badge color="primary">
+              <Badge color="brand">
                 <Language.Text value={row.original} long></Language.Text>
               </Badge>
             );
