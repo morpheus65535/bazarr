@@ -62,7 +62,7 @@ const filterOptions: { label: string; value: FilterCategory }[] = [
   { label: "Language", value: "language" },
   { label: "Season", value: "season" },
   { label: "Episode", value: "episode" },
-  { label: "Series/Movie", value: "item" },
+  { label: "Title", value: "item" },
   { label: "File", value: "file" },
 ];
 
@@ -196,7 +196,7 @@ const SubtitleToolView: FunctionComponent<SubtitleToolViewProps> = ({
         accessorKey: "episodeLabel",
       },
       {
-        header: "Series/Movie",
+        header: "Title",
         accessorKey: "name",
       },
       {
