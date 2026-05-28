@@ -76,7 +76,7 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
               ></FontAwesomeIcon>
             )}
           </Text>
-          <Collapse expanded={open}>
+          <Collapse in={open}>
             <>{items}</>
           </Collapse>
         </Stack>
@@ -230,7 +230,7 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
         <Divider hidden={!bSceneNameAvailable} my="xs"></Divider>
         <Code hidden={!bSceneNameAvailable}>{item?.sceneName}</Code>
       </Alert>
-      <Collapse expanded={haveResult && !results.isFetching}>
+      <Collapse in={haveResult && !results.isFetching}>
         <PageTable
           autoScroll={false}
           tableStyles={{ emptyText: "No result", placeholder: 10 }}

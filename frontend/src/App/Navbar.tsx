@@ -209,9 +209,9 @@ const RouteItem: FunctionComponent<{
               }
             }}
           ></NavbarItem>
-          <Collapse hidden={children.length === 0} expanded={isOpen}>
-            {elements}
-          </Collapse>
+          {children.length > 0 && (
+            <Collapse in={isOpen}>{elements}</Collapse>
+          )}
         </Stack>
       );
     } else {

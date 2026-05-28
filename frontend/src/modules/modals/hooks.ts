@@ -1,7 +1,8 @@
 import { useCallback, useContext, useMemo } from "react";
-import { useModals as useMantineModals } from "@mantine/modals";
-import { ModalSettings } from "@mantine/modals";
+import { openModal, useModals as useMantineModals } from "@mantine/modals";
 import { ModalComponent, ModalIdContext } from "./WithModal";
+
+type ModalSettings = Parameters<typeof openModal>[0];
 
 export function useModals() {
   const { openContextModal: openMantineContextModal, ...rest } =

@@ -1,6 +1,7 @@
 import { createContext, FunctionComponent } from "react";
-import { ContextModalProps } from "@mantine/modals";
-import { ModalSettings } from "@mantine/modals";
+import { ContextModalProps, openModal } from "@mantine/modals";
+
+type ModalSettings = Parameters<typeof openModal>[0];
 
 export type ModalComponent<P extends Record<string, unknown> = {}> =
   FunctionComponent<ContextModalProps<P>> & {

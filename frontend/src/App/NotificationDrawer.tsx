@@ -233,7 +233,7 @@ const NotificationDrawer: FunctionComponent<NotificationDrawerProps> = ({
                         </Text>
                       </Group>
 
-                      <Collapse expanded={!collapsedSections[status]}>
+                      <Collapse in={!collapsedSections[status]}>
                         <Stack>
                           {grouped[status as string]
                             .slice()

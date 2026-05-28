@@ -141,7 +141,7 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
       <Grid
         align="flex-start"
         grow
-        gap="xs"
+        gutter="xs"
         p={24}
         m={0}
         style={{

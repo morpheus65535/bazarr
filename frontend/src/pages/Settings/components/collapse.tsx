@@ -31,7 +31,7 @@ const CollapseBox: FunctionComponent<Props> = ({
 
   return (
     <Collapse
-      expanded={open}
+      in={open}
       pl={indent ? "md" : undefined}
       transitionDuration={0}
     >
