@@ -3,7 +3,6 @@
 
 import logging
 import operator
-import ast
 
 from datetime import datetime, timedelta
 from functools import reduce

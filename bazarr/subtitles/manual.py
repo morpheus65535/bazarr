@@ -23,7 +23,6 @@ from sonarr.history import history_log
 from radarr.history import history_log_movie
 from subtitles.indexer.series import store_subtitles
 from subtitles.indexer.movies import store_subtitles_movie
-from subtitles.processing import ProcessSubtitlesResult
 
 from bazarr.subtitles.cache import subtitle_cache
 from .pool import update_pools, _get_pool

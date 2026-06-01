@@ -11,11 +11,28 @@ from dogpile.cache import make_region
 from datetime import datetime
 from typing import List
 
-from sqlalchemy import create_engine, inspect, DateTime, ForeignKey, Integer, LargeBinary, Text, func, text, BigInteger, \
-    Boolean
+from sqlalchemy import (
+    create_engine,
+    inspect,
+    DateTime,
+    ForeignKey,
+    Integer,
+    LargeBinary,
+    Text,
+    func,
+    text,
+    BigInteger,
+    Boolean,
+)
+
 # importing here to be indirectly imported in other modules later
 from sqlalchemy import update, delete, select, func, UniqueConstraint  # noqa W0611
-from sqlalchemy.orm import scoped_session, sessionmaker, mapped_column, close_all_sessions
+from sqlalchemy.orm import (
+    scoped_session,
+    sessionmaker,
+    mapped_column,
+    close_all_sessions,
+)
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.pool import NullPool
 
@@ -29,13 +46,15 @@ logger = logging.getLogger(__name__)
 
 POSTGRES_ENABLED_ENV = os.getenv("POSTGRES_ENABLED")
 if POSTGRES_ENABLED_ENV:
-    postgresql = POSTGRES_ENABLED_ENV.lower() == 'true'
+    postgresql = POSTGRES_ENABLED_ENV.lower() == "true"
 else:
     postgresql = settings.postgresql.enabled
 
-region = make_region().configure('dogpile.cache.memory')
+region = make_region().configure("dogpile.cache.memory")
 
-migrations_directory = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'migrations')
+migrations_directory = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "migrations"
+)
 
 if postgresql:
     # insert is different between database types
@@ -52,16 +71,18 @@ if postgresql:
     if postgres_url:
         url = make_url(postgres_url)
         backend_name = url.get_backend_name()
-        if backend_name != 'postgresql':
-            raise ValueError(f"Invalid Postgres URL, scheme must be 'postgresql', got {backend_name}")
-        
+        if backend_name != "postgresql":
+            raise ValueError(
+                f"Invalid Postgres URL, scheme must be 'postgresql', got {backend_name}"
+            )
+
         # Allow overriding individual components of the URL
         url_overrides = {
-            'username': postgres_username if postgres_username else None,
-            'password': postgres_password if postgres_password else None,
-            'host': postgres_host if postgres_host else None,
-            'port': postgres_port if postgres_port else None,
-            'database': postgres_database if postgres_database else None,
+            "username": postgres_username if postgres_username else None,
+            "password": postgres_password if postgres_password else None,
+            "host": postgres_host if postgres_host else None,
+            "port": postgres_port if postgres_port else None,
+            "database": postgres_database if postgres_database else None,
         }
         url = url.set(**{k: v for k, v in url_overrides.items()})
     else:
@@ -71,15 +92,18 @@ if postgresql:
             password=postgres_password,
             host=postgres_host,
             port=postgres_port,
-            database=postgres_database
+            database=postgres_database,
         )
-    logger.debug(f"Connecting to PostgreSQL database: {url.render_as_string(hide_password=True)}")
-    
+    logger.debug(
+        f"Connecting to PostgreSQL database: {url.render_as_string(hide_password=True)}"
+    )
+
     engine = create_engine(url, poolclass=NullPool, isolation_level="AUTOCOMMIT")
 else:
     # insert is different between database types
     from sqlalchemy.dialects.sqlite import insert  # noqa E402
-    url = f'sqlite:///{os.path.join(args.config_dir, "db", "bazarr.db")}'
+
+    url = f"sqlite:///{os.path.join(args.config_dir, 'db', 'bazarr.db')}"
     logger.debug(f"Connecting to SQLite database: {url}")
     engine = create_engine(url, poolclass=NullPool, isolation_level="AUTOCOMMIT")
 
@@ -94,6 +118,7 @@ else:
         cursor.execute("PRAGMA foreign_keys=ON")
         cursor.execute("PRAGMA busy_timeout=60000")
         cursor.close()
+
 
 session_factory = sessionmaker(bind=engine)
 database = scoped_session(session_factory)
@@ -116,7 +141,7 @@ metadata = Base.metadata
 
 
 class System(Base):
-    __tablename__ = 'system'
+    __tablename__ = "system"
 
     id = mapped_column(Integer, primary_key=True)
     configured = mapped_column(Text)
@@ -124,7 +149,7 @@ class System(Base):
 
 
 class TableAnnouncements(Base):
-    __tablename__ = 'table_announcements'
+    __tablename__ = "table_announcements"
 
     id = mapped_column(Integer, primary_key=True)
     timestamp = mapped_column(DateTime, nullable=False, default=datetime.now)
@@ -133,30 +158,36 @@ class TableAnnouncements(Base):
 
 
 class TableBlacklist(Base):
-    __tablename__ = 'table_blacklist'
+    __tablename__ = "table_blacklist"
 
     id = mapped_column(Integer, primary_key=True)
     language = mapped_column(Text)
     provider = mapped_column(Text)
-    sonarr_episode_id = mapped_column(Integer, ForeignKey('table_episodes.sonarrEpisodeId', ondelete='CASCADE'))
-    sonarr_series_id = mapped_column(Integer, ForeignKey('table_shows.sonarrSeriesId', ondelete='CASCADE'))
+    sonarr_episode_id = mapped_column(
+        Integer, ForeignKey("table_episodes.sonarrEpisodeId", ondelete="CASCADE")
+    )
+    sonarr_series_id = mapped_column(
+        Integer, ForeignKey("table_shows.sonarrSeriesId", ondelete="CASCADE")
+    )
     subs_id = mapped_column(Text)
     timestamp = mapped_column(DateTime, default=datetime.now)
 
 
 class TableBlacklistMovie(Base):
-    __tablename__ = 'table_blacklist_movie'
+    __tablename__ = "table_blacklist_movie"
 
     id = mapped_column(Integer, primary_key=True)
     language = mapped_column(Text)
     provider = mapped_column(Text)
-    radarr_id = mapped_column(Integer, ForeignKey('table_movies.radarrId', ondelete='CASCADE'))
+    radarr_id = mapped_column(
+        Integer, ForeignKey("table_movies.radarrId", ondelete="CASCADE")
+    )
     subs_id = mapped_column(Text)
     timestamp = mapped_column(DateTime, default=datetime.now)
 
 
 class TableEpisodes(Base):
-    __tablename__ = 'table_episodes'
+    __tablename__ = "table_episodes"
 
     absoluteEpisode = mapped_column(Integer)
     audio_codec = mapped_column(Text)
@@ -175,18 +206,22 @@ class TableEpisodes(Base):
     sceneName = mapped_column(Text)
     season = mapped_column(Integer, nullable=False)
     sonarrEpisodeId = mapped_column(Integer, primary_key=True)
-    sonarrSeriesId = mapped_column(Integer, ForeignKey('table_shows.sonarrSeriesId', ondelete='CASCADE'))
+    sonarrSeriesId = mapped_column(
+        Integer, ForeignKey("table_shows.sonarrSeriesId", ondelete="CASCADE")
+    )
     title = mapped_column(Text, nullable=False)
     tvdbId = mapped_column(Integer)
     updated_at_timestamp = mapped_column(DateTime)
     video_codec = mapped_column(Text)
 
     def to_dict(self):
-        return {column.name: getattr(self, column.name) for column in self.__table__.columns}
+        return {
+            column.name: getattr(self, column.name) for column in self.__table__.columns
+        }
 
 
 class TableEpisodesSubtitles(Base):
-    __tablename__ = 'table_episodes_subtitles'
+    __tablename__ = "table_episodes_subtitles"
 
     id = mapped_column(Integer, primary_key=True)
     language = mapped_column(Text, nullable=False)
@@ -195,21 +230,41 @@ class TableEpisodesSubtitles(Base):
     path = mapped_column(Text, nullable=True)
     size = mapped_column(BigInteger, nullable=True)
     embedded_track_id = mapped_column(Integer, nullable=True)
-    sonarrEpisodeId = mapped_column(Integer, ForeignKey('table_episodes.sonarrEpisodeId', ondelete='CASCADE'),
-                                    nullable=False)
-    sonarrSeriesId = mapped_column(Integer, ForeignKey('table_shows.sonarrSeriesId', ondelete='CASCADE'),
-                                   nullable=False)
+    sonarrEpisodeId = mapped_column(
+        Integer,
+        ForeignKey("table_episodes.sonarrEpisodeId", ondelete="CASCADE"),
+        nullable=False,
+    )
+    sonarrSeriesId = mapped_column(
+        Integer,
+        ForeignKey("table_shows.sonarrSeriesId", ondelete="CASCADE"),
+        nullable=False,
+    )
 
     __table_args__ = (
-        UniqueConstraint('path', 'sonarrSeriesId', 'sonarrEpisodeId', 'language', 'forced', 'hi',
-                         name='uc_external_episodes_subtitles'),
-        UniqueConstraint('embedded_track_id', 'sonarrSeriesId', 'sonarrEpisodeId', 'language', 'forced', 'hi',
-                         name='uc_embedded_episodes_subtitles'),
+        UniqueConstraint(
+            "path",
+            "sonarrSeriesId",
+            "sonarrEpisodeId",
+            "language",
+            "forced",
+            "hi",
+            name="uc_external_episodes_subtitles",
+        ),
+        UniqueConstraint(
+            "embedded_track_id",
+            "sonarrSeriesId",
+            "sonarrEpisodeId",
+            "language",
+            "forced",
+            "hi",
+            name="uc_embedded_episodes_subtitles",
+        ),
     )
 
 
 class TableHistory(Base):
-    __tablename__ = 'table_history'
+    __tablename__ = "table_history"
 
     id = mapped_column(Integer, primary_key=True)
     action = mapped_column(Integer, nullable=False)
@@ -218,26 +273,32 @@ class TableHistory(Base):
     provider = mapped_column(Text)
     score = mapped_column(Integer)
     score_out_of = mapped_column(Integer, nullable=True)
-    sonarrEpisodeId = mapped_column(Integer, ForeignKey('table_episodes.sonarrEpisodeId', ondelete='CASCADE'))
-    sonarrSeriesId = mapped_column(Integer, ForeignKey('table_shows.sonarrSeriesId', ondelete='CASCADE'))
+    sonarrEpisodeId = mapped_column(
+        Integer, ForeignKey("table_episodes.sonarrEpisodeId", ondelete="CASCADE")
+    )
+    sonarrSeriesId = mapped_column(
+        Integer, ForeignKey("table_shows.sonarrSeriesId", ondelete="CASCADE")
+    )
     subs_id = mapped_column(Text)
     subtitles_path = mapped_column(Text)
     timestamp = mapped_column(DateTime, nullable=False, default=datetime.now)
     video_path = mapped_column(Text)
     matched = mapped_column(Text)
     not_matched = mapped_column(Text)
-    upgradedFromId = mapped_column(Integer, ForeignKey('table_history.id'))
+    upgradedFromId = mapped_column(Integer, ForeignKey("table_history.id"))
 
 
 class TableHistoryMovie(Base):
-    __tablename__ = 'table_history_movie'
+    __tablename__ = "table_history_movie"
 
     id = mapped_column(Integer, primary_key=True)
     action = mapped_column(Integer, nullable=False)
     description = mapped_column(Text, nullable=False)
     language = mapped_column(Text)
     provider = mapped_column(Text)
-    radarrId = mapped_column(Integer, ForeignKey('table_movies.radarrId', ondelete='CASCADE'))
+    radarrId = mapped_column(
+        Integer, ForeignKey("table_movies.radarrId", ondelete="CASCADE")
+    )
     score = mapped_column(Integer)
     score_out_of = mapped_column(Integer, nullable=True)
     subs_id = mapped_column(Text)
@@ -246,11 +307,11 @@ class TableHistoryMovie(Base):
     video_path = mapped_column(Text)
     matched = mapped_column(Text)
     not_matched = mapped_column(Text)
-    upgradedFromId = mapped_column(Integer, ForeignKey('table_history_movie.id'))
+    upgradedFromId = mapped_column(Integer, ForeignKey("table_history_movie.id"))
 
 
 class TableLanguagesProfiles(Base):
-    __tablename__ = 'table_languages_profiles'
+    __tablename__ = "table_languages_profiles"
 
     profileId = mapped_column(Integer, primary_key=True)
     cutoff = mapped_column(Integer)
@@ -263,7 +324,7 @@ class TableLanguagesProfiles(Base):
 
 
 class TableMovies(Base):
-    __tablename__ = 'table_movies'
+    __tablename__ = "table_movies"
 
     alternativeTitles = mapped_column(Text)
     audio_codec = mapped_column(Text)
@@ -282,7 +343,9 @@ class TableMovies(Base):
     overview = mapped_column(Text)
     path = mapped_column(Text, nullable=False, unique=True)
     poster = mapped_column(Text)
-    profileId = mapped_column(Integer, ForeignKey('table_languages_profiles.profileId', ondelete='SET NULL'))
+    profileId = mapped_column(
+        Integer, ForeignKey("table_languages_profiles.profileId", ondelete="SET NULL")
+    )
     radarrId = mapped_column(Integer, primary_key=True)
     resolution = mapped_column(Text)
     sceneName = mapped_column(Text)
@@ -295,11 +358,13 @@ class TableMovies(Base):
     year = mapped_column(Text)
 
     def to_dict(self):
-        return {column.name: getattr(self, column.name) for column in self.__table__.columns}
+        return {
+            column.name: getattr(self, column.name) for column in self.__table__.columns
+        }
 
 
 class TableMoviesSubtitles(Base):
-    __tablename__ = 'table_movies_subtitles'
+    __tablename__ = "table_movies_subtitles"
 
     id = mapped_column(Integer, primary_key=True)
     language = mapped_column(Text, nullable=False)
@@ -308,17 +373,32 @@ class TableMoviesSubtitles(Base):
     path = mapped_column(Text, nullable=True)
     size = mapped_column(BigInteger, nullable=True)
     embedded_track_id = mapped_column(Integer, nullable=True)
-    radarrId = mapped_column(Integer, ForeignKey('table_movies.radarrId', ondelete='CASCADE'), nullable=False)
+    radarrId = mapped_column(
+        Integer, ForeignKey("table_movies.radarrId", ondelete="CASCADE"), nullable=False
+    )
 
     __table_args__ = (
-        UniqueConstraint('path', 'radarrId', 'language', 'forced', 'hi', name='uc_external_movies_subtitles'),
-        UniqueConstraint('embedded_track_id', 'radarrId', 'language', 'forced', 'hi',
-                         name='uc_embedded_movies_subtitles'),
+        UniqueConstraint(
+            "path",
+            "radarrId",
+            "language",
+            "forced",
+            "hi",
+            name="uc_external_movies_subtitles",
+        ),
+        UniqueConstraint(
+            "embedded_track_id",
+            "radarrId",
+            "language",
+            "forced",
+            "hi",
+            name="uc_embedded_movies_subtitles",
+        ),
     )
 
 
 class TableMoviesRootfolder(Base):
-    __tablename__ = 'table_movies_rootfolder'
+    __tablename__ = "table_movies_rootfolder"
 
     accessible = mapped_column(Integer)
     error = mapped_column(Text)
@@ -327,7 +407,7 @@ class TableMoviesRootfolder(Base):
 
 
 class TableSettingsLanguages(Base):
-    __tablename__ = 'table_settings_languages'
+    __tablename__ = "table_settings_languages"
 
     code3 = mapped_column(Text, primary_key=True)
     code2 = mapped_column(Text)
@@ -337,7 +417,7 @@ class TableSettingsLanguages(Base):
 
 
 class TableSettingsNotifier(Base):
-    __tablename__ = 'table_settings_notifier'
+    __tablename__ = "table_settings_notifier"
 
     name = mapped_column(Text, primary_key=True)
     enabled = mapped_column(Integer)
@@ -345,7 +425,7 @@ class TableSettingsNotifier(Base):
 
 
 class TableShows(Base):
-    __tablename__ = 'table_shows'
+    __tablename__ = "table_shows"
 
     tvdbId = mapped_column(Integer)
     alternativeTitles = mapped_column(Text)
@@ -360,7 +440,9 @@ class TableShows(Base):
     overview = mapped_column(Text)
     path = mapped_column(Text, nullable=False, unique=True)
     poster = mapped_column(Text)
-    profileId = mapped_column(Integer, ForeignKey('table_languages_profiles.profileId', ondelete='SET NULL'))
+    profileId = mapped_column(
+        Integer, ForeignKey("table_languages_profiles.profileId", ondelete="SET NULL")
+    )
     seriesType = mapped_column(Text)
     sonarrSeriesId = mapped_column(Integer, primary_key=True)
     sortTitle = mapped_column(Text)
@@ -370,11 +452,13 @@ class TableShows(Base):
     year = mapped_column(Text)
 
     def to_dict(self):
-        return {column.name: getattr(self, column.name) for column in self.__table__.columns}
+        return {
+            column.name: getattr(self, column.name) for column in self.__table__.columns
+        }
 
 
 class TableShowsRootfolder(Base):
-    __tablename__ = 'table_shows_rootfolder'
+    __tablename__ = "table_shows_rootfolder"
 
     accessible = mapped_column(Integer)
     error = mapped_column(Text)
@@ -405,7 +489,9 @@ def migrate_db(app):
     db = SQLAlchemy(app, metadata=metadata)
 
     insp = inspect(engine)
-    alembic_temp_tables_list = [x for x in insp.get_table_names() if x.startswith('_alembic_tmp_')]
+    alembic_temp_tables_list = [
+        x for x in insp.get_table_names() if x.startswith("_alembic_tmp_")
+    ]
     for table in alembic_temp_tables_list:
         database.execute(text(f"DROP TABLE IF EXISTS {table}"))
 
@@ -415,36 +501,32 @@ def migrate_db(app):
         db.engine.dispose()
 
     # add the system table single row if it's not existing
-    if not database.execute(
-            select(System)) \
-            .first():
-        database.execute(
-            insert(System)
-            .values(configured='0', updated='0'))
+    if not database.execute(select(System)).first():
+        database.execute(insert(System).values(configured="0", updated="0"))
 
 
 def get_exclusion_clause(exclusion_type):
     where_clause = []
-    if exclusion_type == 'series':
+    if exclusion_type == "series":
         tagsList = settings.sonarr.excluded_tags
         for tag in tagsList:
-            where_clause.append(~(TableShows.tags.contains(f"\'{tag}\'")))
+            where_clause.append(~(TableShows.tags.contains(f"'{tag}'")))
     else:
         tagsList = settings.radarr.excluded_tags
         for tag in tagsList:
-            where_clause.append(~(TableMovies.tags.contains(f"\'{tag}\'")))
+            where_clause.append(~(TableMovies.tags.contains(f"'{tag}'")))
 
-    if exclusion_type == 'series':
+    if exclusion_type == "series":
         monitoredOnly = settings.sonarr.only_monitored
         if monitoredOnly:
-            where_clause.append((TableEpisodes.monitored == 'True'))  # noqa E712
-            where_clause.append((TableShows.monitored == 'True'))  # noqa E712
+            where_clause.append((TableEpisodes.monitored == "True"))  # noqa E712
+            where_clause.append((TableShows.monitored == "True"))  # noqa E712
     else:
         monitoredOnly = settings.radarr.only_monitored
         if monitoredOnly:
-            where_clause.append((TableMovies.monitored == 'True'))  # noqa E712
+            where_clause.append((TableMovies.monitored == "True"))  # noqa E712
 
-    if exclusion_type == 'series':
+    if exclusion_type == "series":
         typesList = settings.sonarr.excluded_series_types
         for item in typesList:
             where_clause.append((TableShows.seriesType != item))
@@ -458,34 +540,40 @@ def get_exclusion_clause(exclusion_type):
 
 @region.cache_on_arguments()
 def update_profile_id_list():
-    return [{
-        'profileId': x.profileId,
-        'name': x.name,
-        'cutoff': x.cutoff,
-        'items': json.loads(x.items),
-        'mustContain': ast.literal_eval(x.mustContain) if x.mustContain else [],
-        'mustNotContain': ast.literal_eval(x.mustNotContain) if x.mustNotContain else [],
-        'originalFormat': x.originalFormat,
-        'tag': x.tag,
-    } for x in database.execute(
-        select(TableLanguagesProfiles.profileId,
-               TableLanguagesProfiles.name,
-               TableLanguagesProfiles.cutoff,
-               TableLanguagesProfiles.items,
-               TableLanguagesProfiles.mustContain,
-               TableLanguagesProfiles.mustNotContain,
-               TableLanguagesProfiles.originalFormat,
-               TableLanguagesProfiles.tag))
-        .all()
+    return [
+        {
+            "profileId": x.profileId,
+            "name": x.name,
+            "cutoff": x.cutoff,
+            "items": json.loads(x.items),
+            "mustContain": ast.literal_eval(x.mustContain) if x.mustContain else [],
+            "mustNotContain": ast.literal_eval(x.mustNotContain)
+            if x.mustNotContain
+            else [],
+            "originalFormat": x.originalFormat,
+            "tag": x.tag,
+        }
+        for x in database.execute(
+            select(
+                TableLanguagesProfiles.profileId,
+                TableLanguagesProfiles.name,
+                TableLanguagesProfiles.cutoff,
+                TableLanguagesProfiles.items,
+                TableLanguagesProfiles.mustContain,
+                TableLanguagesProfiles.mustNotContain,
+                TableLanguagesProfiles.originalFormat,
+                TableLanguagesProfiles.tag,
+            )
+        ).all()
     ]
 
 
 def get_profiles_list(profile_id=None):
     profile_id_list = update_profile_id_list()
 
-    if profile_id and profile_id != 'null':
+    if profile_id and profile_id != "null":
         for profile in profile_id_list:
-            if profile['profileId'] == profile_id:
+            if profile["profileId"] == profile_id:
                 return profile
     else:
         return profile_id_list
@@ -493,28 +581,37 @@ def get_profiles_list(profile_id=None):
 
 def get_desired_languages(profile_id):
     for profile in update_profile_id_list():
-        if profile['profileId'] == profile_id:
-            return [x['language'] for x in profile['items']]
+        if profile["profileId"] == profile_id:
+            return [x["language"] for x in profile["items"]]
 
 
 def get_profile_id_name(profile_id):
     for profile in update_profile_id_list():
-        if profile['profileId'] == profile_id:
-            return profile['name']
+        if profile["profileId"] == profile_id:
+            return profile["name"]
 
 
 def get_profile_cutoff(profile_id):
     cutoff_language = None
     profile_id_list = update_profile_id_list()
 
-    if profile_id and profile_id != 'null':
+    if profile_id and profile_id != "null":
         cutoff_language = []
         for profile in profile_id_list:
-            profileId, name, cutoff, items, mustContain, mustNotContain, originalFormat, tag = profile.values()
+            (
+                profileId,
+                name,
+                cutoff,
+                items,
+                mustContain,
+                mustNotContain,
+                originalFormat,
+                tag,
+            ) = profile.values()
             if cutoff:
                 if profileId == int(profile_id):
                     for item in items:
-                        if item['id'] == cutoff:
+                        if item["id"] == cutoff:
                             return [item]
                         elif cutoff == 65535:
                             cutoff_language.append(item)
@@ -526,30 +623,41 @@ def get_profile_cutoff(profile_id):
 
 
 def get_audio_profile_languages(audio_languages_list_str):
-    from languages.get_languages import alpha2_from_language, alpha3_from_language, language_from_alpha2
+    from languages.get_languages import (
+        alpha2_from_language,
+        alpha3_from_language,
+        language_from_alpha2,
+    )
+
     audio_languages = []
 
     und_default_language = language_from_alpha2(settings.general.default_und_audio_lang)
 
     try:
-        audio_languages_list = ast.literal_eval(audio_languages_list_str or '[]')
+        audio_languages_list = ast.literal_eval(audio_languages_list_str or "[]")
     except ValueError:
         pass
     else:
         for language in audio_languages_list:
             if language:
                 audio_languages.append(
-                    {"name": language,
-                     "code2": alpha2_from_language(language) or None,
-                     "code3": alpha3_from_language(language) or None}
+                    {
+                        "name": language,
+                        "code2": alpha2_from_language(language) or None,
+                        "code3": alpha3_from_language(language) or None,
+                    }
                 )
             else:
                 if und_default_language:
-                    logging.debug(f"Undefined language audio track treated as {und_default_language}")
+                    logging.debug(
+                        f"Undefined language audio track treated as {und_default_language}"
+                    )
                     audio_languages.append(
-                        {"name": und_default_language,
-                         "code2": alpha2_from_language(und_default_language) or None,
-                         "code3": alpha3_from_language(und_default_language) or None}
+                        {
+                            "name": und_default_language,
+                            "code2": alpha2_from_language(und_default_language) or None,
+                            "code3": alpha3_from_language(und_default_language) or None,
+                        }
                     )
 
     return audio_languages
@@ -558,9 +666,8 @@ def get_audio_profile_languages(audio_languages_list_str):
 def get_profile_id(series_id=None, episode_id=None, movie_id=None):
     if series_id:
         data = database.execute(
-            select(TableShows.profileId)
-            .where(TableShows.sonarrSeriesId == series_id))\
-            .first()
+            select(TableShows.profileId).where(TableShows.sonarrSeriesId == series_id)
+        ).first()
         if data:
             return data.profileId
     elif episode_id:
@@ -568,16 +675,15 @@ def get_profile_id(series_id=None, episode_id=None, movie_id=None):
             select(TableShows.profileId)
             .select_from(TableShows)
             .join(TableEpisodes)
-            .where(TableEpisodes.sonarrEpisodeId == episode_id)) \
-            .first()
+            .where(TableEpisodes.sonarrEpisodeId == episode_id)
+        ).first()
         if data:
             return data.profileId
 
     elif movie_id:
         data = database.execute(
-            select(TableMovies.profileId)
-            .where(TableMovies.radarrId == movie_id))\
-            .first()
+            select(TableMovies.profileId).where(TableMovies.radarrId == movie_id)
+        ).first()
         if data:
             return data.profileId
 
@@ -592,7 +698,8 @@ def convert_list_to_clause(arr: list):
 
 
 def upgrade_languages_profile_values():
-    for languages_profile in (database.execute(
+    for languages_profile in (
+        database.execute(
             select(
                 TableLanguagesProfiles.profileId,
                 TableLanguagesProfiles.name,
@@ -601,21 +708,22 @@ def upgrade_languages_profile_values():
                 TableLanguagesProfiles.mustContain,
                 TableLanguagesProfiles.mustNotContain,
                 TableLanguagesProfiles.originalFormat,
-                TableLanguagesProfiles.tag)
-            ))\
-            .all():
+                TableLanguagesProfiles.tag,
+            )
+        )
+    ).all():
         items = json.loads(languages_profile.items)
         for language in items:
-            if language['hi'] == "only":
-                language['hi'] = "True"
-            elif language['hi'] in ["also", "never"]:
-                language['hi'] = "False"
+            if language["hi"] == "only":
+                language["hi"] = "True"
+            elif language["hi"] in ["also", "never"]:
+                language["hi"] = "False"
 
-            if 'audio_exclude' not in language:
-                language['audio_exclude'] = "False"
+            if "audio_exclude" not in language:
+                language["audio_exclude"] = "False"
 
-            if 'audio_only_include' not in language:
-                language['audio_only_include'] = "False"
+            if "audio_only_include" not in language:
+                language["audio_only_include"] = "False"
 
             if "translate_from" not in language:
                 language["translate_from"] = None
@@ -628,7 +736,12 @@ def upgrade_languages_profile_values():
 
 def fix_languages_profiles_with_duplicate_ids():
     languages_profiles = database.execute(
-        select(TableLanguagesProfiles.profileId, TableLanguagesProfiles.items, TableLanguagesProfiles.cutoff)).all()
+        select(
+            TableLanguagesProfiles.profileId,
+            TableLanguagesProfiles.items,
+            TableLanguagesProfiles.cutoff,
+        )
+    ).all()
     for languages_profile in languages_profiles:
         if languages_profile.cutoff:
             # ignore profiles that have a cutoff set
@@ -637,17 +750,17 @@ def fix_languages_profiles_with_duplicate_ids():
         languages_profile_has_duplicate = False
         languages_profile_items = json.loads(languages_profile.items)
         for items in languages_profile_items:
-            if items['id'] in languages_profile_ids:
+            if items["id"] in languages_profile_ids:
                 languages_profile_has_duplicate = True
                 break
             else:
-                languages_profile_ids.append(items['id'])
+                languages_profile_ids.append(items["id"])
 
         if languages_profile_has_duplicate:
             item_id = 0
             for items in languages_profile_items:
                 item_id += 1
-                items['id'] = item_id
+                items["id"] = item_id
             database.execute(
                 update(TableLanguagesProfiles)
                 .values({"items": json.dumps(languages_profile_items)})
@@ -677,47 +790,53 @@ def get_subtitles(sonarr_episode_id: int = None, radarr_id: int = None) -> List[
     subtitles = []
     if sonarr_episode_id:
         episodes_subtitles = database.execute(
-            select(TableEpisodesSubtitles.path,
-                   TableEpisodesSubtitles.language,
-                   TableEpisodesSubtitles.forced,
-                   TableEpisodesSubtitles.hi,
-                   TableEpisodesSubtitles.size,
-                   TableEpisodesSubtitles.embedded_track_id)
-            .where(TableEpisodesSubtitles.sonarrEpisodeId == sonarr_episode_id)
+            select(
+                TableEpisodesSubtitles.path,
+                TableEpisodesSubtitles.language,
+                TableEpisodesSubtitles.forced,
+                TableEpisodesSubtitles.hi,
+                TableEpisodesSubtitles.size,
+                TableEpisodesSubtitles.embedded_track_id,
+            ).where(TableEpisodesSubtitles.sonarrEpisodeId == sonarr_episode_id)
         ).all()
 
         for episode_subtitles in episodes_subtitles:
             subtitles.append(
-                {"path": path_mappings.path_replace(episode_subtitles.path),
-                 "name": language_from_alpha2(episode_subtitles.language),
-                 "code2": episode_subtitles.language,
-                 "code3": alpha3_from_alpha2(episode_subtitles.language),
-                 "forced": episode_subtitles.forced,
-                 "hi": episode_subtitles.hi,
-                 "file_size": episode_subtitles.size,
-                 "embedded_track_id": episode_subtitles.embedded_track_id}
+                {
+                    "path": path_mappings.path_replace(episode_subtitles.path),
+                    "name": language_from_alpha2(episode_subtitles.language),
+                    "code2": episode_subtitles.language,
+                    "code3": alpha3_from_alpha2(episode_subtitles.language),
+                    "forced": episode_subtitles.forced,
+                    "hi": episode_subtitles.hi,
+                    "file_size": episode_subtitles.size,
+                    "embedded_track_id": episode_subtitles.embedded_track_id,
+                }
             )
     elif radarr_id:
         movies_subtitles = database.execute(
-            select(TableMoviesSubtitles.path,
-                   TableMoviesSubtitles.language,
-                   TableMoviesSubtitles.forced,
-                   TableMoviesSubtitles.hi,
-                   TableMoviesSubtitles.size,
-                   TableMoviesSubtitles.embedded_track_id)
-            .where(TableMoviesSubtitles.radarrId == radarr_id)
+            select(
+                TableMoviesSubtitles.path,
+                TableMoviesSubtitles.language,
+                TableMoviesSubtitles.forced,
+                TableMoviesSubtitles.hi,
+                TableMoviesSubtitles.size,
+                TableMoviesSubtitles.embedded_track_id,
+            ).where(TableMoviesSubtitles.radarrId == radarr_id)
         ).all()
 
         for movie_subtitles in movies_subtitles:
             subtitles.append(
-                {"path": path_mappings.path_replace_movie(movie_subtitles.path),
-                 "name": language_from_alpha2(movie_subtitles.language),
-                 "code2": movie_subtitles.language,
-                 "code3": alpha3_from_alpha2(movie_subtitles.language),
-                 "forced": movie_subtitles.forced,
-                 "hi": movie_subtitles.hi,
-                 "file_size": movie_subtitles.size,
-                 "embedded_track_id": movie_subtitles.embedded_track_id}
+                {
+                    "path": path_mappings.path_replace_movie(movie_subtitles.path),
+                    "name": language_from_alpha2(movie_subtitles.language),
+                    "code2": movie_subtitles.language,
+                    "code3": alpha3_from_alpha2(movie_subtitles.language),
+                    "forced": movie_subtitles.forced,
+                    "hi": movie_subtitles.hi,
+                    "file_size": movie_subtitles.size,
+                    "embedded_track_id": movie_subtitles.embedded_track_id,
+                }
             )
 
-    return sorted(subtitles, key=lambda i: (i['name'], i['forced']))
+    return sorted(subtitles, key=lambda i: (i["name"], i["forced"]))

@@ -7,7 +7,6 @@ from app.database import TableEpisodes, TableShows, database, select
 from sonarr.sync.episodes import sync_one_episode
 from subtitles.mass_download import episode_download_subtitles
 from subtitles.indexer.series import store_subtitles
-from utilities.path_mappings import path_mappings
 
 
 from ..utils import authenticate

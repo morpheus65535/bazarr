@@ -15,29 +15,49 @@ from app.jobs_queue import jobs_queue
 from utilities.helper import get_target_folder
 
 
-def translate_subtitles_file(video_path, source_srt_file, from_lang, to_lang, forced, hi,
-                             media_type, sonarr_series_id, sonarr_episode_id, radarr_id, metadata, job_id=None):
+def translate_subtitles_file(
+    video_path,
+    source_srt_file,
+    from_lang,
+    to_lang,
+    forced,
+    hi,
+    media_type,
+    sonarr_series_id,
+    sonarr_episode_id,
+    radarr_id,
+    metadata,
+    job_id=None,
+):
     if not job_id:
-        jobs_queue.add_job_from_function(f'Translating from {from_lang.upper()} to {to_lang.upper()} using '
-                                         f'{settings.translator.translator_type.replace("_", " ").title()}',
-                                         is_progress=True)
+        jobs_queue.add_job_from_function(
+            f"Translating from {from_lang.upper()} to {to_lang.upper()} using "
+            f"{settings.translator.translator_type.replace('_', ' ').title()}",
+            is_progress=True,
+        )
         return
 
     try:
-        logging.debug(f'Translation request: video={video_path}, source={source_srt_file}, from={from_lang}, to={to_lang}')
+        logging.debug(
+            f"Translation request: video={video_path}, source={source_srt_file}, from={from_lang}, to={to_lang}"
+        )
 
         validate_translation_params(video_path, source_srt_file, from_lang, to_lang)
         lang_obj, orig_to_lang = convert_language_codes(to_lang, forced, hi)
 
-        logging.debug(f'BAZARR is translating in {lang_obj} this subtitles {source_srt_file}')
+        logging.debug(
+            f"BAZARR is translating in {lang_obj} this subtitles {source_srt_file}"
+        )
 
         # get the destination path if the subtitles are alongside the video
         dest_srt_file_if_alongside_video = get_subtitle_path(
             video_path,
-            language=lang_obj if isinstance(lang_obj, Language) else lang_obj.subzero_language(),
-            extension='.srt',
+            language=lang_obj
+            if isinstance(lang_obj, Language)
+            else lang_obj.subzero_language(),
+            extension=".srt",
             forced_tag=forced,
-            hi_tag=hi
+            hi_tag=hi,
         )
 
         # get the real destination path taking into account if the user set up Bazarr to store external subtitles in
@@ -46,13 +66,15 @@ def translate_subtitles_file(video_path, source_srt_file, from_lang, to_lang, fo
         if dest_dir_for_srt:
             # if the user has set up Bazarr to store external subtitles in a custom folder, we need to add the custom
             # folder to the destination path
-            dest_srt_file = os.path.join(dest_dir_for_srt, os.path.basename(dest_srt_file_if_alongside_video))
+            dest_srt_file = os.path.join(
+                dest_dir_for_srt, os.path.basename(dest_srt_file_if_alongside_video)
+            )
         else:
             # otherwise, we just use the destination path as it is
             dest_srt_file = dest_srt_file_if_alongside_video
 
-        translator_type = settings.translator.translator_type or 'google'
-        logging.debug(f'Using translator type: {translator_type}')
+        translator_type = settings.translator.translator_type or "google"
+        logging.debug(f"Using translator type: {translator_type}")
 
         translator = TranslatorFactory.create_translator(
             translator_type,
@@ -68,43 +90,60 @@ def translate_subtitles_file(video_path, source_srt_file, from_lang, to_lang, fo
             hi=hi,
             sonarr_series_id=sonarr_series_id,
             sonarr_episode_id=sonarr_episode_id,
-            radarr_id=radarr_id
+            radarr_id=radarr_id,
         )
 
-        logging.debug(f'Created translator instance: {translator.__class__.__name__}')
+        logging.debug(f"Created translator instance: {translator.__class__.__name__}")
         result = translator.translate(job_id=job_id)
         if result is False:
-            raise RuntimeError(f'{translator.__class__.__name__} returned a failed translation result')
-        logging.debug(f'BAZARR saved translated subtitles to {dest_srt_file}')
+            raise RuntimeError(
+                f"{translator.__class__.__name__} returned a failed translation result"
+            )
+        logging.debug(f"BAZARR saved translated subtitles to {dest_srt_file}")
         if metadata is not None:
             from api.subtitles.subtitles import postprocess_subtitles
+
             # Full post-processing (chmod, re-index, event streams, Plex/Jellyfin refresh)
-            postprocess_subtitles(dest_srt_file, video_path, media_type, metadata,
-                                  sonarr_episode_id if media_type == 'episode' else radarr_id)
+            postprocess_subtitles(
+                dest_srt_file,
+                video_path,
+                media_type,
+                metadata,
+                sonarr_episode_id if media_type == "episode" else radarr_id,
+            )
         elif result:
             # Auto-translation path: no metadata available; do minimal re-indexing
             try:
-                from utilities.path_mappings import path_mappings
-                if media_type == 'series':
-                    from subtitles.indexer.series import store_subtitles, list_missing_subtitles
+                if media_type == "series":
+                    from subtitles.indexer.series import (
+                        store_subtitles,
+                        list_missing_subtitles,
+                    )
+
                     store_subtitles(sonarr_episode_id)
                     if sonarr_episode_id:
                         list_missing_subtitles(epno=sonarr_episode_id)
                 else:
-                    from subtitles.indexer.movies import store_subtitles_movie, list_missing_subtitles_movies
+                    from subtitles.indexer.movies import (
+                        store_subtitles_movie,
+                        list_missing_subtitles_movies,
+                    )
+
                     store_subtitles_movie(radarr_id)
                     if radarr_id:
                         list_missing_subtitles_movies(no=radarr_id)
             except Exception as e:
-                logging.warning(f'BAZARR failed to re-index after translation: {e}')
+                logging.warning(f"BAZARR failed to re-index after translation: {e}")
 
         return result
 
     except Exception as e:
-        logging.error(f'Translation failed: {str(e)}', exc_info=True)
+        logging.error(f"Translation failed: {str(e)}", exc_info=True)
         raise
 
     finally:
-        jobs_queue.update_job_name(job_id=job_id,
-                                   new_job_name=f'Translated from {from_lang.upper()} to {to_lang.upper()} using '
-                                                f'{settings.translator.translator_type.replace("_", " ").title()}')
+        jobs_queue.update_job_name(
+            job_id=job_id,
+            new_job_name=f"Translated from {from_lang.upper()} to {to_lang.upper()} using "
+            f"{settings.translator.translator_type.replace('_', ' ').title()}",
+        )

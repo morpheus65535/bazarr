@@ -22,78 +22,111 @@ from plex.operations import plex_refresh_item
 from jellyfin.operations import jellyfin_refresh_item
 
 
-def delete_subtitles(media_type, language, forced, hi, media_path, subtitles_path, sonarr_series_id=None,
-                     sonarr_episode_id=None, radarr_id=None):
+def delete_subtitles(
+    media_type,
+    language,
+    forced,
+    hi,
+    media_path,
+    subtitles_path,
+    sonarr_series_id=None,
+    sonarr_episode_id=None,
+    radarr_id=None,
+):
     if not subtitles_path:
-        logging.error('No subtitles to delete.')
+        logging.error("No subtitles to delete.")
         return False
 
-    if not os.path.splitext(subtitles_path)[1] in SUBTITLE_EXTENSIONS:
-        logging.error('BAZARR can only delete subtitles files.')
+    if os.path.splitext(subtitles_path)[1] not in SUBTITLE_EXTENSIONS:
+        logging.error("BAZARR can only delete subtitles files.")
         return False
 
     language_log = language
     language_string = language_from_alpha2(language)
-    if hi in [True, 'true', 'True']:
-        language_log += ':hi'
-        language_string += ' HI'
-    elif forced in [True, 'true', 'True']:
-        language_log += ':forced'
-        language_string += ' forced'
+    if hi in [True, "true", "True"]:
+        language_log += ":hi"
+        language_string += " HI"
+    elif forced in [True, "true", "True"]:
+        language_log += ":forced"
+        language_string += " forced"
 
-    if media_type == 'series':
+    if media_type == "series":
         pr = path_mappings.path_replace
         prr = path_mappings.path_replace_reverse
 
         metadata = database.execute(
-            select(TableEpisodes.season, TableEpisodes.episode, TableShows.imdbId, TableShows.tvdbId)
+            select(
+                TableEpisodes.season,
+                TableEpisodes.episode,
+                TableShows.imdbId,
+                TableShows.tvdbId,
+            )
             .join(TableShows)
-            .where(TableEpisodes.sonarrEpisodeId == sonarr_episode_id)).first()
+            .where(TableEpisodes.sonarrEpisodeId == sonarr_episode_id)
+        ).first()
     else:
         pr = path_mappings.path_replace_movie
         prr = path_mappings.path_replace_reverse_movie
 
         metadata = database.execute(
-            select(TableMovies.imdbId, TableMovies.tmdbId)
-            .where(TableMovies.radarrId == radarr_id)).first()
+            select(TableMovies.imdbId, TableMovies.tmdbId).where(
+                TableMovies.radarrId == radarr_id
+            )
+        ).first()
 
-    result = ProcessSubtitlesResult(message=f"{language_string} subtitles deleted from disk.",
-                                    reversed_path=prr(media_path),
-                                    downloaded_language_code2=language_log,
-                                    downloaded_provider=None,
-                                    score=None,
-                                    forced=None,
-                                    subtitle_id=None,
-                                    reversed_subtitles_path=prr(subtitles_path),
-                                    hearing_impaired=None)
+    result = ProcessSubtitlesResult(
+        message=f"{language_string} subtitles deleted from disk.",
+        reversed_path=prr(media_path),
+        downloaded_language_code2=language_log,
+        downloaded_provider=None,
+        score=None,
+        forced=None,
+        subtitle_id=None,
+        reversed_subtitles_path=prr(subtitles_path),
+        hearing_impaired=None,
+    )
 
-    if media_type == 'series':
+    if media_type == "series":
         try:
             os.remove(pr(subtitles_path))
         except OSError:
-            logging.exception(f'BAZARR cannot delete subtitles file: {subtitles_path}')
+            logging.exception(f"BAZARR cannot delete subtitles file: {subtitles_path}")
             store_subtitles(sonarr_episode_id)
             return False
         else:
             store_subtitles(sonarr_episode_id)
             history_log(0, sonarr_series_id, sonarr_episode_id, result)
             notify_sonarr(sonarr_series_id)
-            event_stream(type='series', action='update', payload=sonarr_series_id)
-            event_stream(type='episode-wanted', action='update', payload=sonarr_episode_id)
+            event_stream(type="series", action="update", payload=sonarr_series_id)
+            event_stream(
+                type="episode-wanted", action="update", payload=sonarr_episode_id
+            )
 
             if settings.general.use_plex and settings.plex.update_series_library:
-                plex_refresh_item(metadata.imdbId, is_movie=False, season=metadata.season,
-                                  episode=metadata.episode)
-            if settings.general.use_jellyfin and settings.jellyfin.update_series_library:
-                jellyfin_refresh_item(metadata.imdbId, is_movie=False, season=metadata.season,
-                                      episode=metadata.episode, tvdb_id=metadata.tvdbId)
+                plex_refresh_item(
+                    metadata.imdbId,
+                    is_movie=False,
+                    season=metadata.season,
+                    episode=metadata.episode,
+                )
+            if (
+                settings.general.use_jellyfin
+                and settings.jellyfin.update_series_library
+            ):
+                jellyfin_refresh_item(
+                    metadata.imdbId,
+                    is_movie=False,
+                    season=metadata.season,
+                    episode=metadata.episode,
+                    tvdb_id=metadata.tvdbId,
+                )
 
             # Call external webhook after all processing is complete
             call_external_webhook(
                 subtitle_path=subtitles_path,
                 media_path=media_path,
                 language=language_log,
-                media_type=media_type
+                media_type=media_type,
             )
 
             return True
@@ -101,27 +134,28 @@ def delete_subtitles(media_type, language, forced, hi, media_path, subtitles_pat
         try:
             os.remove(pr(subtitles_path))
         except OSError:
-            logging.exception(f'BAZARR cannot delete subtitles file: {subtitles_path}')
+            logging.exception(f"BAZARR cannot delete subtitles file: {subtitles_path}")
             store_subtitles_movie(radarr_id)
             return False
         else:
             store_subtitles_movie(radarr_id)
             history_log_movie(0, radarr_id, result)
             notify_radarr(radarr_id)
-            event_stream(type='movie-wanted', action='update', payload=radarr_id)
+            event_stream(type="movie-wanted", action="update", payload=radarr_id)
 
             if settings.general.use_plex and settings.plex.update_movie_library:
                 plex_refresh_item(metadata.imdbId, is_movie=True)
             if settings.general.use_jellyfin and settings.jellyfin.update_movie_library:
-                jellyfin_refresh_item(metadata.imdbId, is_movie=True,
-                                      tmdb_id=metadata.tmdbId)
+                jellyfin_refresh_item(
+                    metadata.imdbId, is_movie=True, tmdb_id=metadata.tmdbId
+                )
 
             # Call external webhook after all processing is complete
             call_external_webhook(
                 subtitle_path=subtitles_path,
                 media_path=media_path,
                 language=language_log,
-                media_type=media_type
+                media_type=media_type,
             )
-            
+
             return True

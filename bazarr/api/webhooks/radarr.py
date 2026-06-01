@@ -7,7 +7,6 @@ from app.database import TableMovies, database, select
 from radarr.sync.movies import update_one_movie
 from subtitles.mass_download import movies_download_subtitles
 from subtitles.indexer.movies import store_subtitles_movie
-from utilities.path_mappings import path_mappings
 
 from ..utils import authenticate
 
