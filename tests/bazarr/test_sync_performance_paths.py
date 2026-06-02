@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import datetime
+
 from types import SimpleNamespace
 
 import pytest
@@ -263,3 +265,29 @@ def test_update_movies_compares_against_matching_radarr_id(monkeypatch):
     movies_sync.update_movies(job_id="job")
 
     assert updated_movies == [{"radarrId": 2, "title": "New Movie 2", "path": "/movies/two.mkv"}]
+
+
+def test_get_providers_expired_throttle_cleanup_is_idempotent(monkeypatch):
+    from app import get_providers as providers
+
+    provider = "opensubtitlescom"
+    providers.tp.clear()
+    providers.tp[provider] = ("TooManyRequests", datetime.datetime.now(), "1 minute")
+
+    removed_once = {"done": False}
+
+    class _RacingThrottle(dict):
+        def __delitem__(self, key):
+            if not removed_once["done"]:
+                removed_once["done"] = True
+                super().__delitem__(key)
+                raise KeyError(key)
+            super().__delitem__(key)
+
+    racing_tp = _RacingThrottle(providers.tp)
+    monkeypatch.setattr(providers, "tp", racing_tp)
+    monkeypatch.setattr(providers.provider_registry, "names", lambda: [provider])
+    monkeypatch.setattr(providers, "settings", SimpleNamespace(general=SimpleNamespace(enabled_providers=[provider])))
+    monkeypatch.setattr(providers, "set_throttled_providers", lambda data: None)
+
+    assert providers.get_providers() == [provider]
