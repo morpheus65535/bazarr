@@ -5,7 +5,6 @@ import os
 import sys
 import logging
 import subliminal
-import ast
 
 from subzero.language import Language
 from subliminal_patch.core import save_subtitles
@@ -17,6 +16,7 @@ from constants import HI_EXCLUDED
 from utilities.path_mappings import path_mappings
 from utilities.helper import get_target_folder, force_unicode
 from languages.get_languages import alpha3_from_alpha2, alpha2_from_alpha3
+from subtitles.serialization import parse_missing_subtitles, missing_subtitle_to_language_tuple
 
 from app.get_providers import blacklist_subtitle
 
@@ -66,13 +66,16 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
 
         subz_mods = get_array_from(settings.general.subzero_mods)
         saved_any = False
+        missing_languages = None
 
         if providers:
             if forced_minimum_score:
                 min_score = int(forced_minimum_score) + 1
+            if check_if_still_required:
+                missing_languages = check_missing_languages(path, media_type)
             for language in language_set:
                 # confirm if language is still missing or if cutoff has been reached
-                if check_if_still_required and language not in check_missing_languages(path, media_type):
+                if check_if_still_required and language not in missing_languages:
                     # cutoff has been reached
                     logging.debug(f"BAZARR this language ({parse_language_object(language)}) is ignored because cutoff "
                                   f"has been reached during this search.")
@@ -178,6 +181,8 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
                                     logging.debug(f"BAZARR unable to process this subtitles: {subtitle}")
                                     continue
                                 yield processed_subtitle
+                                if check_if_still_required:
+                                    missing_languages = check_missing_languages(path, media_type)
         else:
             logging.info("BAZARR All providers are throttled")
             return None
@@ -259,11 +264,9 @@ def check_missing_languages(path, media_type):
         logging.debug(f"BAZARR no media with this path have been found in database: {reversed_path}")
         return []
 
-    languages = []
-    for language in ast.literal_eval(confirmed_missing_subs.missing_subtitles):
-        if language is not None:
-            hi_ = "True" if language.endswith(':hi') else "False"
-            forced_ = "True" if language.endswith(':forced') else "False"
-            languages.append((language.split(":")[0], hi_, forced_))
+    languages = [
+        missing_subtitle_to_language_tuple(language)
+        for language in parse_missing_subtitles(confirmed_missing_subs.missing_subtitles)
+    ]
 
     return _get_language_obj(languages=languages)

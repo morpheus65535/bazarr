@@ -16,6 +16,7 @@ from app.database import (get_audio_profile_languages, get_desired_languages, ge
                           TableShows, select)
 from subtitles.pool import get_language_equals
 from utilities.helper import bool_map
+from subtitles.serialization import parse_missing_subtitles
 from utilities.path_mappings import path_mappings
 
 None_Keys = ['null', 'undefined', '', None]
@@ -221,7 +222,7 @@ def postprocess(item):
 
     # Parse missing subtitles
     if item.get('missing_subtitles'):
-        item['missing_subtitles'] = ast.literal_eval(item['missing_subtitles'])
+        item['missing_subtitles'] = parse_missing_subtitles(item['missing_subtitles'])
         for i, subs in enumerate(item['missing_subtitles']):
             language = subs.split(':')
             item['missing_subtitles'][i] = {"name": language_from_alpha2(language[0]),

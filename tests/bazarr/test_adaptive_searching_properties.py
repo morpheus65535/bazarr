@@ -58,7 +58,7 @@ def test_update_failed_attempts_fails_safe_for_malformed_attempt_strings(attempt
     assert any(item[0] == "en" for item in parsed)
 
 
-def test_update_failed_attempts_compacts_and_preserves_initial_and_latest_attempts(monkeypatch):
+def test_update_failed_attempts_compacts_matching_canonical_language_attempts(monkeypatch):
     module = adaptive_searching
     now = real_datetime(2026, 1, 1, 12, 0, 0)
     _freeze_datetime(monkeypatch, module, now)
@@ -73,9 +73,11 @@ def test_update_failed_attempts_compacts_and_preserves_initial_and_latest_attemp
     assert parsed == [
         ["de", 6],
         ["en", 1],
-        ["en", current_ts],
-        ["fr", 4],
+        ["en", 3],
+        ["en:forced", 2],
+        ["en:forced", current_ts],
         ["fr", 5],
+        ["fr:hi", 4],
     ]
 
 
