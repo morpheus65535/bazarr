@@ -197,7 +197,7 @@ def test_wanted_movie_filters_out_inactive_languages_entirely(monkeypatch, wante
 
     wanted_module._wanted_movie(movie, ["provider"])
 
-    assert _captured_languages(generate_calls) == []
+    assert generate_calls == []
 
 
 def test_wanted_episode_filters_out_inactive_languages_entirely(monkeypatch, wanted_module, episode_row_factory):
@@ -210,4 +210,4 @@ def test_wanted_episode_filters_out_inactive_languages_entirely(monkeypatch, wan
 
     wanted_module._wanted_episode(episode, ["provider"])
 
-    assert _captured_languages(generate_calls) == []
+    assert generate_calls == []

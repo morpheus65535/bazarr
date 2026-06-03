@@ -19,7 +19,8 @@ from app.event_handler import event_stream
 
 from ..download import generate_subtitles
 from ..language_utils import has_unindexed_external_subtitle, resolve_audio_language
-from ..serialization import parse_missing_subtitles, missing_subtitle_to_language_tuple
+from ..serialization import missing_subtitle_to_language_tuple
+from ..wanted_state import get_missing_languages
 
 
 def movies_download_subtitles(no, job_id=None, job_sub_function=False):
@@ -77,7 +78,7 @@ def movies_download_subtitles(no, job_id=None, job_sub_function=False):
         jobs_queue.update_job_progress(job_id=job_id, progress_message=f"Movie path doesn't exists: {moviePath}")
         raise OSError
 
-    missing_languages = parse_missing_subtitles(movie.missing_subtitles)
+    missing_languages = get_missing_languages('movie', movie.radarrId)
     count_movie = len(missing_languages)
 
     audio_language_list = get_audio_profile_languages(movie.audio_language)
