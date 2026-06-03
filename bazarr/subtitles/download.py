@@ -11,11 +11,11 @@ from subliminal_patch.core import save_subtitles
 from subliminal_patch.core_persistent import download_best_subtitles
 
 from app.config import settings, get_array_from
-from app.database import TableEpisodes, TableMovies, database, select, get_profiles_list
+from app.database import TableEpisodes, TableMovies, TableMissingSubtitles, database, select, get_profiles_list
 from utilities.path_mappings import path_mappings
 from utilities.helper import get_target_folder, force_unicode
 from languages.get_languages import alpha3_from_alpha2
-from subtitles.serialization import parse_missing_subtitles, missing_subtitle_to_language_tuple
+from subtitles.serialization import missing_subtitle_to_language_tuple
 
 from .pool import update_pools, _get_pool
 from .utils import get_video, _get_lang_obj, _get_scores, _set_forced_providers
@@ -63,16 +63,13 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
 
         subz_mods = get_array_from(settings.general.subzero_mods)
         saved_any = False
-        missing_languages = None
 
         if providers:
             if forced_minimum_score:
                 min_score = int(forced_minimum_score) + 1
-            if check_if_still_required:
-                missing_languages = check_missing_languages(path, media_type)
             for language in language_set:
                 # confirm if language is still missing or if cutoff has been reached
-                if check_if_still_required and language not in missing_languages:
+                if check_if_still_required and language not in check_missing_languages(path, media_type):
                     # cutoff has been reached
                     logging.debug(f"BAZARR this language ({parse_language_object(language)}) is ignored because cutoff "
                                   f"has been reached during this search.")
@@ -138,8 +135,6 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
                                     logging.debug(f"BAZARR unable to process this subtitles: {subtitle}")
                                     continue
                                 yield processed_subtitle
-                                if check_if_still_required:
-                                    missing_languages = check_missing_languages(path, media_type)
         else:
             logging.info("BAZARR All providers are throttled")
             return None
@@ -190,14 +185,16 @@ def check_missing_languages(path, media_type):
     # confirm if language is still missing or if cutoff has been reached
     if media_type == 'series':
         confirmed_missing_subs = database.execute(
-            select(TableEpisodes.missing_subtitles)
+            select(TableEpisodes.sonarrEpisodeId)
             .where(TableEpisodes.path == path_mappings.path_replace_reverse(path)))\
             .first()
+        media_id = confirmed_missing_subs.sonarrEpisodeId if confirmed_missing_subs else None
     else:
         confirmed_missing_subs = database.execute(
-            select(TableMovies.missing_subtitles)
+            select(TableMovies.radarrId)
             .where(TableMovies.path == path_mappings.path_replace_reverse_movie(path)))\
             .first()
+        media_id = confirmed_missing_subs.radarrId if confirmed_missing_subs else None
 
     if not confirmed_missing_subs:
         reversed_path = path_mappings.path_replace_reverse(path) if media_type == 'series' else \
@@ -207,7 +204,11 @@ def check_missing_languages(path, media_type):
 
     languages = [
         missing_subtitle_to_language_tuple(language)
-        for language in parse_missing_subtitles(confirmed_missing_subs.missing_subtitles)
+        for language in database.execute(
+            select(TableMissingSubtitles.language)
+            .where(TableMissingSubtitles.media_type == media_type)
+            .where(TableMissingSubtitles.media_id == media_id)
+        ).scalars()
     ]
 
     return _get_language_obj(languages=languages)

@@ -10,7 +10,8 @@ from datetime import datetime
 from functools import reduce
 
 from constants import MINIMUM_VIDEO_SIZE
-from app.database import database, TableShows, TableEpisodes, delete, update, insert, select, get_exclusion_clause
+from app.database import database, TableShows, TableEpisodes, TableMissingSubtitles, delete, update, insert, select, \
+    get_exclusion_clause
 from app.config import settings
 from utilities.path_mappings import path_mappings
 from subtitles.indexer.series import store_subtitles, series_full_scan_subtitles
@@ -19,7 +20,7 @@ from app.event_handler import event_stream
 from sonarr.info import get_sonarr_info
 from app.jobs_queue import jobs_queue
 from app.notifier import send_notifications
-from subtitles.adaptive_searching import is_search_active
+from subtitles.wanted_state import delete_wanted_search_state, get_due_missing_languages_map
 
 from .parser import episodeParser
 from .utils import get_episodes_from_sonarr_api, get_episodesFiles_from_sonarr_api
@@ -154,6 +155,7 @@ def sync_episodes(series_id, defer_search=False, is_signalr=False):
         except IntegrityError as e:
             logging.error(f"BAZARR cannot delete episodes because of {e}")
         else:
+            delete_wanted_search_state('series', episodes_to_delete)
             for removed_episode in episodes_to_delete:
                 event_stream(type='episode', action='delete', payload=removed_episode)
 
@@ -283,6 +285,7 @@ def sync_one_episode(episode_id, defer_search=False, is_signalr=False):
         except IntegrityError as e:
             logging.error(f"BAZARR cannot delete episode {existing_episode.path} because of {e}")
         else:
+            delete_wanted_search_state('series', episode_id)
             event_stream(type='episode', action='delete', payload=int(episode_id))
             logging.debug(
                 f'BAZARR deleted this episode from the database:{path_mappings.path_replace(existing_episode.path)}')
@@ -370,8 +373,8 @@ def _is_there_missing_subtitles(series_id: int = None, episode_id: int = None) -
         or not (`False`).
     :rtype: bool
     """
-    episodes_conditions = [(TableEpisodes.missing_subtitles.is_not(None)),
-                           (TableEpisodes.missing_subtitles != '[]')]
+    episodes_conditions = [(TableMissingSubtitles.media_type == 'series'),
+                           (TableMissingSubtitles.media_id == TableEpisodes.sonarrEpisodeId)]
     if all([series_id, episode_id]) or not any([series_id, episode_id]):
         return False
     elif series_id:
@@ -380,13 +383,18 @@ def _is_there_missing_subtitles(series_id: int = None, episode_id: int = None) -
         episodes_conditions.append(TableEpisodes.sonarrEpisodeId == episode_id)
     episodes_conditions += get_exclusion_clause('series')
     missing_episodes = database.execute(
-        select(TableEpisodes.missing_subtitles, TableEpisodes.failedAttempts)
+        select(TableMissingSubtitles.language, TableEpisodes.sonarrEpisodeId)
         .select_from(TableEpisodes)
         .join(TableShows)
+        .join(TableMissingSubtitles, TableMissingSubtitles.media_id == TableEpisodes.sonarrEpisodeId)
         .where(reduce(operator.and_, episodes_conditions))) \
         .all()
+    due_languages_by_episode = get_due_missing_languages_map(
+        'series',
+        list(dict.fromkeys(missing_episode.sonarrEpisodeId for missing_episode in missing_episodes)),
+    )
     for missing_episode in missing_episodes:
-        for language in missing_episode.missing_subtitles:
-            if is_search_active(desired_language=language, attempt_string=missing_episode.failedAttempts):
-                return True
+        due_languages = due_languages_by_episode.get(missing_episode.sonarrEpisodeId, [])
+        if missing_episode.language in due_languages:
+            return True
     return False

@@ -17,6 +17,7 @@ from utilities.video_analyzer import embedded_subs_reader
 from app.event_handler import event_stream
 from subtitles.indexer.utils import guess_external_subtitles, get_external_subtitles_path
 from app.jobs_queue import jobs_queue
+from subtitles.wanted_state import refresh_wanted_search_state
 
 gc.enable()
 
@@ -236,25 +237,29 @@ def list_missing_subtitles(no=None, epno=None):
     stmt = select(TableShows.sonarrSeriesId,
                   TableEpisodes.sonarrEpisodeId,
                   TableShows.profileId,
-                  TableEpisodes.audio_language) \
+                  TableEpisodes.audio_language,
+                  TableEpisodes.missing_subtitles) \
         .select_from(TableEpisodes) \
         .join(TableShows)
 
     if epno is not None:
-        episodes_subtitles = database.execute(stmt.where(TableEpisodes.sonarrEpisodeId == epno)).all()
+        episodes_subtitles = database.execute(stmt.where(TableEpisodes.sonarrEpisodeId == epno))
     elif no is not None:
-        episodes_subtitles = database.execute(stmt.where(TableEpisodes.sonarrSeriesId == no)).all()
+        episodes_subtitles = database.execute(stmt.where(TableEpisodes.sonarrSeriesId == no))
     else:
-        episodes_subtitles = database.execute(stmt).all()
+        episodes_subtitles = database.execute(stmt)
 
     use_embedded_subs = settings.general.use_embedded_subs
-
-    matches_audio = lambda language: any(x['code2'] == language['language'] for x in get_audio_profile_languages(
-                                episode_subtitles.audio_language))
 
     for episode_subtitles in episodes_subtitles:
         missing_subtitles_text = '[]'
         if episode_subtitles.profileId:
+            audio_language_codes = {
+                x['code2']
+                for x in get_audio_profile_languages(episode_subtitles.audio_language)
+            }
+            matches_audio = lambda language: language['language'] in audio_language_codes
+
             # get desired subtitles
             desired_subtitles_temp = get_profiles_list(profile_id=episode_subtitles.profileId)
             desired_subtitles_list = []
@@ -355,13 +360,20 @@ def list_missing_subtitles(no=None, epno=None):
 
                 missing_subtitles_text = str(missing_subtitles_output_list)
 
-        database.execute(
-            update(TableEpisodes)
-            .values(missing_subtitles=missing_subtitles_text)
-            .where(TableEpisodes.sonarrEpisodeId == episode_subtitles.sonarrEpisodeId))
+        if episode_subtitles.missing_subtitles != missing_subtitles_text:
+            database.execute(
+                update(TableEpisodes)
+                .values(missing_subtitles=missing_subtitles_text)
+                .where(TableEpisodes.sonarrEpisodeId == episode_subtitles.sonarrEpisodeId))
+            refresh_wanted_search_state(
+                'series',
+                episode_subtitles.sonarrEpisodeId,
+                missing_subtitles_text,
+                refresh_failed_attempts=False,
+            )
 
-        event_stream(type='episode', payload=episode_subtitles.sonarrEpisodeId)
-        event_stream(type='episode-wanted', action='update', payload=episode_subtitles.sonarrEpisodeId)
+            event_stream(type='episode', payload=episode_subtitles.sonarrEpisodeId)
+            event_stream(type='episode-wanted', action='update', payload=episode_subtitles.sonarrEpisodeId)
     event_stream(type='badges')
 
 

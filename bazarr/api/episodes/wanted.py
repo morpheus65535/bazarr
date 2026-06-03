@@ -5,8 +5,9 @@ import operator
 from flask_restx import Resource, Namespace, reqparse, fields, marshal
 from functools import reduce
 
-from app.database import get_exclusion_clause, TableEpisodes, TableShows, database, select, func
+from app.database import get_exclusion_clause, TableEpisodes, TableShows, TableMissingSubtitles, database, select, func
 from api.swaggerui import subtitles_language_model
+from subtitles.wanted_state import get_missing_languages_map
 
 from ..utils import authenticate, postprocess
 
@@ -48,8 +49,10 @@ class EpisodesWanted(Resource):
         args = self.get_request_parser.parse_args()
         episodeid = args.get('episodeid[]')
 
-        wanted_conditions = [(TableEpisodes.missing_subtitles.is_not(None)),
-                             (TableEpisodes.missing_subtitles != '[]')]
+        wanted_conditions = [select(TableMissingSubtitles.id)
+                             .where(TableMissingSubtitles.media_type == 'series')
+                             .where(TableMissingSubtitles.media_id == TableEpisodes.sonarrEpisodeId)
+                             .exists()]
         if len(episodeid) > 0:
             wanted_conditions.append((TableEpisodes.sonarrEpisodeId.in_(episodeid)))
             start = 0
@@ -64,7 +67,6 @@ class EpisodesWanted(Resource):
         stmt = select(TableShows.title.label('seriesTitle'),
                       TableEpisodes.season.concat('x').concat(TableEpisodes.episode).label('episode_number'),
                       TableEpisodes.title.label('episodeTitle'),
-                      TableEpisodes.missing_subtitles,
                       TableEpisodes.sonarrSeriesId,
                       TableEpisodes.sonarrEpisodeId,
                       TableEpisodes.sceneName,
@@ -77,17 +79,20 @@ class EpisodesWanted(Resource):
         if length > 0:
             stmt = stmt.order_by(TableEpisodes.sonarrEpisodeId.desc()).limit(length).offset(start)
 
+        episodes = database.execute(stmt).all()
+        missing_languages = get_missing_languages_map('series', [x.sonarrEpisodeId for x in episodes])
+
         results = [postprocess({
             'seriesTitle': x.seriesTitle,
             'episode_number': x.episode_number,
             'episodeTitle': x.episodeTitle,
-            'missing_subtitles': x.missing_subtitles,
+            'missing_subtitles': missing_languages[x.sonarrEpisodeId],
             'sonarrSeriesId': x.sonarrSeriesId,
             'sonarrEpisodeId': x.sonarrEpisodeId,
             'sceneName': x.sceneName,
             'tags': x.tags,
             'seriesType': x.seriesType,
-        }) for x in database.execute(stmt).all()]
+        }) for x in episodes]
 
         count = database.execute(
             select(func.count())

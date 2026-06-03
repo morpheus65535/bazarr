@@ -956,10 +956,70 @@ def save_settings(settings_items):
                 event_stream(type='reset-movie-wanted')
 
 
+def _parse_text_array(value):
+    value = value.strip()
+    if value == '[]':
+        return []
+    if not value.startswith('[') or not value.endswith(']'):
+        raise ValueError
+
+    values = []
+    body = value[1:-1].strip()
+    if not body:
+        return []
+
+    index = 0
+    while index < len(body):
+        while index < len(body) and body[index].isspace():
+            index += 1
+
+        if body.startswith('None', index):
+            values.append(None)
+            index += 4
+        elif index < len(body) and body[index] in ("'", '"'):
+            quote = body[index]
+            index += 1
+            chars = []
+            while index < len(body):
+                char = body[index]
+                if char == "\\":
+                    index += 1
+                    if index >= len(body):
+                        raise ValueError
+                    chars.append(body[index])
+                    index += 1
+                    continue
+                if char == quote:
+                    index += 1
+                    break
+                chars.append(char)
+                index += 1
+            else:
+                raise ValueError
+            values.append("".join(chars))
+        else:
+            raise ValueError
+
+        while index < len(body) and body[index].isspace():
+            index += 1
+        if index == len(body):
+            break
+        if body[index] != ',':
+            raise ValueError
+        index += 1
+        if index == len(body):
+            raise ValueError
+
+    return values
+
+
 def get_array_from(property):
     if property:
         if '[' in property:
-            return ast.literal_eval(property)
+            try:
+                return _parse_text_array(property)
+            except ValueError:
+                return []
         elif ',' in property:
             return property.split(',')
         else:

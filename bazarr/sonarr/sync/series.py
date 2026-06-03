@@ -9,7 +9,8 @@ from datetime import datetime
 from app.config import settings
 from subtitles.indexer.series import list_missing_subtitles
 from sonarr.rootfolder import check_sonarr_rootfolder
-from app.database import TableShows, TableLanguagesProfiles, database, insert, update, delete, select
+from app.database import TableShows, TableEpisodes, TableLanguagesProfiles, database, insert, update, delete, select
+from subtitles.wanted_state import delete_wanted_search_state
 from utilities.path_mappings import path_mappings
 from app.event_handler import event_stream
 from app.jobs_queue import jobs_queue
@@ -158,6 +159,14 @@ def update_one_series(series_id, action, is_signalr=False, sync_episodes_after_u
 
     # Delete series from DB
     if action == 'deleted' and existing_series:
+        episode_ids = [
+            row.sonarrEpisodeId
+            for row in database.execute(
+                select(TableEpisodes.sonarrEpisodeId)
+                .where(TableEpisodes.sonarrSeriesId == int(series_id))
+            )
+        ]
+        delete_wanted_search_state('series', episode_ids)
         database.execute(
             delete(TableShows)
             .where(TableShows.sonarrSeriesId == int(series_id)))

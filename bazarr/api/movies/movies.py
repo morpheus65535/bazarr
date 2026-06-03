@@ -7,6 +7,7 @@ from radarr.sync.movies import update_one_movie
 from subtitles.indexer.movies import list_missing_subtitles_movies, movies_scan_subtitles
 from app.event_handler import event_stream
 from subtitles.wanted import wanted_search_missing_subtitles_movies
+from subtitles.wanted_state import get_missing_languages_map
 from subtitles.mass_download import movies_download_subtitles
 from api.swaggerui import subtitles_model, subtitles_language_model, audio_language_model
 
@@ -67,7 +68,6 @@ class Movies(Resource):
                       TableMovies.audio_language,
                       TableMovies.fanart,
                       TableMovies.imdbId,
-                      TableMovies.missing_subtitles,
                       TableMovies.monitored,
                       TableMovies.overview,
                       TableMovies.path,
@@ -87,12 +87,15 @@ class Movies(Resource):
         if length > 0:
             stmt = stmt.limit(length).offset(start)
 
+        movies = database.execute(stmt).all()
+        missing_languages = get_missing_languages_map('movie', [x.radarrId for x in movies])
+
         results = [postprocess({
             'alternativeTitles': x.alternativeTitles,
             'audio_language': x.audio_language,
             'fanart': x.fanart,
             'imdbId': x.imdbId,
-            'missing_subtitles': x.missing_subtitles,
+            'missing_subtitles': missing_languages[x.radarrId],
             'monitored': x.monitored,
             'overview': x.overview,
             'path': x.path,
@@ -103,7 +106,7 @@ class Movies(Resource):
             'tags': x.tags,
             'title': x.title,
             'year': x.year,
-        }) for x in database.execute(stmt).all()]
+        }) for x in movies]
 
         count = database.execute(
             select(func.count())

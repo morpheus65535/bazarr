@@ -5,7 +5,8 @@ import operator
 from flask_restx import Resource, Namespace, reqparse, fields, marshal
 from functools import reduce
 
-from app.database import get_exclusion_clause, TableEpisodes, TableShows, database, select, update, func
+from app.database import get_exclusion_clause, TableEpisodes, TableShows, TableMissingSubtitles, database, select, \
+    update, func
 from sonarr.sync.series import update_one_series
 from subtitles.indexer.series import list_missing_subtitles, series_scan_subtitles
 from subtitles.mass_download import series_download_subtitles
@@ -76,14 +77,16 @@ class Series(Resource):
             .group_by(TableShows.sonarrSeriesId)\
             .subquery()
 
-        episodes_missing_conditions = [(TableEpisodes.missing_subtitles.is_not(None)),
-                                       (TableEpisodes.missing_subtitles != '[]')]
+        episodes_missing_conditions = [(TableMissingSubtitles.media_type == 'series'),
+                                       (TableMissingSubtitles.media_id == TableEpisodes.sonarrEpisodeId)]
         episodes_missing_conditions += get_exclusion_clause('series')
 
         episodeMissingCount = select(TableShows.sonarrSeriesId,
-                                     func.count(TableEpisodes.sonarrSeriesId).label('episodeMissingCount')) \
+                                     func.count(func.distinct(TableEpisodes.sonarrEpisodeId))
+                                     .label('episodeMissingCount')) \
             .select_from(TableEpisodes) \
             .join(TableShows) \
+            .join(TableMissingSubtitles, TableMissingSubtitles.media_id == TableEpisodes.sonarrEpisodeId) \
             .where(reduce(operator.and_, episodes_missing_conditions)) \
             .group_by(TableShows.sonarrSeriesId)\
             .subquery()
