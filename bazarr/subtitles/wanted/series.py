@@ -1,7 +1,6 @@
 # coding=utf-8
 # fmt: off
 
-import ast
 import logging
 import operator
 import gc
@@ -15,12 +14,14 @@ from sonarr.history import history_log
 from app.notifier import send_notifications
 from app.get_providers import get_providers
 from app.database import get_exclusion_clause, get_audio_profile_languages, TableShows, TableEpisodes, database, \
-    update, select, get_subtitles
+    select, get_subtitles
 from app.event_handler import event_stream
 from app.jobs_queue import jobs_queue, JobCanceled
 from app.config import settings
 
-from ..adaptive_searching import is_search_active, updateFailedAttempts
+from ..adaptive_searching import is_search_active
+from ..serialization import parse_missing_subtitles, missing_subtitle_to_language_tuple
+from ..wanted_state import get_failed_attempt_pairs, record_failed_subtitle_attempts
 from ..download import generate_subtitles
 
 
@@ -33,11 +34,10 @@ def _wanted_episode(episode, providers_list, job_id=None):
 
     languages = []
     languages_to_stamp = []
-    for language in ast.literal_eval(episode.missing_subtitles):
-        if is_search_active(desired_language=language, attempt_string=episode.failedAttempts):
-            hi_ = "True" if language.endswith(':hi') else "False"
-            forced_ = "True" if language.endswith(':forced') else "False"
-            languages.append((language.split(":")[0], hi_, forced_))
+    attempts = get_failed_attempt_pairs('series', episode.sonarrEpisodeId)
+    for language in parse_missing_subtitles(episode.missing_subtitles):
+        if is_search_active(desired_language=language, attempt_string=attempts):
+            languages.append(missing_subtitle_to_language_tuple(language))
             languages_to_stamp.append(language)
 
         else:
@@ -65,15 +65,7 @@ def _wanted_episode(episode, providers_list, job_id=None):
             event_stream(type='episode-wanted', action='delete', payload=episode.sonarrEpisodeId)
 
     if not found_any and providers_list:
-        for language in languages_to_stamp:
-            updated = updateFailedAttempts(
-                desired_language=language,
-                attempt_string=episode.failedAttempts)
-            database.execute(
-                update(TableEpisodes)
-                .values(failedAttempts=updated)
-                .where(TableEpisodes.sonarrEpisodeId ==
-                       episode.sonarrEpisodeId))
+        record_failed_subtitle_attempts('series', episode.sonarrEpisodeId, languages_to_stamp)
 
 
 def wanted_download_subtitles(sonarr_episode_id, job_id=None):
@@ -83,7 +75,6 @@ def wanted_download_subtitles(sonarr_episode_id, job_id=None):
                   TableEpisodes.sonarrSeriesId,
                   TableEpisodes.audio_language,
                   TableEpisodes.sceneName,
-                  TableEpisodes.failedAttempts,
                   TableShows.title,
                   TableShows.profileId) \
         .select_from(TableEpisodes) \
