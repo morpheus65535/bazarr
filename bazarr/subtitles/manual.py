@@ -153,7 +153,8 @@ def manual_download_subtitle(path, audio_language, hi, forced, subtitle, provide
     else:
         os.environ["SZ_KEEP_ENCODING"] = "True"
 
-    subtitle = pickle.loads(codecs.decode(subtitle.encode(), "base64"))
+    subtitle = subtitle.replace(' ', '+')
+    subtitle = pickle.loads(codecs.decode((subtitle + '=' * ((-len(subtitle)) % 4)).encode(), "base64"))
     if hi == 'True':
         subtitle.language.hi = True
     else:
