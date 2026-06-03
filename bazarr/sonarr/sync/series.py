@@ -8,7 +8,7 @@ from datetime import datetime
 
 from app.config import settings
 from sonarr.rootfolder import check_sonarr_rootfolder
-from app.database import TableShows, TableLanguagesProfiles, database, insert, update, delete, select
+from app.database import TableShows, TableLanguagesProfiles, database, insert, update, select
 from utilities.helper import bool_map
 from utilities.path_mappings import path_mappings
 from app.event_handler import event_stream
@@ -17,6 +17,8 @@ from app.jobs_queue import jobs_queue, JobCanceled
 from .episodes import sync_episodes
 from .parser import seriesParser
 from .utils import get_profile_list, get_tags, get_series_from_sonarr_api
+
+from subtitles.wanted_state import delete_series_and_wanted_search_state
 
 FEATURE_PREFIX = "SYNC_SERIES "
 
@@ -150,9 +152,7 @@ def update_one_series(series_id, action, is_signalr=False, sync_episodes_after_u
 
     # Delete series from DB
     if action == 'deleted' and existing_series:
-        database.execute(
-            delete(TableShows)
-            .where(TableShows.sonarrSeriesId == int(series_id)))
+        delete_series_and_wanted_search_state(series_id)
 
         event_stream(type='series', action='delete', payload=int(series_id))
         return

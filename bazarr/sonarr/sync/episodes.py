@@ -10,7 +10,7 @@ from datetime import datetime
 from functools import reduce
 
 from constants import MINIMUM_VIDEO_SIZE
-from app.database import database, TableShows, TableEpisodes, delete, update, insert, select, get_exclusion_clause
+from app.database import database, TableShows, TableEpisodes, update, insert, select, get_exclusion_clause
 from app.config import settings
 from utilities.helper import bool_map
 from utilities.path_mappings import path_mappings
@@ -21,6 +21,8 @@ from sonarr.info import get_sonarr_info
 from app.jobs_queue import jobs_queue
 from app.notifier import send_notifications
 from subtitles.adaptive_searching import is_search_active
+from subtitles.serialization import parse_missing_subtitles
+from subtitles.wanted_state import get_failed_attempt_pairs, delete_media_and_wanted_search_state
 
 from .parser import episodeParser
 from .utils import get_episodes_from_sonarr_api, get_episodesFiles_from_sonarr_api
@@ -148,7 +150,7 @@ def sync_episodes(series_id, defer_search=False, is_signalr=False):
 
     if len(episodes_to_delete):
         try:
-            database.execute(delete(TableEpisodes).where(TableEpisodes.sonarrEpisodeId.in_(episodes_to_delete)))
+            delete_media_and_wanted_search_state('series', TableEpisodes, 'sonarrEpisodeId', episodes_to_delete)
         except IntegrityError as e:
             logging.error(f"BAZARR cannot delete episodes because of {e}")
         else:
@@ -277,9 +279,7 @@ def sync_one_episode(episode_id, defer_search=False, is_signalr=False):
     # Remove episode from DB
     if not episode and existing_episode:
         try:
-            database.execute(
-                delete(TableEpisodes)
-                .where(TableEpisodes.sonarrEpisodeId == episode_id))
+            delete_media_and_wanted_search_state('series', TableEpisodes, 'sonarrEpisodeId', episode_id)
         except IntegrityError as e:
             logging.error(f"BAZARR cannot delete episode {existing_episode.path} because of {e}")
         else:
@@ -389,13 +389,14 @@ def _is_there_missing_subtitles(series_id: int = None, episode_id: int = None) -
         episodes_conditions.append(TableEpisodes.sonarrEpisodeId == episode_id)
     episodes_conditions += get_exclusion_clause('series')
     missing_episodes = database.execute(
-        select(TableEpisodes.missing_subtitles, TableEpisodes.failedAttempts)
+        select(TableEpisodes.sonarrEpisodeId, TableEpisodes.missing_subtitles)
         .select_from(TableEpisodes)
         .join(TableShows)
         .where(reduce(operator.and_, episodes_conditions))) \
         .all()
     for missing_episode in missing_episodes:
-        for language in missing_episode.missing_subtitles:
-            if is_search_active(desired_language=language, attempt_string=missing_episode.failedAttempts):
+        attempts = get_failed_attempt_pairs('series', missing_episode.sonarrEpisodeId)
+        for language in parse_missing_subtitles(missing_episode.missing_subtitles):
+            if is_search_active(desired_language=language, attempt_string=attempts):
                 return True
     return False
