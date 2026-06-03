@@ -3,61 +3,89 @@
 
 import logging
 import operator
-import gc
 
 from functools import reduce
 
+from sqlalchemy import bindparam
+
 from utilities.path_mappings import path_mappings
-from subtitles.indexer.series import store_subtitles, list_missing_subtitles
+from subtitles.indexer.series import store_subtitles
+from subtitles.indexer.series import list_missing_subtitles
 from sonarr.history import history_log
 from app.notifier import send_notifications
 from app.get_providers import get_providers
-from app.database import get_exclusion_clause, get_audio_profile_languages, TableShows, TableEpisodes, database, \
-    update, select, get_subtitles
+from app.database import get_exclusion_clause, get_audio_profile_languages, TableShows, TableEpisodes, \
+    TableEpisodesSubtitles, database, update, select, get_subtitles
 from app.event_handler import event_stream
 from app.jobs_queue import jobs_queue
 from app.config import settings
 
-from ..adaptive_searching import is_search_active, updateFailedAttempts
+from ..adaptive_searching import get_adaptive_search_policy, update_failed_attempts
 from ..download import generate_subtitles
-from ..language_utils import (
-    build_search_payload,
-    format_episode_part,
-    has_unindexed_external_subtitle,
-    resolve_audio_language,
-    stamp_failed_attempts,
-)
+from ..language_utils import format_episode_part, has_unindexed_external_subtitle, resolve_audio_language
+from .utils import get_due_missing_languages, get_language_search_items
 
 
-def _wanted_episode(episode, providers_list, job_id=None):
+_WANTED_EPISODE_DETAILS_SELECT = select(TableEpisodes.path,
+                                        TableEpisodes.missing_subtitles,
+                                        TableEpisodes.sonarrEpisodeId,
+                                        TableEpisodes.sonarrSeriesId,
+                                        TableEpisodes.audio_language,
+                                        TableEpisodes.sceneName,
+                                        TableEpisodes.failedAttempts,
+                                        TableShows.title,
+                                        TableShows.profileId,
+                                        TableEpisodes.season,
+                                        TableEpisodes.episode,
+                                        TableEpisodes.title.label('episodeTitle'),
+                                        select(TableEpisodesSubtitles.id)
+                                        .where(TableEpisodesSubtitles.sonarrEpisodeId == TableEpisodes.sonarrEpisodeId)
+                                        .limit(1)
+                                        .exists()
+                                        .label("has_indexed_subtitles"),
+                                        select(TableEpisodesSubtitles.id)
+                                        .where(TableEpisodesSubtitles.sonarrEpisodeId == TableEpisodes.sonarrEpisodeId)
+                                        .where(TableEpisodesSubtitles.path.is_(None))
+                                        .where(TableEpisodesSubtitles.embedded_track_id.is_(None))
+                                        .limit(1)
+                                        .exists()
+                                        .label("has_incomplete_embedded_subtitles")) \
+    .select_from(TableEpisodes) \
+    .join(TableShows)
+_WANTED_EPISODE_DETAILS_STMT = _WANTED_EPISODE_DETAILS_SELECT \
+    .where(TableEpisodes.sonarrEpisodeId == bindparam("wanted_sonarr_episode_id"))
+
+
+def _episode_needs_wanted_lookup_refresh(episode):
+    return (
+        episode.missing_subtitles is None or
+        not getattr(episode, "has_indexed_subtitles", True) or
+        getattr(episode, "has_incomplete_embedded_subtitles", False)
+    )
+
+
+def _wanted_episode(episode, providers_list, due_languages=None, job_id=None, adaptive_search_policy=None,
+                    fallback_allowed=None):
     audio_language_list = get_audio_profile_languages(episode.audio_language)
     audio_language = resolve_audio_language(audio_language_list)
 
-    def _include_language(canonical_language):
-        active = is_search_active(desired_language=canonical_language, attempt_string=episode.failedAttempts)
-        if not active:
-            logging.debug(
-                f"BAZARR Search is throttled by adaptive search for this episode {episode.path} and "
-                f"language: {canonical_language}"
-            )
-        return active
-
-    languages, languages_to_stamp = build_search_payload(
-        episode.missing_subtitles,
-        "wanted episode search",
-        include_predicate=_include_language,
-    )
-
+    due_missing_languages = due_languages
+    if due_missing_languages is None:
+        due_missing_languages = get_due_missing_languages(
+            episode.missing_subtitles,
+            episode.failedAttempts,
+            adaptive_search_policy=adaptive_search_policy,
+        )
+    if not due_missing_languages:
+        return
     if not episode.path:
         logging.debug("BAZARR wanted episode search skipped because episode path is missing: %s", episode.sonarrEpisodeId)
         return
 
-    def _persist_failed_attempts(updated):
-        database.execute(
-            update(TableEpisodes)
-            .values(failedAttempts=updated)
-            .where(TableEpisodes.sonarrEpisodeId == episode.sonarrEpisodeId)
-        )
+    if fallback_allowed is None:
+        fallback_allowed = settings.general.use_whisper_fallback
+
+    languages = get_language_search_items(due_missing_languages)
 
     found_any = False
     for result in generate_subtitles(path_mappings.path_replace(episode.path),
@@ -69,7 +97,7 @@ def _wanted_episode(episode, providers_list, job_id=None):
                                      episode.profileId,
                                      check_if_still_required=True,
                                      job_id=job_id,
-                                     fallback_allowed=settings.general.use_whisper_fallback):
+                                     fallback_allowed=fallback_allowed):
         if result:
             found_any = True
             if isinstance(result, tuple) and len(result):
@@ -82,53 +110,80 @@ def _wanted_episode(episode, providers_list, job_id=None):
             event_stream(type='episode-wanted', action='delete', payload=episode.sonarrEpisodeId)
 
     if not found_any and providers_list:
-        stamp_failed_attempts(
-            languages_to_stamp,
-            episode.failedAttempts or '[]',
-            update_fn=updateFailedAttempts,
-            persist_fn=_persist_failed_attempts,
-        )
+        database.execute(
+            update(TableEpisodes)
+            .values(failedAttempts=update_failed_attempts(due_missing_languages, episode.failedAttempts))
+            .where(TableEpisodes.sonarrEpisodeId == episode.sonarrEpisodeId))
 
 
-def wanted_download_subtitles(sonarr_episode_id, job_id=None):
-    stmt = select(TableEpisodes.path,
-                  TableEpisodes.missing_subtitles,
-                  TableEpisodes.sonarrEpisodeId,
-                  TableEpisodes.sonarrSeriesId,
-                  TableEpisodes.audio_language,
-                  TableEpisodes.sceneName,
-                  TableEpisodes.failedAttempts,
-                  TableShows.title,
-                  TableShows.profileId) \
-        .select_from(TableEpisodes) \
-        .join(TableShows) \
-        .where((TableEpisodes.sonarrEpisodeId == sonarr_episode_id))
-    episode_details = database.execute(stmt).first()
+def wanted_download_subtitles(
+    sonarr_episode_id,
+    job_id=None,
+    providers_list=None,
+    episode_details=None,
+    due_languages=None,
+    adaptive_search_policy=None,
+    fallback_allowed=None,
+):
+    stmt_params = {"wanted_sonarr_episode_id": sonarr_episode_id}
 
-    previously_indexed_subtitles = get_subtitles(sonarr_episode_id=sonarr_episode_id) or []
+    if episode_details is not None and due_languages is not None and not _episode_needs_wanted_lookup_refresh(episode_details):
+        if providers_list is None:
+            providers_list = get_providers()
+        if adaptive_search_policy is None:
+            adaptive_search_policy = get_adaptive_search_policy()
+        if providers_list:
+            _wanted_episode(
+                episode_details,
+                providers_list,
+                due_languages=due_languages,
+                job_id=job_id,
+                adaptive_search_policy=adaptive_search_policy,
+                fallback_allowed=fallback_allowed,
+            )
+        else:
+            logging.info("BAZARR All providers are throttled")
+        return
+
+    if episode_details is None:
+        episode_details = database.execute(_WANTED_EPISODE_DETAILS_STMT, stmt_params).first()
 
     if not episode_details:
         logging.debug(f"BAZARR no episode with that sonarrId can be found in database: {sonarr_episode_id}")
         return
-    elif not previously_indexed_subtitles or has_unindexed_external_subtitle(previously_indexed_subtitles):
-        # subtitles indexing for this episode might be incomplete, we'll do it again
-        store_subtitles(sonarr_episode_id)
-        episode_details = database.execute(stmt).first()
-        if not episode_details:
-            logging.debug(f"BAZARR no episode with that sonarrId can be found in database after subtitles refresh: {sonarr_episode_id}")
-            return
-    elif episode_details.missing_subtitles is None:
-        # missing subtitles calculation for this episode is incomplete, we'll do it again
-        list_missing_subtitles(epno=sonarr_episode_id)
-        episode_details = database.execute(stmt).first()
+    if _episode_needs_wanted_lookup_refresh(episode_details):
+        previously_indexed_subtitles = get_subtitles(sonarr_episode_id=sonarr_episode_id) or []
+        if not previously_indexed_subtitles or has_unindexed_external_subtitle(previously_indexed_subtitles):
+            # subtitles indexing for this episode might be incomplete, we'll do it again
+            store_subtitles(sonarr_episode_id)
+            episode_details = database.execute(_WANTED_EPISODE_DETAILS_STMT, stmt_params).first()
+            if not episode_details:
+                logging.debug(f"BAZARR no episode with that sonarrId can be found in database after subtitles refresh: {sonarr_episode_id}")
+                return
+        if episode_details.missing_subtitles is None:
+            # missing subtitles calculation for this episode is incomplete, we'll do it again
+            list_missing_subtitles(epno=sonarr_episode_id)
+        episode_details = database.execute(_WANTED_EPISODE_DETAILS_STMT, stmt_params).first()
         if not episode_details:
             logging.debug(f"BAZARR no episode with that sonarrId can be found in database after missing-subtitles refresh: {sonarr_episode_id}")
             return
+        due_languages = None
+        providers_list = None
 
-    providers_list = get_providers()
+    if providers_list is None:
+        providers_list = get_providers()
+    if adaptive_search_policy is None:
+        adaptive_search_policy = get_adaptive_search_policy()
 
     if providers_list:
-        _wanted_episode(episode_details, providers_list, job_id=job_id)
+        _wanted_episode(
+            episode_details,
+            providers_list,
+            due_languages=due_languages,
+            job_id=job_id,
+            adaptive_search_policy=adaptive_search_policy,
+            fallback_allowed=fallback_allowed,
+        )
     else:
         logging.info("BAZARR All providers are throttled")
 
@@ -142,38 +197,60 @@ def wanted_search_missing_subtitles_series(job_id=None, wait_for_completion=Fals
     conditions = [(TableEpisodes.missing_subtitles.is_not(None)),
                   (TableEpisodes.missing_subtitles != '[]')]
     conditions += get_exclusion_clause('series')
+    adaptive_search_policy = get_adaptive_search_policy()
+
     episodes = database.execute(
-        select(TableEpisodes.sonarrSeriesId,
-               TableEpisodes.sonarrEpisodeId,
-               TableShows.tags,
-               TableEpisodes.monitored,
-               TableShows.title,
-               TableEpisodes.season,
-               TableEpisodes.episode,
-               TableEpisodes.title.label('episodeTitle'),
-               TableShows.seriesType)
-        .select_from(TableEpisodes)
-        .join(TableShows)
+        _WANTED_EPISODE_DETAILS_SELECT
         .where(reduce(operator.and_, conditions))) \
         .all()
 
-    count_episodes = len(episodes)
+    episodes_to_search = []
+    fallback_allowed = settings.general.use_whisper_fallback
+    for episode in episodes:
+        due_languages = get_due_missing_languages(
+            episode.missing_subtitles,
+            episode.failedAttempts,
+            adaptive_search_policy=adaptive_search_policy,
+        )
+        if due_languages:
+            episodes_to_search.append((episode, due_languages))
+
+    count_episodes = len(episodes_to_search)
     jobs_queue.update_job_progress(job_id=job_id, progress_max=count_episodes)
 
     if count_episodes == 0:
         jobs_queue.update_job_progress(job_id=job_id, progress_value='max')
+        throttled = False
+    else:
+        throttled = False
 
-    throttled = False
-    for i, episode in enumerate(episodes, start=1):
+    for i, (episode, due_languages) in enumerate(episodes_to_search, start=1):
         season_part = format_episode_part(episode.season)
         episode_part = format_episode_part(episode.episode)
         jobs_queue.update_job_progress(job_id=job_id, progress_value=i,
                                        progress_message=f'{episode.title} - S{season_part}E{episode_part}'
-                                                        f' - {episode.episodeTitle}')
+                                                         f' - {episode.episodeTitle}')
 
         providers = get_providers()
         if providers:
-            wanted_download_subtitles(episode.sonarrEpisodeId, job_id=job_id)
+            if _episode_needs_wanted_lookup_refresh(episode):
+                wanted_download_subtitles(
+                    episode.sonarrEpisodeId,
+                    job_id=job_id,
+                    providers_list=providers,
+                    episode_details=episode,
+                    adaptive_search_policy=adaptive_search_policy,
+                    fallback_allowed=fallback_allowed,
+                )
+            else:
+                _wanted_episode(
+                    episode,
+                    providers,
+                    due_languages=due_languages,
+                    job_id=job_id,
+                    adaptive_search_policy=adaptive_search_policy,
+                    fallback_allowed=fallback_allowed,
+                )
 
             # make sure to override the progress value updated by the subtitles synchronization
             jobs_queue.update_job_progress(job_id=job_id, progress_value=i, progress_max=count_episodes)
@@ -187,5 +264,3 @@ def wanted_search_missing_subtitles_series(job_id=None, wait_for_completion=Fals
     jobs_queue.update_job_progress(job_id=job_id, progress_message=outcome_msg)
     jobs_queue.update_job_name(job_id=job_id, new_job_name="Searched for missing series subtitles")
     logging.info('BAZARR Finished searching for missing Series Subtitles. Check History for more information.')
-
-    gc.collect()

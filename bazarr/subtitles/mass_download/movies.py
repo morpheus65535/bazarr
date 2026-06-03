@@ -18,7 +18,8 @@ from app.jobs_queue import jobs_queue
 from app.event_handler import event_stream
 
 from ..download import generate_subtitles
-from ..language_utils import build_search_payload, has_unindexed_external_subtitle, resolve_audio_language
+from ..language_utils import has_unindexed_external_subtitle, resolve_audio_language
+from ..serialization import parse_missing_subtitles, missing_subtitle_to_language_tuple
 
 
 def movies_download_subtitles(no, job_id=None, job_sub_function=False):
@@ -50,9 +51,9 @@ def movies_download_subtitles(no, job_id=None, job_sub_function=False):
         logging.debug(f"BAZARR no movie with that radarrId can be found in database: {no}")
         jobs_queue.update_job_progress(job_id=job_id, progress_message="Movie not found in database.")
         return
-    previously_indexed_subtitles = get_subtitles(radarr_id=movie.radarrId) or []
 
-    if not len(previously_indexed_subtitles) or has_unindexed_external_subtitle(previously_indexed_subtitles):
+    previously_indexed_subtitles = get_subtitles(radarr_id=movie.radarrId) or []
+    if not previously_indexed_subtitles or has_unindexed_external_subtitle(previously_indexed_subtitles):
         # subtitles indexing for this movie might be incomplete, we'll do it again
         store_subtitles_movie(no)
         movie = database.execute(stmt).first()
@@ -60,7 +61,7 @@ def movies_download_subtitles(no, job_id=None, job_sub_function=False):
             logging.debug(f"BAZARR no movie with that radarrId can be found in database after subtitles refresh: {no}")
             jobs_queue.update_job_progress(job_id=job_id, progress_message="Movie not found in database.")
             return
-    elif movie.missing_subtitles is None:
+    if movie.missing_subtitles is None:
         # missing subtitles calculation for this movie is incomplete, we'll do it again
         list_missing_subtitles_movies(no=no)
         movie = database.execute(stmt).first()
@@ -76,11 +77,13 @@ def movies_download_subtitles(no, job_id=None, job_sub_function=False):
         jobs_queue.update_job_progress(job_id=job_id, progress_message=f"Movie path doesn't exists: {moviePath}")
         raise OSError
 
-    languages, _ = build_search_payload(movie.missing_subtitles, "mass movie download")
-    count_movie = len(languages)
+    missing_languages = parse_missing_subtitles(movie.missing_subtitles)
+    count_movie = len(missing_languages)
 
     audio_language_list = get_audio_profile_languages(movie.audio_language)
     audio_language = resolve_audio_language(audio_language_list)
+
+    languages = []
 
     jobs_queue.update_job_progress(job_id=job_id, progress_max=count_movie, progress_message=movie.title)
 
@@ -88,11 +91,14 @@ def movies_download_subtitles(no, job_id=None, job_sub_function=False):
 
     downloaded_count = 0
     if providers_list:
+        for language in missing_languages:
+            languages.append(missing_subtitle_to_language_tuple(language))
+
         if languages:
             for result in generate_subtitles(moviePath,
                                              languages,
                                              audio_language,
-                                             movie.sceneName,
+                                             str(movie.sceneName),
                                              movie.title,
                                              'movie',
                                              movie.profileId,
@@ -138,7 +144,7 @@ def movie_download_specific_subtitles(radarr_id, language, hi, forced, job_id=No
     if not os.path.exists(moviePath):
         return 'Movie file not found. Path mapping issue?', 500
 
-    sceneName = movieInfo.sceneName or None
+    sceneName = movieInfo.sceneName or 'None'
 
     title = movieInfo.title
 
@@ -151,8 +157,7 @@ def movie_download_specific_subtitles(radarr_id, language, hi, forced, job_id=No
 
     jobs_queue.update_job_name(job_id=job_id, new_job_name=f"Searching {language_str.upper()} for {title}")
 
-    audio_language_list = get_audio_profile_languages(movieInfo.audio_language)
-    audio_language = resolve_audio_language(audio_language_list, fallback=None)
+    audio_language = resolve_audio_language(get_audio_profile_languages(movieInfo.audio_language), fallback=None)
 
     try:
         result = list(generate_subtitles(moviePath, [(language, hi, forced)], audio_language,

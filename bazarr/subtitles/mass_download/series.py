@@ -19,12 +19,8 @@ from app.event_handler import event_stream
 from app.config import settings
 
 from ..download import generate_subtitles
-from ..language_utils import (
-    build_search_payload,
-    format_episode_part,
-    has_unindexed_external_subtitle,
-    resolve_audio_language,
-)
+from ..language_utils import format_episode_part, has_unindexed_external_subtitle, resolve_audio_language
+from ..serialization import parse_missing_subtitles, missing_subtitle_to_language_tuple
 
 
 def series_download_subtitles(no, job_id=None, job_sub_function=False):
@@ -38,11 +34,6 @@ def series_download_subtitles(no, job_id=None, job_sub_function=False):
                TableShows.title)
         .where(TableShows.sonarrSeriesId == no))\
         .first()
-
-    if not series_row:
-        logging.debug(f"BAZARR no series with that sonarrSeriesId can be found in database: {no}")
-        jobs_queue.update_job_progress(job_id=job_id, progress_message="Series not found in database.")
-        return
 
     if series_row and not os.path.exists(path_mappings.path_replace(series_row.path)):
         raise OSError
@@ -124,22 +115,22 @@ def episode_download_subtitles(no, job_id=None, job_sub_function=False, provider
         logging.debug("BAZARR no episode with that sonarrEpisodeId can be found in database:", str(no))
         jobs_queue.update_job_progress(job_id=job_id, progress_message="Episode not found in database.")
         return
-    previously_indexed_subtitles = get_subtitles(sonarr_episode_id=episode.sonarrEpisodeId) or []
 
-    if not len(previously_indexed_subtitles) or has_unindexed_external_subtitle(previously_indexed_subtitles):
+    previously_indexed_subtitles = get_subtitles(sonarr_episode_id=episode.sonarrEpisodeId) or []
+    if not previously_indexed_subtitles or has_unindexed_external_subtitle(previously_indexed_subtitles):
         # subtitles indexing for this episode might be incomplete, we'll do it again
         store_subtitles(episode.sonarrEpisodeId)
         episode = database.execute(stmt).first()
         if not episode:
-            logging.debug("BAZARR no episode with that sonarrEpisodeId can be found in database after subtitles refresh:", str(no))
+            logging.debug(f"BAZARR no episode with that sonarrEpisodeId can be found in database after subtitles refresh: {no}")
             jobs_queue.update_job_progress(job_id=job_id, progress_message="Episode not found in database.")
             return
-    elif episode.missing_subtitles is None:
+    if episode.missing_subtitles is None:
         # missing subtitles calculation for this episode is incomplete, we'll do it again
         list_missing_subtitles(epno=no)
         episode = database.execute(stmt).first()
         if not episode:
-            logging.debug("BAZARR no episode with that sonarrEpisodeId can be found in database after missing-subtitles refresh:", str(no))
+            logging.debug(f"BAZARR no episode with that sonarrEpisodeId can be found in database after missing-subtitles refresh: {no}")
             jobs_queue.update_job_progress(job_id=job_id, progress_message="Episode not found in database.")
             return
 
@@ -158,7 +149,7 @@ def episode_download_subtitles(no, job_id=None, job_sub_function=False, provider
         audio_language_list = get_audio_profile_languages(episode.audio_language)
         audio_language = resolve_audio_language(audio_language_list)
 
-        languages, _ = build_search_payload(episode.missing_subtitles, "mass episode download")
+        languages = []
 
         if not job_sub_function and job_id:
             season_part = format_episode_part(episode.season)
@@ -166,6 +157,9 @@ def episode_download_subtitles(no, job_id=None, job_sub_function=False, provider
             jobs_queue.update_job_progress(job_id=job_id, progress_max=1,
                                            progress_message=f'{episode.title} - S{season_part}E'
                                                             f'{episode_part} - {episode.episodeTitle}')
+
+        for language in parse_missing_subtitles(episode.missing_subtitles):
+            languages.append(missing_subtitle_to_language_tuple(language))
 
         if languages:
             for result in generate_subtitles(episodePath,
@@ -241,8 +235,7 @@ def episode_download_specific_subtitles(sonarr_series_id, sonarr_episode_id, lan
     jobs_queue.update_job_name(job_id=job_id,
                                new_job_name=f"Searching {language_str.upper()} for {episode_long_title}")
 
-    audio_language_list = get_audio_profile_languages(episodeInfo.audio_language)
-    audio_language = resolve_audio_language(audio_language_list, fallback=None)
+    audio_language = resolve_audio_language(get_audio_profile_languages(episodeInfo.audio_language), fallback=None)
 
     try:
         result = list(generate_subtitles(episodePath, [(language, hi, forced)], audio_language, sceneName,
