@@ -140,7 +140,8 @@ const SubtitleToolView: FunctionComponent<SubtitleToolViewProps> = ({
   const [selections, setSelections] = useState<TableColumnType[]>([]);
   const [filterCategory, setFilterCategory] =
     useState<FilterCategory>("language");
-  const [filterValue, setFilterValue] = useState("");
+  const [selectedFilterValue, setSelectedFilterValue] = useState("");
+  const [filterSearchText, setFilterSearchText] = useState("");
   const [filters, setFilters] = useState<SubtitleFilter[]>([]);
   const [sorting, setSorting] = useState<SortingState>([
     { id: "episodeLabel", desc: false },
@@ -297,11 +298,11 @@ const SubtitleToolView: FunctionComponent<SubtitleToolViewProps> = ({
 
   const currentFilterOptions = filterValues[filterCategory];
   const selectedFilterOption = currentFilterOptions.find(
-    (option) => option.value === filterValue,
+    (option) => option.value === selectedFilterValue,
   );
 
   const addFilter = useCallback(() => {
-    const value = filterValue.trim();
+    const value = selectedFilterValue.trim();
 
     if (value.length === 0) {
       return;
@@ -320,8 +321,9 @@ const SubtitleToolView: FunctionComponent<SubtitleToolViewProps> = ({
 
       return [...current, filter];
     });
-    setFilterValue("");
-  }, [filterCategory, filterValue, selectedFilterOption?.label]);
+    setSelectedFilterValue("");
+    setFilterSearchText("");
+  }, [filterCategory, selectedFilterValue, selectedFilterOption?.label]);
 
   const removeFilter = useCallback((filter: SubtitleFilter) => {
     setFilters((current) =>
@@ -459,15 +461,16 @@ const SubtitleToolView: FunctionComponent<SubtitleToolViewProps> = ({
                 value={filterCategory}
                 onChange={(value) => {
                   setFilterCategory((value as FilterCategory) ?? "language");
-                  setFilterValue("");
+                  setSelectedFilterValue("");
+                  setFilterSearchText("");
                 }}
               ></Select>
               {filterCategory === "file" ? (
                 <TextInput
                   label="Value"
-                  value={filterValue}
+                  value={selectedFilterValue}
                   onChange={(event) => {
-                    setFilterValue(event.currentTarget.value);
+                    setSelectedFilterValue(event.currentTarget.value);
                   }}
                   onKeyDown={(event) => {
                     if (event.key === "Enter") {
@@ -480,15 +483,17 @@ const SubtitleToolView: FunctionComponent<SubtitleToolViewProps> = ({
                   searchable
                   data={currentFilterOptions}
                   label="Value"
-                  value={filterValue}
+                  value={selectedFilterValue}
+                  searchValue={filterSearchText}
+                  onSearchChange={setFilterSearchText}
                   onChange={(value) => {
-                    setFilterValue(value ?? "");
+                    setSelectedFilterValue(value ?? "");
                   }}
                 ></Select>
               )}
               <Button
                 leftSection={<FontAwesomeIcon icon={faPlus}></FontAwesomeIcon>}
-                disabled={filterValue.length === 0}
+                disabled={selectedFilterValue.length === 0}
                 onClick={addFilter}
               >
                 Add
