@@ -22,7 +22,7 @@
     "@mantine/notifications": "^9.2.0",
     "@tanstack/react-query": "^5.90.21",
     "@tanstack/react-table": "^8.21.3",
-    "axios": "^1.15.2",
+    "axios": "^1.17.0",
     "braces": "^3.0.3",
     "defu": "^6.1.6",
     "fast-uri": "^3.1.2",
