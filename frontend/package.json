@@ -61,8 +61,8 @@
     "@typescript-eslint/parser": "^8.57.0",
     "@vite-pwa/assets-generator": "^1.0.2",
     "@vitejs/plugin-react": "^5.1.4",
-    "@vitest/coverage-v8": "^4.0.18",
-    "@vitest/ui": "^4.0.18",
+    "@vitest/coverage-v8": "^4.1.8",
+    "@vitest/ui": "^4.1.8",
     "clsx": "^2.1.1",
     "eslint": "^10.0.3",
     "eslint-plugin-react-hooks": "^7.0.1",
@@ -86,7 +86,7 @@
     "vite": "^7.3.2",
     "vite-plugin-checker": "^0.12.0",
     "vite-plugin-pwa": "^1.2.0",
-    "vitest": "^4.0.18",
+    "vitest": "^4.1.8",
     "yaml": "^2.8.2"
   },
   "scripts": {
