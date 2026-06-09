@@ -62,10 +62,10 @@ def get_video(path, title, sceneName, providers=None, media_type="movie"):
 
 def _get_download_code3(subtitle):
     if not subtitle or not subtitle.language:
-        return None
+        return ''
     custom = CustomLanguage.from_value(subtitle.language, "language")
     if custom is None:
-        return subtitle.language.alpha3 if hasattr(subtitle.language, 'alpha3') else None
+        return subtitle.language.alpha3 if hasattr(subtitle.language, 'alpha3') else ''
     return custom.alpha3
 
 
