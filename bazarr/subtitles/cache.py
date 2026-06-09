@@ -34,7 +34,12 @@ class _SubtitleCache:
             entry = self._cache.get(key)
             if entry is None:
                 return None
-            subtitle, expiry = entry
+            try:
+                subtitle, expiry = entry
+            except (TypeError, ValueError):
+                # Malformed cache entry
+                del self._cache[key]
+                return None
             if time.monotonic() >= expiry:
                 del self._cache[key]
                 return None
