@@ -37,11 +37,11 @@ def get_profile_list():
         # Parsing data returned from Sonarr
         if get_sonarr_info.is_legacy():
             for profile in profiles_json.json():
-                if 'language' in profile:
+                if 'language' in profile and isinstance(profile['language'], str):
                     profiles_list.append([profile['id'], profile['language'].capitalize()])
         else:
             for profile in profiles_json.json():
-                if 'name' in profile:
+                if 'name' in profile and isinstance(profile['name'], str):
                     profiles_list.append([profile['id'], profile['name'].capitalize()])
 
     return profiles_list

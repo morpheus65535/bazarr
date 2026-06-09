@@ -28,11 +28,11 @@ def get_profile_list():
         # Parsing data returned from radarr
         if get_radarr_info.is_legacy():
             for profile in profiles_json.json():
-                if 'language' in profile:
+                if 'language' in profile and isinstance(profile['language'], str):
                     profiles_list.append([profile['id'], profile['language'].capitalize()])
         else:
             for profile in profiles_json.json():
-                if 'language' in profile and 'name' in profile['language']:
+                if 'language' in profile and isinstance(profile['language'], dict) and 'name' in profile['language'] and isinstance(profile['language']['name'], str):
                     profiles_list.append([profile['id'], profile['language']['name'].capitalize()])
 
     return profiles_list

@@ -534,8 +534,9 @@ def get_desired_languages(profile_id):
 
 def get_profile_id_name(profile_id):
     for profile in update_profile_id_list():
-        if profile['profileId'] == profile_id:
-            return profile['name']
+        if profile.get('profileId') == profile_id:
+            return profile.get('name')
+    return None
 
 
 def get_profile_cutoff(profile_id):

@@ -153,11 +153,22 @@ def update_movies(job_id=None, wait_for_completion=False):
             }
             current_movies_id_db = set(current_movies_in_db)
 
-            current_movies_radarr = [movie['id'] for movie in movies if movie['hasFile'] and
-                                     'movieFile' in movie and
-                                     (movie['movieFile']['size'] > MINIMUM_VIDEO_SIZE or
-                                      get_movie_file_size_from_db(movie['movieFile']['path']) > MINIMUM_VIDEO_SIZE or
-                                      (settings.general.enable_strm_support and movie['movieFile']['path'].lower().endswith('.strm')))]
+            current_movies_radarr = [
+                movie['id']
+                for movie in movies
+                if isinstance(movie, dict)
+                and movie.get('id') is not None
+                and movie.get('hasFile')
+                and isinstance(movie.get('movieFile'), dict)
+                and (
+                    movie['movieFile'].get('size', 0) > MINIMUM_VIDEO_SIZE
+                    or get_movie_file_size_from_db(movie['movieFile'].get('path', '')) > MINIMUM_VIDEO_SIZE
+                    or (
+                        settings.general.enable_strm_support
+                        and movie['movieFile'].get('path', '').lower().endswith('.strm')
+                    )
+                )
+            ]
 
             # Remove movies from DB that either no longer exist in Radarr or exist and Radarr says do not have a movie file
             movies_to_delete = list(set(current_movies_id_db) - set(current_movies_radarr))
@@ -181,31 +192,31 @@ def update_movies(job_id=None, wait_for_completion=False):
             movies_added = []
             movies_updated = []
             for i, movie in enumerate(movies, start=1):
-                jobs_queue.update_job_progress(job_id=job_id, progress_value=i, progress_message=movie['title'])
+                jobs_queue.update_job_progress(job_id=job_id, progress_value=i, progress_message=movie.get('title', 'Unknown'))
                 # Only movies that Radarr says have files downloaded will be kept up to date in the DB
-                if movie['hasFile'] is True:
+                if movie.get('hasFile') is True:
                     if 'movieFile' in movie:
                         if sync_monitored:
-                            if get_movie_monitored_status(movie['id']) != movie['monitored']:
+                            if get_movie_monitored_status(movie.get('id')) != movie.get('monitored'):
                                 # monitored status is not the same as our DB
-                                trace(f"{i}: (Monitor Status Mismatch) {movie['title']}")
-                            elif not movie['monitored']:
-                                trace(f"{i}: (Skipped Unmonitored) {movie['title']}")
+                                trace(f"{i}: (Monitor Status Mismatch) {movie.get('title', 'Unknown')}")
+                            elif not movie.get('monitored'):
+                                trace(f"{i}: (Skipped Unmonitored) {movie.get('title', 'Unknown')}")
                                 skipped_count += 1
                                 continue
 
-                        if (movie['movieFile']['size'] > MINIMUM_VIDEO_SIZE or
-                                get_movie_file_size_from_db(movie['movieFile']['path']) > MINIMUM_VIDEO_SIZE or
-                                (settings.general.enable_strm_support and movie['movieFile']['path'].lower().endswith('.strm'))):
+                        if (movie['movieFile'].get('size', 0) > MINIMUM_VIDEO_SIZE or
+                                get_movie_file_size_from_db(movie['movieFile'].get('path', '')) > MINIMUM_VIDEO_SIZE or
+                                (settings.general.enable_strm_support and movie['movieFile'].get('path', '').lower().endswith('.strm'))):
                             # Add/update movies from Radarr that have a movie file to current movies list
-                            trace(f"{i}: (Processing) {movie['title']}")
-                            if movie['id'] in current_movies_id_db:
+                            trace(f"{i}: (Processing) {movie.get('title', 'Unknown')}")
+                            if movie.get('id') in current_movies_id_db:
                                 parsed_movie = movieParser(movie, action='update',
                                                            tags_dict=tagsDict,
                                                            language_profiles=language_profiles,
                                                            movie_default_profile=movie_default_profile,
                                                            audio_profiles=audio_profiles)
-                                if not parsed_movie.items() <= current_movies_in_db[movie['id']].items():
+                                if not parsed_movie.items() <= current_movies_in_db[movie.get('id')].items():
                                     update_movie(parsed_movie)
                                     movies_updated.append(parsed_movie['title'])
                             else:
@@ -217,7 +228,7 @@ def update_movies(job_id=None, wait_for_completion=False):
                                 add_movie(parsed_movie)
                                 movies_added.append(parsed_movie['title'])
                 else:
-                    trace(f"{i}: (Skipped File Missing) {movie['title']}")
+                    trace(f"{i}: (Skipped File Missing) {movie.get('title', 'Unknown')}")
                     files_missing += 1
 
             trace(f"Skipped {files_missing} file missing movies out of {movies_count}")
