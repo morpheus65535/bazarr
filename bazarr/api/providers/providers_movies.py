@@ -18,6 +18,16 @@ from ..utils import authenticate
 api_ns_providers_movies = Namespace('Providers Movies', description='List and download movies subtitles manually')
 
 
+def _normalize_flag_token(value):
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized == "true":
+            return "True"
+        if normalized == "false":
+            return "False"
+    return "False"
+
+
 @api_ns_providers_movies.route('providers/movies')
 class ProviderMovies(Resource):
     get_request_parser = reqparse.RequestParser()
@@ -57,21 +67,29 @@ class ProviderMovies(Resource):
             .where(TableMovies.radarrId == radarrId)
         movieInfo = database.execute(stmt).first()
 
-        previously_indexed_subtitles = get_subtitles(radarr_id=radarrId)
+        previously_indexed_subtitles = get_subtitles(radarr_id=radarrId) or []
 
         if not movieInfo:
             return 'Movie not found', 404
-        elif not len(previously_indexed_subtitles) or \
-                any([not x['embedded_track_id'] for x in previously_indexed_subtitles if not x['path']]):
+        elif not len(previously_indexed_subtitles) or any(
+            not x or not isinstance(x, dict) or (not x.get('path', True) and not x.get('embedded_track_id'))
+            for x in previously_indexed_subtitles
+        ):
             # subtitles indexing for this movie might be incomplete, we'll do it again
             store_subtitles_movie(radarrId)
             movieInfo = database.execute(stmt).first()
+            if not movieInfo:
+                return 'Movie not found', 404
         elif movieInfo.missing_subtitles is None:
             # missing subtitles calculation for this movie is incomplete, we'll do it again
             list_missing_subtitles_movies(no=radarrId)
             movieInfo = database.execute(stmt).first()
+            if not movieInfo:
+                return 'Movie not found', 404
 
         title = movieInfo.title
+        if not movieInfo.path:
+            return 'Movie file not found. Path mapping issue?', 500
         moviePath = path_mappings.path_replace_movie(movieInfo.path)
 
         if not os.path.exists(moviePath):
@@ -107,9 +125,9 @@ class ProviderMovies(Resource):
         args = self.post_request_parser.parse_args()
 
         movie_manually_download_specific_subtitle(radarr_id=args.get('radarrid'),
-                                                  hi=args.get('hi').capitalize(),
-                                                  forced=args.get('forced').capitalize(),
-                                                  use_original_format=args.get('original_format').capitalize(),
+                                                  hi=_normalize_flag_token(args.get('hi')),
+                                                  forced=_normalize_flag_token(args.get('forced')),
+                                                  use_original_format=_normalize_flag_token(args.get('original_format')),
                                                   selected_provider=args.get('provider'),
                                                   subtitle=args.get('subtitle'),
                                                   job_id=None)

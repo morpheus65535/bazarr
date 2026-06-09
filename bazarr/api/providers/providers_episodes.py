@@ -17,6 +17,16 @@ from ..utils import authenticate
 api_ns_providers_episodes = Namespace('Providers Episodes', description='List and download episodes subtitles manually')
 
 
+def _normalize_flag_token(value):
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized == "true":
+            return "True"
+        if normalized == "false":
+            return "False"
+    return "False"
+
+
 @api_ns_providers_episodes.route('providers/episodes')
 class ProviderEpisodes(Resource):
     get_request_parser = reqparse.RequestParser()
@@ -58,21 +68,29 @@ class ProviderEpisodes(Resource):
             .where(TableEpisodes.sonarrEpisodeId == sonarrEpisodeId)
         episodeInfo = database.execute(stmt).first()
 
-        previously_indexed_subtitles = get_subtitles(sonarr_episode_id=sonarrEpisodeId)
+        previously_indexed_subtitles = get_subtitles(sonarr_episode_id=sonarrEpisodeId) or []
 
         if not episodeInfo:
             return 'Episode not found', 404
-        elif not len(previously_indexed_subtitles) or \
-                any([not x['embedded_track_id'] for x in previously_indexed_subtitles if not x['path']]):
+        elif not len(previously_indexed_subtitles) or any(
+            not x or not isinstance(x, dict) or (not x.get('path', True) and not x.get('embedded_track_id'))
+            for x in previously_indexed_subtitles
+        ):
             # subtitles indexing for this episode might be incomplete, we'll do it again
             store_subtitles(sonarrEpisodeId)
             episodeInfo = database.execute(stmt).first()
+            if not episodeInfo:
+                return 'Episode not found', 404
         elif episodeInfo.missing_subtitles is None:
             # missing subtitles calculation for this episode is incomplete, we'll do it again
             list_missing_subtitles(epno=sonarrEpisodeId)
             episodeInfo = database.execute(stmt).first()
+            if not episodeInfo:
+                return 'Episode not found', 404
 
         title = episodeInfo.title
+        if not episodeInfo.path:
+            return 'Episode file not found. Path mapping issue?', 500
         episodePath = path_mappings.path_replace(episodeInfo.path)
 
         if not os.path.exists(episodePath):
@@ -110,9 +128,9 @@ class ProviderEpisodes(Resource):
 
         episode_manually_download_specific_subtitle(sonarr_series_id=args.get('seriesid'),
                                                     sonarr_episode_id=args.get('episodeid'),
-                                                    hi=args.get('hi').capitalize(),
-                                                    forced=args.get('forced').capitalize(),
-                                                    use_original_format=args.get('original_format').capitalize(),
+                                                    hi=_normalize_flag_token(args.get('hi')),
+                                                    forced=_normalize_flag_token(args.get('forced')),
+                                                    use_original_format=_normalize_flag_token(args.get('original_format')),
                                                     selected_provider=args.get('provider'),
                                                     subtitle=args.get('subtitle'),
                                                     job_id=None)
