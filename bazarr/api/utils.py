@@ -4,7 +4,6 @@ import ast
 
 from functools import wraps
 from flask import request, abort
-from operator import itemgetter
 
 from languages.custom_lang import CustomLanguage
 from sqlalchemy import or_, and_
@@ -205,11 +204,12 @@ def postprocess(item):
 
             # Filter subtitles: keep if code2 is in expanded desired languages or if it has a path (external)
             item['subtitles'] = [x for x in item['subtitles']
-                                 if x['code2'] in expanded_desired_lang_codes or x['path']]
+                                 if isinstance(x, dict) and
+                                 (x.get('code2') in expanded_desired_lang_codes or x.get('path'))]
         else:
-            item['subtitles'] = [x for x in item['subtitles'] if x['path']]
+            item['subtitles'] = [x for x in item['subtitles'] if isinstance(x, dict) and x.get('path')]
 
-    item['subtitles'] = sorted(item['subtitles'], key=itemgetter('name', 'forced'))
+    item['subtitles'] = sorted(item['subtitles'], key=lambda x: (x.get('name', ''), x.get('forced', False)))
 
     # Parse missing subtitles
     if item.get('missing_subtitles'):
