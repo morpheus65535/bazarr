@@ -101,6 +101,14 @@ def apply_sort(stmt, sort_columns, default_column, sort_by, sort_order):
     # values fall back to the default column.
     sort_column = sort_columns.get(sort_by, default_column)
     return stmt.order_by(sort_column.asc() if sort_order == 'asc' else sort_column.desc())
+def normalize_flag_token(value):
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized == "true":
+            return "True"
+        if normalized == "false":
+            return "False"
+    return "False"
 
 
 def authenticate(actual_method):

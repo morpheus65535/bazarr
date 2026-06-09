@@ -66,7 +66,12 @@ def _load_provider_module(name):
                 ),
                 marshal=lambda data, model, envelope=None: data,
             ),
-            "api.utils": SimpleNamespace(authenticate=lambda fn: fn),
+            "api.utils": SimpleNamespace(
+                authenticate=lambda fn: fn,
+                normalize_flag_token=lambda value: "True"
+                if isinstance(value, str) and value.strip().lower() == "true"
+                else "False",
+            ),
             "app.database": SimpleNamespace(
                 TableMovies=table_movies,
                 TableEpisodes=table_episodes,
@@ -163,6 +168,37 @@ def test_provider_movies_get_handles_malformed_index_entries():
     assert result == []
 
 
+def test_provider_movies_get_reindexes_when_index_entry_is_missing_path_key():
+    module = _load_provider_module("movies")
+    movie_info = SimpleNamespace(
+        title="Movie",
+        path="/movies/movie.mkv",
+        sceneName=None,
+        profileId=1,
+        missing_subtitles="['en']",
+    )
+    store_calls = []
+
+    class _Database:
+        def execute(self, statement):
+            return _Result(first_value=movie_info)
+
+    module.ProviderMovies.get_request_parser = SimpleNamespace(parse_args=lambda: {"radarrid": 7})
+    module.database = _Database()
+    module.get_subtitles = lambda **kwargs: [{}]
+    module.store_subtitles_movie = lambda movie_id: store_calls.append(movie_id)
+    module.path_mappings.path_replace_movie = lambda path: path
+    module.os.path.exists = lambda path: True
+    module.get_providers = lambda: ["provider"]
+    module.manual_search = lambda *args, **kwargs: []
+    module.marshal = lambda data, model, envelope=None: data
+
+    result = module.ProviderMovies().get()
+
+    assert store_calls == [7]
+    assert result == []
+
+
 def test_provider_episodes_get_reindexes_when_index_list_is_none():
     module = _load_provider_module("episodes")
     episode_info = SimpleNamespace(
@@ -212,6 +248,37 @@ def test_provider_episodes_get_handles_malformed_index_entries():
     module.ProviderEpisodes.get_request_parser = SimpleNamespace(parse_args=lambda: {"episodeid": 11})
     module.database = _Database()
     module.get_subtitles = lambda **kwargs: [{"path": None}]
+    module.store_subtitles = lambda episode_id: store_calls.append(episode_id)
+    module.path_mappings.path_replace = lambda path: path
+    module.os.path.exists = lambda path: True
+    module.get_providers = lambda: ["provider"]
+    module.manual_search = lambda *args, **kwargs: []
+    module.marshal = lambda data, model, envelope=None: data
+
+    result = module.ProviderEpisodes().get()
+
+    assert store_calls == [11]
+    assert result == []
+
+
+def test_provider_episodes_get_reindexes_when_index_entry_is_missing_path_key():
+    module = _load_provider_module("episodes")
+    episode_info = SimpleNamespace(
+        title="Series",
+        path="/series/episode.mkv",
+        sceneName=None,
+        profileId=1,
+        missing_subtitles="['en']",
+    )
+    store_calls = []
+
+    class _Database:
+        def execute(self, statement):
+            return _Result(first_value=episode_info)
+
+    module.ProviderEpisodes.get_request_parser = SimpleNamespace(parse_args=lambda: {"episodeid": 11})
+    module.database = _Database()
+    module.get_subtitles = lambda **kwargs: [{}]
     module.store_subtitles = lambda episode_id: store_calls.append(episode_id)
     module.path_mappings.path_replace = lambda path: path
     module.os.path.exists = lambda path: True
@@ -279,6 +346,66 @@ def test_provider_episodes_get_returns_not_found_when_row_disappears_after_reind
     result = module.ProviderEpisodes().get()
 
     assert result == ("Episode not found", 404)
+
+
+def test_provider_movies_get_uses_none_string_for_missing_scene_name():
+    module = _load_provider_module("movies")
+    movie_info = SimpleNamespace(
+        title="Movie",
+        path="/movies/movie.mkv",
+        sceneName=None,
+        profileId=1,
+        missing_subtitles="['en']",
+    )
+    captured_scene = []
+
+    class _Database:
+        def execute(self, statement):
+            return _Result(first_value=movie_info)
+
+    module.ProviderMovies.get_request_parser = SimpleNamespace(parse_args=lambda: {"radarrid": 7})
+    module.database = _Database()
+    module.get_subtitles = lambda **kwargs: [{"path": "/subs.srt"}]
+    module.path_mappings.path_replace_movie = lambda path: path
+    module.os.path.exists = lambda path: True
+    module.get_providers = lambda: ["provider"]
+    module.manual_search = lambda *args, **kwargs: captured_scene.append(args[3]) or []
+    module.marshal = lambda data, model, envelope=None: data
+
+    result = module.ProviderMovies().get()
+
+    assert result == []
+    assert captured_scene == ["None"]
+
+
+def test_provider_episodes_get_uses_none_string_for_missing_scene_name():
+    module = _load_provider_module("episodes")
+    episode_info = SimpleNamespace(
+        title="Series",
+        path="/series/episode.mkv",
+        sceneName=None,
+        profileId=1,
+        missing_subtitles="['en']",
+    )
+    captured_scene = []
+
+    class _Database:
+        def execute(self, statement):
+            return _Result(first_value=episode_info)
+
+    module.ProviderEpisodes.get_request_parser = SimpleNamespace(parse_args=lambda: {"episodeid": 11})
+    module.database = _Database()
+    module.get_subtitles = lambda **kwargs: [{"path": "/subs.srt"}]
+    module.path_mappings.path_replace = lambda path: path
+    module.os.path.exists = lambda path: True
+    module.get_providers = lambda: ["provider"]
+    module.manual_search = lambda *args, **kwargs: captured_scene.append(args[3]) or []
+    module.marshal = lambda data, model, envelope=None: data
+
+    result = module.ProviderEpisodes().get()
+
+    assert result == []
+    assert captured_scene == ["None"]
 
 
 def test_provider_movies_get_returns_file_missing_when_path_is_none():

@@ -70,7 +70,12 @@ def _load_api_subtitles_module(module_name):
             "app.event_handler": SimpleNamespace(event_stream=lambda **kwargs: None),
             "app.config": SimpleNamespace(settings=SimpleNamespace()),
             "app.jobs_queue": SimpleNamespace(jobs_queue=SimpleNamespace()),
-            "api.utils": SimpleNamespace(authenticate=lambda fn: fn),
+            "api.utils": SimpleNamespace(
+                authenticate=lambda fn: fn,
+                normalize_flag_token=lambda value: "True"
+                if isinstance(value, str) and value.strip().lower() == "true"
+                else "False",
+            ),
         },
     )
 
