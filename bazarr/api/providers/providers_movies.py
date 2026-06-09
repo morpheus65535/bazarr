@@ -11,21 +11,12 @@ from subtitles.manual import manual_search, movie_manually_download_specific_sub
 from app.config import settings
 from app.jobs_queue import jobs_queue
 from subtitles.indexer.movies import store_subtitles_movie, list_missing_subtitles_movies
+from subtitles.language_utils import has_unindexed_external_subtitle
 
-from ..utils import authenticate
+from ..utils import authenticate, normalize_flag_token
 
 
 api_ns_providers_movies = Namespace('Providers Movies', description='List and download movies subtitles manually')
-
-
-def _normalize_flag_token(value):
-    if isinstance(value, str):
-        normalized = value.strip().lower()
-        if normalized == "true":
-            return "True"
-        if normalized == "false":
-            return "False"
-    return "False"
 
 
 @api_ns_providers_movies.route('providers/movies')
@@ -71,10 +62,7 @@ class ProviderMovies(Resource):
 
         if not movieInfo:
             return 'Movie not found', 404
-        elif not len(previously_indexed_subtitles) or any(
-            not x or not isinstance(x, dict) or (not x.get('path', True) and not x.get('embedded_track_id'))
-            for x in previously_indexed_subtitles
-        ):
+        elif not len(previously_indexed_subtitles) or has_unindexed_external_subtitle(previously_indexed_subtitles):
             # subtitles indexing for this movie might be incomplete, we'll do it again
             store_subtitles_movie(radarrId)
             movieInfo = database.execute(stmt).first()
@@ -125,9 +113,9 @@ class ProviderMovies(Resource):
         args = self.post_request_parser.parse_args()
 
         movie_manually_download_specific_subtitle(radarr_id=args.get('radarrid'),
-                                                  hi=_normalize_flag_token(args.get('hi')),
-                                                  forced=_normalize_flag_token(args.get('forced')),
-                                                  use_original_format=_normalize_flag_token(args.get('original_format')),
+                                                  hi=normalize_flag_token(args.get('hi')),
+                                                  forced=normalize_flag_token(args.get('forced')),
+                                                  use_original_format=normalize_flag_token(args.get('original_format')),
                                                   selected_provider=args.get('provider'),
                                                   subtitle=args.get('subtitle'),
                                                   job_id=None)

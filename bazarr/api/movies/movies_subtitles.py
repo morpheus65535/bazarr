@@ -17,19 +17,9 @@ from app.event_handler import event_stream
 from app.config import settings
 from app.jobs_queue import jobs_queue
 
-from ..utils import authenticate
+from ..utils import authenticate, normalize_flag_token
 
 api_ns_movies_subtitles = Namespace('Movies Subtitles', description='Download, upload or delete movies subtitles')
-
-
-def _normalize_flag_token(value):
-    if isinstance(value, str):
-        normalized = value.strip().lower()
-        if normalized == "true":
-            return "True"
-        if normalized == "false":
-            return "False"
-    return "False"
 
 
 @api_ns_movies_subtitles.route('movies/subtitles')
@@ -52,8 +42,8 @@ class MoviesSubtitles(Resource):
         args = self.patch_request_parser.parse_args()
 
         movie_download_specific_subtitles(radarr_id=args.get('radarrid'), language=args.get('language'),
-                                          hi=_normalize_flag_token(args.get('hi')),
-                                          forced=_normalize_flag_token(args.get('forced')), job_id=None)
+                                          hi=normalize_flag_token(args.get('hi')),
+                                          forced=normalize_flag_token(args.get('forced')), job_id=None)
 
         return '', 204
 

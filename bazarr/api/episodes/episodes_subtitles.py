@@ -17,19 +17,9 @@ from app.jobs_queue import jobs_queue
 from app.event_handler import event_stream
 from app.config import settings
 
-from ..utils import authenticate
+from ..utils import authenticate, normalize_flag_token
 
 api_ns_episodes_subtitles = Namespace('Episodes Subtitles', description='Download, upload or delete episodes subtitles')
-
-
-def _normalize_flag_token(value):
-    if isinstance(value, str):
-        normalized = value.strip().lower()
-        if normalized == "true":
-            return "True"
-        if normalized == "false":
-            return "False"
-    return "False"
 
 
 @api_ns_episodes_subtitles.route('episodes/subtitles')
@@ -54,8 +44,8 @@ class EpisodesSubtitles(Resource):
 
         episode_download_specific_subtitles(sonarr_series_id=args.get('seriesid'),
                                             sonarr_episode_id=args.get('episodeid'),
-                                            language=args.get('language'), hi=_normalize_flag_token(args.get('hi')),
-                                            forced=_normalize_flag_token(args.get('forced')), job_id=None)
+                                            language=args.get('language'), hi=normalize_flag_token(args.get('hi')),
+                                            forced=normalize_flag_token(args.get('forced')), job_id=None)
 
         return '', 204
 

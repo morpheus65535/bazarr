@@ -33,12 +33,12 @@ def store_subtitles(sonarr_episode_id, use_cache=True):
     if not item:
         logging.warning(f"BAZARR could not find episode with ID {sonarr_episode_id} in the database.")
         return
-    
+
     original_path = item.path
     if not original_path:
         logging.warning(f"BAZARR episode with ID {sonarr_episode_id} has no path in the database.")
         return
-    
+
     mapped_path = path_mappings.path_replace(original_path)
 
     logging.debug(f'BAZARR started subtitles indexing for this file: {mapped_path}')
@@ -263,13 +263,16 @@ def list_missing_subtitles(no=None, epno=None):
                 for language in items if items else []:
                     if not isinstance(language, dict):
                         continue
+                    language_code = language.get('language')
+                    if not isinstance(language_code, str) or not language_code:
+                        continue
                     if language.get('audio_exclude') == "True":
                         if matches_audio(language):
                             continue
                     if language.get('audio_only_include') == "True":
                         if not matches_audio(language):
                             continue
-                    desired_subtitles_list.append({'language': language.get('language', 'unknown'),
+                    desired_subtitles_list.append({'language': language_code,
                                                    'forced': str(language.get('forced', False)),
                                                    'hi': str(language.get('hi', False))})
 
@@ -282,7 +285,10 @@ def list_missing_subtitles(no=None, epno=None):
             for subtitles in actual_subtitles_temp:
                 if not isinstance(subtitles, dict):
                     continue
-                actual_subtitles_list.append({'language': subtitles.get('code2', 'unknown'),
+                language_code = subtitles.get('code2')
+                if not isinstance(language_code, str) or not language_code:
+                    continue
+                actual_subtitles_list.append({'language': language_code,
                                               'forced': str(subtitles.get('forced', False)),
                                               'hi': str(subtitles.get('hi', False))})
 
@@ -294,7 +300,10 @@ def list_missing_subtitles(no=None, epno=None):
                 for cutoff_temp in cutoff_temp_list:
                     if not isinstance(cutoff_temp, dict):
                         continue
-                    cutoff_language = {'language': cutoff_temp.get('language', 'unknown'),
+                    cutoff_code = cutoff_temp.get('language')
+                    if not isinstance(cutoff_code, str) or not cutoff_code:
+                        continue
+                    cutoff_language = {'language': cutoff_code,
                                        'forced': cutoff_temp.get('forced', 'False'),
                                        'hi': cutoff_temp.get('hi', 'False')}
                     if cutoff_temp.get('audio_only_include') == 'True' and not matches_audio(cutoff_temp):

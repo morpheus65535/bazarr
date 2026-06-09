@@ -11,20 +11,11 @@ from subtitles.manual import manual_search, episode_manually_download_specific_s
 from app.config import settings
 from app.jobs_queue import jobs_queue
 from subtitles.indexer.series import store_subtitles, list_missing_subtitles
+from subtitles.language_utils import has_unindexed_external_subtitle
 
-from ..utils import authenticate
+from ..utils import authenticate, normalize_flag_token
 
 api_ns_providers_episodes = Namespace('Providers Episodes', description='List and download episodes subtitles manually')
-
-
-def _normalize_flag_token(value):
-    if isinstance(value, str):
-        normalized = value.strip().lower()
-        if normalized == "true":
-            return "True"
-        if normalized == "false":
-            return "False"
-    return "False"
 
 
 @api_ns_providers_episodes.route('providers/episodes')
@@ -72,10 +63,7 @@ class ProviderEpisodes(Resource):
 
         if not episodeInfo:
             return 'Episode not found', 404
-        elif not len(previously_indexed_subtitles) or any(
-            not x or not isinstance(x, dict) or (not x.get('path', True) and not x.get('embedded_track_id'))
-            for x in previously_indexed_subtitles
-        ):
+        elif not len(previously_indexed_subtitles) or has_unindexed_external_subtitle(previously_indexed_subtitles):
             # subtitles indexing for this episode might be incomplete, we'll do it again
             store_subtitles(sonarrEpisodeId)
             episodeInfo = database.execute(stmt).first()
@@ -128,9 +116,9 @@ class ProviderEpisodes(Resource):
 
         episode_manually_download_specific_subtitle(sonarr_series_id=args.get('seriesid'),
                                                     sonarr_episode_id=args.get('episodeid'),
-                                                    hi=_normalize_flag_token(args.get('hi')),
-                                                    forced=_normalize_flag_token(args.get('forced')),
-                                                    use_original_format=_normalize_flag_token(args.get('original_format')),
+                                                    hi=normalize_flag_token(args.get('hi')),
+                                                    forced=normalize_flag_token(args.get('forced')),
+                                                    use_original_format=normalize_flag_token(args.get('original_format')),
                                                     selected_provider=args.get('provider'),
                                                     subtitle=args.get('subtitle'),
                                                     job_id=None)

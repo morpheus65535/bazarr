@@ -32,10 +32,11 @@ def delete_subtitles(media_type, language, forced, hi, media_path, subtitles_pat
         logging.error('BAZARR can only delete subtitles files.')
         return False
 
-    language_log = language
-    language_string = language_from_alpha2(language) or language
+    language_log = language if isinstance(language, str) and language else "unknown"
+    language_string = language_from_alpha2(language) if isinstance(language, str) else None
     if not language_string:
-        language_string = language or "Unknown"
+        language_string = language if isinstance(language, str) and language else "Unknown"
+    if hi in [True, 'true', 'True']:
         language_log += ':hi'
         language_string += ' HI'
     elif forced in [True, 'true', 'True']:

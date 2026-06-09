@@ -4,7 +4,6 @@ import ast
 
 from functools import wraps
 from flask import request, abort
-from operator import itemgetter
 
 from app.config import settings, base_url
 from languages.get_languages import language_from_alpha2, alpha3_from_alpha2
@@ -14,6 +13,16 @@ from utilities.path_mappings import path_mappings
 None_Keys = ['null', 'undefined', '', None]
 
 False_Keys = ['False', 'false', '0']
+
+
+def normalize_flag_token(value):
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized == "true":
+            return "True"
+        if normalized == "false":
+            return "False"
+    return "False"
 
 
 def authenticate(actual_method):
