@@ -302,10 +302,28 @@ class TableMovies(Base):
         return {column.name: getattr(self, column.name) for column in self.__table__.columns}
 
 
+class TableMissingSubtitles(Base):
+    __tablename__ = 'table_missing_subtitles'
+
+    # This table intentionally stays polymorphic across movies and episodes.
+    # The branch relies on media_type/media_id cleanup helpers instead of FK-enforced
+    # cascades so the same normalized shape can serve both media kinds.
+    id = mapped_column(Integer, primary_key=True)
+    media_type = mapped_column(Text, nullable=False)
+    media_id = mapped_column(Integer, nullable=False)
+    language = mapped_column(Text, nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint('media_type', 'media_id', 'language', name='uc_missing_subtitles_language'),
+        Index('ix_missing_subtitles_media', 'media_type', 'media_id'),
+    )
+
+
 class TableFailedSubtitleAttempts(Base):
     __tablename__ = 'table_failed_subtitle_attempts'
 
-    # Media cleanup is explicit because retry state covers movies and episodes.
+    # Same polymorphic shape as TableMissingSubtitles: the cleanup path is explicit
+    # in application code rather than split across two separate FK graphs.
     id = mapped_column(Integer, primary_key=True)
     media_type = mapped_column(Text, nullable=False)
     media_id = mapped_column(Integer, nullable=False)
