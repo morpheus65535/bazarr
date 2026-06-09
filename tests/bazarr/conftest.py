@@ -6,3 +6,5 @@ os.environ["SZ_USER_AGENT"] = "test"
 os.environ["BAZARR_VERSION"] = "test" # fixme
 
 logging.getLogger("rebulk").setLevel(logging.WARNING)
+
+pytest_plugins = ("tests.bazarr.wanted_search_fixtures",)
