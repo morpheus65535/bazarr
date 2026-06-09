@@ -15,7 +15,20 @@ class _SubtitleCache:
 
     def _purge_expired(self):
         now = time.monotonic()
-        expired = [k for k, (_, expiry) in self._cache.items() if now >= expiry]
+        expired = []
+        for key, entry in self._cache.items():
+            try:
+                _, expiry = entry
+            except (TypeError, ValueError):
+                expired.append(key)
+                continue
+            try:
+                is_expired = now >= expiry
+            except TypeError:
+                expired.append(key)
+                continue
+            if is_expired:
+                expired.append(key)
         for k in expired:
             del self._cache[k]
 
@@ -40,7 +53,12 @@ class _SubtitleCache:
                 # Malformed cache entry
                 del self._cache[key]
                 return None
-            if time.monotonic() >= expiry:
+            try:
+                is_expired = time.monotonic() >= expiry
+            except TypeError:
+                del self._cache[key]
+                return None
+            if is_expired:
                 del self._cache[key]
                 return None
             return subtitle

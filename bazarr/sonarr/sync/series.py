@@ -59,6 +59,9 @@ def update_series(job_id=None, wait_for_completion=False):
         return
     else:
         if not isinstance(series, list):
+            logging.debug('BAZARR Sonarr series sync returned an invalid payload. Skipping sync.')
+            jobs_queue.update_job_name(job_id=job_id, new_job_name="Synced series with Sonarr")
+            gc.collect()
             return
 
         # Get current shows in DB
@@ -85,6 +88,13 @@ def update_series(job_id=None, wait_for_completion=False):
 
         jobs_queue.update_job_progress(job_id=job_id, progress_max=series_count)
         for i, show in enumerate(series, start=1):
+            if not isinstance(show, dict):
+                skipped_count += 1
+                continue
+            show_id = show.get('id')
+            if show_id is None:
+                skipped_count += 1
+                continue
             jobs_queue.update_job_progress(job_id=job_id, progress_value=i, progress_message=show.get('title', 'Unknown'))
 
             if settings.sonarr.sync_only_monitored_series:
@@ -102,22 +112,22 @@ def update_series(job_id=None, wait_for_completion=False):
                 elif not show.get('monitored'):
                     # Add unmonitored series in sonarr to current series list, otherwise it will be deleted from db
                     trace(f"{i}: (Skipped Unmonitored) {show.get('title', 'Unknown')}")
-                    current_shows_sonarr.append(show.get('id'))
+                    current_shows_sonarr.append(show_id)
                     skipped_count += 1
                     continue
 
             trace(f"{i}: (Processing) {show.get('title', 'Unknown')}")
 
             # Add shows in Sonarr to current shows list
-            current_shows_sonarr.append(show.get('id'))
+            current_shows_sonarr.append(show_id)
 
             # Update series in DB
-            update_one_series(show.get('id'), action='updated', sync_episodes_after_update=False,
+            update_one_series(show_id, action='updated', sync_episodes_after_update=False,
                               series_data=[show], audio_profiles=audio_profiles, tagsDict=tagsDict,
                               language_profiles=language_profiles)
 
             # Update episodes in DB
-            sync_episodes(series_id=show.get('id'))
+            sync_episodes(series_id=show_id)
 
         # Calculate series to remove from DB
         removed_series = list(set(current_shows_db) - set(current_shows_sonarr))

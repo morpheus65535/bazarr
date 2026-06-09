@@ -1,215 +1,204 @@
-# coding=utf-8
-import pytest
-from unittest.mock import MagicMock, patch
 from types import SimpleNamespace
-from pathlib import Path
-import logging
 
-logging.disable(logging.CRITICAL)
+import radarr.sync.movies as radarr_movies
+import radarr.sync.utils as radarr_utils
+import sonarr.sync.series as sonarr_series
+import sonarr.sync.utils as sonarr_utils
+import pytest
 
-from tests.test_helpers import load_isolated_module
+
+def _response(payload):
+    return SimpleNamespace(json=lambda: payload)
 
 
-def _load_radarr_utils():
-    root = Path(__file__).resolve().parents[2]
-    module_path = root / "bazarr" / "radarr" / "sync" / "utils.py"
-    return load_isolated_module(
-        "radarr.sync.utils",
-        module_path,
-        ["app", "radarr", "constants"],
-        {
-            "app.config": SimpleNamespace(settings=SimpleNamespace(radarr=SimpleNamespace(apikey="test", http_timeout=30))),
-            "radarr.info": SimpleNamespace(
-                get_radarr_info=MagicMock(is_legacy=MagicMock(return_value=True)),
-                url_api_radarr=MagicMock(return_value="http://localhost:7878/api/v3/")
-            ),
-            "constants": SimpleNamespace(HEADERS={}),
-        },
+@pytest.fixture
+def configured_radarr(monkeypatch):
+    monkeypatch.setattr(radarr_utils.settings.radarr, "apikey", "test")
+    monkeypatch.setattr(radarr_utils.settings.radarr, "http_timeout", 30)
+    monkeypatch.setattr(radarr_utils, "url_api_radarr", lambda: "http://localhost:7878/api/v3/")
+    monkeypatch.setattr(radarr_utils.get_radarr_info, "is_legacy", lambda: True)
+    return radarr_utils
+
+
+@pytest.fixture
+def configured_sonarr(monkeypatch):
+    monkeypatch.setattr(sonarr_utils.settings.sonarr, "apikey", "test")
+    monkeypatch.setattr(sonarr_utils.settings.sonarr, "http_timeout", 30)
+    monkeypatch.setattr(sonarr_utils, "url_api_sonarr", lambda: "http://localhost:8989/api/v3/")
+    monkeypatch.setattr(sonarr_utils.get_sonarr_info, "is_legacy", lambda: True)
+    monkeypatch.setattr(sonarr_utils.get_sonarr_info, "version", lambda: "4.0.0")
+    return sonarr_utils
+
+
+@pytest.mark.parametrize(
+    ("payload", "expected"),
+    [
+        ([{"id": 1, "language": None}, {"id": 2, "language": "English"}], [[2, "English"]]),
+        ([{"id": 1, "language": 123}, {"id": 2, "language": "French"}], [[2, "French"]]),
+        ([None, "bad", {"id": 2, "language": "Spanish"}], [[2, "Spanish"]]),
+    ],
+)
+def test_radarr_legacy_profile_parser_filters_malformed_languages(configured_radarr, monkeypatch, payload, expected):
+    monkeypatch.setattr(configured_radarr.requests, "get", lambda *args, **kwargs: _response(payload))
+
+    assert configured_radarr.get_profile_list() == expected
+
+
+def test_radarr_v4_profile_parser_filters_malformed_nested_language_names(configured_radarr, monkeypatch):
+    monkeypatch.setattr(configured_radarr.get_radarr_info, "is_legacy", lambda: False)
+    monkeypatch.setattr(
+        configured_radarr.requests,
+        "get",
+        lambda *args, **kwargs: _response(
+            [{"id": 1, "language": {"name": None}}, {"id": 2, "language": {"name": "Spanish"}}]
+        ),
     )
 
+    assert configured_radarr.get_profile_list() == [[2, "Spanish"]]
 
-def _load_sonarr_utils():
-    root = Path(__file__).resolve().parents[2]
-    module_path = root / "bazarr" / "sonarr" / "sync" / "utils.py"
-    return load_isolated_module(
-        "sonarr.sync.utils",
-        module_path,
-        ["app", "sonarr", "constants"],
-        {
-            "app.config": SimpleNamespace(settings=SimpleNamespace(sonarr=SimpleNamespace(apikey="test", http_timeout=30))),
-            "sonarr.info": SimpleNamespace(
-                get_sonarr_info=MagicMock(version=MagicMock(return_value="4.0.0")),
-                url_api_sonarr=MagicMock(return_value="http://localhost:8989/api/v3/")
-            ),
-            "constants": SimpleNamespace(HEADERS={}),
-        },
+
+def test_radarr_profile_parser_skips_missing_profile_id(configured_radarr, monkeypatch):
+    monkeypatch.setattr(configured_radarr.requests, "get", lambda *args, **kwargs: _response([{"language": "English"}]))
+
+    assert configured_radarr.get_profile_list() == []
+
+
+@pytest.mark.parametrize(
+    ("payload", "expected"),
+    [
+        ([{"id": 1, "language": None}, {"id": 2, "language": "German"}], [[2, "German"]]),
+        ([{"id": 1, "language": 123}, {"id": 2, "language": "Italian"}], [[2, "Italian"]]),
+        ([None, "bad", {"id": 2, "language": "German"}], [[2, "German"]]),
+        ([], []),
+    ],
+)
+def test_sonarr_legacy_profile_parser_filters_malformed_languages(configured_sonarr, monkeypatch, payload, expected):
+    monkeypatch.setattr(configured_sonarr.requests, "get", lambda *args, **kwargs: _response(payload))
+
+    assert configured_sonarr.get_profile_list() == expected
+
+
+def test_sonarr_v3_profile_parser_filters_malformed_names(configured_sonarr, monkeypatch):
+    monkeypatch.setattr(configured_sonarr.get_sonarr_info, "is_legacy", lambda: False)
+    monkeypatch.setattr(configured_sonarr.get_sonarr_info, "version", lambda: "3.0.0")
+    monkeypatch.setattr(
+        configured_sonarr.requests,
+        "get",
+        lambda *args, **kwargs: _response([{"id": 1, "name": None}, {"id": 2, "name": "Profile1"}]),
     )
 
-
-class TestRadarrProfileParsingProperties:
-    """Property tests for radarr profile parsing with malformed API responses"""
-
-    def test_profile_language_is_none_filtered(self):
-        """Fuzz: Radarr profile['language'] is None is filtered out gracefully"""
-        radarr_utils = _load_radarr_utils()
-        
-        # Mock the API response with None language
-        with patch('requests.get') as mock_get:
-            mock_response = MagicMock()
-            mock_response.json.return_value = [
-                {'id': 1, 'language': None},  # Filtered: not a string
-                {'id': 2, 'language': 'English'},  # Valid
-            ]
-            mock_get.return_value = mock_response
-            
-            result = radarr_utils.get_profile_list()
-            # Should only include the valid profile
-            assert isinstance(result, list)
-            assert len(result) == 1
-            assert result[0] == [2, 'English']
-
-    def test_profile_language_not_string_filtered(self):
-        """Fuzz: Radarr profile['language'] is int is filtered out gracefully"""
-        radarr_utils = _load_radarr_utils()
-        
-        with patch('requests.get') as mock_get:
-            mock_response = MagicMock()
-            mock_response.json.return_value = [
-                {'id': 1, 'language': 123},  # Filtered: not a string
-                {'id': 2, 'language': 'French'},  # Valid
-            ]
-            mock_get.return_value = mock_response
-            
-            result = radarr_utils.get_profile_list()
-            assert isinstance(result, list)
-            assert len(result) == 1
-            assert result[0] == [2, 'French']
-
-    def test_profile_nested_language_name_none_filtered(self):
-        """Fuzz: Radarr profile['language']['name'] is None is filtered (v4)"""
-        radarr_utils = _load_radarr_utils()
-        
-        with patch('requests.get') as mock_get:
-            with patch.object(radarr_utils.get_radarr_info, 'is_legacy', return_value=False):
-                mock_response = MagicMock()
-                mock_response.json.return_value = [
-                    {'id': 1, 'language': {'name': None}},  # Filtered: name not a string
-                    {'id': 2, 'language': {'name': 'Spanish'}},  # Valid
-                ]
-                mock_get.return_value = mock_response
-                
-                result = radarr_utils.get_profile_list()
-                assert isinstance(result, list)
-                assert len(result) == 1
-                assert result[0] == [2, 'Spanish']
-
-    def test_profile_missing_id_key_crashes_hard(self):
-        """Fuzz: Radarr profile missing 'id' key still crashes (by design)"""
-        radarr_utils = _load_radarr_utils()
-        
-        with patch('requests.get') as mock_get:
-            mock_response = MagicMock()
-            mock_response.json.return_value = [
-                {'language': 'English'},  # Missing 'id' — still crashes
-            ]
-            mock_get.return_value = mock_response
-            
-            # This is expected to crash — id is required for the profile list structure
-            with pytest.raises(KeyError):
-                radarr_utils.get_profile_list()
+    assert configured_sonarr.get_profile_list() == [[2, "Profile1"]]
 
 
-class TestSonarrProfileParsingProperties:
-    """Property tests for sonarr profile parsing with malformed API responses"""
+def test_sonarr_v3_profile_parser_returns_empty_for_all_malformed(configured_sonarr, monkeypatch):
+    monkeypatch.setattr(configured_sonarr.get_sonarr_info, "is_legacy", lambda: False)
+    monkeypatch.setattr(configured_sonarr.get_sonarr_info, "version", lambda: "3.0.0")
+    monkeypatch.setattr(
+        configured_sonarr.requests,
+        "get",
+        lambda *args, **kwargs: _response([{"id": 1, "name": 123}, {"id": 2, "name": []}, {"id": 3}]),
+    )
 
-    def test_sonarr_profile_language_is_none_filtered(self):
-        """Fuzz: Sonarr profile['language'] is None is filtered gracefully"""
-        sonarr_utils = _load_sonarr_utils()
-        
-        with patch('requests.get') as mock_get:
-            mock_response = MagicMock()
-            mock_response.json.return_value = [
-                {'id': 1, 'language': None},  # Filtered: not a string
-                {'id': 2, 'language': 'German'},  # Valid
-            ]
-            mock_get.return_value = mock_response
-            
-            with patch.object(sonarr_utils.get_sonarr_info, 'is_legacy', return_value=True):
-                result = sonarr_utils.get_profile_list()
-                assert isinstance(result, list)
-                assert len(result) == 1
-                assert result[0] == [2, 'German']
-
-    def test_sonarr_profile_name_is_none_filtered(self):
-        """Fuzz: Sonarr profile['name'] is None is filtered (v3 path)"""
-        sonarr_utils = _load_sonarr_utils()
-        
-        with patch('requests.get') as mock_get:
-            mock_response = MagicMock()
-            mock_response.json.return_value = [
-                {'id': 1, 'name': None},  # Filtered: not a string
-                {'id': 2, 'name': 'Profile1'},  # Valid
-            ]
-            mock_get.return_value = mock_response
-            
-            # Must use version 3.x to reach the profile parsing code
-            with patch.object(sonarr_utils.get_sonarr_info, 'version', return_value='3.0.0'):
-                with patch.object(sonarr_utils.get_sonarr_info, 'is_legacy', return_value=False):
-                    result = sonarr_utils.get_profile_list()
-                    assert isinstance(result, list)
-                    assert len(result) == 1
-                    assert result[0] == [2, 'Profile1']
-
-    def test_sonarr_profile_language_not_string_filtered(self):
-        """Fuzz: Sonarr profile['language'] is int is filtered (v3 legacy)"""
-        sonarr_utils = _load_sonarr_utils()
-        
-        with patch('requests.get') as mock_get:
-            mock_response = MagicMock()
-            mock_response.json.return_value = [
-                {'id': 1, 'language': 123},  # Filtered: not a string
-                {'id': 2, 'language': 'Italian'},  # Valid
-            ]
-            mock_get.return_value = mock_response
-            
-            with patch.object(sonarr_utils.get_sonarr_info, 'is_legacy', return_value=True):
-                result = sonarr_utils.get_profile_list()
-                assert isinstance(result, list)
-                assert len(result) == 1
-                assert result[0] == [2, 'Italian']
-
-    def test_sonarr_empty_profiles_response(self):
-        """Fuzz: Sonarr returns empty profile list"""
-        sonarr_utils = _load_sonarr_utils()
-        
-        with patch('requests.get') as mock_get:
-            mock_response = MagicMock()
-            mock_response.json.return_value = []
-            mock_get.return_value = mock_response
-            
-            with patch.object(sonarr_utils.get_sonarr_info, 'is_legacy', return_value=True):
-                result = sonarr_utils.get_profile_list()
-                assert result == []
-
-    def test_sonarr_all_profiles_malformed_returns_empty(self):
-        """Fuzz: Sonarr all profiles malformed returns empty list safely"""
-        sonarr_utils = _load_sonarr_utils()
-        
-        with patch('requests.get') as mock_get:
-            mock_response = MagicMock()
-            mock_response.json.return_value = [
-                {'id': 1, 'name': 123},  # int, not string
-                {'id': 2, 'name': []},  # list, not string
-                {'id': 3},  # Missing 'name'
-            ]
-            mock_get.return_value = mock_response
-            
-            with patch.object(sonarr_utils.get_sonarr_info, 'is_legacy', return_value=False):
-                result = sonarr_utils.get_profile_list()
-                # All profiles filtered, returns empty
-                assert result == []
+    assert configured_sonarr.get_profile_list() == []
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+def test_sonarr_profile_parser_skips_missing_profile_id(configured_sonarr, monkeypatch):
+    monkeypatch.setattr(configured_sonarr.requests, "get", lambda *args, **kwargs: _response([{"language": "English"}]))
 
+    assert configured_sonarr.get_profile_list() == []
+
+
+def test_radarr_movie_sync_skips_file_payloads_without_movie_id(monkeypatch):
+    progress = []
+    names = []
+
+    monkeypatch.setattr(radarr_movies, "check_radarr_rootfolder", lambda: None)
+    monkeypatch.setattr(radarr_movies.settings.general, "movie_default_enabled", False)
+    monkeypatch.setattr(radarr_movies.settings.general, "enable_strm_support", False)
+    monkeypatch.setattr(radarr_movies.settings.radarr, "apikey", "test")
+    monkeypatch.setattr(radarr_movies.settings.radarr, "sync_only_monitored_movies", False)
+    monkeypatch.setattr(radarr_movies, "get_profile_list", lambda: [])
+    monkeypatch.setattr(radarr_movies, "get_tags", lambda: [])
+    monkeypatch.setattr(radarr_movies, "get_language_profiles", lambda: [])
+    monkeypatch.setattr(radarr_movies, "get_movie_file_size_from_db", lambda path: 0)
+    monkeypatch.setattr(
+        radarr_movies,
+        "get_movies_from_radarr_api",
+        lambda apikey_radarr: [{"hasFile": True, "title": "Missing ID", "movieFile": {"size": 999999}}],
+    )
+    monkeypatch.setattr(radarr_movies.database, "execute", lambda *args, **kwargs: SimpleNamespace(all=lambda: []))
+    monkeypatch.setattr(
+        radarr_movies.jobs_queue,
+        "update_job_progress",
+        lambda **kwargs: progress.append(kwargs),
+    )
+    monkeypatch.setattr(
+        radarr_movies.jobs_queue,
+        "update_job_name",
+        lambda **kwargs: names.append(kwargs["new_job_name"]),
+    )
+
+    radarr_movies.update_movies(job_id="job")
+
+    assert progress[0]["progress_max"] == 1
+    assert names == ["Synced movies with Radarr"]
+
+
+def test_radarr_movie_sync_handles_malformed_movie_file_fields(monkeypatch):
+    progress = []
+    names = []
+
+    monkeypatch.setattr(radarr_movies, "check_radarr_rootfolder", lambda: None)
+    monkeypatch.setattr(radarr_movies.settings.general, "movie_default_enabled", False)
+    monkeypatch.setattr(radarr_movies.settings.general, "enable_strm_support", True)
+    monkeypatch.setattr(radarr_movies.settings.radarr, "apikey", "test")
+    monkeypatch.setattr(radarr_movies.settings.radarr, "sync_only_monitored_movies", False)
+    monkeypatch.setattr(radarr_movies, "get_profile_list", lambda: [])
+    monkeypatch.setattr(radarr_movies, "get_tags", lambda: [])
+    monkeypatch.setattr(radarr_movies, "get_language_profiles", lambda: [])
+    monkeypatch.setattr(radarr_movies, "get_movie_file_size_from_db", lambda path: 0)
+    monkeypatch.setattr(
+        radarr_movies,
+        "get_movies_from_radarr_api",
+        lambda apikey_radarr: [
+            {"id": 1, "hasFile": True, "title": "Bad Size", "movieFile": {"size": "bad", "path": None}},
+            {"id": 2, "hasFile": True, "title": "Missing Path", "movieFile": {"size": None}},
+        ],
+    )
+    monkeypatch.setattr(radarr_movies.database, "execute", lambda *args, **kwargs: SimpleNamespace(all=lambda: []))
+    monkeypatch.setattr(
+        radarr_movies.jobs_queue,
+        "update_job_progress",
+        lambda **kwargs: progress.append(kwargs),
+    )
+    monkeypatch.setattr(
+        radarr_movies.jobs_queue,
+        "update_job_name",
+        lambda **kwargs: names.append(kwargs["new_job_name"]),
+    )
+
+    radarr_movies.update_movies(job_id="job")
+
+    assert progress[0]["progress_max"] == 2
+    assert names == ["Synced movies with Radarr"]
+
+
+def test_sonarr_series_sync_returns_for_non_list_payload(monkeypatch):
+    monkeypatch.setattr(sonarr_series, "check_sonarr_rootfolder", lambda: None)
+    monkeypatch.setattr(
+        sonarr_series,
+        "get_series_from_sonarr_api",
+        lambda apikey_sonarr: {"unexpected": "payload"},
+    )
+    monkeypatch.setattr(
+        sonarr_series.database,
+        "execute",
+        lambda *args, **kwargs: (_ for _ in ()).throw(AssertionError("database should not be queried")),
+    )
+    monkeypatch.setattr(
+        sonarr_series.jobs_queue,
+        "update_job_progress",
+        lambda **kwargs: (_ for _ in ()).throw(AssertionError("progress should not be updated")),
+    )
+
+    sonarr_series.update_series(job_id="job")
