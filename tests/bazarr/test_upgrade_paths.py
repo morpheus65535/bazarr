@@ -6,6 +6,10 @@ from subtitles.cache import _SubtitleCache
 import subtitles.upgrade as upgrade
 
 
+def _profile_with_language(language="en", forced="False", hi="False"):
+    return {"items": [{"language": language, "forced": forced, "hi": hi}]}
+
+
 @pytest.fixture
 def upgrade_module(bind_wanted_database, monkeypatch):
     bind_wanted_database(upgrade, "movies")
@@ -30,11 +34,21 @@ def upgrade_module(bind_wanted_database, monkeypatch):
 def test_subtitle_cache_store_purges_malformed_entries():
     cache = _SubtitleCache()
     cache._cache["bad"] = "not-a-cache-tuple"
+    cache._cache["bad-expiry"] = (SimpleNamespace(id=2), object())
 
     key = cache.store(SimpleNamespace(id=1))
 
     assert "bad" not in cache._cache
+    assert "bad-expiry" not in cache._cache
     assert cache.get(key).id == 1
+
+
+def test_subtitle_cache_get_purges_malformed_expiry():
+    cache = _SubtitleCache()
+    cache._cache["bad-expiry"] = (SimpleNamespace(id=1), object())
+
+    assert cache.get("bad-expiry") is None
+    assert "bad-expiry" not in cache._cache
 
 
 def test_parse_language_string_handles_non_string_input():
@@ -80,7 +94,7 @@ def test_upgrade_movies_subtitles_handles_none_audio_list_and_result_without_mes
     generate_calls = []
 
     monkeypatch.setattr(upgrade_module, "get_upgradable_movies_subtitles", lambda history_id_list=None: {10: None})
-    monkeypatch.setattr(upgrade_module, "_language_still_desired", lambda language, profile_id: True)
+    monkeypatch.setattr(upgrade_module, "get_profiles_list", lambda *args, **kwargs: _profile_with_language())
     monkeypatch.setattr(upgrade_module, "get_audio_profile_languages", lambda audio_language: None)
     monkeypatch.setattr(
         upgrade_module,
@@ -133,7 +147,7 @@ def test_upgrade_episodes_subtitles_handles_none_score(
     generate_calls = []
 
     monkeypatch.setattr(upgrade_module, "get_upgradable_episode_subtitles", lambda history_id_list=None: {10: None})
-    monkeypatch.setattr(upgrade_module, "_language_still_desired", lambda language, profile_id: True)
+    monkeypatch.setattr(upgrade_module, "get_profiles_list", lambda *args, **kwargs: _profile_with_language())
     monkeypatch.setattr(upgrade_module, "get_audio_profile_languages", lambda audio_language: [{"name": "English"}])
     monkeypatch.setattr(
         upgrade_module,
@@ -170,7 +184,7 @@ def test_upgrade_movies_subtitles_skips_empty_parsed_language(
     movie_row_factory(radarrId=7, path="/movies/movie.mkv", profileId=44)
     movie_history_row_factory(
         id=10,
-        language=None,
+        language="en",
         video_path="/movies/movie.mkv",
         subtitles_path="/movies/sub.srt",
         radarrId=7,
@@ -179,7 +193,7 @@ def test_upgrade_movies_subtitles_skips_empty_parsed_language(
     generate_calls = []
 
     monkeypatch.setattr(upgrade_module, "get_upgradable_movies_subtitles", lambda history_id_list=None: {10: None})
-    monkeypatch.setattr(upgrade_module, "_language_still_desired", lambda language, profile_id: True)
+    monkeypatch.setattr(upgrade_module, "get_profiles_list", lambda *args, **kwargs: _profile_with_language())
     monkeypatch.setattr(upgrade_module, "get_audio_profile_languages", lambda audio_language: [{"name": "English"}])
     monkeypatch.setattr(upgrade_module, "parse_language_string", lambda value: ["", "False", "False"])
     monkeypatch.setattr(
