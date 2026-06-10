@@ -11,9 +11,12 @@ import pytest
 import bazarr.app.libs  # noqa: F401
 
 from sqlalchemy import create_engine
+from sqlalchemy.pool import StaticPool
 from sqlalchemy.orm import Session
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
+
+pytest_plugins = ("tests.bazarr.wanted_search_fixtures",)
 
 
 
@@ -56,10 +59,13 @@ def _get_conflicting(path):
 
 
 @pytest.fixture(scope="session")
-def transactional_engine(tmp_path_factory):
-    db_dir = tmp_path_factory.mktemp("transactional-db")
-    db_path = db_dir / "tests.sqlite"
-    engine = create_engine(f"sqlite:///{db_path}", future=True)
+def transactional_engine():
+    engine = create_engine(
+        "sqlite://",
+        future=True,
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
     try:
         yield engine
     finally:
