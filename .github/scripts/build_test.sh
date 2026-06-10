@@ -1,22 +1,36 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-python3 "${ROOT_DIRECTORY}"/bazarr.py --no-update &
+set -euo pipefail
+
+root_directory="${ROOT_DIRECTORY:-.}"
+url="http://127.0.0.1:6767"
+
+python3 "${root_directory}"/bazarr.py --no-update &
 PID=$!
 
-sleep 30
+cleanup() {
+  echo "Stopping Bazarr..."
+  pkill -INT -P "${PID}" 2>/dev/null || true
+  kill -INT "${PID}" 2>/dev/null || true
+  wait "${PID}" 2>/dev/null || true
+}
+trap cleanup EXIT
 
-if kill -s 0 $PID
-then
-  echo "Bazarr is still running. We'll test if UI is working..."
-else
-  exit 1
-fi
+deadline=$((SECONDS + 120))
 
-exitcode=0
-curl -fsSL --retry-all-errors --retry 60 --retry-max-time 120 --max-time 10 "http://127.0.0.1:6767" --output /dev/null || exitcode=$?
-[[ ${exitcode} == 0 ]] && echo "UI is responsive, good news!" || echo "Oops, UI isn't reachable, bad news..."
+until curl -fsS --max-time 5 "${url}" --output /dev/null; do
+  if ! kill -s 0 "${PID}" 2>/dev/null; then
+    echo "Bazarr stopped before the UI became responsive."
+    wait "${PID}" || true
+    exit 1
+  fi
 
-echo "Let's stop Bazarr before we exit..."
-pkill -INT -P $PID
+  if (( SECONDS >= deadline )); then
+    echo "Timed out waiting for Bazarr UI at ${url}."
+    exit 1
+  fi
 
-exit ${exitcode}
+  sleep 2
+done
+
+echo "UI is responsive."
