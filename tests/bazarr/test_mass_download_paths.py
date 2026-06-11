@@ -433,8 +433,8 @@ def test_episode_download_specific_subtitles_records_success(
     assert len(history) == 1
     assert notifications == [((show.sonarrSeriesId, episode.sonarrEpisodeId, "done"), {})]
     assert names == [
-        "Searching FR:HI for Series - S01E02 - Series",
-        "Searched FR:HI for Series - S01E02 - Series",
+        "Searching FR:HI for Series - S01E02 - Second",
+        "Searched FR:HI for Series - S01E02 - Second",
     ]
 
 
