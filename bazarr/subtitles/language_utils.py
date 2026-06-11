@@ -15,6 +15,10 @@ def parse_language_token(language):
         return None
 
     flags = {part for part in parts[1:] if part}
+    allowed_flags = {"hi", "forced"}
+    if flags - allowed_flags:
+        return None
+
     hi = "hi" in flags
     forced = "forced" in flags
 
