@@ -17,6 +17,13 @@ def test_parse_language_token_rejects_missing_base_language():
     assert module.parse_language_token(None) is None
 
 
+def test_parse_language_token_rejects_unknown_flags():
+    module = language_utils
+
+    assert module.parse_language_token("en:unknown") is None
+    assert module.parse_language_token("fr:hi:bogus") is None
+
+
 def test_safe_missing_languages_filters_invalid_and_normalizes_tokens():
     module = language_utils
 
