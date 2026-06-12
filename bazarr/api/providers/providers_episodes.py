@@ -78,7 +78,7 @@ class ProviderEpisodes(Resource):
         if not os.path.exists(episodePath):
             return 'Episode file not found. Path mapping issue?', 500
 
-        sceneName = episodeInfo.sceneName or "None"
+        sceneName = episodeInfo.sceneName
         profileId = episodeInfo.profileId
 
         providers_list = get_providers()
