@@ -288,6 +288,63 @@ def test_radarr_movie_sync_skips_large_file_with_malformed_required_fields(monke
     assert "Skipped 2 file missing movies out of 2" in traces
 
 
+def test_radarr_movie_sync_processes_valid_entries_in_mixed_payload(monkeypatch):
+    progress = []
+    names = []
+    traces = []
+    parsed_movies = []
+
+    monkeypatch.setattr(radarr_movies, "check_radarr_rootfolder", lambda: None)
+    monkeypatch.setattr(radarr_movies.settings.general, "movie_default_enabled", False)
+    monkeypatch.setattr(radarr_movies.settings.general, "enable_strm_support", False)
+    monkeypatch.setattr(radarr_movies.settings.radarr, "apikey", "test")
+    monkeypatch.setattr(radarr_movies.settings.radarr, "sync_only_monitored_movies", False)
+    monkeypatch.setattr(radarr_movies, "get_profile_list", lambda: [])
+    monkeypatch.setattr(radarr_movies, "get_tags", lambda: [])
+    monkeypatch.setattr(radarr_movies, "get_language_profiles", lambda: [])
+    monkeypatch.setattr(radarr_movies, "get_movie_file_size_from_db", lambda path: 0)
+    monkeypatch.setattr(radarr_movies, "trace", traces.append)
+    monkeypatch.setattr(
+        radarr_movies,
+        "get_movies_from_radarr_api",
+        lambda apikey_radarr: [
+            {"id": 1, "hasFile": True, "title": "Good Movie", "movieFile": {"id": 10, "size": 999999999, "path": "/movies/good.mkv"}},
+            {"id": 2, "hasFile": True, "title": "Bad Movie", "movieFile": {"size": "bad", "path": None}},
+            {"hasFile": True, "title": "Missing ID", "movieFile": {"id": 11, "size": 999999999, "path": "/movies/missing.mkv"}},
+            "bad-entry",
+        ],
+    )
+    monkeypatch.setattr(
+        radarr_movies.database,
+        "execute",
+        lambda *args, **kwargs: SimpleNamespace(all=lambda: []),
+    )
+    monkeypatch.setattr(
+        radarr_movies,
+        "movieParser",
+        lambda movie, **kwargs: parsed_movies.append(movie["title"]) or {"radarrId": movie["id"], "title": movie["title"], "path": movie["movieFile"]["path"]},
+    )
+    monkeypatch.setattr(radarr_movies, "add_movie", lambda movie: parsed_movies.append(f"added:{movie['title']}"))
+    monkeypatch.setattr(radarr_movies, "update_movie", lambda movie: parsed_movies.append(f"updated:{movie['title']}"))
+    monkeypatch.setattr(
+        radarr_movies.jobs_queue,
+        "update_job_progress",
+        lambda **kwargs: progress.append(kwargs),
+    )
+    monkeypatch.setattr(
+        radarr_movies.jobs_queue,
+        "update_job_name",
+        lambda **kwargs: names.append(kwargs["new_job_name"]),
+    )
+
+    radarr_movies.update_movies(job_id="job")
+
+    assert progress[0]["progress_max"] == 4
+    assert parsed_movies == ["Good Movie", "added:Good Movie"]
+    assert "Skipped 1 file missing movies out of 4" in traces
+    assert names == ["Synced movies with Radarr"]
+
+
 def test_sonarr_series_sync_returns_for_non_list_payload(monkeypatch):
     names = []
 
@@ -316,6 +373,52 @@ def test_sonarr_series_sync_returns_for_non_list_payload(monkeypatch):
 
     sonarr_series.update_series(job_id="job")
 
+    assert names == ["Synced series with Sonarr"]
+
+
+def test_sonarr_series_sync_processes_valid_entries_in_mixed_payload(monkeypatch):
+    progress = []
+    names = []
+    processed = []
+    synced_series = []
+
+    monkeypatch.setattr(sonarr_series, "check_sonarr_rootfolder", lambda: None)
+    monkeypatch.setattr(
+        sonarr_series,
+        "get_series_from_sonarr_api",
+        lambda apikey_sonarr: [
+            {"id": 1, "title": "Good Series", "monitored": True},
+            {"title": "Missing ID"},
+            "bad-entry",
+        ],
+    )
+    monkeypatch.setattr(
+        sonarr_series.database,
+        "execute",
+        lambda *args, **kwargs: SimpleNamespace(all=lambda: []),
+    )
+    monkeypatch.setattr(sonarr_series, "get_profile_list", lambda: [])
+    monkeypatch.setattr(sonarr_series, "get_tags", lambda: {})
+    monkeypatch.setattr(sonarr_series, "get_language_profiles", lambda: [])
+    monkeypatch.setattr(sonarr_series, "update_one_series", lambda series_id, **kwargs: processed.append(series_id))
+    monkeypatch.setattr(sonarr_series, "sync_episodes", lambda series_id: synced_series.append(series_id))
+    monkeypatch.setattr(
+        sonarr_series.jobs_queue,
+        "update_job_progress",
+        lambda **kwargs: progress.append(kwargs),
+    )
+    monkeypatch.setattr(
+        sonarr_series.jobs_queue,
+        "update_job_name",
+        lambda **kwargs: names.append(kwargs["new_job_name"]),
+    )
+    monkeypatch.setattr(sonarr_series.gc, "collect", lambda: None)
+
+    sonarr_series.update_series(job_id="job")
+
+    assert progress[0]["progress_max"] == 3
+    assert processed == [1]
+    assert synced_series == [1]
     assert names == ["Synced series with Sonarr"]
 
 
