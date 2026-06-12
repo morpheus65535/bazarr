@@ -49,7 +49,7 @@ def _wanted_episode(episode, providers_list, job_id=None):
     for result in generate_subtitles(path_mappings.path_replace(episode.path),
                                      languages,
                                      audio_language,
-                                     episode.sceneName,
+                                     str(episode.sceneName),
                                      episode.title,
                                      'series',
                                      episode.profileId,
