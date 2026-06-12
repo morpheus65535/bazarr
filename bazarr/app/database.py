@@ -479,7 +479,7 @@ def update_profile_id_list():
         'profileId': x.profileId,
         'name': x.name,
         'cutoff': x.cutoff,
-        'items': json.loads(x.items),
+        'items': _normalize_profile_items(json.loads(x.items)),
         'mustContain': ast.literal_eval(x.mustContain) if x.mustContain else [],
         'mustNotContain': ast.literal_eval(x.mustNotContain) if x.mustNotContain else [],
         'originalFormat': x.originalFormat,
@@ -495,6 +495,24 @@ def update_profile_id_list():
                TableLanguagesProfiles.tag))
         .all()
     ]
+
+
+def _normalize_profile_items(items):
+    if not isinstance(items, list):
+        return []
+
+    normalized_items = []
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+
+        item = item.copy()
+        for key in ('forced', 'hi', 'audio_exclude', 'audio_only_include'):
+            if key in item:
+                item[key] = item[key] is True or item[key] == 'True'
+        normalized_items.append(item)
+
+    return normalized_items
 
 
 def get_profiles_list(profile_id=None):
