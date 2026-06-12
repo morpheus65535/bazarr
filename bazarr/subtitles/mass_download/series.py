@@ -159,7 +159,7 @@ def episode_download_subtitles(no, job_id=None, job_sub_function=False, provider
             for result in generate_subtitles(episodePath,
                                              languages,
                                              audio_language,
-                                             episode.sceneName,
+                                             str(episode.sceneName),
                                              episode.title,
                                              'series',
                                              episode.profileId,
@@ -210,7 +210,7 @@ def episode_download_specific_subtitles(sonarr_series_id, sonarr_episode_id, lan
     if not os.path.exists(episodePath):
         return 'Episode file not found. Path mapping issue?', 500
 
-    sceneName = episodeInfo.sceneName
+    sceneName = episodeInfo.sceneName or "None"
 
     title = episodeInfo.title
 
