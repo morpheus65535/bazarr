@@ -16,4 +16,5 @@ def event_stream(type, action="update", payload=None):
         payload = int(payload)
     except (ValueError, TypeError):
         pass
-    socketio.emit("data", {"type": type, "action": action, "payload": payload})
+    if socketio.server is not None:
+        socketio.emit("data", {"type": type, "action": action, "payload": payload})
