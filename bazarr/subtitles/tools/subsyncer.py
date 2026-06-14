@@ -3,9 +3,8 @@
 import logging
 import os
 
-from ffsubsync.ffsubsync import run, make_parser
 from ffsubsync import ProgressInfo
-
+from ffsubsync.ffsubsync import run, make_parser
 from utilities.binaries import get_binary
 from radarr.history import history_log_movie
 from sonarr.history import history_log
