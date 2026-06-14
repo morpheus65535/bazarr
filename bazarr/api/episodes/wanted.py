@@ -5,7 +5,7 @@ import operator
 from flask_restx import Resource, Namespace, reqparse, fields, marshal
 from functools import reduce
 
-from app.database import get_exclusion_clause, TableEpisodes, TableShows, TableMissingSubtitles, database, select, func
+from app.database import get_exclusion_clause, TableEpisodes, TableShows, TableMissingSubtitles, database, select, func, get_subtitles_map
 from api.swaggerui import subtitles_language_model
 from subtitles.wanted_state import get_missing_languages_map
 
@@ -81,6 +81,7 @@ class EpisodesWanted(Resource):
 
         episodes = database.execute(stmt).all()
         missing_languages = get_missing_languages_map('series', [x.sonarrEpisodeId for x in episodes])
+        subtitles_map = get_subtitles_map('series', [x.sonarrEpisodeId for x in episodes])
 
         results = [postprocess({
             'seriesTitle': x.seriesTitle,
@@ -92,7 +93,7 @@ class EpisodesWanted(Resource):
             'sceneName': x.sceneName,
             'tags': x.tags,
             'seriesType': x.seriesType,
-        }) for x in episodes]
+        }, subtitles=subtitles_map.get(x.sonarrEpisodeId, [])) for x in episodes]
 
         count = database.execute(
             select(func.count())

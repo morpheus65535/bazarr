@@ -6,6 +6,7 @@ import logging
 import os
 import flask_migrate
 import signal
+from collections import defaultdict
 
 from dogpile.cache import make_region
 from datetime import datetime
@@ -710,8 +711,6 @@ def get_subtitles(sonarr_episode_id: int = None, radarr_id: int = None) -> List[
              hearing impaired flag, and file size.
     :rtype: List[dict]
     """
-    from languages.get_languages import alpha3_from_alpha2, language_from_alpha2
-
     subtitles = []
     if sonarr_episode_id:
         episodes_subtitles = database.execute(
@@ -725,16 +724,7 @@ def get_subtitles(sonarr_episode_id: int = None, radarr_id: int = None) -> List[
         ).all()
 
         for episode_subtitles in episodes_subtitles:
-            subtitles.append(
-                {"path": path_mappings.path_replace(episode_subtitles.path),
-                 "name": language_from_alpha2(episode_subtitles.language),
-                 "code2": episode_subtitles.language,
-                 "code3": alpha3_from_alpha2(episode_subtitles.language),
-                 "forced": episode_subtitles.forced,
-                 "hi": episode_subtitles.hi,
-                 "file_size": episode_subtitles.size,
-                 "embedded_track_id": episode_subtitles.embedded_track_id}
-            )
+            subtitles.append(_subtitle_payload(episode_subtitles, path_mappings.path_replace))
     elif radarr_id:
         movies_subtitles = database.execute(
             select(TableMoviesSubtitles.path,
@@ -747,15 +737,57 @@ def get_subtitles(sonarr_episode_id: int = None, radarr_id: int = None) -> List[
         ).all()
 
         for movie_subtitles in movies_subtitles:
-            subtitles.append(
-                {"path": path_mappings.path_replace_movie(movie_subtitles.path),
-                 "name": language_from_alpha2(movie_subtitles.language),
-                 "code2": movie_subtitles.language,
-                 "code3": alpha3_from_alpha2(movie_subtitles.language),
-                 "forced": movie_subtitles.forced,
-                 "hi": movie_subtitles.hi,
-                 "file_size": movie_subtitles.size,
-                 "embedded_track_id": movie_subtitles.embedded_track_id}
-            )
+            subtitles.append(_subtitle_payload(movie_subtitles, path_mappings.path_replace_movie))
 
+    return _sort_subtitles(subtitles)
+
+
+def _subtitle_payload(subtitle, replace_path):
+    from languages.get_languages import alpha3_from_alpha2, language_from_alpha2
+
+    return {"path": replace_path(subtitle.path),
+            "name": language_from_alpha2(subtitle.language),
+            "code2": subtitle.language,
+            "code3": alpha3_from_alpha2(subtitle.language),
+            "forced": subtitle.forced,
+            "hi": subtitle.hi,
+            "file_size": subtitle.size,
+            "embedded_track_id": subtitle.embedded_track_id}
+
+
+def _sort_subtitles(subtitles):
     return sorted(subtitles, key=lambda i: (i['name'], i['forced']))
+
+
+def get_subtitles_map(media_type: str, media_ids: list[int]) -> dict[int, List[dict]]:
+    if not media_ids:
+        return {}
+
+    subtitles_by_media_id = defaultdict(list)
+    if media_type == "series":
+        rows = database.execute(
+            select(TableEpisodesSubtitles.sonarrEpisodeId,
+                   TableEpisodesSubtitles.path,
+                   TableEpisodesSubtitles.language,
+                   TableEpisodesSubtitles.forced,
+                   TableEpisodesSubtitles.hi,
+                   TableEpisodesSubtitles.size,
+                   TableEpisodesSubtitles.embedded_track_id)
+            .where(TableEpisodesSubtitles.sonarrEpisodeId.in_(media_ids))
+        ).all()
+        for row in rows:
+            subtitles_by_media_id[row.sonarrEpisodeId].append(_subtitle_payload(row, path_mappings.path_replace))
+    elif media_type == "movie":
+        rows = database.execute(
+            select(TableMoviesSubtitles.radarrId,
+                   TableMoviesSubtitles.path,
+                   TableMoviesSubtitles.language,
+                   TableMoviesSubtitles.forced,
+                   TableMoviesSubtitles.hi,
+                   TableMoviesSubtitles.size,
+                   TableMoviesSubtitles.embedded_track_id)
+            .where(TableMoviesSubtitles.radarrId.in_(media_ids))
+        ).all()
+        for row in rows:
+            subtitles_by_media_id[row.radarrId].append(_subtitle_payload(row, path_mappings.path_replace_movie))
+    return {media_id: _sort_subtitles(subtitles) for media_id, subtitles in subtitles_by_media_id.items()}
