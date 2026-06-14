@@ -3,7 +3,7 @@
 from flask_restx import Resource, Namespace, reqparse, fields, marshal
 from sqlalchemy import or_
 
-from app.database import TableMovies, database, update, select, func
+from app.database import TableMovies, database, update, select, func, get_subtitles_map
 from radarr.sync.movies import update_one_movie
 from subtitles.indexer.movies import list_missing_subtitles_movies, movies_scan_subtitles
 from app.event_handler import event_stream
@@ -129,6 +129,7 @@ class Movies(Resource):
 
         movies = database.execute(stmt).all()
         missing_languages = get_missing_languages_map('movie', [x.radarrId for x in movies])
+        subtitles_map = get_subtitles_map('movie', [x.radarrId for x in movies])
 
         results = [postprocess({
             'alternativeTitles': x.alternativeTitles,
@@ -147,7 +148,7 @@ class Movies(Resource):
             'tags': x.tags,
             'title': x.title,
             'year': x.year,
-        }) for x in movies]
+        }, subtitles=subtitles_map.get(x.radarrId, [])) for x in movies]
 
         count_stmt = select(func.count()).select_from(TableMovies)
         if where_clauses:

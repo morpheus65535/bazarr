@@ -130,7 +130,7 @@ def authenticate(actual_method):
     return wrapper
 
 
-def postprocess(item):
+def postprocess(item, subtitles=None):
     # Remove ffprobe_cache
     if item.get('radarrId'):
         path_replace = path_mappings.path_replace_movie
@@ -179,8 +179,11 @@ def postprocess(item):
         item['alternativeTitles'] = []
 
     # Add subtitles
-    item['subtitles'] = get_subtitles(sonarr_episode_id=item.get('sonarrEpisodeId'),
-                                      radarr_id=item.get('radarrId'))
+    if subtitles is None:
+        item['subtitles'] = get_subtitles(sonarr_episode_id=item.get('sonarrEpisodeId'),
+                                          radarr_id=item.get('radarrId'))
+    else:
+        item['subtitles'] = subtitles
 
     if settings.general.embedded_subs_show_desired:
         if item.get('profileId'):
