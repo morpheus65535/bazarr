@@ -66,12 +66,16 @@ def format_episode_part(value):
         return str(value) if value is not None else "??"
 
 
+def _is_unindexed_external_subtitle(subtitle):
+    if not subtitle or not isinstance(subtitle, dict):
+        return True
+    if subtitle.get('path', True):
+        return False
+    return not subtitle.get('embedded_track_id')
+
+
 def has_unindexed_external_subtitle(subtitles):
-    return any(
-        not subtitle or not isinstance(subtitle, dict) or not subtitle.get('embedded_track_id')
-        for subtitle in subtitles
-        if not subtitle or not isinstance(subtitle, dict) or not subtitle.get('path', True)
-    )
+    return any(_is_unindexed_external_subtitle(subtitle) for subtitle in subtitles)
 
 
 def build_search_payload(missing_subtitles, context, include_predicate=None):

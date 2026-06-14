@@ -143,3 +143,18 @@ def test_movie_manual_download_handles_none_audio_list_and_message_less_result(
 
     assert result == ("", 204)
     assert notifications == []
+
+
+def test_get_video_skips_scene_name_refinement_for_none(monkeypatch):
+    calls = []
+    video = SimpleNamespace()
+
+    def fake_parse_video(path, **kwargs):
+        calls.append((path, kwargs))
+        return video
+
+    monkeypatch.setattr(subtitle_utils, "parse_video", fake_parse_video)
+    monkeypatch.setattr(subtitle_utils, "registered_refiners", {})
+
+    assert subtitle_utils.get_video("/media/movie.mkv", "Movie", None) is video
+    assert [call[0] for call in calls] == ["/media/movie.mkv"]
