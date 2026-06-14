@@ -39,7 +39,7 @@ def get_video(path, title, sceneName, providers=None, media_type="movie"):
             normalized_scene_name = ""
 
         if normalized_scene_name and normalized_scene_name.lower() != "none":
-            # refine the video object using the sceneName and update the video object accordingly
+            # Refine the video object using the sceneName and update the video object accordingly.
             scenename_with_extension = normalized_scene_name + os.path.splitext(path)[1]
             logging.debug(f'BAZARR guessing video object using scene name: {scenename_with_extension}')
             scenename_video = parse_video(scenename_with_extension, hints=hints, dry_run=True)

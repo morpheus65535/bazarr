@@ -22,6 +22,7 @@ from subtitles.indexer.movies import store_subtitles_movie
 from subtitles.indexer.series import store_subtitles
 from utilities.path_mappings import path_mappings
 from .download import generate_subtitles
+from .language_utils import format_episode_part, resolve_audio_language
 from app.event_handler import event_stream
 
 
@@ -111,9 +112,11 @@ def upgrade_episodes_subtitles(job_id=None, wait_for_completion=False):
     for i, episode in enumerate(episodes_data, start=1):
         providers_list = get_providers()
 
+        season_part = format_episode_part(episode["season"])
+        episode_part = format_episode_part(episode["episode"])
         jobs_queue.update_job_progress(job_id=job_id, progress_value=i,
-                                       progress_message=f'{episode["seriesTitle"]} - S{episode["season"]:02d}E'
-                                                        f'{episode["episode"]:02d} - {episode["title"]}')
+                                       progress_message=f'{episode["seriesTitle"]} - S{season_part}E'
+                                                        f'{episode_part} - {episode["title"]}')
 
         if not providers_list:
             logging.info("BAZARR All providers are throttled")
@@ -125,7 +128,7 @@ def upgrade_episodes_subtitles(job_id=None, wait_for_completion=False):
         if is_hi and not _is_hi_required(language, episode['profileId']):
             is_hi = 'False'
 
-        audio_language = _first_audio_language_name(episode['audio_language'])
+        audio_language = resolve_audio_language(get_audio_profile_languages(episode['audio_language']), fallback=None)
 
         result = list(generate_subtitles(path_mappings.path_replace(episode['video_path']),
                                          [(language, is_hi, is_forced)],
@@ -230,8 +233,10 @@ def upgrade_movies_subtitles(job_id=None, wait_for_completion=False):
         if is_hi and not _is_hi_required(language, movie['profileId']):
             is_hi = 'False'
 
-        audio_language = _first_audio_language_name(movie['audio_language'])
+        audio_language = resolve_audio_language(get_audio_profile_languages(movie['audio_language']), fallback=None)
 
+        # Keep the upgrade path's label shaping alongside the wanted-search cleanup;
+        # both paths now rely on the same normalized subtitle metadata.
         result = list(generate_subtitles(path_mappings.path_replace_movie(movie['video_path']),
                                          [(language, is_hi, is_forced)],
                                          audio_language,
@@ -291,17 +296,6 @@ def parse_language_string(language_string):
         is_hi = "False"
 
     return [language, is_forced, is_hi]
-
-
-def _first_audio_language_name(audio_language):
-    audio_language_list = get_audio_profile_languages(audio_language)
-    if (
-        isinstance(audio_language_list, list)
-        and audio_language_list
-        and isinstance(audio_language_list[0], dict)
-    ):
-        return audio_language_list[0].get('name')
-    return None
 
 
 def _minimum_score_above_current(score):

@@ -221,6 +221,10 @@ def get_missing_languages(media_type, media_id):
     return []
 
 
+def legacy_missing_cache_needs_rebuild(missing_subtitles):
+    return missing_subtitles is None
+
+
 def get_missing_languages_map(media_type, media_ids):
     media_ids = _normalize_media_ids(media_ids)
     missing_languages = {media_id: [] for media_id in media_ids}

@@ -130,7 +130,14 @@ def test_upgrade_episodes_subtitles_handles_none_score(
     monkeypatch,
 ):
     show_row_factory(sonarrSeriesId=3, title="Series", profileId=44)
-    episode_row_factory(sonarrSeriesId=3, sonarrEpisodeId=17, path="/series/e01.mkv", profileId=44)
+    episode_row_factory(
+        sonarrSeriesId=3,
+        sonarrEpisodeId=17,
+        path="/series/e01.mkv",
+        profileId=44,
+        season="special",
+        episode=None,
+    )
     episode_history_row_factory(
         id=10,
         language="en",
@@ -145,6 +152,7 @@ def test_upgrade_episodes_subtitles_handles_none_score(
     history_calls = []
     notifications = []
     generate_calls = []
+    progress_messages = []
 
     monkeypatch.setattr(upgrade_module, "get_upgradable_episode_subtitles", lambda history_id_list=None: {10: None})
     monkeypatch.setattr(upgrade_module, "get_profiles_list", lambda *args, **kwargs: _profile_with_language())
@@ -165,6 +173,11 @@ def test_upgrade_episodes_subtitles_handles_none_score(
         "send_notifications",
         lambda *args, **kwargs: notifications.append(args),
     )
+    monkeypatch.setattr(
+        upgrade_module.jobs_queue,
+        "update_job_progress",
+        lambda *args, **kwargs: progress_messages.append(kwargs.get("progress_message")),
+    )
 
     upgrade_module.upgrade_episodes_subtitles(job_id="job")
 
@@ -172,6 +185,7 @@ def test_upgrade_episodes_subtitles_handles_none_score(
     assert len(history_calls) == 1
     assert notifications == []
     assert generate_calls[0][1]["forced_minimum_score"] is None
+    assert "Series - SspecialE?? - Pilot" in progress_messages
 
 
 def test_upgrade_movies_subtitles_skips_empty_parsed_language(

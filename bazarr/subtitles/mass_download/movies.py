@@ -20,7 +20,7 @@ from app.event_handler import event_stream
 from ..download import generate_subtitles
 from ..language_utils import has_unindexed_external_subtitle, resolve_audio_language
 from ..serialization import missing_subtitle_to_language_tuple
-from ..wanted_state import get_missing_languages
+from ..wanted_state import get_missing_languages, legacy_missing_cache_needs_rebuild
 
 
 def movies_download_subtitles(no, job_id=None, job_sub_function=False):
@@ -62,7 +62,7 @@ def movies_download_subtitles(no, job_id=None, job_sub_function=False):
             logging.debug(f"BAZARR no movie with that radarrId can be found in database after subtitles refresh: {no}")
             jobs_queue.update_job_progress(job_id=job_id, progress_message="Movie not found in database.")
             return
-    if movie.missing_subtitles is None:
+    if legacy_missing_cache_needs_rebuild(movie.missing_subtitles):
         # missing subtitles calculation for this movie is incomplete, we'll do it again
         list_missing_subtitles_movies(no=no)
         movie = database.execute(stmt).first()

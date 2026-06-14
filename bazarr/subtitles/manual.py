@@ -29,24 +29,7 @@ from bazarr.subtitles.cache import subtitle_cache
 from .pool import update_pools, _get_pool
 from .utils import get_video, _get_lang_obj, _get_scores, _set_forced_providers
 from .processing import process_subtitle
-
-
-def _format_episode_part(value):
-    try:
-        return f"{int(value):02d}"
-    except (TypeError, ValueError):
-        return str(value) if value is not None else "??"
-
-
-def _get_first_audio_language_name(audio_languages):
-    if not isinstance(audio_languages, list) or not audio_languages:
-        return None
-
-    first_audio_language = audio_languages[0]
-    if not isinstance(first_audio_language, dict):
-        return None
-
-    return first_audio_language.get('name')
+from .language_utils import format_episode_part, resolve_audio_language
 
 
 @update_pools
@@ -267,15 +250,15 @@ def episode_manually_download_specific_subtitle(sonarr_series_id, sonarr_episode
         return 'Episode not found', 404
 
     title = episodeInfo.title
-    season_part = _format_episode_part(episodeInfo.season)
-    episode_part = _format_episode_part(episodeInfo.episode)
+    season_part = format_episode_part(episodeInfo.season)
+    episode_part = format_episode_part(episodeInfo.episode)
     jobs_queue.update_job_name(job_id=job_id, new_job_name=f"Manually downloading Subtitles for {title} - "
                                                            f"S{season_part}E{episode_part} - "
                                                            f"{episodeInfo.episodeTitle}")
     episodePath = path_mappings.path_replace(episodeInfo.path)
     sceneName = episodeInfo.sceneName or None
 
-    audio_language = _get_first_audio_language_name(get_audio_profile_languages(episodeInfo.audio_language))
+    audio_language = resolve_audio_language(get_audio_profile_languages(episodeInfo.audio_language), fallback=None)
 
     try:
         result = manual_download_subtitle(episodePath, audio_language, hi, forced, subtitle, selected_provider,
@@ -323,7 +306,7 @@ def movie_manually_download_specific_subtitle(radarr_id, hi, forced, use_origina
     moviePath = path_mappings.path_replace_movie(movieInfo.path)
     sceneName = movieInfo.sceneName or None
 
-    audio_language = _get_first_audio_language_name(get_audio_profile_languages(movieInfo.audio_language))
+    audio_language = resolve_audio_language(get_audio_profile_languages(movieInfo.audio_language), fallback=None)
 
     try:
         result = manual_download_subtitle(moviePath, audio_language, hi, forced, subtitle, selected_provider,

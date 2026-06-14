@@ -304,6 +304,9 @@ class TableMovies(Base):
 class TableMissingSubtitles(Base):
     __tablename__ = 'table_missing_subtitles'
 
+    # This table intentionally stays polymorphic across movies and episodes.
+    # The branch relies on media_type/media_id cleanup helpers instead of FK-enforced
+    # cascades so the same normalized shape can serve both media kinds.
     id = mapped_column(Integer, primary_key=True)
     media_type = mapped_column(Text, nullable=False)
     media_id = mapped_column(Integer, nullable=False)
@@ -318,6 +321,8 @@ class TableMissingSubtitles(Base):
 class TableFailedSubtitleAttempts(Base):
     __tablename__ = 'table_failed_subtitle_attempts'
 
+    # Same polymorphic shape as TableMissingSubtitles: the cleanup path is explicit
+    # in application code rather than split across two separate FK graphs.
     id = mapped_column(Integer, primary_key=True)
     media_type = mapped_column(Text, nullable=False)
     media_id = mapped_column(Integer, nullable=False)

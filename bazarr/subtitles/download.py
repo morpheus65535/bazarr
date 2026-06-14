@@ -69,7 +69,7 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
                 min_score = int(forced_minimum_score) + 1
             for language in language_set:
                 # confirm if language is still missing or if cutoff has been reached
-                if check_if_still_required and language not in check_missing_languages(path, media_type):
+                if check_if_still_required and language not in reload_missing_languages_from_db(path, media_type):
                     # cutoff has been reached
                     logging.debug(f"BAZARR this language ({parse_language_object(language)}) is ignored because cutoff "
                                   f"has been reached during this search.")
@@ -181,8 +181,8 @@ def parse_language_object(language):
         return language
 
 
-def check_missing_languages(path, media_type):
-    # confirm if language is still missing or if cutoff has been reached
+def reload_missing_languages_from_db(path, media_type):
+    """Reload the current normalized missing-language rows for a media path."""
     if media_type == 'series':
         confirmed_missing_subs = database.execute(
             select(TableEpisodes.sonarrEpisodeId)
