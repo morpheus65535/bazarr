@@ -17,7 +17,7 @@ from sqlalchemy import update
 
 _metadata = MetaData()
 _movie_rows = Table(
-    "wanted_movie_rows",
+    "table_movies",
     _metadata,
     Column("id", Integer, primary_key=True),
     Column("path", String, nullable=True),
@@ -37,13 +37,13 @@ _movie_rows = Table(
     Column("has_incomplete_embedded_subtitles", Boolean, nullable=False),
 )
 _episode_rows = Table(
-    "wanted_episode_rows",
+    "table_episodes",
     _metadata,
     Column("id", Integer, primary_key=True),
     Column("path", String, nullable=True),
     Column("missing_subtitles", String, nullable=True),
     Column("sonarrEpisodeId", Integer, nullable=False),
-    Column("sonarrSeriesId", Integer, ForeignKey("wanted_show_rows.sonarrSeriesId"), nullable=False),
+    Column("sonarrSeriesId", Integer, ForeignKey("table_shows.sonarrSeriesId"), nullable=False),
     Column("audio_language", String, nullable=False),
     Column("sceneName", String, nullable=True),
     Column("failedAttempts", String, nullable=False),
@@ -57,7 +57,7 @@ _episode_rows = Table(
     Column("has_incomplete_embedded_subtitles", Boolean, nullable=False),
 )
 _show_rows = Table(
-    "wanted_show_rows",
+    "table_shows",
     _metadata,
     Column("id", Integer, primary_key=True),
     Column("sonarrSeriesId", Integer, nullable=False, unique=True),
@@ -144,6 +144,22 @@ def _insert_row(session, table, values):
     return SimpleNamespace(**values)
 
 
+def _serialize_missing_languages(value):
+    if value is None:
+        return None
+    if isinstance(value, str):
+        return value
+    return str(list(dict.fromkeys(value)))
+
+
+def _serialize_failed_attempts(value):
+    if value is None:
+        return "[]"
+    if isinstance(value, str):
+        return value
+    return str(list(value))
+
+
 def _infer_kind(request):
     if "kind" in request.fixturenames:
         try:
@@ -220,6 +236,8 @@ def jobs_queue_factory():
 def movie_row_factory(transactional_session, wanted_search_schema, wanted_row_ids):
     del wanted_search_schema
     def factory(**overrides):
+        missing_languages = overrides.pop("missing_languages", None)
+        failed_attempts = overrides.pop("failed_attempts", None)
         values = {
             "id": next(wanted_row_ids),
             "path": "/movies/movie.mkv",
@@ -238,6 +256,10 @@ def movie_row_factory(transactional_session, wanted_search_schema, wanted_row_id
             "has_indexed_subtitles": True,
             "has_incomplete_embedded_subtitles": False,
         }
+        if missing_languages is not None:
+            values["missing_subtitles"] = _serialize_missing_languages(missing_languages)
+        if failed_attempts is not None:
+            values["failedAttempts"] = _serialize_failed_attempts(failed_attempts)
         values.update(overrides)
         return _insert_row(transactional_session, _movie_rows, values)
 
@@ -270,6 +292,8 @@ def episode_row_factory(transactional_session, wanted_search_schema, wanted_row_
     del wanted_search_schema
     def factory(**overrides):
         episode_title = overrides.pop("episodeTitle", "Pilot")
+        missing_languages = overrides.pop("missing_languages", None)
+        failed_attempts = overrides.pop("failed_attempts", None)
         values = {
             "id": next(wanted_row_ids),
             "path": "/series/e01.mkv",
@@ -288,6 +312,10 @@ def episode_row_factory(transactional_session, wanted_search_schema, wanted_row_
             "has_indexed_subtitles": True,
             "has_incomplete_embedded_subtitles": False,
         }
+        if missing_languages is not None:
+            values["missing_subtitles"] = _serialize_missing_languages(missing_languages)
+        if failed_attempts is not None:
+            values["failedAttempts"] = _serialize_failed_attempts(failed_attempts)
         values.update(overrides)
 
         existing_show = transactional_session.execute(
@@ -506,16 +534,6 @@ def wanted_module(request, bind_wanted_database):
 
     module = importlib.import_module(module_name)
     return bind_wanted_database(module, kind)
-
-
-@pytest.fixture
-def wanted_worker(request, wanted_module):
-    kind = _infer_wanted_kind(request)
-    if kind == "movies":
-        return wanted_module._wanted_movie
-    if kind == "series":
-        return wanted_module._wanted_episode
-    raise ValueError(f"Unsupported wanted kind: {kind}")
 
 
 @pytest.fixture
