@@ -8,7 +8,7 @@ Create Date: 2026-06-02 00:00:00.000000
 from alembic import op
 import sqlalchemy as sa
 
-from subtitles.serialization import parse_text_list_or_default
+from utilities.text_list import parse_text_list_or_default
 from subtitles.adaptive_searching import get_attempt_windows
 
 # revision identifiers, used by Alembic.

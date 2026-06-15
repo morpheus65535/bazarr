@@ -28,7 +28,7 @@ from binascii import hexlify
 from types import MappingProxyType
 from shutil import move
 
-from subtitles.serialization import parse_text_list_or_default
+from utilities.text_list import parse_text_list_or_default
 
 from .get_args import args
 
