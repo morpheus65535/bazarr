@@ -30,7 +30,7 @@ def parse_language_token(language):
 
 
 def safe_missing_languages(missing_subtitles, context):
-    from subtitles.serialization import parse_text_list_or_default
+    from utilities.text_list import parse_text_list_or_default
 
     missing = parse_text_list_or_default(missing_subtitles)
 

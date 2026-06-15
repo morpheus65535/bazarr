@@ -25,7 +25,7 @@ from flask_sqlalchemy import SQLAlchemy
 
 from .config import settings
 from .get_args import args
-from subtitles.serialization import parse_text_list_or_default
+from utilities.text_list import parse_text_list_or_default
 from utilities.path_mappings import path_mappings
 
 logger = logging.getLogger(__name__)
