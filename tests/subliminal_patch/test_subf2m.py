@@ -1,5 +1,6 @@
 import pytest
 from subliminal_patch.core import Episode
+from subliminal_patch.core import Movie
 from subliminal_patch.providers import subf2m
 from subliminal_patch.providers.subf2m import ConfigurationError
 from subliminal_patch.providers.subf2m import Subf2mProvider
@@ -30,6 +31,20 @@ def provider():
 def test_search_movie(provider, title, year, expected_url):
     result = provider._search_movie(title, year)
     assert expected_url in result
+
+
+def test_list_subtitles_movie_falls_back_to_imdb_id(provider):
+    # Radarr may provide a localized movie title that subf2m doesn't index
+    # (here the Danish title for "The Goonies"). The provider should fall back
+    # to searching by IMDB id rather than finding nothing. Regression for #2896.
+    movie = Movie(
+        "Goonierne.1985.1080p.BluRay.x264-GROUP",
+        "Goonierne",
+        year=1985,
+        imdb_id="tt0089218",
+    )
+    subtitles = provider.list_subtitles(movie, {Language.fromalpha2("en")})
+    assert subtitles
 
 
 def test_init_empty_user_agent_raises_configurationerror():
