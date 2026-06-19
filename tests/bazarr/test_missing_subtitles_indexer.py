@@ -9,7 +9,6 @@ import ast
 from types import SimpleNamespace
 
 import pytest
-from sqlalchemy.sql.dml import Update
 from subliminal_patch import core
 
 import app.database as app_database
@@ -187,10 +186,10 @@ class _FakeDatabase:
         self.missing = None
 
     def execute(self, statement):
-        if isinstance(statement, Update):
-            self.missing = ast.literal_eval(statement.compile().params['missing_subtitles'])
-            return None
         return SimpleNamespace(all=lambda: [self.row])
+
+    def store_missing_subtitles(self, table, id_column_name, media_type, media_id, missing_subtitles):
+        self.missing = ast.literal_eval(missing_subtitles)
 
 
 def _missing(monkeypatch, indexer, profile, subtitles):
@@ -205,6 +204,7 @@ def _missing(monkeypatch, indexer, profile, subtitles):
     fake_database = _FakeDatabase(row)
     monkeypatch.setattr(app_database, 'update_profile_id_list', lambda: [profile])
     monkeypatch.setattr(indexer, 'database', fake_database)
+    monkeypatch.setattr(indexer, 'store_missing_subtitles', fake_database.store_missing_subtitles)
     monkeypatch.setattr(indexer, 'settings', SimpleNamespace(general=SimpleNamespace(use_embedded_subs=True)))
     monkeypatch.setattr(indexer, 'get_subtitles', lambda *args, **kwargs: [dict(x) for x in subtitles])
     monkeypatch.setattr(indexer, 'get_language_equals', lambda: [])

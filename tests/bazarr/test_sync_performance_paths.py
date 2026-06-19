@@ -197,7 +197,7 @@ def test_update_series_returns_early_when_sonarr_api_returns_none(monkeypatch):
     assert execute_calls == []
     assert episode_sync_calls == []
     assert update_one_series_calls == []
-    assert job_name_updates == []
+    assert job_name_updates == [((), {"job_id": "job", "new_job_name": "Synced series with Sonarr"})]
 
 
 def test_unchanged_series_skips_update_but_manual_call_syncs_episodes(monkeypatch):
@@ -342,14 +342,14 @@ def test_update_movies_compares_against_matching_radarr_id(monkeypatch):
                 "title": "Movie 1",
                 "hasFile": True,
                 "monitored": True,
-                "movieFile": {"path": "/movies/one.mkv", "size": MINIMUM_VIDEO_SIZE + 1},
+                "movieFile": {"id": 101, "path": "/movies/one.mkv", "size": MINIMUM_VIDEO_SIZE + 1},
             },
             {
                 "id": 2,
                 "title": "New Movie 2",
                 "hasFile": True,
                 "monitored": True,
-                "movieFile": {"path": "/movies/two.mkv", "size": MINIMUM_VIDEO_SIZE + 1},
+                "movieFile": {"id": 102, "path": "/movies/two.mkv", "size": MINIMUM_VIDEO_SIZE + 1},
             },
         ],
     )
