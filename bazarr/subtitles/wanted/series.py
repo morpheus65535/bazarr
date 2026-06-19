@@ -6,7 +6,7 @@ import operator
 
 from functools import reduce
 
-from sqlalchemy import bindparam, case, func
+from sqlalchemy import bindparam, func
 
 from utilities.path_mappings import path_mappings
 from subtitles.indexer.series import store_subtitles
@@ -33,6 +33,7 @@ from subtitles.wanted_state import (
     iter_due_missing_languages_maps,
     record_failed_subtitle_attempts,
     record_failed_subtitle_attempts_map,
+    update_failed_subtitle_attempts,
 )
 from .utils import get_language_search_items
 
@@ -65,8 +66,6 @@ _WANTED_EPISODE_DETAILS_SELECT = select(TableEpisodes.path,
     .join(TableShows)
 _WANTED_EPISODE_DETAILS_STMT = _WANTED_EPISODE_DETAILS_SELECT \
     .where(TableEpisodes.sonarrEpisodeId == bindparam("wanted_sonarr_episode_id"))
-_FAILED_ATTEMPT_UPDATE_BATCH_SIZE = 5000
-_TEMP_FAILED_ATTEMPT_UPDATE_MIN_SIZE = 1000
 _DUE_EPISODE_DETAILS_BATCH_SIZE = 5000
 
 
@@ -102,12 +101,6 @@ def _wanted_episode(episode, providers_list, due_languages=None, job_id=None, ad
             episode.sonarrEpisodeId,
             adaptive_search_policy=adaptive_search_policy,
         )
-    search_active_hook = globals().get("is_search_active")
-    if callable(search_active_hook):
-        due_missing_languages = [
-            language for language in due_missing_languages
-            if search_active_hook(desired_language=language, attempt_string=episode.failedAttempts)
-        ]
     if not due_missing_languages:
         return
     if not episode.path:
@@ -254,45 +247,11 @@ def _record_failed_episode_attempts(failed_attempt_languages):
         'series',
         failed_attempt_languages,
     )
-    if not updated_attempts_by_episode:
-        return
-
-    update_items = list(updated_attempts_by_episode.items())
-    if (
-        len(update_items) >= _TEMP_FAILED_ATTEMPT_UPDATE_MIN_SIZE and
-        database.bind.engine.dialect.name == 'sqlite'
-    ):
-        connection = database.connection()
-        connection.exec_driver_sql('DROP TABLE IF EXISTS temp_failed_attempt_updates')
-        connection.exec_driver_sql(
-            'CREATE TEMP TABLE temp_failed_attempt_updates '
-            '(media_id INTEGER PRIMARY KEY, failedAttempts TEXT NOT NULL)'
-        )
-        try:
-            for index in range(0, len(update_items), _FAILED_ATTEMPT_UPDATE_BATCH_SIZE):
-                connection.exec_driver_sql(
-                    'INSERT INTO temp_failed_attempt_updates (media_id, failedAttempts) VALUES (?, ?)',
-                    update_items[index:index + _FAILED_ATTEMPT_UPDATE_BATCH_SIZE],
-                )
-            connection.exec_driver_sql(
-                'UPDATE table_episodes '
-                'SET "failedAttempts" = ('
-                'SELECT failedAttempts FROM temp_failed_attempt_updates '
-                'WHERE media_id = table_episodes."sonarrEpisodeId") '
-                'WHERE "sonarrEpisodeId" IN (SELECT media_id FROM temp_failed_attempt_updates)'
-            )
-        finally:
-            connection.exec_driver_sql('DROP TABLE IF EXISTS temp_failed_attempt_updates')
-        return
-
-    id_column = TableEpisodes.__table__.c.sonarrEpisodeId
-    for index in range(0, len(update_items), _FAILED_ATTEMPT_UPDATE_BATCH_SIZE):
-        chunk = dict(update_items[index:index + _FAILED_ATTEMPT_UPDATE_BATCH_SIZE])
-        database.execute(
-            TableEpisodes.__table__.update()
-            .where(id_column.in_(chunk))
-            .values(failedAttempts=case(chunk, value=id_column))
-        )
+    update_failed_subtitle_attempts(
+        TableEpisodes.__table__,
+        list(updated_attempts_by_episode.items()),
+        'sonarrEpisodeId',
+    )
 
 
 def _record_pending_failed_episode_attempts(pending_failed_attempts):

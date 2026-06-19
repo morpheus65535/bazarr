@@ -2,13 +2,11 @@
 
 from datetime import datetime
 
-from sqlalchemy import func, or_
+from sqlalchemy import case, func, or_
 
 from app.database import (
-    TableEpisodes,
     TableFailedSubtitleAttempts,
     TableMissingSubtitles,
-    TableMovies,
     database,
     delete,
     insert,
@@ -22,6 +20,7 @@ from subtitles.adaptive_searching import (
 from subtitles.serialization import parse_missing_subtitles
 
 WANTED_STATE_QUERY_BATCH_SIZE = 5000
+FAILED_ATTEMPT_TEMP_TABLE_MIN_SIZE = 1000
 
 
 def _iter_chunks(items, batch_size=None):
@@ -29,6 +28,17 @@ def _iter_chunks(items, batch_size=None):
         batch_size = WANTED_STATE_QUERY_BATCH_SIZE
     for index in range(0, len(items), batch_size):
         yield items[index:index + batch_size]
+
+
+def _normalize_media_ids(media_ids, coerce_int=False):
+    if isinstance(media_ids, (int, str)):
+        media_ids = [media_ids]
+    else:
+        media_ids = list(dict.fromkeys(media_ids))
+
+    if coerce_int:
+        return list(dict.fromkeys(int(media_id) for media_id in media_ids))
+    return media_ids
 
 
 def get_missing_subtitle_rows(media_type, media_id, missing_subtitles):
@@ -61,7 +71,7 @@ def get_failed_subtitle_attempt_rows(media_type, media_id, failed_attempts):
     return rows
 
 
-def _serialize_attempt_windows(attempt_windows):
+def serialize_legacy_failed_attempts(attempt_windows):
     attempts = []
     for language, (initial_attempt_at, latest_attempt_at) in attempt_windows.items():
         attempts.append([language, initial_attempt_at])
@@ -96,7 +106,7 @@ def serialize_failed_subtitle_attempts(media_type, media_id):
     ):
         attempt_windows[row.language] = (row.initial_attempt_at, row.latest_attempt_at)
 
-    return _serialize_attempt_windows(attempt_windows)
+    return serialize_legacy_failed_attempts(attempt_windows)
 
 
 def record_failed_subtitle_attempts(media_type, media_id, languages):
@@ -171,13 +181,13 @@ def record_failed_subtitle_attempts_map(media_type, languages_by_media_id):
             )
 
         for media_id, media_attempts in updated_attempts.items():
-            serialized_attempts[media_id] = _serialize_attempt_windows(media_attempts)
+            serialized_attempts[media_id] = serialize_legacy_failed_attempts(media_attempts)
 
     return serialized_attempts
 
 
 def refresh_wanted_search_state(media_type, media_id, missing_subtitles, failed_attempts=None,
-                                adaptive_search_policy=None, refresh_failed_attempts=True):
+                                refresh_failed_attempts=True):
     database.execute(
         delete(TableMissingSubtitles)
         .where(TableMissingSubtitles.media_type == media_type)
@@ -208,16 +218,11 @@ def get_missing_languages(media_type, media_id):
     if languages:
         return languages
 
-    legacy_column = TableMovies.missing_subtitles if media_type == 'movie' else TableEpisodes.missing_subtitles
-    legacy_id_column = TableMovies.radarrId if media_type == 'movie' else TableEpisodes.sonarrEpisodeId
-    return parse_missing_subtitles(database.execute(
-        select(legacy_column)
-        .where(legacy_id_column == media_id)
-    ).scalar_one_or_none())
+    return []
 
 
 def get_missing_languages_map(media_type, media_ids):
-    media_ids = list(dict.fromkeys(media_ids))
+    media_ids = _normalize_media_ids(media_ids)
     missing_languages = {media_id: [] for media_id in media_ids}
     if not media_ids:
         return missing_languages
@@ -231,28 +236,11 @@ def get_missing_languages_map(media_type, media_ids):
         ):
             missing_languages[row.media_id].append(row.language)
 
-    missing_legacy_ids = [
-        media_id for media_id, languages in missing_languages.items()
-        if not languages
-    ]
-    if missing_legacy_ids:
-        legacy_column = TableMovies.missing_subtitles if media_type == 'movie' else TableEpisodes.missing_subtitles
-        legacy_id_column = TableMovies.radarrId if media_type == 'movie' else TableEpisodes.sonarrEpisodeId
-        for row in database.execute(
-            select(legacy_id_column.label("media_id"), legacy_column.label("missing_subtitles"))
-            .where(legacy_id_column.in_(missing_legacy_ids))
-        ):
-            missing_languages[row.media_id] = parse_missing_subtitles(row.missing_subtitles)
-
     return missing_languages
 
 
 def delete_wanted_search_state(media_type, media_ids):
-    if isinstance(media_ids, (int, str)):
-        media_ids = [media_ids]
-    else:
-        media_ids = list(dict.fromkeys(media_ids))
-    media_ids = [int(media_id) for media_id in media_ids]
+    media_ids = _normalize_media_ids(media_ids, coerce_int=True)
 
     for media_id_chunk in _iter_chunks(media_ids):
         if not media_id_chunk:
@@ -266,6 +254,48 @@ def delete_wanted_search_state(media_type, media_ids):
             delete(TableFailedSubtitleAttempts)
             .where(TableFailedSubtitleAttempts.media_type == media_type)
             .where(TableFailedSubtitleAttempts.media_id.in_(media_id_chunk))
+        )
+
+
+def update_failed_subtitle_attempts(table, update_items, id_column_name):
+    if not update_items:
+        return
+
+    dialect_name = database.get_bind().dialect.name
+    if len(update_items) >= FAILED_ATTEMPT_TEMP_TABLE_MIN_SIZE and dialect_name == 'sqlite':
+        connection = database.connection()
+        connection.exec_driver_sql('DROP TABLE IF EXISTS temp_failed_attempt_updates')
+        connection.exec_driver_sql(
+            'CREATE TEMP TABLE temp_failed_attempt_updates '
+            '(media_id INTEGER PRIMARY KEY, failedAttempts TEXT NOT NULL)'
+        )
+        try:
+            for index in range(0, len(update_items), WANTED_STATE_QUERY_BATCH_SIZE):
+                connection.exec_driver_sql(
+                    'INSERT INTO temp_failed_attempt_updates (media_id, failedAttempts) VALUES (?, ?)',
+                    update_items[index:index + WANTED_STATE_QUERY_BATCH_SIZE],
+                )
+            connection.exec_driver_sql(
+                f'UPDATE {table.name} '
+                'SET "failedAttempts" = ('
+                'SELECT failedAttempts FROM temp_failed_attempt_updates '
+                f'WHERE media_id = {table.name}."{id_column_name}") '
+                f'WHERE "{id_column_name}" IN (SELECT media_id FROM temp_failed_attempt_updates)'
+            )
+        finally:
+            connection.exec_driver_sql('DROP TABLE IF EXISTS temp_failed_attempt_updates')
+        return
+
+    id_column_ref = getattr(table.c, id_column_name, None)
+    if id_column_ref is None:
+        return
+
+    for index in range(0, len(update_items), WANTED_STATE_QUERY_BATCH_SIZE):
+        chunk = dict(update_items[index:index + WANTED_STATE_QUERY_BATCH_SIZE])
+        database.execute(
+            table.update()
+            .where(id_column_ref.in_(chunk))
+            .values(failedAttempts=case(chunk, value=id_column_ref))
         )
 
 

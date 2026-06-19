@@ -5,11 +5,11 @@ Revises: 0124f9e278fb
 Create Date: 2026-06-02 00:00:00.000000
 
 """
-from functools import lru_cache
-from math import isfinite
-
 from alembic import op
 import sqlalchemy as sa
+
+from subtitles.serialization import parse_text_list_or_default
+from subtitles.adaptive_searching import get_attempt_windows
 
 # revision identifiers, used by Alembic.
 revision = 'e6cbb0f6f9b1'
@@ -44,136 +44,14 @@ def index_exists(bind, table_name, index_name):
     return any(i["name"] == index_name for i in indexes)
 
 
-@lru_cache(maxsize=8192)
-def _parse_missing_text_tuple(value):
-    if not value:
-        return ()
-    if not isinstance(value, str):
-        return ()
-
-    value = value.strip()
-    if value == '[]':
-        return ()
-    if not value.startswith('[') or not value.endswith(']'):
-        return ()
-
-    values = []
-    body = value[1:-1].strip()
-    if not body:
-        return ()
-
-    index = 0
-    while index < len(body):
-        while index < len(body) and body[index].isspace():
-            index += 1
-
-        if body.startswith('None', index):
-            values.append(None)
-            index += 4
-        elif index < len(body) and body[index] in ("'", '"'):
-            quote = body[index]
-            index += 1
-            chars = []
-            while index < len(body):
-                char = body[index]
-                if char == "\\":
-                    index += 1
-                    if index >= len(body):
-                        return ()
-                    chars.append(body[index])
-                    index += 1
-                    continue
-                if char == quote:
-                    index += 1
-                    break
-                chars.append(char)
-                index += 1
-            else:
-                return ()
-            values.append("".join(chars))
-        else:
-            return ()
-
-        while index < len(body) and body[index].isspace():
-            index += 1
-        if index == len(body):
-            break
-        if body[index] != ',':
-            return ()
-        index += 1
-        if index == len(body):
-            return ()
-
-    return tuple(values)
-
-
 def _parse_missing_text_list(value):
-    if not isinstance(value, str):
-        return []
-
-    return list(_parse_missing_text_tuple(value))
+    return [language for language in parse_text_list_or_default(value) if language is not None]
 
 
-def _parse_attempts(value):
-    if not value:
-        return []
-    if isinstance(value, list):
-        return value
-    if not isinstance(value, str):
-        return []
-
-    value = value.strip()
-    if value == '[]':
-        return []
-    if not value.startswith('[[') or not value.endswith(']]'):
-        return []
-
-    attempts = []
-    for attempt in value[2:-2].split('], ['):
-        try:
-            language, timestamp_text = attempt.split(', ', 1)
-            if language[0] not in ("'", '"') or language[-1] != language[0]:
-                return []
-            timestamp = float(timestamp_text) if "." in timestamp_text else int(timestamp_text)
-        except (IndexError, TypeError, ValueError):
-            return []
-
-        attempts.append([language[1:-1], timestamp])
-    return attempts
-
-
-def _attempt_windows(attempts):
-    windows = {}
-    for attempt in attempts:
-        if not isinstance(attempt, (list, tuple)) or len(attempt) < 2:
-            return {}
-
-        language, timestamp = attempt[0], attempt[1]
-        if not isinstance(language, str):
-            return {}
-
-        try:
-            timestamp = float(timestamp)
-        except (TypeError, ValueError):
-            return {}
-        if not isfinite(timestamp):
-            return {}
-
-        initial_timestamp, latest_timestamp = windows.get(language, (timestamp, timestamp))
-        if timestamp < initial_timestamp:
-            initial_timestamp = timestamp
-        if timestamp > latest_timestamp:
-            latest_timestamp = timestamp
-        windows[language] = (initial_timestamp, latest_timestamp)
-
-    return windows
-
-
-@lru_cache(maxsize=32768)
 def _attempt_window_items(value):
     return tuple(
         (language, attempt_window[0], attempt_window[1])
-        for language, attempt_window in _attempt_windows(_parse_attempts(value)).items()
+        for language, attempt_window in get_attempt_windows(value).items()
     )
 
 

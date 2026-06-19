@@ -24,6 +24,7 @@ from flask_sqlalchemy import SQLAlchemy
 
 from .config import settings
 from .get_args import args
+from subtitles.serialization import parse_text_list_or_default
 from utilities.path_mappings import path_mappings
 
 logger = logging.getLogger(__name__)
@@ -570,81 +571,13 @@ def get_profile_cutoff(profile_id):
             cutoff_language = None
 
     return cutoff_language
-
-
-def _parse_audio_languages_text(value):
-    if not value:
-        return []
-    if isinstance(value, list):
-        return value
-    if isinstance(value, tuple):
-        return list(value)
-    if not isinstance(value, str):
-        return []
-
-    value = value.strip()
-    if value == '[]':
-        return []
-    if not value.startswith('[') or not value.endswith(']'):
-        return []
-
-    values = []
-    body = value[1:-1].strip()
-    if not body:
-        return []
-
-    index = 0
-    while index < len(body):
-        while index < len(body) and body[index].isspace():
-            index += 1
-
-        if body.startswith('None', index):
-            values.append(None)
-            index += 4
-        elif index < len(body) and body[index] in ("'", '"'):
-            quote = body[index]
-            index += 1
-            chars = []
-            while index < len(body):
-                char = body[index]
-                if char == "\\":
-                    index += 1
-                    if index >= len(body):
-                        return []
-                    chars.append(body[index])
-                    index += 1
-                    continue
-                if char == quote:
-                    index += 1
-                    break
-                chars.append(char)
-                index += 1
-            else:
-                return []
-            values.append("".join(chars))
-        else:
-            return []
-
-        while index < len(body) and body[index].isspace():
-            index += 1
-        if index == len(body):
-            break
-        if body[index] != ',':
-            return []
-        index += 1
-        if index == len(body):
-            return []
-
-    return values
-
-
 def get_audio_profile_languages(audio_languages_list_str):
     from languages.get_languages import alpha2_from_language, alpha3_from_language, language_from_alpha2
     audio_languages = []
 
     und_default_language = language_from_alpha2(settings.general.default_und_audio_lang)
 
-    for language in _parse_audio_languages_text(audio_languages_list_str or '[]'):
+    for language in parse_text_list_or_default(audio_languages_list_str or '[]', default=[]):
         if language:
             audio_languages.append(
                 {"name": language,
