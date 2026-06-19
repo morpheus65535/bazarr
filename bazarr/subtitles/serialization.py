@@ -2,6 +2,8 @@
 
 from functools import lru_cache
 
+from subtitles.language_utils import parse_language_token
+
 
 def _parse_repr_list(value):
     value = value.strip()
@@ -101,8 +103,9 @@ def parse_missing_subtitles(value):
 
 
 def missing_subtitle_to_language_tuple(language):
-    return (
-        language.split(":")[0],
-        "True" if language.endswith(':hi') else "False",
-        "True" if language.endswith(':forced') else "False",
-    )
+    parsed = parse_language_token(language)
+    if parsed is None:
+        return (language, "False", "False")
+
+    _, language_tuple = parsed
+    return language_tuple

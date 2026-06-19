@@ -1,9 +1,6 @@
 # coding=utf-8
 # fmt: off
 
-import ast
-import logging
-
 
 def parse_language_token(language):
     if not isinstance(language, str):
@@ -33,15 +30,9 @@ def parse_language_token(language):
 
 
 def safe_missing_languages(missing_subtitles, context):
-    try:
-        missing = ast.literal_eval(missing_subtitles)
-    except (ValueError, SyntaxError, TypeError):
-        logging.debug("BAZARR malformed missing_subtitles value for %s: %r", context, missing_subtitles)
-        return []
+    from subtitles.serialization import parse_text_list_or_default
 
-    if not isinstance(missing, list):
-        logging.debug("BAZARR invalid missing_subtitles value for %s: %r", context, missing_subtitles)
-        return []
+    missing = parse_text_list_or_default(missing_subtitles)
 
     safe = []
     for language in missing:
