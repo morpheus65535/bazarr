@@ -33,9 +33,14 @@ def get_video(path, title, sceneName, providers=None, media_type="movie"):
         logging.debug(f'BAZARR guessing video object using video file path: {path}')
         skip_hashing = settings.general.skip_hashing
         video = parse_video(path, hints=hints, skip_hashing=skip_hashing, dry_run=False, providers=providers)
-        if sceneName != "None":
-            # refine the video object using the sceneName and update the video object accordingly
-            scenename_with_extension = sceneName + os.path.splitext(path)[1]
+        if isinstance(sceneName, str):
+            normalized_scene_name = sceneName.strip()
+        else:
+            normalized_scene_name = ""
+
+        if normalized_scene_name and normalized_scene_name.lower() != "none":
+            # Refine the video object using the sceneName and update the video object accordingly.
+            scenename_with_extension = normalized_scene_name + os.path.splitext(path)[1]
             logging.debug(f'BAZARR guessing video object using scene name: {scenename_with_extension}')
             scenename_video = parse_video(scenename_with_extension, hints=hints, dry_run=True)
             refine_video_with_scenename(initial_video=video, scenename_video=scenename_video)
@@ -56,9 +61,11 @@ def get_video(path, title, sceneName, providers=None, media_type="movie"):
 
 
 def _get_download_code3(subtitle):
+    if not subtitle or not subtitle.language:
+        return ''
     custom = CustomLanguage.from_value(subtitle.language, "language")
     if custom is None:
-        return subtitle.language.alpha3
+        return subtitle.language.alpha3 if hasattr(subtitle.language, 'alpha3') else ''
     return custom.alpha3
 
 
@@ -91,8 +98,8 @@ def get_ban_list(profile_id):
     if profile_id:
         profile = get_profiles_list(profile_id)
         if profile:
-            return {'must_contain': profile['mustContain'] or [],
-                    'must_not_contain': profile['mustNotContain'] or []}
+            return {'must_contain': profile.get('mustContain') or [],
+                    'must_not_contain': profile.get('mustNotContain') or []}
     return None
 
 
@@ -110,7 +117,9 @@ def _set_forced_providers(pool, also_forced=False, forced_required=False):
 
 
 def refine_video_with_scenename(initial_video, scenename_video):
+    if not initial_video or not scenename_video:
+        return initial_video
     for key, value in vars(scenename_video).items():
-        if value and getattr(initial_video, key) in [None, (), {}, []]:
+        if value and getattr(initial_video, key, None) in [None, (), {}, []]:
             setattr(initial_video, key, value)
     return initial_video

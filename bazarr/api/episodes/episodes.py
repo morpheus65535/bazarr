@@ -2,8 +2,9 @@
 
 from flask_restx import Resource, Namespace, reqparse, fields, marshal
 
-from app.database import TableEpisodes, database, select
+from app.database import TableEpisodes, database, select, get_subtitles_map
 from api.swaggerui import subtitles_model, subtitles_language_model, audio_language_model
+from subtitles.wanted_state import get_missing_languages_map
 
 from ..utils import authenticate, postprocess
 
@@ -50,7 +51,6 @@ class Episodes(Resource):
         stmt = select(
                 TableEpisodes.audio_language,
                 TableEpisodes.episode,
-                TableEpisodes.missing_subtitles,
                 TableEpisodes.monitored,
                 TableEpisodes.path,
                 TableEpisodes.season,
@@ -74,10 +74,13 @@ class Episodes(Resource):
         else:
             return "Series or Episode ID not provided", 404
 
+        missing_languages = get_missing_languages_map('series', [x.sonarrEpisodeId for x in stmt_query])
+        subtitles_map = get_subtitles_map('series', [x.sonarrEpisodeId for x in stmt_query])
+
         return marshal([postprocess({
                 'audio_language': x.audio_language,
                 'episode': x.episode,
-                'missing_subtitles': x.missing_subtitles,
+                'missing_subtitles': missing_languages[x.sonarrEpisodeId],
                 'monitored': x.monitored,
                 'path': x.path,
                 'season': x.season,
@@ -85,4 +88,4 @@ class Episodes(Resource):
                 'sonarrSeriesId': x.sonarrSeriesId,
                 'title': x.title,
                 'sceneName': x.sceneName,
-                }) for x in stmt_query], self.get_response_model, envelope='data')
+                }, subtitles=subtitles_map.get(x.sonarrEpisodeId, [])) for x in stmt_query], self.get_response_model, envelope='data')

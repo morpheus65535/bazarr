@@ -28,6 +28,8 @@ from binascii import hexlify
 from types import MappingProxyType
 from shutil import move
 
+from utilities.text_list import parse_text_list_or_default
+
 from .get_args import args
 
 NoneType = type(None)
@@ -954,12 +956,10 @@ def save_settings(settings_items):
                 event_stream(type='reset-episode-wanted')
             if radarr_exclusion_updated:
                 event_stream(type='reset-movie-wanted')
-
-
 def get_array_from(property):
     if property:
         if '[' in property:
-            return ast.literal_eval(property)
+            return parse_text_list_or_default(property)
         elif ',' in property:
             return property.split(',')
         else:
