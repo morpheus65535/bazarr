@@ -31,6 +31,24 @@ from .utils import get_video, _get_lang_obj, _get_scores, _set_forced_providers
 from .processing import process_subtitle
 
 
+def _format_episode_part(value):
+    try:
+        return f"{int(value):02d}"
+    except (TypeError, ValueError):
+        return str(value) if value is not None else "??"
+
+
+def _get_first_audio_language_name(audio_languages):
+    if not isinstance(audio_languages, list) or not audio_languages:
+        return None
+
+    first_audio_language = audio_languages[0]
+    if not isinstance(first_audio_language, dict):
+        return None
+
+    return first_audio_language.get('name')
+
+
 @update_pools
 def manual_search(path, profile_id, providers, sceneName, title, media_type):
     logging.debug(f'BAZARR Manually searching subtitles for this file: {path}')
@@ -249,17 +267,15 @@ def episode_manually_download_specific_subtitle(sonarr_series_id, sonarr_episode
         return 'Episode not found', 404
 
     title = episodeInfo.title
+    season_part = _format_episode_part(episodeInfo.season)
+    episode_part = _format_episode_part(episodeInfo.episode)
     jobs_queue.update_job_name(job_id=job_id, new_job_name=f"Manually downloading Subtitles for {title} - "
-                                                           f"S{episodeInfo.season:02d}E{episodeInfo.episode:02d} - "
+                                                           f"S{season_part}E{episode_part} - "
                                                            f"{episodeInfo.episodeTitle}")
     episodePath = path_mappings.path_replace(episodeInfo.path)
-    sceneName = episodeInfo.sceneName or "None"
+    sceneName = episodeInfo.sceneName or None
 
-    audio_language_list = get_audio_profile_languages(episodeInfo.audio_language)
-    if len(audio_language_list) > 0:
-        audio_language = audio_language_list[0]['name']
-    else:
-        audio_language = 'None'
+    audio_language = _get_first_audio_language_name(get_audio_profile_languages(episodeInfo.audio_language))
 
     try:
         result = manual_download_subtitle(episodePath, audio_language, hi, forced, subtitle, selected_provider,
@@ -275,12 +291,12 @@ def episode_manually_download_specific_subtitle(sonarr_series_id, sonarr_episode
         elif result:
             store_subtitles(sonarr_episode_id)
             history_log(2, sonarr_series_id, sonarr_episode_id, result)
-            if not settings.general.dont_notify_manual_actions:
+            if not settings.general.dont_notify_manual_actions and hasattr(result, 'message'):
                 send_notifications(sonarr_series_id, sonarr_episode_id, result.message)
             return '', 204
     finally:
         jobs_queue.update_job_name(job_id=job_id, new_job_name=f"Manually downloaded Subtitles for {title} - "
-                                                               f"S{episodeInfo.season:02d}E{episodeInfo.episode:02d} - "
+                                                               f"S{season_part}E{episode_part} - "
                                                                f"{episodeInfo.episodeTitle}")
 
 
@@ -305,13 +321,9 @@ def movie_manually_download_specific_subtitle(radarr_id, hi, forced, use_origina
     jobs_queue.update_job_name(job_id=job_id, new_job_name=f"Manually downloading Subtitles for {title} "
                                                            f"({movieInfo.year})")
     moviePath = path_mappings.path_replace_movie(movieInfo.path)
-    sceneName = movieInfo.sceneName or "None"
+    sceneName = movieInfo.sceneName or None
 
-    audio_language_list = get_audio_profile_languages(movieInfo.audio_language)
-    if len(audio_language_list) > 0:
-        audio_language = audio_language_list[0]['name']
-    else:
-        audio_language = 'None'
+    audio_language = _get_first_audio_language_name(get_audio_profile_languages(movieInfo.audio_language))
 
     try:
         result = manual_download_subtitle(moviePath, audio_language, hi, forced, subtitle, selected_provider,
@@ -327,7 +339,7 @@ def movie_manually_download_specific_subtitle(radarr_id, hi, forced, use_origina
         elif result:
             store_subtitles_movie(radarr_id)
             history_log_movie(2, radarr_id, result)
-            if not settings.general.dont_notify_manual_actions:
+            if not settings.general.dont_notify_manual_actions and hasattr(result, 'message'):
                 send_notifications_movie(radarr_id, result.message)
             return '', 204
     finally:
@@ -338,23 +350,43 @@ def movie_manually_download_specific_subtitle(radarr_id, hi, forced, use_origina
 def _get_language_obj(profile_id):
     language_set = set()
 
-    profile = get_profiles_list(profile_id=int(profile_id))
-    language_items = profile['items']
-    original_format = profile['originalFormat']
+    try:
+        normalized_profile_id = int(profile_id)
+    except (TypeError, ValueError):
+        return language_set, False
+
+    profile = get_profiles_list(profile_id=normalized_profile_id)
+    if not isinstance(profile, dict):
+        return language_set, False
+
+    language_items = profile.get('items')
+    if not isinstance(language_items, list):
+        language_items = []
+    original_format = profile.get('originalFormat', False)
 
     for language in language_items:
-        forced = language['forced']
-        hi = language['hi']
-        language = language['language']
+        if not isinstance(language, dict):
+            continue
 
-        lang = alpha3_from_alpha2(language)
+        forced = language.get('forced')
+        hi = language.get('hi')
+        language_code = language.get('language')
+        if not isinstance(language_code, str) or not language_code.strip():
+            continue
 
-        lang_obj = _get_lang_obj(lang)
+        lang = alpha3_from_alpha2(language_code)
+        if not lang:
+            continue
 
-        if forced == "True":
+        try:
+            lang_obj = _get_lang_obj(lang)
+        except (AttributeError, TypeError, ValueError):
+            continue
+
+        if forced is True:
             lang_obj = Language.rebuild(lang_obj, forced=True)
 
-        if hi == "True":
+        if hi is True:
             lang_obj = Language.rebuild(lang_obj, hi=True)
 
         language_set.add(lang_obj)

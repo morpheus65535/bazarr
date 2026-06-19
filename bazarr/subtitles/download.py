@@ -41,7 +41,10 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
 
     language_set = _get_language_obj(languages=languages)
     profile = get_profiles_list(profile_id=profile_id)
-    original_format = profile['originalFormat']
+    if not profile or not isinstance(profile, dict):
+        logging.warning(f"BAZARR unable to get subtitle profile (profile_id={profile_id})")
+        return None
+    original_format = profile.get('originalFormat', '')
     hi_required = "force HI" if all([x.hi for x in language_set]) else "don't prefer"
     also_forced = any([x.forced for x in language_set])
     forced_required = all([x.forced for x in language_set])
