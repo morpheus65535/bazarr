@@ -25,6 +25,7 @@ def test_wanted_search_uses_normalized_retries_with_legacy_missing_languages(
     # Retry columns and the missing-language mirror deliberately disagree with
     # their counterparts. This PR must use only the normalized retry history.
     transactional_session.execute(update(table).values(failedAttempts='malformed legacy value'))
+    transactional_session.execute(delete(wanted_search_tables.missing_subtitles))
     del row.failedAttempts
     monkeypatch.setattr(adaptive_searching, 'get_adaptive_search_policy', lambda: {
         'delay': timedelta(days=21), 'delta': timedelta(days=7),
@@ -98,6 +99,40 @@ def test_sync_checks_normalized_retry_windows(kind, row_factory, bind_wanted_dat
     assert module._is_there_missing_subtitles(**kwargs) is True
 
 
+@pytest.mark.parametrize('kind', ['movies', 'series'])
+def test_indexer_updates_normalized_missing_languages_before_sync_checks(
+    kind, row_factory, bind_wanted_database, monkeypatch,
+):
+    now = datetime.now()
+    row = row_factory(missing_languages=['fr'], failed_attempts=[
+        ['en', (now - timedelta(days=30)).timestamp()], ['en', now.timestamp()],
+    ])
+    indexer = importlib.import_module('subtitles.indexer.movies' if kind == 'movies' else 'subtitles.indexer.series')
+    bind_wanted_database(indexer, kind)
+    monkeypatch.setattr(indexer, 'get_profiles_list', lambda **kwargs: {'items': [{
+        'language': 'en', 'hi': 'False', 'forced': 'False', 'audio_exclude': 'False', 'audio_only_include': 'False',
+    }]})
+    monkeypatch.setattr(indexer, 'get_profile_cutoff', lambda **kwargs: None)
+    monkeypatch.setattr(indexer, 'event_stream', lambda **kwargs: None)
+    if kind == 'movies':
+        indexer.list_missing_subtitles_movies(no=row.radarrId)
+        media_type, media_id = 'movie', row.radarrId
+    else:
+        indexer.list_missing_subtitles(epno=row.sonarrEpisodeId)
+        media_type, media_id = 'series', row.sonarrEpisodeId
+    assert wanted_state.get_missing_languages(media_type, media_id) == ['en']
+    sync = importlib.import_module('radarr.sync.movies' if kind == 'movies' else 'sonarr.sync.episodes')
+    bind_wanted_database(sync, kind)
+    monkeypatch.setattr(sync, 'get_exclusion_clause', lambda *args: [])
+    monkeypatch.setattr(adaptive_searching, 'get_adaptive_search_policy', lambda: {
+        'delay': timedelta(days=21), 'delta': timedelta(days=7),
+        'initial_search_cutoff': (now - timedelta(days=21)).timestamp(),
+        'latest_search_cutoff': (now - timedelta(days=7)).timestamp(),
+    })
+    kwargs = {'radarr_id': media_id} if kind == 'movies' else {'episode_id': media_id}
+    assert sync._is_there_missing_subtitles(**kwargs) is False
+
+
 def test_retry_upsert_canonicalizes_languages_and_preserves_timestamp_bounds(
     movie_row_factory, monkeypatch,
 ):
@@ -148,6 +183,7 @@ def test_deleting_media_cleans_up_retries_and_skips_late_writes(
     assert wanted_state.delete_media_and_wanted_search_state(media_type, table, id_column, media_id) == [media_id]
     wanted_state.record_failed_subtitle_attempts(media_type, media_id, ['en'])
     assert wanted_state.get_failed_attempt_pairs(media_type, media_id) == []
+    assert wanted_state.get_missing_languages(media_type, media_id) == []
     assert transactional_session.execute(select(table.c[id_column])).all() == []
 
 

@@ -1,6 +1,7 @@
 import importlib
 import os
 from itertools import count
+from threading import Event
 from types import SimpleNamespace
 
 import pytest
@@ -128,6 +129,14 @@ _episode_history_rows = Table(
     Column("timestamp", DateTime, nullable=True),
     Column("upgradedFromId", Integer, nullable=True),
 )
+_missing_subtitle_rows = Table(
+    "table_missing_subtitles",
+    _metadata,
+    Column("id", Integer, primary_key=True),
+    Column("media_type", String, nullable=False),
+    Column("media_id", Integer, nullable=False),
+    Column("language", String, nullable=False),
+)
 _failed_subtitle_attempt_rows = Table(
     "table_failed_subtitle_attempts",
     _metadata,
@@ -203,7 +212,12 @@ def _serialize_failed_attempts(failed_attempts):
 
 def _seed_wanted_state(media_type, media_id, missing_languages, failed_attempts):
     wanted_state = importlib.import_module("subtitles.wanted_state")
-    wanted_state.refresh_failed_subtitle_attempts(media_type, media_id, failed_attempts)
+    wanted_state.refresh_wanted_search_state(
+        media_type,
+        media_id,
+        missing_languages,
+        failed_attempts=failed_attempts,
+    )
 
 
 def _bind_movie_selects(module):
@@ -338,6 +352,7 @@ def wanted_search_tables():
         episode_subtitle=_episode_subtitle_rows,
         movie_history=_movie_history_rows,
         episode_history=_episode_history_rows,
+        missing_subtitles=_missing_subtitle_rows,
         failed_subtitle_attempts=_failed_subtitle_attempt_rows,
     )
 
@@ -348,6 +363,10 @@ def jobs_queue_factory():
         def __init__(self, progress_updates=None, names=None):
             self._progress_updates = progress_updates
             self._names = names
+            self._job = SimpleNamespace(cancel_event=Event())
+
+        def get_job(self, job_id):
+            return self._job
 
         def add_job_from_function(self, *unused_args, **unused_kwargs):
             return None
@@ -370,12 +389,14 @@ def jobs_queue_factory():
 def bind_wanted_state(transactional_session, wanted_search_schema, monkeypatch):
     del wanted_search_schema
     wanted_state = importlib.import_module("subtitles.wanted_state")
+    missing_subtitles = _TableProxy(_missing_subtitle_rows)
     failed_subtitle_attempts = _TableProxy(_failed_subtitle_attempt_rows)
 
     monkeypatch.setattr(wanted_state, "database", transactional_session, raising=False)
     monkeypatch.setattr(wanted_state, "TableMovies", _TableProxy(_movie_rows))
     monkeypatch.setattr(wanted_state, "TableEpisodes", _TableProxy(_episode_rows))
     monkeypatch.setattr(wanted_state, "TableShows", _TableProxy(_show_rows))
+    monkeypatch.setattr(wanted_state, "TableMissingSubtitles", missing_subtitles, raising=False)
     monkeypatch.setattr(wanted_state, "TableFailedSubtitleAttempts", failed_subtitle_attempts, raising=False)
 
 
@@ -659,6 +680,7 @@ def bind_wanted_database(transactional_session, bind_wanted_state, monkeypatch):
         monkeypatch.setattr(module, "get_profiles_list", get_profiles_list, raising=False)
         monkeypatch.setattr(module, "get_audio_profile_languages", get_audio_profile_languages, raising=False)
         monkeypatch.setattr(module, "get_subtitles", get_subtitles, raising=False)
+        monkeypatch.setattr(module, "TableMissingSubtitles", _TableProxy(_missing_subtitle_rows), raising=False)
         monkeypatch.setattr(
             module,
             "TableFailedSubtitleAttempts",
