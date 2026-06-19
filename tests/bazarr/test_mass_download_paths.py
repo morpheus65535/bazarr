@@ -2,6 +2,8 @@ from functools import partial
 from types import SimpleNamespace
 
 import pytest
+from sqlalchemy import delete
+from sqlalchemy import insert
 
 
 def _english_audio_languages(audio_language):
@@ -55,17 +57,25 @@ def _capture_call(calls):
 
 def _refresh_movie_missing_subtitles(module, movie_id, **kwargs):
     module.database.execute(
-        module.update(module.TableMovies)
-        .values(missing_subtitles="['en']")
-        .where(module.TableMovies.radarrId == movie_id)
+        delete(module.TableMissingSubtitles)
+        .where(module.TableMissingSubtitles.media_type == "movie")
+        .where(module.TableMissingSubtitles.media_id == movie_id)
+    )
+    module.database.execute(
+        insert(module.TableMissingSubtitles),
+        [{"media_type": "movie", "media_id": movie_id, "language": "en"}],
     )
 
 
 def _refresh_episode_missing_subtitles(module, episode_id, **kwargs):
     module.database.execute(
-        module.update(module.TableEpisodes)
-        .values(missing_subtitles="['en']")
-        .where(module.TableEpisodes.sonarrEpisodeId == episode_id)
+        delete(module.TableMissingSubtitles)
+        .where(module.TableMissingSubtitles.media_type == "series")
+        .where(module.TableMissingSubtitles.media_id == episode_id)
+    )
+    module.database.execute(
+        insert(module.TableMissingSubtitles),
+        [{"media_type": "series", "media_id": episode_id, "language": "en"}],
     )
 
 
@@ -76,7 +86,7 @@ def test_movies_download_subtitles_builds_language_tuples_and_records_downloads(
     jobs_queue_factory,
 ):
     module = mass_download_module
-    movie = movie_row_factory(missing_subtitles="['en', 'fr:forced']", profileId=44)
+    movie = movie_row_factory(missing_languages=["en", "fr:forced"], profileId=44)
     generated = []
     stored = []
     history = []
@@ -113,7 +123,7 @@ def test_movies_download_subtitles_refreshes_missing_state_before_search(
     jobs_queue_factory,
 ):
     module = mass_download_module
-    movie = movie_row_factory(missing_subtitles=None)
+    movie = movie_row_factory(missing_languages=None)
     generated = []
 
     monkeypatch.setattr(module, "get_exclusion_clause", _no_exclusions)
@@ -142,7 +152,7 @@ def test_movies_download_subtitles_reports_throttled_when_no_providers(
     jobs_queue_factory,
 ):
     module = mass_download_module
-    movie = movie_row_factory(missing_subtitles="['en']")
+    movie = movie_row_factory(missing_languages=["en"])
     progress = []
     names = []
 
@@ -167,7 +177,7 @@ def test_movies_download_subtitles_raises_when_path_missing(
     jobs_queue_factory,
 ):
     module = mass_download_module
-    movie = movie_row_factory(missing_subtitles="['en']")
+    movie = movie_row_factory(missing_languages=["en"])
     progress = []
 
     monkeypatch.setattr(module, "get_exclusion_clause", _no_exclusions)
@@ -273,7 +283,7 @@ def test_episode_download_subtitles_uses_missing_languages_and_records_downloads
     episode = episode_row_factory(
         sonarrSeriesId=show.sonarrSeriesId,
         sonarrEpisodeId=11,
-        missing_subtitles="['en', 'fr:hi']",
+        missing_languages=["en", "fr:hi"],
         profileId=44,
     )
     generated = []
@@ -320,7 +330,7 @@ def test_episode_download_subtitles_refreshes_missing_state_before_search(
 ):
     module = mass_download_module
     show = show_row_factory(sonarrSeriesId=5, title="Series")
-    episode = episode_row_factory(sonarrSeriesId=show.sonarrSeriesId, sonarrEpisodeId=11, missing_subtitles=None)
+    episode = episode_row_factory(sonarrSeriesId=show.sonarrSeriesId, sonarrEpisodeId=11, missing_languages=None)
     generated = []
 
     monkeypatch.setattr(module, "get_exclusion_clause", _no_exclusions)
@@ -367,13 +377,13 @@ def test_mass_download_handles_malformed_audio_profile_languages(
     monkeypatch.setattr(module, "generate_subtitles", _capture_generate_subtitles(generated))
 
     if kind == "movies":
-        row = movie_row_factory(missing_subtitles="['en']")
+        row = movie_row_factory(missing_languages=["en"])
         monkeypatch.setattr(module.path_mappings, "path_replace_movie", lambda path: path)
         monkeypatch.setattr(module, "get_providers", _single_provider_list)
         module.movies_download_subtitles(row.radarrId, job_id="job")
     else:
         show = show_row_factory(sonarrSeriesId=5)
-        row = episode_row_factory(sonarrSeriesId=show.sonarrSeriesId, sonarrEpisodeId=11, missing_subtitles="['en']")
+        row = episode_row_factory(sonarrSeriesId=show.sonarrSeriesId, sonarrEpisodeId=11, missing_languages=["en"])
         monkeypatch.setattr(module.path_mappings, "path_replace", lambda path: path)
         module.episode_download_subtitles(
             row.sonarrEpisodeId,

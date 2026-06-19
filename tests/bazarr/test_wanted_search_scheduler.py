@@ -21,7 +21,7 @@ def _capture_wanted_download_subtitles(calls, item_id, **kwargs):
 
 
 @pytest.mark.parametrize("kind", ["movies", "series"])
-def test_scheduled_search_falls_back_to_legacy_rows_when_due_map_is_empty(
+def test_scheduled_search_uses_normalized_due_rows(
     monkeypatch,
     wanted_module,
     row_factory,
@@ -30,7 +30,7 @@ def test_scheduled_search_falls_back_to_legacy_rows_when_due_map_is_empty(
     kind,
 ):
     searched = []
-    row = row_factory(missing_subtitles="['en']", failedAttempts="[]")
+    row = row_factory(missing_languages=["en"], failed_attempts=[])
     wanted_download_subtitles = partial(_capture_wanted_download_subtitles, searched)
 
     if kind == "movies":

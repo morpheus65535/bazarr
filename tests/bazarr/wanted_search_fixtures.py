@@ -1,4 +1,5 @@
 import importlib
+import os
 from itertools import count
 from types import SimpleNamespace
 
@@ -8,12 +9,18 @@ from sqlalchemy import Column
 from sqlalchemy import DateTime
 from sqlalchemy import ForeignKey
 from sqlalchemy import Integer
+from sqlalchemy import Float
 from sqlalchemy import MetaData
 from sqlalchemy import String
 from sqlalchemy import Table
+from sqlalchemy import UniqueConstraint
 from sqlalchemy import insert
 from sqlalchemy import select
 from sqlalchemy import update
+
+os.environ.setdefault("SZ_USER_AGENT", "pytest")
+
+from subtitles.wanted_state import serialize_legacy_failed_attempts
 
 _metadata = MetaData()
 _movie_rows = Table(
@@ -122,6 +129,25 @@ _episode_history_rows = Table(
     Column("timestamp", DateTime, nullable=True),
     Column("upgradedFromId", Integer, nullable=True),
 )
+_missing_subtitle_rows = Table(
+    "table_missing_subtitles",
+    _metadata,
+    Column("id", Integer, primary_key=True),
+    Column("media_type", String, nullable=False),
+    Column("media_id", Integer, nullable=False),
+    Column("language", String, nullable=False),
+)
+_failed_subtitle_attempt_rows = Table(
+    "table_failed_subtitle_attempts",
+    _metadata,
+    Column("id", Integer, primary_key=True),
+    Column("media_type", String, nullable=False),
+    Column("media_id", Integer, nullable=False),
+    Column("language", String, nullable=False),
+    Column("initial_attempt_at", Float, nullable=False),
+    Column("latest_attempt_at", Float, nullable=False),
+    UniqueConstraint("media_type", "media_id", "language"),
+)
 
 
 class _TableProxy:
@@ -152,12 +178,127 @@ def _serialize_missing_languages(value):
     return str(list(dict.fromkeys(value)))
 
 
-def _serialize_failed_attempts(value):
-    if value is None:
+def _serialize_failed_attempts(failed_attempts):
+    if failed_attempts is None:
         return "[]"
-    if isinstance(value, str):
-        return value
-    return str(list(value))
+    if isinstance(failed_attempts, str):
+        return failed_attempts
+
+    attempts_by_language = {}
+    for attempt in failed_attempts:
+        if not isinstance(attempt, (list, tuple)) or len(attempt) < 2 or not isinstance(attempt[0], str):
+            continue
+        try:
+            timestamp = float(attempt[1])
+        except (TypeError, ValueError):
+            continue
+        initial_attempt_at, latest_attempt_at = attempts_by_language.get(attempt[0], (timestamp, timestamp))
+        attempts_by_language[attempt[0]] = (
+            min(initial_attempt_at, timestamp),
+            max(latest_attempt_at, timestamp),
+        )
+
+    return serialize_legacy_failed_attempts(attempts_by_language)
+
+
+def _seed_wanted_state(media_type, media_id, missing_languages, failed_attempts):
+    wanted_state = importlib.import_module("subtitles.wanted_state")
+    wanted_state.refresh_wanted_search_state(
+        media_type,
+        media_id,
+        missing_languages,
+        failed_attempts=failed_attempts,
+    )
+
+
+def _bind_movie_selects(module):
+    details_select = select(
+        module.TableMovies.path,
+        module.TableMovies.missing_subtitles,
+        module.TableMovies.radarrId,
+        module.TableMovies.audio_language,
+        module.TableMovies.sceneName,
+        module.TableMovies.failedAttempts,
+        module.TableMovies.title,
+        module.TableMovies.profileId,
+        select(module.TableMoviesSubtitles.id)
+        .where(module.TableMoviesSubtitles.radarrId == module.TableMovies.radarrId)
+        .limit(1)
+        .exists()
+        .label("has_indexed_subtitles"),
+        select(module.TableMoviesSubtitles.id)
+        .where(module.TableMoviesSubtitles.radarrId == module.TableMovies.radarrId)
+        .where(module.TableMoviesSubtitles.path.is_(None))
+        .where(module.TableMoviesSubtitles.embedded_track_id.is_(None))
+        .limit(1)
+        .exists()
+        .label("has_incomplete_embedded_subtitles"),
+    )
+    module._WANTED_MOVIE_DETAILS_SELECT = details_select
+    module._WANTED_MOVIE_DETAILS_STMT = details_select.where(
+        module.TableMovies.radarrId == module.bindparam("wanted_radarr_id")
+    )
+    module._WANTED_MOVIES_SELECT = select(
+        module.TableMovies.radarrId,
+        module.TableMovies.audio_language,
+        module.TableMovies.failedAttempts,
+        module.TableMovies.missing_subtitles,
+        module.TableMovies.path,
+        module.TableMovies.profileId,
+        module.TableMovies.sceneName,
+        module.TableMovies.tags,
+        module.TableMovies.monitored,
+        module.TableMovies.title,
+        select(module.TableMoviesSubtitles.id)
+        .where(module.TableMoviesSubtitles.radarrId == module.TableMovies.radarrId)
+        .limit(1)
+        .exists()
+        .label("has_indexed_subtitles"),
+        select(module.TableMoviesSubtitles.id)
+        .where(module.TableMoviesSubtitles.radarrId == module.TableMovies.radarrId)
+        .where(module.TableMoviesSubtitles.path.is_(None))
+        .where(module.TableMoviesSubtitles.embedded_track_id.is_(None))
+        .limit(1)
+        .exists()
+        .label("has_incomplete_embedded_subtitles"),
+    )
+
+
+def _bind_episode_selects(module):
+    details_select = (
+        select(
+            module.TableEpisodes.path,
+            module.TableEpisodes.missing_subtitles,
+            module.TableEpisodes.sonarrEpisodeId,
+            module.TableEpisodes.sonarrSeriesId,
+            module.TableEpisodes.audio_language,
+            module.TableEpisodes.sceneName,
+            module.TableEpisodes.failedAttempts,
+            module.TableShows.title,
+            module.TableShows.profileId,
+            module.TableEpisodes.season,
+            module.TableEpisodes.episode,
+            module.TableEpisodes.title.label("episodeTitle"),
+            select(module.TableEpisodesSubtitles.id)
+            .where(module.TableEpisodesSubtitles.sonarrEpisodeId == module.TableEpisodes.sonarrEpisodeId)
+            .limit(1)
+            .exists()
+            .label("has_indexed_subtitles"),
+            select(module.TableEpisodesSubtitles.id)
+            .where(module.TableEpisodesSubtitles.sonarrEpisodeId == module.TableEpisodes.sonarrEpisodeId)
+            .where(module.TableEpisodesSubtitles.path.is_(None))
+            .where(module.TableEpisodesSubtitles.embedded_track_id.is_(None))
+            .limit(1)
+            .exists()
+            .label("has_incomplete_embedded_subtitles"),
+        )
+        .select_from(module.TableEpisodes)
+        .join(module.TableShows)
+    )
+    module._WANTED_EPISODE_DETAILS_SELECT = details_select
+    module._WANTED_EPISODE_DETAILS_STMT = details_select.where(
+        module.TableEpisodes.sonarrEpisodeId == module.bindparam("wanted_sonarr_episode_id")
+    )
 
 
 def _infer_kind(request):
@@ -205,6 +346,8 @@ def wanted_search_tables():
         episode_subtitle=_episode_subtitle_rows,
         movie_history=_movie_history_rows,
         episode_history=_episode_history_rows,
+        missing_subtitles=_missing_subtitle_rows,
+        failed_subtitle_attempts=_failed_subtitle_attempt_rows,
     )
 
 
@@ -233,19 +376,32 @@ def jobs_queue_factory():
 
 
 @pytest.fixture
-def movie_row_factory(transactional_session, wanted_search_schema, wanted_row_ids):
+def bind_wanted_state(transactional_session, wanted_search_schema, monkeypatch):
     del wanted_search_schema
+    wanted_state = importlib.import_module("subtitles.wanted_state")
+    missing_subtitles = _TableProxy(_missing_subtitle_rows)
+    failed_subtitle_attempts = _TableProxy(_failed_subtitle_attempt_rows)
+
+    monkeypatch.setattr(wanted_state, "database", transactional_session, raising=False)
+    monkeypatch.setattr(wanted_state, "TableMissingSubtitles", missing_subtitles, raising=False)
+    monkeypatch.setattr(wanted_state, "TableFailedSubtitleAttempts", failed_subtitle_attempts, raising=False)
+
+
+@pytest.fixture
+def movie_row_factory(transactional_session, bind_wanted_state, wanted_row_ids):
+    del bind_wanted_state
+
     def factory(**overrides):
-        missing_languages = overrides.pop("missing_languages", None)
-        failed_attempts = overrides.pop("failed_attempts", None)
+        missing_languages = overrides.pop("missing_languages", ["en", "fr:forced"])
+        failed_attempts = overrides.pop("failed_attempts", [("en", 10), ("fr:forced", 10)])
         values = {
             "id": next(wanted_row_ids),
             "path": "/movies/movie.mkv",
-            "missing_subtitles": "['en', 'fr:forced']",
+            "missing_subtitles": _serialize_missing_languages(missing_languages),
             "radarrId": 7,
             "audio_language": "['eng']",
             "sceneName": "Scene",
-            "failedAttempts": "[['en', 10], ['fr:forced', 10]]",
+            "failedAttempts": _serialize_failed_attempts(failed_attempts),
             "title": "Movie",
             "year": 2024,
             "imdbId": "tt123",
@@ -256,12 +412,15 @@ def movie_row_factory(transactional_session, wanted_search_schema, wanted_row_id
             "has_indexed_subtitles": True,
             "has_incomplete_embedded_subtitles": False,
         }
-        if missing_languages is not None:
-            values["missing_subtitles"] = _serialize_missing_languages(missing_languages)
-        if failed_attempts is not None:
-            values["failedAttempts"] = _serialize_failed_attempts(failed_attempts)
         values.update(overrides)
-        return _insert_row(transactional_session, _movie_rows, values)
+        row = _insert_row(transactional_session, _movie_rows, values)
+        _seed_wanted_state(
+            "movie",
+            values["radarrId"],
+            values.get("missing_subtitles"),
+            values.get("failedAttempts"),
+        )
+        return row
 
     return factory
 
@@ -269,6 +428,7 @@ def movie_row_factory(transactional_session, wanted_search_schema, wanted_row_id
 @pytest.fixture
 def show_row_factory(transactional_session, wanted_search_schema, wanted_row_ids):
     del wanted_search_schema
+
     def factory(**overrides):
         values = {
             "id": next(wanted_row_ids),
@@ -288,21 +448,22 @@ def show_row_factory(transactional_session, wanted_search_schema, wanted_row_ids
 
 
 @pytest.fixture
-def episode_row_factory(transactional_session, wanted_search_schema, wanted_row_ids):
-    del wanted_search_schema
+def episode_row_factory(transactional_session, bind_wanted_state, wanted_row_ids):
+    del bind_wanted_state
+
     def factory(**overrides):
         episode_title = overrides.pop("episodeTitle", "Pilot")
-        missing_languages = overrides.pop("missing_languages", None)
-        failed_attempts = overrides.pop("failed_attempts", None)
+        missing_languages = overrides.pop("missing_languages", ["en", "fr:hi"])
+        failed_attempts = overrides.pop("failed_attempts", [("en", 10), ("fr:hi", 10)])
         values = {
             "id": next(wanted_row_ids),
             "path": "/series/e01.mkv",
-            "missing_subtitles": "['en', 'fr:hi']",
+            "missing_subtitles": _serialize_missing_languages(missing_languages),
             "sonarrEpisodeId": 17,
             "sonarrSeriesId": 3,
             "audio_language": "['eng']",
             "sceneName": "Scene",
-            "failedAttempts": "[['en', 10], ['fr:hi', 10]]",
+            "failedAttempts": _serialize_failed_attempts(failed_attempts),
             "title": "Series",
             "profileId": 22,
             "season": 1,
@@ -312,10 +473,6 @@ def episode_row_factory(transactional_session, wanted_search_schema, wanted_row_
             "has_indexed_subtitles": True,
             "has_incomplete_embedded_subtitles": False,
         }
-        if missing_languages is not None:
-            values["missing_subtitles"] = _serialize_missing_languages(missing_languages)
-        if failed_attempts is not None:
-            values["failedAttempts"] = _serialize_failed_attempts(failed_attempts)
         values.update(overrides)
 
         existing_show = transactional_session.execute(
@@ -339,7 +496,14 @@ def episode_row_factory(transactional_session, wanted_search_schema, wanted_row_
             )
 
         episode_values = dict(values, title=values.get("episodeTitle") or episode_title)
-        return _insert_row(transactional_session, _episode_rows, episode_values)
+        row = _insert_row(transactional_session, _episode_rows, episode_values)
+        _seed_wanted_state(
+            "series",
+            values["sonarrEpisodeId"],
+            values.get("missing_subtitles"),
+            values.get("failedAttempts"),
+        )
+        return row
 
     return factory
 
@@ -444,8 +608,8 @@ def episode_history_row_factory(transactional_session, wanted_search_schema, wan
 
 
 @pytest.fixture
-def bind_wanted_database(transactional_session, wanted_search_schema, monkeypatch):
-    del wanted_search_schema
+def bind_wanted_database(transactional_session, bind_wanted_state, monkeypatch):
+    del bind_wanted_state
 
     def get_profile_id(*, movie_id=None, episode_id=None, **unused_kwargs):
         if movie_id is not None:
@@ -494,6 +658,8 @@ def bind_wanted_database(transactional_session, wanted_search_schema, monkeypatc
         return subtitles
 
     def bind(module, kind):
+        wanted_state = importlib.import_module("subtitles.wanted_state")
+
         monkeypatch.setattr(module, "database", transactional_session, raising=False)
         monkeypatch.setattr(module, "select", select, raising=False)
         monkeypatch.setattr(module, "update", update, raising=False)
@@ -501,7 +667,13 @@ def bind_wanted_database(transactional_session, wanted_search_schema, monkeypatc
         monkeypatch.setattr(module, "get_profiles_list", get_profiles_list, raising=False)
         monkeypatch.setattr(module, "get_audio_profile_languages", get_audio_profile_languages, raising=False)
         monkeypatch.setattr(module, "get_subtitles", get_subtitles, raising=False)
-
+        monkeypatch.setattr(module, "TableMissingSubtitles", _TableProxy(_missing_subtitle_rows), raising=False)
+        monkeypatch.setattr(
+            module,
+            "TableFailedSubtitleAttempts",
+            _TableProxy(_failed_subtitle_attempt_rows),
+            raising=False,
+        )
         if kind == "movies":
             monkeypatch.setattr(module, "TableMovies", _TableProxy(_movie_rows), raising=False)
         elif kind == "series":
@@ -513,9 +685,13 @@ def bind_wanted_database(transactional_session, wanted_search_schema, monkeypatc
         if kind == "movies":
             monkeypatch.setattr(module, "TableHistoryMovie", _TableProxy(_movie_history_rows), raising=False)
             monkeypatch.setattr(module, "TableMoviesSubtitles", _TableProxy(_movie_subtitle_rows), raising=False)
+            if hasattr(module, "_WANTED_MOVIE_DETAILS_SELECT"):
+                _bind_movie_selects(module)
         elif kind == "series":
             monkeypatch.setattr(module, "TableHistory", _TableProxy(_episode_history_rows), raising=False)
             monkeypatch.setattr(module, "TableEpisodesSubtitles", _TableProxy(_episode_subtitle_rows), raising=False)
+            if hasattr(module, "_WANTED_EPISODE_DETAILS_SELECT"):
+                _bind_episode_selects(module)
 
         return module
 
