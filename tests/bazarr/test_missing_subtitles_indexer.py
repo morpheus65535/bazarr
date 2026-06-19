@@ -186,7 +186,7 @@ class _FakeDatabase:
         self.missing = None
 
     def execute(self, statement):
-        return SimpleNamespace(all=lambda: [self.row])
+        return [self.row]
 
     def store_missing_subtitles(self, table, id_column_name, media_type, media_id, missing_subtitles):
         self.missing = ast.literal_eval(missing_subtitles)
