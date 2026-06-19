@@ -1,6 +1,9 @@
 from functools import partial
 from unittest.mock import Mock
 
+from sqlalchemy import delete
+from sqlalchemy import insert
+
 
 def _single_provider_list():
     return ["provider"]
@@ -30,17 +33,25 @@ def _record_provider_call(calls):
 
 def _refresh_movie_missing_subtitles(module, movie_id, **kwargs):
     module.database.execute(
-        module.update(module.TableMovies)
-        .values(missing_subtitles="['en']")
-        .where(module.TableMovies.radarrId == movie_id)
+        delete(module.TableMissingSubtitles)
+        .where(module.TableMissingSubtitles.media_type == "movie")
+        .where(module.TableMissingSubtitles.media_id == movie_id)
+    )
+    module.database.execute(
+        insert(module.TableMissingSubtitles),
+        [{"media_type": "movie", "media_id": movie_id, "language": "en"}],
     )
 
 
 def _refresh_episode_missing_subtitles(module, episode_id, **kwargs):
     module.database.execute(
-        module.update(module.TableEpisodes)
-        .values(missing_subtitles="['en']")
-        .where(module.TableEpisodes.sonarrEpisodeId == episode_id)
+        delete(module.TableMissingSubtitles)
+        .where(module.TableMissingSubtitles.media_type == "series")
+        .where(module.TableMissingSubtitles.media_id == episode_id)
+    )
+    module.database.execute(
+        insert(module.TableMissingSubtitles),
+        [{"media_type": "series", "media_id": episode_id, "language": "en"}],
     )
 
 
@@ -55,7 +66,7 @@ def _invalidate_movie_row_after_missing_refresh(module, movie_id, **kwargs):
 def test_wanted_movie_refreshes_missing_state_before_search(
     monkeypatch, wanted_module, movie_row_factory, movie_subtitle_row_factory
 ):
-    movie = movie_row_factory(missing_subtitles=None, failedAttempts="[]")
+    movie = movie_row_factory(missing_languages=None, failed_attempts=[])
     movie_subtitle_row_factory(radarrId=movie.radarrId)
     captured_languages = []
 
@@ -76,7 +87,7 @@ def test_wanted_episode_refreshes_missing_state_before_search(
     monkeypatch, wanted_module, show_row_factory, episode_row_factory, episode_subtitle_row_factory
 ):
     show_row_factory(sonarrSeriesId=3, title="Series")
-    episode = episode_row_factory(missing_subtitles=None, failedAttempts="[]")
+    episode = episode_row_factory(missing_languages=None, failed_attempts=[])
     episode_subtitle_row_factory(sonarrEpisodeId=episode.sonarrEpisodeId)
     captured_languages = []
 
@@ -96,7 +107,7 @@ def test_wanted_episode_refreshes_missing_state_before_search(
 def test_movie_download_wrapper_does_not_refresh_details_after_success(
     monkeypatch, wanted_module, movie_row_factory, movie_subtitle_row_factory
 ):
-    movie = movie_row_factory(missing_subtitles="['en']", failedAttempts="[]")
+    movie = movie_row_factory(missing_languages=["en"], failed_attempts=[])
     movie_subtitle_row_factory(radarrId=movie.radarrId)
     store_subtitles_movie = Mock()
     list_missing_subtitles_movies = Mock(return_value=None)
@@ -118,7 +129,7 @@ def test_series_download_wrapper_does_not_refresh_details_after_success(
     monkeypatch, wanted_module, show_row_factory, episode_row_factory, episode_subtitle_row_factory
 ):
     show_row_factory(sonarrSeriesId=3, title="Series")
-    episode = episode_row_factory(missing_subtitles="['en']", failedAttempts="[]")
+    episode = episode_row_factory(missing_languages=["en"], failed_attempts=[])
     episode_subtitle_row_factory(sonarrEpisodeId=episode.sonarrEpisodeId)
     store_subtitles = Mock()
     list_missing_subtitles = Mock(return_value=None)
@@ -161,7 +172,7 @@ def test_wanted_download_subtitles_returns_early_when_episode_not_found(monkeypa
 def test_wanted_download_subtitles_movie_skips_search_when_no_providers(
     monkeypatch, wanted_module, movie_row_factory, movie_subtitle_row_factory
 ):
-    movie = movie_row_factory(missing_subtitles="['en']")
+    movie = movie_row_factory(missing_languages=["en"])
     movie_subtitle_row_factory(radarrId=movie.radarrId)
     generate_subtitles = Mock(return_value=iter(()))
 
@@ -177,7 +188,7 @@ def test_wanted_download_subtitles_skips_search_when_no_providers(
     monkeypatch, wanted_module, show_row_factory, episode_row_factory, episode_subtitle_row_factory
 ):
     show_row_factory(sonarrSeriesId=3, title="Series")
-    episode = episode_row_factory(missing_subtitles="['en']")
+    episode = episode_row_factory(missing_languages=["en"])
     episode_subtitle_row_factory(sonarrEpisodeId=episode.sonarrEpisodeId)
     generate_subtitles = Mock(return_value=iter(()))
 
@@ -190,7 +201,7 @@ def test_wanted_download_subtitles_skips_search_when_no_providers(
 
 
 def test_wanted_download_subtitles_movie_refreshes_empty_index_list(monkeypatch, wanted_module, movie_row_factory):
-    movie = movie_row_factory(missing_subtitles="['en']", failedAttempts="[]")
+    movie = movie_row_factory(missing_languages=["en"], failed_attempts=[])
     store_subtitles_movie = Mock()
     generate_subtitles = Mock(return_value=iter(()))
 
@@ -206,7 +217,7 @@ def test_wanted_download_subtitles_movie_refreshes_empty_index_list(monkeypatch,
 
 def test_wanted_download_subtitles_refreshes_empty_index_list(monkeypatch, wanted_module, show_row_factory, episode_row_factory):
     show_row_factory(sonarrSeriesId=3, title="Series")
-    episode = episode_row_factory(missing_subtitles="['en']", failedAttempts="[]")
+    episode = episode_row_factory(missing_languages=["en"], failed_attempts=[])
     store_subtitles = Mock()
     generate_subtitles = Mock(return_value=iter(()))
 
@@ -223,7 +234,7 @@ def test_wanted_download_subtitles_refreshes_empty_index_list(monkeypatch, wante
 def test_wanted_download_subtitles_movie_refreshes_unindexed_external_subtitle(
     monkeypatch, wanted_module, movie_row_factory, movie_subtitle_row_factory
 ):
-    movie = movie_row_factory(missing_subtitles="['en']", failedAttempts="[]")
+    movie = movie_row_factory(missing_languages=["en"], failed_attempts=[])
     movie_subtitle_row_factory(radarrId=movie.radarrId, path=None, embedded_track_id=None)
     store_subtitles_movie = Mock()
     generate_subtitles = Mock(return_value=iter(()))
@@ -242,7 +253,7 @@ def test_wanted_download_subtitles_refreshes_unindexed_external_subtitle(
     monkeypatch, wanted_module, show_row_factory, episode_row_factory, episode_subtitle_row_factory
 ):
     show_row_factory(sonarrSeriesId=3, title="Series")
-    episode = episode_row_factory(missing_subtitles="['en']", failedAttempts="[]")
+    episode = episode_row_factory(missing_languages=["en"], failed_attempts=[])
     episode_subtitle_row_factory(sonarrEpisodeId=episode.sonarrEpisodeId, path=None, embedded_track_id=None)
     store_subtitles = Mock()
     generate_subtitles = Mock(return_value=iter(()))
@@ -260,7 +271,7 @@ def test_wanted_download_subtitles_refreshes_unindexed_external_subtitle(
 def test_wanted_movie_wrapper_handles_missing_row_after_missing_refresh(
     monkeypatch, wanted_module, movie_row_factory, movie_subtitle_row_factory
 ):
-    movie = movie_row_factory(missing_subtitles=None)
+    movie = movie_row_factory(missing_languages=None)
     movie_subtitle_row_factory(radarrId=movie.radarrId)
 
     monkeypatch.setattr(

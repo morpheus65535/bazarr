@@ -7,19 +7,33 @@ import subtitles.manual as manual
 import subtitles.utils as subtitle_utils
 
 
+def _no_op(*args, **kwargs):
+    return None
+
+
+def _record_call(calls):
+    def _inner(*args, **kwargs):
+        calls.append((args, kwargs))
+    return _inner
+
+
+def _empty_message_result(*args, **kwargs):
+    return SimpleNamespace()
+
+
 @pytest.fixture
 def manual_module(bind_wanted_database, monkeypatch):
     bind_wanted_database(manual, "movies")
     bind_wanted_database(manual, "series")
-    monkeypatch.setattr(manual.path_mappings, "path_replace", lambda path: path)
-    monkeypatch.setattr(manual.path_mappings, "path_replace_movie", lambda path: path)
-    monkeypatch.setattr(manual, "store_subtitles", lambda *args, **kwargs: None)
-    monkeypatch.setattr(manual, "store_subtitles_movie", lambda *args, **kwargs: None)
-    monkeypatch.setattr(manual, "history_log", lambda *args, **kwargs: None)
-    monkeypatch.setattr(manual, "history_log_movie", lambda *args, **kwargs: None)
-    monkeypatch.setattr(manual, "send_notifications", lambda *args, **kwargs: None)
-    monkeypatch.setattr(manual, "send_notifications_movie", lambda *args, **kwargs: None)
-    monkeypatch.setattr(manual.jobs_queue, "update_job_name", lambda **kwargs: None)
+    monkeypatch.setattr(manual.path_mappings, "path_replace", _no_op)
+    monkeypatch.setattr(manual.path_mappings, "path_replace_movie", _no_op)
+    monkeypatch.setattr(manual, "store_subtitles", _no_op)
+    monkeypatch.setattr(manual, "store_subtitles_movie", _no_op)
+    monkeypatch.setattr(manual, "history_log", _no_op)
+    monkeypatch.setattr(manual, "history_log_movie", _no_op)
+    monkeypatch.setattr(manual, "send_notifications", _no_op)
+    monkeypatch.setattr(manual, "send_notifications_movie", _no_op)
+    monkeypatch.setattr(manual.jobs_queue, "update_job_name", _no_op)
     return manual
 
 
@@ -87,13 +101,9 @@ def test_episode_manual_download_handles_none_audio_list_and_message_less_result
     notifications = []
 
     monkeypatch.setattr(manual_module.settings.general, "dont_notify_manual_actions", False)
-    monkeypatch.setattr(manual_module, "get_audio_profile_languages", lambda audio_language: None)
-    monkeypatch.setattr(manual_module, "manual_download_subtitle", lambda *args, **kwargs: SimpleNamespace())
-    monkeypatch.setattr(
-        manual_module,
-        "send_notifications",
-        lambda *args, **kwargs: notifications.append((args, kwargs)),
-    )
+    monkeypatch.setattr(manual_module, "get_audio_profile_languages", _no_op)
+    monkeypatch.setattr(manual_module, "manual_download_subtitle", _empty_message_result)
+    monkeypatch.setattr(manual_module, "send_notifications", _record_call(notifications))
 
     result = manual_module.episode_manually_download_specific_subtitle(
         sonarr_series_id=5,
@@ -117,13 +127,9 @@ def test_movie_manual_download_handles_none_audio_list_and_message_less_result(
     notifications = []
 
     monkeypatch.setattr(manual_module.settings.general, "dont_notify_manual_actions", False)
-    monkeypatch.setattr(manual_module, "get_audio_profile_languages", lambda audio_language: None)
-    monkeypatch.setattr(manual_module, "manual_download_subtitle", lambda *args, **kwargs: SimpleNamespace())
-    monkeypatch.setattr(
-        manual_module,
-        "send_notifications_movie",
-        lambda *args, **kwargs: notifications.append((args, kwargs)),
-    )
+    monkeypatch.setattr(manual_module, "get_audio_profile_languages", _no_op)
+    monkeypatch.setattr(manual_module, "manual_download_subtitle", _empty_message_result)
+    monkeypatch.setattr(manual_module, "send_notifications_movie", _record_call(notifications))
 
     result = manual_module.movie_manually_download_specific_subtitle(
         radarr_id=7,

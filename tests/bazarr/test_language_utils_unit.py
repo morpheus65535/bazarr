@@ -1,4 +1,5 @@
 import subtitles.language_utils as language_utils
+from subtitles.serialization import missing_subtitle_to_language_tuple
 
 
 def test_parse_language_token_canonicalizes_case_and_flag_order():
@@ -76,6 +77,10 @@ def test_build_search_payload_deduplicates_and_normalizes():
         ("de", "True", "True"),
     ]
     assert stamps == ["en", "fr:hi", "de:forced:hi"]
+
+
+def test_missing_subtitle_to_language_tuple_preserves_combined_flags():
+    assert missing_subtitle_to_language_tuple("en:hi:forced") == ("en", "True", "True")
 
 
 def test_stamp_failed_attempts_chains_updates():
