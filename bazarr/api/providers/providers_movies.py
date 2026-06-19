@@ -77,7 +77,7 @@ class ProviderMovies(Resource):
         if not os.path.exists(moviePath):
             return 'Movie file not found. Path mapping issue?', 500
 
-        sceneName = movieInfo.sceneName or "None"
+        sceneName = movieInfo.sceneName
         profileId = movieInfo.profileId
 
         providers_list = get_providers()
