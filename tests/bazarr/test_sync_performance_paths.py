@@ -250,14 +250,14 @@ def test_update_movies_compares_against_matching_radarr_id(monkeypatch):
                 "title": "Movie 1",
                 "hasFile": True,
                 "monitored": True,
-                "movieFile": {"path": "/movies/one.mkv", "size": MINIMUM_VIDEO_SIZE + 1},
+                "movieFile": {"id": 101, "path": "/movies/one.mkv", "size": MINIMUM_VIDEO_SIZE + 1},
             },
             {
                 "id": 2,
                 "title": "New Movie 2",
                 "hasFile": True,
                 "monitored": True,
-                "movieFile": {"path": "/movies/two.mkv", "size": MINIMUM_VIDEO_SIZE + 1},
+                "movieFile": {"id": 102, "path": "/movies/two.mkv", "size": MINIMUM_VIDEO_SIZE + 1},
             },
         ],
     )

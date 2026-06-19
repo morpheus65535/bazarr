@@ -180,7 +180,7 @@ class TitloviProvider(Provider, ProviderSubtitleArchiveMixin):
                 logger.debug('New token obtained')
 
             elif response.status_code == request_codes.unauthorized:
-                raise AuthenticationError('Login failed')
+                raise AuthenticationError('API login returned 403 Forbidden. Account not verified/API disabled.')
 
         except RequestException as e:
             logger.error(e)
@@ -193,6 +193,8 @@ class TitloviProvider(Provider, ProviderSubtitleArchiveMixin):
         resp = self.session.get(search_url, params=search_params)
         if resp.status_code == request_codes.too_many_requests:
             raise TooManyRequests('Too many requests')
+        elif resp.status_code == request_codes.unauthorized:
+            raise AuthenticationError('API search returned 403 Forbidden. Account not verified/API disabled.')
         else:
             return resp
 
@@ -322,6 +324,8 @@ class TitloviProvider(Provider, ProviderSubtitleArchiveMixin):
         r = self.session.get(subtitle.download_link, timeout=10)
         if r.status_code == request_codes.too_many_requests:
             raise TooManyRequests('Too many requests')
+        elif r.status_code == request_codes.unauthorized:
+            raise AuthenticationError('API download returned 403 Forbidden. Account not verified/API disabled.')
         r.raise_for_status()
 
         # open the archive

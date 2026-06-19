@@ -515,7 +515,7 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     key: "subs4series",
     name: "Subs4Series",
     description:
-      "Greek Subtitles Provider.\nRequires anti-captcha provider to solve captchas for each download.",
+      "Greek Subtitles Provider.\nRequires Anti-Captcha Provider to solve captchas for each download.",
   },
   { key: "subscenter", description: "Hebrew Subtitles Provider" },
   {
@@ -705,7 +705,8 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
   {
     key: "zimuku",
     name: "Zimuku",
-    description: "Chinese Subtitles Provider. Anti-captcha required.",
+    description:
+      "Chinese Subtitles Provider.\nRequires Anti-Captcha Provider to solve numeric captchas for each search and download.",
   },
 ];
 

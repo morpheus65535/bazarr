@@ -473,11 +473,11 @@ class SocketClient(Client):
     def upload(self, captcha=None, **kwargs):
         data = {}
         if captcha:
-            data['captcha'] = base64.b64encode(_load_image(captcha))
+            data['captcha'] = str(base64.b64encode(_load_image(captcha)), 'ascii')
         if kwargs:
             banner = kwargs.get('banner', '')
             if banner:
-                kwargs['banner'] = base64.b64encode(_load_image(banner))
+                kwargs['banner'] = str(base64.b64encode(_load_image(banner)), 'ascii')
             data.update(kwargs)
         response = self._call('upload', data)
         if response.get('captcha'):

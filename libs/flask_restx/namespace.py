@@ -253,11 +253,9 @@ class Namespace(object):
         def wrapper(func):
             doc = {
                 "responses": {
-                    str(code): (
-                        (description, [fields], kwargs)
-                        if as_list
-                        else (description, fields, kwargs)
-                    )
+                    str(code): (description, [fields], kwargs)
+                    if as_list
+                    else (description, fields, kwargs)
                 },
                 "__mask__": kwargs.get(
                     "mask", True

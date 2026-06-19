@@ -528,14 +528,16 @@ def get_profiles_list(profile_id=None):
 
 def get_desired_languages(profile_id):
     for profile in update_profile_id_list():
-        if profile['profileId'] == profile_id:
-            return [x['language'] for x in profile['items']]
+        if profile.get('profileId') == profile_id:
+            return [x.get('language') for x in profile.get('items', []) if isinstance(x, dict) and 'language' in x]
+    return []
 
 
 def get_profile_id_name(profile_id):
     for profile in update_profile_id_list():
-        if profile['profileId'] == profile_id:
-            return profile['name']
+        if profile.get('profileId') == profile_id:
+            return profile.get('name')
+    return None
 
 
 def get_profile_cutoff(profile_id):
@@ -543,15 +545,27 @@ def get_profile_cutoff(profile_id):
     profile_id_list = update_profile_id_list()
 
     if profile_id and profile_id != 'null':
+        try:
+            profile_id = int(profile_id)
+        except (TypeError, ValueError):
+            return None
+
         cutoff_language = []
         for profile in profile_id_list:
-            profileId, name, cutoff, items, mustContain, mustNotContain, originalFormat, tag = profile.values()
+            if not isinstance(profile, dict):
+                continue
+            profileId = profile.get('profileId')
+            cutoff = profile.get('cutoff')
+            items = profile.get('items', [])
+            if not isinstance(items, list):
+                items = []
+
             if cutoff:
-                if profileId == int(profile_id):
+                if profileId == profile_id:
                     for item in items:
-                        if item['id'] == cutoff:
+                        if isinstance(item, dict) and item.get('id') == cutoff:
                             return [item]
-                        elif cutoff == 65535:
+                        elif cutoff == 65535 and isinstance(item, dict):
                             cutoff_language.append(item)
 
         if not len(cutoff_language):
@@ -568,11 +582,13 @@ def get_audio_profile_languages(audio_languages_list_str):
 
     try:
         audio_languages_list = ast.literal_eval(audio_languages_list_str or '[]')
-    except ValueError:
-        pass
+        if not isinstance(audio_languages_list, list):
+            return []
+    except (ValueError, SyntaxError):
+        return []
     else:
         for language in audio_languages_list:
-            if language:
+            if language and isinstance(language, str):
                 audio_languages.append(
                     {"name": language,
                      "code2": alpha2_from_language(language) or None,

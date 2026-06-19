@@ -252,6 +252,9 @@ class RetryingSession(CertifiSession):
                 "https": proxy
             }
 
+        if os.environ.get("SZ_DISABLE_SSL_VERIFY"):
+            self.verify = False
+
     def retry_method(self, method, *args, **kwargs):
         if self.proxies:
             # fixme: may be a little loud
@@ -293,7 +296,7 @@ class SubZeroRequestsTransport(six.moves.xmlrpc_client.SafeTransport):
     proxies = None
 
     def __init__(self, use_https=True, verify=None, user_agent=None, timeout=10, *args, **kwargs):
-        self.verify = pem_file if verify is None else verify
+        self.verify = False if os.environ.get("SZ_DISABLE_SSL_VERIFY") else pem_file if verify is None else verify
         self.use_https = use_https
         self.user_agent = user_agent if user_agent is not None else self.user_agent
         self.timeout = timeout

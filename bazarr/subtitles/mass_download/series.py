@@ -1,7 +1,6 @@
 # coding=utf-8
 # fmt: off
 
-import ast
 import logging
 import operator
 import os
@@ -20,6 +19,12 @@ from app.event_handler import event_stream
 from app.config import settings
 
 from ..download import generate_subtitles
+from ..language_utils import (
+    build_search_payload,
+    format_episode_part,
+    has_unindexed_external_subtitle,
+    resolve_audio_language,
+)
 
 
 def series_download_subtitles(no, job_id=None, job_sub_function=False):
@@ -33,6 +38,11 @@ def series_download_subtitles(no, job_id=None, job_sub_function=False):
                TableShows.title)
         .where(TableShows.sonarrSeriesId == no))\
         .first()
+
+    if not series_row:
+        logging.debug(f"BAZARR no series with that sonarrSeriesId can be found in database: {no}")
+        jobs_queue.update_job_progress(job_id=job_id, progress_message="Series not found in database.")
+        return
 
     if series_row and not os.path.exists(path_mappings.path_replace(series_row.path)):
         raise OSError
@@ -60,9 +70,11 @@ def series_download_subtitles(no, job_id=None, job_sub_function=False):
 
         jobs_queue.update_job_progress(job_id=job_id, progress_max=count_episodes_details)
         for i, episode in enumerate(episodes_details, start=1):
+            season_part = format_episode_part(episode.season)
+            episode_part = format_episode_part(episode.episode)
             jobs_queue.update_job_progress(job_id=job_id, progress_value=i,
-                                           progress_message=f'{episode.title} - S{episode.season:02d}E'
-                                                            f'{episode.episode:02d} - {episode.episodeTitle}')
+                                           progress_message=f'{episode.title} - S{season_part}E'
+                                                            f'{episode_part} - {episode.episodeTitle}')
 
             providers_list = get_providers()
             fallback_allowed = settings.general.use_whisper_fallback and settings.general.use_whisper_fallback_series
@@ -108,21 +120,28 @@ def episode_download_subtitles(no, job_id=None, job_sub_function=False, provider
         .where(reduce(operator.and_, conditions))
     episode = database.execute(stmt).first()
 
-    previously_indexed_subtitles = get_subtitles(sonarr_episode_id=episode.sonarrEpisodeId)
-
     if not episode:
         logging.debug("BAZARR no episode with that sonarrEpisodeId can be found in database:", str(no))
         jobs_queue.update_job_progress(job_id=job_id, progress_message="Episode not found in database.")
         return
-    elif not len(previously_indexed_subtitles) or \
-            any([not x['embedded_track_id'] for x in previously_indexed_subtitles if not x['path']]):
+    previously_indexed_subtitles = get_subtitles(sonarr_episode_id=episode.sonarrEpisodeId) or []
+
+    if not len(previously_indexed_subtitles) or has_unindexed_external_subtitle(previously_indexed_subtitles):
         # subtitles indexing for this episode might be incomplete, we'll do it again
         store_subtitles(episode.sonarrEpisodeId)
         episode = database.execute(stmt).first()
+        if not episode:
+            logging.debug("BAZARR no episode with that sonarrEpisodeId can be found in database after subtitles refresh:", str(no))
+            jobs_queue.update_job_progress(job_id=job_id, progress_message="Episode not found in database.")
+            return
     elif episode.missing_subtitles is None:
         # missing subtitles calculation for this episode is incomplete, we'll do it again
         list_missing_subtitles(epno=no)
         episode = database.execute(stmt).first()
+        if not episode:
+            logging.debug("BAZARR no episode with that sonarrEpisodeId can be found in database after missing-subtitles refresh:", str(no))
+            jobs_queue.update_job_progress(job_id=job_id, progress_message="Episode not found in database.")
+            return
 
     episodePath = path_mappings.path_replace(episode.path)
 
@@ -137,23 +156,16 @@ def episode_download_subtitles(no, job_id=None, job_sub_function=False, provider
     downloaded_count = 0
     if providers_list:
         audio_language_list = get_audio_profile_languages(episode.audio_language)
-        if len(audio_language_list) > 0:
-            audio_language = audio_language_list[0]['name']
-        else:
-            audio_language = 'None'
+        audio_language = resolve_audio_language(audio_language_list)
 
-        languages = []
+        languages, _ = build_search_payload(episode.missing_subtitles, "mass episode download")
 
         if not job_sub_function and job_id:
+            season_part = format_episode_part(episode.season)
+            episode_part = format_episode_part(episode.episode)
             jobs_queue.update_job_progress(job_id=job_id, progress_max=1,
-                                           progress_message=f'{episode.title} - S{episode.season:02d}E'
-                                                            f'{episode.episode:02d} - {episode.episodeTitle}')
-
-        for language in ast.literal_eval(episode.missing_subtitles):
-            if language is not None:
-                hi_ = "True" if language.endswith(':hi') else "False"
-                forced_ = "True" if language.endswith(':forced') else "False"
-                languages.append((language.split(":")[0], hi_, forced_))
+                                           progress_message=f'{episode.title} - S{season_part}E'
+                                                            f'{episode_part} - {episode.episodeTitle}')
 
         if languages:
             for result in generate_subtitles(episodePath,
@@ -171,7 +183,8 @@ def episode_download_subtitles(no, job_id=None, job_sub_function=False, provider
                         result = result[0]
                     store_subtitles(episode.sonarrEpisodeId)
                     history_log(1, episode.sonarrSeriesId, episode.sonarrEpisodeId, result)
-                    send_notifications(episode.sonarrSeriesId, episode.sonarrEpisodeId, result.message)
+                    if hasattr(result, 'message'):
+                        send_notifications(episode.sonarrSeriesId, episode.sonarrEpisodeId, result.message)
                     downloaded_count += 1
         outcome_msg = (f"{downloaded_count} subtitle(s) downloaded"
                        if downloaded_count else "No subtitles found")
@@ -214,7 +227,9 @@ def episode_download_specific_subtitles(sonarr_series_id, sonarr_episode_id, lan
 
     title = episodeInfo.title
 
-    episode_long_title = f'{title} - S{episodeInfo.season:02d}E{episodeInfo.episode:02d} - {episodeInfo.episodeTitle}'
+    season_part = format_episode_part(episodeInfo.season)
+    episode_part = format_episode_part(episodeInfo.episode)
+    episode_long_title = f'{title} - S{season_part}E{episode_part} - {episodeInfo.episodeTitle}'
 
     if hi == 'True':
         language_str = f'{language}:hi'
@@ -227,10 +242,7 @@ def episode_download_specific_subtitles(sonarr_series_id, sonarr_episode_id, lan
                                new_job_name=f"Searching {language_str.upper()} for {episode_long_title}")
 
     audio_language_list = get_audio_profile_languages(episodeInfo.audio_language)
-    if len(audio_language_list) > 0:
-        audio_language = audio_language_list[0]['name']
-    else:
-        audio_language = None
+    audio_language = resolve_audio_language(audio_language_list, fallback=None)
 
     try:
         result = list(generate_subtitles(episodePath, [(language, hi, forced)], audio_language, sceneName,
@@ -242,7 +254,8 @@ def episode_download_specific_subtitles(sonarr_series_id, sonarr_episode_id, lan
                 result = result[0]
             store_subtitles(sonarr_episode_id)
             history_log(1, sonarr_series_id, sonarr_episode_id, result)
-            send_notifications(sonarr_series_id, sonarr_episode_id, result.message)
+            if hasattr(result, 'message'):
+                send_notifications(sonarr_series_id, sonarr_episode_id, result.message)
         else:
             event_stream(type='episode', payload=sonarr_episode_id)
             return '', 204

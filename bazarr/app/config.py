@@ -173,6 +173,7 @@ validators = [
     Validator('general.language_equals', must_exist=True, default=[], is_type_of=list),
     Validator('general.concurrent_jobs', must_exist=True, default=4 if os.cpu_count() >= 4 else os.cpu_count(),
               is_type_of=int),
+    Validator('general.disable_all_providers_ssl_verify', must_exist=True, default=False, is_type_of=bool),
 
     # log section
     Validator('log.include_filter', must_exist=True, default='', is_type_of=str, cast=str),
@@ -672,6 +673,7 @@ def save_settings(settings_items):
     radarr_changed = False
     update_path_map = False
     configure_proxy = False
+    configure_ssl_verify = False
     exclusion_updated = False
     sonarr_exclusion_updated = False
     radarr_exclusion_updated = False
@@ -775,6 +777,9 @@ def save_settings(settings_items):
         if key in ['settings-proxy-type', 'settings-proxy-url', 'settings-proxy-port', 'settings-proxy-username',
                    'settings-proxy-password']:
             configure_proxy = True
+
+        if key == 'settings-general-disable_all_providers_ssl_verify':
+            configure_ssl_verify = True
 
         if key in ['settings-sonarr-excluded_tags', 'settings-sonarr-only_monitored',
                    'settings-sonarr-excluded_series_types', 'settings-sonarr-exclude_season_zero',
@@ -939,6 +944,9 @@ def save_settings(settings_items):
         if configure_proxy:
             configure_proxy_func()
 
+        if configure_ssl_verify:
+            configure_sz_ssl_verify_func()
+
         if exclusion_updated:
             from .event_handler import event_stream
             event_stream(type='badges')
@@ -985,6 +993,13 @@ def configure_proxy_func():
         os.environ['HTTPS_PROXY'] = str(proxy)
         exclude = ','.join(settings.proxy.exclude)
         os.environ['NO_PROXY'] = exclude
+
+
+def configure_sz_ssl_verify_func():
+    if settings.general.disable_all_providers_ssl_verify:
+        os.environ['SZ_DISABLE_SSL_VERIFY'] = 'true'
+    else:
+        os.environ.pop('SZ_DISABLE_SSL_VERIFY', None)
 
 
 def sync_checker(subtitle):

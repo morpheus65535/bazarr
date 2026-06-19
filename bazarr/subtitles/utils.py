@@ -61,9 +61,11 @@ def get_video(path, title, sceneName, providers=None, media_type="movie"):
 
 
 def _get_download_code3(subtitle):
+    if not subtitle or not subtitle.language:
+        return ''
     custom = CustomLanguage.from_value(subtitle.language, "language")
     if custom is None:
-        return subtitle.language.alpha3
+        return subtitle.language.alpha3 if hasattr(subtitle.language, 'alpha3') else ''
     return custom.alpha3
 
 
@@ -96,8 +98,8 @@ def get_ban_list(profile_id):
     if profile_id:
         profile = get_profiles_list(profile_id)
         if profile:
-            return {'must_contain': profile['mustContain'] or [],
-                    'must_not_contain': profile['mustNotContain'] or []}
+            return {'must_contain': profile.get('mustContain') or [],
+                    'must_not_contain': profile.get('mustNotContain') or []}
     return None
 
 
@@ -115,7 +117,9 @@ def _set_forced_providers(pool, also_forced=False, forced_required=False):
 
 
 def refine_video_with_scenename(initial_video, scenename_video):
+    if not initial_video or not scenename_video:
+        return initial_video
     for key, value in vars(scenename_video).items():
-        if value and getattr(initial_video, key) in [None, (), {}, []]:
+        if value and getattr(initial_video, key, None) in [None, (), {}, []]:
             setattr(initial_video, key, value)
     return initial_video

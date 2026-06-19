@@ -23,7 +23,7 @@ import app.libs  # noqa W0611
 
 from app.get_args import args  # noqa E402
 from app.check_update import apply_update, check_releases, check_if_new_update  # noqa E402
-from app.config import settings, configure_proxy_func, base_url  # noqa E402
+from app.config import settings, configure_proxy_func, configure_sz_ssl_verify_func, base_url  # noqa E402
 from init import *  # noqa E402
 import logging  # noqa E402
 
@@ -58,6 +58,8 @@ else:
     migrate_db(app)
     upgrade_languages_profile_values()
     fix_languages_profiles_with_duplicate_ids()
+
+configure_sz_ssl_verify_func()
 
 configure_proxy_func()
 

@@ -7,7 +7,8 @@ import logging
 import json
 from subliminal.cache import region
 from dogpile.cache.api import NO_VALUE
-from python_anticaptcha import AnticaptchaClient, NoCaptchaTaskProxylessTask, NoCaptchaTask, AnticaptchaException
+from python_anticaptcha import AnticaptchaClient, NoCaptchaTaskProxylessTask, NoCaptchaTask, ImageToTextTask, \
+    AnticaptchaException
 from deathbycaptcha import SocketClient as DBCClient, DEFAULT_TOKEN_TIMEOUT
 import six
 from six.moves import range
@@ -252,6 +253,100 @@ class DBCPitcher(DBCProxyLessPitcher):
             "proxy": self.proxy
         })
         return payload
+
+
+@registry.register
+class AntiCaptchaImageToTextPitcher(Pitcher):
+    name = "AntiCaptchaImageToText"
+    source = "anti-captcha.com"
+    image_fp = None
+
+    def __init__(self, website_name, image_fp, tries=3, client_key=None, *args, **kwargs):
+        super().__init__(website_name, tries, client_key, *args, **kwargs)
+        self.tries = tries
+        self.client_key = client_key or os.environ.get("ANTICAPTCHA_ACCOUNT_KEY")
+        if not self.client_key:
+            raise Exception("AntiCaptcha key not given, exiting")
+        self.website_name = website_name
+        self.image_fp = image_fp
+        self.success = False
+        self.solve_time = None
+
+    def get_client(self):
+        return AnticaptchaClient(self.client_key)
+
+    def get_job(self):
+        task = ImageToTextTask(self.image_fp)
+        return self.client.createTask(task)
+
+    def _throw(self):
+        for i in range(self.tries):
+            try:
+                super(AntiCaptchaImageToTextPitcher, self)._throw()
+                self.job.join()
+                ret = self.job.get_captcha_text()
+                if ret:
+                    self.success = True
+                    return ret
+            except AnticaptchaException as e:
+                if i >= self.tries - 1:
+                    logger.error("%s: Captcha solving finally failed. Exiting", self.website_name)
+                    return
+                if e.error_code == 'ERROR_ZERO_BALANCE':
+                    logger.error("%s: No balance left on captcha solving service. Exiting", self.website_name)
+                    return
+                elif e.error_code == 'ERROR_NO_SLOT_AVAILABLE':
+                    logger.info("%s: No captcha solving slot available, retrying", self.website_name)
+                    time.sleep(5.0)
+                    continue
+                elif e.error_code == 'ERROR_KEY_DOES_NOT_EXIST':
+                    logger.error("%s: Bad AntiCaptcha API key", self.website_name)
+                    return
+                raise
+
+
+@registry.register
+class DBCImageToTextPitcher(Pitcher):
+    name = "DeathByCaptchaImageToText"
+    source = "deathbycaptcha.com"
+    image_fp = None
+    username = None
+    password = None
+
+    def __init__(self, website_name, image_fp, timeout=DEFAULT_TOKEN_TIMEOUT, tries=3,
+                 client_key=None, *args, **kwargs):
+        super().__init__(website_name, tries, client_key, *args, **kwargs)
+        self.tries = tries
+        self.client_key = client_key or os.environ.get("ANTICAPTCHA_ACCOUNT_KEY")
+        if not self.client_key:
+            raise Exception("DeathByCaptcha credentials not given, exiting")
+        self.username, self.password = self.client_key.split(":", 1)
+        self.website_name = website_name
+        self.image_fp = image_fp
+        self.timeout = timeout
+        self.success = False
+        self.solve_time = None
+
+    def get_client(self):
+        return DBCClient(self.username, self.password)
+
+    def get_job(self):
+        pass
+
+    def _throw(self):
+        self.client = self.get_client()
+        for i in range(self.tries):
+            try:
+                data = self.client.decode(self.image_fp, timeout=self.timeout)
+                if data and data["is_correct"] and data["text"]:
+                    self.success = True
+                    return data["text"]
+            except Exception:
+                if i >= self.tries - 1:
+                    logger.error("%s: Captcha solving finally failed. Exiting", self.website_name)
+                    return
+                logger.info("%s: Captcha solving failed, retrying", self.website_name)
+                time.sleep(5.0)
 
 
 def load_verification(site_name, session, callback=lambda x: None):
