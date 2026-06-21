@@ -116,6 +116,7 @@ class LegendasNetProvider(ProviderRetryMixin, Provider):
         if response.status_code == 429:
             raise APIThrottled('Too many requests')
         elif response.status_code in (401, 403):
+            self.session.headers.pop('Authorization', None)
             raise ConfigurationError('Invalid username or password')
         elif response.status_code != 200:
             response.raise_for_status()
@@ -175,6 +176,7 @@ class LegendasNetProvider(ProviderRetryMixin, Provider):
         elif res.status_code == 429:
             raise APIThrottled("Too many requests")
         elif res.status_code in (401, 403):
+            self.session.headers.pop('Authorization', None)
             raise ConfigurationError("Invalid access token")
         elif res.status_code != 200:
             res.raise_for_status()
@@ -252,6 +254,7 @@ class LegendasNetProvider(ProviderRetryMixin, Provider):
         if r.status_code == 429:
             raise DownloadLimitExceeded("Daily download limit exceeded")
         elif r.status_code in (401, 403):
+            self.session.headers.pop('Authorization', None)
             raise ConfigurationError("Invalid access token")
         elif r.status_code != 200:
             r.raise_for_status()

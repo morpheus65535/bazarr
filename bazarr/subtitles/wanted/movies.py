@@ -12,9 +12,11 @@ from subtitles.indexer.movies import store_subtitles_movie, list_missing_subtitl
 from radarr.history import history_log_movie
 from app.notifier import send_notifications_movie
 from app.get_providers import get_providers
-from app.database import get_exclusion_clause, get_audio_profile_languages, TableMovies, database, update, select
+from app.database import (get_exclusion_clause, get_audio_profile_languages, TableMovies, database, update, select,
+                          get_subtitles)
 from app.event_handler import event_stream
 from app.jobs_queue import jobs_queue
+from app.config import settings
 
 from ..adaptive_searching import is_search_active, updateFailedAttempts
 from ..download import generate_subtitles
@@ -50,16 +52,17 @@ def _wanted_movie(movie, providers_list, job_id=None):
                                      'movie',
                                      movie.profileId,
                                      check_if_still_required=True,
-                                     job_id=job_id):
+                                     job_id=job_id,
+                                     fallback_allowed=settings.general.use_whisper_fallback):
 
         if result:
             found_any = True
             if isinstance(result, tuple) and len(result):
                 result = result[0]
-            store_subtitles_movie(movie.path, path_mappings.path_replace_movie(movie.path))
+            store_subtitles_movie(movie.radarrId)
             history_log_movie(1, movie.radarrId, result)
-            event_stream(type='movie-wanted', action='delete', payload=movie.radarrId)
             send_notifications_movie(movie.radarrId, result.message)
+            event_stream(type='movie-wanted', action='delete', payload=movie.radarrId)
 
     if not found_any and providers_list:
         for language in languages_to_stamp:
@@ -80,17 +83,19 @@ def wanted_download_subtitles_movie(radarr_id, job_id=None):
                   TableMovies.sceneName,
                   TableMovies.failedAttempts,
                   TableMovies.title,
-                  TableMovies.profileId,
-                  TableMovies.subtitles) \
+                  TableMovies.profileId) \
         .where(TableMovies.radarrId == radarr_id)
     movie = database.execute(stmt).first()
+
+    previously_indexed_subtitles = get_subtitles(radarr_id=radarr_id)
 
     if not movie:
         logging.debug(f"BAZARR no movie with that radarrId can be found in database: {radarr_id}")
         return
-    elif movie.subtitles is None:
-        # subtitles indexing for this movie is incomplete, we'll do it again
-        store_subtitles_movie(movie.path, path_mappings.path_replace_movie(movie.path))
+    elif not len(previously_indexed_subtitles) or \
+            any([not x['embedded_track_id'] for x in previously_indexed_subtitles if not x['path']]):
+        # subtitles indexing for this movie might be incomplete, we'll do it again
+        store_subtitles_movie(radarr_id)
         movie = database.execute(stmt).first()
     elif movie.missing_subtitles is None:
         # missing subtitles calculation for this movie is incomplete, we'll do it again

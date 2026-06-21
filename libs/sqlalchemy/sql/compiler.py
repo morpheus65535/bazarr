@@ -23,6 +23,7 @@ To generate user-defined SQL strings, see
 :doc:`/ext/compiler`.
 
 """
+
 from __future__ import annotations
 
 import collections
@@ -2129,7 +2130,7 @@ class SQLCompiler(Compiled):
                     leep_res = self._literal_execute_expanding_parameter(
                         escaped_name, parameter, values
                     )
-                    (to_update, replacement_expr) = leep_res
+                    to_update, replacement_expr = leep_res
 
                     to_update_sets[escaped_name] = to_update
                     replacement_expressions[escaped_name] = replacement_expr
@@ -3169,6 +3170,7 @@ class SQLCompiler(Compiled):
         if (
             self.dialect.div_is_floordiv
             and binary.right.type._type_affinity is sqltypes.Integer
+            and binary.left.type._type_affinity is sqltypes.Integer
         ):
             return (
                 self.process(binary.left, **kw)
@@ -4569,6 +4571,8 @@ class SQLCompiler(Compiled):
             "_label_select_column is only relevant within "
             "the columns clause of a SELECT or RETURNING"
         )
+        result_expr: Union[elements.Label[Any], _CompileLabel]
+
         if isinstance(column, elements.Label):
             if col_expr is not column:
                 result_expr = _CompileLabel(

@@ -28,7 +28,6 @@ from ..sql import func
 from ..sql import literal_column
 from ..sql import util as sql_util
 
-
 log = logging.getLogger(__name__)
 
 

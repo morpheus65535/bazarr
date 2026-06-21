@@ -132,7 +132,7 @@ class OpenSubtitlesComSubtitle(Subtitle):
         # rest is same for both groups
 
         # year
-        if video.year == self.year:
+        if self.imdb_match or video.year == self.year:
             self.matches.add('year')
 
         # release_group
@@ -460,13 +460,13 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
     def download_subtitle(self, subtitle):
         logger.info('Downloading subtitle %r', subtitle)
 
-        headers = {'Accept': 'application/json', 'Content-Type': 'application/json',
-                   'Authorization': 'Bearer ' + self.token}
         res = self.retry(
             lambda: self.checked(
                 lambda: self.session.post(self.server_url() + 'download',
                                           json={'file_id': subtitle.file_id, 'sub_format': 'srt'},
-                                          headers=headers,
+                                          headers={'Accept': 'application/json',
+                                                   'Content-Type': 'application/json',
+                                                   'Authorization': 'Bearer ' + self.token},
                                           timeout=30),
                 validate_json=True,
                 json_key_name='link'
@@ -494,11 +494,11 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
             subtitle_content = r.content
             subtitle.content = fix_line_ending(subtitle_content)
 
-    @staticmethod
-    def reset_token():
+    def reset_token(self):
         logger.debug('Authentication failed: clearing cache and attempting to login.')
         region.delete("oscom_token")
         region.delete("oscom_server")
+        self.session.headers.pop('Authorization', None)
         return
 
     def checked(self, fn, raise_api_limit=False, validate_json=False, json_key_name=None, validate_content=False,

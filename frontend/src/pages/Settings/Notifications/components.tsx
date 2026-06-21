@@ -1,10 +1,12 @@
 import { FunctionComponent, useCallback, useMemo } from "react";
 import {
+  Anchor,
   Button,
   Divider,
   Group,
   SimpleGrid,
   Stack,
+  Text,
   Textarea,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
@@ -63,6 +65,10 @@ const NotificationForm: FunctionComponent<Props> = ({
     },
   });
 
+  const isCustomNotificationProvider =
+    form.values.selection &&
+    ["JSON", "XML", "Form"].includes(form.values.selection.name);
+
   const test = useMutation({
     mutationFn: (url: string) => api.system.testNotification(url),
   });
@@ -94,6 +100,21 @@ const NotificationForm: FunctionComponent<Props> = ({
             {...form.getInputProps("url")}
           ></Textarea>
         </div>
+        {isCustomNotificationProvider && (
+          <div>
+            <Text size="sm" c="dimmed">
+              Customize the notification payload with{" "}
+              <Anchor
+                href="https://wiki.bazarr.media/Additional-Configuration/Custom-Notifications/"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                media variables
+              </Anchor>
+              .
+            </Text>
+          </div>
+        )}
         <Divider></Divider>
         <Group justify="right">
           <MutateButton mutation={test} args={() => form.values.url}>

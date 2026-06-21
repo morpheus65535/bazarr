@@ -150,6 +150,15 @@ class NotifySES(NotifyBase):
     template_tokens = dict(
         NotifyBase.template_tokens,
         **{
+            "token": {
+                # Session token for temporary/IAM credentials (optional).
+                # May be supplied in the URL password field
+                # (ses://user:{token}@host/...) or via ?token=.
+                "name": _("Session Token"),
+                "type": "string",
+                "private": True,
+                "map_to": "session_token",
+            },
             "from_email": {
                 "name": _("From Email"),
                 "type": "string",
@@ -202,15 +211,15 @@ class NotifySES(NotifyBase):
                 "type": "string",
                 "map_to": "from_name",
             },
-            "cc": {
-                "name": _("Carbon Copy"),
-                "type": "list:string",
-            },
-            "bcc": {
-                "name": _("Blind Carbon Copy"),
-                "type": "list:string",
+            "token": {
+                # ?token= kwarg mirrors the token template token
+                "alias_of": "token",
             },
             "access": {
+                "alias_of": "access_key_id",
+            },
+            "key": {
+                # Intuitive alias for access_key_id
                 "alias_of": "access_key_id",
             },
             "secret": {
@@ -218,6 +227,14 @@ class NotifySES(NotifyBase):
             },
             "region": {
                 "alias_of": "region",
+            },
+            "cc": {
+                "name": _("Carbon Copy"),
+                "type": "list:string",
+            },
+            "bcc": {
+                "name": _("Blind Carbon Copy"),
+                "type": "list:string",
             },
         },
     )
@@ -233,10 +250,14 @@ class NotifySES(NotifyBase):
         targets=None,
         cc=None,
         bcc=None,
+        session_token=None,
         **kwargs,
     ):
         """Initialize Notify AWS SES Object."""
         super().__init__(**kwargs)
+
+        # Store optional session token for temporary/IAM credentials
+        self.aws_session_token = session_token if session_token else None
 
         # Store our AWS API Access Key
         self.aws_access_key_id = validate_regex(access_key_id)
@@ -326,10 +347,12 @@ class NotifySES(NotifyBase):
             for recipient in parse_emails(targets):
                 result = is_email(recipient)
                 if result:
-                    self.targets.append((
-                        result["name"] if result["name"] else False,
-                        result["full_email"],
-                    ))
+                    self.targets.append(
+                        (
+                            result["name"] if result["name"] else False,
+                            result["full_email"],
+                        )
+                    )
                     continue
 
                 self.logger.warning(
@@ -585,6 +608,7 @@ class NotifySES(NotifyBase):
                 headers=headers,
                 verify=self.verify_certificate,
                 timeout=self.request_timeout,
+                allow_redirects=self.redirects,
             )
 
             if r.status_code != requests.codes.ok:
@@ -604,7 +628,8 @@ class NotifySES(NotifyBase):
                 )
 
                 self.logger.debug(
-                    "Response Details:\r\n%r", (r.content or b"")[:2000])
+                    "Response Details:\r\n%r", (r.content or b"")[:2000]
+                )
 
                 return (False, NotifySES.aws_response_to_dict(r.text))
 
@@ -656,51 +681,67 @@ class NotifySES(NotifyBase):
         )
 
         # Similar to headers; but a subset.  keys must be lowercase
-        signed_headers = OrderedDict([
-            ("content-type", headers["Content-Type"]),
-            ("host", f"email.{self.aws_region_name}.amazonaws.com"),
-            ("x-amz-date", headers["X-Amz-Date"]),
-        ])
+        signed_headers = OrderedDict(
+            [
+                ("content-type", headers["Content-Type"]),
+                ("host", f"email.{self.aws_region_name}.amazonaws.com"),
+                ("x-amz-date", headers["X-Amz-Date"]),
+            ]
+        )
+
+        # Include session token in signed headers for temporary credentials;
+        # x-amz-security-token sorts after x-amz-date alphabetically and
+        # must appear after it to keep the canonical request valid.
+        if self.aws_session_token:
+            headers["X-Amz-Security-Token"] = self.aws_session_token
+            signed_headers["x-amz-security-token"] = self.aws_session_token
 
         #
         # Build Canonical Request Object
         #
-        canonical_request = "\n".join([
-            # Method
-            "POST",
-            # URL
-            self.aws_canonical_uri,
-            # Query String (none set for POST)
-            "",
-            # Header Content (must include \n at end!)
-            # All entries except characters in amazon date must be
-            # lowercase
-            "\n".join([f"{k}:{v}" for k, v in signed_headers.items()]) + "\n",
-            # Header Entries (in same order identified above)
-            ";".join(signed_headers.keys()),
-            # Payload
-            sha256(payload.encode("utf-8")).hexdigest(),
-        ])
+        canonical_request = "\n".join(
+            [
+                # Method
+                "POST",
+                # URL
+                self.aws_canonical_uri,
+                # Query String (none set for POST)
+                "",
+                # Header Content (must include \n at end!)
+                # All entries except characters in amazon date must be
+                # lowercase
+                "\n".join([f"{k}:{v}" for k, v in signed_headers.items()])
+                + "\n",
+                # Header Entries (in same order identified above)
+                ";".join(signed_headers.keys()),
+                # Payload
+                sha256(payload.encode("utf-8")).hexdigest(),
+            ]
+        )
 
         # Prepare Unsigned Signature
-        to_sign = "\n".join([
-            self.aws_auth_algorithm,
-            amzdate,
-            scope,
-            sha256(canonical_request.encode("utf-8")).hexdigest(),
-        ])
+        to_sign = "\n".join(
+            [
+                self.aws_auth_algorithm,
+                amzdate,
+                scope,
+                sha256(canonical_request.encode("utf-8")).hexdigest(),
+            ]
+        )
 
         # Our Authorization header
-        headers["Authorization"] = ", ".join([
-            (
-                f"{self.aws_auth_algorithm} "
-                f"Credential={self.aws_access_key_id}/{scope}"
-            ),
-            "SignedHeaders={signed_headers}".format(
-                signed_headers=";".join(signed_headers.keys()),
-            ),
-            f"Signature={self.aws_auth_signature(to_sign, reference)}",
-        ])
+        headers["Authorization"] = ", ".join(
+            [
+                (
+                    f"{self.aws_auth_algorithm} "
+                    f"Credential={self.aws_access_key_id}/{scope}"
+                ),
+                "SignedHeaders={signed_headers}".format(
+                    signed_headers=";".join(signed_headers.keys()),
+                ),
+                f"Signature={self.aws_auth_signature(to_sign, reference)}",
+            ]
+        )
 
         return headers
 
@@ -833,13 +874,15 @@ class NotifySES(NotifyBase):
 
         if self.cc:
             # Handle our Carbon Copy Addresses
-            params["cc"] = ",".join([
-                "{}{}".format(
-                    "" if not e not in self.names else f"{self.names[e]}:",
-                    e,
-                )
-                for e in self.cc
-            ])
+            params["cc"] = ",".join(
+                [
+                    "{}{}".format(
+                        "" if not e not in self.names else f"{self.names[e]}:",
+                        e,
+                    )
+                    for e in self.cc
+                ]
+            )
 
         if self.bcc:
             # Handle our Blind Carbon Copy Addresses
@@ -859,11 +902,28 @@ class NotifySES(NotifyBase):
             len(self.targets) == 1 and self.targets[0][1] == self.from_addr
         )
 
+        # Build the from-address URL segment; include the session token in
+        # the password position when present:
+        # ses://sender:{token}@example.com/...
+        if self.aws_session_token:
+            # Split from_addr into local and domain parts;
+            # from_addr always contains @ (enforced by __init__ validation)
+            fa_local, fa_domain = self.from_addr.split("@", 1)
+            from_url_part = "{}:{}@{}".format(
+                NotifySES.quote(fa_local, safe=""),
+                self.pprint(self.aws_session_token, privacy, safe="+=")
+                if privacy
+                else NotifySES.quote(self.aws_session_token, safe="+="),
+                NotifySES.quote(fa_domain, safe=""),
+            )
+        else:
+            from_url_part = NotifySES.quote(self.from_addr, safe="@")
+
         return (
             "{schema}://{from_addr}/{key_id}/{key_secret}/{region}/"
             "{targets}/?{params}".format(
                 schema=self.secure_protocol,
-                from_addr=NotifySES.quote(self.from_addr, safe="@"),
+                from_addr=from_url_part,
                 key_id=self.pprint(self.aws_access_key_id, privacy, safe=""),
                 key_secret=self.pprint(
                     self.aws_secret_access_key,
@@ -875,15 +935,17 @@ class NotifySES(NotifyBase):
                 targets=(
                     ""
                     if not has_targets
-                    else "/".join([
-                        NotifySES.quote(
-                            "{}{}".format(
-                                "" if not e[0] else f"{e[0]}:", e[1]
-                            ),
-                            safe="",
-                        )
-                        for e in self.targets
-                    ])
+                    else "/".join(
+                        [
+                            NotifySES.quote(
+                                "{}{}".format(
+                                    "" if not e[0] else f"{e[0]}:", e[1]
+                                ),
+                                safe="",
+                            )
+                            for e in self.targets
+                        ]
+                    )
                 ),
                 params=NotifySES.urlencode(params),
             )
@@ -925,7 +987,6 @@ class NotifySES(NotifyBase):
         # Section 1: Get Region and Access Secret
         index = 0
         for index, entry in enumerate(entries, start=1):
-
             # Are we at the region yet?
             result = IS_REGION.match(entry)
             if result:
@@ -989,8 +1050,11 @@ class NotifySES(NotifyBase):
         else:
             results["secret_access_key"] = secret_access_key
 
-        # Handle access key id over-ride
-        if "access" in results["qsd"] and len(results["qsd"]["access"]):
+        # Handle access key id override; ?key= is the preferred alias,
+        # ?access= is retained for backwards compatibility
+        if "key" in results["qsd"] and len(results["qsd"]["key"]):
+            results["access_key_id"] = NotifySES.unquote(results["qsd"]["key"])
+        elif "access" in results["qsd"] and len(results["qsd"]["access"]):
             results["access_key_id"] = NotifySES.unquote(
                 results["qsd"]["access"]
             )
@@ -1004,6 +1068,17 @@ class NotifySES(NotifyBase):
             )
         else:
             results["region_name"] = region_name
+
+        # Session token may come from the URL password field or the
+        # ?token= query parameter; ?token= takes priority when both
+        # are present.
+        results["session_token"] = None
+        if results.get("password"):
+            results["session_token"] = NotifySES.unquote(results["password"])
+        if "token" in results["qsd"] and len(results["qsd"]["token"]):
+            results["session_token"] = NotifySES.unquote(
+                results["qsd"]["token"]
+            )
 
         # Return our result set
         return results

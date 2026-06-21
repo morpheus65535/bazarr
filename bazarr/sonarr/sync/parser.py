@@ -51,6 +51,8 @@ def seriesParser(show, action, tags_dict, language_profiles, serie_default_profi
 
     lastAired = parser.parse(show['lastAired']).strftime("%Y-%m-%d") if 'lastAired' in show and show['lastAired'] else None
 
+    original_language = show['originalLanguage'].get('name') if isinstance(show.get('originalLanguage'), dict) else None
+
     audio_language = []
     if not settings.general.parse_embedded_audio_track:
         if get_sonarr_info.is_legacy():
@@ -79,6 +81,7 @@ def seriesParser(show, action, tags_dict, language_profiles, serie_default_profi
         'monitored': str(bool(show['monitored'])),
         'ended': ended,
         'lastAired': lastAired,
+        'originalLanguage': original_language,
     }
 
     if action == 'insert':
@@ -104,14 +107,19 @@ def profile_id_to_language(id_, profiles):
     return profiles_to_return
 
 
-def episodeParser(episode):
+def episodeParser(episode, parse_embedded_audio_track=None):
+    if parse_embedded_audio_track is None:
+        parse_embedded_audio_track = settings.general.parse_embedded_audio_track
+
     if 'hasFile' in episode:
         if episode['hasFile'] is True:
             if 'episodeFile' in episode:
-                try:
-                    bazarr_file_size = os.path.getsize(path_mappings.path_replace(episode['episodeFile']['path']))
-                except OSError:
-                    bazarr_file_size = 0
+                bazarr_file_size = episode['episodeFile']['size']
+                if bazarr_file_size <= MINIMUM_VIDEO_SIZE:
+                    try:
+                        bazarr_file_size = os.path.getsize(path_mappings.path_replace(episode['episodeFile']['path']))
+                    except OSError:
+                        bazarr_file_size = 0
                 if (episode['episodeFile']['size'] > MINIMUM_VIDEO_SIZE or bazarr_file_size > MINIMUM_VIDEO_SIZE or
                         (settings.general.enable_strm_support and episode['episodeFile']['path'].lower().endswith('.strm'))):
                     if 'sceneName' in episode['episodeFile']:
@@ -119,7 +127,7 @@ def episodeParser(episode):
                     else:
                         sceneName = None
 
-                    if settings.general.parse_embedded_audio_track:
+                    if parse_embedded_audio_track:
                         audio_language = embedded_audio_reader(path_mappings.path_replace(episode['episodeFile']
                                                                                           ['path']),
                                                                file_size=episode['episodeFile']['size'],

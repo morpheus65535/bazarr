@@ -7,7 +7,6 @@
 
 """Defines the public namespace for SQL expression constructs."""
 
-
 from __future__ import annotations
 
 from ._dml_constructors import delete as delete

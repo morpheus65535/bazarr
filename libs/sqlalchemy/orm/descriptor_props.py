@@ -10,6 +10,7 @@ that exist as configurational elements, but don't participate
 as actively in the load/persist ORM loop.
 
 """
+
 from __future__ import annotations
 
 from dataclasses import is_dataclass
@@ -56,7 +57,6 @@ from ..sql.elements import BindParameter
 from ..util.typing import get_args
 from ..util.typing import is_fwd_ref
 from ..util.typing import is_pep593
-
 
 if typing.TYPE_CHECKING:
     from ._typing import _InstanceDict

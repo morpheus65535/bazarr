@@ -15,6 +15,7 @@ at the class level of a particular ``_Dispatch`` class as well as within
 instances of ``_Dispatch``.
 
 """
+
 from __future__ import annotations
 
 import typing

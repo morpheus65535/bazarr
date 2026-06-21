@@ -19,6 +19,7 @@ from radarr.history import history_log_movie
 from sonarr.notify import notify_sonarr
 from radarr.notify import notify_radarr
 from plex.operations import plex_refresh_item
+from jellyfin.operations import jellyfin_refresh_item
 
 
 def delete_subtitles(media_type, language, forced, hi, media_path, subtitles_path, sonarr_series_id=None,
@@ -45,7 +46,7 @@ def delete_subtitles(media_type, language, forced, hi, media_path, subtitles_pat
         prr = path_mappings.path_replace_reverse
 
         metadata = database.execute(
-            select(TableEpisodes.season, TableEpisodes.episode, TableShows.imdbId)
+            select(TableEpisodes.season, TableEpisodes.episode, TableShows.imdbId, TableShows.tvdbId)
             .join(TableShows)
             .where(TableEpisodes.sonarrEpisodeId == sonarr_episode_id)).first()
     else:
@@ -53,7 +54,7 @@ def delete_subtitles(media_type, language, forced, hi, media_path, subtitles_pat
         prr = path_mappings.path_replace_reverse_movie
 
         metadata = database.execute(
-            select(TableMovies.imdbId)
+            select(TableMovies.imdbId, TableMovies.tmdbId)
             .where(TableMovies.radarrId == radarr_id)).first()
 
     result = ProcessSubtitlesResult(message=f"{language_string} subtitles deleted from disk.",
@@ -71,11 +72,11 @@ def delete_subtitles(media_type, language, forced, hi, media_path, subtitles_pat
             os.remove(pr(subtitles_path))
         except OSError:
             logging.exception(f'BAZARR cannot delete subtitles file: {subtitles_path}')
-            store_subtitles(prr(media_path), media_path)
+            store_subtitles(sonarr_episode_id)
             return False
         else:
+            store_subtitles(sonarr_episode_id)
             history_log(0, sonarr_series_id, sonarr_episode_id, result)
-            store_subtitles(prr(media_path), media_path)
             notify_sonarr(sonarr_series_id)
             event_stream(type='series', action='update', payload=sonarr_series_id)
             event_stream(type='episode-wanted', action='update', payload=sonarr_episode_id)
@@ -83,7 +84,10 @@ def delete_subtitles(media_type, language, forced, hi, media_path, subtitles_pat
             if settings.general.use_plex and settings.plex.update_series_library:
                 plex_refresh_item(metadata.imdbId, is_movie=False, season=metadata.season,
                                   episode=metadata.episode)
-            
+            if settings.general.use_jellyfin and settings.jellyfin.update_series_library:
+                jellyfin_refresh_item(metadata.imdbId, is_movie=False, season=metadata.season,
+                                      episode=metadata.episode, tvdb_id=metadata.tvdbId)
+
             # Call external webhook after all processing is complete
             call_external_webhook(
                 subtitle_path=subtitles_path,
@@ -91,23 +95,26 @@ def delete_subtitles(media_type, language, forced, hi, media_path, subtitles_pat
                 language=language_log,
                 media_type=media_type
             )
-            
+
             return True
     else:
         try:
             os.remove(pr(subtitles_path))
         except OSError:
             logging.exception(f'BAZARR cannot delete subtitles file: {subtitles_path}')
-            store_subtitles_movie(prr(media_path), media_path)
+            store_subtitles_movie(radarr_id)
             return False
         else:
+            store_subtitles_movie(radarr_id)
             history_log_movie(0, radarr_id, result)
-            store_subtitles_movie(prr(media_path), media_path)
             notify_radarr(radarr_id)
             event_stream(type='movie-wanted', action='update', payload=radarr_id)
 
             if settings.general.use_plex and settings.plex.update_movie_library:
                 plex_refresh_item(metadata.imdbId, is_movie=True)
+            if settings.general.use_jellyfin and settings.jellyfin.update_movie_library:
+                jellyfin_refresh_item(metadata.imdbId, is_movie=True,
+                                      tmdb_id=metadata.tmdbId)
 
             # Call external webhook after all processing is complete
             call_external_webhook(

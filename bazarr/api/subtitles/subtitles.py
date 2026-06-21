@@ -5,7 +5,7 @@ import sys
 
 from flask_restx import Resource, Namespace, reqparse, fields, marshal
 
-from app.database import TableShows, TableEpisodes, TableMovies, database, select
+from app.database import TableShows, TableEpisodes, TableMovies, database, select, get_subtitles
 from languages.get_languages import alpha3_from_alpha2
 from utilities.path_mappings import path_mappings
 from utilities.video_analyzer import subtitles_sync_references
@@ -18,6 +18,7 @@ from subtitles.sync import sync_subtitles
 from app.config import settings, empty_values, get_array_from
 from app.event_handler import event_stream
 from plex.operations import plex_refresh_item
+from jellyfin.operations import jellyfin_refresh_item
 
 
 from ..utils import authenticate
@@ -124,8 +125,8 @@ class Subtitles(Resource):
 
         if media_type == 'episode':
             metadata = database.execute(
-                select(TableEpisodes.path, TableEpisodes.sonarrSeriesId, TableEpisodes.subtitles, TableEpisodes.season,
-                       TableEpisodes.episode, TableShows.imdbId)
+                select(TableEpisodes.path, TableEpisodes.sonarrSeriesId, TableEpisodes.season,
+                       TableEpisodes.episode, TableShows.imdbId, TableShows.tvdbId)
                 .join(TableShows)
                 .where(TableEpisodes.sonarrEpisodeId == id)) \
                 .first()
@@ -136,7 +137,7 @@ class Subtitles(Resource):
             video_path = path_mappings.path_replace(metadata.path)
         else:
             metadata = database.execute(
-                select(TableMovies.path, TableMovies.subtitles, TableMovies.imdbId)
+                select(TableMovies.path, TableMovies.imdbId, TableMovies.tmdbId)
                 .where(TableMovies.radarrId == id))\
                 .first()
 
@@ -147,7 +148,7 @@ class Subtitles(Resource):
 
         if action == 'sync':
             try:
-                postprocess_callback = lambda: postprocess_subtitles(subtitles_path, video_path, media_type, metadata, id)
+                postprocess_callback = lambda: postprocess_subtitles(subtitles_path, media_type, metadata, id)
                 sync_subtitles(video_path=video_path, srt_path=subtitles_path, srt_lang=language, hi=hi, forced=forced,
                                percent_score=0,  # make sure to always sync when requested manually
                                reference=args.get('reference') if args.get('reference') not in empty_values else
@@ -169,20 +170,15 @@ class Subtitles(Resource):
             dest_language = language
             from_language = None
 
-            if metadata.subtitles:
-                subtitles_list = get_array_from(metadata.subtitles)
-                subtitles_filename = os.path.basename(subtitles_path)
+            subtitles = get_subtitles(sonarr_episode_id=id if media_type == "episode" else None,
+                                      radarr_id=id if media_type == "movie" else None)
 
-                for subtitle_entry in subtitles_list:
-                    if len(subtitle_entry) >= 2 and subtitle_entry[1] is not None:
-                        db_subtitle_filename = os.path.basename(subtitle_entry[1])
-                        if db_subtitle_filename == subtitles_filename:
-                            # Remove any suffix (e.g., :hi, :forced) from language code
-                            from_language = subtitle_entry[0].split(':')[0]
-                            break
+            if subtitles:
+                for external_subtitles in subtitles:
+                    if external_subtitles['path'] == subtitles_path:
+                        from_language = external_subtitles['code2']
+                        break
 
-                if not from_language or not alpha3_from_alpha2(from_language):
-                    from_language = subtitles_lang_from_filename(subtitles_path)
                 if not from_language or not alpha3_from_alpha2(from_language):
                     return 'Invalid source language code', 400
 
@@ -201,52 +197,38 @@ class Subtitles(Resource):
             try:
                 subtitles_apply_mods(language=language, subtitle_path=subtitles_path, mods=[action],
                                      video_path=video_path)
-                postprocess_subtitles(subtitles_path, video_path, media_type, metadata, id)
+                postprocess_subtitles(subtitles_path, media_type, metadata, id)
             except OSError:
                 return 'Unable to edit subtitles file. Check logs.', 409
 
         return '', 204
 
 
-def postprocess_subtitles(subtitles_path, video_path, media_type, metadata, id):
+def postprocess_subtitles(subtitles_path, media_type, metadata, id):
     # apply chmod if required
     chmod = int(settings.general.chmod, 8) if not sys.platform.startswith('win') and settings.general.chmod_enabled else None
     if chmod:
         os.chmod(subtitles_path, chmod)
 
-    if media_type == 'episode':
-        store_subtitles(path_mappings.path_replace_reverse(video_path), video_path)
-        event_stream(type='series', payload=metadata.sonarrSeriesId)
-        event_stream(type='episode', payload=id)
+        if media_type == 'episode':
+            store_subtitles(id)
+            event_stream(type='series', payload=metadata.sonarrSeriesId)
+            event_stream(type='episode', payload=id)
 
-        if settings.general.use_plex and settings.plex.update_series_library:
-            plex_refresh_item(metadata.imdbId, is_movie=False, season=metadata.season,
-                              episode=metadata.episode)
-    else:
-        store_subtitles_movie(path_mappings.path_replace_reverse_movie(video_path), video_path)
-        event_stream(type='movie', payload=id)
-
-        if settings.general.use_plex and settings.plex.update_movie_library:
-            plex_refresh_item(metadata.imdbId, is_movie=True)
-
-
-def subtitles_lang_from_filename(path):
-    split_extensionless_path = os.path.splitext(path.lower())[0].rsplit(".", 2)
-
-    if len(split_extensionless_path) < 2:
-        return None
-    elif len(split_extensionless_path) == 2:
-        return_lang = split_extensionless_path[-1]
-    else:
-        first_ext = split_extensionless_path[-1]
-        second_ext = split_extensionless_path[-2]
-
-        if first_ext in ['hi', 'sdh', 'cc']:
-            if alpha3_from_alpha2(second_ext):
-                return_lang = second_ext
-            else:
-                return first_ext
+            if settings.general.use_plex and settings.plex.update_series_library:
+                plex_refresh_item(metadata.imdbId, is_movie=False, season=metadata.season,
+                                  episode=metadata.episode)
+            if settings.general.use_jellyfin and settings.jellyfin.update_series_library:
+                jellyfin_refresh_item(metadata.imdbId, is_movie=False, season=metadata.season,
+                                      episode=metadata.episode, tvdb_id=metadata.tvdbId)
         else:
-            return_lang = first_ext
+            store_subtitles_movie(id)
+            event_stream(type='movie', payload=id)
 
-    return return_lang.replace('_', '-')
+            if settings.general.use_plex and settings.plex.update_movie_library:
+                plex_refresh_item(metadata.imdbId, is_movie=True)
+            if settings.general.use_jellyfin and settings.jellyfin.update_movie_library:
+                jellyfin_refresh_item(metadata.imdbId, is_movie=True,
+                                      tmdb_id=metadata.tmdbId)
+
+        return '', 204

@@ -11,7 +11,6 @@ are meaningful to the ORM.
 
 """
 
-
 from __future__ import annotations
 
 from ..util.typing import Literal

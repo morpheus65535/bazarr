@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-03-08 16:43-0400\n"
+"POT-Creation-Date: 2026-05-29 13:49-0400\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,15 +17,19 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
 
-#: apprise/attachment/base.py:96 apprise/url.py:141
+#: apprise/attachment/base.py:96 apprise/url.py:148
 msgid "Verify SSL"
 msgstr ""
 
-#: apprise/url.py:151
+#: apprise/url.py:158
+msgid "Follow Redirects"
+msgstr ""
+
+#: apprise/url.py:168
 msgid "Socket Read Timeout"
 msgstr ""
 
-#: apprise/url.py:165
+#: apprise/url.py:182
 msgid "Socket Connect Timeout"
 msgstr ""
 
@@ -53,19 +57,19 @@ msgstr ""
 msgid "Memory"
 msgstr ""
 
-#: apprise/plugins/__init__.py:280
+#: apprise/plugins/__init__.py:278
 msgid "Schema"
 msgstr ""
 
-#: apprise/plugins/__init__.py:401
+#: apprise/plugins/__init__.py:398
 msgid "No dependencies."
 msgstr ""
 
-#: apprise/plugins/__init__.py:404
+#: apprise/plugins/__init__.py:401
 msgid "Packages are required to function."
 msgstr ""
 
-#: apprise/plugins/__init__.py:408
+#: apprise/plugins/__init__.py:405
 msgid "Packages are recommended to improve functionality."
 msgstr ""
 
@@ -73,20 +77,23 @@ msgstr ""
 msgid "App User Name"
 msgstr ""
 
-#: apprise/plugins/africas_talking.py:138 apprise/plugins/brevo.py:112
+#: apprise/plugins/africas_talking.py:138 apprise/plugins/brevo.py:157
 #: apprise/plugins/burstsms.py:104 apprise/plugins/clicksend.py:98
-#: apprise/plugins/dot.py:121 apprise/plugins/fcm/__init__.py:143
-#: apprise/plugins/httpsms.py:77 apprise/plugins/join.py:140
-#: apprise/plugins/kavenegar.py:115 apprise/plugins/kumulos.py:87
-#: apprise/plugins/mailgun.py:146 apprise/plugins/messagebird.py:78
-#: apprise/plugins/one_signal.py:113 apprise/plugins/opsgenie.py:236
+#: apprise/plugins/dot.py:136 apprise/plugins/evolution.py:105
+#: apprise/plugins/exotel.py:213 apprise/plugins/fcm/__init__.py:143
+#: apprise/plugins/httpsms.py:77 apprise/plugins/jira.py:230
+#: apprise/plugins/join.py:140 apprise/plugins/kavenegar.py:115
+#: apprise/plugins/kumulos.py:87 apprise/plugins/mailgun.py:146
+#: apprise/plugins/messagebird.py:78 apprise/plugins/octopush.py:136
+#: apprise/plugins/one_signal.py:113 apprise/plugins/opsgenie.py:228
 #: apprise/plugins/pagerduty.py:131 apprise/plugins/popcorn_notify.py:71
-#: apprise/plugins/prowl.py:121 apprise/plugins/resend.py:107
+#: apprise/plugins/postmark.py:117 apprise/plugins/prowl.py:121
+#: apprise/plugins/resend.py:107 apprise/plugins/resend.py:145
 #: apprise/plugins/sendgrid.py:116 apprise/plugins/seven.py:75
 #: apprise/plugins/simplepush.py:101 apprise/plugins/smsmanager.py:106
 #: apprise/plugins/smtp2go.py:118 apprise/plugins/sparkpost.py:169
 #: apprise/plugins/splunk.py:165 apprise/plugins/techuluspush.py:97
-#: apprise/plugins/twilio.py:197 apprise/plugins/vapid/__init__.py:152
+#: apprise/plugins/twilio.py:194 apprise/plugins/vapid/__init__.py:152
 #: apprise/plugins/vonage.py:80
 msgid "API Key"
 msgstr ""
@@ -96,153 +103,166 @@ msgid "Target Phone"
 msgstr ""
 
 #: apprise/plugins/africas_talking.py:150 apprise/plugins/aprs.py:187
-#: apprise/plugins/bark.py:159 apprise/plugins/brevo.py:129
+#: apprise/plugins/bark.py:159 apprise/plugins/brevo.py:174
 #: apprise/plugins/bulksms.py:137 apprise/plugins/bulkvs.py:110
 #: apprise/plugins/burstsms.py:131 apprise/plugins/clickatell.py:90
 #: apprise/plugins/clicksend.py:112 apprise/plugins/d7networks.py:110
 #: apprise/plugins/dapnet.py:138 apprise/plugins/dingtalk.py:111
-#: apprise/plugins/email/base.py:140 apprise/plugins/fcm/__init__.py:168
+#: apprise/plugins/email/base.py:164 apprise/plugins/evolution.py:134
+#: apprise/plugins/exotel.py:190 apprise/plugins/fcm/__init__.py:168
 #: apprise/plugins/flock.py:125 apprise/plugins/fortysixelks.py:111
-#: apprise/plugins/httpsms.py:97 apprise/plugins/irc/base.py:149
+#: apprise/plugins/home_assistant.py:153 apprise/plugins/httpsms.py:97
+#: apprise/plugins/humhub.py:149 apprise/plugins/irc/base.py:149
 #: apprise/plugins/join.py:172 apprise/plugins/kavenegar.py:135
 #: apprise/plugins/line.py:93 apprise/plugins/mailgun.py:157
-#: apprise/plugins/mastodon.py:190 apprise/plugins/matrix.py:262
-#: apprise/plugins/mattermost.py:185 apprise/plugins/messagebird.py:99
-#: apprise/plugins/mqtt.py:174 apprise/plugins/msg91.py:123
+#: apprise/plugins/mastodon.py:202 apprise/plugins/matrix/base.py:307
+#: apprise/plugins/mattermost.py:189 apprise/plugins/messagebird.py:99
+#: apprise/plugins/mqtt.py:177 apprise/plugins/msg91.py:123
 #: apprise/plugins/nextcloud.py:148 apprise/plugins/nextcloudtalk.py:101
-#: apprise/plugins/notifiarr.py:103 apprise/plugins/notificationapi.py:187
-#: apprise/plugins/ntfy.py:241 apprise/plugins/office365.py:148
-#: apprise/plugins/one_signal.py:141 apprise/plugins/plivo.py:114
-#: apprise/plugins/popcorn_notify.py:89 apprise/plugins/pushbullet.py:105
-#: apprise/plugins/pushed.py:107 apprise/plugins/pushover.py:206
+#: apprise/plugins/notifiarr.py:103 apprise/plugins/notificationapi.py:192
+#: apprise/plugins/ntfy.py:241 apprise/plugins/octopush.py:153
+#: apprise/plugins/office365.py:287 apprise/plugins/one_signal.py:141
+#: apprise/plugins/plivo.py:114 apprise/plugins/popcorn_notify.py:89
+#: apprise/plugins/postmark.py:133 apprise/plugins/pushbullet.py:105
+#: apprise/plugins/pushed.py:107 apprise/plugins/pushover.py:252
 #: apprise/plugins/pushsafer.py:376 apprise/plugins/pushy.py:97
 #: apprise/plugins/reddit.py:170 apprise/plugins/resend.py:124
-#: apprise/plugins/revolt.py:112 apprise/plugins/rocketchat.py:166
-#: apprise/plugins/sendgrid.py:133 apprise/plugins/sendpulse.py:136
-#: apprise/plugins/seven.py:88 apprise/plugins/sfr.py:113
-#: apprise/plugins/signal_api.py:138 apprise/plugins/sinch.py:140
-#: apprise/plugins/slack.py:248 apprise/plugins/smpp.py:128
-#: apprise/plugins/smseagle.py:172 apprise/plugins/smsmanager.py:119
-#: apprise/plugins/sns.py:138 apprise/plugins/telegram.py:359
-#: apprise/plugins/threema.py:115 apprise/plugins/twilio.py:174
-#: apprise/plugins/twist.py:123 apprise/plugins/twitter.py:168
-#: apprise/plugins/vapid/__init__.py:158 apprise/plugins/voipms.py:107
-#: apprise/plugins/vonage.py:108 apprise/plugins/whatsapp.py:126
-#: apprise/plugins/wxpusher.py:139 apprise/plugins/xmpp/base.py:118
+#: apprise/plugins/revolt.py:112 apprise/plugins/ringcentral.py:219
+#: apprise/plugins/rocketchat.py:167 apprise/plugins/sendgrid.py:133
+#: apprise/plugins/sendpulse.py:139 apprise/plugins/seven.py:88
+#: apprise/plugins/sfr.py:113 apprise/plugins/signal_api.py:138
+#: apprise/plugins/sinch.py:140 apprise/plugins/slack.py:273
+#: apprise/plugins/smpp.py:128 apprise/plugins/smseagle.py:172
+#: apprise/plugins/smsmanager.py:119 apprise/plugins/sns.py:170
+#: apprise/plugins/telegram.py:359 apprise/plugins/threema.py:115
+#: apprise/plugins/twilio.py:174 apprise/plugins/twist.py:123
+#: apprise/plugins/twitter.py:193 apprise/plugins/vapid/__init__.py:158
+#: apprise/plugins/voipms.py:108 apprise/plugins/vonage.py:108
+#: apprise/plugins/wechat.py:218 apprise/plugins/whatsapp.py:166
+#: apprise/plugins/wxpusher.py:139 apprise/plugins/xmpp/base.py:134
 #: apprise/plugins/zulip.py:153
 msgid "Targets"
 msgstr ""
 
-#: apprise/plugins/africas_talking.py:168
+#: apprise/plugins/africas_talking.py:166
 msgid "From"
 msgstr ""
 
-#: apprise/plugins/africas_talking.py:174 apprise/plugins/bulksms.py:170
-#: apprise/plugins/bulkvs.py:131 apprise/plugins/burstsms.py:166
-#: apprise/plugins/clicksend.py:130 apprise/plugins/d7networks.py:128
-#: apprise/plugins/dapnet.py:167 apprise/plugins/mailgun.py:194
-#: apprise/plugins/mastodon.py:215 apprise/plugins/one_signal.py:161
-#: apprise/plugins/opsgenie.py:288 apprise/plugins/plivo.py:137
-#: apprise/plugins/popcorn_notify.py:104 apprise/plugins/signal_api.py:155
-#: apprise/plugins/smseagle.py:190 apprise/plugins/smsmanager.py:152
-#: apprise/plugins/smtp2go.py:151 apprise/plugins/sparkpost.py:209
-#: apprise/plugins/twitter.py:193
-msgid "Batch Mode"
-msgstr ""
-
-#: apprise/plugins/africas_talking.py:179
+#: apprise/plugins/africas_talking.py:172
 msgid "SMS Mode"
 msgstr ""
 
+#: apprise/plugins/africas_talking.py:181 apprise/plugins/bulksms.py:170
+#: apprise/plugins/bulkvs.py:131 apprise/plugins/burstsms.py:166
+#: apprise/plugins/clicksend.py:130 apprise/plugins/d7networks.py:144
+#: apprise/plugins/dapnet.py:167 apprise/plugins/exotel.py:222
+#: apprise/plugins/home_assistant.py:170 apprise/plugins/jira.py:282
+#: apprise/plugins/mailgun.py:194 apprise/plugins/mastodon.py:247
+#: apprise/plugins/octopush.py:173 apprise/plugins/one_signal.py:185
+#: apprise/plugins/opsgenie.py:307 apprise/plugins/plivo.py:137
+#: apprise/plugins/popcorn_notify.py:104 apprise/plugins/signal_api.py:160
+#: apprise/plugins/smseagle.py:211 apprise/plugins/smsmanager.py:152
+#: apprise/plugins/smtp2go.py:151 apprise/plugins/sparkpost.py:209
+#: apprise/plugins/twitter.py:218
+msgid "Batch Mode"
+msgstr ""
+
 #: apprise/plugins/apprise_api.py:102 apprise/plugins/bark.py:134
-#: apprise/plugins/custom_form.py:121 apprise/plugins/custom_json.py:103
-#: apprise/plugins/custom_xml.py:103 apprise/plugins/emby.py:85
-#: apprise/plugins/enigma2.py:110 apprise/plugins/fluxer.py:159
-#: apprise/plugins/gotify.py:129 apprise/plugins/growl.py:140
-#: apprise/plugins/home_assistant.py:79 apprise/plugins/irc/base.py:117
-#: apprise/plugins/lametric.py:460 apprise/plugins/mastodon.py:168
-#: apprise/plugins/matrix.py:220 apprise/plugins/mattermost.py:151
-#: apprise/plugins/misskey.py:117 apprise/plugins/mqtt.py:147
-#: apprise/plugins/nextcloud.py:116 apprise/plugins/nextcloudtalk.py:74
-#: apprise/plugins/notica.py:126 apprise/plugins/ntfy.py:211
+#: apprise/plugins/custom_form.py:130 apprise/plugins/custom_json.py:112
+#: apprise/plugins/custom_xml.py:112 apprise/plugins/emby.py:85
+#: apprise/plugins/enigma2.py:110 apprise/plugins/evolution.py:111
+#: apprise/plugins/fluxer.py:159 apprise/plugins/gotify.py:129
+#: apprise/plugins/growl.py:140 apprise/plugins/home_assistant.py:122
+#: apprise/plugins/humhub.py:138 apprise/plugins/irc/base.py:117
+#: apprise/plugins/kodi.py:96 apprise/plugins/lametric.py:460
+#: apprise/plugins/mastodon.py:180 apprise/plugins/matrix/base.py:262
+#: apprise/plugins/mattermost.py:155 apprise/plugins/misskey.py:117
+#: apprise/plugins/mqtt.py:149 apprise/plugins/nextcloud.py:116
+#: apprise/plugins/nextcloudtalk.py:74 apprise/plugins/notica.py:126
+#: apprise/plugins/notifico.py:166 apprise/plugins/ntfy.py:211
 #: apprise/plugins/parseplatform.py:90 apprise/plugins/pushdeer.py:75
 #: apprise/plugins/pushjet.py:71 apprise/plugins/rocketchat.py:120
 #: apprise/plugins/rsyslog.py:180 apprise/plugins/signal_api.py:97
-#: apprise/plugins/smseagle.py:135 apprise/plugins/synology.py:83
-#: apprise/plugins/workflows.py:125 apprise/plugins/xbmc.py:96
-#: apprise/plugins/xmpp/base.py:96
+#: apprise/plugins/smseagle.py:135 apprise/plugins/sogs.py:207
+#: apprise/plugins/synology.py:83 apprise/plugins/workflows.py:126
+#: apprise/plugins/xmpp/base.py:101
 msgid "Hostname"
 msgstr ""
 
 #: apprise/plugins/apprise_api.py:107 apprise/plugins/bark.py:139
-#: apprise/plugins/custom_form.py:126 apprise/plugins/custom_json.py:108
-#: apprise/plugins/custom_xml.py:108 apprise/plugins/email/base.py:129
+#: apprise/plugins/custom_form.py:135 apprise/plugins/custom_json.py:117
+#: apprise/plugins/custom_xml.py:117 apprise/plugins/email/base.py:153
 #: apprise/plugins/emby.py:90 apprise/plugins/enigma2.py:115
-#: apprise/plugins/fluxer.py:163 apprise/plugins/gotify.py:140
-#: apprise/plugins/growl.py:145 apprise/plugins/home_assistant.py:84
-#: apprise/plugins/irc/base.py:122 apprise/plugins/lametric.py:464
-#: apprise/plugins/mastodon.py:178 apprise/plugins/matrix.py:224
-#: apprise/plugins/mattermost.py:167 apprise/plugins/misskey.py:127
-#: apprise/plugins/mqtt.py:152 apprise/plugins/nextcloud.py:121
-#: apprise/plugins/nextcloudtalk.py:79 apprise/plugins/notica.py:130
+#: apprise/plugins/evolution.py:116 apprise/plugins/fluxer.py:163
+#: apprise/plugins/gotify.py:140 apprise/plugins/growl.py:145
+#: apprise/plugins/home_assistant.py:127 apprise/plugins/humhub.py:143
+#: apprise/plugins/irc/base.py:122 apprise/plugins/kodi.py:101
+#: apprise/plugins/lametric.py:464 apprise/plugins/mastodon.py:190
+#: apprise/plugins/matrix/base.py:267 apprise/plugins/mattermost.py:171
+#: apprise/plugins/misskey.py:127 apprise/plugins/mqtt.py:154
+#: apprise/plugins/nextcloud.py:121 apprise/plugins/nextcloudtalk.py:79
+#: apprise/plugins/notica.py:130 apprise/plugins/notifico.py:170
 #: apprise/plugins/ntfy.py:215 apprise/plugins/parseplatform.py:95
 #: apprise/plugins/pushdeer.py:79 apprise/plugins/pushjet.py:76
 #: apprise/plugins/rocketchat.py:125 apprise/plugins/rsyslog.py:185
 #: apprise/plugins/signal_api.py:102 apprise/plugins/smpp.py:108
-#: apprise/plugins/smseagle.py:140 apprise/plugins/synology.py:88
-#: apprise/plugins/workflows.py:130 apprise/plugins/xbmc.py:101
-#: apprise/plugins/xmpp/base.py:101
+#: apprise/plugins/smseagle.py:140 apprise/plugins/sogs.py:212
+#: apprise/plugins/synology.py:88 apprise/plugins/workflows.py:131
+#: apprise/plugins/xmpp/base.py:106
 msgid "Port"
 msgstr ""
 
 #: apprise/plugins/apprise_api.py:113 apprise/plugins/bark.py:145
-#: apprise/plugins/bluesky.py:119 apprise/plugins/custom_form.py:132
-#: apprise/plugins/custom_json.py:114 apprise/plugins/custom_xml.py:114
+#: apprise/plugins/bluesky.py:119 apprise/plugins/custom_form.py:141
+#: apprise/plugins/custom_json.py:123 apprise/plugins/custom_xml.py:123
 #: apprise/plugins/emby.py:97 apprise/plugins/enigma2.py:121
-#: apprise/plugins/freemobile.py:78 apprise/plugins/home_assistant.py:90
-#: apprise/plugins/lametric.py:471 apprise/plugins/matrix.py:230
+#: apprise/plugins/freemobile.py:78 apprise/plugins/home_assistant.py:133
+#: apprise/plugins/jira.py:236 apprise/plugins/kodi.py:107
+#: apprise/plugins/lametric.py:471 apprise/plugins/matrix/base.py:273
 #: apprise/plugins/nextcloud.py:127 apprise/plugins/nextcloudtalk.py:85
-#: apprise/plugins/notica.py:136 apprise/plugins/ntfy.py:221
-#: apprise/plugins/opsgenie.py:242 apprise/plugins/pushjet.py:88
-#: apprise/plugins/rocketchat.py:131 apprise/plugins/signal_api.py:108
-#: apprise/plugins/smpp.py:92 apprise/plugins/synology.py:94
-#: apprise/plugins/xbmc.py:107
+#: apprise/plugins/notica.py:136 apprise/plugins/notifico.py:176
+#: apprise/plugins/ntfy.py:221 apprise/plugins/opsgenie.py:234
+#: apprise/plugins/pushjet.py:88 apprise/plugins/rocketchat.py:131
+#: apprise/plugins/signal_api.py:108 apprise/plugins/smpp.py:92
+#: apprise/plugins/synology.py:94
 msgid "Username"
 msgstr ""
 
 #: apprise/plugins/apprise_api.py:117 apprise/plugins/aprs.py:172
 #: apprise/plugins/bark.py:149 apprise/plugins/bluesky.py:124
 #: apprise/plugins/bulksms.py:117 apprise/plugins/bulkvs.py:90
-#: apprise/plugins/custom_form.py:136 apprise/plugins/custom_json.py:118
-#: apprise/plugins/custom_xml.py:118 apprise/plugins/dapnet.py:123
-#: apprise/plugins/email/base.py:119 apprise/plugins/emby.py:101
+#: apprise/plugins/custom_form.py:145 apprise/plugins/custom_json.py:127
+#: apprise/plugins/custom_xml.py:127 apprise/plugins/dapnet.py:123
+#: apprise/plugins/email/base.py:143 apprise/plugins/emby.py:101
 #: apprise/plugins/enigma2.py:125 apprise/plugins/freemobile.py:83
-#: apprise/plugins/growl.py:151 apprise/plugins/home_assistant.py:94
-#: apprise/plugins/irc/base.py:132 apprise/plugins/matrix.py:234
-#: apprise/plugins/mqtt.py:163 apprise/plugins/nextcloud.py:131
+#: apprise/plugins/growl.py:151 apprise/plugins/home_assistant.py:137
+#: apprise/plugins/humhub.py:133 apprise/plugins/irc/base.py:132
+#: apprise/plugins/kodi.py:111 apprise/plugins/matrix/base.py:277
+#: apprise/plugins/mqtt.py:165 apprise/plugins/nextcloud.py:131
 #: apprise/plugins/nextcloudtalk.py:90 apprise/plugins/notica.py:140
-#: apprise/plugins/ntfy.py:225 apprise/plugins/pushjet.py:92
-#: apprise/plugins/reddit.py:145 apprise/plugins/rocketchat.py:135
-#: apprise/plugins/signal_api.py:112 apprise/plugins/simplepush.py:108
-#: apprise/plugins/smpp.py:97 apprise/plugins/synology.py:98
-#: apprise/plugins/twist.py:101 apprise/plugins/voipms.py:88
-#: apprise/plugins/xbmc.py:111 apprise/plugins/xmpp/base.py:112
+#: apprise/plugins/notifico.py:180 apprise/plugins/ntfy.py:225
+#: apprise/plugins/pushjet.py:92 apprise/plugins/reddit.py:145
+#: apprise/plugins/rocketchat.py:135 apprise/plugins/signal_api.py:112
+#: apprise/plugins/simplepush.py:108 apprise/plugins/smpp.py:97
+#: apprise/plugins/synology.py:98 apprise/plugins/twist.py:101
+#: apprise/plugins/voipms.py:88 apprise/plugins/xmpp/base.py:117
 msgid "Password"
 msgstr ""
 
 #: apprise/plugins/apprise_api.py:122 apprise/plugins/chanify.py:74
-#: apprise/plugins/dingtalk.py:93 apprise/plugins/feishu.py:80
-#: apprise/plugins/gotify.py:123 apprise/plugins/mattermost.py:157
-#: apprise/plugins/notica.py:119 apprise/plugins/notifiarr.py:91
-#: apprise/plugins/ntfy.py:230 apprise/plugins/pushme.py:62
-#: apprise/plugins/ryver.py:99 apprise/plugins/serverchan.py:70
-#: apprise/plugins/slack.py:294 apprise/plugins/synology.py:103
-#: apprise/plugins/webexteams.py:116 apprise/plugins/zulip.py:136
+#: apprise/plugins/dingtalk.py:93 apprise/plugins/exotel.py:166
+#: apprise/plugins/feishu.py:80 apprise/plugins/gotify.py:123
+#: apprise/plugins/mattermost.py:161 apprise/plugins/notica.py:119
+#: apprise/plugins/notifiarr.py:91 apprise/plugins/ntfy.py:230
+#: apprise/plugins/pushme.py:62 apprise/plugins/ryver.py:99
+#: apprise/plugins/serverchan.py:70 apprise/plugins/slack.py:323
+#: apprise/plugins/synology.py:103 apprise/plugins/zulip.py:136
 msgid "Token"
 msgstr ""
 
-#: apprise/plugins/apprise_api.py:136 apprise/plugins/ntfy.py:288
-#: apprise/plugins/opsgenie.py:307 apprise/plugins/pagertree.py:133
+#: apprise/plugins/apprise_api.py:136 apprise/plugins/jira.py:301
+#: apprise/plugins/ntfy.py:288 apprise/plugins/opsgenie.py:294
+#: apprise/plugins/pagertree.py:133
 msgid "Tags"
 msgstr ""
 
@@ -250,8 +270,8 @@ msgstr ""
 msgid "Query Method"
 msgstr ""
 
-#: apprise/plugins/apprise_api.py:154 apprise/plugins/custom_form.py:165
-#: apprise/plugins/custom_json.py:141 apprise/plugins/custom_xml.py:141
+#: apprise/plugins/apprise_api.py:154 apprise/plugins/custom_form.py:174
+#: apprise/plugins/custom_json.py:150 apprise/plugins/custom_xml.py:150
 #: apprise/plugins/enigma2.py:153 apprise/plugins/nextcloud.py:181
 #: apprise/plugins/nextcloudtalk.py:122 apprise/plugins/notica.py:156
 #: apprise/plugins/pagertree.py:142 apprise/plugins/synology.py:128
@@ -260,15 +280,15 @@ msgstr ""
 
 #: apprise/plugins/aprs.py:167 apprise/plugins/bulksms.py:112
 #: apprise/plugins/bulkvs.py:85 apprise/plugins/clicksend.py:93
-#: apprise/plugins/dapnet.py:118 apprise/plugins/email/base.py:115
-#: apprise/plugins/mailgun.py:136 apprise/plugins/mqtt.py:158
-#: apprise/plugins/reddit.py:140 apprise/plugins/sendpulse.py:108
+#: apprise/plugins/dapnet.py:118 apprise/plugins/email/base.py:139
+#: apprise/plugins/mailgun.py:136 apprise/plugins/mqtt.py:160
+#: apprise/plugins/reddit.py:140 apprise/plugins/sendpulse.py:110
 #: apprise/plugins/smtp2go.py:108 apprise/plugins/sparkpost.py:159
 msgid "User Name"
 msgstr ""
 
 #: apprise/plugins/aprs.py:178 apprise/plugins/aprs.py:199
-#: apprise/plugins/dapnet.py:129 apprise/plugins/dapnet.py:150
+#: apprise/plugins/dapnet.py:129 apprise/plugins/dapnet.py:162
 msgid "Target Callsign"
 msgstr ""
 
@@ -281,160 +301,200 @@ msgid "Locale"
 msgstr ""
 
 #: apprise/plugins/bark.py:154 apprise/plugins/fcm/__init__.py:157
-#: apprise/plugins/pushbullet.py:89 apprise/plugins/pushover.py:200
-#: apprise/plugins/pushsafer.py:366 apprise/plugins/pushy.py:85
+#: apprise/plugins/home_assistant.py:148 apprise/plugins/pushbullet.py:89
+#: apprise/plugins/pushover.py:240 apprise/plugins/pushsafer.py:366
+#: apprise/plugins/pushy.py:85
 msgid "Target Device"
 msgstr ""
 
-#: apprise/plugins/bark.py:174 apprise/plugins/lametric.py:516
-#: apprise/plugins/macosx.py:124 apprise/plugins/pushover.py:223
+#: apprise/plugins/bark.py:171 apprise/plugins/lametric.py:516
+#: apprise/plugins/macosx.py:124 apprise/plugins/pushover.py:269
 #: apprise/plugins/pushsafer.py:392 apprise/plugins/pushy.py:110
 msgid "Sound"
 msgstr ""
 
-#: apprise/plugins/bark.py:179
+#: apprise/plugins/bark.py:176
 msgid "Level"
 msgstr ""
 
-#: apprise/plugins/bark.py:184
+#: apprise/plugins/bark.py:181
 msgid "Volume"
 msgstr ""
 
-#: apprise/plugins/bark.py:190 apprise/plugins/ntfy.py:270
+#: apprise/plugins/bark.py:187 apprise/plugins/ntfy.py:270
 #: apprise/plugins/pagerduty.py:172
 msgid "Click"
 msgstr ""
 
-#: apprise/plugins/bark.py:194 apprise/plugins/pushy.py:114
+#: apprise/plugins/bark.py:191 apprise/plugins/pushy.py:114
 msgid "Badge"
 msgstr ""
 
-#: apprise/plugins/bark.py:199
+#: apprise/plugins/bark.py:196
 msgid "Category"
 msgstr ""
 
-#: apprise/plugins/bark.py:203 apprise/plugins/join.py:158
+#: apprise/plugins/bark.py:200 apprise/plugins/join.py:158
 #: apprise/plugins/pagerduty.py:163
 msgid "Group"
 msgstr ""
 
-#: apprise/plugins/bark.py:207 apprise/plugins/dbus.py:225
+#: apprise/plugins/bark.py:204 apprise/plugins/dbus.py:228
 #: apprise/plugins/discord.py:196 apprise/plugins/fcm/__init__.py:197
 #: apprise/plugins/flock.py:136 apprise/plugins/fluxer.py:250
-#: apprise/plugins/glib.py:187 apprise/plugins/gnome.py:154
-#: apprise/plugins/growl.py:175 apprise/plugins/join.py:182
-#: apprise/plugins/line.py:108 apprise/plugins/macosx.py:115
-#: apprise/plugins/matrix.py:273 apprise/plugins/mattermost.py:211
-#: apprise/plugins/msteams.py:200 apprise/plugins/notifiarr.py:125
-#: apprise/plugins/ntfy.py:256 apprise/plugins/one_signal.py:155
+#: apprise/plugins/glib.py:188 apprise/plugins/gnome.py:154
+#: apprise/plugins/growl.py:175 apprise/plugins/join.py:183
+#: apprise/plugins/kodi.py:129 apprise/plugins/line.py:108
+#: apprise/plugins/macosx.py:115 apprise/plugins/matrix/base.py:318
+#: apprise/plugins/mattermost.py:212 apprise/plugins/notifiarr.py:125
+#: apprise/plugins/ntfy.py:256 apprise/plugins/one_signal.py:164
 #: apprise/plugins/pagerduty.py:191 apprise/plugins/ryver.py:124
-#: apprise/plugins/slack.py:259 apprise/plugins/telegram.py:370
+#: apprise/plugins/slack.py:291 apprise/plugins/telegram.py:370
 #: apprise/plugins/vapid/__init__.py:204 apprise/plugins/windows.py:106
-#: apprise/plugins/workflows.py:162 apprise/plugins/xbmc.py:129
+#: apprise/plugins/workflows.py:163
 msgid "Include Image"
 msgstr ""
 
-#: apprise/plugins/bark.py:213 apprise/plugins/mattermost.py:207
-#: apprise/plugins/revolt.py:128
+#: apprise/plugins/bark.py:210 apprise/plugins/mattermost.py:208
+#: apprise/plugins/revolt.py:129
 msgid "Icon URL"
 msgstr ""
 
-#: apprise/plugins/bark.py:217 apprise/plugins/streamlabs.py:119
+#: apprise/plugins/bark.py:214 apprise/plugins/streamlabs.py:119
 msgid "Call"
 msgstr ""
 
-#: apprise/plugins/base.py:192
+#: apprise/plugins/base.py:305
 msgid "Overflow Mode"
 msgstr ""
 
-#: apprise/plugins/base.py:207
+#: apprise/plugins/base.py:320
 msgid "Notify Format"
 msgstr ""
 
-#: apprise/plugins/base.py:217
+#: apprise/plugins/base.py:330
 msgid "Interpret Emojis"
 msgstr ""
 
-#: apprise/plugins/base.py:227
+#: apprise/plugins/base.py:340
 msgid "Persistent Storage"
 msgstr ""
 
-#: apprise/plugins/base.py:237
+#: apprise/plugins/base.py:350
 msgid "Timezone"
 msgstr ""
 
-#: apprise/plugins/brevo.py:119 apprise/plugins/resend.py:114
-#: apprise/plugins/sendgrid.py:123
+#: apprise/plugins/base.py:359
+msgid "Service Retry"
+msgstr ""
+
+#: apprise/plugins/base.py:367
+msgid "Inter-Retry Wait"
+msgstr ""
+
+#: apprise/plugins/base.py:375
+msgid "Optional Service"
+msgstr ""
+
+#: apprise/plugins/blink1.py:151
+msgid "blink(1)"
+msgstr ""
+
+#: apprise/plugins/blink1.py:178
+msgid "Serial Number"
+msgstr ""
+
+#: apprise/plugins/blink1.py:188
+msgid "Duration (ms)"
+msgstr ""
+
+#: apprise/plugins/blink1.py:195
+msgid "Fade Time (ms)"
+msgstr ""
+
+#: apprise/plugins/blink1.py:202
+msgid "LED Number"
+msgstr ""
+
+#: apprise/plugins/brevo.py:164 apprise/plugins/postmark.py:123
+#: apprise/plugins/resend.py:114 apprise/plugins/sendgrid.py:123
 msgid "Source Email"
 msgstr ""
 
-#: apprise/plugins/brevo.py:124 apprise/plugins/email/base.py:135
-#: apprise/plugins/mailgun.py:152 apprise/plugins/notificationapi.py:172
-#: apprise/plugins/office365.py:143 apprise/plugins/one_signal.py:124
-#: apprise/plugins/popcorn_notify.py:84 apprise/plugins/pushbullet.py:100
-#: apprise/plugins/pushsafer.py:371 apprise/plugins/resend.py:119
-#: apprise/plugins/sendgrid.py:128 apprise/plugins/sendpulse.py:131
-#: apprise/plugins/slack.py:231 apprise/plugins/threema.py:105
+#: apprise/plugins/brevo.py:169 apprise/plugins/email/base.py:159
+#: apprise/plugins/mailgun.py:152 apprise/plugins/notificationapi.py:177
+#: apprise/plugins/office365.py:282 apprise/plugins/one_signal.py:124
+#: apprise/plugins/popcorn_notify.py:84 apprise/plugins/postmark.py:128
+#: apprise/plugins/pushbullet.py:100 apprise/plugins/pushsafer.py:371
+#: apprise/plugins/resend.py:119 apprise/plugins/sendgrid.py:128
+#: apprise/plugins/sendpulse.py:134 apprise/plugins/slack.py:256
+#: apprise/plugins/threema.py:105
 msgid "Target Email"
 msgstr ""
 
-#: apprise/plugins/brevo.py:143 apprise/plugins/email/base.py:165
-#: apprise/plugins/mailgun.py:186 apprise/plugins/notificationapi.py:218
-#: apprise/plugins/office365.py:162 apprise/plugins/resend.py:138
-#: apprise/plugins/sendgrid.py:147 apprise/plugins/sendpulse.py:152
-#: apprise/plugins/ses.py:206 apprise/plugins/smtp2go.py:143
-#: apprise/plugins/sparkpost.py:201
+#: apprise/plugins/brevo.py:185 apprise/plugins/postmark.py:149
+#: apprise/plugins/ses.py:205
+msgid "Reply To Email"
+msgstr ""
+
+#: apprise/plugins/brevo.py:193 apprise/plugins/email/base.py:240
+#: apprise/plugins/mailgun.py:186 apprise/plugins/notificationapi.py:243
+#: apprise/plugins/office365.py:307 apprise/plugins/postmark.py:157
+#: apprise/plugins/resend.py:158 apprise/plugins/sendgrid.py:153
+#: apprise/plugins/sendpulse.py:169 apprise/plugins/ses.py:232
+#: apprise/plugins/smtp2go.py:143 apprise/plugins/sparkpost.py:201
 msgid "Carbon Copy"
 msgstr ""
 
-#: apprise/plugins/brevo.py:147 apprise/plugins/email/base.py:169
-#: apprise/plugins/mailgun.py:190 apprise/plugins/notificationapi.py:222
-#: apprise/plugins/office365.py:166 apprise/plugins/resend.py:142
-#: apprise/plugins/sendgrid.py:151 apprise/plugins/sendpulse.py:156
-#: apprise/plugins/ses.py:210 apprise/plugins/smtp2go.py:147
-#: apprise/plugins/sparkpost.py:205
+#: apprise/plugins/brevo.py:197 apprise/plugins/email/base.py:244
+#: apprise/plugins/mailgun.py:190 apprise/plugins/notificationapi.py:247
+#: apprise/plugins/office365.py:311 apprise/plugins/postmark.py:161
+#: apprise/plugins/resend.py:162 apprise/plugins/sendgrid.py:157
+#: apprise/plugins/sendpulse.py:173 apprise/plugins/ses.py:236
+#: apprise/plugins/smtp2go.py:147 apprise/plugins/sparkpost.py:205
 msgid "Blind Carbon Copy"
-msgstr ""
-
-#: apprise/plugins/brevo.py:151 apprise/plugins/ses.py:196
-msgid "Reply To Email"
 msgstr ""
 
 #: apprise/plugins/bulksms.py:123 apprise/plugins/bulkvs.py:103
 #: apprise/plugins/burstsms.py:124 apprise/plugins/clickatell.py:83
 #: apprise/plugins/clicksend.py:105 apprise/plugins/d7networks.py:103
-#: apprise/plugins/dingtalk.py:106 apprise/plugins/httpsms.py:90
+#: apprise/plugins/dingtalk.py:106 apprise/plugins/evolution.py:127
+#: apprise/plugins/exotel.py:183 apprise/plugins/httpsms.py:90
 #: apprise/plugins/kavenegar.py:128 apprise/plugins/messagebird.py:92
-#: apprise/plugins/msg91.py:116 apprise/plugins/plivo.py:107
-#: apprise/plugins/popcorn_notify.py:77 apprise/plugins/seven.py:81
+#: apprise/plugins/msg91.py:116 apprise/plugins/octopush.py:146
+#: apprise/plugins/plivo.py:107 apprise/plugins/popcorn_notify.py:77
+#: apprise/plugins/ringcentral.py:213 apprise/plugins/seven.py:81
 #: apprise/plugins/signal_api.py:124 apprise/plugins/sinch.py:127
 #: apprise/plugins/smpp.py:121 apprise/plugins/smseagle.py:151
-#: apprise/plugins/smsmanager.py:112 apprise/plugins/sns.py:125
+#: apprise/plugins/smsmanager.py:112 apprise/plugins/sns.py:157
 #: apprise/plugins/threema.py:98 apprise/plugins/twilio.py:161
-#: apprise/plugins/voipms.py:100 apprise/plugins/vonage.py:101
-#: apprise/plugins/whatsapp.py:119
+#: apprise/plugins/voipms.py:101 apprise/plugins/vonage.py:101
+#: apprise/plugins/whatsapp.py:147
 msgid "Target Phone No"
 msgstr ""
 
 #: apprise/plugins/bulksms.py:130 apprise/plugins/nextcloud.py:142
+#: apprise/plugins/pushover.py:246
 msgid "Target Group"
 msgstr ""
 
-#: apprise/plugins/bulksms.py:152 apprise/plugins/bulkvs.py:96
-#: apprise/plugins/bulkvs.py:125 apprise/plugins/clickatell.py:78
+#: apprise/plugins/bulksms.py:149 apprise/plugins/bulkvs.py:96
+#: apprise/plugins/bulkvs.py:122 apprise/plugins/clickatell.py:78
 #: apprise/plugins/fortysixelks.py:100 apprise/plugins/httpsms.py:83
-#: apprise/plugins/httpsms.py:115 apprise/plugins/signal_api.py:117
-#: apprise/plugins/sinch.py:120 apprise/plugins/smpp.py:114
-#: apprise/plugins/smsmanager.py:137 apprise/plugins/twilio.py:154
-#: apprise/plugins/voipms.py:94 apprise/plugins/vonage.py:94
+#: apprise/plugins/httpsms.py:115 apprise/plugins/ringcentral.py:207
+#: apprise/plugins/signal_api.py:117 apprise/plugins/sinch.py:120
+#: apprise/plugins/smpp.py:114 apprise/plugins/smsmanager.py:134
+#: apprise/plugins/twilio.py:154 apprise/plugins/voipms.py:94
+#: apprise/plugins/vonage.py:94
 msgid "From Phone No"
 msgstr ""
 
-#: apprise/plugins/bulksms.py:158
+#: apprise/plugins/bulksms.py:155
 msgid "Route Group"
 msgstr ""
 
-#: apprise/plugins/bulksms.py:165 apprise/plugins/d7networks.py:123
+#: apprise/plugins/bulksms.py:162 apprise/plugins/d7networks.py:136
+#: apprise/plugins/exotel.py:228
 msgid "Unicode Characters"
 msgstr ""
 
@@ -447,16 +507,28 @@ msgstr ""
 msgid "Sender ID"
 msgstr ""
 
-#: apprise/plugins/burstsms.py:155
+#: apprise/plugins/burstsms.py:152
 msgid "Country"
 msgstr ""
 
-#: apprise/plugins/burstsms.py:164
+#: apprise/plugins/burstsms.py:161
 msgid "validity"
 msgstr ""
 
 #: apprise/plugins/chanify.py:47
 msgid "Chanify"
+msgstr ""
+
+#: apprise/plugins/chime.py:130 apprise/plugins/discord.py:130
+#: apprise/plugins/fluxer.py:174 apprise/plugins/ifttt.py:103
+#: apprise/plugins/zoom.py:139
+msgid "Webhook ID"
+msgstr ""
+
+#: apprise/plugins/chime.py:136 apprise/plugins/discord.py:136
+#: apprise/plugins/fluxer.py:181 apprise/plugins/google_chat.py:118
+#: apprise/plugins/webexteams.py:171
+msgid "Webhook Token"
 msgstr ""
 
 #: apprise/plugins/clickatell.py:45
@@ -467,22 +539,22 @@ msgstr ""
 msgid "API Token"
 msgstr ""
 
-#: apprise/plugins/custom_form.py:148 apprise/plugins/custom_json.py:130
-#: apprise/plugins/custom_xml.py:130
+#: apprise/plugins/custom_form.py:157 apprise/plugins/custom_json.py:139
+#: apprise/plugins/custom_xml.py:139
 msgid "Fetch Method"
 msgstr ""
 
-#: apprise/plugins/custom_form.py:154
+#: apprise/plugins/custom_form.py:163
 msgid "Attach File As"
 msgstr ""
 
-#: apprise/plugins/custom_form.py:169 apprise/plugins/custom_json.py:145
-#: apprise/plugins/custom_xml.py:145 apprise/plugins/pagertree.py:146
+#: apprise/plugins/custom_form.py:178 apprise/plugins/custom_json.py:154
+#: apprise/plugins/custom_xml.py:154 apprise/plugins/pagertree.py:146
 msgid "Payload Extras"
 msgstr ""
 
-#: apprise/plugins/custom_form.py:173 apprise/plugins/custom_json.py:149
-#: apprise/plugins/custom_xml.py:149
+#: apprise/plugins/custom_form.py:182 apprise/plugins/custom_json.py:158
+#: apprise/plugins/custom_xml.py:158
 msgid "GET Params"
 msgstr ""
 
@@ -490,41 +562,42 @@ msgstr ""
 msgid "API Access Token"
 msgstr ""
 
-#: apprise/plugins/d7networks.py:141 apprise/plugins/seven.py:107
+#: apprise/plugins/d7networks.py:127 apprise/plugins/seven.py:105
 msgid "Originating Address"
 msgstr ""
 
-#: apprise/plugins/dapnet.py:155 apprise/plugins/gotify.py:153
-#: apprise/plugins/growl.py:163 apprise/plugins/join.py:188
+#: apprise/plugins/dapnet.py:150 apprise/plugins/exotel.py:240
+#: apprise/plugins/gotify.py:153 apprise/plugins/growl.py:163
+#: apprise/plugins/jira.py:287 apprise/plugins/join.py:189
 #: apprise/plugins/lametric.py:494 apprise/plugins/ntfy.py:282
-#: apprise/plugins/opsgenie.py:293 apprise/plugins/prowl.py:141
-#: apprise/plugins/pushover.py:217 apprise/plugins/pushsafer.py:387
-#: apprise/plugins/smseagle.py:210
+#: apprise/plugins/opsgenie.py:280 apprise/plugins/prowl.py:141
+#: apprise/plugins/pushover.py:263 apprise/plugins/pushsafer.py:387
+#: apprise/plugins/smseagle.py:187
 msgid "Priority"
 msgstr ""
 
-#: apprise/plugins/dapnet.py:161
+#: apprise/plugins/dapnet.py:156
 msgid "Transmitter Groups"
 msgstr ""
 
-#: apprise/plugins/dbus.py:153
+#: apprise/plugins/dbus.py:156
 msgid "libdbus-1.so.x must be installed."
 msgstr ""
 
-#: apprise/plugins/dbus.py:157 apprise/plugins/glib.py:126
+#: apprise/plugins/dbus.py:160
 msgid "DBus Notification"
 msgstr ""
 
-#: apprise/plugins/dbus.py:201 apprise/plugins/glib.py:163
+#: apprise/plugins/dbus.py:204 apprise/plugins/glib.py:165
 #: apprise/plugins/gnome.py:142 apprise/plugins/pagertree.py:128
 msgid "Urgency"
 msgstr ""
 
-#: apprise/plugins/dbus.py:213 apprise/plugins/glib.py:175
+#: apprise/plugins/dbus.py:216 apprise/plugins/glib.py:176
 msgid "X-Axis"
 msgstr ""
 
-#: apprise/plugins/dbus.py:219 apprise/plugins/glib.py:181
+#: apprise/plugins/dbus.py:222 apprise/plugins/glib.py:182
 msgid "Y-Axis"
 msgstr ""
 
@@ -534,19 +607,9 @@ msgstr ""
 
 #: apprise/plugins/discord.py:125 apprise/plugins/flock.py:106
 #: apprise/plugins/fluxer.py:169 apprise/plugins/ryver.py:106
-#: apprise/plugins/slack.py:186 apprise/plugins/viber.py:95
+#: apprise/plugins/slack.py:208 apprise/plugins/viber.py:99
 #: apprise/plugins/zulip.py:124
 msgid "Bot Name"
-msgstr ""
-
-#: apprise/plugins/discord.py:130 apprise/plugins/fluxer.py:174
-#: apprise/plugins/ifttt.py:103
-msgid "Webhook ID"
-msgstr ""
-
-#: apprise/plugins/discord.py:136 apprise/plugins/fluxer.py:181
-#: apprise/plugins/google_chat.py:118
-msgid "Webhook Token"
 msgstr ""
 
 #: apprise/plugins/discord.py:149 apprise/plugins/fluxer.py:201
@@ -563,7 +626,7 @@ msgid "Avatar URL"
 msgstr ""
 
 #: apprise/plugins/discord.py:163 apprise/plugins/fluxer.py:215
-#: apprise/plugins/pushover.py:229
+#: apprise/plugins/pushover.py:275
 msgid "URL"
 msgstr ""
 
@@ -591,44 +654,48 @@ msgstr ""
 msgid "Ping Users/Roles"
 msgstr ""
 
-#: apprise/plugins/dot.py:127
+#: apprise/plugins/dot.py:142
 msgid "Device Serial Number"
 msgstr ""
 
-#: apprise/plugins/dot.py:133
+#: apprise/plugins/dot.py:155
 msgid "API Mode"
 msgstr ""
 
-#: apprise/plugins/dot.py:147
+#: apprise/plugins/dot.py:161
 msgid "Refresh Now"
 msgstr ""
 
-#: apprise/plugins/dot.py:153
+#: apprise/plugins/dot.py:167
 msgid "Text Signature"
 msgstr ""
 
-#: apprise/plugins/dot.py:157
+#: apprise/plugins/dot.py:171
 msgid "Icon Base64 (Text API)"
 msgstr ""
 
-#: apprise/plugins/dot.py:161
+#: apprise/plugins/dot.py:175
 msgid "Image Base64 (Image API)"
 msgstr ""
 
-#: apprise/plugins/dot.py:166
+#: apprise/plugins/dot.py:180
 msgid "Link"
 msgstr ""
 
-#: apprise/plugins/dot.py:170
+#: apprise/plugins/dot.py:184
 msgid "Border"
 msgstr ""
 
-#: apprise/plugins/dot.py:177
+#: apprise/plugins/dot.py:191
 msgid "Dither Type"
 msgstr ""
 
-#: apprise/plugins/dot.py:183
+#: apprise/plugins/dot.py:197
 msgid "Dither Kernel"
+msgstr ""
+
+#: apprise/plugins/dot.py:203
+msgid "Task Key"
 msgstr ""
 
 #: apprise/plugins/emby.py:112
@@ -636,7 +703,7 @@ msgid "Modal"
 msgstr ""
 
 #: apprise/plugins/enigma2.py:130 apprise/plugins/gotify.py:134
-#: apprise/plugins/mattermost.py:163 apprise/plugins/notica.py:145
+#: apprise/plugins/mattermost.py:167 apprise/plugins/notica.py:145
 msgid "Path"
 msgstr ""
 
@@ -644,11 +711,31 @@ msgstr ""
 msgid "Server Timeout"
 msgstr ""
 
+#: apprise/plugins/evolution.py:122
+msgid "Instance Name"
+msgstr ""
+
+#: apprise/plugins/exotel.py:160 apprise/plugins/sinch.py:106
+#: apprise/plugins/twilio.py:140
+msgid "Account SID"
+msgstr ""
+
+#: apprise/plugins/exotel.py:172
+msgid "From Phone No / Sender ID"
+msgstr ""
+
+#: apprise/plugins/exotel.py:233 apprise/plugins/jira.py:275
+#: apprise/plugins/mailgun.py:176 apprise/plugins/notificationapi.py:212
+#: apprise/plugins/opsgenie.py:273 apprise/plugins/pagerduty.py:176
+#: apprise/plugins/sparkpost.py:191
+msgid "Region Name"
+msgstr ""
+
 #: apprise/plugins/feishu.py:49
 msgid "Feishu"
 msgstr ""
 
-#: apprise/plugins/flock.py:99 apprise/plugins/twitter.py:150
+#: apprise/plugins/flock.py:99 apprise/plugins/twitter.py:175
 msgid "Access Key"
 msgstr ""
 
@@ -662,8 +749,10 @@ msgstr ""
 
 #: apprise/plugins/fcm/__init__.py:182 apprise/plugins/fcm/__init__.py:188
 #: apprise/plugins/fluxer.py:195 apprise/plugins/lametric.py:510
-#: apprise/plugins/mattermost.py:223 apprise/plugins/notificationapi.py:209
-#: apprise/plugins/ntfy.py:296 apprise/plugins/vapid/__init__.py:169
+#: apprise/plugins/mattermost.py:224 apprise/plugins/notificationapi.py:218
+#: apprise/plugins/ntfy.py:296 apprise/plugins/office365.py:319
+#: apprise/plugins/sns.py:202 apprise/plugins/vapid/__init__.py:169
+#: apprise/plugins/webexteams.py:197 apprise/plugins/zoom.py:158
 msgid "Mode"
 msgstr ""
 
@@ -687,8 +776,12 @@ msgstr ""
 msgid "Free-Mobile"
 msgstr ""
 
-#: apprise/plugins/glib.py:122
+#: apprise/plugins/glib.py:123
 msgid "libdbus-1.so.x or libdbus-2.so.x must be installed."
+msgstr ""
+
+#: apprise/plugins/glib.py:127
+msgid "GLib Notification"
 msgstr ""
 
 #: apprise/plugins/gnome.py:100
@@ -711,8 +804,21 @@ msgstr ""
 msgid "Thread Key"
 msgstr ""
 
+#: apprise/plugins/groupme.py:123
+msgid "Bot ID"
+msgstr ""
+
+#: apprise/plugins/groupme.py:130 apprise/plugins/line.py:82
+#: apprise/plugins/mastodon.py:185 apprise/plugins/matrix/base.py:282
+#: apprise/plugins/misskey.py:122 apprise/plugins/pushbullet.py:83
+#: apprise/plugins/pushover.py:234 apprise/plugins/smseagle.py:146
+#: apprise/plugins/spugpush.py:68 apprise/plugins/streamlabs.py:105
+#: apprise/plugins/whatsapp.py:121
+msgid "Access Token"
+msgstr ""
+
 #: apprise/plugins/growl.py:169 apprise/plugins/mqtt.py:195
-#: apprise/plugins/msteams.py:206 apprise/plugins/nextcloud.py:163
+#: apprise/plugins/nextcloud.py:163
 msgid "Version"
 msgstr ""
 
@@ -720,12 +826,20 @@ msgstr ""
 msgid "Sticky"
 msgstr ""
 
-#: apprise/plugins/home_assistant.py:99
+#: apprise/plugins/home_assistant.py:142
 msgid "Long-Lived Access Token"
 msgstr ""
 
-#: apprise/plugins/home_assistant.py:113
+#: apprise/plugins/home_assistant.py:165
 msgid "Notification ID"
+msgstr ""
+
+#: apprise/plugins/home_assistant.py:182
+msgid "Path Prefix"
+msgstr ""
+
+#: apprise/plugins/humhub.py:127
+msgid "Token or Username"
 msgstr ""
 
 #: apprise/plugins/ifttt.py:109
@@ -740,6 +854,55 @@ msgstr ""
 msgid "Remove Tokens"
 msgstr ""
 
+#: apprise/plugins/jira.py:240 apprise/plugins/opsgenie.py:238
+msgid "Target Escalation"
+msgstr ""
+
+#: apprise/plugins/jira.py:246 apprise/plugins/opsgenie.py:244
+msgid "Target Schedule"
+msgstr ""
+
+#: apprise/plugins/irc/base.py:137 apprise/plugins/jira.py:252
+#: apprise/plugins/line.py:88 apprise/plugins/mastodon.py:196
+#: apprise/plugins/matrix/base.py:289 apprise/plugins/nextcloud.py:136
+#: apprise/plugins/one_signal.py:129 apprise/plugins/opsgenie.py:250
+#: apprise/plugins/pushed.py:95 apprise/plugins/rocketchat.py:156
+#: apprise/plugins/slack.py:261 apprise/plugins/twitter.py:187
+#: apprise/plugins/wechat.py:198 apprise/plugins/xmpp/base.py:123
+#: apprise/plugins/zulip.py:143
+msgid "Target User"
+msgstr ""
+
+#: apprise/plugins/jira.py:258 apprise/plugins/opsgenie.py:256
+msgid "Target Team"
+msgstr ""
+
+#: apprise/plugins/jira.py:264 apprise/plugins/opsgenie.py:262
+msgid "Targets "
+msgstr ""
+
+#: apprise/plugins/jira.py:293 apprise/plugins/opsgenie.py:286
+msgid "Entity"
+msgstr ""
+
+#: apprise/plugins/jira.py:297 apprise/plugins/opsgenie.py:290
+msgid "Alias"
+msgstr ""
+
+#: apprise/plugins/jira.py:308 apprise/plugins/opsgenie.py:298
+#: apprise/plugins/pagertree.py:118 apprise/plugins/splunk.py:202
+msgid "Action"
+msgstr ""
+
+#: apprise/plugins/jira.py:319 apprise/plugins/opsgenie.py:317
+msgid "Details"
+msgstr ""
+
+#: apprise/plugins/jira.py:323 apprise/plugins/opsgenie.py:321
+#: apprise/plugins/splunk.py:213
+msgid "Action Mapping"
+msgstr ""
+
 #: apprise/plugins/join.py:147
 msgid "Device ID"
 msgstr ""
@@ -751,6 +914,11 @@ msgstr ""
 #: apprise/plugins/kavenegar.py:122 apprise/plugins/messagebird.py:85
 #: apprise/plugins/plivo.py:100
 msgid "Source Phone No"
+msgstr ""
+
+#: apprise/plugins/kodi.py:123 apprise/plugins/streamlabs.py:141
+#: apprise/plugins/windows.py:100
+msgid "Duration"
 msgstr ""
 
 #: apprise/plugins/kumulos.py:99
@@ -795,23 +963,6 @@ msgstr ""
 msgid "Bot Token"
 msgstr ""
 
-#: apprise/plugins/line.py:82 apprise/plugins/mastodon.py:173
-#: apprise/plugins/matrix.py:239 apprise/plugins/misskey.py:122
-#: apprise/plugins/pushbullet.py:83 apprise/plugins/pushover.py:194
-#: apprise/plugins/smseagle.py:146 apprise/plugins/spugpush.py:68
-#: apprise/plugins/streamlabs.py:105 apprise/plugins/whatsapp.py:99
-msgid "Access Token"
-msgstr ""
-
-#: apprise/plugins/irc/base.py:137 apprise/plugins/line.py:88
-#: apprise/plugins/mastodon.py:184 apprise/plugins/matrix.py:244
-#: apprise/plugins/nextcloud.py:136 apprise/plugins/one_signal.py:129
-#: apprise/plugins/opsgenie.py:258 apprise/plugins/pushed.py:95
-#: apprise/plugins/rocketchat.py:155 apprise/plugins/slack.py:236
-#: apprise/plugins/twitter.py:162 apprise/plugins/zulip.py:143
-msgid "Target User"
-msgstr ""
-
 #: apprise/plugins/macosx.py:65
 msgid ""
 "Only works with Mac OS X 10.8 and higher. Additionally  requires that "
@@ -826,105 +977,76 @@ msgstr ""
 msgid "Open/Click URL"
 msgstr ""
 
-#: apprise/plugins/email/base.py:124 apprise/plugins/mailgun.py:141
-#: apprise/plugins/sendpulse.py:112 apprise/plugins/smtp2go.py:113
+#: apprise/plugins/email/base.py:148 apprise/plugins/mailgun.py:141
+#: apprise/plugins/sendpulse.py:115 apprise/plugins/smtp2go.py:113
 #: apprise/plugins/sparkpost.py:164
 msgid "Domain"
 msgstr ""
 
-#: apprise/plugins/email/base.py:160 apprise/plugins/mailgun.py:168
-#: apprise/plugins/resend.py:154 apprise/plugins/ses.py:201
-#: apprise/plugins/smtp2go.py:135 apprise/plugins/sparkpost.py:186
+#: apprise/plugins/email/base.py:179 apprise/plugins/mailgun.py:168
+#: apprise/plugins/postmark.py:144 apprise/plugins/resend.py:140
+#: apprise/plugins/ses.py:210 apprise/plugins/smtp2go.py:135
+#: apprise/plugins/sparkpost.py:186
 msgid "From Name"
 msgstr ""
 
-#: apprise/plugins/mailgun.py:176 apprise/plugins/notificationapi.py:203
-#: apprise/plugins/opsgenie.py:281 apprise/plugins/pagerduty.py:176
-#: apprise/plugins/sparkpost.py:191
-msgid "Region Name"
-msgstr ""
-
-#: apprise/plugins/email/base.py:209 apprise/plugins/mailgun.py:204
+#: apprise/plugins/email/base.py:253 apprise/plugins/mailgun.py:204
 #: apprise/plugins/smtp2go.py:161 apprise/plugins/sparkpost.py:219
 msgid "Email Header"
 msgstr ""
 
-#: apprise/plugins/mailgun.py:208 apprise/plugins/msteams.py:222
-#: apprise/plugins/notificationapi.py:246 apprise/plugins/sparkpost.py:223
-#: apprise/plugins/workflows.py:201
+#: apprise/plugins/mailgun.py:208 apprise/plugins/notificationapi.py:256
+#: apprise/plugins/slack.py:340 apprise/plugins/sparkpost.py:223
+#: apprise/plugins/workflows.py:202
 msgid "Template Tokens"
 msgstr ""
 
-#: apprise/plugins/mastodon.py:204 apprise/plugins/misskey.py:143
+#: apprise/plugins/mastodon.py:216 apprise/plugins/misskey.py:143
 msgid "Visibility"
 msgstr ""
 
-#: apprise/plugins/mastodon.py:210 apprise/plugins/twitter.py:185
-msgid "Cache Results"
-msgstr ""
-
-#: apprise/plugins/mastodon.py:220
-msgid "Sensitive Attachments"
-msgstr ""
-
-#: apprise/plugins/mastodon.py:225
+#: apprise/plugins/mastodon.py:222
 msgid "Spoiler Text"
 msgstr ""
 
-#: apprise/plugins/mastodon.py:229
+#: apprise/plugins/mastodon.py:226
 msgid "Idempotency-Key"
 msgstr ""
 
-#: apprise/plugins/mastodon.py:233
+#: apprise/plugins/mastodon.py:230
 msgid "Language Code"
 msgstr ""
 
-#: apprise/plugins/matrix.py:250 apprise/plugins/rocketchat.py:161
-msgid "Target Room ID"
+#: apprise/plugins/mastodon.py:234 apprise/plugins/twitter.py:210
+msgid "Cache Results"
 msgstr ""
 
-#: apprise/plugins/matrix.py:256
-msgid "Target Room Alias"
+#: apprise/plugins/mastodon.py:239
+msgid "Sensitive Attachments"
 msgstr ""
 
-#: apprise/plugins/matrix.py:279
-msgid "Server Discovery"
+#: apprise/plugins/mastodon.py:255
+msgid "Ping Users/Tags"
 msgstr ""
 
-#: apprise/plugins/matrix.py:284
-msgid "Force Home Server on Room IDs"
-msgstr ""
-
-#: apprise/plugins/matrix.py:289 apprise/plugins/rocketchat.py:177
-#: apprise/plugins/ryver.py:118
-msgid "Webhook Mode"
-msgstr ""
-
-#: apprise/plugins/matrix.py:295
-msgid "Matrix API Verion"
-msgstr ""
-
-#: apprise/plugins/matrix.py:301 apprise/plugins/notificationapi.py:154
-msgid "Message Type"
-msgstr ""
-
-#: apprise/plugins/irc/base.py:128 apprise/plugins/mattermost.py:147
-#: apprise/plugins/xmpp/base.py:107
+#: apprise/plugins/irc/base.py:128 apprise/plugins/mattermost.py:151
+#: apprise/plugins/xmpp/base.py:112
 msgid "User"
 msgstr ""
 
-#: apprise/plugins/irc/base.py:143 apprise/plugins/mattermost.py:173
+#: apprise/plugins/irc/base.py:143 apprise/plugins/mattermost.py:177
 #: apprise/plugins/notifiarr.py:97 apprise/plugins/pushbullet.py:94
-#: apprise/plugins/pushed.py:101 apprise/plugins/rocketchat.py:149
-#: apprise/plugins/slack.py:242 apprise/plugins/twist.py:112
+#: apprise/plugins/pushed.py:101 apprise/plugins/rocketchat.py:150
+#: apprise/plugins/slack.py:267 apprise/plugins/twist.py:112
+#: apprise/plugins/xmpp/base.py:128
 msgid "Target Channel"
 msgstr ""
 
-#: apprise/plugins/mattermost.py:179 apprise/plugins/twist.py:118
+#: apprise/plugins/mattermost.py:183 apprise/plugins/twist.py:118
 msgid "Target Channel ID"
 msgstr ""
 
-#: apprise/plugins/mqtt.py:169
+#: apprise/plugins/mqtt.py:171
 msgid "Target Queue"
 msgstr ""
 
@@ -932,8 +1054,9 @@ msgstr ""
 msgid "QOS"
 msgstr ""
 
-#: apprise/plugins/mqtt.py:201 apprise/plugins/notificationapi.py:161
-#: apprise/plugins/office365.py:130 apprise/plugins/sendpulse.py:117
+#: apprise/plugins/mqtt.py:201 apprise/plugins/notificationapi.py:166
+#: apprise/plugins/office365.py:269 apprise/plugins/ringcentral.py:192
+#: apprise/plugins/sendpulse.py:120
 msgid "Client ID"
 msgstr ""
 
@@ -945,7 +1068,7 @@ msgstr ""
 msgid "Retain Messages"
 msgstr ""
 
-#: apprise/plugins/msg91.py:102 apprise/plugins/sendpulse.py:161
+#: apprise/plugins/msg91.py:102 apprise/plugins/sendpulse.py:156
 msgid "Template ID"
 msgstr ""
 
@@ -957,32 +1080,8 @@ msgstr ""
 msgid "Short URL"
 msgstr ""
 
-#: apprise/plugins/msg91.py:148 apprise/plugins/whatsapp.py:168
+#: apprise/plugins/msg91.py:148 apprise/plugins/whatsapp.py:203
 msgid "Template Mapping"
-msgstr ""
-
-#: apprise/plugins/msteams.py:151
-msgid "Team Name"
-msgstr ""
-
-#: apprise/plugins/msteams.py:159 apprise/plugins/slack.py:203
-msgid "Token A"
-msgstr ""
-
-#: apprise/plugins/msteams.py:168 apprise/plugins/slack.py:211
-msgid "Token B"
-msgstr ""
-
-#: apprise/plugins/msteams.py:177 apprise/plugins/slack.py:219
-msgid "Token C"
-msgstr ""
-
-#: apprise/plugins/msteams.py:186
-msgid "Token D"
-msgstr ""
-
-#: apprise/plugins/msteams.py:212 apprise/plugins/workflows.py:180
-msgid "Template Path"
 msgstr ""
 
 #: apprise/plugins/nextcloud.py:169 apprise/plugins/nextcloudtalk.py:113
@@ -1005,46 +1104,50 @@ msgstr ""
 msgid "Source"
 msgstr ""
 
-#: apprise/plugins/notificationapi.py:166 apprise/plugins/office365.py:137
-#: apprise/plugins/sendpulse.py:124
+#: apprise/plugins/matrix/base.py:352 apprise/plugins/notificationapi.py:159
+msgid "Message Type"
+msgstr ""
+
+#: apprise/plugins/notificationapi.py:171 apprise/plugins/office365.py:276
+#: apprise/plugins/ringcentral.py:199 apprise/plugins/sendpulse.py:127
 msgid "Client Secret"
 msgstr ""
 
-#: apprise/plugins/notificationapi.py:177
+#: apprise/plugins/notificationapi.py:182
 msgid "Target ID"
 msgstr ""
 
-#: apprise/plugins/notificationapi.py:182
+#: apprise/plugins/notificationapi.py:187
 msgid "Target SMS"
 msgstr ""
 
-#: apprise/plugins/notificationapi.py:198
+#: apprise/plugins/notificationapi.py:207
 msgid "Channels"
 msgstr ""
 
-#: apprise/plugins/email/base.py:185 apprise/plugins/notificationapi.py:226
-#: apprise/plugins/resend.py:146
+#: apprise/plugins/email/base.py:196 apprise/plugins/notificationapi.py:223
+#: apprise/plugins/office365.py:315 apprise/plugins/resend.py:150
 msgid "Reply To"
 msgstr ""
 
-#: apprise/plugins/email/base.py:155 apprise/plugins/notificationapi.py:231
-#: apprise/plugins/sendpulse.py:147 apprise/plugins/ses.py:154
+#: apprise/plugins/email/base.py:174 apprise/plugins/notificationapi.py:228
+#: apprise/plugins/sendpulse.py:150 apprise/plugins/ses.py:163
 msgid "From Email"
 msgstr ""
 
-#: apprise/plugins/fcm/__init__.py:153 apprise/plugins/notifico.py:124
+#: apprise/plugins/fcm/__init__.py:153 apprise/plugins/notifico.py:187
 msgid "Project ID"
 msgstr ""
 
-#: apprise/plugins/notifico.py:133
+#: apprise/plugins/notifico.py:196
 msgid "Message Hook"
 msgstr ""
 
-#: apprise/plugins/notifico.py:148
+#: apprise/plugins/notifico.py:211
 msgid "IRC Colors"
 msgstr ""
 
-#: apprise/plugins/notifico.py:154
+#: apprise/plugins/notifico.py:217
 msgid "Prefix"
 msgstr ""
 
@@ -1076,15 +1179,39 @@ msgstr ""
 msgid "Authentication Type"
 msgstr ""
 
-#: apprise/plugins/office365.py:118
+#: apprise/plugins/octopush.py:130
+msgid "API Login"
+msgstr ""
+
+#: apprise/plugins/octopush.py:142
+msgid "Sender"
+msgstr ""
+
+#: apprise/plugins/octopush.py:178
+msgid "Accept Replies"
+msgstr ""
+
+#: apprise/plugins/octopush.py:183
+msgid "Purpose"
+msgstr ""
+
+#: apprise/plugins/octopush.py:189
+msgid "Type"
+msgstr ""
+
+#: apprise/plugins/office365.py:257
 msgid "Tenant Domain"
 msgstr ""
 
-#: apprise/plugins/office365.py:125
+#: apprise/plugins/office365.py:264
 msgid "Account Email or Object ID"
 msgstr ""
 
-#: apprise/plugins/one_signal.py:108 apprise/plugins/sendgrid.py:157
+#: apprise/plugins/office365.py:325
+msgid "Save to Sent Items"
+msgstr ""
+
+#: apprise/plugins/one_signal.py:108 apprise/plugins/sendgrid.py:146
 msgid "Template"
 msgstr ""
 
@@ -1096,21 +1223,21 @@ msgstr ""
 msgid "Include Segment"
 msgstr ""
 
-#: apprise/plugins/one_signal.py:166
-msgid "Enable Contents"
-msgstr ""
-
-#: apprise/plugins/one_signal.py:172
-msgid "Decode Template Args"
-msgstr ""
-
-#: apprise/plugins/one_signal.py:181
+#: apprise/plugins/one_signal.py:155
 msgid "Subtitle"
 msgstr ""
 
-#: apprise/plugins/one_signal.py:185 apprise/plugins/sfr.py:125
-#: apprise/plugins/whatsapp.py:130
+#: apprise/plugins/one_signal.py:159 apprise/plugins/sfr.py:125
+#: apprise/plugins/whatsapp.py:141
 msgid "Language"
+msgstr ""
+
+#: apprise/plugins/one_signal.py:170
+msgid "Enable Contents"
+msgstr ""
+
+#: apprise/plugins/one_signal.py:176
+msgid "Decode Template Args"
 msgstr ""
 
 #: apprise/plugins/one_signal.py:195
@@ -1119,43 +1246,6 @@ msgstr ""
 
 #: apprise/plugins/one_signal.py:199
 msgid "Postback Data"
-msgstr ""
-
-#: apprise/plugins/opsgenie.py:246
-msgid "Target Escalation"
-msgstr ""
-
-#: apprise/plugins/opsgenie.py:252
-msgid "Target Schedule"
-msgstr ""
-
-#: apprise/plugins/opsgenie.py:264
-msgid "Target Team"
-msgstr ""
-
-#: apprise/plugins/opsgenie.py:270
-msgid "Targets "
-msgstr ""
-
-#: apprise/plugins/opsgenie.py:299
-msgid "Entity"
-msgstr ""
-
-#: apprise/plugins/opsgenie.py:303
-msgid "Alias"
-msgstr ""
-
-#: apprise/plugins/opsgenie.py:314 apprise/plugins/pagertree.py:118
-#: apprise/plugins/splunk.py:202
-msgid "Action"
-msgstr ""
-
-#: apprise/plugins/opsgenie.py:325
-msgid "Details"
-msgstr ""
-
-#: apprise/plugins/opsgenie.py:329 apprise/plugins/splunk.py:213
-msgid "Action Mapping"
 msgstr ""
 
 #: apprise/plugins/pagerduty.py:138 apprise/plugins/spike.py:68
@@ -1227,33 +1317,53 @@ msgstr ""
 msgid "Secret Key"
 msgstr ""
 
-#: apprise/plugins/pushme.py:81 apprise/plugins/signal_api.py:160
-#: apprise/plugins/smseagle.py:195
+#: apprise/plugins/pushme.py:81 apprise/plugins/signal_api.py:152
+#: apprise/plugins/smseagle.py:193
 msgid "Show Status"
 msgstr ""
 
-#: apprise/plugins/pushover.py:188
+#: apprise/plugins/pushover.py:228
 msgid "User Key"
 msgstr ""
 
-#: apprise/plugins/pushover.py:234
+#: apprise/plugins/pushover.py:280
 msgid "URL Title"
 msgstr ""
 
-#: apprise/plugins/pushover.py:239
-msgid "Retry"
+#: apprise/plugins/pushover.py:285
+msgid "Emergency Retry Interval"
 msgstr ""
 
-#: apprise/plugins/pushover.py:245
+#: apprise/plugins/pushover.py:291
 msgid "Expire"
 msgstr ""
 
-#: apprise/plugins/pushplus.py:48
+#: apprise/plugins/pushover.py:301
+msgid "Encryption Key"
+msgstr ""
+
+#: apprise/plugins/pushover.py:308
+msgid "E2EE"
+msgstr ""
+
+#: apprise/plugins/pushplus.py:172
 msgid "Pushplus"
 msgstr ""
 
-#: apprise/plugins/pushplus.py:68 apprise/plugins/qq.py:66
+#: apprise/plugins/pushplus.py:210 apprise/plugins/qq.py:66
 msgid "User Token"
+msgstr ""
+
+#: apprise/plugins/pushplus.py:219
+msgid "Group Topics"
+msgstr ""
+
+#: apprise/plugins/pushplus.py:240
+msgid "Channel"
+msgstr ""
+
+#: apprise/plugins/pushplus.py:257
+msgid "Webhook Name"
 msgstr ""
 
 #: apprise/plugins/pushsafer.py:360
@@ -1269,7 +1379,7 @@ msgid "Secret API Key"
 msgstr ""
 
 #: apprise/plugins/fcm/__init__.py:162 apprise/plugins/pushy.py:91
-#: apprise/plugins/sns.py:131 apprise/plugins/wxpusher.py:128
+#: apprise/plugins/sns.py:163 apprise/plugins/wxpusher.py:128
 msgid "Target Topic"
 msgstr ""
 
@@ -1285,51 +1395,76 @@ msgstr ""
 msgid "Target Subreddit"
 msgstr ""
 
-#: apprise/plugins/reddit.py:185
+#: apprise/plugins/reddit.py:182
 msgid "Kind"
 msgstr ""
 
-#: apprise/plugins/reddit.py:191
+#: apprise/plugins/reddit.py:188
 msgid "Flair ID"
 msgstr ""
 
-#: apprise/plugins/reddit.py:196
+#: apprise/plugins/reddit.py:193
 msgid "Flair Text"
 msgstr ""
 
-#: apprise/plugins/reddit.py:201
+#: apprise/plugins/reddit.py:198
 msgid "NSFW"
 msgstr ""
 
-#: apprise/plugins/reddit.py:207
+#: apprise/plugins/reddit.py:204
 msgid "Is Ad?"
 msgstr ""
 
-#: apprise/plugins/reddit.py:213
+#: apprise/plugins/reddit.py:210
 msgid "Send Replies"
 msgstr ""
 
-#: apprise/plugins/reddit.py:219
+#: apprise/plugins/reddit.py:216
 msgid "Is Spoiler"
 msgstr ""
 
-#: apprise/plugins/reddit.py:225
+#: apprise/plugins/reddit.py:222
 msgid "Resubmit Flag"
+msgstr ""
+
+#: apprise/plugins/resend.py:135
+msgid "From Address"
 msgstr ""
 
 #: apprise/plugins/revolt.py:104
 msgid "Channel ID"
 msgstr ""
 
-#: apprise/plugins/revolt.py:130
+#: apprise/plugins/revolt.py:131
 msgid "Embed URL"
 msgstr ""
 
-#: apprise/plugins/rocketchat.py:145
+#: apprise/plugins/ringcentral.py:186
+msgid "Token / Password"
+msgstr ""
+
+#: apprise/plugins/ringcentral.py:239
+msgid "Environment"
+msgstr ""
+
+#: apprise/plugins/ringcentral.py:252
+msgid "Authentication Mode"
+msgstr ""
+
+#: apprise/plugins/rocketchat.py:146
 msgid "Webhook"
 msgstr ""
 
-#: apprise/plugins/rocketchat.py:182
+#: apprise/plugins/matrix/base.py:295 apprise/plugins/rocketchat.py:162
+msgid "Target Room ID"
+msgstr ""
+
+#: apprise/plugins/matrix/base.py:334 apprise/plugins/rocketchat.py:178
+#: apprise/plugins/ryver.py:118
+msgid "Webhook Mode"
+msgstr ""
+
+#: apprise/plugins/rocketchat.py:183
 msgid "Use Avatar"
 msgstr ""
 
@@ -1345,33 +1480,37 @@ msgstr ""
 msgid "Organization"
 msgstr ""
 
-#: apprise/plugins/sendgrid.py:166 apprise/plugins/sendpulse.py:175
+#: apprise/plugins/sendgrid.py:166 apprise/plugins/sendpulse.py:182
 msgid "Template Data"
 msgstr ""
 
-#: apprise/plugins/ses.py:160 apprise/plugins/sns.py:106
+#: apprise/plugins/ses.py:157 apprise/plugins/sns.py:132
+msgid "Session Token"
+msgstr ""
+
+#: apprise/plugins/ses.py:169 apprise/plugins/sns.py:138
 msgid "Access Key ID"
 msgstr ""
 
-#: apprise/plugins/ses.py:166 apprise/plugins/sns.py:112
+#: apprise/plugins/ses.py:175 apprise/plugins/sns.py:144
 msgid "Secret Access Key"
 msgstr ""
 
-#: apprise/plugins/ses.py:172 apprise/plugins/sinch.py:160
-#: apprise/plugins/sns.py:118
+#: apprise/plugins/ses.py:181 apprise/plugins/sinch.py:157
+#: apprise/plugins/sns.py:150
 msgid "Region"
 msgstr ""
 
-#: apprise/plugins/ses.py:179 apprise/plugins/smtp2go.py:124
+#: apprise/plugins/ses.py:188 apprise/plugins/smtp2go.py:124
 #: apprise/plugins/sparkpost.py:175
 msgid "Target Emails"
 msgstr ""
 
-#: apprise/plugins/seven.py:115 apprise/plugins/smseagle.py:205
+#: apprise/plugins/seven.py:113 apprise/plugins/smseagle.py:203
 msgid "Flash"
 msgstr ""
 
-#: apprise/plugins/seven.py:119
+#: apprise/plugins/seven.py:117
 msgid "Label"
 msgstr ""
 
@@ -1412,30 +1551,31 @@ msgid "TTS Voice"
 msgstr ""
 
 #: apprise/plugins/signal_api.py:131 apprise/plugins/smseagle.py:158
+#: apprise/plugins/whatsapp.py:159
 msgid "Target Group ID"
 msgstr ""
 
-#: apprise/plugins/signl4.py:86
+#: apprise/plugins/signl4.py:89
 msgid "Service"
 msgstr ""
 
-#: apprise/plugins/signl4.py:90
+#: apprise/plugins/signl4.py:93
 msgid "Location"
 msgstr ""
 
-#: apprise/plugins/signl4.py:94
+#: apprise/plugins/signl4.py:97
 msgid "Alerting Scenario"
 msgstr ""
 
-#: apprise/plugins/signl4.py:98
+#: apprise/plugins/signl4.py:101
 msgid "Filtering"
 msgstr ""
 
-#: apprise/plugins/signl4.py:103
+#: apprise/plugins/signl4.py:106
 msgid "External ID"
 msgstr ""
 
-#: apprise/plugins/signl4.py:107
+#: apprise/plugins/signl4.py:110
 msgid "Status"
 msgstr ""
 
@@ -1447,36 +1587,52 @@ msgstr ""
 msgid "Event"
 msgstr ""
 
-#: apprise/plugins/sinch.py:106 apprise/plugins/twilio.py:140
-msgid "Account SID"
-msgstr ""
-
 #: apprise/plugins/sinch.py:134 apprise/plugins/twilio.py:168
 msgid "Target Short Code"
 msgstr ""
 
-#: apprise/plugins/slack.py:194
+#: apprise/plugins/slack.py:216
 msgid "OAuth Access Token"
 msgstr ""
 
 #: apprise/plugins/slack.py:225
+msgid "Token A"
+msgstr ""
+
+#: apprise/plugins/slack.py:234
+msgid "Token B"
+msgstr ""
+
+#: apprise/plugins/slack.py:243
+msgid "Token C"
+msgstr ""
+
+#: apprise/plugins/slack.py:250
 msgid "Target Encoded ID"
 msgstr ""
 
-#: apprise/plugins/slack.py:265
+#: apprise/plugins/slack.py:279
+msgid "Workflow Path"
+msgstr ""
+
+#: apprise/plugins/slack.py:297
 msgid "Include Footer"
 msgstr ""
 
-#: apprise/plugins/slack.py:273
+#: apprise/plugins/slack.py:305
 msgid "Use Blocks"
 msgstr ""
 
-#: apprise/plugins/slack.py:282
+#: apprise/plugins/slack.py:311
 msgid "Include Timestamp"
 msgstr ""
 
-#: apprise/plugins/slack.py:288 apprise/plugins/twitter.py:179
+#: apprise/plugins/slack.py:317 apprise/plugins/twitter.py:204
 msgid "Message Mode"
+msgstr ""
+
+#: apprise/plugins/slack.py:330 apprise/plugins/workflows.py:181
+msgid "Template Path"
 msgstr ""
 
 #: apprise/plugins/smpp.py:61
@@ -1491,12 +1647,24 @@ msgstr ""
 msgid "Target Contact"
 msgstr ""
 
-#: apprise/plugins/smseagle.py:200
+#: apprise/plugins/smseagle.py:198
 msgid "Test Only"
 msgstr ""
 
-#: apprise/plugins/smsmanager.py:146
+#: apprise/plugins/smsmanager.py:143
 msgid "Gateway"
+msgstr ""
+
+#: apprise/plugins/sogs.py:219
+msgid "Public Key"
+msgstr ""
+
+#: apprise/plugins/sogs.py:226
+msgid "Seed"
+msgstr ""
+
+#: apprise/plugins/sogs.py:233
+msgid "Rooms"
 msgstr ""
 
 #: apprise/plugins/spike.py:48
@@ -1529,11 +1697,6 @@ msgstr ""
 
 #: apprise/plugins/streamlabs.py:136
 msgid "Sound Link"
-msgstr ""
-
-#: apprise/plugins/streamlabs.py:141 apprise/plugins/windows.py:100
-#: apprise/plugins/xbmc.py:123
-msgid "Duration"
 msgstr ""
 
 #: apprise/plugins/streamlabs.py:147
@@ -1600,19 +1763,19 @@ msgstr ""
 msgid "Target Threema ID"
 msgstr ""
 
-#: apprise/plugins/twilio.py:203
+#: apprise/plugins/twilio.py:200
 msgid "Notification Method: sms or call"
 msgstr ""
 
-#: apprise/plugins/twitter.py:138
+#: apprise/plugins/twitter.py:163
 msgid "Consumer Key"
 msgstr ""
 
-#: apprise/plugins/twitter.py:144
+#: apprise/plugins/twitter.py:169
 msgid "Consumer Secret"
 msgstr ""
 
-#: apprise/plugins/twitter.py:156
+#: apprise/plugins/twitter.py:181
 msgid "Access Secret"
 msgstr ""
 
@@ -1628,7 +1791,7 @@ msgstr ""
 msgid "Receiver IDs"
 msgstr ""
 
-#: apprise/plugins/viber.py:101
+#: apprise/plugins/viber.py:105
 msgid "Bot Avatar URL"
 msgstr ""
 
@@ -1636,19 +1799,47 @@ msgstr ""
 msgid "User Email"
 msgstr ""
 
-#: apprise/plugins/vapid/__init__.py:179 apprise/plugins/vonage.py:136
+#: apprise/plugins/vapid/__init__.py:179 apprise/plugins/vonage.py:133
 msgid "ttl"
+msgstr ""
+
+#: apprise/plugins/webexteams.py:178
+msgid "Bot Access Token"
+msgstr ""
+
+#: apprise/plugins/webexteams.py:184
+msgid "Room IDs"
+msgstr ""
+
+#: apprise/plugins/wechat.py:174
+msgid "Corp ID"
+msgstr ""
+
+#: apprise/plugins/wechat.py:181
+msgid "App Secret"
+msgstr ""
+
+#: apprise/plugins/wechat.py:189
+msgid "Agent ID"
+msgstr ""
+
+#: apprise/plugins/wechat.py:205
+msgid "Target Department"
+msgstr ""
+
+#: apprise/plugins/wechat.py:212
+msgid "Target Tag"
 msgstr ""
 
 #: apprise/plugins/wecombot.py:99
 msgid "Bot Webhook Key"
 msgstr ""
 
-#: apprise/plugins/whatsapp.py:106
+#: apprise/plugins/whatsapp.py:128
 msgid "Template Name"
 msgstr ""
 
-#: apprise/plugins/whatsapp.py:112
+#: apprise/plugins/whatsapp.py:134
 msgid "From Phone ID"
 msgstr ""
 
@@ -1656,23 +1847,23 @@ msgstr ""
 msgid "A local Microsoft Windows environment is required."
 msgstr ""
 
-#: apprise/plugins/workflows.py:137
+#: apprise/plugins/workflows.py:138
 msgid "Workflow ID"
 msgstr ""
 
-#: apprise/plugins/workflows.py:145
+#: apprise/plugins/workflows.py:146
 msgid "Signature"
 msgstr ""
 
-#: apprise/plugins/workflows.py:168
+#: apprise/plugins/workflows.py:169
 msgid "Use Power Automate URL"
 msgstr ""
 
-#: apprise/plugins/workflows.py:175
+#: apprise/plugins/workflows.py:176
 msgid "Wrap Text"
 msgstr ""
 
-#: apprise/plugins/workflows.py:190
+#: apprise/plugins/workflows.py:191
 msgid "API Version"
 msgstr ""
 
@@ -1684,28 +1875,40 @@ msgstr ""
 msgid "Target User ID"
 msgstr ""
 
+#: apprise/plugins/zoom.py:145
+msgid "Verification Token"
+msgstr ""
+
 #: apprise/plugins/zulip.py:148
 msgid "Target Stream"
 msgstr ""
 
-#: apprise/plugins/email/base.py:150
-msgid "To Email"
-msgstr ""
-
-#: apprise/plugins/email/base.py:173
+#: apprise/plugins/email/base.py:184
 msgid "SMTP Server"
 msgstr ""
 
-#: apprise/plugins/email/base.py:178 apprise/plugins/xmpp/base.py:129
+#: apprise/plugins/email/base.py:189 apprise/plugins/xmpp/base.py:149
 msgid "Secure Mode"
 msgstr ""
 
-#: apprise/plugins/email/base.py:190
-msgid "PGP Encryption"
+#: apprise/plugins/email/base.py:201
+msgid "PGP Security Mode"
 msgstr ""
 
-#: apprise/plugins/email/base.py:196
+#: apprise/plugins/email/base.py:208
 msgid "PGP Public Key Path"
+msgstr ""
+
+#: apprise/plugins/email/base.py:221
+msgid "PGP Private Key Path"
+msgstr ""
+
+#: apprise/plugins/email/base.py:229
+msgid "Web Key Directory"
+msgstr ""
+
+#: apprise/plugins/email/base.py:235
+msgid "To Email"
 msgstr ""
 
 #: apprise/plugins/fcm/__init__.py:148
@@ -1740,6 +1943,30 @@ msgstr ""
 msgid "Auth Mode"
 msgstr ""
 
+#: apprise/plugins/matrix/base.py:301
+msgid "Target Room Alias"
+msgstr ""
+
+#: apprise/plugins/matrix/base.py:324
+msgid "Server Discovery"
+msgstr ""
+
+#: apprise/plugins/matrix/base.py:329
+msgid "Force Home Server on Room IDs"
+msgstr ""
+
+#: apprise/plugins/matrix/base.py:340
+msgid "Webhook Path"
+msgstr ""
+
+#: apprise/plugins/matrix/base.py:346
+msgid "Matrix API Verion"
+msgstr ""
+
+#: apprise/plugins/matrix/base.py:358
+msgid "End-to-End Encryption"
+msgstr ""
+
 #: apprise/plugins/vapid/__init__.py:193
 msgid "PEM Private KeyFile"
 msgstr ""
@@ -1748,15 +1975,27 @@ msgstr ""
 msgid "Subscripion File"
 msgstr ""
 
-#: apprise/plugins/xmpp/base.py:136
+#: apprise/plugins/xmpp/base.py:144
+msgid "XMPP Server"
+msgstr ""
+
+#: apprise/plugins/xmpp/base.py:156
 msgid "Get Roster"
 msgstr ""
 
-#: apprise/plugins/xmpp/base.py:141
+#: apprise/plugins/xmpp/base.py:161
 msgid "Use Subject"
 msgstr ""
 
-#: apprise/plugins/xmpp/base.py:146
+#: apprise/plugins/xmpp/base.py:166
 msgid "Keep Connection Alive"
+msgstr ""
+
+#: apprise/plugins/xmpp/base.py:172
+msgid "MUC Nickname"
+msgstr ""
+
+#: apprise/plugins/xmpp/base.py:176
+msgid "SCRAM-PLUS Channel Binding"
 msgstr ""
 

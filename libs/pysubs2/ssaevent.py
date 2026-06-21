@@ -1,6 +1,6 @@
 import re
 import warnings
-from typing import Optional, Dict, Any, ClassVar, FrozenSet
+from typing import Optional, Any, ClassVar, Literal
 import dataclasses
 
 from .common import IntOrFloat
@@ -24,24 +24,38 @@ class SSAEvent:
 
         >>> ev = SSAEvent(start=make_time(s=1), end=make_time(s=2.5), text="Hello World!")
 
-    """
-    OVERRIDE_SEQUENCE: ClassVar = re.compile(r"{[^}]*}")
+    Attributes:
+        start: Subtitle start time (in milliseconds)
+        end: Subtitle end time (in milliseconds)
+        text: Text of subtitle (with SubStation override tags)
+        marked: (SSA only)
+        layer: Layer number, 0 is the lowest layer (ASS only)
+        style: Style name
+        name: Actor name
+        marginl: Left margin
+        marginr: Right margin
+        marginv: Vertical margin
+        effect: Line effect
+        type: Line type (Dialogue/Comment)
 
-    start: int = 0  #: Subtitle start time (in milliseconds)
-    end: int = 10000  #: Subtitle end time (in milliseconds)
-    text: str = ""  #: Text of subtitle (with SubStation override tags)
-    marked: bool = False  #: (SSA only)
-    layer: int = 0  #: Layer number, 0 is the lowest layer (ASS only)
-    style: str = "Default"  #: Style name
-    name: str = ""  #: Actor name
-    marginl: int = 0  #: Left margin
-    marginr: int = 0  #: Right margin
-    marginv: int = 0  #: Vertical margin
-    effect: str = ""  #: Line effect
-    type: str = "Dialogue"  #: Line type (Dialogue/Comment)
+    """
+    OVERRIDE_SEQUENCE: ClassVar[re.Pattern[str]] = re.compile(r"{[^}]*}")
+
+    start: int = 0
+    end: int = 10000
+    text: str = ""
+    marked: bool = False
+    layer: int = 0
+    style: str = "Default"
+    name: str = ""
+    marginl: int = 0
+    marginr: int = 0
+    marginv: int = 0
+    effect: str = ""
+    type: Literal["Dialogue", "Comment"] = "Dialogue"
 
     @property
-    def FIELDS(self) -> FrozenSet[str]:
+    def FIELDS(self) -> frozenset[str]:
         """All fields in SSAEvent."""
         warnings.warn("Deprecated in 1.2.0 - it's a dataclass now", DeprecationWarning)
         return frozenset(field.name for field in dataclasses.fields(self))
@@ -130,7 +144,7 @@ class SSAEvent:
         """Return a copy of the SSAEvent."""
         return SSAEvent(**self.as_dict())
 
-    def as_dict(self) -> Dict[str, Any]:
+    def as_dict(self) -> dict[str, Any]:
         # dataclasses.asdict() would recursively dictify Color objects, which we don't want
         return {field.name: getattr(self, field.name) for field in dataclasses.fields(self)}
 

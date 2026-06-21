@@ -50,7 +50,7 @@ from json import dumps, loads
 
 import requests
 
-from ..common import NOTIFY_TYPES, NotifyType, PersistentStoreMode
+from ..common import NotifyType, PersistentStoreMode
 from ..locale import gettext_lazy as _
 from ..utils.parse import is_uuid, parse_bool, parse_list, validate_regex
 from .base import NotifyBase
@@ -103,14 +103,6 @@ OPSGENIE_ACTIONS = (
     OpsgenieAlertAction.ACKNOWLEDGE,
     OpsgenieAlertAction.NOTE,
 )
-
-# Map all support Apprise Categories to Opsgenie Categories
-OPSGENIE_ALERT_MAP = {
-    NotifyType.INFO: OpsgenieAlertAction.CLOSE,
-    NotifyType.SUCCESS: OpsgenieAlertAction.CLOSE,
-    NotifyType.WARNING: OpsgenieAlertAction.NEW,
-    NotifyType.FAILURE: OpsgenieAlertAction.NEW,
-}
 
 
 # Regions
@@ -210,7 +202,7 @@ class NotifyOpsgenie(NotifyBase):
 
     # Defines our default message mapping
     opsgenie_message_map = {
-        # Add a note to existing alert
+        # Add a note to an existing alert
         NotifyType.INFO: OpsgenieAlertAction.NOTE,
         # Close existing alert
         NotifyType.SUCCESS: OpsgenieAlertAction.CLOSE,
@@ -284,11 +276,6 @@ class NotifyOpsgenie(NotifyBase):
                 "default": OpsgenieRegion.US,
                 "map_to": "region_name",
             },
-            "batch": {
-                "name": _("Batch Mode"),
-                "type": "bool",
-                "default": False,
-            },
             "priority": {
                 "name": _("Priority"),
                 "type": "choice:int",
@@ -307,14 +294,19 @@ class NotifyOpsgenie(NotifyBase):
                 "name": _("Tags"),
                 "type": "string",
             },
-            "to": {
-                "alias_of": "targets",
-            },
             "action": {
                 "name": _("Action"),
                 "type": "choice:string",
                 "values": OPSGENIE_ACTIONS,
                 "default": OPSGENIE_ACTIONS[0],
+            },
+            "to": {
+                "alias_of": "targets",
+            },
+            "batch": {
+                "name": _("Batch Mode"),
+                "type": "bool",
+                "default": False,
             },
         },
     )
@@ -348,6 +340,12 @@ class NotifyOpsgenie(NotifyBase):
     ):
         """Initialize Opsgenie Object."""
         super().__init__(**kwargs)
+
+        # Notify users that this plugin will require them to switch soon
+        self.logger.deprecate(
+            "Opsgenie will soon be depricated and moved to Jira; "
+            "visit https://atlassian.com/ for more details"
+        )
 
         # API Key (associated with project)
         self.apikey = validate_regex(apikey)
@@ -403,7 +401,7 @@ class NotifyOpsgenie(NotifyBase):
         if mapping and isinstance(mapping, dict):
             for k_, v_ in mapping.items():
                 # Get our mapping
-                k = next((t for t in NOTIFY_TYPES if t.startswith(k_)), None)
+                k = next((t for t in NotifyType if t.startswith(k_)), None)
                 if not k:
                     msg = (
                         f"The Opsgenie mapping key specified ({k_}) "
@@ -414,11 +412,7 @@ class NotifyOpsgenie(NotifyBase):
 
                 v_lower = v_.lower()
                 v = next(
-                    (
-                        v
-                        for v in OPSGENIE_ACTIONS[1:]
-                        if v.startswith(v_lower)
-                    ),
+                    (v for v in OPSGENIE_ACTIONS[1:] if v.startswith(v_lower)),
                     None,
                 )
                 if not v:
@@ -462,7 +456,6 @@ class NotifyOpsgenie(NotifyBase):
             if target.startswith(
                 NotifyOpsgenie.template_tokens["target_team"]["prefix"]
             ):
-
                 self.targets.append(
                     {"type": OpsgenieCategory.TEAM, "id": target[1:]}
                     if is_uuid(target[1:])
@@ -472,7 +465,6 @@ class NotifyOpsgenie(NotifyBase):
             elif target.startswith(
                 NotifyOpsgenie.template_tokens["target_schedule"]["prefix"]
             ):
-
                 self.targets.append(
                     {"type": OpsgenieCategory.SCHEDULE, "id": target[1:]}
                     if is_uuid(target[1:])
@@ -485,7 +477,6 @@ class NotifyOpsgenie(NotifyBase):
             elif target.startswith(
                 NotifyOpsgenie.template_tokens["target_escalation"]["prefix"]
             ):
-
                 self.targets.append(
                     {"type": OpsgenieCategory.ESCALATION, "id": target[1:]}
                     if is_uuid(target[1:])
@@ -498,7 +489,6 @@ class NotifyOpsgenie(NotifyBase):
             elif target.startswith(
                 NotifyOpsgenie.template_tokens["target_user"]["prefix"]
             ):
-
                 self.targets.append(
                     {"type": OpsgenieCategory.USER, "id": target[1:]}
                     if is_uuid(target[1:])
@@ -547,6 +537,7 @@ class NotifyOpsgenie(NotifyBase):
                 headers=headers,
                 verify=self.verify_certificate,
                 timeout=self.request_timeout,
+                allow_redirects=self.redirects,
             )
 
             # A Response might look like:
@@ -582,7 +573,8 @@ class NotifyOpsgenie(NotifyBase):
                 )
 
                 self.logger.debug(
-                    "Response Details:\r\n%r", (r.content or b"")[:2000])
+                    "Response Details:\r\n%r", (r.content or b"")[:2000]
+                )
 
                 return (False, content.get("requestId"))
 
@@ -604,7 +596,7 @@ class NotifyOpsgenie(NotifyBase):
 
         # Get our Opsgenie Action
         action = (
-            OPSGENIE_ALERT_MAP[notify_type]
+            self.mapping[notify_type]
             if self.action == OpsgenieAlertAction.MAP
             else self.action
         )
@@ -658,7 +650,7 @@ class NotifyOpsgenie(NotifyBase):
             # limitation
             if len(payload["message"]) > self.opsgenie_body_minlen:
                 payload["message"] = (
-                    f"{title_body[:self.opsgenie_body_minlen - 3]}..."
+                    f"{title_body[: self.opsgenie_body_minlen - 3]}..."
                 )
 
             if self.__tags:
@@ -813,16 +805,18 @@ class NotifyOpsgenie(NotifyBase):
             schema=self.secure_protocol,
             user=f"{self.user}@" if self.user else "",
             apikey=self.pprint(self.apikey, privacy, safe=""),
-            targets="/".join([
-                NotifyOpsgenie.quote(
-                    "{}{}".format(
-                        map_[x["type"]],
-                        x.get("id", x.get("name", x.get("username"))),
+            targets="/".join(
+                [
+                    NotifyOpsgenie.quote(
+                        "{}{}".format(
+                            map_[x["type"]],
+                            x.get("id", x.get("name", x.get("username"))),
+                        )
                     )
-                )
-                for x in self.targets
-            ]),
-            params=NotifyOpsgenie.urlencode(params),
+                    for x in self.targets
+                ]
+            ),
+            params=NotifyOpsgenie.urlencode(params, safe=":"),
         )
 
     def __len__(self):

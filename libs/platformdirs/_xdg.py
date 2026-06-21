@@ -21,7 +21,7 @@ class XDGMixin(PlatformDirsABC):
     def _site_data_dirs(self) -> list[str]:
         if xdg_dirs := os.environ.get("XDG_DATA_DIRS", "").strip():
             return [self._append_app_name_and_version(p) for p in xdg_dirs.split(os.pathsep) if p.strip()]
-        return super()._site_data_dirs  # type: ignore[misc]
+        return super()._site_data_dirs
 
     @property
     def site_data_dir(self) -> str:
@@ -40,7 +40,7 @@ class XDGMixin(PlatformDirsABC):
     def _site_config_dirs(self) -> list[str]:
         if xdg_dirs := os.environ.get("XDG_CONFIG_DIRS", "").strip():
             return [self._append_app_name_and_version(p) for p in xdg_dirs.split(os.pathsep) if p.strip()]
-        return super()._site_config_dirs  # type: ignore[misc]
+        return super()._site_config_dirs
 
     @property
     def site_config_dir(self) -> str:
@@ -119,6 +119,34 @@ class XDGMixin(PlatformDirsABC):
         return super().user_desktop_dir
 
     @property
+    def user_projects_dir(self) -> str:
+        """:returns: projects directory tied to the user, from ``$XDG_PROJECTS_DIR`` if set, else platform default"""
+        if path := os.environ.get("XDG_PROJECTS_DIR", "").strip():
+            return os.path.expanduser(path)  # noqa: PTH111  # API returns str, not Path
+        return super().user_projects_dir
+
+    @property
+    def user_publicshare_dir(self) -> str:
+        """:returns: public share directory tied to the user, from ``$XDG_PUBLICSHARE_DIR`` if set, else platform default"""
+        if path := os.environ.get("XDG_PUBLICSHARE_DIR", "").strip():
+            return os.path.expanduser(path)  # noqa: PTH111  # API returns str, not Path
+        return super().user_publicshare_dir
+
+    @property
+    def user_templates_dir(self) -> str:
+        """:returns: templates directory tied to the user, from ``$XDG_TEMPLATES_DIR`` if set, else platform default"""
+        if path := os.environ.get("XDG_TEMPLATES_DIR", "").strip():
+            return os.path.expanduser(path)  # noqa: PTH111  # API returns str, not Path
+        return super().user_templates_dir
+
+    @property
+    def user_fonts_dir(self) -> str:
+        """:returns: fonts directory tied to the user, from ``$XDG_DATA_HOME/fonts`` if set, else platform default"""
+        if path := os.environ.get("XDG_DATA_HOME", "").strip():
+            return f"{os.path.expanduser(path)}/fonts"  # noqa: PTH111  # API returns str, not Path
+        return super().user_fonts_dir
+
+    @property
     def user_applications_dir(self) -> str:
         """:returns: applications directory tied to the user, from ``$XDG_DATA_HOME`` if set, else platform default"""
         if path := os.environ.get("XDG_DATA_HOME", "").strip():
@@ -129,7 +157,7 @@ class XDGMixin(PlatformDirsABC):
     def _site_applications_dirs(self) -> list[str]:
         if xdg_dirs := os.environ.get("XDG_DATA_DIRS", "").strip():
             return [os.path.join(p, "applications") for p in xdg_dirs.split(os.pathsep) if p.strip()]  # noqa: PTH118
-        return super()._site_applications_dirs  # type: ignore[misc]
+        return super()._site_applications_dirs
 
     @property
     def site_applications_dir(self) -> str:

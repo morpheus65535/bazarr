@@ -101,6 +101,20 @@ class PluginManager(metaclass=Singleton):
         # Track manually disabled modules (by their schema)
         self._disabled = set()
 
+        # Reference counter for optional runtime libraries declared via
+        # runtime_deps().  Maps top-level package name -> count of currently
+        # *enabled* plugins that depend on it.  When a plugin is disabled and
+        # its counter reaches zero the library *may* be evicted from
+        # sys.modules - but only when evict_on_disable is True.
+        self._dep_counter = {}
+
+        # Controls whether libraries are evicted from sys.modules when their
+        # dep counter reaches zero.  Defaults to False so that third-party
+        # projects embedding Apprise are not surprised by modules disappearing.
+        # The Apprise API sets this to True at startup to reclaim memory from
+        # optional libraries whose plugins are all disabled.
+        self.evict_on_disable = False
+
         # Hash of all paths previously scanned so we don't waste
         # effort/overhead doing it again
         self._paths_previously_scanned = set()
@@ -133,6 +147,10 @@ class PluginManager(metaclass=Singleton):
             for schema in self._disabled:
                 self._schema_map[schema].enabled = True
             self._disabled.clear()
+
+            # Reset the library dependency counter (evict_on_disable is an
+            # intentional configuration choice and is NOT reset here)
+            self._dep_counter = {}
 
             # Reset our variables
             self._schema_map = {}
@@ -275,8 +293,8 @@ class PluginManager(metaclass=Singleton):
                     continue
 
                 logger.trace(
-                    f"{self.name} {module_name} loaded in"
-                    f" {time.time() - tl_start:.6f}s"
+                    f"{self.name} {module_name} loaded"
+                    f" in {time.time() - tl_start:.6f}s"
                 )
 
             # Track the directory loaded so we never load it again
@@ -287,6 +305,12 @@ class PluginManager(metaclass=Singleton):
                 f" {len(self._schema_map) - schema_count} Schema(s) loaded in"
                 f" {time.time() - t_start:.4f}s"
             )
+
+            # Build the runtime dependency reference counter so that
+            # disable() can evict libraries when their last user is
+            # disabled.  This is done here (inside the lock) by iterating
+            # _module_map directly to avoid a recursive lock acquisition.
+            self._build_dep_counter()
 
     def module_detection(self, paths, cache=True):
         """Leverage the @notify decorator and load all objects found matching
@@ -330,7 +354,6 @@ class PluginManager(metaclass=Singleton):
             if module_pyname in self._custom_module_map:
                 # First clear out existing entries
                 for schema in self._custom_module_map[module_pyname]["notify"]:
-
                     # Remove any mapped modules to this file
                     del self._schema_map[schema]
 
@@ -347,8 +370,8 @@ class PluginManager(metaclass=Singleton):
             # Print our loaded modules if any
             if module_pyname in self._custom_module_map:
                 logger.debug(
-                    "Custom module %s - %d schema(s) (name=%s) "
-                    "loaded in %.6fs",
+                    "Custom module %s - %d schema(s)"
+                    " (name=%s) loaded in %.6fs",
                     path_,
                     len(self._custom_module_map[module_pyname]["notify"]),
                     module_name,
@@ -366,7 +389,6 @@ class PluginManager(metaclass=Singleton):
                 for schema, _meta in self._custom_module_map[module_pyname][
                     "notify"
                 ].items():
-
                     # For mapping purposes; map our element in our main list
                     self._module_map[module_name]["plugin"].add(
                         self._schema_map[schema]
@@ -398,7 +420,6 @@ class PluginManager(metaclass=Singleton):
             if os.path.isdir(path) and not os.path.isfile(
                 os.path.join(path, "__init__.py")
             ):
-
                 logger.debug("Scanning for custom plugins in: %s", path)
                 for entry in os.listdir(path):
                     re_match = module_re.match(entry)
@@ -419,8 +440,7 @@ class PluginManager(metaclass=Singleton):
                             continue
 
                     if not cache or (
-                        cache
-                        and new_path not in self._paths_previously_scanned
+                        new_path not in self._paths_previously_scanned
                     ):
                         # Load our module
                         _import_module(new_path)
@@ -472,8 +492,8 @@ class PluginManager(metaclass=Singleton):
         if not schemas or not isinstance(schemas, (set, tuple, list)):
             # We're done
             logger.error(
-                "The schemas provided (type %s) is unsupported; "
-                "loaded from %s.",
+                "The schemas provided (type %s) is"
+                " unsupported; loaded from %s.",
                 type(schemas),
                 send_func.__name__ if send_func else plugin.__class__.__name__,
             )
@@ -495,7 +515,8 @@ class PluginManager(metaclass=Singleton):
                     "force loaded; overriding %s%s.",
                     ", ".join(conflict),
                     "custom notify function " if send_func else "",
-                    send_func.__name__ if send_func
+                    send_func.__name__
+                    if send_func
                     else plugin.__class__.__name__,
                 )
                 self.remove(*conflict, unload=False)
@@ -506,7 +527,8 @@ class PluginManager(metaclass=Singleton):
                     "loaded from %s%s.",
                     ", ".join(conflict),
                     "custom notify function " if send_func else "",
-                    send_func.__name__ if send_func
+                    send_func.__name__
+                    if send_func
                     else plugin.__class__.__name__,
                 )
                 return False
@@ -519,7 +541,8 @@ class PluginManager(metaclass=Singleton):
                     "loaded from %s%s.",
                     ", ".join(conflict),
                     "custom notify function " if send_func else "",
-                    send_func.__name__ if send_func
+                    send_func.__name__
+                    if send_func
                     else plugin.__class__.__name__,
                 )
                 return False
@@ -617,6 +640,87 @@ class PluginManager(metaclass=Singleton):
             else [s for s in self._schema_map if self._schema_map[s].enabled]
         )
 
+    def _build_dep_counter(self):
+        """Build the runtime library reference counter from loaded plugins.
+
+        Iterates `_module_map` directly (rather than calling
+        `self.plugins()`) so it is safe to call while `_lock` is held
+        inside `load_modules`.
+
+        Only enabled plugins contribute to the counter - plugins already
+        disabled because their optional library is not installed are not
+        counted, as there is nothing in memory to evict for them.
+        """
+        self._dep_counter = {}
+        if not self._module_map:
+            return
+        for module in self._module_map.values():
+            for plugin in module["plugin"]:
+                # Guard: attachment and other non-notify plugin types do not
+                # carry `enabled` or `runtime_deps`; skip them safely.
+                if not getattr(plugin, "enabled", False):
+                    continue
+                fn = getattr(plugin, "runtime_deps", None)
+                if not callable(fn):
+                    continue
+                for lib in fn():
+                    self._dep_counter[lib] = self._dep_counter.get(lib, 0) + 1
+
+    def _evict_library(self, lib_name):
+        """Remove a library and all its submodules from `sys.modules`.
+
+        Called when `evict_on_disable` is `True` and the reference counter
+        for *lib_name* reaches zero - meaning no enabled plugin requires it.
+        """
+        to_remove = [
+            k
+            for k in sys.modules
+            if k == lib_name or k.startswith(lib_name + ".")
+        ]
+
+        evicted = 0
+        for key in to_remove:
+            try:
+                del sys.modules[key]
+                evicted += 1
+            except KeyError:
+                logger.trace("Eviction skipped: '%s' not in sys.modules", key)
+
+        if evicted:
+            logger.debug(
+                "Evicted %d module(s) for '%s' from memory",
+                evicted,
+                lib_name,
+            )
+        elif to_remove:
+            # Keys were found but all raised KeyError (race condition)
+            logger.trace(
+                "Eviction of '%s' found %d candidate(s) but removed none",
+                lib_name,
+                len(to_remove),
+            )
+
+    def _update_dep_counter(self, plugin, delta):
+        """Increment or decrement dep counters for *plugin* by *delta* (+1/-1).
+
+        Evicts libraries from memory when `evict_on_disable` is `True` and the
+        counter reaches zero.
+        """
+        fn = getattr(plugin, "runtime_deps", None)
+        if not callable(fn):
+            return
+        for lib in fn():
+            count = self._dep_counter.get(lib, 0) + delta
+            self._dep_counter[lib] = max(0, count)
+            logger.trace(
+                "Dep counter '%s': %d -> %d",
+                lib,
+                count - delta,
+                self._dep_counter[lib],
+            )
+            if self.evict_on_disable and count <= 0:
+                self._evict_library(lib)
+
     def disable(self, *schemas):
         """Disables the modules associated with the specified schemas."""
         if not self:
@@ -627,12 +731,17 @@ class PluginManager(metaclass=Singleton):
             if schema not in self._schema_map:
                 continue
 
-            if not self._schema_map[schema].enabled:
+            plugin = self._schema_map[schema]
+            if not plugin.enabled:
                 continue
 
-            # Disable
-            self._schema_map[schema].enabled = False
+            # Disable via the plugin classmethod so subclasses can hook in
+            plugin.disable()
             self._disabled.add(schema)
+            logger.debug("Disabled %s plugin (%s://)", self.name, schema)
+
+            # Decrement dep counters; evict if evict_on_disable and zero
+            self._update_dep_counter(plugin, -1)
 
     def enable_only(self, *schemas):
         """Disables the modules associated with the specified schemas."""
@@ -654,15 +763,31 @@ class PluginManager(metaclass=Singleton):
                     # Disable it (only if previously enabled); this prevents us
                     # from adjusting schemas that were disabled due to missing
                     # libraries or other environment reasons
-                    plugin.enabled = False
+                    plugin.disable()
                     self._disabled |= p_schemas
+                    logger.debug(
+                        "Disabled %s plugin (%s)",
+                        self.name,
+                        ", ".join(f"{s}://" for s in p_schemas),
+                    )
+
+                    # Decrement dep counters; evict at zero if evict_on_disable
+                    self._update_dep_counter(plugin, -1)
                 continue
 
             # If we reach here, our schema was flagged to be enabled
             if p_schemas & self._disabled:
                 # Previously disabled; no worries, let's clear this up
                 self._disabled -= p_schemas
-                plugin.enabled = True
+                plugin.enable()
+                logger.debug(
+                    "Enabled %s plugin (%s)",
+                    self.name,
+                    ", ".join(f"{s}://" for s in p_schemas),
+                )
+
+                # Increment dep counters for the re-enabled plugin
+                self._update_dep_counter(plugin, +1)
 
     def __contains__(self, schema):
         """Checks if a schema exists."""
@@ -738,9 +863,8 @@ class PluginManager(metaclass=Singleton):
                     not self._module_map[key]["native"]
                     and module_pyname in self._custom_module_map
                 ):
-
-                    del self._custom_module_map[module_pyname][
-                        "notify"][schema]
+                    notify = self._custom_module_map[module_pyname]["notify"]
+                    del notify[schema]
 
                     if not self._custom_module_map[module_pyname]["notify"]:
                         #

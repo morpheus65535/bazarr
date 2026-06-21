@@ -9,18 +9,22 @@ import signal
 
 from dogpile.cache import make_region
 from datetime import datetime
+from typing import List
 
-from sqlalchemy import create_engine, inspect, DateTime, ForeignKey, Integer, LargeBinary, Text, func, text, BigInteger
+from sqlalchemy import create_engine, inspect, DateTime, ForeignKey, Integer, LargeBinary, Text, func, text, BigInteger, \
+    Boolean
 # importing here to be indirectly imported in other modules later
-from sqlalchemy import update, delete, select, func  # noqa W0611
+from sqlalchemy import update, delete, select, func, UniqueConstraint  # noqa W0611
 from sqlalchemy.orm import scoped_session, sessionmaker, mapped_column, close_all_sessions
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.pool import NullPool
+from alembic.migration import MigrationContext
 
 from flask_sqlalchemy import SQLAlchemy
 
 from .config import settings
 from .get_args import args
+from utilities.path_mappings import path_mappings
 
 logger = logging.getLogger(__name__)
 
@@ -89,6 +93,7 @@ else:
         cursor.execute("PRAGMA journal_mode=WAL")
         cursor.execute("PRAGMA synchronous=FULL")
         cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.execute("PRAGMA busy_timeout=60000")
         cursor.close()
 
 session_factory = sessionmaker(bind=engine)
@@ -172,7 +177,6 @@ class TableEpisodes(Base):
     season = mapped_column(Integer, nullable=False)
     sonarrEpisodeId = mapped_column(Integer, primary_key=True)
     sonarrSeriesId = mapped_column(Integer, ForeignKey('table_shows.sonarrSeriesId', ondelete='CASCADE'))
-    subtitles = mapped_column(Text)
     title = mapped_column(Text, nullable=False)
     tvdbId = mapped_column(Integer)
     updated_at_timestamp = mapped_column(DateTime)
@@ -180,6 +184,29 @@ class TableEpisodes(Base):
 
     def to_dict(self):
         return {column.name: getattr(self, column.name) for column in self.__table__.columns}
+
+
+class TableEpisodesSubtitles(Base):
+    __tablename__ = 'table_episodes_subtitles'
+
+    id = mapped_column(Integer, primary_key=True)
+    language = mapped_column(Text, nullable=False)
+    hi = mapped_column(Boolean, nullable=False)
+    forced = mapped_column(Boolean, nullable=False)
+    path = mapped_column(Text, nullable=True)
+    size = mapped_column(BigInteger, nullable=True)
+    embedded_track_id = mapped_column(Integer, nullable=True)
+    sonarrEpisodeId = mapped_column(Integer, ForeignKey('table_episodes.sonarrEpisodeId', ondelete='CASCADE'),
+                                    nullable=False)
+    sonarrSeriesId = mapped_column(Integer, ForeignKey('table_shows.sonarrSeriesId', ondelete='CASCADE'),
+                                   nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint('path', 'sonarrSeriesId', 'sonarrEpisodeId', 'language', 'forced', 'hi',
+                         name='uc_external_episodes_subtitles'),
+        UniqueConstraint('embedded_track_id', 'sonarrSeriesId', 'sonarrEpisodeId', 'language', 'forced', 'hi',
+                         name='uc_embedded_episodes_subtitles'),
+    )
 
 
 class TableHistory(Base):
@@ -252,6 +279,7 @@ class TableMovies(Base):
     missing_subtitles = mapped_column(Text)
     monitored = mapped_column(Text)
     movie_file_id = mapped_column(Integer)
+    originalLanguage = mapped_column(Text)
     overview = mapped_column(Text)
     path = mapped_column(Text, nullable=False, unique=True)
     poster = mapped_column(Text)
@@ -260,13 +288,34 @@ class TableMovies(Base):
     resolution = mapped_column(Text)
     sceneName = mapped_column(Text)
     sortTitle = mapped_column(Text)
-    subtitles = mapped_column(Text)
     tags = mapped_column(Text)
     title = mapped_column(Text, nullable=False)
     tmdbId = mapped_column(Text, nullable=False, unique=True)
     updated_at_timestamp = mapped_column(DateTime)
     video_codec = mapped_column(Text)
     year = mapped_column(Text)
+
+    def to_dict(self):
+        return {column.name: getattr(self, column.name) for column in self.__table__.columns}
+
+
+class TableMoviesSubtitles(Base):
+    __tablename__ = 'table_movies_subtitles'
+
+    id = mapped_column(Integer, primary_key=True)
+    language = mapped_column(Text, nullable=False)
+    hi = mapped_column(Boolean, nullable=False)
+    forced = mapped_column(Boolean, nullable=False)
+    path = mapped_column(Text, nullable=True)
+    size = mapped_column(BigInteger, nullable=True)
+    embedded_track_id = mapped_column(Integer, nullable=True)
+    radarrId = mapped_column(Integer, ForeignKey('table_movies.radarrId', ondelete='CASCADE'), nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint('path', 'radarrId', 'language', 'forced', 'hi', name='uc_external_movies_subtitles'),
+        UniqueConstraint('embedded_track_id', 'radarrId', 'language', 'forced', 'hi',
+                         name='uc_embedded_movies_subtitles'),
+    )
 
 
 class TableMoviesRootfolder(Base):
@@ -308,6 +357,7 @@ class TableShows(Base):
     imdbId = mapped_column(Text)
     lastAired = mapped_column(Text)
     monitored = mapped_column(Text)
+    originalLanguage = mapped_column(Text)
     overview = mapped_column(Text)
     path = mapped_column(Text, nullable=False, unique=True)
     poster = mapped_column(Text)
@@ -319,6 +369,9 @@ class TableShows(Base):
     title = mapped_column(Text, nullable=False)
     updated_at_timestamp = mapped_column(DateTime)
     year = mapped_column(Text)
+
+    def to_dict(self):
+        return {column.name: getattr(self, column.name) for column in self.__table__.columns}
 
 
 class TableShowsRootfolder(Base):
@@ -335,6 +388,22 @@ def init_db():
 
     # Create tables if they don't exist.
     metadata.create_all(engine)
+
+    try:
+        database_engine = database.bind.engine.dialect.name.capitalize()
+    except Exception:
+        logger.exception("Failed to determine database engine type")
+        database_engine = ""
+
+    try:
+        database_version = ".".join([str(x) for x in database.bind.engine.dialect.server_version_info or tuple()])
+    except Exception:
+        logger.exception("Failed to determine database engine version")
+        database_version = ""
+
+    os.environ["BAZARR_DB_ENGINE_VERSION"] = f"{database_engine} {database_version}"
+    os.environ["BAZARR_DB_MIGRATION_VERSION"] = (MigrationContext.configure(engine.connect()).get_current_revision() or
+                                                 "unknown")
 
 
 def create_db_revision(app):
@@ -598,3 +667,71 @@ def fix_languages_profiles_with_duplicate_ids():
                 .values({"items": json.dumps(languages_profile_items)})
                 .where(TableLanguagesProfiles.profileId == languages_profile.profileId)
             )
+
+
+def get_subtitles(sonarr_episode_id: int = None, radarr_id: int = None) -> List[dict]:
+    """
+    Retrieves a list of subtitles based on the provided episode or movie identifiers.
+
+    If `sonarr_episode_id` is provided, subtitles for the given episode are returned. If only
+    `radarr_id` is provided, subtitles for the given movie are returned. The information includes
+    details such as file path, language, forced subtitles flag, hearing impaired flag, and file size.
+
+    :param sonarr_episode_id: The Sonarr episode identifier, used specifically for episode subtitles.
+    :type sonarr_episode_id: int, optional
+    :param radarr_id: The Radarr identifier, used specifically for movie subtitles.
+    :type radarr_id: int, optional
+    :return: A list of dictionaries, each containing information about a subtitle file, including its
+             path, language metadata (name, alpha-2 code, and alpha-3 code), forced subtitles flag,
+             hearing impaired flag, and file size.
+    :rtype: List[dict]
+    """
+    from languages.get_languages import alpha3_from_alpha2, language_from_alpha2
+
+    subtitles = []
+    if sonarr_episode_id:
+        episodes_subtitles = database.execute(
+            select(TableEpisodesSubtitles.path,
+                   TableEpisodesSubtitles.language,
+                   TableEpisodesSubtitles.forced,
+                   TableEpisodesSubtitles.hi,
+                   TableEpisodesSubtitles.size,
+                   TableEpisodesSubtitles.embedded_track_id)
+            .where(TableEpisodesSubtitles.sonarrEpisodeId == sonarr_episode_id)
+        ).all()
+
+        for episode_subtitles in episodes_subtitles:
+            subtitles.append(
+                {"path": path_mappings.path_replace(episode_subtitles.path),
+                 "name": language_from_alpha2(episode_subtitles.language),
+                 "code2": episode_subtitles.language,
+                 "code3": alpha3_from_alpha2(episode_subtitles.language),
+                 "forced": episode_subtitles.forced,
+                 "hi": episode_subtitles.hi,
+                 "file_size": episode_subtitles.size,
+                 "embedded_track_id": episode_subtitles.embedded_track_id}
+            )
+    elif radarr_id:
+        movies_subtitles = database.execute(
+            select(TableMoviesSubtitles.path,
+                   TableMoviesSubtitles.language,
+                   TableMoviesSubtitles.forced,
+                   TableMoviesSubtitles.hi,
+                   TableMoviesSubtitles.size,
+                   TableMoviesSubtitles.embedded_track_id)
+            .where(TableMoviesSubtitles.radarrId == radarr_id)
+        ).all()
+
+        for movie_subtitles in movies_subtitles:
+            subtitles.append(
+                {"path": path_mappings.path_replace_movie(movie_subtitles.path),
+                 "name": language_from_alpha2(movie_subtitles.language),
+                 "code2": movie_subtitles.language,
+                 "code3": alpha3_from_alpha2(movie_subtitles.language),
+                 "forced": movie_subtitles.forced,
+                 "hi": movie_subtitles.hi,
+                 "file_size": movie_subtitles.size,
+                 "embedded_track_id": movie_subtitles.embedded_track_id}
+            )
+
+    return sorted(subtitles, key=lambda i: (i['name'], i['forced']))

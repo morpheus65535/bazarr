@@ -82,7 +82,6 @@ from ..orm.session import Session
 from ..util import b64decode
 from ..util import b64encode
 
-
 __all__ = ["Serializer", "Deserializer", "dumps", "loads"]
 
 

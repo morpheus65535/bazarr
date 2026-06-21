@@ -5,7 +5,8 @@ import ast
 from functools import reduce
 
 from api.swaggerui import subtitles_language_model
-from app.database import TableEpisodes, TableShows, TableHistory, TableBlacklist, database, select, func
+from app.database import (TableEpisodes, TableShows, TableHistory, TableBlacklist, database, select, func,
+                          TableEpisodesSubtitles)
 from subtitles.upgrade import get_upgradable_episode_subtitles,  _language_still_desired
 
 import pretty
@@ -93,14 +94,17 @@ class EpisodesHistory(Resource):
                       TableShows.profileId,
                       TableHistory.matched,
                       TableHistory.not_matched,
-                      TableEpisodes.subtitles.label('external_subtitles'),
+                      TableEpisodesSubtitles.path.label('external_subtitles'),
                       blacklisted_subtitles.c.subs_id.label('blacklisted')) \
             .select_from(TableHistory) \
             .join(TableShows, onclause=TableHistory.sonarrSeriesId == TableShows.sonarrSeriesId) \
             .join(TableEpisodes, onclause=TableHistory.sonarrEpisodeId == TableEpisodes.sonarrEpisodeId) \
+            .join(TableEpisodesSubtitles,
+                  onclause=TableHistory.sonarrEpisodeId == TableEpisodesSubtitles.sonarrEpisodeId) \
             .join(blacklisted_subtitles, onclause=TableHistory.subs_id == blacklisted_subtitles.c.subs_id,
                   isouter=True) \
             .where(reduce(operator.and_, query_conditions)) \
+            .where(TableEpisodesSubtitles.path.is_not(None)) \
             .order_by(TableHistory.timestamp.desc())
         if length > 0:
             stmt = stmt.limit(length).offset(start)
@@ -127,7 +131,7 @@ class EpisodesHistory(Resource):
             'provider': x.provider,
             'matches': x.matched,
             'dont_matches': x.not_matched,
-            'external_subtitles': [y[1] for y in ast.literal_eval(x.external_subtitles) if y[1]],
+            'external_subtitles': x.external_subtitles,
             'blacklisted': bool(x.blacklisted),
         } for x in database.execute(stmt).all()]
 
@@ -146,7 +150,7 @@ class EpisodesHistory(Resource):
 
             # Mark not upgradable if video/subtitles file doesn't exist anymore or if language isn't desired anymore
             if item['upgradable']:
-                if (item['subtitles_path'] not in item['external_subtitles'] or item['video_path'] != item['path'] or
+                if (item['subtitles_path'] != item['external_subtitles'] or item['video_path'] != item['path'] or
                         not still_desired):
                     item.update({"upgradable": False})
 

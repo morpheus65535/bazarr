@@ -102,7 +102,7 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
       {
         type: "text",
         key: "cookies",
-        name: "Cookies, e.g., PHPSESSID=abc; wikisubtitlesuser=xyz; wikisubtitlespass=efg",
+        name: "Cookies, you must copy the whole value from your browser",
       },
       {
         type: "text",
@@ -148,7 +148,7 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
       {
         type: "text",
         key: "cookies",
-        name: "Cookies, e.g., PHPSESSID=abc; wikisubtitlesuser=xyz; wikisubtitlespass=efg",
+        name: "Cookies, you must copy the whole value from your browser",
       },
       {
         type: "text",
@@ -300,6 +300,24 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     ],
   },
   {
+    key: "pipocas",
+    name: "Pipocas.tv",
+    description:
+      "Portuguese / Brazilian / English / Spanish Subtitles Provider",
+    inputs: [
+      {
+        type: "text",
+        key: "username",
+        name: "Username",
+      },
+      {
+        type: "password",
+        key: "password",
+        name: "Password",
+      },
+    ],
+  },
+  {
     key: "legendasdivx",
     name: "LegendasDivx",
     description: "Brazilian / Portuguese Subtitles Provider",
@@ -411,6 +429,11 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     ],
   },
   {
+    key: "prijevodionline",
+    name: "Prijevodi Online",
+    description: "Prijevodi Online website. No need for login or cookies.",
+  },
+  {
     key: "regielive",
     name: "RegieLive",
     description: "Romanian Subtitles Provider",
@@ -419,6 +442,11 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     key: "soustitreseu",
     name: "Sous-Titres.eu",
     description: "Mostly French Subtitles Provider",
+  },
+  {
+    key: "subclub",
+    name: "SubClub.eu",
+    description: "Estonian Subtitles Provider",
   },
   {
     key: "subdl",
@@ -487,7 +515,7 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     key: "subs4series",
     name: "Subs4Series",
     description:
-      "Greek Subtitles Provider.\nRequires anti-captcha provider to solve captchas for each download.",
+      "Greek Subtitles Provider.\nRequires Anti-Captcha Provider to solve captchas for each download.",
   },
   { key: "subscenter", description: "Hebrew Subtitles Provider" },
   {
@@ -677,7 +705,8 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
   {
     key: "zimuku",
     name: "Zimuku",
-    description: "Chinese Subtitles Provider. Anti-captcha required.",
+    description:
+      "Chinese Subtitles Provider.\nRequires Anti-Captcha Provider to solve numeric captchas for each search and download.",
   },
 ];
 

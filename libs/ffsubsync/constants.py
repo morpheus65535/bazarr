@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 
 SUBSYNC_RESOURCES_ENV_MAGIC: str = "ffsubsync_resources_xj48gjdkl340"
@@ -18,7 +18,35 @@ DEFAULT_VAD: str = "subs_then_webrtc"
 DEFAULT_MAX_OFFSET_SECONDS: int = 60
 DEFAULT_APPLY_OFFSET_SECONDS: int = 0
 
+# Quality gating (--skip-sync-on-low-quality). The score's sign is meaningful even
+# though its magnitude is not, so 0.0 rejects only anti-correlated alignments. The
+# framerate-deviation default clears every real correction (discrete ratios reach
+# ~0.0427 and a typical --gss result stays well within +/-0.1), so it does not
+# reject a legitimate correction -- it is a knob to tighten when you know the
+# framerate should not change.
+DEFAULT_MIN_SCORE: float = 0.0
+DEFAULT_QUALITY_MAX_OFFSET_SECONDS: float = 30.0
+DEFAULT_MAX_FRAMERATE_DEVIATION: float = 0.1
+
 SUBTITLE_EXTENSIONS: Tuple[str, ...] = ("srt", "ass", "ssa", "sub")
+
+# Remote URL protocols that ffmpeg can read directly as an input (`-i <url>`),
+# so a reference of this form needs no local download or read-permission check.
+REMOTE_URL_PROTOCOLS: Tuple[str, ...] = (
+    "http://",
+    "https://",
+    "rtmp://",
+    "rtsp://",
+    "ftp://",
+)
+
+
+def is_remote_url(path: Optional[str]) -> bool:
+    """Return True if *path* is a remote URL ffmpeg can stream directly."""
+    if path is None:
+        return False
+    return path.startswith(REMOTE_URL_PROTOCOLS)
+
 
 GITHUB_DEV_USER: str = "smacke"
 PROJECT_NAME: str = "FFsubsync"

@@ -1,6 +1,6 @@
 import re
 import warnings
-from typing import List, Sequence, Optional, TextIO, Any, Tuple
+from typing import Sequence, Optional, TextIO, Any
 
 from .base import FormatBase
 from ..ssaevent import SSAEvent
@@ -77,8 +77,8 @@ class SubripFormat(FormatBase):
                 If False, these other HTML tags will be stripped from output
                 (in the previous example, you would get only ``example {\\i1}text{\\i0}``).
         """
-        timestamps: List[Tuple[int, int]] = [] # (start, end)
-        following_lines: List[List[str]] = [] # contains lists of lines following each timestamp
+        timestamps: list[tuple[int, int]] = [] # (start, end)
+        following_lines: list[list[str]] = [] # contains lists of lines following each timestamp
 
         for line in fp:
             stamps = cls.TIMESTAMP.findall(line)
@@ -90,7 +90,7 @@ class SubripFormat(FormatBase):
                 if timestamps:
                     following_lines[-1].append(line)
 
-        def prepare_text(lines: List[str]) -> str:
+        def prepare_text(lines: list[str]) -> str:
             # Handle the "happy" empty subtitle case, which is timestamp line followed by blank line(s)
             # followed by number line and timestamp line of the next subtitle. Fixes issue #11.
             if (len(lines) >= 2
@@ -175,5 +175,5 @@ class SubripFormat(FormatBase):
             lineno += 1
 
     @classmethod
-    def _get_visible_lines(cls, subs: "SSAFile") -> List[SSAEvent]:
+    def _get_visible_lines(cls, subs: "SSAFile") -> list[SSAEvent]:
         return subs.get_text_events()

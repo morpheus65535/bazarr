@@ -62,7 +62,7 @@ class Extension(Generic[T]):
         self,
         name: str,
         entry_point: importlib.metadata.EntryPoint,
-        plugin: Callable[..., T],
+        plugin: type[T],
         obj: T | None,
     ) -> None:
         self.name = name

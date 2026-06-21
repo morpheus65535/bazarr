@@ -1,4 +1,4 @@
-from typing import Dict, Type
+from typing import Type
 
 from .base import FormatBase
 from .microdvd import MicroDVDFormat
@@ -13,8 +13,9 @@ from .webvtt import WebVTTFormat
 from .whisper import WhisperJAXFormat
 from ..exceptions import UnknownFormatIdentifierError, UnknownFileExtensionError, FormatAutodetectionError
 
+
 #: Dict mapping file extensions to format identifiers.
-FILE_EXTENSION_TO_FORMAT_IDENTIFIER: Dict[str, str] = {
+FILE_EXTENSION_TO_FORMAT_IDENTIFIER: dict[str, str] = {
     ".srt": "srt",
     ".ass": "ass",
     ".ssa": "ssa",
@@ -28,7 +29,7 @@ FILE_EXTENSION_TO_FORMAT_IDENTIFIER: Dict[str, str] = {
 }
 
 #: Dict mapping format identifiers to implementations (FormatBase subclasses).
-FORMAT_IDENTIFIER_TO_FORMAT_CLASS: Dict[str, Type[FormatBase]] = {
+FORMAT_IDENTIFIER_TO_FORMAT_CLASS: dict[str, Type[FormatBase]] = {
     "srt": SubripFormat,
     "ass": SubstationFormat,
     "ssa": SubstationFormat,

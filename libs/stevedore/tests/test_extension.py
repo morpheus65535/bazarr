@@ -230,16 +230,31 @@ class TestCallback(utils.TestCase):
         self.assertEqual(expected_output, set(em.items()))
 
 
+class Base:
+    def greet(self, user):
+        raise NotImplementedError()
+
+
+class Foo(Base):
+    def greet(self, user):
+        print("Hello {user}. I'm foo.")
+
+
+class Bar(Base):
+    def greet(self, user):
+        print("Hello {user}. I'm bar.")
+
+
 class TestConflictResolution(utils.TestCase):
     def test_ignore_conflicts(self):
         """Test that ignore_conflicts logs a warning when conflicts exist."""
-        extensions = [
+        extensions: list[extension.Extension[Base]] = [
             extension.Extension(
                 'conflict',
                 importlib.metadata.EntryPoint(
                     'conflict', 'module1:Class1', 'test.group'
                 ),
-                type('TestClass1', (), {}),
+                Foo,
                 None,
             ),
             extension.Extension(
@@ -247,7 +262,7 @@ class TestConflictResolution(utils.TestCase):
                 importlib.metadata.EntryPoint(
                     'conflict', 'module2:Class2', 'test.group'
                 ),
-                type('TestClass2', (), {}),
+                Bar,
                 None,
             ),
         ]
@@ -266,21 +281,21 @@ class TestConflictResolution(utils.TestCase):
 
     def test_error_on_conflict(self):
         """Test error_on_conflict raises MultipleMatches exception."""
-        extensions = [
+        extensions: list[extension.Extension[Base]] = [
             extension.Extension(
                 'conflict',
                 importlib.metadata.EntryPoint(
-                    'conflict', 'module1:Class1', 'test.group'
+                    'conflict', 'module1:Foo', 'test.group'
                 ),
-                type('TestClass1', (), {}),
+                Foo,
                 None,
             ),
             extension.Extension(
                 'conflict',
                 importlib.metadata.EntryPoint(
-                    'conflict', 'module2:Class2', 'test.group'
+                    'conflict', 'module2:Bar', 'test.group'
                 ),
-                type('TestClass2', (), {}),
+                Bar,
                 None,
             ),
         ]
@@ -301,18 +316,14 @@ class TestConflictResolution(utils.TestCase):
 
         ext1 = extension.Extension(
             'test',
-            importlib.metadata.EntryPoint(
-                'test', 'module1:Class1', 'test.group'
-            ),
-            type('TestClass1', (), {}),
+            importlib.metadata.EntryPoint('test', 'module1:Foo', 'test.group'),
+            Foo,
             None,
         )
         ext2 = extension.Extension(
             'test',
-            importlib.metadata.EntryPoint(
-                'test', 'module2:Class2', 'test.group'
-            ),
-            type('TestClass2', (), {}),
+            importlib.metadata.EntryPoint('test', 'module2:Bar', 'test.group'),
+            Bar,
             None,
         )
 
@@ -348,7 +359,7 @@ class TestExtensionProperties(utils.TestCase):
             importlib.metadata.EntryPoint(
                 'name', 'module.name:attribute.name [extra]', 'group_name'
             ),
-            mock.Mock(),
+            Foo,
             None,
         )
         self.ext2 = extension.Extension(
@@ -356,7 +367,7 @@ class TestExtensionProperties(utils.TestCase):
             importlib.metadata.EntryPoint(
                 'name', 'module:attribute', 'group_name'
             ),
-            mock.Mock(),
+            Bar,
             None,
         )
 

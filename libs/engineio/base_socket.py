@@ -1,3 +1,6 @@
+import time
+
+
 class BaseSocket:
     upgrade_protocols = ['websocket']
 
@@ -5,7 +8,7 @@ class BaseSocket:
         self.server = server
         self.sid = sid
         self.queue = self.server.create_queue()
-        self.last_ping = None
+        self.last_ping = time.time()
         self.connected = False
         self.upgrading = False
         self.upgraded = False

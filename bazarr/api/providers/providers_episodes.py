@@ -4,7 +4,7 @@ import os
 
 from flask_restx import Resource, Namespace, reqparse, fields, marshal
 
-from app.database import TableEpisodes, TableShows, database, select
+from app.database import TableEpisodes, TableShows, database, select, get_subtitles
 from utilities.path_mappings import path_mappings
 from app.get_providers import get_providers
 from subtitles.manual import manual_search, episode_manually_download_specific_subtitle
@@ -52,18 +52,20 @@ class ProviderEpisodes(Resource):
                       TableEpisodes.sceneName,
                       TableShows.title,
                       TableShows.profileId,
-                      TableEpisodes.subtitles,
                       TableEpisodes.missing_subtitles) \
             .select_from(TableEpisodes) \
             .join(TableShows) \
             .where(TableEpisodes.sonarrEpisodeId == sonarrEpisodeId)
         episodeInfo = database.execute(stmt).first()
 
+        previously_indexed_subtitles = get_subtitles(sonarr_episode_id=sonarrEpisodeId)
+
         if not episodeInfo:
             return 'Episode not found', 404
-        elif episodeInfo.subtitles is None:
-            # subtitles indexing for this episode is incomplete, we'll do it again
-            store_subtitles(episodeInfo.path, path_mappings.path_replace(episodeInfo.path))
+        elif not len(previously_indexed_subtitles) or \
+                any([not x['embedded_track_id'] for x in previously_indexed_subtitles if not x['path']]):
+            # subtitles indexing for this episode might be incomplete, we'll do it again
+            store_subtitles(sonarrEpisodeId)
             episodeInfo = database.execute(stmt).first()
         elif episodeInfo.missing_subtitles is None:
             # missing subtitles calculation for this episode is incomplete, we'll do it again

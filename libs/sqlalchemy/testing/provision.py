@@ -25,7 +25,6 @@ from ..sql import ddl
 from ..sql import schema
 from ..util import decorator
 
-
 log = logging.getLogger(__name__)
 
 FOLLOWER_IDENT = None

@@ -19,7 +19,6 @@ from typing import Union
 from . import url as _url
 from .. import util
 
-
 if typing.TYPE_CHECKING:
     from .base import Engine
     from .interfaces import _CoreAnyExecuteParams

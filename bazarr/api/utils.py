@@ -8,7 +8,7 @@ from operator import itemgetter
 
 from app.config import settings, base_url
 from languages.get_languages import language_from_alpha2, alpha3_from_alpha2
-from app.database import get_audio_profile_languages, get_desired_languages
+from app.database import get_audio_profile_languages, get_desired_languages, get_subtitles
 from utilities.path_mappings import path_mappings
 
 None_Keys = ['null', 'undefined', '', None]
@@ -57,32 +57,14 @@ def postprocess(item):
     else:
         item['alternativeTitles'] = []
 
-    # Parse subtitles
-    if item.get('subtitles'):
-        item['subtitles'] = ast.literal_eval(item['subtitles'])
-        for i, subs in enumerate(item['subtitles']):
-            language = subs[0].split(':')
-            file_size = subs[2] if len(subs) > 2 else 0
-            item['subtitles'][i] = {"path": path_replace(subs[1]),
-                                    "name": language_from_alpha2(language[0]),
-                                    "code2": language[0],
-                                    "code3": alpha3_from_alpha2(language[0]),
-                                    "forced": False,
-                                    "hi": False,
-                                    "file_size": file_size}
-            if len(language) > 1:
-                item['subtitles'][i].update(
-                    {
-                        "forced": language[1].lower() == 'forced',
-                        "hi": language[1].lower() == 'hi',
-                    }
-                )
-        if settings.general.embedded_subs_show_desired and item.get('profileId'):
-            desired_lang_list = get_desired_languages(item['profileId'])
-            item['subtitles'] = [x for x in item['subtitles'] if x['code2'] in desired_lang_list or x['path']]
+    # Add subtitles
+    item['subtitles'] = get_subtitles(sonarr_episode_id=item.get('sonarrEpisodeId'),
+                                      radarr_id=item.get('radarrId'))
+
+    if settings.general.embedded_subs_show_desired and item.get('profileId'):
+        desired_lang_list = get_desired_languages(item['profileId'])
+        item['subtitles'] = [x for x in item['subtitles'] if x['code2'] in desired_lang_list or x['path']]
         item['subtitles'] = sorted(item['subtitles'], key=itemgetter('name', 'forced'))
-    else:
-        item['subtitles'] = []
 
     # Parse missing subtitles
     if item.get('missing_subtitles'):
@@ -144,10 +126,7 @@ def postprocess(item):
 
     if item.get('external_subtitles'):
         # Provide mapped external subtitles paths for history
-        if isinstance(item['external_subtitles'], str):
-            item['external_subtitles'] = ast.literal_eval(item['external_subtitles'])
-        for i, subs in enumerate(item['external_subtitles']):
-            item['external_subtitles'][i] = path_replace(subs)
+        item['external_subtitles'] = path_replace(item['external_subtitles'])
 
     # map poster and fanart to server proxy
     if item.get('poster') is not None:

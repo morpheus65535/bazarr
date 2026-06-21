@@ -43,12 +43,13 @@ def shell_complete(
 
     comp = comp_cls(cli, ctx_args, prog_name, complete_var)
 
+    # Write bytes, otherwise Windows text stdout translates LF to CRLF and breaks.
     if instruction == "source":
-        echo(comp.source())
+        echo(comp.source().encode(), nl=False)
         return 0
 
     if instruction == "complete":
-        echo(comp.complete())
+        echo(comp.complete().encode())
         return 0
 
     return 1
@@ -180,14 +181,18 @@ function %(complete_func)s;
 COMP_CWORD=(commandline -t) %(prog_name)s);
 
     for completion in $response;
-        set -l metadata (string split "," $completion);
+        set -l metadata (string split \n $completion);
 
         if test $metadata[1] = "dir";
             __fish_complete_directories $metadata[2];
         else if test $metadata[1] = "file";
             __fish_complete_path $metadata[2];
         else if test $metadata[1] = "plain";
-            echo $metadata[2];
+            if test $metadata[3] != "_";
+                echo $metadata[2]\t$metadata[3];
+            else;
+                echo $metadata[2];
+            end;
         end;
     end;
 end;
@@ -417,10 +422,20 @@ class FishComplete(ShellComplete):
         return args, incomplete
 
     def format_completion(self, item: CompletionItem) -> str:
-        if item.help:
-            return f"{item.type},{item.value}\t{item.help}"
-
-        return f"{item.type},{item.value}"
+        """
+        .. versionchanged:: 8.4.0
+            Escape newlines in value and help to fix completion errors with
+            multi-line help strings.
+        """
+        # The fish completion script splits each response line on literal
+        # newlines, so any newline in the value or help would corrupt the
+        # frame. Replace them with the two-character escape "\n" so the text
+        # round-trips through fish without breaking the format. The "_"
+        # sentinel for missing help mirrors :class:`ZshComplete`.
+        help_ = item.help or "_"
+        value = item.value.replace("\n", r"\n")
+        help_escaped = help_.replace("\n", r"\n")
+        return f"{item.type}\n{value}\n{help_escaped}"
 
 
 ShellCompleteType = t.TypeVar("ShellCompleteType", bound="type[ShellComplete]")
@@ -511,8 +526,6 @@ def _is_incomplete_argument(ctx: Context, param: Parameter) -> bool:
     if not isinstance(param, Argument):
         return False
 
-    assert param.name is not None
-    # Will be None if expose_value is False.
     value = ctx.params.get(param.name)
     return (
         param.nargs == -1

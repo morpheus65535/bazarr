@@ -41,22 +41,18 @@ def get_external_subtitles_path(file, subtitle):
     return path
 
 
-def guess_external_subtitles(dest_folder, subtitles, media_type, previously_indexed_subtitles_to_exclude=None):
+def guess_external_subtitles(dest_folder, subtitles, previously_indexed_subtitles_to_exclude=None):
     for subtitle, language in subtitles.items():
         subtitle_path = os.path.join(dest_folder, subtitle)
-        reversed_subtitle_path = path_mappings.path_replace_reverse(subtitle_path) if media_type == "series" \
-            else path_mappings.path_replace_reverse_movie(subtitle_path)
 
-        if previously_indexed_subtitles_to_exclude:
-            x_found_lang = None
-            for x_lang, x_path, x_size in previously_indexed_subtitles_to_exclude:
-                if x_path == reversed_subtitle_path and x_size == os.stat(subtitle_path).st_size:
-                    x_found_lang = x_lang
+        if previously_indexed_subtitles_to_exclude and not language:
+            for external_subtitles in previously_indexed_subtitles_to_exclude:
+                if (external_subtitles['path'] == subtitle_path and
+                        external_subtitles['file_size'] == os.stat(subtitle_path).st_size):
+                    subtitles[subtitle] = _get_lang_from_str(external_subtitles['code2'],
+                                                             external_subtitles['forced'],
+                                                             external_subtitles['hi'])
                     break
-            if x_found_lang:
-                if not language:
-                    subtitles[subtitle] = _get_lang_from_str(x_found_lang)
-                continue
 
         if not language:
             if os.path.exists(subtitle_path) and os.path.splitext(subtitle_path)[1] in core.SUBTITLE_EXTENSIONS:
@@ -143,19 +139,15 @@ def guess_external_subtitles(dest_folder, subtitles, media_type, previously_inde
     return subtitles
 
 
-def _get_lang_from_str(x_found_lang):
-    x_found_lang_split = x_found_lang.split(':')[0]
-    x_hi = ':hi' in x_found_lang.lower()
-    x_forced = ':forced' in x_found_lang.lower()
-
-    if len(x_found_lang_split) == 2:
+def _get_lang_from_str(x_found_lang, x_forced, x_hi):
+    if len(x_found_lang) == 2:
         x_custom_lang_attr = "alpha2"
-    elif len(x_found_lang_split) == 3:
+    elif len(x_found_lang) == 3:
         x_custom_lang_attr = "alpha3"
     else:
         x_custom_lang_attr = "language"
 
-    x_custom_lang = CustomLanguage.from_value(x_found_lang_split, attr=x_custom_lang_attr)
+    x_custom_lang = CustomLanguage.from_value(x_found_lang, attr=x_custom_lang_attr)
 
     if x_custom_lang is not None:
         return Language.rebuild(x_custom_lang.subzero_language(), hi=x_hi, forced=x_forced)

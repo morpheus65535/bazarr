@@ -14,7 +14,7 @@ from radarr.history import history_log_movie
 from app.notifier import send_notifications_movie
 from app.get_providers import get_providers
 from app.database import (get_exclusion_clause, get_audio_profile_languages, TableMovies, database, select,
-                          get_profile_id)
+                          get_profile_id, get_subtitles)
 from app.jobs_queue import jobs_queue
 from app.event_handler import event_stream
 
@@ -42,18 +42,20 @@ def movies_download_subtitles(no, job_id=None, job_sub_function=False):
                   TableMovies.year,
                   TableMovies.tags,
                   TableMovies.monitored,
-                  TableMovies.profileId,
-                  TableMovies.subtitles) \
+                  TableMovies.profileId) \
         .where(reduce(operator.and_, conditions))
     movie = database.execute(stmt).first()
+
+    previously_indexed_subtitles = get_subtitles(radarr_id=movie.radarrId)
 
     if not movie:
         logging.debug(f"BAZARR no movie with that radarrId can be found in database: {no}")
         jobs_queue.update_job_progress(job_id=job_id, progress_message="Movie not found in database.")
         return
-    elif movie.subtitles is None:
-        # subtitles indexing for this movie is incomplete, we'll do it again
-        store_subtitles_movie(movie.path, path_mappings.path_replace_movie(movie.path))
+    elif not len(previously_indexed_subtitles) or \
+            any([not x['embedded_track_id'] for x in previously_indexed_subtitles if not x['path']]):
+        # subtitles indexing for this movie might be incomplete, we'll do it again
+        store_subtitles_movie(no)
         movie = database.execute(stmt).first()
     elif movie.missing_subtitles is None:
         # missing subtitles calculation for this movie is incomplete, we'll do it again
@@ -105,7 +107,7 @@ def movies_download_subtitles(no, job_id=None, job_sub_function=False):
                 if result:
                     if isinstance(result, tuple) and len(result):
                         result = result[0]
-                    store_subtitles_movie(movie.path, moviePath)
+                    store_subtitles_movie(no)
                     history_log_movie(1, no, result)
                     send_notifications_movie(no, result.message)
                     downloaded_count += 1
@@ -168,9 +170,9 @@ def movie_download_specific_subtitles(radarr_id, language, hi, forced, job_id=No
             result = result[0]
             if isinstance(result, tuple) and len(result):
                 result = result[0]
+            store_subtitles_movie(radarr_id)
             history_log_movie(1, radarr_id, result)
             send_notifications_movie(radarr_id, result.message)
-            store_subtitles_movie(result.path, moviePath)
         else:
             event_stream(type='movie', payload=radarr_id)
             return '', 204

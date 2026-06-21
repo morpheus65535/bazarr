@@ -44,6 +44,7 @@ This plugin supports 2 modes of operation:
 
 from __future__ import annotations
 
+import io
 from itertools import chain
 
 # Create an incoming webhook; the website will provide you with something like:
@@ -117,6 +118,9 @@ class NotifyMattermost(NotifyBase):
 
     # Mattermost does not have a title
     title_maxlen = 0
+
+    # Attachment support defaults True; toggled off for webhook mode
+    attachment_support = True
 
     # Allow persistent caching of bot channel lookups
     storage_mode = PersistentStoreMode.AUTO
@@ -192,9 +196,6 @@ class NotifyMattermost(NotifyBase):
     template_args = dict(
         NotifyBase.template_args,
         **{
-            "to": {
-                "alias_of": "targets",
-            },
             "channel": {
                 # Backwards compatible
                 "alias_of": "targets",
@@ -224,6 +225,9 @@ class NotifyMattermost(NotifyBase):
                 "type": "choice:string",
                 "values": MATTERMOST_MODES,
                 "default": MATTERMOST_MODES[0],
+            },
+            "to": {
+                "alias_of": "targets",
             },
         },
     )
@@ -258,6 +262,9 @@ class NotifyMattermost(NotifyBase):
                 raise TypeError(msg)
         else:
             self.mode = self.template_args["mode"]["default"]
+
+        # Enable attachment support only in bot mode
+        self.attachment_support = self.mode == MattermostMode.BOT
 
         # Token (webhook token in webhook mode, bearer token in bot mode)
         self.token = validate_regex(token)
@@ -360,6 +367,7 @@ class NotifyMattermost(NotifyBase):
                 headers=headers,
                 verify=self.verify_certificate,
                 timeout=self.request_timeout,
+                allow_redirects=self.redirects,
             )
 
             if r.status_code != requests.codes.ok:
@@ -413,6 +421,7 @@ class NotifyMattermost(NotifyBase):
         body: str,
         title: str = "",
         notify_type: NotifyType = NotifyType.INFO,
+        attach=None,
         **kwargs: Any,
     ) -> bool:
         """Perform Mattermost Notification."""
@@ -435,14 +444,59 @@ class NotifyMattermost(NotifyBase):
             "Content-Type": "application/json",
         }
 
+        # Pre-read attachment content before the target loop so the same
+        # bytes can be sent to every target via a fresh io.BytesIO wrapper.
+        # AttachMemory streams close after the first read and cannot be
+        # re-opened; reading everything upfront avoids that problem.
+        attach_data: list[tuple[str, bytes, str]] = []
+
         if self.mode == MattermostMode.BOT:
             url = "{}://{}{}{}/api/v4/posts".format(
+                self.schema, self.host, port, self.fullpath.rstrip("/")
+            )
+
+            # URL used to upload file attachments before posting
+            upload_url = "{}://{}{}{}/api/v4/files".format(
                 self.schema, self.host, port, self.fullpath.rstrip("/")
             )
 
             # Append headers
             headers["Authorization"] = f"Bearer {self.token}"
             expected = (requests.codes.created, requests.codes.ok)
+
+            if attach and self.attachment_support:
+                for no, attachment in enumerate(attach, start=1):
+                    if not attachment:
+                        self.logger.error(
+                            "Could not access Mattermost attachment %s.",
+                            attachment.url(privacy=True),
+                        )
+                        return False
+
+                    # Capture name and mimetype before open() so that
+                    # AttachMemory's exists() check (triggered by these
+                    # properties) does not fail on a closed stream.
+                    fname = attachment.name or f"file{no:03}.dat"
+                    mimetype = attachment.mimetype
+
+                    self.logger.debug(
+                        "Reading Mattermost attachment %s",
+                        attachment.url(privacy=True),
+                    )
+                    try:
+                        with attachment.open() as fp:
+                            content = fp.read()
+
+                    except (OSError, ValueError) as e:
+                        self.logger.warning(
+                            "An I/O error occurred reading"
+                            " Mattermost attachment %s.",
+                            fname,
+                        )
+                        self.logger.debug("I/O Exception: %s", e)
+                        return False
+
+                    attach_data.append((fname, content, mimetype))
 
         else:  # self.mode == MattermostMode.WEBHOOK
             url = "{}://{}{}{}/hooks/{}".format(
@@ -468,10 +522,109 @@ class NotifyMattermost(NotifyBase):
                     continue
 
             if self.mode == MattermostMode.BOT:
+                # Upload pre-read attachment bytes scoped to this
+                # channel_id.  Fresh io.BytesIO wrappers are created for
+                # each target so all targets receive the same content.
+                file_ids: list[str] = []
+                attach_error = False
+                if attach_data:
+                    upload_headers: dict[str, str] = {
+                        "User-Agent": self.app_id,
+                        "Authorization": f"Bearer {self.token}",
+                    }
+                    for fname, content, mimetype in attach_data:
+                        self.logger.debug(
+                            "Posting Mattermost attachment %s",
+                            fname,
+                        )
+
+                        try:
+                            self.throttle()
+                            r = requests.post(
+                                upload_url,
+                                data={"channel_id": target},
+                                headers=upload_headers,
+                                files={
+                                    "files": (
+                                        fname,
+                                        io.BytesIO(content),
+                                        mimetype,
+                                    )
+                                },
+                                verify=self.verify_certificate,
+                                timeout=self.request_timeout,
+                                allow_redirects=self.redirects,
+                            )
+
+                        except requests.RequestException as e:
+                            self.logger.warning(
+                                "A Connection error occurred"
+                                " uploading Mattermost"
+                                " attachment."
+                            )
+                            self.logger.debug("Socket Exception: %s", e)
+                            attach_error = True
+                            break
+
+                        if r.status_code not in (
+                            requests.codes.created,
+                            requests.codes.ok,
+                        ):
+                            status = self.http_response_code_lookup(
+                                r.status_code
+                            )
+                            self.logger.warning(
+                                "Failed to upload Mattermost"
+                                " attachment %s: %s, error=%d.",
+                                fname,
+                                status,
+                                r.status_code,
+                            )
+                            self.logger.debug(
+                                "Response Details:\r\n%r",
+                                (r.content or b"")[:2000],
+                            )
+                            attach_error = True
+                            break
+
+                        try:
+                            data = loads(r.content.decode("utf-8"))
+                            file_id = data.get("file_infos", [{}])[0].get(
+                                "id", ""
+                            )
+
+                        except (
+                            AttributeError,
+                            TypeError,
+                            ValueError,
+                            IndexError,
+                        ):
+                            self.logger.warning(
+                                "Failed to parse Mattermost"
+                                " file upload response."
+                            )
+                            attach_error = True
+                            break
+
+                        if not file_id:
+                            self.logger.warning(
+                                "Mattermost file upload returned no file ID."
+                            )
+                            attach_error = True
+                            break
+
+                        file_ids.append(file_id)
+
+                if attach_error:
+                    has_error = True
+                    continue
+
                 payload: dict[str, Any] = {
                     "channel_id": target,
                     "message": body,
                 }
+                if file_ids:
+                    payload["file_ids"] = file_ids
 
             else:
                 payload: dict[str, Any] = {
@@ -485,9 +638,7 @@ class NotifyMattermost(NotifyBase):
                 if image_url:
                     payload["icon_url"] = image_url
 
-                payload["username"] = (
-                    self.user if self.user else self.app_id
-                )
+                payload["username"] = self.user if self.user else self.app_id
 
                 if target:
                     payload["channel"] = target
@@ -498,9 +649,7 @@ class NotifyMattermost(NotifyBase):
                 url,
                 self.verify_certificate,
             )
-            self.logger.debug(
-                "Mattermost %s Payload: %s", self.mode, payload
-            )
+            self.logger.debug("Mattermost %s Payload: %s", self.mode, payload)
 
             self.throttle()
 
@@ -511,6 +660,7 @@ class NotifyMattermost(NotifyBase):
                     headers=headers,
                     verify=self.verify_certificate,
                     timeout=self.request_timeout,
+                    allow_redirects=self.redirects,
                 )
 
                 if r.status_code not in expected:
@@ -541,7 +691,8 @@ class NotifyMattermost(NotifyBase):
                 self.logger.warning(
                     "A Connection error occurred sending Mattermost "
                     "%s notification to %s.",
-                    self.mode, target,
+                    self.mode,
+                    target,
                 )
                 self.logger.debug("Socket Exception: %s", e)
                 has_error = True
@@ -593,11 +744,15 @@ class NotifyMattermost(NotifyBase):
                 else:
                     entries.append(f"+{value}")
 
-            params["to"] = ",".join(chain(
-                [NotifyMattermost.quote(v, safe="#+") for v in entries],
-                [NotifyMattermost.quote(x, safe="")
-                 for x in self._invalid_targets],
-            ))
+            params["to"] = ",".join(
+                chain(
+                    [NotifyMattermost.quote(v, safe="#+") for v in entries],
+                    [
+                        NotifyMattermost.quote(x, safe="")
+                        for x in self._invalid_targets
+                    ],
+                )
+            )
 
         default_port = 443 if self.secure else 80
         default_schema = self.secure_protocol if self.secure else self.protocol
@@ -682,15 +837,11 @@ class NotifyMattermost(NotifyBase):
 
         # Our Mode
         if "mode" in results["qsd"] and results["qsd"]["mode"]:
-            results["mode"] = NotifyMattermost.unquote(
-                results["qsd"]["mode"]
-            )
+            results["mode"] = NotifyMattermost.unquote(results["qsd"]["mode"])
 
         # Team support (bot mode lookup). This maps to `user`.
         if "team" in results["qsd"] and results["qsd"]["team"]:
-            results["user"] = NotifyMattermost.unquote(
-                results["qsd"]["team"]
-            )
+            results["user"] = NotifyMattermost.unquote(results["qsd"]["team"])
             if "mode" not in results:
                 results["mode"] = MattermostMode.BOT
 

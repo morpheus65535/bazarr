@@ -44,7 +44,6 @@ from .. import inspection
 from .. import util
 from ..util.typing import Literal
 
-
 if TYPE_CHECKING:
     from .elements import BindParameter
     from .elements import ClauseElement
@@ -301,7 +300,7 @@ class LambdaElement(elements.ClauseElement):
                 rec = lambda_element._rec
                 if rec.bindparam_trackers:
                     tracker_instrumented_fn = (
-                        rec.tracker_instrumented_fn  # type:ignore [union-attr] # noqa: E501
+                        rec.tracker_instrumented_fn  # type: ignore [union-attr] # noqa: E501
                     )
                     for tracker in rec.bindparam_trackers:
                         tracker(
@@ -314,7 +313,7 @@ class LambdaElement(elements.ClauseElement):
         return rec
 
     def __getattr__(self, key):
-        return getattr(self._rec.expected_expr, key)
+        return getattr(self._resolved, key)
 
     @property
     def _is_sequence(self):

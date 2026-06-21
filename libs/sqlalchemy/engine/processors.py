@@ -12,6 +12,7 @@ processors.
 They all share one common characteristic: None is passed through unchanged.
 
 """
+
 from __future__ import annotations
 
 import typing

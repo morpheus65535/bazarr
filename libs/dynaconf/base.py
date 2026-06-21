@@ -121,7 +121,7 @@ class LazySettings(LazyObject):
             self._setup()
         if name in self._wrapped._deleted:  # noqa
             raise AttributeError(
-                f"Attribute {name} was deleted, " "or belongs to different env"
+                f"Attribute {name} was deleted, or belongs to different env"
             )
 
         if name not in RESERVED_ATTRS:
@@ -298,6 +298,13 @@ class Settings:
 
     def __contains__(self, item):
         """Respond to `item in settings`"""
+        nested_sep = getattr(self, "NESTED_SEPARATOR_FOR_DYNACONF", None)
+
+        if isinstance(item, str) and nested_sep and nested_sep in item:
+            item = item.replace(nested_sep, ".")
+        if isinstance(item, str) and "." in item:
+            return self.get(item, default=missing) is not missing
+
         return item.upper() in self.store or item.lower() in self.store
 
     def __getattribute__(self, name):
@@ -429,12 +436,6 @@ class Settings:
         :param default: In case of not found it will be returned
         :param parent: Is there a pre-loaded parent in a nested data?
         """
-        # if parent is not traverseable raise error
-        if parent and not hasattr(parent, "get"):
-            raise AttributeError(
-                f"cannot lookup {dotted_key!r} from {type(parent).__name__!r}"
-            )
-
         split_key = dotted_key.split(".")
         name, keys = split_key[0], split_key[1:]
         result = self.get(name, default=default, parent=parent, **kwargs)
@@ -446,6 +447,13 @@ class Settings:
             elif cast is True:
                 return parse_conf_data(result, tomlfy=True, box_settings=self)
             return result
+
+        # Still keys left, but current result/parent is not a data container
+        if keys and not isinstance(result, (dict, list)):
+            result_type = type(result).__name__
+            raise AttributeError(
+                f"Invalid dotted lookup in {dotted_key}. {name} is a {result_type}"
+            )
 
         # If we've still got key elements to traverse, let's do that.
         return self._dotted_get(
@@ -526,7 +534,7 @@ class Settings:
             self.unset(key)
             self.execute_loaders(key=key)
 
-        data = (parent or self.store).get(key, default)
+        data = _get_with_default(parent or self.store, key, default)
         if cast:
             data = apply_converter(cast, data, box_settings=self)
         return data
@@ -1527,3 +1535,25 @@ RESERVED_ATTRS = (
         "_REGISTERED_HOOKS",
     ]
 )
+
+# These are special fields defined by Dynaconf, but users can access it
+_PUBLIC_PROPERTIES = [
+    name
+    for name, _ in inspect.getmembers(
+        Settings, lambda x: isinstance(x, property)
+    )
+]
+
+
+def _get_with_default(data: dict | list, key: str, default):
+    if isinstance(data, dict):
+        return data.get(key, default)
+    elif isinstance(data, list):
+        if not key.isdigit():
+            raise ValueError(f"Expected integer, got: {key}")
+        try:
+            return data[int(key)]
+        except KeyError:
+            return default
+    else:
+        raise AttributeError(f"Unknown data container type: {type(data)}")

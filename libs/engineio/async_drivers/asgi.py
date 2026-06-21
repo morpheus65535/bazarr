@@ -136,10 +136,18 @@ class ASGIApp:
 
 async def translate_request(scope, receive, send):
     class AwaitablePayload:  # pragma: no cover
-        def __init__(self, payload):
-            self.payload = payload or b''
+        def __init__(self, event):
+            self.event = event
+            self.payload = None
 
         async def read(self, length=None):
+            if self.payload is None and event['type'] == 'http.request':
+                # read payload from http request
+                self.payload = self.event.get('body') or b''
+                while self.event.get('more_body'):
+                    self.event = await receive()
+                    if self.event['type'] == 'http.request':
+                        self.payload += self.event.get('body') or b''
             if length is None:
                 r = self.payload
                 self.payload = b''
@@ -149,16 +157,7 @@ async def translate_request(scope, receive, send):
             return r
 
     event = await receive()
-    payload = b''
-    if event['type'] == 'http.request':
-        payload += event.get('body') or b''
-        while event.get('more_body'):
-            event = await receive()
-            if event['type'] == 'http.request':
-                payload += event.get('body') or b''
-    elif event['type'] == 'websocket.connect':
-        pass
-    else:
+    if event['type'] not in ['http.request', 'websocket.connect']:
         return {}
 
     raw_uri = scope['path']
@@ -171,7 +170,7 @@ async def translate_request(scope, receive, send):
         else:
             raw_uri += '?' + query_string
     environ = {
-        'wsgi.input': AwaitablePayload(payload),
+        'wsgi.input': AwaitablePayload(event),
         'wsgi.errors': sys.stderr,
         'wsgi.version': (1, 0),
         'wsgi.async': True,

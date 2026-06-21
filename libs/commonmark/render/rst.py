@@ -119,11 +119,13 @@ class ReStructuredTextRenderer(Renderer):
             self.cr()
 
     def item(self, node, entering):
-        tagname = '*' if node.list_data['type'] == 'bullet' else '#.'
+        tagname = '* ' if node.list_data['type'] == 'bullet' else '#. '
 
         if entering:
-            self.out(tagname + ' ')
+            self.out(tagname)
+            self.indent_length += len(tagname)
         else:
+            self.indent_length -= len(tagname)
             self.cr()
 
     def block_quote(self, node, entering):

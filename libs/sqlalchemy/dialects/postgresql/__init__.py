@@ -89,7 +89,6 @@ from .types import TIMESTAMP
 from .types import TSQUERY
 from .types import TSVECTOR
 
-
 # Alias psycopg also as psycopg_async
 psycopg_async = type(
     "psycopg_async", (ModuleType,), {"dialect": psycopg.dialect_async}

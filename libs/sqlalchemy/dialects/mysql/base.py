@@ -1063,6 +1063,7 @@ output:
     )
 
 """  # noqa
+
 from __future__ import annotations
 
 from collections import defaultdict
@@ -2764,6 +2765,7 @@ class MySQLDialect(default.DefaultDialect):
     # i.e. first connect
     _backslash_escapes = True
     _server_ansiquotes = False
+    _casing = 0
 
     server_version_info: Tuple[int, ...]
     identifier_preparer: MySQLIdentifierPreparer
@@ -3186,9 +3188,9 @@ class MySQLDialect(default.DefaultDialect):
             self._is_mysql and self.server_version_info >= (8, 0, 1)
         )
 
-        self._needs_correct_for_88718_96365 = (
-            not self.is_mariadb and self.server_version_info >= (8,)
-        )
+        self._needs_correct_for_88718_96365 = self.server_version_info >= (
+            8,
+        ) and (self.server_version_info < (8, 0, 14) or self._casing == 2)
 
         self.delete_returning = (
             self.is_mariadb and self.server_version_info >= (10, 0, 5)
@@ -3253,7 +3255,7 @@ class MySQLDialect(default.DefaultDialect):
     def _is_mariadb_102(self) -> bool:
         return (
             self.is_mariadb
-            and self._mariadb_normalized_version_info  # type:ignore[operator]
+            and self._mariadb_normalized_version_info  # type: ignore[operator]
             > (
                 10,
                 2,

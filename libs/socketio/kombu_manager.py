@@ -114,14 +114,16 @@ class KombuManager(PubSubManager):  # pragma: no cover
                     self.publisher_connection)
                 producer_publish(self.json.dumps(data))
                 break
-            except (OSError, kombu.exceptions.KombuError):
+            except Exception as exc:
                 if retry:
-                    self._get_logger().error('Cannot publish to rabbitmq... '
-                                             'retrying')
+                    self._get_logger().error(
+                        'Cannot publish to rabbitmq... retrying',
+                        extra={"rabbitmq_exception": str(exc)})
                     retry = False
                 else:
                     self._get_logger().error(
-                        'Cannot publish to rabbitmq... giving up')
+                        'Cannot publish to rabbitmq... giving up',
+                        extra={"rabbitmq_exception": str(exc)})
                     break
 
     def _listen(self):
@@ -136,9 +138,10 @@ class KombuManager(PubSubManager):  # pragma: no cover
                             message.ack()
                             yield message.payload
                             retry_sleep = 1
-            except (OSError, kombu.exceptions.KombuError):
+            except Exception as exc:
                 self._get_logger().error(
-                    'Cannot receive from rabbitmq... '
-                    'retrying in {} secs'.format(retry_sleep))
+                    'Cannot receive from rabbotmq... retrying in '
+                    f'{retry_sleep} secs',
+                    extra={"rabbitmq_exception": str(exc)})
                 time.sleep(retry_sleep)
                 retry_sleep = min(retry_sleep * 2, 60)

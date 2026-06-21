@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 model = {
  ' de': 0,
  ' în': 1,

@@ -1,6 +1,6 @@
 import re
 from enum import Enum
-from typing import Optional, TextIO, Any, Dict, List, Union
+from typing import Optional, TextIO, Any, Union
 import xml.etree.ElementTree as ET
 
 from .base import FormatBase
@@ -42,11 +42,11 @@ class TTMLFormat(FormatBase):
             return make_time(**{metric: count})  # type: ignore[arg-type]
 
         # clock-time (not supported: frames, subframes)
-        m = re.fullmatch(r"(\d{2,}):(\d{2}):(\d{2}(?:\.\d+)?)", expr)
+        m = re.fullmatch(r"(((?P<h>\d+):)?(?P<m>\d{1,2}):)?(?P<s>\d{2}(?:\.\d+)?)", expr)
         if m is not None:
-            hours = int(m.group(1))
-            minutes = int(m.group(2))
-            seconds = int(m.group(3)) if m.group(3).isnumeric() else float(m.group(3))
+            hours = int(m.group("h")) if m.group("h") else 0
+            minutes = int(m.group("m")) if m.group("m") else 0
+            seconds = int(m.group("s")) if m.group("s").isnumeric() else float(m.group("s"))
             return make_time(h=hours, m=minutes, s=seconds)
 
         raise NotImplementedError(f"Unsupported time expression: {expr}")
@@ -60,10 +60,24 @@ class TTMLFormat(FormatBase):
         return None
 
     @classmethod
-    def from_file(cls, subs: "SSAFile", fp: TextIO, format_: str, **kwargs: Any) -> None:
+    def from_file(
+            cls,
+            subs: "SSAFile",
+            fp: TextIO,
+            format_: str,
+            ignore_par_time_offset: bool = False,
+            **kwargs: Any
+    ) -> None:
         """
         Rudimentary TTML parser. No formatting/styling apart from newlines is supported.
         Frame-based time expressions are not supported.
+
+        Keyword Args:
+            ignore_par_time_offset: Interpret all "begin" and "end" attributes of ``<p>`` elements
+                as absolute times, instead of relative to their parent (note that we only support "par"
+                time containers, for which this logic should be applied). This violates TTML1 spec
+                (https://www.w3.org/TR/2018/REC-ttml1-20181108/#timing-attribute-timeContainer),
+                but is used in Apple Music lyrics.
 
         """
         tree = ET.parse(fp)
@@ -73,61 +87,8 @@ class TTMLFormat(FormatBase):
         if body_elem is None:
             return
 
-        cls._parse_body(subs, body_elem)
-
-    @classmethod
-    def _parse_body(cls, subs: "SSAFile", body_elem: ET.Element) -> None:
-        begin_ms = cls.timestamp_to_ms(body_elem.attrib.get("begin", "0s"))
-        time_container = TimeContainer(body_elem.attrib.get("timeContainer", "par"))
-        if time_container != TimeContainer.PAR:
-            raise NotImplementedError("Only 'par' timeContainer is supported")
-
-        for div_elem in body_elem.iterfind(f"{TT_NS}div"):
-            cls._parse_div(subs, div_elem, begin_ms)
-
-    @classmethod
-    def _parse_div(cls, subs: "SSAFile", div_elem: ET.Element, parent_begin_ms: int) -> None:
-        begin_ms = cls.timestamp_to_ms(div_elem.attrib.get("begin", "0s")) + parent_begin_ms
-        time_container = TimeContainer(div_elem.attrib.get("timeContainer", "par"))
-        if time_container != TimeContainer.PAR:
-            raise NotImplementedError("Only 'par' timeContainer is supported")
-
-        for p_elem in div_elem.iterfind(f"{TT_NS}p"):
-            cls._parse_p(subs, p_elem, begin_ms)
-
-    @classmethod
-    def _parse_p(cls, subs: "SSAFile", p_elem: ET.Element, parent_begin_ms: int) -> None:
-        begin_ms = cls.timestamp_to_ms(p_elem.attrib.get("begin", "0s")) + parent_begin_ms
-        if "duration" in p_elem.attrib:
-            end_ms = begin_ms + cls.timestamp_to_ms(p_elem.attrib["duration"])
-        else:
-            end_ms = cls.timestamp_to_ms(p_elem.attrib["end"]) + parent_begin_ms
-        time_container = TimeContainer(p_elem.attrib.get("timeContainer", "par"))
-        if time_container != TimeContainer.PAR:
-            raise NotImplementedError("Only 'par' timeContainer is supported")
-
-        event = SSAEvent(start=begin_ms, end=end_ms)
-        subs.events.append(event)
-
-        for node in etree_iter_child_nodes(p_elem):
-            if isinstance(node, str):
-                event.text += node.strip().replace("\n", " ")
-            else:
-                if node.tag == f"{TT_NS}br":
-                    event.text += "\\N"
-                elif node.tag == f"{TT_NS}span":
-                    cls._parse_span(event, node)
-
-    @classmethod
-    def _parse_span(cls, event: SSAEvent, span_elem: ET.Element) -> None:
-        for node in etree_iter_child_nodes(span_elem):
-            if isinstance(node, str):
-                event.text += node.strip().replace("\n", " ")
-            else:
-                if node.tag == f"{TT_NS}br":
-                    event.text += "\\N"
-                elif node.tag == f"{TT_NS}span":
-                    cls._parse_span(event, node)
+        parser = _TTMLParser(subs, ignore_par_time_offset)
+        parser.parse_body(body_elem)
 
     @classmethod
     def to_file(cls, subs: "SSAFile", fp: TextIO, format_: str, **kwargs: Any) -> None:
@@ -189,7 +150,7 @@ class TTMLFormat(FormatBase):
             print(output_xml, file=fp)
 
     @classmethod
-    def ssastyle_to_tts(cls, style: SSAStyle, base_style: Optional[SSAStyle] = None) -> Dict[str, str]:
+    def ssastyle_to_tts(cls, style: SSAStyle, base_style: Optional[SSAStyle] = None) -> dict[str, str]:
         """
         Convert `SSAStyle` (or its difference to base style) into dictionary of XML attributes
 
@@ -225,10 +186,72 @@ class TTMLFormat(FormatBase):
     def _append_text(cls, elem: ET.Element, text: str) -> None:
         text = text.replace("\\h", " ")
         chunks = re.split(r"\\[Nn]", text)
-        nodes: List[Union[ET.Element, str]] = []
+        nodes: list[Union[ET.Element, str]] = []
         for i, chunk in enumerate(chunks):
             if i > 0:
                 nodes.append(ET.Element(f"{TT_NS}br"))
             nodes.append(chunk)
 
         etree_append_child_nodes(elem, nodes)
+
+
+class _TTMLParser:
+    def __init__(self, subs: "SSAFile", ignore_par_time_offset: bool = False) -> None:
+        self.subs = subs
+        self.ignore_par_time_offset = ignore_par_time_offset
+
+    def parse_body(self, body_elem: ET.Element) -> None:
+        begin_ms = TTMLFormat.timestamp_to_ms(body_elem.attrib.get("begin", "0s"))
+        time_container = TimeContainer(body_elem.attrib.get("timeContainer", "par"))
+        if time_container != TimeContainer.PAR:
+            raise NotImplementedError("Only 'par' timeContainer is supported")
+
+        for div_elem in body_elem.iterfind(f"{TT_NS}div"):
+            self.parse_div(div_elem, begin_ms)
+
+    def parse_div(self, div_elem: ET.Element, parent_begin_ms: int) -> None:
+        begin_ms = TTMLFormat.timestamp_to_ms(div_elem.attrib.get("begin", "0s")) + parent_begin_ms
+        time_container = TimeContainer(div_elem.attrib.get("timeContainer", "par"))
+        if time_container != TimeContainer.PAR:
+            raise NotImplementedError("Only 'par' timeContainer is supported")
+
+        for p_elem in div_elem.iterfind(f"{TT_NS}p"):
+            self.parse_p(p_elem, begin_ms)
+
+    def parse_p(self, p_elem: ET.Element, parent_begin_ms: int) -> None:
+        if self.ignore_par_time_offset:
+            parent_begin_ms = 0
+
+        begin_ms = TTMLFormat.timestamp_to_ms(p_elem.attrib.get("begin", "0s")) + parent_begin_ms
+        if "duration" in p_elem.attrib:
+            end_ms = begin_ms + TTMLFormat.timestamp_to_ms(p_elem.attrib["duration"])
+        else:
+            end_ms = TTMLFormat.timestamp_to_ms(p_elem.attrib["end"]) + parent_begin_ms
+        time_container = TimeContainer(p_elem.attrib.get("timeContainer", "par"))
+        if time_container != TimeContainer.PAR:
+            raise NotImplementedError("Only 'par' timeContainer is supported")
+
+        event = SSAEvent(start=begin_ms, end=end_ms)
+        self.subs.events.append(event)
+
+        for node in etree_iter_child_nodes(p_elem):
+            if isinstance(node, str):
+                event.text += re.sub(r"\s+", " ", node)
+            else:
+                if node.tag == f"{TT_NS}br":
+                    event.text += "\\N"
+                elif node.tag == f"{TT_NS}span":
+                    self.parse_span(event, node)
+
+        event.text = event.text.strip()
+        event.text = re.sub(r"\s*\\N\s*", r"\\N", event.text)
+
+    def parse_span(self, event: SSAEvent, span_elem: ET.Element) -> None:
+        for node in etree_iter_child_nodes(span_elem):
+            if isinstance(node, str):
+                event.text += re.sub(r"\s+", " ", node)
+            else:
+                if node.tag == f"{TT_NS}br":
+                    event.text += "\\N"
+                elif node.tag == f"{TT_NS}span":
+                    self.parse_span(event, node)

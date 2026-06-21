@@ -74,6 +74,10 @@ def update_series(job_id=None, wait_for_completion=False):
             # Get current series monitored status in DB
             series_monitored = get_series_monitored_table()
 
+        audio_profiles = get_profile_list()
+        tagsDict = get_tags()
+        language_profiles = get_language_profiles()
+
         trace(f"Starting sync for {series_count} shows")
 
         jobs_queue.update_job_progress(job_id=job_id, progress_max=series_count)
@@ -105,7 +109,9 @@ def update_series(job_id=None, wait_for_completion=False):
             current_shows_sonarr.append(show['id'])
 
             # Update series in DB
-            update_one_series(show['id'], action='updated')
+            update_one_series(show['id'], action='updated', sync_episodes_after_update=False,
+                              series_data=[show], audio_profiles=audio_profiles, tagsDict=tagsDict,
+                              language_profiles=language_profiles)
 
             # Update episodes in DB
             sync_episodes(series_id=show['id'])
@@ -127,7 +133,8 @@ def update_series(job_id=None, wait_for_completion=False):
     gc.collect()
 
 
-def update_one_series(series_id, action, is_signalr=False):
+def update_one_series(series_id, action, is_signalr=False, sync_episodes_after_update=True, series_data=None,
+                      audio_profiles=None, tagsDict=None, language_profiles=None):
     logging.debug(f'BAZARR syncing this specific series from Sonarr: {series_id}')
 
     # Check if there's a row in database for this series ID
@@ -152,59 +159,73 @@ def update_one_series(series_id, action, is_signalr=False):
     else:
         serie_default_profile = None
 
-    audio_profiles = get_profile_list()
-    tagsDict = get_tags()
-    language_profiles = get_language_profiles()
+    if audio_profiles is None:
+        audio_profiles = get_profile_list()
+    if tagsDict is None:
+        tagsDict = get_tags()
+    if language_profiles is None:
+        language_profiles = get_language_profiles()
 
-    try:
-        # Get series data from sonarr api
-        series_data = get_series_from_sonarr_api(apikey_sonarr=settings.sonarr.apikey, sonarr_series_id=int(series_id))
-    except Exception:
-        logging.exception(f'BAZARR cannot get series with ID {series_id} from Sonarr API.')
-        return
-    else:
-        if not series_data:
+    if series_data is None:
+        try:
+            # Get series data from sonarr api
+            series_data = get_series_from_sonarr_api(apikey_sonarr=settings.sonarr.apikey, sonarr_series_id=int(series_id))
+        except Exception:
+            logging.exception(f'BAZARR cannot get series with ID {series_id} from Sonarr API.')
             return
-        else:
-            if action == 'updated' and existing_series:
-                # Update existing series in DB
-                series = seriesParser(series_data[0], action='update', tags_dict=tagsDict,
-                                      language_profiles=language_profiles,
-                                      serie_default_profile=serie_default_profile,
-                                      audio_profiles=audio_profiles)
-                try:
-                    series['updated_at_timestamp'] = datetime.now()
-                    database.execute(
-                        update(TableShows)
-                        .values(series)
-                        .where(TableShows.sonarrSeriesId == series['sonarrSeriesId']))
-                except IntegrityError as e:
-                    logging.error(f"BAZARR cannot update series {series['path']} because of {e}")
-                else:
-                    if not is_signalr:
-                        # Sonarr emit two SignalR events when episodes must be refreshed.
-                        # The one that gets there doesn't include the episodeChanged flag.
-                        # The episodes are synced only when this function is called from the
-                        # frontend sync button in the episodes' page.
-                        sync_episodes(series_id=int(series_id))
-                    event_stream(type='series', action='update', payload=int(series_id))
-                    logging.debug(
-                        f'BAZARR updated this series into the database:{path_mappings.path_replace(series["path"])}')
-            elif action == 'updated' and not existing_series:
-                # Insert new series in DB
-                series = seriesParser(series_data[0], action='insert', tags_dict=tagsDict,
-                                      language_profiles=language_profiles,
-                                      serie_default_profile=serie_default_profile,
-                                      audio_profiles=audio_profiles)
 
-                try:
-                    series['created_at_timestamp'] = datetime.now()
-                    database.execute(
-                        insert(TableShows)
-                        .values(series))
-                except IntegrityError as e:
-                    logging.error(f"BAZARR cannot insert series {series['path']} because of {e}")
-                else:
-                    event_stream(type='series', action='update', payload=int(series_id))
-                    logging.debug(
-                        f'BAZARR inserted this series into the database:{path_mappings.path_replace(series["path"])}')
+    if not series_data:
+        return
+
+    if action == 'updated' and existing_series:
+        # Update existing series in DB
+        series = seriesParser(series_data[0], action='update', tags_dict=tagsDict,
+                              language_profiles=language_profiles,
+                              serie_default_profile=serie_default_profile,
+                              audio_profiles=audio_profiles)
+        existing_series_model = existing_series[0]
+        existing_series_values = {
+            column.name: getattr(existing_series_model, column.name)
+            for column in existing_series_model.__table__.columns
+        }
+        if series.items() <= existing_series_values.items():
+            if sync_episodes_after_update and not is_signalr:
+                sync_episodes(series_id=int(series_id))
+            return
+
+        try:
+            series['updated_at_timestamp'] = datetime.now()
+            database.execute(
+                update(TableShows)
+                .values(series)
+                .where(TableShows.sonarrSeriesId == series['sonarrSeriesId']))
+        except IntegrityError as e:
+            logging.error(f"BAZARR cannot update series {series['path']} because of {e}")
+        else:
+            if sync_episodes_after_update and not is_signalr:
+                # Sonarr emit two SignalR events when episodes must be refreshed.
+                # The one that gets there doesn't include the episodeChanged flag.
+                # The episodes are synced only when this function is called from the
+                # frontend sync button in the episodes' page.
+                sync_episodes(series_id=int(series_id))
+            event_stream(type='series', action='update', payload=int(series_id))
+            logging.debug(
+                f'BAZARR updated this series into the database:{path_mappings.path_replace(series["path"])}')
+    elif action == 'updated' and not existing_series:
+        # Insert new series in DB
+        series = seriesParser(series_data[0], action='insert', tags_dict=tagsDict,
+                              language_profiles=language_profiles,
+                              serie_default_profile=serie_default_profile,
+                              audio_profiles=audio_profiles)
+
+        try:
+            series['created_at_timestamp'] = datetime.now()
+            database.execute(
+                insert(TableShows)
+                .values(series))
+        except IntegrityError as e:
+            logging.error(f"BAZARR cannot insert series {series['path']} because of {e}")
+        else:
+            event_stream(type='series', action='update', payload=int(series_id))
+            logging.debug(
+                f'BAZARR inserted this series into the database:{path_mappings.path_replace(series["path"])}')

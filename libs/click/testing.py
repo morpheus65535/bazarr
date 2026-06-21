@@ -4,6 +4,7 @@ import collections.abc as cabc
 import contextlib
 import io
 import os
+import pdb
 import shlex
 import sys
 import tempfile
@@ -20,6 +21,8 @@ if t.TYPE_CHECKING:
     from _typeshed import ReadableBuffer
 
     from .core import Command
+
+CaptureMode = t.Literal["sys", "fd"]
 
 
 class EchoingStdin:
@@ -66,6 +69,39 @@ def _pause_echo(stream: EchoingStdin | None) -> cabc.Iterator[None]:
         stream._paused = False
 
 
+class _FDCapture:
+    """Redirect a file descriptor to a temporary file for capture.
+
+    Saves the current target of *targetfd* via :func:`os.dup`, then
+    redirects it to a temporary file via :func:`os.dup2`. On
+    :meth:`stop`, restores the original ``fd`` and returns the captured
+    bytes. Inspired by Pytest's ``FDCapture``.
+
+    .. versionadded:: 8.4.0
+    """
+
+    def __init__(self, targetfd: int) -> None:
+        self._targetfd = targetfd
+        self.saved_fd: int = -1
+        self._tmpfile: t.BinaryIO | None = None
+
+    def start(self) -> None:
+        self.saved_fd = os.dup(self._targetfd)
+        self._tmpfile = tempfile.TemporaryFile(buffering=0)
+        os.dup2(self._tmpfile.fileno(), self._targetfd)
+
+    def stop(self) -> bytes:
+        assert self._tmpfile is not None, "_FDCapture.start() was not called"
+        os.dup2(self.saved_fd, self._targetfd)
+        os.close(self.saved_fd)
+        self.saved_fd = -1
+        self._tmpfile.seek(0)
+        data = self._tmpfile.read()
+        self._tmpfile.close()
+        self._tmpfile = None
+        return data
+
+
 class BytesIOCopy(io.BytesIO):
     """Patch ``io.BytesIO`` to let the written stream be copied to another.
 
@@ -98,26 +134,48 @@ class StreamMixer:
         self.stdout: io.BytesIO = BytesIOCopy(copy_to=self.output)
         self.stderr: io.BytesIO = BytesIOCopy(copy_to=self.output)
 
-    def __del__(self) -> None:
-        """
-        Guarantee that embedded file-like objects are closed in a
-        predictable order, protecting against races between
-        self.output being closed and other streams being flushed on close
-
-        .. versionadded:: 8.2.2
-        """
-        self.stderr.close()
-        self.stdout.close()
-        self.output.close()
-
 
 class _NamedTextIOWrapper(io.TextIOWrapper):
+    """A :class:`~io.TextIOWrapper` with custom ``name`` and ``mode``
+    that does not close its underlying buffer.
+
+    When ``CliRunner`` runs in ``fd`` mode, ``_original_fd`` is patched to
+    point at the saved (pre-redirection) ``fd``, so C-level consumers that call
+    :meth:`fileno` (like ``faulthandler`` or ``subprocess``) keep working. In
+    the default ``sys`` mode ``_original_fd`` stays at ``-1`` and
+    :meth:`fileno` raises :exc:`io.UnsupportedOperation`, matching the
+    pre-``8.3.3`` behavior.
+    """
+
     def __init__(
-        self, buffer: t.BinaryIO, name: str, mode: str, **kwargs: t.Any
+        self,
+        buffer: t.BinaryIO,
+        name: str,
+        mode: str,
+        **kwargs: t.Any,
     ) -> None:
         super().__init__(buffer, **kwargs)
         self._name = name
         self._mode = mode
+        self._original_fd: int = -1
+
+    def close(self) -> None:
+        """The buffer this object contains belongs to some other object,
+        so prevent the default ``__del__`` implementation from closing
+        that buffer.
+
+        .. versionadded:: 8.3.2
+        """
+
+    def fileno(self) -> int:
+        """Return the file descriptor of the saved original stream when
+        ``CliRunner`` runs in ``fd`` mode. Otherwise delegate to
+        :class:`~io.TextIOWrapper`, which raises
+        :exc:`io.UnsupportedOperation` for a ``BytesIO``-backed buffer.
+        """
+        if self._original_fd >= 0:
+            return self._original_fd
+        return super().fileno()
 
     @property
     def name(self) -> str:
@@ -240,6 +298,21 @@ class CliRunner:
                        will automatically echo the input.
     :param catch_exceptions: Whether to catch any exceptions other than
                              ``SystemExit`` when running :meth:`~CliRunner.invoke`.
+    :param capture: Selects the output capture strategy. ``sys`` (default)
+        captures Python-level writes only and leaves
+        :meth:`sys.stdout.fileno` raising :exc:`io.UnsupportedOperation`, so
+        user code that calls :func:`os.dup2` on ``sys.stdout.fileno()`` cannot
+        clobber the host runner's stdout. ``fd`` redirects file descriptors
+        ``1`` and ``2`` via :func:`os.dup2` to a temporary file, also catching
+        output from stale stream references, C extensions, and subprocesses.
+        ``fd`` is not supported on Windows.
+
+    .. versionchanged:: 8.4.0
+        Added the ``capture`` parameter. The default ``sys`` mode no longer
+        exposes the original fd through :meth:`fileno`, reverting the change
+        introduced in ``8.3.3`` that broke Pytest's ``fd``-level capture
+        teardown. Use ``capture="fd"`` to restore that behavior with proper
+        isolation. :issue:`3384`
 
     .. versionchanged:: 8.2
         Added the ``catch_exceptions`` parameter.
@@ -254,11 +327,21 @@ class CliRunner:
         env: cabc.Mapping[str, str | None] | None = None,
         echo_stdin: bool = False,
         catch_exceptions: bool = True,
+        capture: CaptureMode = "sys",
     ) -> None:
+        if capture not in {"sys", "fd"}:
+            raise ValueError(
+                f"capture={capture!r} is not valid. Choose from 'sys' or 'fd'."
+            )
+        if capture == "fd" and sys.platform == "win32":
+            raise ValueError(
+                f"capture={capture!r} is not supported on Windows. Use 'sys'."
+            )
         self.charset = charset
         self.env: cabc.Mapping[str, str | None] = env or {}
         self.echo_stdin = echo_stdin
         self.catch_exceptions = catch_exceptions
+        self.capture: CaptureMode = capture
 
     def get_default_prog_name(self, cli: Command) -> str:
         """Given a command object it will return the default program name
@@ -338,7 +421,10 @@ class CliRunner:
             text_input._CHUNK_SIZE = 1  # type: ignore
 
         sys.stdout = _NamedTextIOWrapper(
-            stream_mixer.stdout, encoding=self.charset, name="<stdout>", mode="w"
+            stream_mixer.stdout,
+            encoding=self.charset,
+            name="<stdout>",
+            mode="w",
         )
 
         sys.stderr = _NamedTextIOWrapper(
@@ -393,11 +479,51 @@ class CliRunner:
         old__getchar_func = termui._getchar
         old_should_strip_ansi = utils.should_strip_ansi  # type: ignore
         old__compat_should_strip_ansi = _compat.should_strip_ansi
+        old_pdb_init = pdb.Pdb.__init__
         termui.visible_prompt_func = visible_input
         termui.hidden_prompt_func = hidden_input
         termui._getchar = _getchar
         utils.should_strip_ansi = should_strip_ansi  # type: ignore
         _compat.should_strip_ansi = should_strip_ansi
+
+        def _patched_pdb_init(
+            self: pdb.Pdb,
+            completekey: str = "tab",
+            stdin: t.IO[str] | None = None,
+            stdout: t.IO[str] | None = None,
+            **kwargs: t.Any,
+        ) -> None:
+            """Default ``pdb.Pdb`` to real terminal streams during
+            ``CliRunner`` isolation.
+
+            Without this patch, ``pdb.Pdb.__init__`` inherits from
+            ``cmd.Cmd`` which falls back to ``sys.stdin``/``sys.stdout``
+            when no explicit streams are provided. During isolation
+            those are ``BytesIO``-backed wrappers, so the debugger
+            reads from an empty buffer and writes to captured output,
+            making interactive debugging impossible.
+
+            By defaulting to ``sys.__stdin__``/``sys.__stdout__`` (the
+            original terminal streams Python preserves regardless of
+            redirection), debuggers can interact with the user while
+            ``click.echo`` output is still captured normally.
+
+            This covers ``pdb.set_trace()``, ``breakpoint()``,
+            ``pdb.post_mortem()``, and debuggers that subclass
+            ``pdb.Pdb`` (ipdb, pdbpp). Explicit ``stdin``/``stdout``
+            arguments are honored and not overridden. Debuggers that
+            do not subclass ``pdb.Pdb`` (pudb, debugpy) are not
+            covered.
+            """
+            if stdin is None:
+                stdin = sys.__stdin__
+            if stdout is None:
+                stdout = sys.__stdout__
+            old_pdb_init(
+                self, completekey=completekey, stdin=stdin, stdout=stdout, **kwargs
+            )
+
+        pdb.Pdb.__init__ = _patched_pdb_init  # type: ignore[assignment]
 
         old_env = {}
         try:
@@ -429,6 +555,7 @@ class CliRunner:
             utils.should_strip_ansi = old_should_strip_ansi  # type: ignore
             _compat.should_strip_ansi = old__compat_should_strip_ansi
             formatting.FORCED_WIDTH = old_forced_width
+            pdb.Pdb.__init__ = old_pdb_init  # type: ignore[method-assign]
 
     def invoke(
         self,
@@ -487,7 +614,27 @@ class CliRunner:
         if catch_exceptions is None:
             catch_exceptions = self.catch_exceptions
 
+        # Set up fd capture before isolation replaces sys.stdout and sys.stderr.
+        cap_out: _FDCapture | None = None
+        cap_err: _FDCapture | None = None
+
+        if self.capture == "fd":
+            cap_out = _FDCapture(1)
+            cap_err = _FDCapture(2)
+            try:
+                cap_out.start()
+                cap_err.start()
+            except OSError:
+                cap_out = cap_err = None
+
         with self.isolation(input=input, env=env, color=color) as outstreams:
+            # Point the captured streams' fileno() at the saved (original)
+            # fd so that C-level consumers like faulthandler keep working
+            # while fd 1/2 are redirected to the capture tmpfile.
+            if cap_out is not None and cap_err is not None:
+                sys.stdout._original_fd = cap_out.saved_fd  # type: ignore[union-attr]
+                sys.stderr._original_fd = cap_err.saved_fd  # type: ignore[union-attr]
+
             return_value = None
             exception: BaseException | None = None
             exit_code = 0
@@ -528,6 +675,18 @@ class CliRunner:
             finally:
                 sys.stdout.flush()
                 sys.stderr.flush()
+
+                # Stop fd capture and merge the captured bytes into
+                # the stdout/stderr BytesIO streams. BytesIOCopy mirrors
+                # those writes into outstreams[2] automatically.
+                if cap_out is not None and cap_err is not None:
+                    fd_out = cap_out.stop()
+                    fd_err = cap_err.stop()
+                    if fd_out:
+                        outstreams[0].write(fd_out)
+                    if fd_err:
+                        outstreams[1].write(fd_err)
+
                 stdout = outstreams[0].getvalue()
                 stderr = outstreams[1].getvalue()
                 output = outstreams[2].getvalue()

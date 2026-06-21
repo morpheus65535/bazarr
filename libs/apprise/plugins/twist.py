@@ -254,15 +254,17 @@ class NotifyTwist(NotifyBase):
                 ),
                 user=self.quote(self.user, safe=""),
                 host=self.host,
-                targets="/".join([
-                    NotifyTwist.quote(x, safe="")
-                    for x in chain(
-                        # Channels are prefixed with a pound/hashtag symbol
-                        [f"#{x}" for x in self.channels],
-                        # Channel IDs
-                        self.channel_ids,
-                    )
-                ]),
+                targets="/".join(
+                    [
+                        NotifyTwist.quote(x, safe="")
+                        for x in chain(
+                            # Channels are prefixed with a pound/hashtag symbol
+                            [f"#{x}" for x in self.channels],
+                            # Channel IDs
+                            self.channel_ids,
+                        )
+                    ]
+                ),
                 params=NotifyTwist.urlencode(params),
             )
         )
@@ -659,6 +661,7 @@ class NotifyTwist(NotifyBase):
                 headers=headers,
                 verify=self.verify_certificate,
                 timeout=self.request_timeout,
+                allow_redirects=self.redirects,
             )
 
             # Get our JSON content if it's possible
@@ -695,13 +698,13 @@ class NotifyTwist(NotifyBase):
                 and content.get("error_code") in (120, 200)
                 and self.login()
             ):
-
                 r = fn(
                     api_url,
                     data=payload,
                     headers=headers,
                     verify=self.verify_certificate,
                     timeout=self.request_timeout,
+                    allow_redirects=self.redirects,
                 )
 
                 # Get our JSON content if it's possible
@@ -730,7 +733,8 @@ class NotifyTwist(NotifyBase):
                 )
 
                 self.logger.debug(
-                    "Response Details:\r\n%r", (r.content or b"")[:2000])
+                    "Response Details:\r\n%r", (r.content or b"")[:2000]
+                )
 
                 # Mark our failure
                 return (False, content)

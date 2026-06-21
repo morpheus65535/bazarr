@@ -463,6 +463,15 @@ def _transform_attrs(
 
     attrs = base_attrs + own_attrs
 
+    # Resolve default field alias before executing field_transformer, so that
+    # the transformer receives fully populated Attribute objects with usable
+    # alias values.
+    for a in attrs:
+        if not a.alias:
+            # Evolve is very slow, so we hold our nose and do it dirty.
+            _OBJ_SETATTR.__get__(a)("alias", _default_init_alias_for(a.name))
+            _OBJ_SETATTR.__get__(a)("alias_is_default", True)
+
     if field_transformer is not None:
         attrs = tuple(field_transformer(cls, attrs))
 
@@ -480,13 +489,12 @@ def _transform_attrs(
         if had_default is False and a.default is not NOTHING:
             had_default = True
 
-    # Resolve default field alias after executing field_transformer.
-    # This allows field_transformer to differentiate between explicit vs
-    # default aliases and supply their own defaults.
+    # Resolve default field alias for any new attributes that the
+    # field_transformer may have added without setting an alias.
     for a in attrs:
         if not a.alias:
-            # Evolve is very slow, so we hold our nose and do it dirty.
             _OBJ_SETATTR.__get__(a)("alias", _default_init_alias_for(a.name))
+            _OBJ_SETATTR.__get__(a)("alias_is_default", True)
 
     # Create AttrsClass *after* applying the field_transformer since it may
     # add or remove attributes!
@@ -569,7 +577,7 @@ def _frozen_delattrs(self, name):
     """
     Attached to frozen classes as __delattr__.
     """
-    if isinstance(self, BaseException) and name in ("__notes__",):
+    if isinstance(self, BaseException) and name == "__notes__":
         BaseException.__delattr__(self, name)
         return
 
@@ -1096,9 +1104,7 @@ class _ClassBuilder:
         return self
 
     def add_replace(self):
-        self._cls_dict["__replace__"] = self._add_method_dunders(
-            lambda self, **changes: evolve(self, **changes)
-        )
+        self._cls_dict["__replace__"] = self._add_method_dunders(evolve)
         return self
 
     def add_match_args(self):
@@ -1884,16 +1890,16 @@ def _add_repr(cls, ns=None, attrs=None):
 
 def fields(cls):
     """
-    Return the tuple of *attrs* attributes for a class.
+    Return the tuple of *attrs* attributes for a class or instance.
 
     The tuple also allows accessing the fields by their names (see below for
     examples).
 
     Args:
-        cls (type): Class to introspect.
+        cls (type): Class or instance to introspect.
 
     Raises:
-        TypeError: If *cls* is not a class.
+        TypeError: If *cls* is neither a class nor an *attrs* instance.
 
         attrs.exceptions.NotAnAttrsClassError:
             If *cls* is not an *attrs* class.
@@ -1904,12 +1910,17 @@ def fields(cls):
     .. versionchanged:: 16.2.0 Returned tuple allows accessing the fields
        by name.
     .. versionchanged:: 23.1.0 Add support for generic classes.
+    .. versionchanged:: 26.1.0 Add support for instances.
     """
     generic_base = get_generic_base(cls)
 
     if generic_base is None and not isinstance(cls, type):
-        msg = "Passed object must be a class."
-        raise TypeError(msg)
+        type_ = type(cls)
+        if getattr(type_, "__attrs_attrs__", None) is None:
+            msg = "Passed object must be a class or attrs instance."
+            raise TypeError(msg)
+
+        return fields(type_)
 
     attrs = getattr(cls, "__attrs_attrs__", None)
 
@@ -2016,7 +2027,7 @@ def _make_init_script(
         attr_dict[a.name] = a
 
         if a.on_setattr is not None:
-            if frozen is True:
+            if frozen is True and a.on_setattr is not setters.NO_OP:
                 msg = "Frozen classes can't use on_setattr."
                 raise ValueError(msg)
 
@@ -2429,6 +2440,8 @@ class Attribute:
     - ``name`` (`str`): The name of the attribute.
     - ``alias`` (`str`): The __init__ parameter name of the attribute, after
       any explicit overrides and default private-attribute-name handling.
+    - ``alias_is_default`` (`bool`): Whether the ``alias`` was automatically
+      generated (``True``) or explicitly provided by the user (``False``).
     - ``inherited`` (`bool`): Whether or not that attribute has been inherited
       from a base class.
     - ``eq_key`` and ``order_key`` (`typing.Callable` or `None`): The
@@ -2454,6 +2467,7 @@ class Attribute:
         equality checks and hashing anymore.
     .. versionadded:: 21.1.0 *eq_key* and *order_key*
     .. versionadded:: 22.2.0 *alias*
+    .. versionadded:: 26.1.0 *alias_is_default*
 
     For the full version history of the fields, see `attr.ib`.
     """
@@ -2478,6 +2492,7 @@ class Attribute:
         "inherited",
         "on_setattr",
         "alias",
+        "alias_is_default",
     )
 
     def __init__(
@@ -2500,6 +2515,7 @@ class Attribute:
         order_key=None,
         on_setattr=None,
         alias=None,
+        alias_is_default=None,
     ):
         eq, eq_key, order, order_key = _determine_attrib_eq_order(
             cmp, eq_key or eq, order_key or order, True
@@ -2534,6 +2550,10 @@ class Attribute:
         bound_setattr("inherited", inherited)
         bound_setattr("on_setattr", on_setattr)
         bound_setattr("alias", alias)
+        bound_setattr(
+            "alias_is_default",
+            alias is None if alias_is_default is None else alias_is_default,
+        )
 
     def __setattr__(self, name, value):
         raise FrozenInstanceError
@@ -2569,6 +2589,7 @@ class Attribute:
             ca.order_key,
             ca.on_setattr,
             ca.alias,
+            ca.alias is None,
         )
 
     # Don't use attrs.evolve since fields(Attribute) doesn't work
@@ -2587,6 +2608,20 @@ class Attribute:
 
         new._setattrs(changes.items())
 
+        if "alias" in changes and "alias_is_default" not in changes:
+            # Explicit alias provided -- no longer the default.
+            _OBJ_SETATTR.__get__(new)("alias_is_default", False)
+        elif (
+            "name" in changes
+            and "alias" not in changes
+            # Don't auto-generate alias if the user picked picked the old one.
+            and self.alias_is_default
+        ):
+            # Name changed, alias was auto-generated -- update it.
+            _OBJ_SETATTR.__get__(new)(
+                "alias", _default_init_alias_for(new.name)
+            )
+
         return new
 
     # Don't use _add_pickle since fields(Attribute) doesn't work
@@ -2603,6 +2638,17 @@ class Attribute:
         """
         Play nice with pickle.
         """
+        if len(state) < len(self.__slots__):
+            # Pre-26.1.0 pickle without alias_is_default -- infer it
+            # heuristically.
+            state_dict = dict(zip(self.__slots__, state))
+            alias_is_default = state_dict.get(
+                "alias"
+            ) is None or state_dict.get("alias") == _default_init_alias_for(
+                state_dict["name"]
+            )
+            state = (*state, alias_is_default)
+
         self._setattrs(zip(self.__slots__, state))
 
     def _setattrs(self, name_values_pairs):
@@ -2626,7 +2672,7 @@ _a = [
         name=name,
         default=NOTHING,
         validator=None,
-        repr=True,
+        repr=(name != "alias_is_default"),
         cmp=None,
         eq=True,
         order=False,
@@ -3087,9 +3133,7 @@ class Converter:
                 value, field
             )
         else:
-            self.__call__ = lambda value, instance, field: self.converter(
-                value, instance, field
-            )
+            self.__call__ = self.converter
 
         rt = ex.get_return_type()
         if rt is not None:

@@ -273,10 +273,10 @@ def episode_manually_download_specific_subtitle(sonarr_series_id, sonarr_episode
         if isinstance(result, str):
             return result, 500
         elif result:
+            store_subtitles(sonarr_episode_id)
             history_log(2, sonarr_series_id, sonarr_episode_id, result)
             if not settings.general.dont_notify_manual_actions:
                 send_notifications(sonarr_series_id, sonarr_episode_id, result.message)
-            store_subtitles(result.path, episodePath)
             return '', 204
     finally:
         jobs_queue.update_job_name(job_id=job_id, new_job_name=f"Manually downloaded Subtitles for {title} - "
@@ -325,10 +325,10 @@ def movie_manually_download_specific_subtitle(radarr_id, hi, forced, use_origina
         if isinstance(result, str):
             return result, 500
         elif result:
+            store_subtitles_movie(radarr_id)
             history_log_movie(2, radarr_id, result)
             if not settings.general.dont_notify_manual_actions:
                 send_notifications_movie(radarr_id, result.message)
-            store_subtitles_movie(result.path, moviePath)
             return '', 204
     finally:
         jobs_queue.update_job_name(job_id=job_id, new_job_name=f"Manually downloaded Subtitles for {title} "

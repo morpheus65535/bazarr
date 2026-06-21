@@ -230,7 +230,7 @@ class SafeConstructor(BaseConstructor):
 	bool_values={'yes':_C,'no':_B,'y':_C,'n':_B,'true':_C,'false':_B,'on':_C,'off':_B}
 	def construct_yaml_bool(self,node):value=self.construct_scalar(node);return self.bool_values[value.lower()]
 	def construct_yaml_int(self,node):
-		value_s=to_str(self.construct_scalar(node));value_s=value_s.replace(_D,'');sign=+1
+		value_s=to_str(self.construct_scalar(node));value_s=value_s.replace(_D,'');sign=1
 		if value_s[0]=='-':sign=-1
 		if value_s[0]in _L:value_s=value_s[1:]
 		if value_s==_F:return 0
@@ -247,7 +247,7 @@ class SafeConstructor(BaseConstructor):
 	while inf_value!=inf_value*inf_value:inf_value*=inf_value
 	nan_value=-inf_value/inf_value
 	def construct_yaml_float(self,node):
-		value_so=to_str(self.construct_scalar(node));value_s=value_so.replace(_D,'').lower();sign=+1
+		value_so=to_str(self.construct_scalar(node));value_s=value_so.replace(_D,'').lower();sign=1
 		if value_s[0]=='-':sign=-1
 		if value_s[0]in _L:value_s=value_s[1:]
 		if value_s=='.inf':return sign*self.inf_value
@@ -459,7 +459,7 @@ class RoundTripConstructor(SafeConstructor):
 		try:sx=value_su.rstrip(_D);underscore=[len(sx)-sx.rindex(_D)-1,_B,_B]
 		except ValueError:underscore=_A
 		except IndexError:underscore=_A
-		value_s=value_su.replace(_D,'');sign=+1
+		value_s=value_su.replace(_D,'');sign=1
 		if value_s[0]=='-':sign=-1
 		if value_s[0]in _L:value_s=value_s[1:]
 		if value_s==_F:return 0
@@ -497,7 +497,7 @@ class RoundTripConstructor(SafeConstructor):
 				if v[idx]==_F:lead0+=1
 				idx+=1
 			return lead0
-		m_sign=_B;value_so=to_str(self.construct_scalar(node));value_s=value_so.replace(_D,'').lower();sign=+1
+		m_sign=_B;value_so=to_str(self.construct_scalar(node));value_s=value_so.replace(_D,'').lower();sign=1
 		if value_s[0]=='-':sign=-1
 		if value_s[0]in _L:m_sign=value_s[0];value_s=value_s[1:]
 		if value_s=='.inf':return sign*self.inf_value

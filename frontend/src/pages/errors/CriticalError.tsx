@@ -18,7 +18,7 @@ const CriticalError: FunctionComponent<Props> = ({ message }) => (
       closeButtonLabel="Reload"
       onClose={Reload}
     >
-      <Text color="red">{message}</Text>
+      <Text c="red">{message}</Text>
     </Alert>
   </Container>
 );

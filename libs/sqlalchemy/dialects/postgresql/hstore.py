@@ -19,7 +19,6 @@ from .operators import HAS_KEY
 from ... import types as sqltypes
 from ...sql import functions as sqlfunc
 
-
 __all__ = ("HSTORE", "hstore")
 
 
@@ -303,12 +302,12 @@ class _HStoreMatrixFunction(sqlfunc.GenericFunction):
 HSTORE_PAIR_RE = re.compile(
     r"""
 (
-  "(?P<key> (\\ . | [^"])* )"       # Quoted key
+  "(?P<key> (\\ . | [^"\\])* )"     # Quoted key
 )
 [ ]* => [ ]*    # Pair operator, optional adjoining whitespace
 (
     (?P<value_null> NULL )          # NULL value
-  | "(?P<value> (\\ . | [^"])* )"   # Quoted value
+  | "(?P<value> (\\ . | [^"\\])* )" # Quoted value
 )
 """,
     re.VERBOSE,

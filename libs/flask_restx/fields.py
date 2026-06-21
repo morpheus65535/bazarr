@@ -134,9 +134,6 @@ class Raw(object):
     :param bool readonly: Is the field read only ? (for documentation purpose)
     :param example: An optional data example (for documentation purpose)
     :param callable mask: An optional mask function to be applied to output
-    :param bool nullable: Whether the field accepts null values in input
-        validation. When True, the generated JSON Schema will allow null
-        values for this field during request payload validation.
     """
 
     #: The JSON/Swagger schema type
@@ -156,7 +153,6 @@ class Raw(object):
         readonly=None,
         example=None,
         mask=None,
-        nullable=None,
         **kwargs
     ):
         self.attribute = attribute
@@ -167,7 +163,6 @@ class Raw(object):
         self.readonly = readonly
         self.example = example if example is not None else self.__schema_example__
         self.mask = mask
-        self.nullable = nullable
 
     def format(self, value):
         """
@@ -289,19 +284,6 @@ class Nested(Raw):
             schema["allOf"] = allOf
         else:
             schema["$ref"] = ref
-
-        # If nullable is True, wrap using anyOf to permit nulls for input validation
-        if self.nullable:
-            # Remove structural keys that conflict with anyOf composition
-            for key in ("$ref", "allOf", "type", "items"):
-                schema.pop(key, None)
-            # Create anyOf with the original schema and null type
-            anyOf = [{"$ref": ref}]
-            if self.as_list:
-                anyOf = [{"type": "array", "items": {"$ref": ref}}]
-            anyOf.append({"type": "null"})
-            schema["anyOf"] = anyOf
-
         return schema
 
     def clone(self, mask=None):
@@ -351,11 +333,9 @@ class List(Raw):
         return [
             self.container.output(
                 idx,
-                (
-                    val
-                    if (isinstance(val, dict) or is_attr(val)) and not is_nested
-                    else value
-                ),
+                val
+                if (isinstance(val, dict) or is_attr(val)) and not is_nested
+                else value,
             )
             for idx, val in enumerate(value)
         ]

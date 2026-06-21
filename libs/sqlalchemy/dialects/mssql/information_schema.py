@@ -20,7 +20,6 @@ from ...types import String
 from ...types import TypeDecorator
 from ...types import Unicode
 
-
 ischema = MetaData()
 
 

@@ -42,6 +42,7 @@ Pass through exact pyodbc connection string::
     connection_uri = "mysql+pyodbc:///?odbc_connect=%s" % params
 
 """  # noqa
+
 from __future__ import annotations
 
 import datetime

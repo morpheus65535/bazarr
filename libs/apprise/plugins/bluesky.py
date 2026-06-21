@@ -180,7 +180,6 @@ class NotifyBlueSky(NotifyBase):
             # We need to upload our payload first so that we can source it
             # in remaining messages
             for no, attachment in enumerate(attach, start=1):
-
                 # Perform some simple error checking
                 if not attachment:
                     # We could not access the attachment
@@ -261,10 +260,12 @@ class NotifyBlueSky(NotifyBase):
                     payload_["record"]["text"] = f"{no:02d}/{len(blobs):02d}"
 
                 payload_["record"]["embed"] = {
-                    "images": [{
-                        "image": blob[0],
-                        "alt": blob[1],
-                    }],
+                    "images": [
+                        {
+                            "image": blob[0],
+                            "alt": blob[1],
+                        }
+                    ],
                     "$type": "app.bsky.embed.images",
                 }
                 payloads.append(payload_)
@@ -567,6 +568,7 @@ class NotifyBlueSky(NotifyBase):
                 headers=headers,
                 verify=self.verify_certificate,
                 timeout=self.request_timeout,
+                allow_redirects=self.redirects,
             )
 
             # Get our JSON content if it's possible
@@ -611,7 +613,8 @@ class NotifyBlueSky(NotifyBase):
                 )
 
                 self.logger.debug(
-                    "Response Details:\r\n%r", (r.content or b"")[:2000])
+                    "Response Details:\r\n%r", (r.content or b"")[:2000]
+                )
 
                 # Mark our failure
                 return (False, content)

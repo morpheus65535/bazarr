@@ -78,7 +78,7 @@ def translate_subtitles_file(video_path, source_srt_file, from_lang, to_lang, fo
         logging.debug(f'BAZARR saved translated subtitles to {dest_srt_file}')
         from api.subtitles.subtitles import postprocess_subtitles
         # Call postprocess_subtitles after translation
-        postprocess_subtitles(dest_srt_file, video_path, media_type, metadata, sonarr_episode_id if media_type == 'episode' else radarr_id)
+        postprocess_subtitles(dest_srt_file, media_type, metadata, sonarr_episode_id if media_type == 'episode' else radarr_id)
         return result
 
     except Exception as e:

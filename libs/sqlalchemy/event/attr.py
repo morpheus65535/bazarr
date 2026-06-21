@@ -28,6 +28,7 @@ as well as support for subclass propagation (e.g. events assigned to
 ``Pool`` vs. ``QueuePool``) are all implemented here.
 
 """
+
 from __future__ import annotations
 
 import collections

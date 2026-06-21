@@ -22,6 +22,15 @@ from stevedore.tests import test_extension
 from stevedore.tests import utils
 
 
+class Base: ...
+
+
+class Foo(Base): ...
+
+
+class Bar(Base): ...
+
+
 class TestCallback(utils.TestCase):
     def test_detect_plugins(self):
         em: driver.DriverManager[Any]
@@ -79,7 +88,7 @@ class TestCallback(utils.TestCase):
                 importlib.metadata.EntryPoint(
                     'backend', 'pkg1:driver', 'backend'
                 ),
-                lambda x: None,
+                Foo,
                 None,
             ),
             extension.Extension(
@@ -87,7 +96,7 @@ class TestCallback(utils.TestCase):
                 importlib.metadata.EntryPoint(
                     'backend', 'pkg2:driver', 'backend'
                 ),
-                lambda x: None,
+                Bar,
                 None,
             ),
         ]

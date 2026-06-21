@@ -25,7 +25,7 @@ type SelectItemWithPayload<T> = ComboboxItem & {
 function DefaultKeyBuilder<T>(value: T) {
   if (typeof value === "string") {
     return value;
-  } else if (typeof value === "number") {
+  } else if (typeof value === "number" || typeof value === "boolean") {
     return value.toString();
   } else {
     LOG("error", "Unknown value type", value);
@@ -42,7 +42,7 @@ export interface GroupedSelectorOptions<T> {
 
 export type GroupedSelectorProps<T> = Override<
   {
-    options: ComboboxItemGroup[];
+    options: GroupedSelectorOptions<T>[];
     getkey?: (value: T) => string;
   },
   Omit<SelectProps, "data">
@@ -56,7 +56,7 @@ export function GroupedSelector<T>({
     <Select
       data-testid="input-selector"
       comboboxProps={{ withinPortal: true }}
-      data={options}
+      data={options as unknown as ComboboxItemGroup<string>[]}
       {...select}
     ></Select>
   );

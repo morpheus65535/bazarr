@@ -2565,7 +2565,7 @@ def _determine_last_joined_entity(
     if not setup_joins:
         return None
 
-    (target, onclause, from_, flags) = setup_joins[-1]
+    target, onclause, from_, flags = setup_joins[-1]
 
     if isinstance(
         target,

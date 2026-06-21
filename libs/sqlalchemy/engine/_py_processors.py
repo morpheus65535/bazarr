@@ -28,7 +28,6 @@ from typing import Type
 from typing import TypeVar
 from typing import Union
 
-
 _DT = TypeVar(
     "_DT", bound=Union[datetime.datetime, datetime.time, datetime.date]
 )

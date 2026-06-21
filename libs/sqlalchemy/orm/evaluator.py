@@ -16,7 +16,6 @@ This module is **private, for internal use by SQLAlchemy**.
 
 """
 
-
 from __future__ import annotations
 
 from typing import Type

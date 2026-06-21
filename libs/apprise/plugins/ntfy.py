@@ -284,7 +284,7 @@ class NotifyNtfy(NotifyBase):
                 "values": NTFY_PRIORITIES,
                 "default": NtfyPriority.NORMAL,
             },
-            "tags": {
+            "xtags": {
                 "name": _("Tags"),
                 "type": "string",
             },
@@ -322,7 +322,7 @@ class NotifyNtfy(NotifyBase):
         delay=None,
         email=None,
         priority=None,
-        tags=None,
+        xtags=None,
         actions=None,
         mode=None,
         include_image=True,
@@ -405,7 +405,7 @@ class NotifyNtfy(NotifyBase):
         )
 
         # Any optional tags to attach to the notification
-        self.__tags = parse_list(tags)
+        self.__tags = parse_list(xtags)
 
         # Action buttons
         self.__actions = actions
@@ -467,7 +467,6 @@ class NotifyNtfy(NotifyBase):
                 # We need to upload our payload first so that we can source it
                 # in remaining messages
                 for no, attachment in enumerate(attach):
-
                     # First message only includes the text (if defined)
                     body_ = body if not no and body else None
                     title_ = title if not no and title else None
@@ -661,6 +660,7 @@ class NotifyNtfy(NotifyBase):
                 auth=auth,
                 verify=self.verify_certificate,
                 timeout=self.request_timeout,
+                allow_redirects=self.redirects,
             )
 
             if r.status_code != requests.codes.ok:
@@ -698,7 +698,8 @@ class NotifyNtfy(NotifyBase):
                 )
 
                 self.logger.debug(
-                    "Response Details:\r\n%r", (r.content or b"")[:2000])
+                    "Response Details:\r\n%r", (r.content or b"")[:2000]
+                )
 
                 return False, response
 
@@ -750,10 +751,12 @@ class NotifyNtfy(NotifyBase):
 
         if self.mode == NtfyMode.PRIVATE:
             if self.auth == NtfyAuth.BASIC:
-                kwargs.extend([
-                    self.user if self.user else None,
-                    self.password if self.password else None,
-                ])
+                kwargs.extend(
+                    [
+                        self.user if self.user else None,
+                        self.password if self.password else None,
+                    ]
+                )
 
             elif self.token:  # NtfyAuth.TOKEN also
                 kwargs.append(self.token)
@@ -788,7 +791,7 @@ class NotifyNtfy(NotifyBase):
             params["email"] = self.email
 
         if self.__tags:
-            params["tags"] = ",".join(self.__tags)
+            params["xtags"] = ",".join(self.__tags)
 
         if self.__actions:
             params["actions"] = self.__actions
@@ -888,10 +891,14 @@ class NotifyNtfy(NotifyBase):
         if "email" in results["qsd"] and len(results["qsd"]["email"]):
             results["email"] = NotifyNtfy.unquote(results["qsd"]["email"])
 
-        if "tags" in results["qsd"] and len(results["qsd"]["tags"]):
-            results["tags"] = parse_list(
-                NotifyNtfy.unquote(results["qsd"]["tags"])
-            )
+        # Support both 'xtags' (canonical) and legacy 'tags'.
+        # Storing as 'xtags' prevents the config/base parser from
+        # misinterpreting this as an apprise-level tag filter.
+        raw_xtags = (
+            results["qsd"].get("xtags") or results["qsd"].get("tags") or ""
+        )
+        if raw_xtags:
+            results["xtags"] = parse_list(NotifyNtfy.unquote(raw_xtags))
 
         if "actions" in results["qsd"] and len(results["qsd"]["actions"]):
             results["actions"] = NotifyNtfy.unquote(results["qsd"]["actions"])

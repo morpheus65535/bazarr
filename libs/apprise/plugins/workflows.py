@@ -74,6 +74,7 @@ class APIVersion:
     """
     Define API Versions
     """
+
     WORKFLOW = "2016-06-01"
     POWER_AUTOMATE = "2022-03-01-preview"
 
@@ -258,6 +259,11 @@ class NotifyWorkflows(NotifyBase):
         if template:
             # Add our definition to our template
             self.template.add(template)
+            if not len(self.template):
+                # add() failed (unsupported schema, unparseable URL, etc.)
+                msg = "The Workflows template specified could not be loaded."
+                self.logger.warning(msg)
+                raise TypeError(msg)
             # Enforce maximum file size
             self.template[0].max_file_size = self.max_workflows_template_size
 
@@ -266,12 +272,12 @@ class NotifyWorkflows(NotifyBase):
         # - If using power_automate, the API version required is different.
         default_api_version = (
             APIVersion.POWER_AUTOMATE
-            if self.power_automate else APIVersion.WORKFLOW)
+            if self.power_automate
+            else APIVersion.WORKFLOW
+        )
 
         self.api_version = (
-            version
-            if version is not None
-            else default_api_version
+            version if version is not None else default_api_version
         )
 
         # Template functionality
@@ -304,30 +310,36 @@ class NotifyWorkflows(NotifyBase):
 
         body_content = []
         if image_url:
-            body_content.append({
-                "type": "Image",
-                "url": image_url,
-                "height": "32px",
-                "altText": notify_type.value,
-            })
+            body_content.append(
+                {
+                    "type": "Image",
+                    "url": image_url,
+                    "height": "32px",
+                    "altText": notify_type.value,
+                }
+            )
 
         if title:
-            body_content.append({
-                "type": "TextBlock",
-                "text": f"{title}",
-                "style": "heading",
-                "weight": "Bolder",
-                "size": "Large",
-                "id": "title",
-            })
+            body_content.append(
+                {
+                    "type": "TextBlock",
+                    "text": f"{title}",
+                    "style": "heading",
+                    "weight": "Bolder",
+                    "size": "Large",
+                    "id": "title",
+                }
+            )
 
-        body_content.append({
-            "type": "TextBlock",
-            "text": body,
-            "style": "default",
-            "wrap": self.wrap,
-            "id": "body",
-        })
+        body_content.append(
+            {
+                "type": "TextBlock",
+                "text": body,
+                "style": "default",
+                "wrap": self.wrap,
+                "id": "body",
+            }
+        )
 
         if not self.template:
             # By default we use a generic working payload if there was
@@ -335,18 +347,22 @@ class NotifyWorkflows(NotifyBase):
             schema = "http://adaptivecards.io/schemas/adaptive-card.json"
             payload = {
                 "type": "message",
-                "attachments": [{
-                    "contentType": "application/vnd.microsoft.card.adaptive",
-                    "contentUrl": None,
-                    "content": {
-                        "$schema": schema,
-                        "type": "AdaptiveCard",
-                        "version": self.adaptive_card_version,
-                        "body": body_content,
-                        # Additionally
-                        "msteams": {"width": "full"},
-                    },
-                }],
+                "attachments": [
+                    {
+                        "contentType": (
+                            "application/vnd.microsoft.card.adaptive"
+                        ),
+                        "contentUrl": None,
+                        "content": {
+                            "$schema": schema,
+                            "type": "AdaptiveCard",
+                            "version": self.adaptive_card_version,
+                            "body": body_content,
+                            # Additionally
+                            "msteams": {"width": "full"},
+                        },
+                    }
+                ],
             }
 
             return payload
@@ -377,24 +393,84 @@ class NotifyWorkflows(NotifyBase):
         # Enforce Application mode
         tokens["app_mode"] = TemplateType.JSON
 
+        # Coerce all substitution values to str before JSON-escaping.
+        # apply_template's _escape_json() calls json.dumps(v)[1:-1] which
+        # is only correct for strings; None produces "ul" and other non-
+        # string types produce similarly corrupted output.  app_mode is a
+        # TemplateType sentinel passed as a named parameter, not a
+        # substitution value, so it is left as-is.
+        safe_tokens = {
+            k: (
+                v
+                if k == "app_mode" or isinstance(v, str)
+                else ("" if v is None else str(v))
+            )
+            for k, v in tokens.items()
+        }
+
         try:
             with open(template.path) as fp:
-                content = json.loads(apply_template(fp.read(), **tokens))
+                content = json.loads(apply_template(fp.read(), **safe_tokens))
 
         except OSError:
             self.logger.error(
-                f"MSTeam template {template.url(privacy=True)} could not be"
-                " read."
+                "Workflow template"
+                f" {template.url(privacy=True)} could not be read."
             )
-            return None
+            return False
 
         except JSONDecodeError as e:
             self.logger.error(
-                f"MSTeam template {template.url(privacy=True)} contains"
-                " invalid JSON."
+                "Workflow template"
+                f" {template.url(privacy=True)} contains invalid JSON."
             )
             self.logger.debug(f"JSONDecodeError: {e}")
-            return None
+            return False
+
+        # Validate the required payload structure for Workflows/Power Automate
+
+        # Template must parse to a JSON object, not an array or scalar
+        if not isinstance(content, dict):
+            self.logger.error(
+                "Workflow template"
+                f" {template.url(privacy=True)} must be a JSON object"
+                " (got {}).".format(type(content).__name__)
+            )
+            return False
+
+        # Root payload must be a Workflows/Power Automate 'message' type
+        if content.get("type") != "message":
+            self.logger.error(
+                "Workflow template"
+                f" {template.url(privacy=True)} must have"
+                " 'type': 'message'"
+                " (got {!r}).".format(content.get("type"))
+            )
+            return False
+
+        # Payload must carry a non-empty attachments list
+        if (
+            not isinstance(content.get("attachments"), list)
+            or not content["attachments"]
+        ):
+            self.logger.error(
+                "Workflow template"
+                f" {template.url(privacy=True)} must contain"
+                " a non-empty 'attachments' list."
+            )
+            return False
+
+        # Each attachment must be a dict with a contentType string
+        if not all(
+            isinstance(a, dict) and isinstance(a.get("contentType"), str)
+            for a in content["attachments"]
+        ):
+            self.logger.error(
+                "Workflow template"
+                f" {template.url(privacy=True)} contains an"
+                " attachment missing a 'contentType' string."
+            )
+            return False
 
         return content
 
@@ -416,9 +492,7 @@ class NotifyWorkflows(NotifyBase):
         # The URL changes depending on whether we're using power automate or
         # not
         path = (
-            "/powerautomate/automations/direct"
-            if self.power_automate
-            else ""
+            "/powerautomate/automations/direct" if self.power_automate else ""
         )
 
         notify_url = (
@@ -456,6 +530,7 @@ class NotifyWorkflows(NotifyBase):
                 headers=headers,
                 verify=self.verify_certificate,
                 timeout=self.request_timeout,
+                allow_redirects=self.redirects,
             )
             if r.status_code not in (
                 requests.codes.ok,
@@ -474,7 +549,8 @@ class NotifyWorkflows(NotifyBase):
                 )
 
                 self.logger.debug(
-                    "Response Details:\r\n%r", (r.content or b"")[:2000])
+                    "Response Details:\r\n%r", (r.content or b"")[:2000]
+                )
 
                 # We failed
                 return False
@@ -524,10 +600,12 @@ class NotifyWorkflows(NotifyBase):
             )
 
         # Store our version if it differs from default
-        if (self.api_version != APIVersion.WORKFLOW
-            and not self.power_automate) or (
-                self.api_version != APIVersion.POWER_AUTOMATE
-                and self.power_automate):
+        if (
+            self.api_version != APIVersion.WORKFLOW and not self.power_automate
+        ) or (
+            self.api_version != APIVersion.POWER_AUTOMATE
+            and self.power_automate
+        ):
             # But only do so if we're not using power automate with the
             # default version for that.
             params["ver"] = self.api_version
@@ -573,9 +651,8 @@ class NotifyWorkflows(NotifyBase):
             results["qsd"].get(
                 "powerautomate",
                 results["qsd"].get(
-                    "pa",
-                    NotifyWorkflows.template_args["pa"]["default"]
-                )
+                    "pa", NotifyWorkflows.template_args["pa"]["default"]
+                ),
             )
         )
 
@@ -667,15 +744,12 @@ class NotifyWorkflows(NotifyBase):
         if result:
             # Determine if we're using power automate or not
             power_automate = (
-                "&pa=yes"
-                if result.group("power_automate")
-                else ""
+                "&pa=yes" if result.group("power_automate") else ""
             )
 
             # Construct our URL
             return NotifyWorkflows.parse_url(
-                "{schema}://{host}{port}/{workflow}/{params}{pa}"
-                .format(
+                "{schema}://{host}{port}/{workflow}/{params}{pa}".format(
                     schema=NotifyWorkflows.secure_protocol[0],
                     host=result.group("host"),
                     port=(

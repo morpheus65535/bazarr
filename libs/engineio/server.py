@@ -401,7 +401,6 @@ class Server(base_server.BaseServer):
             'maxPayload': self.max_http_buffer_size,
         })
         s.send(pkt)
-        s.schedule_ping()
 
         # NOTE: some sections below are marked as "no cover" to workaround
         # what seems to be a bug in the coverage package. All the lines below
@@ -412,6 +411,8 @@ class Server(base_server.BaseServer):
             del self.sockets[sid]
             self.logger.warning('Application rejected connection')
             return self._unauthorized(ret or None)
+
+        s.schedule_ping()
 
         if transport == 'websocket':  # pragma: no cover
             ret = s.handle_get_request(environ, start_response)

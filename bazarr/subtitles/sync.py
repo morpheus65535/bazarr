@@ -19,9 +19,9 @@ def sync_subtitles(video_path,
                    sonarr_episode_id=None,
                    radarr_id=None,
                    job_id=None,
-                   max_offset_seconds=str(settings.subsync.max_offset_seconds),
-                   gss=settings.subsync.gss,
-                   no_fix_framerate=settings.subsync.no_fix_framerate,
+                   max_offset_seconds=None,
+                   gss=None,
+                   no_fix_framerate=None,
                    reference=None,
                    force_sync=False,
                    callback=None):
@@ -30,7 +30,7 @@ def sync_subtitles(video_path,
         return False
 
     if not job_id:
-        jobs_queue.add_job_from_function(f"Syncing {srt_path}", is_progress=False)
+        jobs_queue.add_job_from_function(f"Syncing {srt_path}", is_progress=True)
         return False
 
     jobs_queue.update_job_name(job_id=job_id, new_job_name=f"Syncing {srt_path}")
@@ -48,6 +48,13 @@ def sync_subtitles(video_path,
             subsync_threshold = settings.subsync.subsync_movie_threshold
 
         if not use_subsync_threshold or (use_subsync_threshold and percent_score <= float(subsync_threshold)):
+            if max_offset_seconds is None:
+                max_offset_seconds = str(settings.subsync.max_offset_seconds)
+            if no_fix_framerate is None:
+                no_fix_framerate = settings.subsync.no_fix_framerate
+            if gss is None:
+                gss = settings.subsync.gss
+
             subsync = SubSyncer()
             sync_kwargs = {
                 'video_path': video_path,
@@ -76,6 +83,7 @@ def sync_subtitles(video_path,
             else:
                 return True
             finally:
+                jobs_queue.update_job_progress(job_id=job_id, progress_value="max")
                 jobs_queue.update_job_name(job_id=job_id, new_job_name=f"Synced {srt_path}")
                 del subsync
                 gc.collect()

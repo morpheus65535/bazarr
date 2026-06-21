@@ -524,7 +524,7 @@ class SZProviderPool(ProviderPool):
         return True
 
     def download_best_subtitles(self, subtitles, video, languages, min_score=0, hearing_impaired=False, only_one=False,
-                                use_original_format=False):
+                                use_original_format=False, fallback_allowed=False):
         """Download the best matching subtitles.
 
         patch:
@@ -634,6 +634,24 @@ class SZProviderPool(ProviderPool):
             if only_one:
                 logger.debug('Only one subtitle downloaded')
                 break
+
+        # --- WHISPER FALLBACK PRECONDITIONS ---
+        # 1. No regular provider results with at least minimum score
+        # 2. We are in a Bulk Task or Single Series search
+        # 3. User enabled the Whisper fallback setting
+        # 4. Whisper is actually in the active providers list
+        if (not downloaded_subtitles and 
+            fallback_allowed and 
+            'whisperai' in self.providers):
+            
+            for subtitle, score, score_without_hash, matches, orig_matches in scored_subtitles:
+                if subtitle.provider_name == 'whisperai':
+                    logger.info('BAZARR Bulk Task: Falling back to Whisper for %r', video.name)
+                    subtitle.use_original_format = use_original_format
+                    if self.download_subtitle(subtitle):
+                        subtitle.score = score
+                        downloaded_subtitles.append(subtitle)
+                        break
 
         return downloaded_subtitles
 
@@ -1198,9 +1216,6 @@ def save_subtitles(file_path, subtitles, single=False, directory=None, chmod=Non
 
     saved_subtitles = []
     for subtitle in subtitles:
-        # check if HI mods will be used to get the proper name for the subtitles file
-        must_remove_hi = subtitle.mods and 'remove_HI' in subtitle.mods
-
         # check content
         if subtitle.content is None or subtitle.text is None:
             logger.error('Skipping subtitle %r: no content', subtitle)
@@ -1217,9 +1232,16 @@ def save_subtitles(file_path, subtitles, single=False, directory=None, chmod=Non
                 parse_for_hi_regex(subtitle_text=subtitle.text, alpha3_language=subtitle.language.alpha3 if
                                    (hasattr(subtitle, 'language') and hasattr(subtitle.language, 'alpha3')) else None)):
             subtitle.language.hi = True
+
+        # check if HI mods will be used to get the proper name for the subtitles file
+        if subtitle.mods and 'remove_HI' in subtitle.mods:
+            if hasattr(subtitle, 'hearing_impaired'):
+                subtitle.hearing_impaired = False
+            if hasattr(subtitle, 'language') and hasattr(subtitle.language, 'hi'):
+                subtitle.language.hi = False
+
         subtitle_path = get_subtitle_path(file_path, None if single else subtitle.language,
-                                          forced_tag=subtitle.language.forced,
-                                          hi_tag=False if must_remove_hi else subtitle.language.hi, tags=tags)
+                                          forced_tag=subtitle.language.forced, hi_tag=subtitle.language.hi, tags=tags)
         if directory is not None:
             subtitle_path = os.path.join(directory, os.path.split(subtitle_path)[1])
 

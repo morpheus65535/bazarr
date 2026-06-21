@@ -3,6 +3,7 @@
 import os
 import logging
 import hashlib
+import hmac
 
 from charset_normalizer import detect
 from bs4 import UnicodeDammit
@@ -16,7 +17,8 @@ def check_credentials(user, pw, request, log_success=True):
     ip_addr = forwarded_for_ip_addr or real_ip_addr or request.remote_addr
     username = settings.auth.username
     password = settings.auth.password
-    if hashlib.md5(f"{pw}".encode('utf-8')).hexdigest() == password and user == username:
+    submitted_hash = hashlib.md5(f"{pw}".encode('utf-8')).hexdigest()
+    if hmac.compare_digest(submitted_hash, str(password or '')) and user == username:
         if log_success:
             logging.info(f'Successful authentication from {ip_addr} for user {user}')
         return True

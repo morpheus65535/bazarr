@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import string
 import warnings
 from functools import wraps
 
@@ -16,9 +17,10 @@ from dynaconf.vendor import toml
 from dynaconf.vendor import tomllib
 
 try:
-    from jinja2 import Environment
+    import jinja2
+    from jinja2.sandbox import SandboxedEnvironment
 
-    jinja_env = Environment()
+    jinja_env = SandboxedEnvironment()
     for p_method in ("abspath", "realpath", "relpath", "dirname", "basename"):
         jinja_env.filters[p_method] = getattr(os.path, p_method)
 except ImportError:  # pragma: no cover
@@ -211,12 +213,16 @@ class BaseFormatter:
         return str(self.token)
 
 
-def _jinja_formatter(value, **context):
+def _jinja_formatter(value: str, **context) -> str:
     if jinja_env is None:  # pragma: no cover
         raise ImportError(
             "jinja2 must be installed to enable '@jinja' settings in dynaconf"
         )
-    return jinja_env.from_string(value).render(**context)
+    try:
+        return jinja_env.from_string(value).render(**context)
+    except jinja2.exceptions.SecurityError:
+        warnings.warn(f"Unsafe access attempt to: {value}")
+        return ""
 
 
 def _get_formatter(value, **context):
@@ -236,27 +242,59 @@ def _get_formatter(value, **context):
     cast group will match anything provided after @
     the default group will match anything between single or double quotes
     """
-    pattern = re.compile(
-        r"(?P<key>\w+(?:\.\w+)?)\s*"
-        r"(?:(?P<cast>@\w+)\s*)?"
-        r'(?P<quote>["\']?)'
-        r'\s*(?P<default>[^"\']*)\s*(?P=quote)?'
-    )
-    if match := pattern.match(value.strip()):
-        data = match.groupdict()
-        return context["this"].get(
-            key=data["key"],
-            default=data["default"],
-            cast=data["cast"],
-        )
-    else:
+    tokens = value.strip().split()
+    if not tokens or len(tokens) > 3:
         raise DynaconfFormatError(f"Error parsing {value} malformed syntax.")
+
+    params = {
+        "key": tokens[0],
+        "cast": None,
+        "default": None,
+    }
+    for token in tokens[1:]:
+        if token.startswith("@"):
+            params["cast"] = token
+        else:
+            params["default"] = token
+
+    if not params["default"] and params["key"] not in context["this"]:
+        raise DynaconfParseError(
+            f"Key {params['key']} not found in settings and no default value provided."
+        )
+
+    return context["this"].get(**params)
+
+
+class SafeFormatter(string.Formatter):
+    def get_field(self, field_name, args, context):
+        self._validate_key_exists(field_name, context)
+        return super().get_field(field_name, args, context)
+
+    def _validate_key_exists(self, field_name: str, context):
+        if not field_name.lower().startswith("this"):
+            return
+        from dynaconf.base import _PUBLIC_PROPERTIES
+
+        field_name = field_name.replace("[", ".")
+        field_name = field_name.replace("]", "")
+        context_name, _, key = field_name.partition(".")
+        # these are accessible by the user, but are not considered setting keys
+        # e.g, settings.current_env
+        if key in _PUBLIC_PROPERTIES:
+            return
+        # allow only existing setting keys
+        if key not in context[context_name]:
+            raise AttributeError(key)
+
+
+def _format_formatter(input: str, **context) -> str:
+    return SafeFormatter().format(input, **context)
 
 
 class Formatters:
     """Dynaconf builtin formatters"""
 
-    python_formatter = BaseFormatter(str.format, "format")
+    python_formatter = BaseFormatter(_format_formatter, "format")
     jinja_formatter = BaseFormatter(_jinja_formatter, "jinja")
     get_formatter = BaseFormatter(_get_formatter, "get")
 

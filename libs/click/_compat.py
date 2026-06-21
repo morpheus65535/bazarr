@@ -12,6 +12,7 @@ from weakref import WeakKeyDictionary
 
 CYGWIN = sys.platform.startswith("cygwin")
 WIN = sys.platform.startswith("win")
+MAC = sys.platform == "darwin"
 auto_wrap_for_ansi: t.Callable[[t.TextIO], t.TextIO] | None = None
 _ansi_re = re.compile(r"\033\[[;?0-9]*[a-zA-Z]")
 
@@ -502,6 +503,10 @@ def should_strip_ansi(
     if color is None:
         if stream is None:
             stream = sys.stdin
+        elif hasattr(stream, "color"):
+            # ._termui_impl.MaybeStripAnsi handles stripping ansi itself,
+            # so we don't need to strip it here
+            return False
         return not isatty(stream) and not _is_jupyter_kernel_output(stream)
     return not color
 

@@ -2,11 +2,32 @@
   .root {
     @include mantine.dark {
       color: var(--mantine-color-dark-0);
+      --mantine-color-brand-filled-hover: var(--mantine-color-brand-6);
+    }
+
+    &[data-variant="subtle"] {
+      @include mantine.light {
+        --mantine-color-dark-light-hover: var(--mantine-color-gray-2);
+      }
+
+      @include mantine.dark {
+        --mantine-color-dark-light-hover: var(--mantine-color-dark-4);
+      }
     }
 
     &[data-variant="danger"] {
       background-color: var(--mantine-color-red-9);
       color: var(--mantine-color-red-0);
+
+      @include mantine.light {
+        --button-hover: var(--mantine-color-red-8);
+        --mantine-color-brand-filled-hover: var(--mantine-color-red-8);
+      }
+
+      @include mantine.dark {
+        --button-hover: var(--mantine-color-red-7);
+        --mantine-color-brand-filled-hover: var(--mantine-color-red-7);
+      }
     }
   }
 

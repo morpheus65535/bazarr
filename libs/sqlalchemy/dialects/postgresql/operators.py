@@ -7,7 +7,6 @@
 # mypy: ignore-errors
 from ...sql import operators
 
-
 _getitem_precedence = operators._PRECEDENCE[operators.json_getitem_op]
 _eq_precedence = operators._PRECEDENCE[operators.eq]
 

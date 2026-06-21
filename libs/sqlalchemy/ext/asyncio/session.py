@@ -41,7 +41,6 @@ from ...util.concurrency import greenlet_spawn
 from ...util.typing import Concatenate
 from ...util.typing import ParamSpec
 
-
 if TYPE_CHECKING:
     from .engine import AsyncConnection
     from .engine import AsyncEngine

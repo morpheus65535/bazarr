@@ -177,7 +177,7 @@ def test_check_login_form_auth_failure():
             result = decorated_function()
 
             # Should call abort
-            mock_abort.assert_called_once_with(401, message="Unauthorized")
+            mock_abort.assert_called_once_with(401)
 
 
 def test_check_login_preserves_function_arguments():

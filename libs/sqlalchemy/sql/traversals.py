@@ -35,7 +35,6 @@ from .. import util
 from ..util import langhelpers
 from ..util.typing import Self
 
-
 SKIP_TRAVERSE = util.symbol("skip_traverse")
 COMPARE_FAILED = False
 COMPARE_SUCCEEDED = True

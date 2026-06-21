@@ -18,7 +18,6 @@ from ..sql.schema import Column
 from ..sql.schema import ColumnCollectionConstraint
 from ..sql.schema import Index
 
-
 _OnConflictConstraintT = Union[str, ColumnCollectionConstraint, Index, None]
 _OnConflictIndexElementsT = Optional[
     Iterable[Union[Column[Any], str, roles.DDLConstraintColumnRole]]

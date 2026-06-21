@@ -912,10 +912,9 @@ class MappedColumn(
                         )
                     else:
                         detail = (
-                            f"""none of {
-                                ", ".join(f"'{t}'" for t in checks)
-                            } """
-                            "are resolvable by the registry"
+                            "none of "
+                            + ", ".join(f"'{t}'" for t in checks)
+                            + " are resolvable by the registry"
                         )
                     raise orm_exc.MappedAnnotationError(
                         "Could not locate SQLAlchemy Core type when resolving "

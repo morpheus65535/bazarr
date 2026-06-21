@@ -24,12 +24,19 @@ from ffsubsync.constants import (
     FRAMERATE_RATIOS,
     SAMPLE_RATE,
     SUBTITLE_EXTENSIONS,
+    DEFAULT_MIN_SCORE,
+    DEFAULT_QUALITY_MAX_OFFSET_SECONDS,
+    DEFAULT_MAX_FRAMERATE_DEVIATION,
+    is_remote_url,
 )
 from ffsubsync.ffmpeg_utils import ffmpeg_bin_path
 from ffsubsync.sklearn_shim import Pipeline, TransformerMixin
 from ffsubsync.speech_transformers import (
     VideoSpeechTransformer,
+    MultiSegmentVideoSpeechTransformer,
     DeserializeSpeechTransformer,
+    PGSSpeechTransformer,
+    ProgressInfo,
     make_subtitle_speech_pipeline,
 )
 from ffsubsync.subtitle_parser import make_subtitle_parser
@@ -94,6 +101,20 @@ def make_test_case(
     return 0
 
 
+def _resolve_srtout(args: argparse.Namespace, srtin: Optional[str]) -> Optional[str]:
+    """Decide where the synced subtitles for ``srtin`` should be written.
+
+    Overwriting the input takes precedence; otherwise, when subtitles were
+    auto-detected from the reference, write a `<name>.synced.srt` next to each
+    input; otherwise fall back to the explicit (possibly ``None``) output.
+    """
+    if args.overwrite_input:
+        return srtin
+    if getattr(args, "auto_srtout", False) and srtin is not None:
+        return "{}.synced.srt".format(os.path.splitext(srtin)[0])
+    return args.srtout
+
+
 def get_srt_pipe_maker(
     args: argparse.Namespace, srtin: Optional[str]
 ) -> Callable[[Optional[float]], Union[Pipeline, Callable[[float], Pipeline]]]:
@@ -121,6 +142,38 @@ def get_framerate_ratios_to_try(args: argparse.Namespace) -> List[Optional[float
         return framerate_ratios
 
 
+def assess_alignment_quality(
+    best_score: float,
+    offset_seconds: float,
+    scale_factor: float,
+    *,
+    min_score: float,
+    max_offset_seconds: float,
+    max_framerate_deviation: float,
+) -> List[str]:
+    """Return reasons an alignment looks too low-quality to trust (empty = trust it).
+
+    Used by --skip-sync-on-low-quality to decide whether to leave the subtitles
+    unmodified rather than apply a probably-wrong shift. A negative score means the
+    best alignment is anti-correlated; an implausibly large offset or framerate
+    scale suggests a spurious match.
+    """
+    reasons: List[str] = []
+    if best_score < min_score:
+        reasons.append("score %.1f < %.1f" % (best_score, min_score))
+    if abs(offset_seconds) > max_offset_seconds:
+        reasons.append(
+            "|offset| %.1fs > %.1fs" % (abs(offset_seconds), max_offset_seconds)
+        )
+    framerate_deviation = abs(scale_factor - 1.0)
+    if framerate_deviation > max_framerate_deviation:
+        reasons.append(
+            "framerate deviation %.3f > %.3f"
+            % (framerate_deviation, max_framerate_deviation)
+        )
+    return reasons
+
+
 def try_sync(
     args: argparse.Namespace, reference_pipe: Optional[Pipeline], result: Dict[str, Any]
 ) -> bool:
@@ -138,7 +191,7 @@ def try_sync(
             skip_infer_framerate_ratio = (
                 args.skip_infer_framerate_ratio or reference_pipe is None
             )
-            srtout = srtin if args.overwrite_input else args.srtout
+            srtout = _resolve_srtout(args, srtin)
             srt_pipe_maker = get_srt_pipe_maker(args, srtin)
             framerate_ratios = get_framerate_ratios_to_try(args)
             srt_pipes = [srt_pipe_maker(1.0)] + [
@@ -149,8 +202,10 @@ def try_sync(
                     continue
                 else:
                     srt_pipe.fit(srtin)
-            if not skip_infer_framerate_ratio and hasattr(
-                reference_pipe[-1], "num_frames"
+            if (
+                not skip_infer_framerate_ratio
+                and hasattr(reference_pipe[-1], "num_frames")
+                and reference_pipe[-1].num_frames is not None
             ):
                 inferred_framerate_ratio_from_length = (
                     float(reference_pipe[-1].num_frames)
@@ -188,6 +243,32 @@ def try_sync(
             logger.info("score: %.3f", best_score)
             logger.info("offset seconds: %.3f", offset_seconds)
             logger.info("framerate scale factor: %.3f", scale_step.scale_factor)
+            low_quality_reasons: List[str] = []
+            if getattr(args, "skip_sync_on_low_quality", False):
+                low_quality_reasons = assess_alignment_quality(
+                    best_score,
+                    offset_seconds,
+                    scale_step.scale_factor,
+                    min_score=args.min_score,
+                    max_offset_seconds=args.quality_max_offset_seconds,
+                    max_framerate_deviation=args.max_framerate_deviation,
+                )
+            if low_quality_reasons:
+                logger.warning(
+                    "low-quality alignment (%s); leaving subtitles unmodified",
+                    "; ".join(low_quality_reasons),
+                )
+                sync_was_successful = False
+                # write the original (unscaled, unshifted) subtitles unchanged
+                original_subs = best_srt_pipe.named_steps["parse"].subs_
+                out_subs = original_subs.clone_props_for_subs(list(original_subs))
+                if args.output_encoding != "same":
+                    out_subs = out_subs.set_encoding(args.output_encoding)
+                logger.info(
+                    "writing original (unsynced) output to {}".format(srtout or "stdout")
+                )
+                out_subs.write_file(srtout)
+                continue
             output_steps: List[Tuple[str, TransformerMixin]] = [
                 ("shift", SubtitleShifter(offset_seconds))
             ]
@@ -219,7 +300,30 @@ def try_sync(
     return sync_was_successful
 
 
-def make_reference_pipe(args: argparse.Namespace) -> Pipeline:
+def make_reference_pipe(
+    args: argparse.Namespace,
+    progress_handler: Optional[Callable[[ProgressInfo], None]] = None,
+) -> Pipeline:
+    pgs_stream = getattr(args, "pgs_ref_stream", None)
+    if pgs_stream is not None:
+        # "auto" (bare --pgs-ref-stream flag) → let PGSSpeechTransformer auto-detect
+        resolved_stream: Optional[str] = None if pgs_stream == "auto" else pgs_stream
+        if resolved_stream is not None and not resolved_stream.startswith("0:"):
+            resolved_stream = "0:" + resolved_stream
+        return Pipeline(
+            [
+                (
+                    "speech_extract",
+                    PGSSpeechTransformer(
+                        sample_rate=SAMPLE_RATE,
+                        start_seconds=args.start_seconds,
+                        ffmpeg_path=args.ffmpeg_path,
+                        ref_stream=resolved_stream,
+                        gui_mode=args.gui_mode,
+                    ),
+                ),
+            ]
+        )
     ref_format = _ref_format(args.reference)
     if ref_format in SUBTITLE_EXTENSIONS:
         if args.vad is not None:
@@ -246,6 +350,29 @@ def make_reference_pipe(args: argparse.Namespace) -> Pipeline:
         ref_stream = args.reference_stream
         if ref_stream is not None and not ref_stream.startswith("0:"):
             ref_stream = "0:" + ref_stream
+        if getattr(args, "multi_segment_sync", False):
+            return Pipeline(
+                [
+                    (
+                        "speech_extract",
+                        MultiSegmentVideoSpeechTransformer(
+                            vad=vad,
+                            sample_rate=SAMPLE_RATE,
+                            frame_rate=args.frame_rate,
+                            non_speech_label=args.non_speech_label,
+                            segment_count=getattr(args, "segment_count", 8),
+                            skip_intro_outro=getattr(
+                                args, "skip_intro_outro", False
+                            ),
+                            parallel_workers=getattr(args, "parallel_workers", 4),
+                            ffmpeg_path=args.ffmpeg_path,
+                            ref_stream=ref_stream,
+                            vlc_mode=args.vlc_mode,
+                            gui_mode=args.gui_mode,
+                        ),
+                    ),
+                ]
+            )
         return Pipeline(
             [
                 (
@@ -260,6 +387,13 @@ def make_reference_pipe(args: argparse.Namespace) -> Pipeline:
                         ref_stream=ref_stream,
                         vlc_mode=args.vlc_mode,
                         gui_mode=args.gui_mode,
+                        max_duration_seconds=getattr(
+                            args, "max_duration_seconds", None
+                        ),
+                        extract_audio_first=getattr(
+                            args, "extract_audio_first", False
+                        ),
+                        progress_handler=progress_handler,
                     ),
                 ),
             ]
@@ -312,6 +446,34 @@ def extract_subtitles_from_reference(args: argparse.Namespace) -> int:
     return retcode
 
 
+def _detect_srtin_from_reference(reference: str) -> List[str]:
+    """Find subtitle files that sit next to the reference and share its name.
+
+    Matches `<reference-stem>.srt` and `<reference-stem>.<suffix>.srt` (e.g.
+    `movie.srt`, `movie.en.srt` for a `movie.mkv` reference) in the reference's
+    own directory, so detection works regardless of the process's current
+    working directory. The reference itself is never returned, so this is safe
+    even when the reference is already a subtitle file.
+    """
+    reference_dir = os.path.dirname(reference) or "."
+    reference_stem = os.path.splitext(os.path.basename(reference))[0]
+    reference_abspath = os.path.abspath(reference)
+    matches = []
+    for name in sorted(os.listdir(reference_dir)):
+        stem, ext = os.path.splitext(name)
+        if ext.lower() != ".srt":
+            continue
+        if name.endswith(".synced.srt"):
+            continue  # skip our own previously-synced outputs so re-runs are idempotent
+        if stem != reference_stem and not stem.startswith(reference_stem + "."):
+            continue
+        path = os.path.join(reference_dir, name)
+        if os.path.abspath(path) == reference_abspath:
+            continue
+        matches.append(path)
+    return matches
+
+
 def validate_args(args: argparse.Namespace) -> None:
     if args.vlc_mode:
         logger.setLevel(logging.CRITICAL)
@@ -336,6 +498,36 @@ def validate_args(args: argparse.Namespace) -> None:
             raise ValueError("cannot specify multiple input srt files for test cases")
         if len(args.srtin) > 1 and args.gui_mode:
             raise ValueError("cannot specify multiple input srt files in GUI mode")
+    elif (
+        args.reference is not None
+        and not is_remote_url(args.reference)  # can't list a remote dir for sibling srts
+        and args.extract_subs_from_stream is None
+        and not args.gui_mode
+        and not args.make_test_case
+        and sys.stdin.isatty()  # don't hijack subtitles piped in on stdin
+    ):
+        # No input subtitles were given (and nothing is piped in), so look for
+        # subtitle files alongside the reference that share its name.
+        logger.info("no input srt specified; detecting input srt from reference")
+        detected = _detect_srtin_from_reference(args.reference)
+        if detected:
+            for path in detected:
+                logger.info("detected input srt: %s", path)
+            args.srtin = detected
+            if len(detected) > 1 and args.srtout is not None:
+                raise ValueError(
+                    "detected multiple input srt files but an output file was "
+                    "specified; re-run with --overwrite-input or a single input"
+                )
+            if args.srtout is None and not args.overwrite_input:
+                args.auto_srtout = True
+                logger.info(
+                    "writing synced output alongside each input as "
+                    "<name>.synced.srt; pass --overwrite-input to overwrite the "
+                    "input file(s) in place instead"
+                )
+        else:
+            logger.info("no input srt detected from reference")
     if (
         args.make_test_case and not args.gui_mode
     ):  # this validation not necessary for gui mode
@@ -373,7 +565,11 @@ def validate_file_permissions(args: argparse.Namespace) -> None:
         "unable to {action} {file}; "
         "try ensuring file exists and has correct permissions"
     )
-    if args.reference is not None and not os.access(args.reference, os.R_OK):
+    if (
+        args.reference is not None
+        and not is_remote_url(args.reference)  # ffmpeg streams URLs directly; no local file to check
+        and not os.access(args.reference, os.R_OK)
+    ):
         raise ValueError(
             error_string_template.format(action="read reference", file=args.reference)
         )
@@ -423,7 +619,11 @@ def _npy_savename(args: argparse.Namespace) -> str:
     return os.path.splitext(args.reference)[0] + ".npz"
 
 
-def _run_impl(args: argparse.Namespace, result: Dict[str, Any]) -> bool:
+def _run_impl(
+    args: argparse.Namespace,
+    result: Dict[str, Any],
+    progress_handler: Optional[Callable[[ProgressInfo], None]] = None,
+) -> bool:
     if args.extract_subs_from_stream is not None:
         result["retval"] = extract_subtitles_from_reference(args)
         return True
@@ -432,7 +632,7 @@ def _run_impl(args: argparse.Namespace, result: Dict[str, Any]) -> bool:
         or (len(args.srtin) == 1 and args.srtin[0] == args.reference)
     ):
         return try_sync(args, None, result)
-    reference_pipe = make_reference_pipe(args)
+    reference_pipe = make_reference_pipe(args, progress_handler=progress_handler)
     logger.info("extracting speech segments from reference '%s'...", args.reference)
     reference_pipe.fit(args.reference)
     logger.info("...done")
@@ -451,7 +651,7 @@ def _run_impl(args: argparse.Namespace, result: Dict[str, Any]) -> bool:
 
 
 def validate_and_transform_args(
-    parser_or_args: Union[argparse.ArgumentParser, argparse.Namespace]
+    parser_or_args: Union[argparse.ArgumentParser, argparse.Namespace],
 ) -> Optional[argparse.Namespace]:
     if isinstance(parser_or_args, argparse.Namespace):
         parser = None
@@ -484,8 +684,18 @@ def validate_and_transform_args(
 
 
 def run(
-    parser_or_args: Union[argparse.ArgumentParser, argparse.Namespace]
+    parser_or_args: Union[argparse.ArgumentParser, argparse.Namespace],
+    progress_handler: Optional[Callable[[ProgressInfo], None]] = None,
 ) -> Dict[str, Any]:
+    """Synchronize subtitles.
+
+    ``progress_handler``, if given, is called repeatedly during reference speech
+    extraction with a :class:`~ffsubsync.speech_transformers.ProgressInfo`
+    describing how much of the reference audio has been processed. This lets a
+    host application (e.g. a web UI) display sync progress. The handler is only
+    invoked for the video-reference path; exceptions it raises are logged and
+    swallowed so a buggy handler cannot abort syncing.
+    """
     sync_was_successful = False
     result = {
         "retval": 0,
@@ -498,7 +708,9 @@ def run(
         return result
     log_path, log_handler = _setup_logging(args)
     try:
-        sync_was_successful = _run_impl(args, result)
+        sync_was_successful = _run_impl(
+            args, result, progress_handler=progress_handler
+        )
         result["sync_was_successful"] = sync_was_successful
         return result
     finally:
@@ -523,7 +735,16 @@ def add_main_args_for_cli(parser: argparse.ArgumentParser) -> None:
         ),
     )
     parser.add_argument(
-        "-i", "--srtin", nargs="*", help="Input subtitles file (default=stdin)."
+        "-i",
+        "--srtin",
+        nargs="*",
+        help=(
+            "Input subtitles file (default=stdin). If omitted (and nothing is "
+            "piped in), subtitles sharing the reference's name in its directory "
+            "are auto-detected (e.g. `movie.srt`, `movie.en.srt` for `movie.mkv`) "
+            "and each is synced to a `<name>.synced.srt` next to it; pass "
+            "--overwrite-input to overwrite the detected file(s) in place."
+        ),
     )
     parser.add_argument(
         "-o", "--srtout", help="Output subtitles file (default=stdout)."
@@ -556,6 +777,21 @@ def add_main_args_for_cli(parser: argparse.ArgumentParser) -> None:
             "Example: `ffs ref.mkv -i in.srt -o out.srt --reference-stream s:2`"
         ),
     )
+    parser.add_argument(
+        "--pgs-ref-stream",
+        "--pgsstream",
+        nargs="?",
+        const="auto",
+        default=None,
+        help=(
+            "Use a PGS (Presentation Graphic Stream) image-based subtitle track from "
+            "the reference MKV as the sync reference instead of audio VAD. "
+            "Optionally specify the stream (leading `0:` is optional, e.g. `s:0` or `3`). "
+            "Omit the value to auto-detect the first hdmv_pgs_subtitle track. "
+            "Example: `ffs ref.mkv -i in.srt -o out.srt --pgs-ref-stream` (auto) "
+            "or `ffs ref.mkv -i in.srt -o out.srt --pgs-ref-stream s:2` (explicit)."
+        ),
+    )
 
 
 def add_cli_only_args(parser: argparse.ArgumentParser) -> None:
@@ -564,7 +800,7 @@ def add_cli_only_args(parser: argparse.ArgumentParser) -> None:
         "--version",
         action="version",
         version="{package} {version}".format(
-            package=__package__, version=get_version()
+            package=__package__ or "ffsubsync", version=get_version()
         ),
     )
     parser.add_argument(
@@ -603,11 +839,89 @@ def add_cli_only_args(parser: argparse.ArgumentParser) -> None:
         "(default=%d seconds)." % DEFAULT_MAX_OFFSET_SECONDS,
     )
     parser.add_argument(
+        "--max-duration-seconds",
+        type=float,
+        default=None,
+        help="If specified, only process the first this-many seconds of the "
+        "reference (measured from --start-seconds). Useful for speeding up "
+        "long or remote references, since ffmpeg stops reading/downloading "
+        "once this duration is reached.",
+    )
+    parser.add_argument(
+        "--extract-audio-first",
+        action="store_true",
+        help="For remote URL references, first copy the audio track to a local "
+        "temp file (no re-encode) and run speech detection on that, instead of "
+        "streaming the full container over the network during detection. Can be "
+        "more stable on flaky connections; ignored for local references.",
+    )
+    parser.add_argument(
+        "--multi-segment-sync",
+        action="store_true",
+        help="Sample a few short segments spread across the reference and run "
+        "speech detection only on those, instead of the whole reference. Speeds "
+        "up long or remote references; the usual framerate and offset search is "
+        "unchanged. Only applies to video / audio references.",
+    )
+    parser.add_argument(
+        "--segment-count",
+        type=int,
+        default=8,
+        help="Number of segments to sample for --multi-segment-sync (default=8).",
+    )
+    parser.add_argument(
+        "--skip-intro-outro",
+        action="store_true",
+        help="With --multi-segment-sync, skip the first 30s and last 60s of the "
+        "reference when placing segments (intros/credits often lack dialogue).",
+    )
+    parser.add_argument(
+        "--parallel-workers",
+        type=int,
+        default=4,
+        help="How many segments to extract in parallel for --multi-segment-sync "
+        "(default=4); useful for overlapping downloads of remote references.",
+    )
+    parser.add_argument(
         "--apply-offset-seconds",
         type=float,
         default=DEFAULT_APPLY_OFFSET_SECONDS,
         help="Apply a predefined offset in seconds to all subtitle segments "
         "(default=%d seconds)." % DEFAULT_APPLY_OFFSET_SECONDS,
+    )
+    parser.add_argument(
+        "--skip-sync-on-low-quality",
+        action="store_true",
+        help="If the alignment looks untrustworthy (see the thresholds below), "
+        "leave the subtitles unmodified instead of applying a probably-wrong "
+        "sync. Useful for batch jobs where a bad sync is worse than none.",
+    )
+    parser.add_argument(
+        "--min-score",
+        type=float,
+        default=DEFAULT_MIN_SCORE,
+        help="With --skip-sync-on-low-quality, reject alignments scoring below "
+        "this. The score's magnitude is not normalized, but its sign is "
+        "meaningful, so the default of %.1f rejects only anti-correlated "
+        "(clearly wrong) alignments." % DEFAULT_MIN_SCORE,
+    )
+    parser.add_argument(
+        "--quality-max-offset-seconds",
+        type=float,
+        default=DEFAULT_QUALITY_MAX_OFFSET_SECONDS,
+        help="With --skip-sync-on-low-quality, reject alignments whose offset "
+        "exceeds this many seconds (default=%.1f)."
+        % DEFAULT_QUALITY_MAX_OFFSET_SECONDS,
+    )
+    parser.add_argument(
+        "--max-framerate-deviation",
+        type=float,
+        default=DEFAULT_MAX_FRAMERATE_DEVIATION,
+        help="With --skip-sync-on-low-quality, reject alignments whose framerate "
+        "scale deviates from 1.0 by more than this. The default of %.2f permits "
+        "every framerate correction ffsubsync can make (so it never rejects a "
+        "legitimate one); tighten it only when you know the framerate should not "
+        "change." % DEFAULT_MAX_FRAMERATE_DEVIATION,
     )
     parser.add_argument(
         "--frame-rate",
@@ -648,10 +962,16 @@ def add_cli_only_args(parser: argparse.ArgumentParser) -> None:
             "auditok",
             "subs_then_silero",
             "silero",
+            "fused",
+            "fused:weighted",
+            "fused:intersection",
+            "fused:union",
         ],
         default=None,
         help="Which voice activity detector to use for speech extraction "
-        "(if using video / audio as a reference, default={}).".format(DEFAULT_VAD),
+        "(if using video / audio as a reference, default={}). The `fused` "
+        "options combine webrtc and silero and require the optional silero "
+        "dependency (torch).".format(DEFAULT_VAD),
     )
     parser.add_argument(
         "--no-fix-framerate",

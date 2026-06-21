@@ -42,7 +42,7 @@ class TVsubtitlesProvider(_TVsubtitlesProvider):
         """
         # make the search
         logger.info('Searching show id for %r', series)
-        r = self.session.post(self.server_url + 'search.php', data={'q': series}, timeout=10)
+        r = self.session.post(self.server_url + 'search1.php', data={'qs': series}, timeout=10)
         r.raise_for_status()
 
         # get the series out of the suggestions

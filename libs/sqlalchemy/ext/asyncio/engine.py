@@ -187,7 +187,7 @@ class AsyncConnectable:
     ],
 )
 # "Class has incompatible disjoint bases" - no idea
-class AsyncConnection(  # type:ignore[misc]
+class AsyncConnection(  # type: ignore[misc]
     ProxyComparable[Connection],
     StartableContext["AsyncConnection"],
     AsyncConnectable,

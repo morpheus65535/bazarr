@@ -186,11 +186,24 @@ class ConfigHTTP(ConfigBase):
                 auth=auth,
                 verify=self.verify_certificate,
                 timeout=self.request_timeout,
+                allow_redirects=self.redirects,
                 stream=True,
             ) as r:
-
                 # Handle Errors
                 r.raise_for_status()
+
+                # raise_for_status() only covers 4xx/5xx; when redirect
+                # following is disabled any 3xx must be treated as a failure
+                # so we do not silently return a redirect stub as config.
+                # Using a status-code range rather than r.is_redirect
+                # catches 3xx responses that lack a Location header.
+                if not self.redirects and 300 <= r.status_code < 400:
+                    self.logger.error(
+                        "HTTP redirect encountered but redirect "
+                        "following is disabled:"
+                        f" {self.url(privacy=True)}"
+                    )
+                    return None
 
                 # Get our file-size (if known)
                 try:
@@ -204,7 +217,6 @@ class ConfigHTTP(ConfigBase):
                     self.max_buffer_size > 0
                     and file_size > self.max_buffer_size
                 ):
-
                     # Provide warning of data truncation
                     self.logger.error(
                         "HTTP config response exceeds maximum buffer length "
@@ -235,12 +247,10 @@ class ConfigHTTP(ConfigBase):
                 )
                 if self.config_format is None and content_type:
                     if MIME_IS_YAML.match(content_type) is not None:
-
                         # YAML data detected based on header content
                         self.default_config_format = ConfigFormat.YAML
 
                     elif MIME_IS_TEXT.match(content_type) is not None:
-
                         # TEXT data detected based on header content
                         self.default_config_format = ConfigFormat.TEXT
 

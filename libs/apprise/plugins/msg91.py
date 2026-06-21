@@ -236,7 +236,6 @@ class NotifyMSG91(NotifyBase):
 
         # Prepare Recipient Payload Object
         for key, value in self.template_mapping.items():
-
             if key in RESERVED_KEYWORDS:
                 self.logger.warning(
                     "Ignoring MSG91 custom payload entry %s", key
@@ -289,6 +288,7 @@ class NotifyMSG91(NotifyBase):
                 headers=headers,
                 verify=self.verify_certificate,
                 timeout=self.request_timeout,
+                allow_redirects=self.redirects,
             )
 
             if r.status_code != requests.codes.ok:
@@ -308,7 +308,8 @@ class NotifyMSG91(NotifyBase):
                 )
 
                 self.logger.debug(
-                    "Response Details:\r\n%r", (r.content or b"")[:2000])
+                    "Response Details:\r\n%r", (r.content or b"")[:2000]
+                )
 
                 return False
 

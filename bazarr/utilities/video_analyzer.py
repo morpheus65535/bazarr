@@ -5,7 +5,7 @@ import os
 import pickle
 
 from app.config import settings
-from app.database import TableEpisodes, TableMovies, database, update, select
+from app.database import TableEpisodes, TableMovies, database, update, select, get_subtitles
 from languages.custom_lang import CustomLanguage
 from languages.get_languages import language_from_alpha2, language_from_alpha3, alpha3_from_alpha2
 from utilities.path_mappings import path_mappings
@@ -50,6 +50,7 @@ def embedded_subs_reader(file, file_size, episode_file_id=None, movie_file_id=No
     if cache_provider:
         for detected_language in data[cache_provider]["subtitle"]:
             # Avoid commentary subtitles
+            track_id = detected_language.get("id")
             name = detected_language.get("name", "").lower()
             if "commentary" in name:
                 logging.debug(f"Ignoring commentary subtitle: {name}")
@@ -70,7 +71,7 @@ def embedded_subs_reader(file, file_size, episode_file_id=None, movie_file_id=No
             forced = detected_language.get("forced", False)
             hearing_impaired = detected_language.get("hearing_impaired", False)
             codec = detected_language.get("format")  # or None
-            subtitles_list.append([language, forced, hearing_impaired, codec])
+            subtitles_list.append([track_id, language, forced, hearing_impaired, codec])
 
     return subtitles_list
 
@@ -110,7 +111,7 @@ def subtitles_sync_references(subtitles_path, sonarr_episode_id=None, radarr_mov
 
     if sonarr_episode_id:
         media_data = database.execute(
-            select(TableEpisodes.path, TableEpisodes.file_size, TableEpisodes.episode_file_id, TableEpisodes.subtitles)
+            select(TableEpisodes.path, TableEpisodes.file_size, TableEpisodes.episode_file_id)
             .where(TableEpisodes.sonarrEpisodeId == sonarr_episode_id)) \
             .first()
 
@@ -123,7 +124,7 @@ def subtitles_sync_references(subtitles_path, sonarr_episode_id=None, radarr_mov
                                     use_cache=True)
     elif radarr_movie_id:
         media_data = database.execute(
-            select(TableMovies.path, TableMovies.file_size, TableMovies.movie_file_id, TableMovies.subtitles)
+            select(TableMovies.path, TableMovies.file_size, TableMovies.movie_file_id)
             .where(TableMovies.radarrId == radarr_movie_id)) \
             .first()
 
@@ -188,22 +189,19 @@ def subtitles_sync_references(subtitles_path, sonarr_episode_id=None, radarr_mov
                 track_id += 1
 
         try:
-            parsed_subtitles = ast.literal_eval(media_data.subtitles)
+            parsed_subtitles = get_subtitles(sonarr_episode_id=sonarr_episode_id, radarr_id=radarr_movie_id,)
         except ValueError:
             pass
         else:
             for subtitles in parsed_subtitles:
-                reversed_subtitles_path = path_mappings.path_replace_reverse(subtitles_path) if sonarr_episode_id else (
-                    path_mappings.path_replace_reverse_movie(subtitles_path))
-                if subtitles[1] and subtitles[1] != reversed_subtitles_path:
-                    language_dict = languages_from_colon_seperated_string(subtitles[0])
+                if subtitles['path'] and subtitles['path'] != subtitles_path:
                     references_dict['external_subtitles_tracks'].append({
-                        'name': os.path.basename(subtitles[1]),
-                        'path': path_mappings.path_replace(subtitles[1]) if sonarr_episode_id else
-                        path_mappings.path_replace_reverse_movie(subtitles[1]),
-                        'language': language_dict['language'],
-                        'forced': language_dict['forced'],
-                        'hearing_impaired': language_dict['hi'],
+                        'name': os.path.basename(subtitles['path']),
+                        'path': path_mappings.path_replace(subtitles['path']) if sonarr_episode_id else
+                        path_mappings.path_replace_reverse_movie(subtitles['path']),
+                        'language': subtitles['name'],
+                        'forced': subtitles['forced'],
+                        'hearing_impaired': subtitles['hi'],
                     })
                 else:
                     # excluding subtitles that is going to be synced from the external subtitles list
@@ -334,15 +332,3 @@ def parse_video_metadata(file, file_size, episode_file_id=None, movie_file_id=No
             .values(ffprobe_cache=pickle.dumps(data, pickle.HIGHEST_PROTOCOL))
             .where(TableMovies.movie_file_id == movie_file_id))
     return data
-
-
-def languages_from_colon_seperated_string(lang):
-    splitted_language = lang.split(':')
-    language = language_from_alpha2(splitted_language[0])
-    forced = hi = False
-    if len(splitted_language) > 1:
-        if splitted_language[1] == 'forced':
-            forced = True
-        elif splitted_language[1] == 'hi':
-            hi = True
-    return {'language': language, 'forced': forced, 'hi': hi}

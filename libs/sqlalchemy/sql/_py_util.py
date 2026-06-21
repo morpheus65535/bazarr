@@ -32,7 +32,7 @@ class prefix_anon_map(Dict[str, str]):
     """
 
     def __missing__(self, key: str) -> str:
-        (ident, derived) = key.split(" ", 1)
+        ident, derived = key.split(" ", 1)
         anonymous_counter = self.get(derived, 1)
         self[derived] = anonymous_counter + 1  # type: ignore
         value = f"{derived}_{anonymous_counter}"

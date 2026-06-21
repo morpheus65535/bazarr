@@ -4,7 +4,7 @@ import os
 
 from flask_restx import Resource, Namespace, reqparse, fields, marshal
 
-from app.database import TableMovies, database, select
+from app.database import TableMovies, database, select, get_subtitles
 from utilities.path_mappings import path_mappings
 from app.get_providers import get_providers
 from subtitles.manual import manual_search, movie_manually_download_specific_subtitle
@@ -53,16 +53,18 @@ class ProviderMovies(Resource):
                       TableMovies.path,
                       TableMovies.sceneName,
                       TableMovies.profileId,
-                      TableMovies.subtitles,
                       TableMovies.missing_subtitles) \
             .where(TableMovies.radarrId == radarrId)
         movieInfo = database.execute(stmt).first()
 
+        previously_indexed_subtitles = get_subtitles(radarr_id=radarrId)
+
         if not movieInfo:
             return 'Movie not found', 404
-        elif movieInfo.subtitles is None:
-            # subtitles indexing for this movie is incomplete, we'll do it again
-            store_subtitles_movie(movieInfo.path, path_mappings.path_replace_movie(movieInfo.path))
+        elif not len(previously_indexed_subtitles) or \
+                any([not x['embedded_track_id'] for x in previously_indexed_subtitles if not x['path']]):
+            # subtitles indexing for this movie might be incomplete, we'll do it again
+            store_subtitles_movie(radarrId)
             movieInfo = database.execute(stmt).first()
         elif movieInfo.missing_subtitles is None:
             # missing subtitles calculation for this movie is incomplete, we'll do it again

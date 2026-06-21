@@ -79,11 +79,13 @@ class WebSocket:  # pragma: no cover
     """
     def __init__(self, handler, server):
         self.handler = handler
+        self.server = server
         self._sock = None
 
     async def __call__(self, environ):
         request = environ['aiohttp.request']
-        self._sock = WebSocketResponse(max_msg_size=0)
+        self._sock = WebSocketResponse(
+            max_msg_size=self.server.max_http_buffer_size)
         await self._sock.prepare(request)
 
         self.environ = environ

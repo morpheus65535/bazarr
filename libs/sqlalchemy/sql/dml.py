@@ -9,6 +9,7 @@ Provide :class:`_expression.Insert`, :class:`_expression.Update` and
 :class:`_expression.Delete`.
 
 """
+
 from __future__ import annotations
 
 import collections.abc as collections_abc
@@ -1124,6 +1125,9 @@ class ValuesBase(UpdateBase):
                :ref:`tutorial_multiple_parameters` - an introduction to
                the traditional Core method of multiple parameter set
                invocation for INSERTs and other statements.
+
+               :ref:`tutorial_core_insert_values_clause` - Insert tutorial
+               detailing alternatives to the multiple values syntax.
 
           The UPDATE construct also supports rendering the SET parameters
           in a specific order.  For this feature refer to the

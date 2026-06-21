@@ -25,7 +25,7 @@ from .processing import process_subtitle
 @update_pools
 def generate_subtitles(path, languages, audio_language, sceneName, title, media_type, profile_id,
                        forced_minimum_score=None, is_upgrade=False, check_if_still_required=False,
-                       previous_subtitles_to_delete=None, job_id=None):
+                       previous_subtitles_to_delete=None, job_id=None, fallback_allowed=False):
     if not languages:
         return None
 
@@ -78,7 +78,8 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
                                                                        pool_instance=pool,
                                                                        min_score=int(min_score),
                                                                        hearing_impaired=hi_required,
-                                                                       use_original_format=original_format in (1, "1", "True", True))
+                                                                       use_original_format=original_format in (1, "1", "True", True),
+                                                                       fallback_allowed=fallback_allowed)
                     except Exception as e:
                         logging.exception(f'BAZARR Error downloading Subtitles for this file {path}: {repr(e)}')
                         return None

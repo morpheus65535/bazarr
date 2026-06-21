@@ -33,6 +33,7 @@ const themeProvider = createTheme({
     ],
   },
   primaryColor: "brand",
+  defaultRadius: "sm",
   components: {
     ActionIcon: ActionIcon.extend({
       classNames: actionIconClasses,

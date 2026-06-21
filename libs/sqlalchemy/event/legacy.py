@@ -9,6 +9,7 @@
 generation of deprecation notes and docstrings.
 
 """
+
 from __future__ import annotations
 
 import typing

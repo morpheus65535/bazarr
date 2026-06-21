@@ -427,6 +427,8 @@ class AsyncServer(base_server.BaseServer):
         if delete_it:
             self.logger.info('Disconnecting %s [%s]', sid, namespace)
             eio_sid = self.manager.pre_disconnect(sid, namespace=namespace)
+            if eio_sid in self._binary_packet:
+                del self._binary_packet[eio_sid]
             await self._send_packet(eio_sid, self.packet_class(
                 packet.DISCONNECT, namespace=namespace))
             await self._trigger_event('disconnect', namespace, sid,
@@ -702,6 +704,9 @@ class AsyncServer(base_server.BaseServer):
                                        pkt.data)
             elif pkt.packet_type == packet.BINARY_EVENT or \
                     pkt.packet_type == packet.BINARY_ACK:
+                if not self.manager.sid_from_eio_sid(eio_sid,
+                                                     pkt.namespace or '/'):
+                    raise ValueError('Unexpected binary packet')
                 self._binary_packet[eio_sid] = pkt
             elif pkt.packet_type == packet.CONNECT_ERROR:
                 raise ValueError('Unexpected CONNECT_ERROR packet.')

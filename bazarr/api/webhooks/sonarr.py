@@ -115,7 +115,7 @@ class WebHooksSonarr(Resource):
                 )
                 continue
 
-            store_subtitles(episode.path, path_mappings.path_replace(episode.path))
+            store_subtitles(episode.sonarrEpisodeId)
             episode_download_subtitles(no=episode.sonarrEpisodeId)
 
         return "Finished processing subtitles.", 200

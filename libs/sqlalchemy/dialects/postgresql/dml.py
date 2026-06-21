@@ -35,7 +35,6 @@ from ...sql.elements import TextClause
 from ...sql.expression import alias
 from ...util.typing import Self
 
-
 __all__ = ("Insert", "insert")
 
 

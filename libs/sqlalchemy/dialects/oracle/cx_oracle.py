@@ -489,6 +489,7 @@ SQLAlchemy type (or a subclass of such).
    as better integration of outputtypehandlers.
 
 """  # noqa
+
 from __future__ import annotations
 
 import decimal

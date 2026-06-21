@@ -56,7 +56,6 @@ class Episodes(Resource):
                 TableEpisodes.season,
                 TableEpisodes.sonarrEpisodeId,
                 TableEpisodes.sonarrSeriesId,
-                TableEpisodes.subtitles,
                 TableEpisodes.title,
                 TableEpisodes.sceneName,
             )
@@ -84,7 +83,6 @@ class Episodes(Resource):
                 'season': x.season,
                 'sonarrEpisodeId': x.sonarrEpisodeId,
                 'sonarrSeriesId': x.sonarrSeriesId,
-                'subtitles': x.subtitles,
                 'title': x.title,
                 'sceneName': x.sceneName,
                 }) for x in stmt_query], self.get_response_model, envelope='data')

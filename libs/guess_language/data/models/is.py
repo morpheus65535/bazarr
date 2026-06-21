@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 model = {
  'að ': 0,
  'um ': 1,

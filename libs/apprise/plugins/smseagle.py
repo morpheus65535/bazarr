@@ -180,16 +180,14 @@ class NotifySMSEagle(NotifyBase):
     template_args = dict(
         NotifyBase.template_args,
         **{
-            "to": {
-                "alias_of": "targets",
-            },
             "token": {
                 "alias_of": "token",
             },
-            "batch": {
-                "name": _("Batch Mode"),
-                "type": "bool",
-                "default": False,
+            "priority": {
+                "name": _("Priority"),
+                "type": "choice:int",
+                "values": SMSEAGLE_PRIORITIES,
+                "default": SMSEaglePriority.NORMAL,
             },
             "status": {
                 "name": _("Show Status"),
@@ -206,11 +204,13 @@ class NotifySMSEagle(NotifyBase):
                 "type": "bool",
                 "default": False,
             },
-            "priority": {
-                "name": _("Priority"),
-                "type": "choice:int",
-                "values": SMSEAGLE_PRIORITIES,
-                "default": SMSEaglePriority.NORMAL,
+            "to": {
+                "alias_of": "targets",
+            },
+            "batch": {
+                "name": _("Batch Mode"),
+                "type": "bool",
+                "default": False,
             },
         },
     )
@@ -391,10 +391,12 @@ class NotifySMSEagle(NotifyBase):
 
                 try:
                     # Prepare our Attachment in Base64
-                    attachments.append({
-                        "content_type": attachment.mimetype,
-                        "content": attachment.base64(),
-                    })
+                    attachments.append(
+                        {
+                            "content_type": attachment.mimetype,
+                            "content": attachment.base64(),
+                        }
+                    )
 
                 except exception.AppriseException:
                     # We could not access the attachment
@@ -508,7 +510,8 @@ class NotifySMSEagle(NotifyBase):
                         f"(cert_verify={self.verify_certificate!r})"
                     )
                     self.logger.debug(
-                        "SMSEagle Payload: %s", sanitize_payload(payload))
+                        "SMSEagle Payload: %s", sanitize_payload(payload)
+                    )
 
                 # Always call throttle before any remote server i/o is made
                 self.throttle()
@@ -519,6 +522,7 @@ class NotifySMSEagle(NotifyBase):
                         headers=headers,
                         verify=self.verify_certificate,
                         timeout=self.request_timeout,
+                        allow_redirects=self.redirects,
                     )
 
                     try:
@@ -564,7 +568,6 @@ class NotifySMSEagle(NotifyBase):
                             )  # pragma: no cover
                         )
                     ):
-
                         # We had a problem
                         status_str = (
                             content.get("result")
@@ -615,7 +618,7 @@ class NotifySMSEagle(NotifyBase):
                 except requests.RequestException as e:
                     self.logger.warning(
                         "A Connection error occured sending"
-                        f" {len(targets[index:index + batch_size])} SMSEagle"
+                        f" {len(targets[index : index + batch_size])} SMSEagle"
                         f" {category} notification(s)."
                     )
                     self.logger.debug(f"Socket Exception: {e!s}")
@@ -680,19 +683,21 @@ class NotifySMSEagle(NotifyBase):
                 if self.port is None or self.port == default_port
                 else f":{self.port}"
             ),
-            targets="/".join([
-                NotifySMSEagle.quote(x, safe="#@")
-                for x in chain(
-                    # Pass phones directly as is
-                    self.target_phones,
-                    # Contacts
-                    [f"@{x}" for x in self.target_contacts],
-                    # Groups
-                    [f"#{x}" for x in self.target_groups],
-                    # Pass along the same invalid entries as were provided
-                    self.invalid_targets,
-                )
-            ]),
+            targets="/".join(
+                [
+                    NotifySMSEagle.quote(x, safe="#@")
+                    for x in chain(
+                        # Pass phones directly as is
+                        self.target_phones,
+                        # Contacts
+                        [f"@{x}" for x in self.target_contacts],
+                        # Groups
+                        [f"#{x}" for x in self.target_groups],
+                        # Pass along the same invalid entries as were provided
+                        self.invalid_targets,
+                    )
+                ]
+            ),
             params=NotifySMSEagle.urlencode(params),
         )
 

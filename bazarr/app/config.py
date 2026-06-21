@@ -113,6 +113,7 @@ validators = [
     Validator('general.use_sonarr', must_exist=True, default=False, is_type_of=bool),
     Validator('general.use_radarr', must_exist=True, default=False, is_type_of=bool),
     Validator('general.use_plex', must_exist=True, default=False, is_type_of=bool),
+    Validator('general.use_jellyfin', must_exist=True, default=False, is_type_of=bool),
     Validator('general.path_mappings_movie', must_exist=True, default=[], is_type_of=list),
     Validator('general.serie_tag_enabled', must_exist=True, default=False, is_type_of=bool),
     Validator('general.movie_tag_enabled', must_exist=True, default=False, is_type_of=bool),
@@ -125,6 +126,7 @@ validators = [
               is_in=[25, 50, 100, 250, 500, 1000]),
     Validator('general.theme', must_exist=True, default='auto', is_type_of=str,
               is_in=['auto', 'light', 'dark']),
+    Validator('general.show_live_badge', must_exist=True, default=True, is_type_of=bool),
     Validator('general.minimum_score_movie', must_exist=True, default=70, is_type_of=int, gte=0, lte=100),
     Validator('general.use_embedded_subs', must_exist=True, default=True, is_type_of=bool),
     Validator('general.embedded_subs_show_desired', must_exist=True, default=True, is_type_of=bool),
@@ -145,6 +147,8 @@ validators = [
     Validator('general.chmod', must_exist=True, default='0640', is_type_of=str),
     Validator('general.subfolder', must_exist=True, default='current', is_type_of=str),
     Validator('general.subfolder_custom', must_exist=True, default='', is_type_of=str),
+    Validator('general.use_whisper_fallback', must_exist=True, default=False, is_type_of=bool),
+    Validator('general.use_whisper_fallback_series', must_exist=True, default=False, is_type_of=bool),
     Validator('general.upgrade_subs', must_exist=True, default=True, is_type_of=bool),
     Validator('general.upgrade_frequency', must_exist=True, default=12, is_type_of=int,
               is_in=[6, 12, 24, 168, ONE_HUNDRED_YEARS_IN_HOURS]),
@@ -169,6 +173,7 @@ validators = [
     Validator('general.language_equals', must_exist=True, default=[], is_type_of=list),
     Validator('general.concurrent_jobs', must_exist=True, default=4 if os.cpu_count() >= 4 else os.cpu_count(),
               is_type_of=int),
+    Validator('general.disable_all_providers_ssl_verify', must_exist=True, default=False, is_type_of=bool),
 
     # log section
     Validator('log.include_filter', must_exist=True, default='', is_type_of=str, cast=str),
@@ -281,6 +286,18 @@ validators = [
     Validator('plex.disable_auto_migration', must_exist=True, default=False, is_type_of=bool),
     Validator('plex.client_identifier', must_exist=True, default='', is_type_of=str),
 
+    # jellyfin section
+    Validator('jellyfin.url', must_exist=True, default='', is_type_of=str),
+    Validator('jellyfin.apikey', must_exist=True, default='', is_type_of=str),
+    Validator('jellyfin.movie_library', must_exist=True, default=[], is_type_of=list),
+    Validator('jellyfin.series_library', must_exist=True, default=[], is_type_of=list),
+    Validator('jellyfin.movie_library_ids', must_exist=True, default=[], is_type_of=list),
+    Validator('jellyfin.series_library_ids', must_exist=True, default=[], is_type_of=list),
+    Validator('jellyfin.update_movie_library', must_exist=True, default=False, is_type_of=bool),
+    Validator('jellyfin.update_series_library', must_exist=True, default=False, is_type_of=bool),
+    Validator('jellyfin.refresh_method', must_exist=True, default='immediate', is_type_of=str,
+              is_in=['immediate', 'async']),
+
     # proxy section
     Validator('proxy.type', must_exist=True, default=None, is_type_of=(NoneType, str),
               is_in=[None, 'socks5', 'socks5h', 'http']),
@@ -348,6 +365,10 @@ validators = [
     # legendasnet section
     Validator('legendasnet.username', must_exist=True, default='', is_type_of=str, cast=str),
     Validator('legendasnet.password', must_exist=True, default='', is_type_of=str, cast=str),
+
+    # pipocas section
+    Validator('pipocas.username', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('pipocas.password', must_exist=True, default='', is_type_of=str, cast=str),
 
     # ktuvit section
     Validator('ktuvit.email', must_exist=True, default='', is_type_of=str),
@@ -421,6 +442,8 @@ validators = [
     Validator('subsync.subsync_movie_threshold', must_exist=True, default=70, is_type_of=int, gte=0, lte=100),
     Validator('subsync.debug', must_exist=True, default=False, is_type_of=bool),
     Validator('subsync.force_audio', must_exist=True, default=False, is_type_of=bool),
+    Validator('subsync.use_original_language', must_exist=True, default=False, is_type_of=bool),
+    Validator('subsync.auto_use_original_language', must_exist=True, default=False, is_type_of=bool),
     Validator('subsync.checker', must_exist=True, default={}, is_type_of=dict),
     Validator('subsync.checker.blacklisted_providers', must_exist=True, default=[], is_type_of=list),
     Validator('subsync.checker.blacklisted_languages', must_exist=True, default=[], is_type_of=list),
@@ -650,6 +673,7 @@ def save_settings(settings_items):
     radarr_changed = False
     update_path_map = False
     configure_proxy = False
+    configure_ssl_verify = False
     exclusion_updated = False
     sonarr_exclusion_updated = False
     radarr_exclusion_updated = False
@@ -754,56 +778,59 @@ def save_settings(settings_items):
                    'settings-proxy-password']:
             configure_proxy = True
 
+        if key == 'settings-general-disable_all_providers_ssl_verify':
+            configure_ssl_verify = True
+
         if key in ['settings-sonarr-excluded_tags', 'settings-sonarr-only_monitored',
                    'settings-sonarr-excluded_series_types', 'settings-sonarr-exclude_season_zero',
-                   'settings.radarr.excluded_tags', 'settings-radarr-only_monitored']:
+                   'settings-radarr-excluded_tags', 'settings-radarr-only_monitored']:
             exclusion_updated = True
 
         if key in ['settings-sonarr-excluded_tags', 'settings-sonarr-only_monitored',
                    'settings-sonarr-excluded_series_types', 'settings-sonarr-exclude_season_zero']:
             sonarr_exclusion_updated = True
 
-        if key in ['settings.radarr.excluded_tags', 'settings-radarr-only_monitored']:
+        if key in ['settings-radarr-excluded_tags', 'settings-radarr-only_monitored']:
             radarr_exclusion_updated = True
 
         if key == 'settings-addic7ed-username':
-            if key != settings.addic7ed.username:
+            if value != settings.addic7ed.username:
                 reset_providers = True
                 region.delete('addic7ed_data')
         elif key == 'settings-addic7ed-password':
-            if key != settings.addic7ed.password:
+            if value != settings.addic7ed.password:
                 reset_providers = True
                 region.delete('addic7ed_data')
 
         if key == 'settings-legendasdivx-username':
-            if key != settings.legendasdivx.username:
+            if value != settings.legendasdivx.username:
                 reset_providers = True
                 region.delete('legendasdivx_cookies2')
         elif key == 'settings-legendasdivx-password':
-            if key != settings.legendasdivx.password:
+            if value != settings.legendasdivx.password:
                 reset_providers = True
                 region.delete('legendasdivx_cookies2')
 
         if key == 'settings-opensubtitlescom-username':
-            if key != settings.opensubtitlescom.username:
+            if value != settings.opensubtitlescom.username:
                 reset_providers = True
                 region.delete('oscom_token')
         elif key == 'settings-opensubtitlescom-password':
-            if key != settings.opensubtitlescom.password:
+            if value != settings.opensubtitlescom.password:
                 reset_providers = True
                 region.delete('oscom_token')
 
         if key == 'settings-titlovi-username':
-            if key != settings.titlovi.username:
+            if value != settings.titlovi.username:
                 reset_providers = True
                 region.delete('titlovi_token')
         elif key == 'settings-titlovi-password':
-            if key != settings.titlovi.password:
+            if value != settings.titlovi.password:
                 reset_providers = True
                 region.delete('titlovi_token')
 
         if key == 'settings-subsource-apikey':
-            if key != settings.subsource.apikey:
+            if value != settings.subsource.apikey:
                 reset_providers = True
 
         if reset_providers:
@@ -917,6 +944,9 @@ def save_settings(settings_items):
         if configure_proxy:
             configure_proxy_func()
 
+        if configure_ssl_verify:
+            configure_sz_ssl_verify_func()
+
         if exclusion_updated:
             from .event_handler import event_stream
             event_stream(type='badges')
@@ -963,6 +993,13 @@ def configure_proxy_func():
         os.environ['HTTPS_PROXY'] = str(proxy)
         exclude = ','.join(settings.proxy.exclude)
         os.environ['NO_PROXY'] = exclude
+
+
+def configure_sz_ssl_verify_func():
+    if settings.general.disable_all_providers_ssl_verify:
+        os.environ['SZ_DISABLE_SSL_VERIFY'] = 'true'
+    else:
+        os.environ.pop('SZ_DISABLE_SSL_VERIFY', None)
 
 
 def sync_checker(subtitle):

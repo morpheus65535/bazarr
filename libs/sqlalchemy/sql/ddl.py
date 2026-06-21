@@ -11,6 +11,7 @@ Provides the hierarchy of DDL-defining schema items as well as routines
 to invoke them for a create/drop call.
 
 """
+
 from __future__ import annotations
 
 import contextlib

@@ -128,10 +128,12 @@ class AsyncSocket(base_socket.BaseSocket):
                 await self.queue.join()
 
     def schedule_ping(self):
-        self.server.start_background_task(self._send_ping)
+        # only schedule a new ping if the previous ping wait cycle completed
+        if self.last_ping:
+            self.last_ping = None
+            self.server.start_background_task(self._send_ping)
 
     async def _send_ping(self):
-        self.last_ping = None
         await asyncio.sleep(self.server.ping_interval)
         if not self.closing and not self.closed:
             self.last_ping = time.time()

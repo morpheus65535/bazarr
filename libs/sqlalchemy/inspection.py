@@ -28,6 +28,7 @@ tools which build on top of SQLAlchemy configurations to be constructed
 in a forwards-compatible way.
 
 """
+
 from __future__ import annotations
 
 from typing import Any

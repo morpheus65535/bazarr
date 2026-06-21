@@ -6,6 +6,7 @@
 # the MIT License: https://www.opensource.org/licenses/mit-license.php
 
 """Public API functions for the event system."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -17,7 +18,6 @@ from .registry import _EventKey
 from .registry import _ListenerFnType
 from .. import exc
 from .. import util
-
 
 CANCEL = util.symbol("CANCEL")
 NO_RETVAL = util.symbol("NO_RETVAL")

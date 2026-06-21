@@ -7,6 +7,7 @@
 # mypy: allow-untyped-defs, allow-untyped-calls
 
 """SQL specific types."""
+
 from __future__ import annotations
 
 import collections.abc as collections_abc
@@ -3636,7 +3637,6 @@ class Uuid(Emulated, TypeEngine[_UUID_RETURN]):
 
         from sqlalchemy import Uuid
         from sqlalchemy import Table, Column, MetaData, String
-
 
         metadata_obj = MetaData()
 
