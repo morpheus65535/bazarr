@@ -166,6 +166,9 @@ def subtitles_sync_references(subtitles_path, sonarr_episode_id=None, radarr_mov
                     language = 'Undefined'
                 else:
                     alpha3 = _handle_alpha3(detected_language)
+                    if alpha3 is None:
+                        track_id += 1
+                        continue
                     language = language_from_alpha3(alpha3)
 
                 references_dict['audio_tracks'].append({'stream': f'a:{track_id}', 'name': name, 'language': language})
@@ -187,6 +190,9 @@ def subtitles_sync_references(subtitles_path, sonarr_episode_id=None, radarr_mov
                     language = 'Undefined'
                 else:
                     alpha3 = _handle_alpha3(detected_language)
+                    if alpha3 is None:
+                        track_id += 1
+                        continue
                     language = language_from_alpha3(alpha3)
 
                 forced = detected_language.get("forced", False)
