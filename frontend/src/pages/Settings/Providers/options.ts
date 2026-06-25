@@ -9,4 +9,8 @@ export const antiCaptchaOption: SelectorOption<string>[] = [
     label: "Death by Captcha",
     value: "death-by-captcha",
   },
+  {
+    label: "CaptchaAI",
+    value: "captchaai",
+  },
 ];

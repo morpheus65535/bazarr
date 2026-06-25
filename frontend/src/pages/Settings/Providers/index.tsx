@@ -62,6 +62,17 @@ const SettingsProvidersView: FunctionComponent = () => {
           </Anchor>
           <Message>Link to subscribe</Message>
         </CollapseBox>
+        <CollapseBox
+          settingKey="settings-general-anti_captcha_provider"
+          on={(value) => value === "captchaai"}
+        >
+          <Text
+            label="Account Key"
+            settingKey="settings-captchaai-captchaai_key"
+          ></Text>
+          <Anchor href="https://captchaai.com">CaptchaAI.com</Anchor>
+          <Message>Link to subscribe</Message>
+        </CollapseBox>
       </Section>
       <Section header="Integrations">
         <ProviderView

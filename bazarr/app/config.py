@@ -155,7 +155,7 @@ validators = [
     Validator('general.days_to_upgrade_subs', must_exist=True, default=7, is_type_of=int, gte=0, lte=30),
     Validator('general.upgrade_manual', must_exist=True, default=True, is_type_of=bool),
     Validator('general.anti_captcha_provider', must_exist=True, default=None, is_type_of=(NoneType, str),
-              is_in=[None, 'anti-captcha', 'death-by-captcha']),
+              is_in=[None, 'anti-captcha', 'death-by-captcha', 'captchaai']),
     Validator('general.wanted_search_frequency', must_exist=True, default=6, is_type_of=int, 
               is_in=[6, 12, 24, 168, ONE_HUNDRED_YEARS_IN_HOURS]),
     Validator('general.wanted_search_frequency_movie', must_exist=True, default=6, is_type_of=int,
@@ -387,6 +387,9 @@ validators = [
     # deathbycaptcha section
     Validator('deathbycaptcha.username', must_exist=True, default='', is_type_of=str, cast=str),
     Validator('deathbycaptcha.password', must_exist=True, default='', is_type_of=str, cast=str),
+
+    # captchaai section
+    Validator('captchaai.captchaai_key', must_exist=True, default='', is_type_of=str),
 
     # napisy24 section
     Validator('napisy24.username', must_exist=True, default='', is_type_of=str, cast=str),
@@ -752,7 +755,8 @@ def save_settings(settings_items):
             os.environ["SZ_HI_EXTENSION"] = value or ""
 
         if key in ['settings-general-anti_captcha_provider', 'settings-anticaptcha-anti_captcha_key',
-                   'settings-deathbycaptcha-username', 'settings-deathbycaptcha-password']:
+                   'settings-deathbycaptcha-username', 'settings-deathbycaptcha-password',
+                   'settings-captchaai-captchaai_key']:
             configure_captcha = True
 
         if key in ['update_schedule', 'settings-general-use_sonarr', 'settings-general-use_radarr',
@@ -980,6 +984,9 @@ def configure_captcha_func():
         os.environ["ANTICAPTCHA_CLASS"] = 'DeathByCaptchaProxyLess'
         os.environ["ANTICAPTCHA_ACCOUNT_KEY"] = str(':'.join(
             {settings.deathbycaptcha.username, settings.deathbycaptcha.password}))
+    elif settings.general.anti_captcha_provider == 'captchaai' and settings.captchaai.captchaai_key != "":
+        os.environ["ANTICAPTCHA_CLASS"] = 'CaptchaAIProxyLess'
+        os.environ["ANTICAPTCHA_ACCOUNT_KEY"] = str(settings.captchaai.captchaai_key)
     else:
         os.environ["ANTICAPTCHA_CLASS"] = ''
 
