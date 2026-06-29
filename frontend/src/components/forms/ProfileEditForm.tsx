@@ -188,7 +188,6 @@ const ProfileEditForm: FunctionComponent<Props> = ({
           value={code}
           onChange={(value) => {
             if (value) {
-              item.language = value.code2;
               action.mutate(index, { ...item, language: value.code2 });
             }
           }}
