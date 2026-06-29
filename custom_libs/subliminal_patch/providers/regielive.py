@@ -118,31 +118,42 @@ class RegieLiveProvider(Provider):
     def download_subtitle(self, subtitle):
         session = self.session
         _addheaders = {
-            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:72.0) Gecko/20100101 Firefox/72.0',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-            'Origin': 'https://subtitrari.regielive.ro',
-            'Accept-Language': 'en-US,en;q=0.5',
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36',
+            'Accept': 'application/octet-stream, */*',
+            'Accept-Language': 'en-US,en;q=0.9',
             'Referer': 'https://subtitrari.regielive.ro',
-            'Pragma': 'no-cache',
-            'Cache-Control': 'no-cache'
         }
         session.headers.update(_addheaders)
-        res = self.checked(
-            lambda: session.get('https://subtitrari.regielive.ro')
+        response = self.checked(
+            lambda: session.get(subtitle.page_link)
         )
-        cookies = res.cookies
-        _zipped = self.checked(
-            lambda: session.get(subtitle.page_link, cookies=cookies, allow_redirects=False)
-        )
-        if _zipped:
-            if _zipped.text == '500':
-                raise ValueError('Error 500 on server')
-            archive = zipfile.ZipFile(io.BytesIO(_zipped.content))
-            subtitle_content = self._get_subtitle_from_archive(archive)
-            subtitle.content = fix_line_ending(subtitle_content)
 
-            return subtitle
-        raise ValueError('Problems conecting to the server')
+        if response.text == '500':
+            raise ProviderError('RegieLive download failed: server returned HTTP 500')
+
+        if response.status_code != 200:
+            detail = response.text.strip().replace('\n', ' ')[:400]
+            raise ProviderError(
+                f'RegieLive download failed: unexpected status {response.status_code}'
+                + (f' ({detail})' if detail else '')
+            )
+
+        try:
+            archive = zipfile.ZipFile(io.BytesIO(response.content))
+        except zipfile.BadZipFile as exc:
+            detail = response.text.strip().replace('\n', ' ')[:200]
+            raise ProviderError(
+                'RegieLive download failed: provider returned an invalid archive payload'
+                + (f' ({detail})' if detail else '')
+            ) from exc
+
+        try:
+            subtitle_content = self._get_subtitle_from_archive(archive)
+        except APIThrottled as exc:
+            raise ProviderError('RegieLive download failed: archive did not contain a subtitle file') from exc
+
+        subtitle.content = fix_line_ending(subtitle_content)
+        return subtitle
 
     @staticmethod
     def _get_subtitle_from_archive(archive):
