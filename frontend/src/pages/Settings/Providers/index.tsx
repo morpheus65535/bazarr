@@ -1,6 +1,7 @@
 import { FunctionComponent } from "react";
 import { Anchor } from "@mantine/core";
 import {
+  Check,
   CollapseBox,
   Layout,
   Message,
@@ -67,6 +68,16 @@ const SettingsProvidersView: FunctionComponent = () => {
           availableOptions={IntegrationList}
           settingsKey="settings-general-enabled_integrations"
         ></ProviderView>
+      </Section>
+      <Section header="Security">
+        <Check
+          label="Disable All Providers HTTPS Certificate Validation"
+          settingKey="settings-general-disable_all_providers_ssl_verify"
+        ></Check>
+        <Message>
+          Disable all providers HTTPS certificate validation. Do not change
+          unless you get SSL issues with providers and you understand the risks.
+        </Message>
       </Section>
     </Layout>
   );

@@ -11,7 +11,6 @@ from .mask import Mask
 from .errors import abort
 
 from jsonschema import Draft4Validator
-from jsonschema.validators import validator_for
 from jsonschema.exceptions import ValidationError
 
 from .utils import not_none
@@ -90,48 +89,9 @@ class ModelBase(object):
         return model
 
     def validate(self, data, resolver=None, format_checker=None):
-        # For backward compatibility, resolver can be either a RefResolver or a Registry
-        if resolver is not None and hasattr(resolver, "resolve"):
-            # Old RefResolver - convert to registry
-            registry = None
-            validator = Draft4Validator(
-                self.__schema__, resolver=resolver, format_checker=format_checker
-            )
-        else:
-            # New Registry or None
-            # If we have a registry, we need to create a schema that includes definitions
-            schema_to_validate = self.__schema__
-            if resolver is not None:
-                # Check if the schema has $ref that need to be resolved
-                import json
-
-                schema_str = json.dumps(self.__schema__)
-                if '"$ref"' in schema_str:
-                    # Create a schema with inline definitions from the registry
-                    definitions = {}
-                    for uri in resolver:
-                        resource = resolver[uri]
-                        if isinstance(resource, dict) and "definitions" in resource:
-                            definitions.update(resource["definitions"])
-
-                    if definitions:
-                        # Create a new schema that includes the definitions
-                        schema_to_validate = {
-                            "$id": "http://localhost/schema.json",
-                            "definitions": definitions,
-                            **self.__schema__,
-                        }
-
-            ValidatorClass = validator_for(schema_to_validate)
-            if resolver is not None:
-                validator = ValidatorClass(
-                    schema_to_validate, registry=resolver, format_checker=format_checker
-                )
-            else:
-                validator = ValidatorClass(
-                    schema_to_validate, format_checker=format_checker
-                )
-
+        validator = Draft4Validator(
+            self.__schema__, resolver=resolver, format_checker=format_checker
+        )
         try:
             validator.validate(data)
         except ValidationError:

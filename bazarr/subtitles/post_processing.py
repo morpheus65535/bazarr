@@ -4,6 +4,7 @@
 import os
 import logging
 import subprocess
+import shlex
 
 from locale import getpreferredencoding
 
@@ -15,8 +16,9 @@ def postprocessing(command, path):
             from ctypes import windll
             code_page = windll.kernel32.GetConsoleOutputCP()
             encoding = f"cp{code_page}"
-            
-        process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,
+
+        args = shlex.split(command)  # parse into argv list
+        process = subprocess.Popen(args, shell=False, stdout=subprocess.PIPE,
                                    stderr=subprocess.PIPE, encoding=encoding)
         # wait for the process to terminate
         out, err = process.communicate()

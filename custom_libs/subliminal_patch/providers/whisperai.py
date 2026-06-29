@@ -446,18 +446,23 @@ class WhisperAIProvider(Provider):
             # This launches a subprocess to decode audio while down-mixing and resampling as necessary.
             inp = ffmpeg.input(path, threads=0)
             if audio_stream_language:
-                # There is more than one audio stream, so pick the requested one by name
-                # Use the ISO 639-2 code if available
                 audio_stream_language = wlm.get_ISO_639_2_code(audio_stream_language)
                 logger.debug(f"Whisper will use the '{audio_stream_language}' audio stream for {path}")
-                # 0 = Pick first stream in case there are multiple language streams of the same language,
-                # otherwise ffmpeg will try to combine multiple streams, but our output format doesn't support that.
-                # The first stream is probably the correct one, as later streams are usually commentaries
-                lang_map = f"0:a:m:language:{audio_stream_language}"
-                out = inp.output("-", format="s16le", acodec="pcm_s16le", ac=1, ar=16000, af=audio_filter,
-                                 map=lang_map)
-            else:
-                out = inp.output("-", format="s16le", acodec="pcm_s16le", ac=1, ar=16000, af=audio_filter)
+
+            # Probe for the first audio stream matching the requested language.
+            # Mapping by language tag alone (0:a:m:language:X) selects all streams sharing
+            # that tag — s16le only supports one audio stream, so files with duplicate-language
+            # tracks (e.g. stereo + 5.1 both tagged eng) would fail.
+            probe = ffmpeg.probe(path)
+            stream_index = next(
+                (s['index'] for s in probe['streams']
+                 if s['codec_type'] == 'audio'
+                 and s.get('tags', {}).get('language') == audio_stream_language),
+                None
+            ) if audio_stream_language else None
+            map_arg = f"0:{stream_index}" if stream_index is not None else "0:a:0"  # 0:a:0 = first audio stream, avoids mapping all streams if no language matched
+
+            out = inp.output("-", format="s16le", acodec="pcm_s16le", ac=1, ar=16000, af=audio_filter, map=map_arg)
 
             start_time = time.time()
             out, _ = out.run(cmd=[ffmpeg_path, "-nostdin"], capture_stdout=True, capture_stderr=True) 
