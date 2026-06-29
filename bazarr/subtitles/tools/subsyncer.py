@@ -2,10 +2,8 @@
 
 import logging
 import os
-from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from ffsubsync import ProgressInfo
+from ffsubsync import ProgressInfo
 
 from utilities.binaries import get_binary
 from radarr.history import history_log_movie
