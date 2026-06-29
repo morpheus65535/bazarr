@@ -100,6 +100,19 @@ PHONE_NO_DETECTION_RE = re.compile(
     r"\s*([+(\s]*[0-9][0-9()\s-]+[0-9])(?=$|[\s,+(]+[0-9])", re.I
 )
 
+IS_DOMAIN_SERVICE_TARGET = re.compile(
+    r"\s*((?P<domain>[a-z0-9_-]+)\.)?(?P<service>[a-z0-9_-]+)"
+    r"(:(?P<targets>[a-z0-9_,-]+))?",
+    re.I,
+)
+
+DOMAIN_SERVICE_TARGET_DETECTION_RE = re.compile(
+    r"\s*((?:[a-z0-9_-]+\.)?[a-z0-9_-]+"
+    r"(?::(?:[a-z0-9_-]+(?:,+[a-z0-9_-]+)+?))?)"
+    r"(?=$|(?:\s|,+\s|\s,+)+(?:[a-z0-9_-]+\.)?[a-z0-9_-]+)",
+    re.I,
+)
+
 # Support for prefix: (string followed by colon) infront of phone no
 PHONE_NO_WPREFIX_DETECTION_RE = re.compile(
     r"\s*((?:[a-z]+:)?[+(\s]*[0-9][0-9()\s-]+[0-9])"
@@ -262,6 +275,44 @@ def is_uuid(uuid):
     return bool(match)
 
 
+def is_domain_service_target(entry, domain="notify"):
+    """Determine if the specified entry a domain.service:target type
+
+    Expects a string containing the following formats:
+      - service
+      - service:target
+      - service:target1,target2
+      - domain.service:target
+      - domain.service:target1,target2
+
+    Args:
+        entry (str): The string you want to check.
+
+    Returns:
+        bool: Returns False if the entry specified is domain.service:target
+    """
+
+    try:
+        result = IS_DOMAIN_SERVICE_TARGET.match(entry)
+        if not result:
+            # not parseable content as it does not even conform closely to a
+            # domain.service:target
+            return False
+
+    except TypeError:
+        # not parseable content
+        return False
+
+    return {
+        # Store domain or set default if not acquired
+        "domain": result.group("domain") if result.group("domain") else domain,
+        # store service
+        "service": result.group("service"),
+        # store targets if defined
+        "targets": parse_list(result.group("targets")),
+    }
+
+
 def is_phone_no(phone, min_len=10):
     """Determine if the specified entry is a phone number.
 
@@ -358,7 +409,7 @@ def is_call_sign(callsign):
         callsign (str): The string you want to check.
 
     Returns:
-        bool: Returns False if the address specified is not a phone number
+        bool: Returns False if the enry specified is not a callsign
     """
 
     try:
@@ -763,7 +814,6 @@ def parse_url(
         if isinstance(port, int) and not (
             not strict_port or (strict_port and port > 0 and port <= 65535)
         ):
-
             # An invalid port was specified
             return None
 
@@ -848,6 +898,48 @@ def parse_bool(arg, default=False):
 
     # Handle other types
     return bool(arg)
+
+
+def parse_domain_service_targets(
+    *args, store_unparseable=True, domain="notify", **kwargs
+):
+    """
+    Takes a string containing the following formats separated by space
+      - service
+      - service:target
+      - service:target1,target2
+      - domain.service:target
+      - domain.service:target1,target2
+
+      If no domain is parsed, the default domain is returned.
+
+      Targets can be comma separated (if multiple are to be defined)
+    """
+
+    result = []
+    for arg in args:
+        if isinstance(arg, str) and arg:
+            _result = DOMAIN_SERVICE_TARGET_DETECTION_RE.findall(arg)
+            if _result:
+                result += _result
+
+            elif not _result and store_unparseable:
+                # we had content passed into us that was lost because it was
+                # so poorly formatted that it didn't even come close to
+                # meeting the regular expression we defined. We intentially
+                # keep it as part of our result set so that parsing done
+                # at a higher level can at least report this to the end user
+                # and hopefully give them some indication as to what they
+                # may have done wrong.
+                result += list(filter(bool, re.split(STRING_DELIMITERS, arg)))
+
+        elif isinstance(arg, (set, list, tuple)):
+            # Use recursion to handle the list of phone numbers
+            result += parse_domain_service_targets(
+                *arg, store_unparseable=store_unparseable, domain=domain
+            )
+
+    return result
 
 
 def parse_phone_no(*args, store_unparseable=True, prefix=False, **kwargs):
@@ -937,7 +1029,10 @@ def parse_emails(*args, store_unparseable=True, **kwargs):
 
         elif isinstance(arg, (set, list, tuple)):
             # Use recursion to handle the list of Emails
-            result += parse_emails(*arg, store_unparseable=store_unparseable)
+            result += parse_emails(
+                *arg,
+                store_unparseable=store_unparseable,
+            )
 
     return result
 
@@ -955,7 +1050,6 @@ def url_assembly(encode=False, **kwargs):
     # Determine Authentication
     auth = ""
     if kwargs.get("user") is not None and kwargs.get("password") is not None:
-
         auth = "{user}:{password}@".format(
             user=quote_(kwargs.get("user"), safe=""),
             password=quote_(kwargs.get("password"), safe=""),
@@ -1013,8 +1107,18 @@ def urlencode(query, doseq=False, safe="", encoding=None, errors=None):
     """
     # Tidy query by eliminating any records set to None
     query_ = {k: v for (k, v) in query.items() if v is not None}
+    # Use quote (not quote_plus) so spaces become %20 rather than +.
+    # Apprise's parse_qsd intentionally leaves + raw (it is a reserved
+    # character in tokens/passwords), so values encoded with + can never
+    # round-trip cleanly.  %20 is decoded correctly by unquote() and is
+    # safe across all Apprise plugin URL round-trips.
     return _urlencode(
-        query_, doseq=doseq, safe=safe, encoding=encoding, errors=errors
+        query_,
+        doseq=doseq,
+        safe=safe,
+        encoding=encoding,
+        errors=errors,
+        quote_via=quote,
     )
 
 
@@ -1082,7 +1186,8 @@ def parse_list(*args, cast=None, allow_whitespace=True, sort=True):
 
         elif isinstance(arg, (set, list, tuple)):
             result += parse_list(
-                *arg, allow_whitespace=allow_whitespace, sort=sort)
+                *arg, allow_whitespace=allow_whitespace, sort=sort
+            )
 
     #
     # filter() eliminates any empty entries
@@ -1095,8 +1200,11 @@ def parse_list(*args, cast=None, allow_whitespace=True, sort=True):
             sorted(filter(bool, list(set(result))))
             if allow_whitespace
             else sorted(
-                [x.strip() for x in filter(
-                    bool, list(set(result))) if x.strip()]
+                [
+                    x.strip()
+                    for x in filter(bool, list(set(result)))
+                    if x.strip()
+                ]
             )
         )
     return (

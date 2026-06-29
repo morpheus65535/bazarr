@@ -26,9 +26,10 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 __title__ = "Apprise"
-__description__: str = \
+__description__: str = (
     "Push Notifications that work with just about every platform!"
-__version__ = "1.9.8"
+)
+__version__ = "1.11.0"
 __author__ = "Chris Caron"
 __email__ = "lead2gold@gmail.com"
 __license__ = "BSD 2-Clause"
@@ -70,6 +71,7 @@ from .manager_config import ConfigurationManager
 from .manager_plugins import NotificationManager
 from .persistent_store import PersistentStore
 from .plugins.base import NotifyBase
+from .tag import AppriseTag
 from .url import PrivacyMode, URLBase
 
 # Set default logging handler to avoid "No handler found" warnings.
@@ -92,6 +94,7 @@ __all__ = [
     "AppriseAttachment",
     "AppriseConfig",
     "AppriseLocale",
+    "AppriseTag",
     "AttachBase",
     "AttachmentManager",
     "ConfigBase",

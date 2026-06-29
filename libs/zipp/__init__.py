@@ -14,10 +14,9 @@ import pathlib
 import posixpath
 import re
 import stat
-import sys
 import zipfile
 
-from ._functools import save_method_args
+from ._functools import none_as, save_method_args
 from .compat.py310 import text_encoding
 from .glob import Translator
 
@@ -196,12 +195,7 @@ class FastLookup(CompleteDirs):
 
 
 def _extract_text_encoding(encoding=None, *args, **kwargs):
-    # compute stack level so that the caller of the caller sees any warning.
-    is_pypy = sys.implementation.name == 'pypy'
-    # PyPy no longer special cased after 7.3.19 (or maybe 7.3.18)
-    # See jaraco/zipp#143
-    is_old_pypi = is_pypy and sys.pypy_version_info < (7, 3, 19)
-    stack_level = 3 + is_old_pypi
+    stack_level = 3
     return text_encoding(encoding, stack_level), args, kwargs
 
 
@@ -277,7 +271,7 @@ class Path:
     resolve to the zipfile.
 
     >>> str(path)
-    'mem/abcde.zip/'
+    'mem/abcde.zip'
     >>> path.name
     'abcde.zip'
     >>> path.filename == pathlib.Path('mem/abcde.zip')
@@ -404,7 +398,7 @@ class Path:
 
     def iterdir(self):
         if not self.is_dir():
-            raise ValueError("Can't listdir a file")
+            raise NotADirectoryError("Can't listdir a file")
         subs = map(self._next, self.root.namelist())
         return filter(self._is_child, subs)
 
@@ -435,7 +429,8 @@ class Path:
         return posixpath.relpath(str(self), str(other.joinpath(*extra)))
 
     def __str__(self):
-        return posixpath.join(self.root.filename, self.at)
+        root = none_as(self.root.filename, ':zipfile:')
+        return posixpath.join(root, self.at) if self.at else root
 
     def __repr__(self):
         return self.__repr.format(self=self)

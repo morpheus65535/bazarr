@@ -35,9 +35,14 @@ from typing import Any, Optional
 from ...common import NotifyType
 from ...locale import gettext_lazy as _
 from ...url import PrivacyMode
-from ...utils.parse import parse_bool, parse_list
+from ...utils.parse import parse_bool, parse_list, validate_regex
 from ..base import NotifyBase
-from .adapter import SLIXMPP_SUPPORT_AVAILABLE, SlixmppAdapter, XMPPConfig
+from .adapter import (
+    SLIXMPP_SUPPORT_AVAILABLE,
+    SlixmppAdapter,
+    XMPPChannelBindingError,
+    XMPPConfig,
+)
 from .common import SECURE_MODES, SecureXMPPMode
 
 # A pragmatic, "hardened" JID validator intended for Apprise URLs.
@@ -50,7 +55,7 @@ from .common import SECURE_MODES, SecureXMPPMode
 # This does not try to fully implement RFC 7622. The goal is to catch bad
 # inputs early and reliably while still supporting common JID patterns.
 IS_JID = re.compile(
-    r"^\s*(?P<local>[^@\s/]+)((@|%40)"
+    r"^\s*(?P<is_room>#|%23)?(?P<local>[^@\s/]+)((@|%40)"
     r"(?P<domain>[^@\s/]+))?(?:(/|%2F)(?P<resource>[^%/\s]+)"
     r"((/|%2F).*)?)?\s*$"
 )
@@ -114,6 +119,17 @@ class NotifyXMPP(NotifyBase):
                 "private": True,
                 "required": True,
             },
+            "target_user": {
+                "name": _("Target User"),
+                "type": "string",
+                "map_to": "targets",
+            },
+            "target_channels": {
+                "name": _("Target Channel"),
+                "type": "string",
+                "prefix": "#",
+                "map_to": "targets",
+            },
             "targets": {
                 "name": _("Targets"),
                 "type": "list:string",
@@ -124,7 +140,11 @@ class NotifyXMPP(NotifyBase):
     template_args = dict(
         NotifyBase.template_args,
         **{
-            "to": {"alias_of": "targets"},
+            "xmpp": {
+                "name": _("XMPP Server"),
+                "type": "string",
+                "map_to": "xmpp_host",
+            },
             "mode": {
                 "name": _("Secure Mode"),
                 "type": "choice:string",
@@ -147,49 +167,78 @@ class NotifyXMPP(NotifyBase):
                 "type": "bool",
                 "default": False,
             },
+            "to": {"alias_of": "targets"},
+            "name": {
+                "name": _("MUC Nickname"),
+                "type": "string",
+            },
+            "scramplus": {
+                "name": _("SCRAM-PLUS Channel Binding"),
+                "type": "bool",
+                "default": True,
+            },
         },
     )
 
     def __init__(
         self,
-        targets: Optional[list[str]] = None,
+        targets: Optional[list[(str, str)]] = None,
         secure_mode: Optional[str] = None,
         roster: Optional[bool] = None,
         subject: Optional[bool] = None,
         keepalive: Optional[bool] = None,
+        name: Optional[str] = None,
+        xmpp_host: Optional[str] = None,
+        scramplus: Optional[bool] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(**kwargs)
 
+        # xmpp_host allows the connection host to differ from the JID domain.
+        # Mirrors the smtp= / smtp_host pattern in the email plugin.
+        self.xmpp_host = (
+            xmpp_host.strip()
+            if isinstance(xmpp_host, str) and xmpp_host.strip()
+            else ""
+        )
+
         try:
-            self.jid = self.normalize_jid(self.user or "", self.host)
+            self.jid, _ = self.normalize_jid(self.user or "", self.host)
 
         except ValueError:
             msg = f"An invalid XMPP JID ({self.user}) was specified."
             self.logger.warning(msg)
             raise TypeError(msg) from None
 
-        self.targets: list[str] = []
+        self.targets: list[(str, str)] = []
+        # Flag for tracking if we want Multi-User Chat function enabled
+        self.want_muc = False
+
         for target in parse_list(targets):
             try:
-                jid = self.normalize_jid(target or "", self.host)
+                jid, is_muc = self.normalize_jid(target or "", self.host)
+                mtype = "groupchat" if is_muc else "chat"
+                if is_muc:
+                    self.want_muc = True
 
             except ValueError:
                 self.logger.warning(
-                    "Dropped invalid XMPP target (%s).", target)
+                    "Dropped invalid XMPP target (%s).", target
+                )
                 continue
-            self.targets.append(jid)
+            self.targets.append((mtype, jid))
 
         if isinstance(secure_mode, str) and secure_mode.strip():
             self.secure_mode = secure_mode.strip().lower()
             self.secure_mode = next(
-                (k for k in SECURE_MODES
-                 if k.startswith(self.secure_mode)), None
+                (k for k in SECURE_MODES if k.startswith(self.secure_mode)),
+                None,
             )
             if self.secure_mode not in SECURE_MODES:
                 msg = (
                     "The XMPP secure mode specified "
-                    f"({secure_mode}) is invalid.")
+                    f"({secure_mode}) is invalid."
+                )
                 self.logger.warning(msg)
                 raise TypeError(msg)
 
@@ -203,18 +252,31 @@ class NotifyXMPP(NotifyBase):
         # Prepare our roster check
         self.roster = (
             self.template_args["roster"]["default"]
-            if roster is None else bool(roster)
+            if roster is None
+            else bool(roster)
         )
 
         self.subject = (
             self.template_args["subject"]["default"]
-            if subject is None else bool(subject)
+            if subject is None
+            else bool(subject)
         )
 
         self.keepalive = (
             self.template_args["keepalive"]["default"]
             if keepalive is None
             else bool(keepalive)
+        )
+
+        # SCRAM-PLUS: controls whether SASL SCRAM-PLUS mechanisms are
+        # attempted.  Set to False when the server returns "Invalid
+        # channel binding" during authentication; use ?scramplus=no.
+        self.scramplus = (
+            self.template_args["scramplus"]["default"]
+            if scramplus is None
+            else parse_bool(
+                scramplus, default=self.template_args["scramplus"]["default"]
+            )
         )
 
         if self.secure and self.secure_mode == SecureXMPPMode.NONE:
@@ -232,6 +294,12 @@ class NotifyXMPP(NotifyBase):
                 self.secure_mode,
             )
             self.secure = True
+
+        # MUC nickname: alphanumeric + underscore; falls back to the JID
+        # username, then the app_id as a last resort
+        self.name = validate_regex(name, r"^[a-zA-Z0-9_]+$") if name else None
+        if self.name is None:
+            self.name = self.user or self.app_id
 
         # Keepalive adapter (created lazily)
         self._adapter: Optional[SlixmppAdapter] = None
@@ -251,7 +319,11 @@ class NotifyXMPP(NotifyBase):
         """Return the pieces that uniquely identify this configuration."""
         return (
             self.secure_protocol if self.secure else self.protocol,
-            self.host, self.user, self.password, self.port,
+            self.host,
+            self.xmpp_host,
+            self.user,
+            self.password,
+            self.port,
         )
 
     def url(self, privacy: bool = False, *args: Any, **kwargs: Any) -> str:
@@ -263,7 +335,16 @@ class NotifyXMPP(NotifyBase):
             "roster": "yes" if self.roster else "no",
             "subject": "yes" if self.subject else "no",
             "keepalive": "yes" if self.keepalive else "no",
+            "scramplus": "yes" if self.scramplus else "no",
         }
+
+        # Only include name when it differs from the default
+        # (JID user / app_id)
+        if self.name != (self.user or self.app_id):
+            params["name"] = self.name
+
+        if self.xmpp_host and self.xmpp_host != self.host:
+            params["xmpp"] = self.xmpp_host
 
         # Extend our parameters
         params.update(self.url_parameters(privacy=privacy, *args, **kwargs))
@@ -286,7 +367,11 @@ class NotifyXMPP(NotifyBase):
 
         # Targets can contain '/' as a resource separator, so ensure it is
         # always percent-encoded in the path (otherwise Apprise will split it).
-        targets = "/".join(self.quote(t, safe="") for t in self.targets)
+        # Use %23 for the MUC '#' prefix so it is not misread as a fragment.
+        targets = "/".join(
+            ("%23" if mode == "groupchat" else "") + self.quote(jid, safe="")
+            for (mode, jid) in self.targets
+        )
 
         return "{schema}://{auth}{host}{port}/{targets}?{params}".format(
             schema=schema,
@@ -313,10 +398,11 @@ class NotifyXMPP(NotifyBase):
         config = XMPPConfig(
             jid=self.jid,
             password=self.password or "",
-            host=self.host,
+            host=self.xmpp_host or self.host,
             port=self.port if self.port else default_port,
             secure=self.secure_mode,
             verify_certificate=self.verify_certificate,
+            use_channel_binding=self.scramplus,
         )
 
         self.logger.debug(
@@ -336,30 +422,44 @@ class NotifyXMPP(NotifyBase):
 
         subject = title if self.subject else ""
 
-        if self.keepalive and self._adapter:
-            # Reuse existing adapter
-            return self._adapter.send_message(
-                targets=self.targets,
-                subject=subject,
-                body=body,
+        try:
+            if self.keepalive and self._adapter:
+                # Reuse existing adapter
+                return self._adapter.send_message(
+                    targets=self.targets,
+                    subject=subject,
+                    body=body,
+                )
+
+            adapter_kwargs = {
+                "config": config,
+                "targets": self.targets,
+                "subject": subject,
+                "body": body,
+                "timeout": self.socket_connect_timeout,
+                "roster": self.roster,
+                "keepalive": self.keepalive,
+                "want_muc": self.want_muc,
+                "default_nickname": self.name,
+            }
+            if not self.keepalive:
+                # One-shot mode: Create, process, and discard
+                return SlixmppAdapter(**adapter_kwargs).process()
+
+            # Keepalive mode, reuse a single adapter instance
+            self._adapter = SlixmppAdapter(**adapter_kwargs)
+            return self._adapter.send_message()
+
+        except XMPPChannelBindingError:
+            # The server rejected SASL SCRAM-PLUS channel binding.
+            # Log a targeted hint so the user knows what to fix.
+            self.logger.warning(
+                "XMPP authentication failed: the server rejected "
+                "SASL SCRAM-PLUS channel binding. Add "
+                "?scramplus=no to your Apprise URL to disable "
+                "SCRAM-PLUS mechanism negotiation."
             )
-
-        adapter_kwargs = {
-            "config": config,
-            "targets": self.targets,
-            "subject": subject,
-            "body": body,
-            "timeout": self.socket_connect_timeout,
-            "roster": self.roster,
-            "keepalive": self.keepalive,
-        }
-        if not self.keepalive:
-            # One-shot mode: Create, process, and discard
-            return SlixmppAdapter(**adapter_kwargs).process()
-
-        # Keepalive mode, reuse a single adapter instance
-        self._adapter = SlixmppAdapter(**adapter_kwargs)
-        return self._adapter.send_message()
+            return False
 
     @property
     def title_maxlen(self) -> Optional[int]:
@@ -370,9 +470,8 @@ class NotifyXMPP(NotifyBase):
 
         return 0 if not self.subject else super().title_maxlen
 
-        # We don't support titles for SMSEagle notifications
     @staticmethod
-    def normalize_jid(value: str, default_host: str) -> str:
+    def normalize_jid(value: str, default_host: str) -> tuple[str, bool]:
         """Normalize and validate a JID.
 
         Behaviour:
@@ -386,21 +485,18 @@ class NotifyXMPP(NotifyBase):
            optional '/resource' suffix.
         """
         raw = (value or "").strip()
-        if not raw:
-            raise ValueError("Empty JID")
-
         results = IS_JID.match(raw)
         if not results:
             raise ValueError("Invalid JID")
 
-        host = default_host \
-            if not results.group("domain") else results.group("domain")
+        is_muc = bool(results.group("is_room"))
+        host = results.group("domain") or default_host
 
         jid = f"{results.group('local')}@{host}"
         if results.group("resource"):
             jid = f"{jid}/{results.group('resource')}"
 
-        return jid
+        return jid, is_muc
 
     @staticmethod
     def parse_url(url: str) -> Optional[dict[str, Any]]:
@@ -412,7 +508,8 @@ class NotifyXMPP(NotifyBase):
         # Targets from path
         results["targets"] = [
             NotifyXMPP.unquote(t)
-            for t in NotifyXMPP.split_path(results.get("fullpath"))]
+            for t in NotifyXMPP.split_path(results.get("fullpath"))
+        ]
 
         qd = results.get("qsd", {})
 
@@ -435,4 +532,23 @@ class NotifyXMPP(NotifyBase):
         if "keepalive" in results["qsd"] and len(results["qsd"]["keepalive"]):
             results["keepalive"] = parse_bool(results["qsd"]["keepalive"])
 
+        if "name" in results["qsd"] and len(results["qsd"]["name"]):
+            results["name"] = NotifyXMPP.unquote(results["qsd"]["name"])
+
+        if "xmpp" in results["qsd"] and len(results["qsd"]["xmpp"]):
+            results["xmpp_host"] = NotifyXMPP.unquote(results["qsd"]["xmpp"])
+
+        if "scramplus" in results["qsd"] and len(results["qsd"]["scramplus"]):
+            results["scramplus"] = parse_bool(
+                results["qsd"]["scramplus"],
+                default=NotifyXMPP.template_args["scramplus"]["default"],
+            )
+
         return results
+
+    @staticmethod
+    def runtime_deps():
+        """Return a tuple of top-level Python package names that this plugin
+        imported as optional runtime dependencies.
+        """
+        return ("slixmpp",)

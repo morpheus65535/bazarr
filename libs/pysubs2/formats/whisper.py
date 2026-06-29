@@ -8,11 +8,11 @@ from .base import FormatBase
 from ..ssaevent import SSAEvent
 from ..ssafile import SSAFile
 from ..time import make_time, timestamp_to_ms
-from typing import Union, List, Dict, Any, Optional, Sequence, TextIO
+from typing import Union, Any, Optional, Sequence, TextIO
 import re
 
 
-def load_from_whisper(result_or_segments: Union[Dict[str, Any], List[Dict[str, Any]]]) -> SSAFile:
+def load_from_whisper(result_or_segments: Union[dict[str, Any], list[dict[str, Any]]]) -> SSAFile:
     """
     Load subtitle file from OpenAI Whisper transcript
 

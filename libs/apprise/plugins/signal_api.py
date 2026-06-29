@@ -145,19 +145,19 @@ class NotifySignalAPI(NotifyBase):
     template_args = dict(
         NotifyBase.template_args,
         **{
-            "to": {
-                "alias_of": "targets",
-            },
             "from": {
                 "alias_of": "from_phone",
             },
-            "batch": {
-                "name": _("Batch Mode"),
+            "status": {
+                "name": _("Show Status"),
                 "type": "bool",
                 "default": False,
             },
-            "status": {
-                "name": _("Show Status"),
+            "to": {
+                "alias_of": "targets",
+            },
+            "batch": {
+                "name": _("Batch Mode"),
                 "type": "bool",
                 "default": False,
             },
@@ -278,7 +278,8 @@ class NotifySignalAPI(NotifyBase):
 
         # Support Styled (Markdown formatting)
         text_mode = (
-            "styled" if self.notify_format == NotifyFormat.MARKDOWN
+            "styled"
+            if self.notify_format == NotifyFormat.MARKDOWN
             else "normal"
         )
 
@@ -351,7 +352,8 @@ class NotifySignalAPI(NotifyBase):
                 log_payload = dict(payload)
                 log_payload.pop("recipients", None)
                 self.logger.debug(
-                    "Signal API Payload: %s", sanitize_payload(log_payload))
+                    "Signal API Payload: %s", sanitize_payload(log_payload)
+                )
                 self.logger.debug(
                     "Signal API Recipients: %s",
                     payload.get("recipients", []),
@@ -367,6 +369,7 @@ class NotifySignalAPI(NotifyBase):
                     headers=headers,
                     verify=self.verify_certificate,
                     timeout=self.request_timeout,
+                    allow_redirects=self.redirects,
                 )
                 if r.status_code not in (
                     requests.codes.ok,
@@ -393,7 +396,8 @@ class NotifySignalAPI(NotifyBase):
                     )
 
                     self.logger.debug(
-                        "Response Details:\r\n%r", (r.content or b"")[:2000])
+                        "Response Details:\r\n%r", (r.content or b"")[:2000]
+                    )
 
                     # Mark our failure
                     has_error = True
@@ -414,7 +418,7 @@ class NotifySignalAPI(NotifyBase):
             except requests.RequestException as e:
                 self.logger.warning(
                     "A Connection error occured sending"
-                    f" {len(self.targets[index:index + batch_size])} Signal"
+                    f" {len(self.targets[index : index + batch_size])} Signal"
                     " API notification(s)."
                 )
                 self.logger.debug(f"Socket Exception: {e!s}")

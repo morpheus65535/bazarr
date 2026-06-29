@@ -235,15 +235,17 @@ class NotifyNotifiarr(NotifyBase):
         return "{schema}://{apikey}/{targets}?{params}".format(
             schema=self.secure_protocol,
             apikey=self.pprint(self.apikey, privacy, safe=""),
-            targets="/".join([
-                NotifyNotifiarr.quote(x, safe="+#@")
-                for x in chain(
-                    # Channels
-                    [f"#{x}" for x in self.targets["channels"]],
-                    # Pass along the same invalid entries as were provided
-                    self.targets["invalid"],
-                )
-            ]),
+            targets="/".join(
+                [
+                    NotifyNotifiarr.quote(x, safe="+#@")
+                    for x in chain(
+                        # Channels
+                        [f"#{x}" for x in self.targets["channels"]],
+                        # Pass along the same invalid entries as were provided
+                        self.targets["invalid"],
+                    )
+                ]
+            ),
             params=NotifyNotifiarr.urlencode(params),
         )
 
@@ -363,6 +365,7 @@ class NotifyNotifiarr(NotifyBase):
                 headers=headers,
                 verify=self.verify_certificate,
                 timeout=self.request_timeout,
+                allow_redirects=self.redirects,
             )
             if r.status_code < 200 or r.status_code >= 300:
                 # We had a problem
@@ -378,7 +381,8 @@ class NotifyNotifiarr(NotifyBase):
                 )
 
                 self.logger.debug(
-                    "Response Details:\r\n%r", (r.content or b"")[:2000])
+                    "Response Details:\r\n%r", (r.content or b"")[:2000]
+                )
 
                 # Return; we're done
                 return False

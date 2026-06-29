@@ -138,6 +138,7 @@ class NotifyWxPusher(NotifyBase):
             "targets": {
                 "name": _("Targets"),
                 "type": "list:string",
+                "required": True,
             },
         },
     )
@@ -251,6 +252,7 @@ class NotifyWxPusher(NotifyBase):
                 headers=headers,
                 verify=self.verify_certificate,
                 timeout=self.request_timeout,
+                allow_redirects=self.redirects,
             )
 
             try:
@@ -268,7 +270,6 @@ class NotifyWxPusher(NotifyBase):
                 and content
                 and content.get("code") == 1000
             ):
-
                 # We're good!
                 self.logger.info(
                     "Sent WxPusher notification to %d targets.",
@@ -307,7 +308,8 @@ class NotifyWxPusher(NotifyBase):
 
                 self.logger.debug(
                     "Response Details:\r\n%r",
-                    content if content else (r.content or b"")[:2000])
+                    content if content else (r.content or b"")[:2000],
+                )
 
                 # Mark our failure
                 return False

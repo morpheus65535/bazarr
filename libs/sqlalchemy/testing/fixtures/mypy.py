@@ -42,8 +42,7 @@ class MypyTest(TestBase):
             with open(
                 Path(cachedir) / "sqla_mypy_config.cfg", "w"
             ) as config_file:
-                config_file.write(
-                    f"""
+                config_file.write(f"""
                     [mypy]\n
                     plugins = sqlalchemy.ext.mypy.plugin\n
                     show_error_codes = True\n
@@ -53,13 +52,11 @@ class MypyTest(TestBase):
                     [mypy-sqlalchemy.*]
                     ignore_errors = True
 
-                    """
-                )
+                    """)
             with open(
                 Path(cachedir) / "plain_mypy_config.cfg", "w"
             ) as config_file:
-                config_file.write(
-                    f"""
+                config_file.write(f"""
                     [mypy]\n
                     show_error_codes = True\n
                     {mypy_path}
@@ -67,8 +64,7 @@ class MypyTest(TestBase):
                     [mypy-sqlalchemy.*]
                     ignore_errors = True
 
-                    """
-                )
+                    """)
             yield cachedir
 
     @config.fixture()
@@ -202,15 +198,18 @@ class MypyTest(TestBase):
                                 expected_msg,
                             )
 
-                            expected_msg = re.sub(
-                                "List", "builtins.list", expected_msg
-                            )
+                            # as of mypy 1.20.0 it's not spitting out
+                            # "builtins" anymore (using assert_type() would be
+                            # better overall)
+                            # expected_msg = re.sub(
+                            #    "List", "builtins.list", expected_msg
+                            # )
 
-                            expected_msg = re.sub(
-                                r"\b(int|str|float|bool)\b",
-                                lambda m: rf"builtins.{m.group(0)}\*?",
-                                expected_msg,
-                            )
+                            # expected_msg = re.sub(
+                            #    r"\b(int|str|float|bool)\b",
+                            #    lambda m: rf"builtins.{m.group(0)}\*?",
+                            #    expected_msg,
+                            # )
                             # expected_msg = re.sub(
                             #     r"(Sequence|Tuple|List|Union)",
                             #     lambda m: fr"typing.{m.group(0)}\*?",

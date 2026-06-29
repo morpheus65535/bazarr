@@ -1,0 +1,12 @@
+msgpack-1.2.1.dist-info/INSTALLER,sha256=zuuue4knoyJ-UwPPXg8fezS7VCrXJQrAP7zeNuwvFQg,4
+msgpack-1.2.1.dist-info/METADATA,sha256=Fv93GsM-y87XpvTM41W-U43bJ-DGhv4JurRd8HFiHq8,8273
+msgpack-1.2.1.dist-info/RECORD,,
+msgpack-1.2.1.dist-info/REQUESTED,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
+msgpack-1.2.1.dist-info/WHEEL,sha256=DkV-ntIm-3VWD87iCIyvXSz28ISStjMGlDRnHg-QlnQ,110
+msgpack-1.2.1.dist-info/licenses/COPYING,sha256=SS3tuoXaWHL3jmCRvNH-pHTWYNNay03ulkuKqz8AdCc,614
+msgpack-1.2.1.dist-info/top_level.txt,sha256=2tykSY1pXdiA2xYTDR6jPw0qI5ZGxRihyhf4S5hZyXk,8
+msgpack/__init__.py,sha256=VHnCSJiHgikrXuSJKJ94I6-tx0_GfPMsa1-BOv5ctuU,1109
+msgpack/_cmsgpack.cpython-310-darwin.so,sha256=4wfyKX-wAHJU57jxHLTHlxiJiQFP6VtwwQTFOMP63pg,204672
+msgpack/exceptions.py,sha256=dCTWei8dpkrMsQDcjQk74ATl9HsIBH0ybt8zOPNqMYc,1081
+msgpack/ext.py,sha256=0j-OWB-bZIwWP-0X2H9uUfkIr3rn6HVdz1Yw0M1M33I,5731
+msgpack/fallback.py,sha256=jO5tLolPFtz69Y1A8xdWO8jALSwCHLVNoklYYusbBN0,32820

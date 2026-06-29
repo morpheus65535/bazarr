@@ -105,6 +105,7 @@ The owning object and :class:`.CollectionAttributeImpl` are also reachable
 through the adapter, allowing for some very sophisticated behavior.
 
 """
+
 from __future__ import annotations
 
 import operator

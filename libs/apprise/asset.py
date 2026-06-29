@@ -147,6 +147,23 @@ class AppriseAsset:
     # to a new line.
     interpret_escapes = False
 
+    # Default number of retries after a first notification failure.
+    # Individual plugins may override this via their ?retry= URL parameter
+    # or the 'retry:' YAML key.  Clamped to [0, APPRISE_MAX_SERVICE_RETRY].
+    default_service_retry = 0
+
+    # Default wait (in seconds) between retry attempts.  Individual plugins
+    # may override this via their ?wait= URL parameter or the 'wait:' YAML
+    # key.  Clamped to [0.0, APPRISE_MAX_SERVICE_WAIT].
+    default_service_wait = 0.5
+
+    # When True, as soon as any independent OR tag chain exhausts all its
+    # priority groups without success, notify() / async_notify() return False
+    # immediately without running further escalation rounds for the surviving
+    # chains.  When False (the default), all chains are allowed to complete
+    # regardless of whether another chain has already failed.
+    abort_on_chain_failure = False
+
     # Defines the encoding of the content passed into Apprise
     encoding = "utf-8"
 
@@ -172,6 +189,13 @@ class AppriseAsset:
     # choose to disable this for a slight performance bump. It is recommended
     # that you leave this option as is otherwise.
     secure_logging = True
+
+    # By default, HTTP redirects (3xx responses) are followed, matching the
+    # behaviour of the underlying requests library. Set this to False to
+    # disable redirect following globally across all plugins without having
+    # to add redirect=no to every individual URL. Individual URLs can still
+    # override this via the redirect= parameter.
+    http_redirects = True
 
     # Optionally specify one or more path to attempt to scan for Python modules
     # By default, no paths are scanned.
@@ -223,7 +247,7 @@ class AppriseAsset:
         storage_salt: Optional[Union[str, bytes]] = None,
         storage_idlen: Optional[int] = None,
         timezone: Optional[Union[str, tzinfo]] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         """Asset Initialization."""
         # Assign default arguments if specified
@@ -248,14 +272,16 @@ class AppriseAsset:
             # Define how our persistent storage behaves
             try:
                 self.__storage_mode = (
-                    storage_mode if isinstance(storage_mode, NotifyFormat)
+                    storage_mode
+                    if isinstance(storage_mode, NotifyFormat)
                     else PersistentStoreMode(storage_mode.lower())
                 )
 
             except (AttributeError, ValueError, TypeError):
                 err = (
                     f"An invalid persistent store mode ({storage_mode}) was "
-                    "specified.")
+                    "specified."
+                )
                 raise AttributeError(err) from None
 
         if isinstance(storage_idlen, int):
@@ -277,7 +303,8 @@ class AppriseAsset:
             self._tzinfo = zoneinfo(timezone)
             if not self._tzinfo:
                 raise AttributeError(
-                    "AppriseAsset timezone provided is invalid") from None
+                    "AppriseAsset timezone provided is invalid"
+                ) from None
         else:
             # Default our timezone to what is detected on the system
             self._tzinfo = datetime.now().astimezone().tzinfo
@@ -322,8 +349,7 @@ class AppriseAsset:
 
         # Attempt to get the type, otherwise return a default grey
         # if we couldn't look up the entry
-        color = self.html_notify_map.get(
-            notify_type, self.default_html_color)
+        color = self.html_notify_map.get(notify_type, self.default_html_color)
         if color_type is None:
             # This is the default return type
             return color
@@ -344,8 +370,7 @@ class AppriseAsset:
     def ascii(self, notify_type: NotifyType) -> str:
         """Returns an ascii representation based on passed in notify type."""
         # look our response up
-        return self.ascii_notify_map.get(
-            notify_type, self.default_ascii_chars)
+        return self.ascii_notify_map.get(notify_type, self.default_ascii_chars)
 
     def image_url(
         self,

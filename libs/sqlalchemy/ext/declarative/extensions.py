@@ -8,6 +8,7 @@
 
 
 """Public API functions and helpers for declarative."""
+
 from __future__ import annotations
 
 import collections

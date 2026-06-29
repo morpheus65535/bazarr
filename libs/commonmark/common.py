@@ -67,7 +67,7 @@ def unescape_string(s):
 
 def normalize_uri(uri):
     try:
-        return quote(uri.encode('utf-8'), safe=str('/@:+?=&()%#*,'))
+        return quote(uri.encode('utf-8'), safe=str(';/@:+?=&()%#*,'))
     except UnicodeDecodeError:
         # Python 2 also throws a UnicodeDecodeError, complaining about
         # the width of the "safe" string. Removing this parameter

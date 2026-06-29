@@ -875,8 +875,6 @@ class InlineParser(object):
         self.brackets = None
         while (self.parseInline(block)):
             pass
-        # allow raw string to be garbage collected
-        block.string_content = None
         self.processEmphasis(None)
 
     parse = parseInlines

@@ -10,6 +10,7 @@
 within INSERT and UPDATE statements.
 
 """
+
 from __future__ import annotations
 
 import functools
@@ -848,7 +849,7 @@ def _setup_delete_return_defaults(
     toplevel,
     kw,
 ):
-    (_, _, implicit_return_defaults, *_) = _get_returning_modifiers(
+    _, _, implicit_return_defaults, *_ = _get_returning_modifiers(
         compiler, stmt, compile_state, toplevel
     )
 

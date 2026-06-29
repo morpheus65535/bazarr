@@ -93,6 +93,7 @@ class NotifyVoipms(NotifyBase):
             "from_phone": {
                 "name": _("From Phone No"),
                 "type": "string",
+                "required": True,
                 "regex": (r"^\+?[0-9\s)(+-]+$", "i"),
                 "map_to": "source",
             },
@@ -249,10 +250,12 @@ class NotifyVoipms(NotifyBase):
                     headers=headers,
                     verify=self.verify_certificate,
                     timeout=self.request_timeout,
+                    allow_redirects=self.redirects,
                 )
 
                 with contextlib.suppress(
-                        AttributeError, TypeError, ValueError):
+                    AttributeError, TypeError, ValueError
+                ):
                     # Load our JSON object if valid
                     # ValueError = r.content is Unparsable
                     # TypeError = r.content is None
@@ -276,7 +279,8 @@ class NotifyVoipms(NotifyBase):
                     )
 
                     self.logger.debug(
-                        "Response Details:\r\n%r", (r.content or b"")[:2000])
+                        "Response Details:\r\n%r", (r.content or b"")[:2000]
+                    )
 
                     # Mark our failure
                     has_error = True
@@ -343,10 +347,12 @@ class NotifyVoipms(NotifyBase):
             password=self.pprint(self.password, privacy, safe=""),
             from_phone=self.voip_ms_country_code
             + self.pprint(self.source, privacy, safe=""),
-            targets="/".join([
-                self.voip_ms_country_code + NotifyVoipms.quote(x, safe="")
-                for x in self.targets
-            ]),
+            targets="/".join(
+                [
+                    self.voip_ms_country_code + NotifyVoipms.quote(x, safe="")
+                    for x in self.targets
+                ]
+            ),
             params=NotifyVoipms.urlencode(params),
         )
 

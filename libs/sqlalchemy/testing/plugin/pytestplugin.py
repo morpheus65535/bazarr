@@ -654,13 +654,10 @@ def _pytest_fn_decorator(target):
             __target_fn="__target_fn", __orig_fn="__orig_fn", name=fn.__name__
         )
         metadata.update(format_argspec_plus(spec, grouped=False))
-        code = (
-            """\
+        code = """\
 def %(name)s%(grouped_args)s:
     return %(__target_fn)s(%(__orig_fn)s, %(apply_kw)s)
-"""
-            % metadata
-        )
+""" % metadata
         decorated = _exec_code_in_env(
             code, {"__target_fn": target, "__orig_fn": fn}, fn.__name__
         )

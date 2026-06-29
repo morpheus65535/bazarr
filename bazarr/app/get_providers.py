@@ -54,6 +54,11 @@ def legendasdivx_limit_reset_timedelta():
     return time_until_midnight(timezone=ZoneInfo('Europe/Lisbon')) + datetime.timedelta(minutes=60)
 
 
+# Get timedelta until midnight GMT
+def midnight_gmt_limit_reset_timedelta():
+    return time_until_midnight(timezone=ZoneInfo('Etc/GMT')) + datetime.timedelta(minutes=15)
+
+
 VALID_THROTTLE_EXCEPTIONS = (TooManyRequests, DownloadLimitExceeded, ServiceUnavailable, APIThrottled,
                              ParseResponseError, IPAddressBlocked)
 VALID_COUNT_EXCEPTIONS = ('TooManyRequests', 'ServiceUnavailable', 'APIThrottled', requests.exceptions.Timeout,
@@ -127,6 +132,10 @@ def provider_throttle_map():
         },
         "subdl": {
             ProviderError: (datetime.timedelta(hours=1), "1 hour"),
+            DownloadLimitExceeded: (
+                midnight_gmt_limit_reset_timedelta(),
+                f"{midnight_gmt_limit_reset_timedelta().seconds // 3600 + 1} hours"),
+            APIThrottled: (datetime.timedelta(minutes=15), "15 minutes"),
         }
     }
 

@@ -97,18 +97,20 @@ class AsyncAioPikaManager(AsyncPubSubManager):  # pragma: no cover
                     ), routing_key='*',
                 )
                 break
-            except aio_pika.AMQPException:
-                if retry:
-                    self._get_logger().error('Cannot publish to rabbitmq... '
-                                             'retrying')
-                    retry = False
-                else:
-                    self._get_logger().error(
-                        'Cannot publish to rabbitmq... giving up')
-                    break
             except aio_pika.exceptions.ChannelInvalidStateError:
                 # aio_pika raises this exception when the task is cancelled
                 raise asyncio.CancelledError()
+            except Exception as exc:
+                if retry:
+                    self._get_logger().error(
+                        'Cannot publish to rabbitmq... retrying',
+                        extra={"rabbitmq_exception": str(exc)})
+                    retry = False
+                else:
+                    self._get_logger().error(
+                        'Cannot publish to rabbitmq... giving up',
+                        extra={"rabbitmq_exception": str(exc)})
+                    break
 
     async def _listen(self):
         retry_sleep = 1
@@ -125,12 +127,13 @@ class AsyncAioPikaManager(AsyncPubSubManager):  # pragma: no cover
                             async with message.process():
                                 yield message.body
                                 retry_sleep = 1
-            except aio_pika.AMQPException:
-                self._get_logger().error(
-                    'Cannot receive from rabbitmq... '
-                    'retrying in {} secs'.format(retry_sleep))
-                await asyncio.sleep(retry_sleep)
-                retry_sleep = min(retry_sleep * 2, 60)
             except aio_pika.exceptions.ChannelInvalidStateError:
                 # aio_pika raises this exception when the task is cancelled
                 raise asyncio.CancelledError()
+            except Exception as exc:
+                self._get_logger().error(
+                    'Cannot receive from rabbotmq... retrying in '
+                    f'{retry_sleep} secs',
+                    extra={"rabbitmq_exception": str(exc)})
+                await asyncio.sleep(retry_sleep)
+                retry_sleep = min(retry_sleep * 2, 60)

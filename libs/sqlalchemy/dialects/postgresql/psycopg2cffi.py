@@ -22,6 +22,7 @@ is as per ``psycopg2``.
     :mod:`sqlalchemy.dialects.postgresql.psycopg2`
 
 """  # noqa
+
 from .psycopg2 import PGDialect_psycopg2
 from ... import util
 

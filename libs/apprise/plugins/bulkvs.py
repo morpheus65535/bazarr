@@ -118,14 +118,14 @@ class NotifyBulkVS(NotifyBase):
     template_args = dict(
         NotifyBase.template_args,
         **{
-            "to": {
-                "alias_of": "targets",
-            },
             "from": {
                 "name": _("From Phone No"),
                 "type": "string",
                 "regex": (r"^\+?[0-9\s)(+-]+$", "i"),
                 "map_to": "source",
+            },
+            "to": {
+                "alias_of": "targets",
             },
             "batch": {
                 "name": _("Batch Mode"),
@@ -257,6 +257,7 @@ class NotifyBulkVS(NotifyBase):
                     auth=auth,
                     verify=self.verify_certificate,
                     timeout=self.request_timeout,
+                    allow_redirects=self.redirects,
                 )
 
                 # A Response may look like:
@@ -295,7 +296,8 @@ class NotifyBulkVS(NotifyBase):
                     )
 
                     self.logger.debug(
-                        "Response Details:\r\n%r", (r.content or b"")[:2000])
+                        "Response Details:\r\n%r", (r.content or b"")[:2000]
+                    )
 
                     # Mark our failure
                     has_error = True

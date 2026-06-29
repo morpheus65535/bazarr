@@ -265,6 +265,7 @@ class NotifyFCM(NotifyBase):
         self.oauth = GoogleOAuth(
             user_agent=self.app_id,
             timeout=self.request_timeout,
+            redirects=self.redirects,
             verify_certificate=self.verify_certificate,
         )
 
@@ -289,7 +290,6 @@ class NotifyFCM(NotifyBase):
             self.keyfile[0].max_file_size = self.max_fcm_keyfile_size
 
         else:  # Legacy Mode
-
             # The apikey associated with the account
             self.apikey = validate_regex(apikey)
             if not self.apikey:
@@ -490,6 +490,7 @@ class NotifyFCM(NotifyBase):
                     headers=headers,
                     verify=self.verify_certificate,
                     timeout=self.request_timeout,
+                    allow_redirects=self.redirects,
                 )
                 if r.status_code not in (
                     requests.codes.ok,
@@ -511,7 +512,8 @@ class NotifyFCM(NotifyBase):
                     )
 
                     self.logger.debug(
-                        "Response Details:\r\n%r", (r.content or b"")[:2000])
+                        "Response Details:\r\n%r", (r.content or b"")[:2000]
+                    )
 
                     has_error = True
 
@@ -648,3 +650,10 @@ class NotifyFCM(NotifyBase):
         results["data_kwargs"] = results["qsd+"]
 
         return results
+
+    @staticmethod
+    def runtime_deps():
+        """Return a tuple of top-level Python package names that this plugin
+        imported as optional runtime dependencies.
+        """
+        return ("cryptography",)

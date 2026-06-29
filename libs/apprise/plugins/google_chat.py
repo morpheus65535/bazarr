@@ -223,15 +223,21 @@ class NotifyGoogleChat(NotifyBase):
         }
 
         if self.thread_key:
-            params.update({
-                "messageReplyOption": "REPLY_MESSAGE_FALLBACK_TO_NEW_THREAD",
-            })
-
-            payload.update({
-                "thread": {
-                    "thread_key": self.thread_key,
+            params.update(
+                {
+                    "messageReplyOption": (
+                        "REPLY_MESSAGE_FALLBACK_TO_NEW_THREAD"
+                    ),
                 }
-            })
+            )
+
+            payload.update(
+                {
+                    "thread": {
+                        "thread_key": self.thread_key,
+                    }
+                }
+            )
 
         self.logger.debug(
             "Google Chat POST URL:"
@@ -250,12 +256,12 @@ class NotifyGoogleChat(NotifyBase):
                 headers=headers,
                 verify=self.verify_certificate,
                 timeout=self.request_timeout,
+                allow_redirects=self.redirects,
             )
             if r.status_code not in (
                 requests.codes.ok,
                 requests.codes.no_content,
             ):
-
                 # We had a problem
                 status_str = NotifyBase.http_response_code_lookup(
                     r.status_code
@@ -269,7 +275,8 @@ class NotifyGoogleChat(NotifyBase):
                 )
 
                 self.logger.debug(
-                    "Response Details:\r\n%r", (r.content or b"")[:2000])
+                    "Response Details:\r\n%r", (r.content or b"")[:2000]
+                )
 
                 # Return; we're done
                 return False

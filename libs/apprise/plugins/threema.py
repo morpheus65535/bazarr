@@ -123,9 +123,6 @@ class NotifyThreema(NotifyBase):
     template_args = dict(
         NotifyBase.template_args,
         **{
-            "to": {
-                "alias_of": "targets",
-            },
             "from": {
                 "alias_of": "gateway_id",
             },
@@ -134,6 +131,9 @@ class NotifyThreema(NotifyBase):
             },
             "secret": {
                 "alias_of": "secret",
+            },
+            "to": {
+                "alias_of": "targets",
             },
         },
     )
@@ -256,6 +256,7 @@ class NotifyThreema(NotifyBase):
                     headers=headers,
                     verify=self.verify_certificate,
                     timeout=self.request_timeout,
+                    allow_redirects=self.redirects,
                 )
 
                 if r.status_code != requests.codes.ok:
@@ -275,7 +276,8 @@ class NotifyThreema(NotifyBase):
                     )
 
                     self.logger.debug(
-                        "Response Details:\r\n%r", (r.content or b"")[:2000])
+                        "Response Details:\r\n%r", (r.content or b"")[:2000]
+                    )
 
                     # Mark our failure
                     has_error = True

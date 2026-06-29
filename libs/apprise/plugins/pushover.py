@@ -25,17 +25,41 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+import base64
 import contextlib
-from itertools import chain
+import gzip
+import os as _os
 import re
 
 import requests
+
+# Optional dependency for E2EE field encryption.
+# When absent, encryption is silently skipped with a warning if the user
+# explicitly configured a key + e2ee=yes.
+try:
+    from cryptography.hazmat.primitives import (
+        hashes as _crypto_hashes,
+        hmac as _crypto_hmac,
+        padding as _crypto_pad,
+    )
+    from cryptography.hazmat.primitives.ciphers import (
+        Cipher as _Cipher,
+        algorithms as _crypto_algos,
+        modes as _crypto_modes,
+    )
+
+    # E2EE support is available
+    PUSHOVER_E2EE_SUPPORT = True
+
+except ImportError:
+    # E2EE support unavailable; `pip install cryptography` to enable
+    PUSHOVER_E2EE_SUPPORT = False
 
 from ..attachment.base import AttachBase
 from ..common import NotifyFormat, NotifyType
 from ..conversion import convert_between
 from ..locale import gettext_lazy as _
-from ..utils.parse import parse_list, validate_regex
+from ..utils.parse import parse_bool, parse_list, validate_regex
 from .base import NotifyBase
 
 # Flag used as a placeholder to sending to all devices
@@ -43,6 +67,10 @@ PUSHOVER_SEND_TO_ALL = "ALL_DEVICES"
 
 # Used to detect a Device
 VALIDATE_DEVICE = re.compile(r"^\s*(?P<device>[a-z0-9_-]{1,25})\s*$", re.I)
+
+# Used to detect a Group key (same format as user key: alphanumeric, prefixed
+# with # or its URL-encoded equivalent %23)
+VALIDATE_GROUP = re.compile(r"^\s*(%23|#)(?P<group>[a-z0-9]+)\s*$", re.I)
 
 
 # Priorities
@@ -138,12 +166,24 @@ PUSHOVER_HTTP_ERROR_MAP = {
     401: "Unauthorized - Invalid Token.",
 }
 
+# Validate the E2EE encryption key: exactly 64 hexadecimal characters
+# representing a 256-bit AES key, matching the format required by the
+# Pushover E2EE API: https://pushover.net/api#e2ee
+VALIDATE_ENCRYPTION_KEY = re.compile(r"^[0-9a-f]{64}$", re.I)
+
 
 class NotifyPushover(NotifyBase):
     """A wrapper for Pushover Notifications."""
 
     # The default descriptive name associated with the Notification
     service_name = "Pushover"
+
+    # Optional dependency: cryptography is only needed for E2EE field
+    # encryption.  The plugin works without it; encryption is skipped
+    # with a warning when the package is absent.
+    requirements = {
+        "packages_recommended": "cryptography",
+    }
 
     # The services URL
     service_url = "https://pushover.net/"
@@ -202,6 +242,12 @@ class NotifyPushover(NotifyBase):
                 "regex": (r"^[a-z0-9_-]{1,25}$", "i"),
                 "map_to": "targets",
             },
+            "target_group": {
+                "name": _("Target Group"),
+                "type": "string",
+                "prefix": "#",
+                "map_to": "targets",
+            },
             "targets": {
                 "name": _("Targets"),
                 "type": "list:string",
@@ -235,8 +281,8 @@ class NotifyPushover(NotifyBase):
                 "map_to": "supplemental_url_title",
                 "type": "string",
             },
-            "retry": {
-                "name": _("Retry"),
+            "interval": {
+                "name": _("Emergency Retry Interval"),
                 "type": "int",
                 "min": 30,
                 "default": 900,  # 15 minutes
@@ -251,6 +297,20 @@ class NotifyPushover(NotifyBase):
             "to": {
                 "alias_of": "targets",
             },
+            "key": {
+                "name": _("Encryption Key"),
+                "type": "string",
+                "private": True,
+                # Maps to the encryption_key __init__ parameter
+                "map_to": "encryption_key",
+            },
+            "e2ee": {
+                "name": _("E2EE"),
+                "type": "bool",
+                # Enabled by default when an encryption_key is provided;
+                # set to no to force plaintext even when a key is set
+                "default": True,
+            },
         },
     )
 
@@ -261,10 +321,12 @@ class NotifyPushover(NotifyBase):
         targets=None,
         priority=None,
         sound=None,
-        retry=None,
+        interval=None,
         expire=None,
         supplemental_url=None,
         supplemental_url_title=None,
+        encryption_key=None,
+        e2ee=None,
         **kwargs,
     ):
         """Initialize Pushover Object."""
@@ -284,26 +346,32 @@ class NotifyPushover(NotifyBase):
             self.logger.warning(msg)
             raise TypeError(msg)
 
-        # Track our valid devices
+        # Track our valid devices and groups separately
         targets = parse_list(targets)
 
         # Track any invalid entries
         self.invalid_targets = []
+        self.devices = []
+        self.groups = []
 
-        if len(targets) == 0:
-            self.targets = (PUSHOVER_SEND_TO_ALL,)
+        if not targets:
+            # No targets specified at all: send to all devices of user
+            self.devices = [PUSHOVER_SEND_TO_ALL]
 
         else:
-            self.targets = []
             for target in targets:
+                result = VALIDATE_GROUP.match(target)
+                if result:
+                    self.groups.append(result.group("group"))
+                    continue
+
                 result = VALIDATE_DEVICE.match(target)
                 if result:
-                    # Store device information
-                    self.targets.append(result.group("device"))
+                    self.devices.append(result.group("device"))
                     continue
 
                 self.logger.warning(
-                    f"Dropped invalid Pushover device ({target}) specified.",
+                    f"Dropped invalid Pushover target ({target}) specified.",
                 )
                 self.invalid_targets.append(target)
 
@@ -337,21 +405,21 @@ class NotifyPushover(NotifyBase):
 
         # The following are for emergency alerts
         if self.priority == PushoverPriority.EMERGENCY:
-
-            # How often to resend notification, in seconds
-            self.retry = self.template_args["retry"]["default"]
+            # How often to resend notification, in seconds (emergency only)
+            self.interval = self.template_args["interval"]["default"]
             with contextlib.suppress(ValueError, TypeError):
-                # Get our retry value
-                self.retry = int(retry)
+                self.interval = int(interval)
 
-            # How often to resend notification, in seconds
+            # How long before the emergency alert expires, in seconds
             self.expire = self.template_args["expire"]["default"]
             with contextlib.suppress(ValueError, TypeError):
                 # Acquire our expiry value
                 self.expire = int(expire)
 
-            if self.retry < 30:
-                msg = "Pushover retry must be at least 30 seconds."
+            if self.interval < 30:
+                msg = (
+                    "Pushover emergency interval must be at least 30 seconds."
+                )
                 self.logger.warning(msg)
                 raise TypeError(msg)
 
@@ -362,7 +430,83 @@ class NotifyPushover(NotifyBase):
                 )
                 self.logger.warning(msg)
                 raise TypeError(msg)
+
+        # End-to-end encryption: validate and store the encryption key.
+        # The key must be exactly 64 hex characters (256-bit AES key).
+        if encryption_key:
+            # Normalise to lower-case hex string
+            _key = str(encryption_key).strip().lower()
+            if not VALIDATE_ENCRYPTION_KEY.match(_key):
+                msg = (
+                    "Pushover encryption_key must be exactly 64 hex "
+                    "characters (256-bit AES key); "
+                    "got {} chars".format(len(_key))
+                )
+                self.logger.warning(msg)
+                raise TypeError(msg)
+
+            self.encryption_key = _key
+        else:
+            # No key -- E2EE is not possible
+            self.encryption_key = None
+
+        # e2ee flag: defaults to True (encrypt when a key is available).
+        # Set to False/no to force plaintext even when a key is configured.
+        self.e2ee = (
+            self.template_args["e2ee"]["default"]
+            if e2ee is None
+            else parse_bool(e2ee)
+        )
         return
+
+    def _encrypt_field(self, plaintext, key_bytes):
+        """Encrypt a single Pushover message field for E2EE.
+
+        Implements the field-level encryption scheme from
+        https://pushover.net/api#e2ee -- per field:
+
+        1. gzip-compress the plaintext string (UTF-8)
+        2. AES-256-CBC-encrypt the compressed data (random 16-byte IV,
+           PKCS7 padding) using the caller-supplied 256-bit key
+        3. Compute HMAC-SHA256 over (IV || ciphertext) with the same key
+        4. Return base64(IV || ciphertext || HMAC)
+
+        Raises on any crypto error; the caller must not silently fall
+        back to sending plaintext when encryption fails.
+        """
+
+        try:
+            # Compress the UTF-8 encoded plaintext
+            compressed = gzip.compress(plaintext.encode("utf-8"))
+
+            # Generate a random 16-byte initialisation vector
+            iv = _os.urandom(16)
+
+            # Pad the compressed data to a multiple of the AES block size
+            padder = _crypto_pad.PKCS7(128).padder()
+            padded = padder.update(compressed) + padder.finalize()
+
+            # AES-256-CBC encryption
+            cipher = _Cipher(
+                _crypto_algos.AES(key_bytes),
+                _crypto_modes.CBC(iv),
+            )
+            encryptor = cipher.encryptor()
+            ciphertext = encryptor.update(padded) + encryptor.finalize()
+
+            # HMAC-SHA256 over IV || ciphertext for integrity
+            h = _crypto_hmac.HMAC(key_bytes, _crypto_hashes.SHA256())
+            h.update(iv + ciphertext)
+            mac = h.finalize()
+
+            # Base64-encode the concatenated IV || ciphertext || HMAC
+            return base64.b64encode(iv + ciphertext + mac).decode("ascii")
+
+        except Exception as err:
+            self.logger.debug(
+                "Pushover E2EE field encryption failed: {}".format(err)
+            )
+            raise
 
     def send(
         self,
@@ -374,67 +518,142 @@ class NotifyPushover(NotifyBase):
     ):
         """Perform Pushover Notification."""
 
-        if not self.targets:
+        if not self.devices and not self.groups:
             # There were no services to notify
             self.logger.warning("There were no Pushover targets to notify.")
             return False
 
-        # prepare JSON Object
-        payload = {
+        # Determine whether E2EE field encryption should be applied.
+        # Conditions: user supplied a key, e2ee flag is True, and the
+        # cryptography package is installed.
+        do_encrypt = bool(self.encryption_key and self.e2ee)
+        if do_encrypt and not PUSHOVER_E2EE_SUPPORT:
+            # Encryption was explicitly requested but the library is absent;
+            # fall back to plaintext with a clear warning
+            self.logger.warning(
+                "Pushover E2EE requested but the 'cryptography' package "
+                "is not installed; sending message unencrypted. "
+                "Install it with: pip install cryptography"
+            )
+            do_encrypt = False
+
+        # Build the base payload shared across all sends
+        base_payload = {
             "token": self.token,
-            "user": self.user_key,
             "priority": str(self.priority),
             "title": title if title else self.app_desc,
             "message": body,
-            "device": ",".join(self.targets),
             "sound": self.sound,
         }
 
         if self.supplemental_url:
-            payload["url"] = self.supplemental_url
+            base_payload["url"] = self.supplemental_url
 
         if self.supplemental_url_title:
-            payload["url_title"] = self.supplemental_url_title
+            base_payload["url_title"] = self.supplemental_url_title
 
         if self.notify_format == NotifyFormat.HTML:
             # https://pushover.net/api#html
-            payload["html"] = 1
+            base_payload["html"] = 1
 
         elif self.notify_format == NotifyFormat.MARKDOWN:
-            payload["message"] = convert_between(
+            base_payload["message"] = convert_between(
                 NotifyFormat.MARKDOWN, NotifyFormat.HTML, body
             )
-            payload["html"] = 1
+            base_payload["html"] = 1
 
         if self.priority == PushoverPriority.EMERGENCY:
-            payload.update({"retry": self.retry, "expire": self.expire})
+            base_payload.update(
+                {
+                    "retry": self.interval,
+                    "expire": self.expire,
+                }
+            )
 
-        if attach and self.attachment_support:
-            # Create a copy of our payload
-            payload_ = payload.copy()
+        # Apply field-level E2EE encryption when conditions are met.
+        # Encrypted fields: message, title, url, url_title.
+        # Reference: https://pushover.net/api#e2ee
+        if do_encrypt:
+            # Decode the hex key once for all fields in this send call
+            key_bytes = bytes.fromhex(self.encryption_key)
 
-            # Send with attachments
-            for no, attachment in enumerate(attach):
-                if no or not body:
-                    # To handle multiple attachments, clean up our message
-                    payload_["message"] = attachment.name
+            try:
+                # Encrypt each present field individually
+                base_payload["message"] = self._encrypt_field(
+                    base_payload["message"], key_bytes
+                )
+                base_payload["title"] = self._encrypt_field(
+                    base_payload["title"], key_bytes
+                )
+                if "url" in base_payload:
+                    base_payload["url"] = self._encrypt_field(
+                        base_payload["url"], key_bytes
+                    )
+                if "url_title" in base_payload:
+                    base_payload["url_title"] = self._encrypt_field(
+                        base_payload["url_title"], key_bytes
+                    )
 
-                if not self._send(payload_, attachment):
-                    # Mark our failure
-                    return False
+                # Signal to the Pushover API that fields are encrypted
+                base_payload["encrypted"] = 1
 
-                # Clear our title if previously set
-                payload_["title"] = ""
+            except Exception:
+                # Any failure in the crypto path is fatal -- do not send
+                # silently degraded (unencrypted) content when the caller
+                # expected encryption.
+                self.logger.warning(
+                    "Pushover E2EE encryption failed; notification not sent."
+                )
+                return False
 
-                # No need to alarm for each consecutive attachment uploaded
-                # afterwards
-                payload_["sound"] = PushoverSound.NONE
+        # Build per-target payloads:
+        #  - devices: one call with user=user_key, device=dev1,dev2,...
+        #  - groups: one call per group with user=group_key
+        payloads = []
+        if self.devices:
+            payloads.append(
+                {
+                    **base_payload,
+                    "user": self.user_key,
+                    "device": ",".join(self.devices),
+                }
+            )
+        for group_key in self.groups:
+            payloads.append(
+                {
+                    **base_payload,
+                    "user": group_key,
+                }
+            )
 
-        else:
-            # Simple send
-            return self._send(payload)
+        has_error = False
+        for payload in payloads:
+            if attach and self.attachment_support:
+                # Create a copy of our payload
+                payload_ = payload.copy()
 
-        return True
+                # Send with attachments
+                for no, attachment in enumerate(attach):
+                    if no or not body:
+                        # To handle multiple attachments, clean up our message
+                        payload_["message"] = attachment.name
+
+                    if not self._send(payload_, attachment):
+                        # Mark our failure
+                        has_error = True
+
+                    # Clear our title if previously set
+                    payload_["title"] = ""
+
+                    # No need to alarm for each consecutive attachment
+                    # uploaded afterwards
+                    payload_["sound"] = PushoverSound.NONE
+
+            else:
+                if not self._send(payload):
+                    has_error = True
+
+        return not has_error
 
     def _send(self, payload, attach=None):
         """Wrapper to the requests (post) object."""
@@ -469,7 +688,6 @@ class NotifyPushover(NotifyBase):
                 if not (
                     file_size > 0 and file_size <= self.attach_max_size_bytes
                 ):
-
                     # File size is no good
                     self.logger.warning(
                         f"Pushover attachment size ({file_size}B) exceeds"
@@ -510,9 +728,11 @@ class NotifyPushover(NotifyBase):
                     "attachment": (
                         attach.name,
                         # file handle is safely closed in `finally`; inline
-                        # open is intentional
-                        open(attach.path, "rb"),  # noqa: SIM115
-                    )}
+                        # open is intentional; attach.open() dispatches to
+                        # BytesIO for memory attachments
+                        attach.open(),
+                    )
+                }
 
             r = requests.post(
                 self.notify_url,
@@ -522,6 +742,7 @@ class NotifyPushover(NotifyBase):
                 auth=auth,
                 verify=self.verify_certificate,
                 timeout=self.request_timeout,
+                allow_redirects=self.redirects,
             )
 
             if r.status_code != requests.codes.ok:
@@ -533,7 +754,7 @@ class NotifyPushover(NotifyBase):
                 self.logger.warning(
                     "Failed to send Pushover notification to {}: "
                     "{}{}error={}.".format(
-                        payload["device"],
+                        payload.get("device") or f"group:{payload['user']}",
                         status_str,
                         ", " if status_str else "",
                         r.status_code,
@@ -541,23 +762,24 @@ class NotifyPushover(NotifyBase):
                 )
 
                 self.logger.debug(
-                    "Response Details:\r\n%r", (r.content or b"")[:2000])
+                    "Response Details:\r\n%r", (r.content or b"")[:2000]
+                )
 
                 return False
 
             else:
                 self.logger.info(
                     "Sent Pushover notification to {}.".format(
-                        payload["device"]
+                        payload.get("device") or f"group:{payload['user']}"
                     )
                 )
 
         except requests.RequestException as e:
             self.logger.warning(
-                "A Connection error occurred sending Pushover:{} ".format(
-                    payload["device"]
+                "A Connection error occurred sending Pushover"
+                ":{} notification.".format(
+                    payload.get("device") or "group:{}".format(payload["user"])
                 )
-                + "notification."
             )
             self.logger.debug(f"Socket Exception: {e!s}")
 
@@ -589,6 +811,14 @@ class NotifyPushover(NotifyBase):
         """
         return (self.secure_protocol, self.user_key, self.token)
 
+    def __len__(self):
+        """Returns the number of HTTP requests this instance will make.
+
+        Devices are batched into a single call; each group requires its own.
+        """
+        # At least 1 if there are any valid targets
+        return max(1, (1 if self.devices else 0) + len(self.groups))
+
     def url(self, privacy=False, *args, **kwargs):
         """Returns the URL built dynamically based on specified arguments."""
 
@@ -599,32 +829,53 @@ class NotifyPushover(NotifyBase):
                 if self.priority not in PUSHOVER_PRIORITIES
                 else PUSHOVER_PRIORITIES[self.priority]
             ),
+            "sound": self.sound,
         }
 
-        # Only add expire and retry for emergency messages,
-        # pushover ignores for all other priorities
+        if self.supplemental_url:
+            params["url"] = self.supplemental_url
+
+        if self.supplemental_url_title:
+            params["url_title"] = self.supplemental_url_title
+
+        # Only add expire and interval for emergency messages;
+        # Pushover ignores them for all other priorities
         if self.priority == PushoverPriority.EMERGENCY:
-            params.update({"expire": self.expire, "retry": self.retry})
+            params.update({"expire": self.expire, "interval": self.interval})
+
+        # Include E2EE parameters when a key is set.
+        # Use the short ?key= URL parameter for brevity.
+        if self.encryption_key:
+            params["key"] = (
+                self.pprint(self.encryption_key, privacy, safe="")
+                if privacy
+                else self.encryption_key
+            )
+            # Only emit e2ee=no when the user explicitly disabled it;
+            # the default (True) is implied when a key is present
+            if not self.e2ee:
+                params["e2ee"] = "no"
 
         # Extend our parameters
         params.update(self.url_parameters(privacy=privacy, *args, **kwargs))
 
-        # Escape our devices
-        devices = "/".join([
-            NotifyPushover.quote(x, safe="")
-            for x in chain(self.targets, self.invalid_targets)
-        ])
+        # Assemble targets: devices (excluding sentinel), groups (%23-encoded),
+        # then any invalid entries so the URL round-trips faithfully
+        targets = "/".join(
+            [
+                NotifyPushover.quote(d, safe="")
+                for d in self.devices
+                if d != PUSHOVER_SEND_TO_ALL
+            ]
+            + [NotifyPushover.quote(f"#{g}", safe="") for g in self.groups]
+            + [NotifyPushover.quote(x, safe="") for x in self.invalid_targets]
+        )
 
-        if devices == PUSHOVER_SEND_TO_ALL:
-            # keyword is reserved for internal usage only; it's safe to remove
-            # it from the devices list
-            devices = ""
-
-        return "{schema}://{user_key}@{token}/{devices}/?{params}".format(
+        return "{schema}://{user_key}@{token}/{targets}/?{params}".format(
             schema=self.secure_protocol,
             user_key=self.pprint(self.user_key, privacy, safe=""),
             token=self.pprint(self.token, privacy, safe=""),
-            devices=devices,
+            targets=targets,
             params=NotifyPushover.urlencode(params),
         )
 
@@ -632,6 +883,16 @@ class NotifyPushover(NotifyBase):
     def parse_url(url):
         """Parses the URL and returns enough arguments that can allow us to re-
         instantiate this object."""
+
+        # Encode any literal # in the path so group key prefixes survive
+        # Python's urlparse, which treats # as a fragment separator and
+        # silently drops everything after it.
+        if isinstance(url, str):
+            q_idx = url.find("?")
+            _path = url if q_idx < 0 else url[:q_idx]
+            _rest = "" if q_idx < 0 else url[q_idx:]
+            url = _path.replace("#", "%23") + _rest
+
         results = NotifyBase.parse_url(url, verify_host=False)
         if not results:
             # We're done early as we couldn't load the results
@@ -659,13 +920,15 @@ class NotifyPushover(NotifyBase):
                 results["qsd"]["url"]
             )
         if "url_title" in results["qsd"] and len(results["qsd"]["url_title"]):
-            results["supplemental_url_title"] = results["qsd"]["url_title"]
+            results["supplemental_url_title"] = NotifyPushover.unquote(
+                results["qsd"]["url_title"]
+            )
 
-        # Get expire and retry
+        # Get expire and emergency retry interval
         if "expire" in results["qsd"] and len(results["qsd"]["expire"]):
             results["expire"] = results["qsd"]["expire"]
-        if "retry" in results["qsd"] and len(results["qsd"]["retry"]):
-            results["retry"] = results["qsd"]["retry"]
+        if "interval" in results["qsd"] and len(results["qsd"]["interval"]):
+            results["interval"] = results["qsd"]["interval"]
 
         # The 'to' makes it easier to use yaml configuration
         if "to" in results["qsd"] and len(results["qsd"]["to"]):
@@ -673,7 +936,26 @@ class NotifyPushover(NotifyBase):
                 results["qsd"]["to"]
             )
 
+        # E2EE encryption key (64-char hex string); URL param is ?key= for
+        # brevity, mapped to the encryption_key __init__ parameter
+        if "key" in results["qsd"] and results["qsd"]["key"]:
+            results["encryption_key"] = NotifyPushover.unquote(
+                results["qsd"]["key"]
+            )
+
+        # E2EE flag -- only parse when present; absence preserves default
+        if "e2ee" in results["qsd"] and results["qsd"]["e2ee"]:
+            results["e2ee"] = results["qsd"]["e2ee"]
+
         # Token
         results["token"] = NotifyPushover.unquote(results["host"])
 
         return results
+
+    @staticmethod
+    def runtime_deps():
+        """Return optional runtime dependency package names.
+
+        E2EE support requires the ``cryptography`` package.
+        """
+        return ("cryptography",)

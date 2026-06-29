@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from html.parser import HTMLParser
-from typing import List, Optional, TextIO, Any, Tuple
+from typing import Optional, TextIO, Any
 
 from .base import FormatBase
 from ..ssaevent import SSAEvent
@@ -67,7 +67,7 @@ class SyncElement:
 class SAMIParser(HTMLParser):
     def __init__(self) -> None:
         super().__init__()
-        self.sync_elements: List[SyncElement] = []
+        self.sync_elements: list[SyncElement] = []
         self.current_sync_element: Optional[SyncElement] = None
 
     def begin_sync_element(self, start_ms: int) -> None:
@@ -84,7 +84,7 @@ class SAMIParser(HTMLParser):
         if self.current_sync_element is not None:
             self.current_sync_element.text += text
 
-    def handle_starttag(self, tag: str, attrs: List[Tuple[str, Optional[str]]]) -> None:
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, Optional[str]]]) -> None:
         if tag == "sync":
             start_ms = int(dict(attrs)["start"] or 0)
             self.begin_sync_element(start_ms)

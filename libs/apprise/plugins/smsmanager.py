@@ -130,9 +130,6 @@ class NotifySMSManager(NotifyBase):
             "key": {
                 "alias_of": "apikey",
             },
-            "to": {
-                "alias_of": "targets",
-            },
             "from": {
                 "name": _("From Phone No"),
                 "type": "string",
@@ -147,6 +144,9 @@ class NotifySMSManager(NotifyBase):
                 "type": "choice:string",
                 "values": SMS_MANAGER_GATEWAYS,
                 "default": SMS_MANAGER_GATEWAYS[0],
+            },
+            "to": {
+                "alias_of": "targets",
             },
             "batch": {
                 "name": _("Batch Mode"),
@@ -295,6 +295,7 @@ class NotifySMSManager(NotifyBase):
                     headers=headers,
                     verify=self.verify_certificate,
                     timeout=self.request_timeout,
+                    allow_redirects=self.redirects,
                 )
 
                 if r.status_code != requests.codes.ok:
@@ -317,7 +318,8 @@ class NotifySMSManager(NotifyBase):
                     )
 
                     self.logger.debug(
-                        "Response Details:\r\n%r", (r.content or b"")[:2000])
+                        "Response Details:\r\n%r", (r.content or b"")[:2000]
+                    )
 
                     # Mark our failure
                     has_error = True
@@ -369,9 +371,12 @@ class NotifySMSManager(NotifyBase):
         return "{schema}://{apikey}@{targets}?{params}".format(
             schema=self.secure_protocol[0],
             apikey=self.pprint(self.apikey, privacy, safe=""),
-            targets="/".join([
-                NotifySMSManager.quote(f"{x}", safe="+") for x in self.targets
-            ]),
+            targets="/".join(
+                [
+                    NotifySMSManager.quote(f"{x}", safe="+")
+                    for x in self.targets
+                ]
+            ),
             params=NotifySMSManager.urlencode(params),
         )
 

@@ -30,7 +30,7 @@ def sync_subtitles(video_path,
         return False
 
     if not job_id:
-        jobs_queue.add_job_from_function(f"Syncing {srt_path}", is_progress=False)
+        jobs_queue.add_job_from_function(f"Syncing {srt_path}", is_progress=True)
         return False
 
     jobs_queue.update_job_name(job_id=job_id, new_job_name=f"Syncing {srt_path}")
@@ -83,6 +83,7 @@ def sync_subtitles(video_path,
             else:
                 return True
             finally:
+                jobs_queue.update_job_progress(job_id=job_id, progress_value="max")
                 jobs_queue.update_job_name(job_id=job_id, new_job_name=f"Synced {srt_path}")
                 del subsync
                 gc.collect()

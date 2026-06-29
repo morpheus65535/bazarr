@@ -224,7 +224,6 @@ class NotifyPushed(NotifyBase):
             if not self._send(
                 payload=payload_, notify_type=notify_type, **kwargs
             ):
-
                 # toggle flag
                 has_error = True
 
@@ -240,7 +239,6 @@ class NotifyPushed(NotifyBase):
             if not self._send(
                 payload=payload_, notify_type=notify_type, **kwargs
             ):
-
                 # toggle flag
                 has_error = True
 
@@ -275,6 +273,7 @@ class NotifyPushed(NotifyBase):
                 headers=headers,
                 verify=self.verify_certificate,
                 timeout=self.request_timeout,
+                allow_redirects=self.redirects,
             )
 
             if r.status_code != requests.codes.ok:
@@ -290,7 +289,8 @@ class NotifyPushed(NotifyBase):
                 )
 
                 self.logger.debug(
-                    "Response Details:\r\n%r", (r.content or b"")[:2000])
+                    "Response Details:\r\n%r", (r.content or b"")[:2000]
+                )
 
                 # Return; we're done
                 return False
@@ -330,15 +330,17 @@ class NotifyPushed(NotifyBase):
             app_secret=self.pprint(
                 self.app_secret, privacy, mode=PrivacyMode.Secret, safe=""
             ),
-            targets="/".join([
-                NotifyPushed.quote(x)
-                for x in chain(
-                    # Channels are prefixed with a pound/hashtag symbol
-                    [f"#{x}" for x in self.channels],
-                    # Users are prefixed with an @ symbol
-                    [f"@{x}" for x in self.users],
-                )
-            ]),
+            targets="/".join(
+                [
+                    NotifyPushed.quote(x)
+                    for x in chain(
+                        # Channels are prefixed with a pound/hashtag symbol
+                        [f"#{x}" for x in self.channels],
+                        # Users are prefixed with an @ symbol
+                        [f"@{x}" for x in self.users],
+                    )
+                ]
+            ),
             params=NotifyPushed.urlencode(params),
         )
 

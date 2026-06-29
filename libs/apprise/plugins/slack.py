@@ -73,14 +73,17 @@
 
 import contextlib
 from json import dumps, loads
+from json.decoder import JSONDecodeError
 import re
 from time import time
 
 import requests
 
+from ..apprise_attachment import AppriseAttachment
 from ..common import NotifyFormat, NotifyImageSize, NotifyType
 from ..locale import gettext_lazy as _
 from ..utils.parse import is_email, parse_bool, parse_list, validate_regex
+from ..utils.templates import TemplateType, apply_template
 from .base import NotifyBase
 
 # Extend HTTP Error Messages
@@ -114,12 +117,22 @@ class SlackMode:
     # Our token looks like: xoxb-1234-1234-abc124 or
     BOT = "bot"
 
+    # Slack Workflow Builder webhook
+    # URL: https://hooks.slack.com/workflows/T.../F.../X.../Y...
+    WORKFLOW = "workflow"
+
+    # Slack Workflow trigger webhook (newer format)
+    # URL: https://hooks.slack.com/triggers/T.../X.../Y...
+    WORKFLOW_TRIGGER = "trigger"
+
 
 # Define our Slack Modes
 SLACK_MODES = (
     SlackMode.WEBHOOK,
     SlackMode.WEBHOOK_GOV,
     SlackMode.BOT,
+    SlackMode.WORKFLOW,
+    SlackMode.WORKFLOW_TRIGGER,
 )
 
 
@@ -150,6 +163,11 @@ class NotifySlack(NotifyBase):
     webhook_url = "https://hooks.slack.com/services"
     webhook_gov_url = "https://hooks.slack-gov.com/services"
 
+    # Slack Workflow Builder webhook URL bases
+    # See: https://slack.com/help/articles/360041352714
+    workflow_url = "https://hooks.slack.com/workflows"
+    workflow_trigger_url = "https://hooks.slack.com/triggers"
+
     # Slack API URL (used with Bots)
     api_url = "https://slack.com/api/{}"
 
@@ -158,6 +176,10 @@ class NotifySlack(NotifyBase):
 
     # The maximum allowable characters allowed in the body per message
     body_maxlen = 35000
+
+    # There is no reason we should exceed 35KB when reading in a JSON file.
+    # If it is more than this, then it is not accepted
+    max_slack_template_size = 35000
 
     # Default Notification Format
     notify_format = NotifyFormat.MARKDOWN
@@ -170,7 +192,7 @@ class NotifySlack(NotifyBase):
     templates = (
         # Webhook
         "{schema}://{token_a}/{token_b}/{token_c}",
-        "{schema}://{botname}@{token_a}/{token_b}{token_c}",
+        "{schema}://{botname}@{token_a}/{token_b}/{token_c}",
         "{schema}://{token_a}/{token_b}/{token_c}/{targets}",
         "{schema}://{botname}@{token_a}/{token_b}/{token_c}/{targets}",
         # Bot
@@ -203,6 +225,7 @@ class NotifySlack(NotifyBase):
                 "name": _("Token A"),
                 "type": "string",
                 "private": True,
+                "required": True,
                 "regex": (r"^[A-Z0-9]+$", "i"),
             },
             # Token required as part of the Webhook request
@@ -211,6 +234,7 @@ class NotifySlack(NotifyBase):
                 "name": _("Token B"),
                 "type": "string",
                 "private": True,
+                "required": True,
                 "regex": (r"^[A-Z0-9]+$", "i"),
             },
             # Token required as part of the Webhook request
@@ -219,6 +243,7 @@ class NotifySlack(NotifyBase):
                 "name": _("Token C"),
                 "type": "string",
                 "private": True,
+                "required": True,
                 "regex": (r"^[A-Za-z0-9]+$", "i"),
             },
             "target_encoded_id": {
@@ -248,6 +273,13 @@ class NotifySlack(NotifyBase):
                 "name": _("Targets"),
                 "type": "list:string",
             },
+            # Workflow Builder path: all URL segments joined with slashes
+            # e.g. T05XXXX/Ft07XXXX/XXXXXXXX/YYYYYYYY
+            "workflow_path": {
+                "name": _("Workflow Path"),
+                "type": "string",
+                "private": True,
+            },
         },
     )
 
@@ -275,9 +307,6 @@ class NotifySlack(NotifyBase):
                 "default": False,
                 "map_to": "use_blocks",
             },
-            "to": {
-                "alias_of": "targets",
-            },
             "timestamp": {
                 "name": _("Include Timestamp"),
                 "type": "bool",
@@ -294,8 +323,24 @@ class NotifySlack(NotifyBase):
                 "name": _("Token"),
                 "alias_of": ("access_token", "token_a", "token_b", "token_c"),
             },
+            "to": {
+                "alias_of": "targets",
+            },
+            "template": {
+                "name": _("Template Path"),
+                "type": "string",
+                "private": True,
+            },
         },
     )
+
+    # Define our token control
+    template_kwargs = {
+        "tokens": {
+            "name": _("Template Tokens"),
+            "prefix": ":",
+        },
+    }
 
     # Formatting requirements are defined here:
     # https://api.slack.com/docs/message-formatting
@@ -349,27 +394,86 @@ class NotifySlack(NotifyBase):
         include_timestamp=None,
         use_blocks=None,
         mode=None,
+        template=None,
+        tokens=None,
+        workflow_path=None,
         **kwargs,
     ):
         """Initialize Slack Object."""
         super().__init__(**kwargs)
 
         # Store our webhook mode
-        if mode and isinstance(mode, str):
+        # Track whether the caller supplied an explicit mode so we can
+        # decide later whether to validate exact segment count or
+        # auto-detect the workflow sub-mode from segment count.
+        _mode_explicit = bool(mode and isinstance(mode, str))
+        if _mode_explicit:
             self.mode = next(
                 (a for a in SLACK_MODES if a.startswith(mode)), None
             )
             if self.mode not in SLACK_MODES:
-                msg = (
-                    f"The Slack mode specified ({mode}) is invalid."
-                )
+                msg = f"The Slack mode specified ({mode}) is invalid."
                 self.logger.warning(msg)
                 raise TypeError(msg)
+
+        elif workflow_path:
+            # Mode will be determined by segment count below;
+            # use WORKFLOW as a sentinel so we enter the right branch.
+            self.mode = SlackMode.WORKFLOW
 
         else:  # Detect
             self.mode = SlackMode.BOT if access_token else SlackMode.WEBHOOK
 
-        if self.mode in (SlackMode.WEBHOOK, SlackMode.WEBHOOK_GOV):
+        if self.mode in (
+            SlackMode.WORKFLOW,
+            SlackMode.WORKFLOW_TRIGGER,
+        ):
+            # Workflow Builder mode: no OAuth token, no webhook tokens
+            self.access_token = None
+            self.token_a = None
+            self.token_b = None
+            self.token_c = None
+
+            # Parse workflow path segments from string or list
+            if isinstance(workflow_path, (list, tuple)):
+                self.workflow_path = [str(s) for s in workflow_path if s]
+            elif isinstance(workflow_path, str):
+                self.workflow_path = [s for s in workflow_path.split("/") if s]
+            else:
+                self.workflow_path = []
+
+            # Segment counts are fixed by Slack:
+            #   /workflows/ URLs have exactly 4 segments
+            #   /triggers/  URLs have exactly 3 segments
+            seg_count = len(self.workflow_path)
+            if _mode_explicit:
+                # Validate exact count for the declared mode
+                expected = 4 if self.mode == SlackMode.WORKFLOW else 3
+                if seg_count != expected:
+                    msg = (
+                        f"A Slack {self.mode!r} URL requires exactly"
+                        f" {expected} path segments"
+                        f" ({workflow_path!r} has {seg_count})."
+                    )
+                    self.logger.warning(msg)
+                    raise TypeError(msg)
+            else:
+                # Auto-detect sub-mode from segment count
+                if seg_count == 4:
+                    self.mode = SlackMode.WORKFLOW
+                elif seg_count == 3:
+                    self.mode = SlackMode.WORKFLOW_TRIGGER
+                else:
+                    msg = (
+                        "A Slack Workflow URL requires exactly 3 or 4"
+                        f" path segments ({workflow_path!r} has"
+                        f" {seg_count})."
+                    )
+                    self.logger.warning(msg)
+                    raise TypeError(msg)
+
+        elif self.mode in (SlackMode.WEBHOOK, SlackMode.WEBHOOK_GOV):
+            self.workflow_path = []
             self.access_token = None
             self.token_a = validate_regex(
                 token_a, *self.template_tokens["token_a"]["regex"]
@@ -404,6 +508,7 @@ class NotifySlack(NotifyBase):
                 self.logger.warning(msg)
                 raise TypeError(msg)
         else:
+            self.workflow_path = []
             self.token_a = None
             self.token_b = None
             self.token_c = None
@@ -437,7 +542,14 @@ class NotifySlack(NotifyBase):
             # a flag lower to not set the channels
             self.channels.append(
                 None
-                if self.mode in (SlackMode.WEBHOOK, SlackMode.WEBHOOK_GOV)
+                if self.mode
+                in (
+                    SlackMode.WEBHOOK,
+                    SlackMode.WEBHOOK_GOV,
+                    # Workflow mode has no channel concept
+                    SlackMode.WORKFLOW,
+                    SlackMode.WORKFLOW_TRIGGER,
+                )
                 else self.default_notification_channel
             )
 
@@ -447,22 +559,172 @@ class NotifySlack(NotifyBase):
             re.IGNORECASE,
         )
         # Place a thumbnail image inline with the message body
-        self.include_image = \
-            self.template_args["image"]["default"] \
-            if include_image is None else include_image
+        self.include_image = (
+            self.template_args["image"]["default"]
+            if include_image is None
+            else include_image
+        )
 
         # Place a footer with each post
-        self.include_footer = \
-            self.template_args["footer"]["default"] \
-            if include_footer is None else include_footer
+        self.include_footer = (
+            self.template_args["footer"]["default"]
+            if include_footer is None
+            else include_footer
+        )
 
         # timestamp inclusion (only applicable if footer also defined
-        self.include_timestamp = \
-            self.template_args["timestamp"]["default"] \
-            if include_timestamp is None \
+        self.include_timestamp = (
+            self.template_args["timestamp"]["default"]
+            if include_timestamp is None
             else include_timestamp
+        )
+
+        # Our template object is just an AppriseAttachment object
+        self.template = AppriseAttachment(asset=self.asset)
+        if template:
+            # Add our definition to our template
+            self.template.add(template)
+            if not len(self.template):
+                # add() failed (unsupported schema, unparseable URL, etc.)
+                msg = f"The Slack template ({template!r}) could not be loaded."
+                self.logger.warning(msg)
+                raise TypeError(msg)
+            # Enforce maximum file size
+            self.template[0].max_file_size = self.max_slack_template_size
+
+        # Template functionality
+        self.tokens = {}
+        if isinstance(tokens, dict):
+            self.tokens.update(tokens)
+
+        elif tokens:
+            msg = (
+                "The specified Slack Template Tokens "
+                f"({tokens}) are not identified as a dictionary."
+            )
+            self.logger.warning(msg)
+            raise TypeError(msg)
+
+        # A template always implies Block Kit mode; there is no meaningful
+        # use for templates outside of blocks mode.
+        if self.template:
+            self.use_blocks = True
 
         return
+
+    def gen_payload(
+        self, body, title="", notify_type=NotifyType.INFO, **kwargs
+    ):
+        """Generate our payload from an external Block Kit JSON template.
+
+        Returns the validated attachment content dict (which must contain
+        a non-empty 'blocks' list with typed entries) to be placed into
+        the Slack attachments array.  Returns False on any failure.
+        """
+        # Acquire the first template attachment
+        template = self.template[0]
+        if not template:
+            # We could not access the attachment
+            self.logger.error(
+                "Could not access Slack template"
+                f" {template.url(privacy=True)}."
+            )
+            return False
+
+        # Acquire our to-be footer icon if configured to do so
+        image_url = (
+            None if not self.include_image else self.image_url(notify_type)
+        )
+
+        # Take a copy of our token dictionary
+        tokens = self.tokens.copy()
+
+        # Apply some defaults template values
+        tokens["app_body"] = body
+        tokens["app_title"] = title
+        tokens["app_type"] = notify_type.value
+        tokens["app_id"] = self.app_id
+        tokens["app_desc"] = self.app_desc
+        tokens["app_color"] = self.color(notify_type)
+        tokens["app_image_url"] = image_url
+        tokens["app_url"] = self.app_url
+
+        # Templates are always Block Kit JSON; enforce JSON escaping
+        tokens["app_mode"] = TemplateType.JSON
+
+        # Coerce all substitution values to str before JSON-escaping.
+        # apply_template's _escape_json() calls json.dumps(v)[1:-1] which
+        # is only correct for strings; None produces "ul" and other non-
+        # string types produce similarly corrupted output.  app_mode is a
+        # TemplateType sentinel passed as a named parameter, not a
+        # substitution value, so it is left as-is.
+        safe_tokens = {
+            k: (
+                v
+                if k == "app_mode" or isinstance(v, str)
+                else ("" if v is None else str(v))
+            )
+            for k, v in tokens.items()
+        }
+
+        try:
+            with open(template.path) as fp:
+                content = apply_template(fp.read(), **safe_tokens)
+
+        except OSError:
+            self.logger.error(
+                "Slack template"
+                f" {template.url(privacy=True)} could not be read."
+            )
+            return False
+
+        # Parse and validate as JSON
+        try:
+            content = loads(content)
+
+        except JSONDecodeError as e:
+            self.logger.error(
+                "Slack template"
+                f" {template.url(privacy=True)} contains invalid JSON."
+            )
+            self.logger.debug(f"JSONDecodeError: {e}")
+            return False
+
+        # Template must parse to a JSON object, not an array or scalar
+        if not isinstance(content, dict):
+            self.logger.error(
+                "Slack template"
+                f" {template.url(privacy=True)} must be a JSON object"
+                " (got {}).".format(type(content).__name__)
+            )
+            return False
+
+        # 'blocks' must be a non-empty list (Block Kit requirement)
+        if (
+            not isinstance(content.get("blocks"), list)
+            or not content["blocks"]
+        ):
+            self.logger.error(
+                "Slack template"
+                f" {template.url(privacy=True)} must contain"
+                " a non-empty 'blocks' list."
+            )
+            return False
+
+        # Every block must be a dict with a 'type' string (Block Kit)
+        if not all(
+            isinstance(b, dict) and isinstance(b.get("type"), str)
+            for b in content["blocks"]
+        ):
+            self.logger.error(
+                "Slack template"
+                f" {template.url(privacy=True)} contains"
+                " a block missing a 'type' string."
+            )
+            return False
+
+        # Return the validated attachment content dict
+        return content
 
     def send(
         self,
@@ -478,70 +740,123 @@ class NotifySlack(NotifyBase):
         has_error = False
 
         #
+        # Workflow Builder mode: fixed endpoint, no channel iteration
+        #
+        if self.mode in (SlackMode.WORKFLOW, SlackMode.WORKFLOW_TRIGGER):
+            if self.template:
+                # Use external Block Kit JSON template
+                payload = self.gen_payload(
+                    body, title, notify_type=notify_type, **kwargs
+                )
+                if payload is False:
+                    return False
+
+            else:
+                # Default payload: combine title and body into a single
+                # 'text' field -- the workflow must accept this variable.
+                payload = {
+                    "text": f"{title}: {body}" if title else body,
+                }
+
+            # Construct the workflow POST URL from stored path segments
+            wf_base = (
+                self.workflow_trigger_url
+                if self.mode is SlackMode.WORKFLOW_TRIGGER
+                else self.workflow_url
+            )
+            url = "{}/{}".format(wf_base, "/".join(self.workflow_path))
+            # _send() returns False on error, non-False on success
+            return self._send(url, payload) is not False
+
+        #
         # Prepare JSON Object (applicable to both WEBHOOK and BOT mode)
         #
         if self.use_blocks:
-            # Our slack format
-            slack_format = (
-                "mrkdwn"
-                if self.notify_format == NotifyFormat.MARKDOWN
-                else "plain_text"
-            )
-
-            payload = {
-                "username": self.user if self.user else self.app_id,
-                "attachments": [{
-                    "blocks": [{
-                        "type": "section",
-                        "text": {"type": slack_format, "text": body},
-                    }],
-                    "color": self.color(notify_type),
-                }],
-            }
-
-            # Slack only accepts non-empty header sections
-            if title:
-                payload["attachments"][0]["blocks"].insert(
-                    0,
-                    {
-                        "type": "header",
-                        "text": {
-                            "type": "plain_text",
-                            "text": title,
-                            "emoji": True,
-                        },
-                    },
+            if self.template:
+                # Template mode: generate blocks attachment from template
+                template_content = self.gen_payload(
+                    body, title, notify_type=notify_type, **kwargs
                 )
+                if template_content is False:
+                    # Template loading or parsing failed; abort early
+                    return False
 
-            # Include the footer only if specified to do so
-            if self.include_footer:
-
-                # Acquire our to-be footer icon if configured to do so
-                image_url = (
-                    None
-                    if not self.include_image
-                    else self.image_url(notify_type)
-                )
-
-                # Prepare our footer based on the block structure
-                footer = {
-                    "type": "context",
-                    "elements": [{"type": slack_format, "text": self.app_id}],
+                # Wrap the template attachment content in a full payload
+                payload = {
+                    "username": self.user if self.user else self.app_id,
+                    "attachments": [template_content],
                 }
 
-                if image_url:
-                    payload["icon_url"] = image_url
+            else:
+                # Our slack format
+                slack_format = (
+                    "mrkdwn"
+                    if self.notify_format == NotifyFormat.MARKDOWN
+                    else "plain_text"
+                )
 
-                    footer["elements"].insert(
+                payload = {
+                    "username": self.user if self.user else self.app_id,
+                    "attachments": [
+                        {
+                            "blocks": [
+                                {
+                                    "type": "section",
+                                    "text": {
+                                        "type": slack_format,
+                                        "text": body,
+                                    },
+                                }
+                            ],
+                            "color": self.color(notify_type),
+                        }
+                    ],
+                }
+
+                # Slack only accepts non-empty header sections
+                if title:
+                    payload["attachments"][0]["blocks"].insert(
                         0,
                         {
-                            "type": "image",
-                            "image_url": image_url,
-                            "alt_text": notify_type,
+                            "type": "header",
+                            "text": {
+                                "type": "plain_text",
+                                "text": title,
+                                "emoji": True,
+                            },
                         },
                     )
 
-                payload["attachments"][0]["blocks"].append(footer)
+                # Include the footer only if specified to do so
+                if self.include_footer:
+                    # Acquire our to-be footer icon if configured to do so
+                    image_url = (
+                        None
+                        if not self.include_image
+                        else self.image_url(notify_type)
+                    )
+
+                    # Prepare our footer based on the block structure
+                    footer = {
+                        "type": "context",
+                        "elements": [
+                            {"type": slack_format, "text": self.app_id}
+                        ],
+                    }
+
+                    if image_url:
+                        payload["icon_url"] = image_url
+
+                        footer["elements"].insert(
+                            0,
+                            {
+                                "type": "image",
+                                "image_url": image_url,
+                                "alt_text": notify_type,
+                            },
+                        )
+
+                    payload["attachments"][0]["blocks"].append(footer)
 
         else:
             #
@@ -607,11 +922,13 @@ class NotifySlack(NotifyBase):
                 "username": self.user if self.user else self.app_id,
                 # Use Markdown language
                 "mrkdwn": self.notify_format == NotifyFormat.MARKDOWN,
-                "attachments": [{
-                    "title": title,
-                    "text": body,
-                    "color": self.color(notify_type),
-                }],
+                "attachments": [
+                    {
+                        "title": title,
+                        "text": body,
+                        "color": self.color(notify_type),
+                    }
+                ],
             }
 
             # Acquire our to-be footer icon if configured to do so
@@ -693,8 +1010,9 @@ class NotifySlack(NotifyBase):
                         continue
 
                     # Store oure content
-                    channel, thread_ts = result.group("channel"), result.group(
-                        "thread_ts"
+                    channel, thread_ts = (
+                        result.group("channel"),
+                        result.group("thread_ts"),
                     )
                     if thread_ts:
                         payload["thread_ts"] = thread_ts
@@ -744,7 +1062,6 @@ class NotifySlack(NotifyBase):
         ):
             # Send our attachments (can only be done in bot mode)
             for no, attachment in enumerate(attach, start=1):
-
                 # Perform some simple error checking
                 if not attachment:
                     # We could not access the attachment
@@ -791,10 +1108,12 @@ class NotifySlack(NotifyBase):
                 # https://api.slack.com/methods/files.completeUploadExternal
                 for channel_id in attach_channel_list:
                     payload_ = {
-                        "files": [{
-                            "id": file_id,
-                            "title": attachment.name,
-                        }],
+                        "files": [
+                            {
+                                "id": file_id,
+                                "title": attachment.name,
+                            }
+                        ],
                         "channel_id": channel_id,
                     }
                     url_ = self.api_url.format("files.completeUploadExternal")
@@ -865,6 +1184,7 @@ class NotifySlack(NotifyBase):
                 params=params,
                 verify=self.verify_certificate,
                 timeout=self.request_timeout,
+                allow_redirects=self.redirects,
             )
 
             # Attachment posts return a JSON string
@@ -888,7 +1208,6 @@ class NotifySlack(NotifyBase):
             if r.status_code != requests.codes.ok or not (
                 response and response.get("ok", False)
             ):
-
                 # We had a problem
                 status_str = NotifySlack.http_response_code_lookup(
                     r.status_code, SLACK_HTTP_ERROR_MAP
@@ -901,7 +1220,8 @@ class NotifySlack(NotifyBase):
                 )
 
                 self.logger.debug(
-                    "Response Details:\r\n%r", (r.content or b"")[:2000])
+                    "Response Details:\r\n%r", (r.content or b"")[:2000]
+                )
 
                 # Return; we're done
                 return False
@@ -1017,10 +1337,11 @@ class NotifySlack(NotifyBase):
                     "file": (
                         attach.name,
                         # file handle is safely closed in `finally`; inline
-                        # open is intentional
-                        open(attach.path, "rb"),  # noqa: SIM115
-                        ),
-                    }
+                        # open is intentional; attach.open() dispatches to
+                        # BytesIO for memory attachments
+                        attach.open(),
+                    ),
+                }
 
             r = requests.request(
                 http_method,
@@ -1030,6 +1351,7 @@ class NotifySlack(NotifyBase):
                 files=files,
                 verify=self.verify_certificate,
                 timeout=self.request_timeout,
+                allow_redirects=self.redirects,
                 params=params if params else None,
             )
 
@@ -1059,6 +1381,13 @@ class NotifySlack(NotifyBase):
                         and b"OK" in r.content
                     )
                 )
+            elif self.mode in (
+                SlackMode.WORKFLOW,
+                SlackMode.WORKFLOW_TRIGGER,
+            ):
+                # Workflow trigger webhooks confirm success via HTTP 200;
+                # the response body may be empty or non-standard JSON.
+                status_okay = r.status_code == requests.codes.ok
             elif r.content == b"ok":
                 # The text 'ok' is returned if this is a Webhook request
                 # So the below captures that as well.
@@ -1149,6 +1478,10 @@ class NotifySlack(NotifyBase):
 
         Targets or end points should never be identified here.
         """
+        if self.mode in (SlackMode.WORKFLOW, SlackMode.WORKFLOW_TRIGGER):
+            # Workflow mode is identified by its path segments
+            return (self.secure_protocol, self.mode, *self.workflow_path)
+
         return (
             self.secure_protocol,
             self.token_a,
@@ -1169,14 +1502,32 @@ class NotifySlack(NotifyBase):
             "mode": self.mode,
         }
 
+        if self.template:
+            params["template"] = NotifySlack.quote(
+                self.template[0].url(), safe=""
+            )
+
         # Extend our parameters
         params.update(self.url_parameters(privacy=privacy, *args, **kwargs))
+
+        # Store any template token entries if specified
+        params.update({f":{k}": v for k, v in self.tokens.items()})
 
         # Determine if there is a botname present
         botname = ""
         if self.user:
             botname = "{botname}@".format(
                 botname=NotifySlack.quote(self.user, safe=""),
+            )
+
+        if self.mode in (SlackMode.WORKFLOW, SlackMode.WORKFLOW_TRIGGER):
+            return "{schema}://{path}/?{params}".format(
+                schema=self.secure_protocol,
+                path="/".join(
+                    self.pprint(s, privacy, safe="")
+                    for s in self.workflow_path
+                ),
+                params=NotifySlack.urlencode(params),
             )
 
         if self.mode in (SlackMode.WEBHOOK, SlackMode.WEBHOOK_GOV):
@@ -1221,22 +1572,41 @@ class NotifySlack(NotifyBase):
         # The first token is stored in the hostname
         token = NotifySlack.unquote(results["host"])
 
-        # Get unquoted entries
+        # Get unquoted path entries
         entries = NotifySlack.split_path(results["fullpath"])
 
-        # Verify if our token_a us a bot token or part of a webhook:
-        if token.startswith("xo"):
+        # Peek at mode early to guide path parsing.
+        # Resolve via the same prefix-matching used in __init__ so that
+        # abbreviated inputs (e.g. mode=tri or mode=work) are handled
+        # identically in both places.
+        _mode_raw = results["qsd"].get("mode", "")
+        _mode = (
+            next(
+                (a for a in SLACK_MODES if a.startswith(_mode_raw)),
+                "",
+            )
+            if _mode_raw
+            else ""
+        )
+
+        if _mode in (SlackMode.WORKFLOW, SlackMode.WORKFLOW_TRIGGER):
+            # All path segments form the workflow_path
+            results["workflow_path"] = "/".join([token, *entries])
+            results["targets"] = []
+
+        # Verify if our token is a bot token or part of a webhook:
+        elif token.startswith("xo"):
             # We're dealing with a bot
             results["access_token"] = token
+            results["targets"] = entries
 
         else:
             # We're dealing with a webhook
             results["token_a"] = token
             results["token_b"] = entries.pop(0) if entries else None
             results["token_c"] = entries.pop(0) if entries else None
-
-        # assign remaining entries to the channels we wish to notify
-        results["targets"] = entries
+            # assign remaining entries to the channels we wish to notify
+            results["targets"] = entries
 
         # Support the token flag where you can set it to the bot token
         # or the webhook token (with slash delimiters)
@@ -1280,27 +1650,41 @@ class NotifySlack(NotifyBase):
             )
 
         # Get Image Flag
-        results["include_image"] = \
-            parse_bool(results["qsd"].get(
-                "image", NotifySlack.template_args["image"]["default"]))
+        results["include_image"] = parse_bool(
+            results["qsd"].get(
+                "image", NotifySlack.template_args["image"]["default"]
+            )
+        )
 
-        results["include_timestamp"] = \
-            parse_bool(results["qsd"].get(
-                "timestamp",
-                NotifySlack.template_args["timestamp"]["default"]))
+        results["include_timestamp"] = parse_bool(
+            results["qsd"].get(
+                "timestamp", NotifySlack.template_args["timestamp"]["default"]
+            )
+        )
 
         # Get Payload structure (use blocks?)
         if "blocks" in results["qsd"] and len(results["qsd"]["blocks"]):
             results["use_blocks"] = parse_bool(results["qsd"]["blocks"])
 
         # Get Footer Flag
-        results["include_footer"] = \
-            parse_bool(results["qsd"].get(
-                "footer", NotifySlack.template_args["footer"]["default"]))
+        results["include_footer"] = parse_bool(
+            results["qsd"].get(
+                "footer", NotifySlack.template_args["footer"]["default"]
+            )
+        )
 
         # Get Mode
         if "mode" in results["qsd"] and len(results["qsd"]["mode"]):
             results["mode"] = NotifySlack.unquote(results["qsd"]["mode"])
+
+        # Template Handling
+        if "template" in results["qsd"] and results["qsd"]["template"]:
+            results["template"] = NotifySlack.unquote(
+                results["qsd"]["template"]
+            )
+
+        # Store our tokens
+        results["tokens"] = results["qsd:"]
 
         return results
 
@@ -1310,8 +1694,41 @@ class NotifySlack(NotifyBase):
         Supports:
           - https://hooks.slack.com/services/TOKEN_A/TOKEN_B/TOKEN_C
           - https://hooks.slack-gov.com/services/TOKEN_A/TOKEN_B/TOKEN_C
+          - https://hooks.slack.com/workflows/T.../F.../X.../Y...
+          - https://hooks.slack.com/triggers/T.../X.../Y...
         """
 
+        # Workflow Builder and trigger webhook URLs
+        wf_result = re.match(
+            r"^https?://hooks\.slack\.com/"
+            r"(?P<wf_type>workflows|triggers)/"
+            r"(?P<path>[A-Z0-9][A-Z0-9/_-]+)/?"
+            r"(?P<params>\?.+)?$",
+            url,
+            re.I,
+        )
+        if wf_result:
+            wf_type = wf_result.group("wf_type").lower()
+            # Map URL path type to Apprise mode string
+            mode = (
+                SlackMode.WORKFLOW_TRIGGER
+                if wf_type == "triggers"
+                else SlackMode.WORKFLOW
+            )
+            path = wf_result.group("path").strip("/")
+            params = wf_result.group("params") or ""
+            sep = "&" if params else "?"
+            return NotifySlack.parse_url(
+                "{schema}://{path}/{params}{sep}mode={mode}".format(
+                    schema=NotifySlack.secure_protocol,
+                    path=path,
+                    params=params,
+                    sep=sep,
+                    mode=mode,
+                )
+            )
+
+        # Standard incoming webhook and government webhook URLs
         result = re.match(
             r"^https?://(?P<host>hooks\.slack(?P<gov>-gov)?\.com)/services/"
             r"(?P<token_a>[A-Z0-9]+)/"
@@ -1324,15 +1741,14 @@ class NotifySlack(NotifyBase):
 
         if result:
             params = (
-                ""
-                if not result.group("params")
-                else result.group("params")
+                "" if not result.group("params") else result.group("params")
             )
 
             if result.group("gov"):
                 # provide gov parameters
-                params = ("?" if not params else "&") + \
-                    f"mode={SlackMode.WEBHOOK_GOV}"
+                params = (
+                    "?" if not params else "&"
+                ) + f"mode={SlackMode.WEBHOOK_GOV}"
 
             return NotifySlack.parse_url(
                 "{schema}://{token_a}/{token_b}/{token_c}/{params}".format(

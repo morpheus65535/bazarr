@@ -8,7 +8,6 @@
 
 """Foundational utilities common to many sql modules."""
 
-
 from __future__ import annotations
 
 import collections

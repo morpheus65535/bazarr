@@ -1,10 +1,10 @@
 import io
 from itertools import chain
-import os.path
+from pathlib import Path
 import logging
-from typing import Optional, List, Dict, Iterable, Any, overload, Iterator, TextIO, Tuple, MutableSequence
+from typing import Optional, Iterable, Any, overload, Iterator, TextIO, MutableSequence
 
-from .common import IntOrFloat
+from .common import IntOrFloat, PathOrStr
 from .ssaevent import SSAEvent
 from .ssastyle import SSAStyle
 from .time import make_time, ms_to_str
@@ -26,30 +26,48 @@ class SSAFile(MutableSequence[SSAEvent]):
 
         del subs[0]
 
+    Attributes:
+        events: List of :class:`SSAEvent` instances, ie. individual subtitles.
+        styles: Dict of :class:`SSAStyle` instances.
+        info: Dict with script metadata, ie. ``[Script Info]``.
+        aegisub_project: Dict with Aegisub project, ie. ``[Aegisub Project Garbage]``.
+        fonts_opaque: Dict with embedded fonts, ie. ``[Fonts]``.
+        graphics_opaque: Dict with embedded images, ie. ``[Graphics]``.
+        fps: Framerate used when reading the file, if applicable.
+        format: Format of source subtitle file, if applicable, eg. ``"srt"``.
+
     """
 
-    DEFAULT_INFO: Dict[str, str] = {
+    DEFAULT_INFO: dict[str, str] = {
         "WrapStyle": "0",
         "ScaledBorderAndShadow": "yes",
         "Collisions": "Normal"
     }
+    events: list[SSAEvent]
+    styles: dict[str, SSAStyle]
+    info: dict[str, str]
+    aegisub_project: dict[str, str]
+    fonts_opaque: dict[str, Any]
+    graphics_opaque: dict[str, Any]
+    fps: Optional[float]
+    format: Optional[str]
 
     def __init__(self) -> None:
-        self.events: List[SSAEvent] = []  #: List of :class:`SSAEvent` instances, ie. individual subtitles.
-        self.styles: Dict[str, SSAStyle] = {"Default": SSAStyle.DEFAULT_STYLE.copy()}  #: Dict of :class:`SSAStyle` instances.
-        self.info: Dict[str, str] = self.DEFAULT_INFO.copy()  #: Dict with script metadata, ie. ``[Script Info]``.
-        self.aegisub_project: Dict[str, str] = {}  #: Dict with Aegisub project, ie. ``[Aegisub Project Garbage]``.
-        self.fonts_opaque: Dict[str, Any] = {}  #: Dict with embedded fonts, ie. ``[Fonts]``.
-        self.graphics_opaque: Dict[str, Any] = {}  #: Dict with embedded images, ie. ``[Graphics]``.
-        self.fps: Optional[float] = None  #: Framerate used when reading the file, if applicable.
-        self.format: Optional[str] = None  #: Format of source subtitle file, if applicable, eg. ``"srt"``.
+        self.events = []
+        self.styles = {"Default": SSAStyle.DEFAULT_STYLE.copy()}
+        self.info = self.DEFAULT_INFO.copy()
+        self.aegisub_project = {}
+        self.fonts_opaque = {}
+        self.graphics_opaque = {}
+        self.fps = None
+        self.format = None
 
     # ------------------------------------------------------------------------
     # I/O methods
     # ------------------------------------------------------------------------
 
     @classmethod
-    def load(cls, path: str, encoding: str = "utf-8", format_: Optional[str] = None, fps: Optional[float] = None,
+    def load(cls, path: PathOrStr, encoding: str = "utf-8", format_: Optional[str] = None, fps: Optional[float] = None,
              errors: Optional[str] = None, **kwargs: Any) -> "SSAFile":
         """
         Load subtitle file from given path.
@@ -62,7 +80,7 @@ class SSAFile(MutableSequence[SSAEvent]):
             (eg. :meth:`pysubs2.formats.subrip.SubripFormat.from_file()`)
 
         Arguments:
-            path (str): Path to subtitle file.
+            path (Path | str): Path to subtitle file.
             encoding (str): Character encoding of input file.
                 Defaults to UTF-8, you may need to change this.
             errors (Optional[str]): Error handling for character encoding
@@ -104,11 +122,11 @@ class SSAFile(MutableSequence[SSAEvent]):
 
         Example:
             >>> subs1 = pysubs2.load("subrip-subtitles.srt")
-            >>> subs2 = pysubs2.load("microdvd-subtitles.sub",fps=23.976)
-            >>> subs3 = pysubs2.load("subrip-subtitles-with-fancy-tags.srt",keep_unknown_html_tags=True)
+            >>> subs2 = pysubs2.load("microdvd-subtitles.sub", fps=23.976)
+            >>> subs3 = pysubs2.load("subrip-subtitles-with-fancy-tags.srt", keep_unknown_html_tags=True)
 
         """
-        with open(path, encoding=encoding, errors=errors) as fp:
+        with Path(path).open(encoding=encoding, errors=errors) as fp:
             return cls.from_file(fp, format_, fps=fps, **kwargs)
 
     @classmethod
@@ -191,7 +209,7 @@ class SSAFile(MutableSequence[SSAEvent]):
         impl.from_file(subs, fp, format_, fps=fps, **kwargs)
         return subs
 
-    def save(self, path: str, encoding: str = "utf-8", format_: Optional[str] = None, fps: Optional[float] = None,
+    def save(self, path: PathOrStr, encoding: str = "utf-8", format_: Optional[str] = None, fps: Optional[float] = None,
              errors: Optional[str] = None, **kwargs: Any) -> None:
         """
         Save subtitle file to given path.
@@ -204,7 +222,7 @@ class SSAFile(MutableSequence[SSAEvent]):
             (eg. :meth:`pysubs2.formats.subrip.SubripFormat.to_file()`)
 
         Arguments:
-            path (str): Path to subtitle file.
+            path (Path | str): Path to subtitle file.
             encoding (str): Character encoding of output file.
                 Defaults to UTF-8, which should be fine for most purposes.
             format_ (str): Optional, specifies desired subtitle format
@@ -240,11 +258,12 @@ class SSAFile(MutableSequence[SSAEvent]):
             pysubs2.exceptions.UnknownFileExtensionError
 
         """
+        outpath = Path(path)
         if format_ is None:
-            ext = os.path.splitext(path)[1].lower()
+            ext = outpath.suffix.lower()
             format_ = get_format_identifier(ext)
 
-        with open(path, "w", encoding=encoding, errors=errors) as fp:
+        with outpath.open("w", encoding=encoding, errors=errors) as fp:
             self.to_file(fp, format_, fps=fps, **kwargs)
 
     def to_string(self, format_: str, fps: Optional[float] = None, **kwargs: Any) -> str:
@@ -309,9 +328,9 @@ class SSAFile(MutableSequence[SSAEvent]):
             line.start += delta
             line.end += delta
 
-    def transform_framerate(self, in_fps: float, out_fps: float, keep_duration: bool = False) -> None:
+    def transform_framerate(self, in_fps: float, out_fps: float) -> None:
         """
-        Rescale all timestamps by ratio of in_fps/out_fps. Force keep duration/display time of subtitles.
+        Rescale all timestamps by ratio of in_fps/out_fps.
 
         Can be used to fix files converted from frame-based to time-based
         with wrongly assumed framerate.
@@ -319,7 +338,6 @@ class SSAFile(MutableSequence[SSAEvent]):
         Arguments:
             in_fps (float)
             out_fps (float)
-            keep_duration (bool)
 
         Raises:
             ValueError: Non-positive framerate given.
@@ -330,14 +348,8 @@ class SSAFile(MutableSequence[SSAEvent]):
 
         ratio = in_fps / out_fps
         for line in self:
-            duration = line.duration
             line.start = int(round(line.start * ratio))
-            if keep_duration:
-                line.duration = duration
-            else:
-                line.end = int(round(line.end * ratio))
-         
-                
+            line.end = int(round(line.end * ratio))
 
     # ------------------------------------------------------------------------
     # Working with styles
@@ -405,10 +417,11 @@ class SSAFile(MutableSequence[SSAEvent]):
         - Less than two characters of text
         - Duplicated text with identical time interval (only the first event is kept)
         """
-        new_events = []
+        new_events: list[SSAEvent] = []
 
-        duplicate_text_ids = set()
-        times_to_texts: Dict[Tuple[int, int], List[str]] = {}
+        duplicate_text_ids: set[int] = set()
+        times_to_texts: dict[tuple[int, int], list[str]] = {}
+
         for i, e in enumerate(self):
             tmp = times_to_texts.setdefault((e.start, e.end), [])
             if tmp.count(e.plaintext) > 0:
@@ -427,7 +440,7 @@ class SSAFile(MutableSequence[SSAEvent]):
 
         self.events = new_events
 
-    def get_text_events(self) -> List[SSAEvent]:
+    def get_text_events(self) -> list[SSAEvent]:
         """
         Return list of events excluding SSA comment lines and lines with SSA drawing tags
         """
@@ -538,7 +551,7 @@ class SSAFile(MutableSequence[SSAEvent]):
         pass
 
     @overload
-    def __getitem__(self, s: slice) -> List[SSAEvent]:
+    def __getitem__(self, s: slice) -> list[SSAEvent]:
         pass
 
     def __getitem__(self, item: Any) -> Any:

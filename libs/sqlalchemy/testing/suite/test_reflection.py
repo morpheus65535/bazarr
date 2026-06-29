@@ -52,7 +52,6 @@ from ...testing import is_none
 from ...testing import is_true
 from ...testing import mock
 
-
 metadata, users = None, None
 
 

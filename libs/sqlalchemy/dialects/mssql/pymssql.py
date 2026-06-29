@@ -22,6 +22,7 @@ pymssql is a Python module that provides a Python DBAPI interface around
 
 
 """  # noqa
+
 import re
 
 from .base import MSDialect

@@ -20,7 +20,6 @@ from .. import util
 from ..util.concurrency import await_fallback
 from ..util.concurrency import await_only
 
-
 if TYPE_CHECKING:
     from ..engine.interfaces import ConnectArgsType
     from ..engine.url import URL
@@ -35,6 +34,14 @@ class AsyncAdapt_aioodbc_cursor(AsyncAdapt_dbapi_cursor):
 
         # how it's supposed to work
         # return self.await_(self._cursor.setinputsizes(*inputsizes))
+
+    @property
+    def fast_executemany(self):
+        return self._cursor._impl.fast_executemany
+
+    @fast_executemany.setter
+    def fast_executemany(self, value):
+        self._cursor._impl.fast_executemany = value
 
 
 class AsyncAdapt_aioodbc_ss_cursor(
@@ -125,6 +132,7 @@ class AsyncAdapt_aioodbc_dbapi:
             "ProgrammingError",
             "InternalError",
             "NotSupportedError",
+            "SQL_DRIVER_NAME",
             "NUMBER",
             "STRING",
             "DATETIME",
@@ -133,6 +141,7 @@ class AsyncAdapt_aioodbc_dbapi:
             "BinaryNull",
             "SQL_VARCHAR",
             "SQL_WVARCHAR",
+            "SQL_DECIMAL",
         ):
             setattr(self, name, getattr(self.pyodbc, name))
 

@@ -6,6 +6,7 @@
 # the MIT License: https://www.opensource.org/licenses/mit-license.php
 
 """ORM event interfaces."""
+
 from __future__ import annotations
 
 from typing import Any

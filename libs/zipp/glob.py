@@ -71,7 +71,8 @@ class Translator:
         Perform the replacements for a match from :func:`separate`.
         """
         return match.group('set') or (
-            re.escape(match.group(0))
+            re
+            .escape(match.group(0))
             .replace('\\*\\*', r'.*')
             .replace('\\*', rf'[^{re.escape(self.seps)}]*')
             .replace('\\?', r'[^/]')

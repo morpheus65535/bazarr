@@ -28,17 +28,28 @@
 # API Source:
 #   https://developers.facebook.com/docs/whatsapp/cloud-api/reference/messages
 #
-# 1. Register a developer account with Meta:
-#  https://developers.facebook.com/docs/whatsapp/cloud-api/get-started
-# 2. Enable 2 Factor Authentication (2FA) with your account (if not done
-#  already)
-# 3. Create a App using WhatsApp Product.  There are 2 to create an app from
-#   Do NOT chose the WhatsApp Webhook one (choose the other)
+# The setup is split across two Meta portals:
+#  - https://business.facebook.com  (Business Manager — System Users & tokens)
+#  - https://developers.facebook.com (Developer Dashboard — App & Phone ID)
 #
-#  When you click on the API Setup section of your new app you need to record
-#  both the access token and the From Phone Number ID.  Note that this not the
-#  from phone number itself, but it's ID.  It's displayed below and contains
-#  way more numbers then your typical phone number
+# 1. Create a Meta Business Manager account at https://business.facebook.com
+#    (or use an existing one).  WhatsApp Business Accounts (WABAs) and System
+#    Users live here.
+# 2. Create a Meta Developer account at https://developers.facebook.com and
+#    create a new App.  Add WhatsApp as a product.  If prompted, select the
+#    "Business" app type and choose "Connect to Customers (WhatsApp)" as the
+#    use case (you may need to click "Customise Use Case" on the home page).
+# 3. In Business Manager, go to Settings > Users > System Users, create a
+#    System User (Admin or Employee role), click "Add Assets", assign your
+#    WhatsApp app, and grant the whatsapp_business_messaging permission.
+#    Then click "Generate Token" and copy it — this is your permanent token.
+# 4. Switch back to the Developer Dashboard, open your app, then go to
+#    WhatsApp > API Setup (or Getting Started) to find your From Phone Number
+#    ID.  This is NOT your actual phone number; it is a separate numeric ID
+#    (roughly 14 digits) assigned by Meta to the sender number.
+# 5. During sandbox testing, verify any recipient phone number through Meta's
+#    interface.  For production, your business must be verified and placed on
+#    the appropriate messaging tier.
 
 from json import dumps, loads
 import re
@@ -47,8 +58,18 @@ import requests
 
 from ..common import NotifyType
 from ..locale import gettext_lazy as _
-from ..utils.parse import is_phone_no, parse_phone_no, validate_regex
+from ..utils.parse import (
+    is_phone_no,
+    parse_phone_no,
+    validate_regex,
+)
 from .base import NotifyBase
+
+# Matches the numeric-only portion of a WhatsApp Cloud API group ID after any
+# '#' prefix and '@g.us' JID suffix have been stripped.  E.164 phone numbers
+# are capped at 15 digits; group IDs are 18-20 digits, so requiring 16+ gives
+# an unambiguous separation with no overlap.
+IS_GROUP_ID = re.compile(r"^[0-9]{16,}$")
 
 
 class NotifyWhatsApp(NotifyBase):
@@ -69,8 +90,9 @@ class NotifyWhatsApp(NotifyBase):
     # 60/300 = 0.2
     request_rate_per_sec = 0.20
 
-    # Facebook Graph version
-    fb_graph_version = "v17.0"
+    # Facebook Graph version; bump this when Meta deprecates the current one.
+    # Release schedule: https://developers.facebook.com/docs/graph-api/changelog
+    fb_graph_version = "v21.0"
 
     # A URL that takes you to the setup/help of the specific protocol
     setup_url = "https://appriseit.com/services/whatsapp/"
@@ -115,6 +137,12 @@ class NotifyWhatsApp(NotifyBase):
                 "required": True,
                 "regex": (r"^[0-9]+$", "i"),
             },
+            "language": {
+                "name": _("Language"),
+                "type": "string",
+                "default": "en_US",
+                "regex": (r"^[^0-9\s]+$", "i"),
+            },
             "target_phone": {
                 "name": _("Target Phone No"),
                 "type": "string",
@@ -122,15 +150,22 @@ class NotifyWhatsApp(NotifyBase):
                 "regex": (r"^[0-9\s)(+-]+$", "i"),
                 "map_to": "targets",
             },
+            # WhatsApp group IDs are purely numeric and 16+ digits long —
+            # safely above the 15-digit E.164 phone number maximum.
+            # The '#' prefix in the Apprise URL is recommended for clarity;
+            # bare 16+ digit strings are also accepted.
+            # The '@g.us' API JID suffix is added automatically at send time.
+            "target_group": {
+                "name": _("Target Group ID"),
+                "type": "string",
+                "prefix": "#",
+                "regex": (r"^[0-9]{16,}$", "i"),
+                "map_to": "targets",
+            },
             "targets": {
                 "name": _("Targets"),
                 "type": "list:string",
-            },
-            "language": {
-                "name": _("Language"),
-                "type": "string",
-                "default": "en_US",
-                "regex": (r"^[^0-9\s]+$", "i"),
+                "required": True,
             },
         },
     )
@@ -139,9 +174,6 @@ class NotifyWhatsApp(NotifyBase):
     template_args = dict(
         NotifyBase.template_args,
         **{
-            "to": {
-                "alias_of": "targets",
-            },
             "from": {
                 "alias_of": "from_phone_id",
             },
@@ -153,6 +185,9 @@ class NotifyWhatsApp(NotifyBase):
             },
             "lang": {
                 "alias_of": "language",
+            },
+            "to": {
+                "alias_of": "targets",
             },
         },
     )
@@ -237,20 +272,47 @@ class NotifyWhatsApp(NotifyBase):
             #
             self.template = None
 
-        # Parse our targets
+        # Parse our targets (phone numbers and/or group IDs).
+        #
+        # parse_phone_no does the heavy lifting: it handles formatted phone
+        # strings ("+1 (555) 987-6543", dashes, spaces, etc.) and, with the
+        # default store_unparseable=True, passes through anything it cannot
+        # identify as a phone so we can inspect it below.
+        # A '#' prefix on a group ID is silently stripped by the phone regex
+        # (the digits still match); a '@g.us' JID suffix causes the whole
+        # token to be kept as-is (the '@' breaks the phone pattern).
+        #
+        # For each token after parse_phone_no:
+        #   is_phone_no() succeeds -> valid phone, stored as E.164 '+XXX'
+        #   is_phone_no() fails    -> strip '@g.us', run IS_GROUP_ID:
+        #                            16+ pure digits -> group ('#digits')
+        #                            anything else   -> warn and drop
         self.targets = []
 
         for target in parse_phone_no(targets):
-            # Validate targets and drop bad ones:
+            # Validate as a phone number first
             result = is_phone_no(target)
-            if not result:
-                self.logger.warning(
-                    f"Dropped invalid phone # ({target}) specified.",
-                )
+            if result:
+                # Valid phone number; store in E.164 format
+                self.targets.append("+{}".format(result["full"]))
                 continue
 
-            # store valid phone number
-            self.targets.append("+{}".format(result["full"]))
+            # Not a valid phone — check whether it is a group ID.
+            # Strip both the '#' prefix (retained when parse_phone_no uses
+            # its unparseable-store path rather than the phone regex) and the
+            # '@g.us' JID suffix (the native Meta API group ID format).
+            gid = (
+                re.sub(r"@g\.us$", "", target, flags=re.I).strip().lstrip("#")
+            )
+            if IS_GROUP_ID.match(gid):
+                # Store with '#' prefix; '@g.us' is re-added at send time
+                self.targets.append(f"#{gid}")
+                continue
+
+            # Genuinely invalid — warn and drop
+            self.logger.warning(
+                f"Dropped invalid WhatsApp target ({target}) specified.",
+            )
 
         self.template_mapping = {}
         if template_mapping:
@@ -336,7 +398,7 @@ class NotifyWhatsApp(NotifyBase):
 
         payload = {
             "messaging_product": "whatsapp",
-            # The To gets populated in the loop below
+            # 'to' and 'recipient_type' are set per-target in the loop below
             "to": None,
         }
 
@@ -344,29 +406,36 @@ class NotifyWhatsApp(NotifyBase):
             #
             # Send Message
             #
-            payload.update({
-                "recipient_type": "individual",
-                "type": "text",
-                "text": {"body": body},
-            })
+            payload.update(
+                {
+                    # recipient_type is overridden per-target below
+                    "recipient_type": "individual",
+                    "type": "text",
+                    "text": {"body": body},
+                }
+            )
 
         else:
             #
             # Send Template
             #
-            payload.update({
-                "type": "template",
-                "template": {
-                    "name": self.template,
-                    "language": {"code": self.language},
-                },
-            })
+            payload.update(
+                {
+                    "type": "template",
+                    "template": {
+                        "name": self.template,
+                        "language": {"code": self.language},
+                    },
+                }
+            )
 
             if self.components:
-                payload["template"]["components"] = [{
-                    "type": "body",
-                    "parameters": [],
-                }]
+                payload["template"]["components"] = [
+                    {
+                        "type": "body",
+                        "parameters": [],
+                    }
+                ]
                 for key in self.component_keys:
                     if isinstance(self.components[key], dict):
                         # Manual Assignment
@@ -376,14 +445,16 @@ class NotifyWhatsApp(NotifyBase):
                         continue
 
                     # Mapping of body and/or notify type
-                    payload["template"]["components"][0]["parameters"].append({
-                        "type": "text",
-                        "text": (
-                            body
-                            if self.components[key] == "body"
-                            else notify_type.value
-                        ),
-                    })
+                    payload["template"]["components"][0]["parameters"].append(
+                        {
+                            "type": "text",
+                            "text": (
+                                body
+                                if self.components[key] == "body"
+                                else notify_type.value
+                            ),
+                        }
+                    )
 
         # Create a copy of the targets list
         targets = list(self.targets)
@@ -392,8 +463,16 @@ class NotifyWhatsApp(NotifyBase):
             # Get our target to notify
             target = targets.pop(0)
 
-            # Prepare our user
-            payload["to"] = target
+            # Group targets are stored with a '#' prefix; phone numbers
+            # are stored in E.164 format ('+' prefix).
+            if target.startswith("#"):
+                # Reconstruct the full Meta API group ID (digits + @g.us)
+                payload["to"] = "{}@g.us".format(target[1:])
+                payload["recipient_type"] = "group"
+            else:
+                # Individual phone number
+                payload["to"] = target
+                payload["recipient_type"] = "individual"
 
             # Some Debug Logging
             self.logger.debug(
@@ -411,6 +490,7 @@ class NotifyWhatsApp(NotifyBase):
                     headers=headers,
                     verify=self.verify_certificate,
                     timeout=self.request_timeout,
+                    allow_redirects=self.redirects,
                 )
 
                 if r.status_code not in (
@@ -457,7 +537,8 @@ class NotifyWhatsApp(NotifyBase):
                     )
 
                     self.logger.debug(
-                        "Response Details:\r\n%r", (r.content or b"")[:2000])
+                        "Response Details:\r\n%r", (r.content or b"")[:2000]
+                    )
 
                     # Mark our failure
                     has_error = True
@@ -506,24 +587,19 @@ class NotifyWhatsApp(NotifyBase):
         # Append our payload extras into our parameters
         params.update({f":{k}": v for k, v in self.template_mapping.items()})
 
-        return (
-            "{schema}://{template}{token}@{from_id}/{targets}/?{params}"
-            .format(
-                schema=self.secure_protocol,
-                from_id=self.pprint(self.from_phone_id, privacy, safe=""),
-                token=self.pprint(self.token, privacy, safe=""),
-                template=(
-                    ""
-                    if not self.template
-                    else "{}:".format(
-                        NotifyWhatsApp.quote(self.template, safe="")
-                    )
-                ),
-                targets="/".join(
-                    [NotifyWhatsApp.quote(x, safe="") for x in self.targets]
-                ),
-                params=NotifyWhatsApp.urlencode(params),
-            )
+        return "{schema}://{template}{token}@{from_id}/{targets}/?{params}".format(
+            schema=self.secure_protocol,
+            from_id=self.pprint(self.from_phone_id, privacy, safe=""),
+            token=self.pprint(self.token, privacy, safe=""),
+            template=(
+                ""
+                if not self.template
+                else "{}:".format(NotifyWhatsApp.quote(self.template, safe=""))
+            ),
+            targets="/".join(
+                [NotifyWhatsApp.quote(x, safe="") for x in self.targets]
+            ),
+            params=NotifyWhatsApp.urlencode(params),
         )
 
     def __len__(self):

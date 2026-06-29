@@ -498,8 +498,10 @@ def convert_ini_to_yaml(config_file):
     os.replace(config_file, f'{config_file}.old')
 
 
-config_yaml_file = os.path.join(args.config_dir, 'config', 'config.yaml')
-config_ini_file = os.path.join(args.config_dir, 'config', 'config.ini')
+config_base_file_path = os.getenv('BAZARR_CONFIG_BASE_FILE_PATH', os.path.join(args.config_dir, 'config'))
+
+config_yaml_file = os.path.join(config_base_file_path, 'config.yaml')
+config_ini_file = os.path.join(config_base_file_path, 'config.ini')
 if os.path.exists(config_ini_file) and not os.path.exists(config_yaml_file):
     convert_ini_to_yaml(config_ini_file)
 elif not os.path.exists(config_yaml_file):

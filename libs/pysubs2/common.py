@@ -1,5 +1,6 @@
 from dataclasses import dataclass
-from typing import Tuple, Union, Optional, Dict, Iterable, Iterator
+from os import PathLike
+from typing import Union, Optional, Iterable, Iterator, Any
 from enum import IntEnum
 import xml.etree.ElementTree as ET
 from contextlib import contextmanager
@@ -56,14 +57,15 @@ class Alignment(IntEnum):
         return SSA_ALIGNMENT[self.value - 1]
 
 
-SSA_ALIGNMENT: Tuple[int, ...] = (1, 2, 3, 9, 10, 11, 5, 6, 7)
+SSA_ALIGNMENT: tuple[int, ...] = (1, 2, 3, 9, 10, 11, 5, 6, 7)
 
 
 #: Version of the pysubs2 library.
-VERSION = "1.8.0"
+VERSION = "1.8.1"
 
 
 IntOrFloat = Union[int, float]
+PathOrStr = Union[str, PathLike[Any]]
 
 
 def etree_iter_child_nodes(elem: ET.Element) -> Iterator[Union[ET.Element, str]]:
@@ -118,7 +120,7 @@ def etree_register_namespace_override() -> Iterator[None]:
     Workaround for poor namespace handling in ``xml.etree.ElementTree``.
 
     """
-    namespace_map: Optional[Dict[str, str]] = None
+    namespace_map: Optional[dict[str, str]] = None
     namespace_map_original_content = {}
     try:
         namespace_map = getattr(ET.register_namespace, "_namespace_map", None)

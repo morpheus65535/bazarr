@@ -75,7 +75,7 @@ class AsyncRedisManager(AsyncPubSubManager):
         self.redis = None
         self.pubsub = None
 
-    def _get_redis_module_and_error(self):
+    def _get_redis_module(self):
         parsed_url = urlparse(self.redis_url)
         scheme = parsed_url.scheme.split('+', 1)[0].lower()
         if scheme in ['redis', 'rediss']:
@@ -83,13 +83,13 @@ class AsyncRedisManager(AsyncPubSubManager):
                 raise RuntimeError('Redis package is not installed '
                                    '(Run "pip install redis" '
                                    'in your virtualenv).')
-            return aioredis, RedisError
+            return aioredis
         if scheme in ['valkey', 'valkeys']:
             if aiovalkey is None or ValkeyError is None:
                 raise RuntimeError('Valkey package is not installed '
                                    '(Run "pip install valkey" '
                                    'in your virtualenv).')
-            return aiovalkey, ValkeyError
+            return aiovalkey
         if scheme == 'unix':
             if aioredis is None or RedisError is None:
                 if aiovalkey is None or ValkeyError is None:
@@ -98,14 +98,14 @@ class AsyncRedisManager(AsyncPubSubManager):
                                        'or "pip install valkey" '
                                        'in your virtualenv).')
                 else:
-                    return aiovalkey, ValkeyError
+                    return aiovalkey
             else:
-                return aioredis, RedisError
+                return aioredis
         error_msg = f'Unsupported Redis URL scheme: {scheme}'
         raise ValueError(error_msg)
 
     def _redis_connect(self):
-        module, _ = self._get_redis_module_and_error()
+        module = self._get_redis_module()
         parsed_url = urlparse(self.redis_url)
         if parsed_url.scheme in {"redis+sentinel", "valkey+sentinel"}:
             sentinels, service_name, connection_kwargs = \
@@ -121,30 +121,25 @@ class AsyncRedisManager(AsyncPubSubManager):
         self.connected = True
 
     async def _publish(self, data):  # pragma: no cover
-        _, error = self._get_redis_module_and_error()
         for retries_left in range(1, -1, -1):  # 2 attempts
             try:
                 if not self.connected:
                     self._redis_connect()
                 return await self.redis.publish(
                     self.channel, self.json.dumps(data))
-            except error as exc:
+            except Exception as exc:
                 if retries_left > 0:
                     self._get_logger().error(
-                        'Cannot publish to redis... '
-                        'retrying',
+                        'Cannot publish to redis... retrying',
                         extra={"redis_exception": str(exc)})
                     self.connected = False
                 else:
                     self._get_logger().error(
-                        'Cannot publish to redis... '
-                        'giving up',
+                        'Cannot publish to redis... giving up',
                         extra={"redis_exception": str(exc)})
-
                     break
 
     async def _redis_listen_with_retries(self):  # pragma: no cover
-        _, error = self._get_redis_module_and_error()
         retry_sleep = 1
         subscribed = False
         while True:
@@ -155,11 +150,11 @@ class AsyncRedisManager(AsyncPubSubManager):
                     retry_sleep = 1
                 async for message in self.pubsub.listen():
                     yield message
-            except error as exc:
-                self._get_logger().error('Cannot receive from redis... '
-                                         'retrying in '
-                                         f'{retry_sleep} secs',
-                                         extra={"redis_exception": str(exc)})
+            except Exception as exc:
+                self._get_logger().error(
+                    'Cannot receive from redis... retrying in '
+                    f'{retry_sleep} secs',
+                    extra={"redis_exception": str(exc)})
                 subscribed = False
                 await asyncio.sleep(retry_sleep)
                 retry_sleep *= 2

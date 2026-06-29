@@ -1,115 +1,172 @@
-######################## BEGIN LICENSE BLOCK ########################
-# This library is free software; you can redistribute it and/or
-# modify it under the terms of the GNU Lesser General Public
-# License as published by the Free Software Foundation; either
-# version 2.1 of the License, or (at your option) any later version.
-#
-# This library is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# Lesser General Public License for more details.
-#
-# You should have received a copy of the GNU Lesser General Public
-# License along with this library; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA
-# 02110-1301  USA
-######################### END LICENSE BLOCK #########################
+"""Universal character encoding detector — 0BSD-licensed rewrite."""
 
-from typing import List, Union
+from __future__ import annotations
 
-from .charsetgroupprober import CharSetGroupProber
-from .charsetprober import CharSetProber
-from .enums import InputState
-from .resultdict import ResultDict
-from .universaldetector import UniversalDetector
-from .version import VERSION, __version__
+from collections.abc import Iterable
 
-__all__ = ["UniversalDetector", "detect", "detect_all", "__version__", "VERSION"]
+from chardet._utils import (
+    _DEFAULT_CHUNK_SIZE,
+    DEFAULT_MAX_BYTES,
+    MINIMUM_THRESHOLD,
+    _resolve_prefer_superset,
+    _validate_max_bytes,
+    _warn_deprecated_chunk_size,
+)
+from chardet._version import __version__
+from chardet.detector import UniversalDetector
+from chardet.enums import EncodingEra, LanguageFilter
+from chardet.equivalences import apply_compat_names, apply_preferred_superset
+from chardet.pipeline import DetectionDict, DetectionResult
+from chardet.pipeline.orchestrator import run_pipeline
+from chardet.registry import _validate_encoding, normalize_encodings
+
+__all__ = [
+    "DEFAULT_MAX_BYTES",
+    "MINIMUM_THRESHOLD",
+    "DetectionDict",
+    "DetectionResult",
+    "EncodingEra",
+    "LanguageFilter",
+    "UniversalDetector",
+    "__version__",
+    "detect",
+    "detect_all",
+]
 
 
-def detect(
-    byte_str: Union[bytes, bytearray], should_rename_legacy: bool = False
-) -> ResultDict:
+def detect(  # noqa: PLR0913
+    byte_str: bytes | bytearray,
+    should_rename_legacy: bool = False,
+    encoding_era: EncodingEra = EncodingEra.ALL,
+    chunk_size: int = _DEFAULT_CHUNK_SIZE,
+    max_bytes: int = DEFAULT_MAX_BYTES,
+    *,
+    prefer_superset: bool = False,
+    compat_names: bool = True,
+    include_encodings: Iterable[str] | None = None,
+    exclude_encodings: Iterable[str] | None = None,
+    no_match_encoding: str = "cp1252",
+    empty_input_encoding: str = "utf-8",
+) -> DetectionDict:
+    """Detect the encoding of the given byte string.
+
+    :param byte_str: The byte sequence to detect encoding for.
+    :param should_rename_legacy: Deprecated alias for *prefer_superset*.
+    :param encoding_era: Restrict candidate encodings to the given era.
+    :param chunk_size: Deprecated -- accepted for backward compatibility but
+        has no effect.
+    :param max_bytes: Maximum number of bytes to examine from *byte_str*.
+    :param prefer_superset: If ``True``, remap ISO subset encodings to their
+        Windows/CP superset equivalents (e.g., ISO-8859-1 -> Windows-1252).
+    :param compat_names: If ``True`` (default), return encoding names
+        compatible with chardet 5.x/6.x.  If ``False``, return raw Python
+        codec names.
+    :param include_encodings: If given, restrict detection to only these
+        encodings (names or aliases).
+    :param exclude_encodings: If given, remove these encodings from the
+        candidate set.
+    :param no_match_encoding: Encoding to return when no candidate survives
+        the pipeline.  Defaults to ``"cp1252"``.
+    :param empty_input_encoding: Encoding to return for empty input.  Defaults
+        to ``"utf-8"``.
+    :returns: A dictionary with keys ``"encoding"``, ``"confidence"``, and
+        ``"language"``.
     """
-    Detect the encoding of the given byte string.
+    _warn_deprecated_chunk_size(chunk_size)
+    _validate_max_bytes(max_bytes)
+    prefer_superset = _resolve_prefer_superset(should_rename_legacy, prefer_superset)
+    include = normalize_encodings(include_encodings, "include_encodings")
+    exclude = normalize_encodings(exclude_encodings, "exclude_encodings")
+    no_match = _validate_encoding(no_match_encoding, "no_match_encoding")
+    empty = _validate_encoding(empty_input_encoding, "empty_input_encoding")
+    data = byte_str if isinstance(byte_str, bytes) else bytes(byte_str)
+    results = run_pipeline(
+        data,
+        encoding_era,
+        max_bytes=max_bytes,
+        include_encodings=include,
+        exclude_encodings=exclude,
+        no_match_encoding=no_match,
+        empty_input_encoding=empty,
+    )
+    result = results[0].to_dict()
+    if prefer_superset:
+        apply_preferred_superset(result)
+    if compat_names:
+        apply_compat_names(result)
+    return result
 
-    :param byte_str:     The byte sequence to examine.
-    :type byte_str:      ``bytes`` or ``bytearray``
-    :param should_rename_legacy:  Should we rename legacy encodings
-                                  to their more modern equivalents?
-    :type should_rename_legacy:   ``bool``
-    """
-    if not isinstance(byte_str, bytearray):
-        if not isinstance(byte_str, bytes):
-            raise TypeError(
-                f"Expected object of type bytes or bytearray, got: {type(byte_str)}"
-            )
-        byte_str = bytearray(byte_str)
-    detector = UniversalDetector(should_rename_legacy=should_rename_legacy)
-    detector.feed(byte_str)
-    return detector.close()
 
-
-def detect_all(
-    byte_str: Union[bytes, bytearray],
+def detect_all(  # noqa: PLR0913
+    byte_str: bytes | bytearray,
     ignore_threshold: bool = False,
     should_rename_legacy: bool = False,
-) -> List[ResultDict]:
+    encoding_era: EncodingEra = EncodingEra.ALL,
+    chunk_size: int = _DEFAULT_CHUNK_SIZE,
+    max_bytes: int = DEFAULT_MAX_BYTES,
+    *,
+    prefer_superset: bool = False,
+    compat_names: bool = True,
+    include_encodings: Iterable[str] | None = None,
+    exclude_encodings: Iterable[str] | None = None,
+    no_match_encoding: str = "cp1252",
+    empty_input_encoding: str = "utf-8",
+) -> list[DetectionDict]:
+    """Detect all possible encodings of the given byte string.
+
+    When *ignore_threshold* is False (the default), results with confidence
+    <= MINIMUM_THRESHOLD (0.20) are filtered out.  If all results are below
+    the threshold, the full unfiltered list is returned as a fallback so the
+    caller always receives at least one result.
+
+    :param byte_str: The byte sequence to detect encoding for.
+    :param ignore_threshold: If ``True``, return all candidate encodings
+        regardless of confidence score.
+    :param should_rename_legacy: Deprecated alias for *prefer_superset*.
+    :param encoding_era: Restrict candidate encodings to the given era.
+    :param chunk_size: Deprecated -- accepted for backward compatibility but
+        has no effect.
+    :param max_bytes: Maximum number of bytes to examine from *byte_str*.
+    :param prefer_superset: If ``True``, remap ISO subset encodings to their
+        Windows/CP superset equivalents.
+    :param compat_names: If ``True`` (default), return encoding names
+        compatible with chardet 5.x/6.x.  If ``False``, return raw Python
+        codec names.
+    :param include_encodings: If given, restrict detection to only these
+        encodings (names or aliases).
+    :param exclude_encodings: If given, remove these encodings from the
+        candidate set.
+    :param no_match_encoding: Encoding to return when no candidate survives
+        the pipeline.  Defaults to ``"cp1252"``.
+    :param empty_input_encoding: Encoding to return for empty input.  Defaults
+        to ``"utf-8"``.
+    :returns: A list of dictionaries, sorted by descending confidence.
     """
-    Detect all the possible encodings of the given byte string.
-
-    :param byte_str:          The byte sequence to examine.
-    :type byte_str:           ``bytes`` or ``bytearray``
-    :param ignore_threshold:  Include encodings that are below
-                              ``UniversalDetector.MINIMUM_THRESHOLD``
-                              in results.
-    :type ignore_threshold:   ``bool``
-    :param should_rename_legacy:  Should we rename legacy encodings
-                                  to their more modern equivalents?
-    :type should_rename_legacy:   ``bool``
-    """
-    if not isinstance(byte_str, bytearray):
-        if not isinstance(byte_str, bytes):
-            raise TypeError(
-                f"Expected object of type bytes or bytearray, got: {type(byte_str)}"
-            )
-        byte_str = bytearray(byte_str)
-
-    detector = UniversalDetector(should_rename_legacy=should_rename_legacy)
-    detector.feed(byte_str)
-    detector.close()
-
-    if detector.input_state == InputState.HIGH_BYTE:
-        results: List[ResultDict] = []
-        probers: List[CharSetProber] = []
-        for prober in detector.charset_probers:
-            if isinstance(prober, CharSetGroupProber):
-                probers.extend(p for p in prober.probers)
-            else:
-                probers.append(prober)
-        for prober in probers:
-            if ignore_threshold or prober.get_confidence() > detector.MINIMUM_THRESHOLD:
-                charset_name = prober.charset_name or ""
-                lower_charset_name = charset_name.lower()
-                # Use Windows encoding name instead of ISO-8859 if we saw any
-                # extra Windows-specific bytes
-                if lower_charset_name.startswith("iso-8859") and detector.has_win_bytes:
-                    charset_name = detector.ISO_WIN_MAP.get(
-                        lower_charset_name, charset_name
-                    )
-                # Rename legacy encodings with superset encodings if asked
-                if should_rename_legacy:
-                    charset_name = detector.LEGACY_MAP.get(
-                        charset_name.lower(), charset_name
-                    )
-                results.append(
-                    {
-                        "encoding": charset_name,
-                        "confidence": prober.get_confidence(),
-                        "language": prober.language,
-                    }
-                )
-        if len(results) > 0:
-            return sorted(results, key=lambda result: -result["confidence"])
-
-    return [detector.result]
+    _warn_deprecated_chunk_size(chunk_size)
+    _validate_max_bytes(max_bytes)
+    prefer_superset = _resolve_prefer_superset(should_rename_legacy, prefer_superset)
+    include = normalize_encodings(include_encodings, "include_encodings")
+    exclude = normalize_encodings(exclude_encodings, "exclude_encodings")
+    no_match = _validate_encoding(no_match_encoding, "no_match_encoding")
+    empty = _validate_encoding(empty_input_encoding, "empty_input_encoding")
+    data = byte_str if isinstance(byte_str, bytes) else bytes(byte_str)
+    results = run_pipeline(
+        data,
+        encoding_era,
+        max_bytes=max_bytes,
+        include_encodings=include,
+        exclude_encodings=exclude,
+        no_match_encoding=no_match,
+        empty_input_encoding=empty,
+    )
+    dicts = [r.to_dict() for r in results]
+    if not ignore_threshold:
+        filtered = [d for d in dicts if d["confidence"] > MINIMUM_THRESHOLD]
+        if filtered:
+            dicts = filtered
+    for d in dicts:
+        if prefer_superset:
+            apply_preferred_superset(d)
+        if compat_names:
+            apply_compat_names(d)
+    return sorted(dicts, key=lambda d: d["confidence"], reverse=True)

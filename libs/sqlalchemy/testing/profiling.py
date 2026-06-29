@@ -29,7 +29,6 @@ from .util import gc_collect
 from ..util import freethreading
 from ..util import has_compiled_ext
 
-
 try:
     import cProfile
 except ImportError:

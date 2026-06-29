@@ -23,6 +23,7 @@ For examples of how the instrumentation extension is used,
 see the example :ref:`examples_instrumentation`.
 
 """
+
 import weakref
 
 from .. import util
@@ -38,7 +39,6 @@ from ..orm.instrumentation import _default_opt_manager_getter
 from ..orm.instrumentation import _default_state_getter
 from ..orm.instrumentation import ClassManager
 from ..orm.instrumentation import InstrumentationFactory
-
 
 INSTRUMENTATION_MANAGER = "__sa_instrumentation_manager__"
 """Attribute, elects custom instrumentation when present on a mapped class.

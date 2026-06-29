@@ -3,16 +3,17 @@ import logging
 import os
 import time
 import io
+from typing import Callable
 
 from zipfile import ZipFile, is_zipfile
 from urllib.parse import urljoin
-from requests import Session
+from requests import Session, Response
 from guessit import guessit
 
 from babelfish import language_converters
 from subzero.language import Language
 from subliminal import Episode, Movie
-from subliminal.exceptions import ConfigurationError, ProviderError, DownloadLimitExceeded
+from subliminal.exceptions import ConfigurationError, ProviderError, DownloadLimitExceeded, AuthenticationError
 from subliminal_patch.exceptions import APIThrottled
 from .mixins import ProviderRetryMixin
 from subliminal_patch.subtitle import Subtitle
@@ -98,7 +99,7 @@ class SubdlSubtitle(Subtitle):
             matches.add('title')
             # imdb
             matches.add('imdb_id')
-            # tmdb 
+            # tmdb
             matches.add('tmdb_id')
 
         utils.update_matches(matches, video, self.releases)
@@ -164,21 +165,23 @@ class SubdlProvider(ProviderRetryMixin, Provider):
         # query the server
         if isinstance(self.video, Episode):
             res = self.retry(
-                lambda: self.session.get(self.server_url() + 'subtitles',
-                                         params=(('api_key', self.api_key),
-                                                 ('episode_number', self.video.episode),
-                                                 ('film_name', title if not imdb_id else None),
-                                                 ('imdb_id', imdb_id if imdb_id else None),
-                                                 ('languages', langs),
-                                                 ('season_number', self.video.season),
-                                                 ('subs_per_page', 30),
-                                                 ('type', 'tv'),
-                                                 ('comment', 1),
-                                                 ('releases', 1),
-                                                 ('unpack', 1),
-                                                 ('bazarr', 1)),  # this argument filter incompatible image based or
-                                         # txt subtitles
-                                         timeout=30),
+                lambda: self.checked(
+                    lambda: self.session.get(self.server_url() + 'subtitles',
+                                             params=(('api_key', self.api_key),
+                                                     ('episode_number', self.video.episode),
+                                                     ('film_name', title if not imdb_id else None),
+                                                     ('imdb_id', imdb_id if imdb_id else None),
+                                                     ('languages', langs),
+                                                     ('season_number', self.video.season),
+                                                     ('subs_per_page', 30),
+                                                     ('type', 'tv'),
+                                                     ('comment', 1),
+                                                     ('releases', 1),
+                                                     ('unpack', 1),
+                                                     ('bazarr', 1)),  # this argument filter incompatible image based or
+                                             # txt subtitles
+                                             timeout=30)
+                ),
                 amount=retry_amount,
                 retry_timeout=retry_timeout
             )
@@ -189,19 +192,21 @@ class SubdlProvider(ProviderRetryMixin, Provider):
             if absolute_episode and absolute_episode != self.video.episode:
                 logger.debug(f'Also searching by absolute episode number: {absolute_episode}')
                 res_absolute = self.retry(
-                    lambda: self.session.get(self.server_url() + 'subtitles',
-                                             params=(('api_key', self.api_key),
-                                                     ('episode_number', absolute_episode),
-                                                     ('film_name', title if not imdb_id else None),
-                                                     ('imdb_id', imdb_id if imdb_id else None),
-                                                     ('languages', langs),
-                                                     ('subs_per_page', 30),
-                                                     ('type', 'tv'),
-                                                     ('comment', 1),
-                                                     ('releases', 1),
-                                                     ('unpack', 1),
-                                                     ('bazarr', 1)),
-                                             timeout=30),
+                    lambda: self.checked(
+                        lambda: self.session.get(self.server_url() + 'subtitles',
+                                                 params=(('api_key', self.api_key),
+                                                         ('episode_number', absolute_episode),
+                                                         ('film_name', title if not imdb_id else None),
+                                                         ('imdb_id', imdb_id if imdb_id else None),
+                                                         ('languages', langs),
+                                                         ('subs_per_page', 30),
+                                                         ('type', 'tv'),
+                                                         ('comment', 1),
+                                                         ('releases', 1),
+                                                         ('unpack', 1),
+                                                         ('bazarr', 1)),
+                                                 timeout=30)
+                    ),
                     amount=retry_amount,
                     retry_timeout=retry_timeout
                 )
@@ -214,19 +219,21 @@ class SubdlProvider(ProviderRetryMixin, Provider):
             # The release name matching in get_matches() will identify the correct episode.
             logger.debug(f'Also searching by season only (no episode filter) for season {self.video.season}')
             res_season = self.retry(
-                lambda: self.session.get(self.server_url() + 'subtitles',
-                                         params=(('api_key', self.api_key),
-                                                 ('film_name', title if not imdb_id else None),
-                                                 ('imdb_id', imdb_id if imdb_id else None),
-                                                 ('languages', langs),
-                                                 ('season_number', self.video.season),
-                                                 ('subs_per_page', 30),
-                                                 ('type', 'tv'),
-                                                 ('comment', 1),
-                                                 ('releases', 1),
-                                                 ('unpack', 1),
-                                                 ('bazarr', 1)),
-                                         timeout=30),
+                lambda: self.checked(
+                    lambda: self.session.get(self.server_url() + 'subtitles',
+                                             params=(('api_key', self.api_key),
+                                                     ('film_name', title if not imdb_id else None),
+                                                     ('imdb_id', imdb_id if imdb_id else None),
+                                                     ('languages', langs),
+                                                     ('season_number', self.video.season),
+                                                     ('subs_per_page', 30),
+                                                     ('type', 'tv'),
+                                                     ('comment', 1),
+                                                     ('releases', 1),
+                                                     ('unpack', 1),
+                                                     ('bazarr', 1)),
+                                             timeout=30)
+                ),
                 amount=retry_amount,
                 retry_timeout=retry_timeout
             )
@@ -245,10 +252,12 @@ class SubdlProvider(ProviderRetryMixin, Provider):
                        'bazarr': 1
             }
             res = self.retry(
-                lambda: self.session.get(self.server_url() + 'subtitles',
-                                         params=params, # this argument filter incompatible image based or
-                                         # txt subtitles
-                                         timeout=30),
+                lambda: self.checked(
+                    lambda: self.session.get(self.server_url() + 'subtitles',
+                                             params=params, # this argument filter incompatible image based or
+                                             # txt subtitles
+                                             timeout=30)
+                ),
                 amount=retry_amount,
                 retry_timeout=retry_timeout
             )
@@ -274,19 +283,14 @@ class SubdlProvider(ProviderRetryMixin, Provider):
                         params['tmdb_id']=tmdb_id
 
                         res = self.retry(
-                            lambda: self.session.get(self.server_url() + 'subtitles',
-                                                     params=params,
-                                                     timeout=30),
+                            lambda: self.checked(
+                                lambda: self.session.get(self.server_url() + 'subtitles',
+                                                         params=params,
+                                                         timeout=30)
+                            ),
                             amount=retry_amount,
                             retry_timeout=retry_timeout
                         )
-
-        if res.status_code == 429:
-            raise APIThrottled("Too many requests")
-        elif res.status_code == 403:
-            raise ConfigurationError("Invalid API key")
-        elif res.status_code != 200:
-            res.raise_for_status()
 
         subtitles = []
 
@@ -294,12 +298,11 @@ class SubdlProvider(ProviderRetryMixin, Provider):
 
         if ('success' in result and not result['success']) or ('status' in result and not result['status']):
             logger.debug(result)
-            if 'error' in result:
-                error_msg = result['error']
-                if "can't find" in error_msg.lower():
-                    logger.debug(f"No subtitles found for {imdb_id or title}: {error_msg}")
-                    return subtitles
-                raise ProviderError(error_msg)
+            if 'error' in result and "can't find" in result['error'].lower():
+                logger.debug(f"No subtitles found for {imdb_id or title}: {result['error']}")
+            else:
+                logger.debug(f"Error while searching for subtitles: {result}")
+            return subtitles
 
         # Merge absolute episode search results if available
         all_items = list(result.get('subtitles', []))
@@ -331,18 +334,20 @@ class SubdlProvider(ProviderRetryMixin, Provider):
         if not all_items and isinstance(self.video, Episode):
             logger.debug('All season-filtered searches returned 0 results, falling back to title-only search')
             res_title = self.retry(
-                lambda: self.session.get(self.server_url() + 'subtitles',
-                                         params=(('api_key', self.api_key),
-                                                 ('film_name', title if not imdb_id else None),
-                                                 ('imdb_id', imdb_id if imdb_id else None),
-                                                 ('languages', langs),
-                                                 ('subs_per_page', 30),
-                                                 ('type', 'tv'),
-                                                 ('comment', 1),
-                                                 ('releases', 1),
-                                                 ('unpack', 1),
-                                                 ('bazarr', 1)),
-                                         timeout=30),
+                lambda: self.checked(
+                    lambda: self.session.get(self.server_url() + 'subtitles',
+                                             params=(('api_key', self.api_key),
+                                                     ('film_name', title if not imdb_id else None),
+                                                     ('imdb_id', imdb_id if imdb_id else None),
+                                                     ('languages', langs),
+                                                     ('subs_per_page', 30),
+                                                     ('type', 'tv'),
+                                                     ('comment', 1),
+                                                     ('releases', 1),
+                                                     ('unpack', 1),
+                                                     ('bazarr', 1)),
+                                             timeout=30)
+                ),
                 amount=retry_amount,
                 retry_timeout=retry_timeout
             )
@@ -498,17 +503,12 @@ class SubdlProvider(ProviderRetryMixin, Provider):
         download_link = urljoin("https://dl.subdl.com", subtitle.download_link)
 
         r = self.retry(
-            lambda: self.session.get(download_link, timeout=30),
+            lambda: self.checked(
+                lambda: self.session.get(download_link, timeout=30)
+            ),
             amount=retry_amount,
             retry_timeout=retry_timeout
         )
-
-        if r.status_code == 429 or (r.status_code == 500 and r.text == 'Download limit exceeded'):
-            raise DownloadLimitExceeded("Daily download limit exceeded")
-        elif r.status_code == 403:
-            raise ConfigurationError("Invalid API key")
-        elif r.status_code != 200:
-            r.raise_for_status()
 
         if not r:
             logger.error(f'Could not download subtitle from {download_link}')
@@ -554,3 +554,69 @@ class SubdlProvider(ProviderRetryMixin, Provider):
                 logger.error(f'Could not unzip subtitle from {download_link}')
                 subtitle.content = None
                 return
+
+    def checked(self, fn: Callable, is_retry: bool = False, retry_attempt=0) -> Response:
+        """
+        Executes a given callable and handles API-related errors, including authentication errors, rate limits,
+        and service busy scenarios. The method will ensure proper handling of retries and logging for recoverable
+        errors or failures.
+
+        :param fn: The callable to execute, expected to return a Response object.
+        :type fn: Callable
+        :param is_retry: Indicates whether the current execution is a retry attempt. Defaults to False.
+        :type is_retry: bool, optional
+        :param retry_attempt: The number of retry attempts made for handling "service_busy" errors. Defaults to 0.
+        :type retry_attempt: int, optional
+        :return: The HTTP response object returned by the callable upon success.
+        :rtype: Response
+        :raises ProviderError: If a non-recoverable error or unhandled exception occurs.
+        :raises AuthenticationError: If the API key is invalid with a 403 response code.
+        :raises DownloadLimitExceeded: If the daily download limit is exceeded.
+        :raises APIThrottled: If the API request rate limit is hit and retries are exhausted.
+        """
+        response = None
+        try:
+            response = fn()
+        except Exception:
+            logger.exception('Unhandled exception raised.')
+            raise ProviderError('Unhandled exception raised. Check log.')
+        else:
+            status_code = response.status_code
+            if status_code == 403:
+                raise AuthenticationError("Invalid API key")
+            elif status_code == 429:
+                try:
+                    payload = response.json()
+                except Exception:
+                    logger.exception('Failed to parse JSON response')
+                else:
+                    if isinstance(payload, dict) and 'error' in payload:
+                        if payload['error'] == 'daily_limit':
+                            raise DownloadLimitExceeded("Daily download limit exceeded")
+                        elif payload['error'] == 'rate_limit':
+                            if not is_retry:
+                                logger.debug("API request rate limit hit, waiting and trying again once.")
+                                retry_delay = response.headers.get('Retry-After', 15)
+                                logger.debug(f"Retry delay: {retry_delay} seconds")
+                                time.sleep(retry_delay)
+                                logger.debug("Retrying API request")
+                                return self.checked(fn, is_retry=True)
+                            raise APIThrottled("API request limit hit")
+                        elif payload['error'] == 'service_busy':
+                            if retry_attempt < 5:
+                                logger.debug("API service is busy, waiting and trying again once.")
+                                retry_delay = response.headers.get('Retry-After', 5)
+                                logger.debug(f"Service busy retry delay: {retry_delay} seconds")
+                                time.sleep(retry_delay)
+                                logger.debug("Retrying service busy API request")
+                                return self.checked(fn, retry_attempt=retry_attempt + 1)
+                            else:
+                                raise ProviderError("API service is busy")
+                    else:
+                        logger.exception(f'Missing error field in JSON response: {payload}')
+                        response.raise_for_status()
+            elif status_code != 200:
+                logger.exception('Unhandled API response')
+                response.raise_for_status()
+
+        return response

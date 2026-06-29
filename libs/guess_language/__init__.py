@@ -1,11 +1,12 @@
+# -*- coding: utf-8 -*-
 """Guess the natural language of a text
 """
 #   © 2012 spirit <hiddenspirit@gmail.com>
-#   https://bitbucket.org/spirit/guess_language
+#   https://github.com/hiddenspirit/guess_language
 #
 #   Original Python package:
 #   Copyright (c) 2008, Kent S Johnson
-#   http://code.google.com/p/guess-language/
+#   https://github.com/kent37/guess-language
 #
 #   Original C++ version for KDE:
 #   Copyright (c) 2006 Jacob R Rideout <kde@jacobrideout.net>
@@ -31,6 +32,8 @@
 #
 #   You should have received a copy of the GNU Lesser General Public License
 #   along with this program. If not, see <http://www.gnu.org/licenses/>.
+
+from __future__ import unicode_literals
 
 import functools
 import re
@@ -314,18 +317,21 @@ class UNKNOWN(str):
     def __bool__(self):
         return False
 
+    def __nonzero__(self):
+        return False
+
 
 UNKNOWN = UNKNOWN("UNKNOWN")
 
 
-def guess_language(text: str, hints=None):
+def guess_language(text, hints=None):
     """Return the ISO 639-1 language code.
     """
     words = WORD_RE.findall(text[:MAX_LENGTH].replace("’", "'"))
     return identify(words, find_runs(words), hints)
 
 
-def guess_language_info(text: str, hints=None):
+def guess_language_info(text, hints=None):
     """Return LanguageInfo(tag, id, name).
     """
     tag = guess_language(text, hints)
@@ -340,13 +346,13 @@ def guess_language_info(text: str, hints=None):
 guess_language_tag = guess_language
 
 
-def guess_language_id(text: str, hints=None):
+def guess_language_id(text, hints=None):
     """Return the language ID.
     """
     return _get_id(guess_language(text, hints))
 
 
-def guess_language_name(text: str, hints=None):
+def guess_language_name(text, hints=None):
     """Return the language name (in English).
     """
     return _get_name(guess_language(text, hints))
@@ -558,7 +564,7 @@ else:
                 best_score = score
                 best_tag = tag
 
-        if best_score / len(words) < threshold:
+        if float(best_score) / len(words) < threshold:
             return UNKNOWN
 
         return best_tag

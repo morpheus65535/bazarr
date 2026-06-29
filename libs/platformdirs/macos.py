@@ -25,13 +25,10 @@ class _MacOSDefaults(PlatformDirsABC):  # noqa: PLR0904
 
     """
 
-    @property
-    def user_data_dir(self) -> str:
-        """:returns: data directory tied to the user, e.g. ``~/Library/Application Support/$appname/$version``"""
+    def _base_user_app_support_dir(self) -> str:
         return self._append_app_name_and_version(os.path.expanduser("~/Library/Application Support"))  # noqa: PTH111
 
-    @property
-    def _site_data_dirs(self) -> list[str]:
+    def _base_site_dirs(self) -> list[str]:
         is_homebrew = "/opt/python" in sys.prefix
         homebrew_prefix = sys.prefix.split("/opt/python")[0] if is_homebrew else ""
         path_list = [self._append_app_name_and_version(f"{homebrew_prefix}/share")] if is_homebrew else []
@@ -39,18 +36,32 @@ class _MacOSDefaults(PlatformDirsABC):  # noqa: PLR0904
         return path_list
 
     @property
+    def user_data_dir(self) -> str:
+        """:returns: data directory tied to the user, e.g. ``~/Library/Application Support/$appname/$version``"""
+        return self._base_user_app_support_dir()
+
+    @property
+    def _site_data_dirs(self) -> list[str]:
+        return self._base_site_dirs()
+
+    @property
     def site_data_path(self) -> Path:
         """:returns: data path shared by users. Only return the first item, even if ``multipath`` is set to ``True``"""
         return self._first_item_as_path_if_multipath(self.site_data_dir)
 
     @property
+    def site_config_path(self) -> Path:
+        """:returns: config path shared by users. Only return the first item, even if ``multipath`` is set to ``True``"""
+        return self._first_item_as_path_if_multipath(self.site_config_dir)
+
+    @property
     def user_config_dir(self) -> str:
         """:returns: config directory tied to the user, same as `user_data_dir`"""
-        return self.user_data_dir
+        return self._base_user_app_support_dir()
 
     @property
     def _site_config_dirs(self) -> list[str]:
-        return self._site_data_dirs
+        return self._base_site_dirs()
 
     @property
     def user_cache_dir(self) -> str:
@@ -76,12 +87,12 @@ class _MacOSDefaults(PlatformDirsABC):  # noqa: PLR0904
     @property
     def user_state_dir(self) -> str:
         """:returns: state directory tied to the user, same as `user_data_dir`"""
-        return self.user_data_dir
+        return self._base_user_app_support_dir()
 
     @property
     def site_state_dir(self) -> str:
         """:returns: state directory shared by users, same as `site_data_dir`"""
-        return self.site_data_dir
+        return self._base_site_dirs()[0]
 
     @property
     def user_log_dir(self) -> str:
@@ -122,6 +133,31 @@ class _MacOSDefaults(PlatformDirsABC):  # noqa: PLR0904
     def user_desktop_dir(self) -> str:
         """:returns: desktop directory tied to the user, e.g. ``~/Desktop``"""
         return os.path.expanduser("~/Desktop")  # noqa: PTH111
+
+    @property
+    def user_projects_dir(self) -> str:
+        """:returns: projects directory tied to the user, e.g. ``~/Projects``"""
+        return os.path.expanduser("~/Projects")  # noqa: PTH111
+
+    @property
+    def user_publicshare_dir(self) -> str:
+        """:returns: public share directory tied to the user, e.g. ``~/Public``"""
+        return os.path.expanduser("~/Public")  # noqa: PTH111  # API returns str, not Path
+
+    @property
+    def user_templates_dir(self) -> str:
+        """:returns: templates directory tied to the user, e.g. ``~/Templates``"""
+        return os.path.expanduser("~/Templates")  # noqa: PTH111  # API returns str, not Path
+
+    @property
+    def user_fonts_dir(self) -> str:
+        """:returns: fonts directory tied to the user, e.g. ``~/Library/Fonts``"""
+        return os.path.expanduser("~/Library/Fonts")  # noqa: PTH111  # API returns str, not Path
+
+    @property
+    def user_preference_dir(self) -> str:
+        """:returns: preference directory tied to the user, e.g. ``~/Library/Preferences/AppName``"""
+        return self._append_app_name_and_version(os.path.expanduser("~/Library/Preferences"))  # noqa: PTH111  # API returns str, not Path
 
     @property
     def user_bin_dir(self) -> str:

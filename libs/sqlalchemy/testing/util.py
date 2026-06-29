@@ -40,7 +40,6 @@ from ..util import defaultdict
 from ..util import has_refcount_gc
 from ..util import inspect_getfullargspec
 
-
 if not has_refcount_gc:
 
     def non_refcount_gc_collect(*args):

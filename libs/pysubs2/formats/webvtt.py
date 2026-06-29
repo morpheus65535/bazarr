@@ -1,5 +1,5 @@
 import re
-from typing import List, Sequence, Optional, TextIO, Any
+from typing import Sequence, Optional, TextIO, Any
 
 from ..ssaevent import SSAEvent
 from .subrip import SubripFormat
@@ -48,7 +48,7 @@ class WebVTTFormat(SubripFormat):
             subs=subs, fp=fp, format_=format_, **kwargs)
 
     @classmethod
-    def _get_visible_lines(cls, subs: "SSAFile") -> List[SSAEvent]:
+    def _get_visible_lines(cls, subs: "SSAFile") -> list[SSAEvent]:
         visible_lines = super()._get_visible_lines(subs)
         visible_lines.sort(key=lambda e: e.start)
         return visible_lines

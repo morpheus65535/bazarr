@@ -2,6 +2,10 @@
 
 import logging
 import os
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ffsubsync import ProgressInfo
 
 from utilities.binaries import get_binary
 from radarr.history import history_log_movie
@@ -13,6 +17,7 @@ from utilities.video_analyzer import subtitles_sync_references
 from app.config import settings
 from app.database import TableMovies, TableShows, database, select
 from app.get_args import args
+from app.jobs_queue import jobs_queue
 
 
 def _load_ffsubsync():
@@ -35,7 +40,6 @@ class SubSyncer:
         else:
             self.vad = 'subs_then_webrtc'
         self.log_dir_path = os.path.join(args.config_dir, 'log')
-        self.progress_callback = None
         self.sync_result = None
         self.job_id = None
 
@@ -101,12 +105,19 @@ class SubSyncer:
                      f"falling back")
         return None
 
+    def _on_progress(self, info: ProgressInfo) -> None:
+        # info.processed_seconds / info.total_seconds (total may be None);
+        # info.fraction is a 0.0-1.0 ratio (None if the total is unknown).
+        if info.total_seconds is not None:
+            jobs_queue.update_job_progress(job_id=self.job_id,
+                                           progress_value=info.processed_seconds,
+                                           progress_max=info.total_seconds)
+
     def sync(self, video_path, srt_path, srt_lang, hi, forced,
              max_offset_seconds, no_fix_framerate, gss, reference=None, sonarr_series_id=None, sonarr_episode_id=None,
-             radarr_id=None, progress_callback=None, job_id=None, force_sync=False):
+             radarr_id=None, job_id=None, force_sync=False):
         self.reference = video_path
         self.srtin = srt_path
-        self.progress_callback = progress_callback
         self.sync_result = None
 
         if self.srtin.casefold().endswith('.ass'):
@@ -198,7 +209,7 @@ class SubSyncer:
                 os.remove(self.srtout)
                 logging.debug('BAZARR deleted the previous subtitles synchronization attempt file.')
 
-            self.sync_result = run(self.args)
+            self.sync_result = run(self.args, progress_handler=self._on_progress)
 
             result = self.sync_result
         except Exception:

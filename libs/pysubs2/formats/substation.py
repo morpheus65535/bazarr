@@ -1,7 +1,7 @@
 import logging
 import re
 import warnings
-from typing import Any, Union, Optional, Dict, Tuple, List, TextIO
+from typing import Any, Union, Optional, TextIO
 
 from .base import FormatBase
 from ..ssaevent import SSAEvent
@@ -86,8 +86,8 @@ def is_valid_field_content(s: str) -> bool:
 
 
 def parse_tags(text: str, style: SSAStyle = SSAStyle.DEFAULT_STYLE,
-               styles: Optional[Dict[str, SSAStyle]] = None,
-               skip_empty_fragments: bool = False) -> List[Tuple[str, SSAStyle]]:
+               styles: Optional[dict[str, SSAStyle]] = None,
+               skip_empty_fragments: bool = False) -> list[tuple[str, SSAStyle]]:
     """
     Split text into fragments with computed SSAStyles.
     

@@ -27,7 +27,6 @@ from .. import pool
 from ..util import await_only
 from ..util.typing import Literal
 
-
 if typing.TYPE_CHECKING:
     from ..engine import Engine
     from ..engine.url import URL

@@ -7,6 +7,7 @@
 # mypy: allow-untyped-defs, allow-untyped-calls
 
 """Collection classes and helpers."""
+
 from __future__ import annotations
 
 import operator
@@ -62,7 +63,6 @@ else:
     from sqlalchemy.cyextension.collections import (  # noqa
         unique_list as unique_list,
     )
-
 
 _T = TypeVar("_T", bound=Any)
 _KT = TypeVar("_KT", bound=Any)

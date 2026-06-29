@@ -20,6 +20,7 @@ r"""
     dialects are mysqlclient and PyMySQL.
 
 """  # noqa
+
 from __future__ import annotations
 
 from typing import Any

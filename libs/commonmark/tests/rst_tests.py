@@ -100,6 +100,24 @@ This is a ordered list:
 """
         self.assertEqualRender(src_markdown, expected_rst)
 
+    def test_ordered_list_with_multi_line_items(self):
+        src_markdown = """
+This is an ordered list with multi-line items:
+1. First item,
+with lazy indentation.
+2. Second item,
+   with normal indentation.
+"""
+        expected_rst = """
+This is an ordered list with multi-line items:
+
+#. First item,
+   with lazy indentation.
+#. Second item,
+   with normal indentation.
+"""
+        self.assertEqualRender(src_markdown, expected_rst)
+
     def test_block_quote(self):
         src_markdown = """
 Before the blockquote:

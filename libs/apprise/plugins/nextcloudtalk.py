@@ -224,6 +224,7 @@ class NotifyNextcloudTalk(NotifyBase):
                     auth=(self.user, self.password),
                     verify=self.verify_certificate,
                     timeout=self.request_timeout,
+                    allow_redirects=self.redirects,
                 )
                 if r.status_code not in (
                     requests.codes.created,
@@ -244,7 +245,8 @@ class NotifyNextcloudTalk(NotifyBase):
                     )
 
                     self.logger.debug(
-                        "Response Details:\r\n%r", (r.content or b"")[:2000])
+                        "Response Details:\r\n%r", (r.content or b"")[:2000]
+                    )
 
                     # track our failure
                     has_error = True

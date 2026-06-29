@@ -13,6 +13,8 @@ from subliminal_patch.providers.embeddedsubtitles import (
 )
 from subliminal_patch.providers.embeddedsubtitles import _get_pretty_release_name
 from subliminal_patch.providers.embeddedsubtitles import _MemoizedFFprobeVideoContainer
+from subliminal_patch.providers.embeddedsubtitles import _rebuild_langs
+from subliminal_patch.providers.embeddedsubtitles import EmbeddedSubtitle
 from subliminal_patch.providers.embeddedsubtitles import EmbeddedSubtitlesProvider
 from subzero.language import Language
 
@@ -347,6 +349,105 @@ def test_get_pretty_release_name():
     )
     container = FFprobeVideoContainer("foo.mkv")
     assert _get_pretty_release_name(stream, container) == "foo.en.forced.srt"
+
+
+@pytest.mark.parametrize(
+    "language_ietf,title,expected_language",
+    [
+        ("zh-Hans", "中文（繁體）", Language("zho")),
+        ("zh-Hant", "中文（简体）", Language("zho", "TW")),
+    ],
+)
+def test_rebuild_langs_prefers_chinese_language_ietf_over_title_markers(
+    language_ietf, title, expected_language
+):
+    stream = FFprobeSubtitleStream(
+        {
+            "index": 1,
+            "codec_name": "subrip",
+            "tags": {
+                "language": "chi",
+                "language_ietf": language_ietf,
+                "title": title,
+            },
+        }
+    )
+
+    _rebuild_langs([stream])
+
+    assert stream.language == expected_language
+
+
+@pytest.mark.parametrize(
+    "title,expected_language",
+    [
+        ("中文（简体）", Language("zho")),
+        ("中文（繁體）", Language("zho", "TW")),
+        ("中文（繁体）", Language("zho", "TW")),
+    ],
+)
+def test_rebuild_langs_detects_chinese_script_from_title(title, expected_language):
+    stream = FFprobeSubtitleStream(
+        {
+            "index": 1,
+            "codec_name": "subrip",
+            "tags": {"language": "chi", "title": title},
+        }
+    )
+
+    _rebuild_langs([stream])
+
+    assert stream.language == expected_language
+
+
+def test_get_subtitle_path_rebuilds_chinese_streams_before_cache_extraction(
+    tmpdir, mocker
+):
+    container = FFprobeVideoContainer("foo.mkv")
+    selected_stream = FFprobeSubtitleStream(
+        {
+            "index": 1,
+            "codec_name": "subrip",
+            "tags": {"language": "chi", "title": "中文（简体）"},
+        }
+    )
+    _rebuild_langs([selected_stream])
+    subtitle = EmbeddedSubtitle(selected_stream, container, {"hash"}, "series")
+    cache_streams = [
+        FFprobeSubtitleStream(
+            {
+                "index": 1,
+                "codec_name": "subrip",
+                "tags": {"language": "chi", "title": "中文（简体）"},
+            }
+        ),
+        FFprobeSubtitleStream(
+            {
+                "index": 2,
+                "codec_name": "subrip",
+                "tags": {"language": "chi", "title": "中文（繁體）"},
+            }
+        ),
+    ]
+    extracted_suffixes = {}
+
+    def copy_subtitles(subtitles, *args, **kwargs):
+        extracted_suffixes.update(
+            {stream.index: stream.suffix for stream in subtitles}
+        )
+        return {
+            stream.index: tmpdir.join(stream.suffix).strpath
+            for stream in subtitles
+        }
+
+    mocker.patch.object(container, "get_subtitles", return_value=cache_streams)
+    mocker.patch.object(container, "copy_subtitles", side_effect=copy_subtitles)
+
+    with EmbeddedSubtitlesProvider(cache_dir=tmpdir) as provider:
+        provider._get_subtitle_path(subtitle)
+
+    assert extracted_suffixes[1] == "zh.srt"
+    assert extracted_suffixes[2] == "zh-TW.srt"
 
 
 def test_download_subtitle_multiple(video_multiple_languages):

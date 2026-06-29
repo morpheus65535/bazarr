@@ -66,6 +66,27 @@ AWS_HTTP_ERROR_MAP = {
 }
 
 
+class SNSMode:
+    """Tracks the mode of operation for SNS Notifications."""
+
+    # SMS mode: the title is merged into the message body and the
+    # body is limited to 160 characters. This is the safe default
+    # and applies to phone targets and any mix of phones + topics.
+    SMS = "sms"
+
+    # Topic mode: the title is sent as the SNS Subject field for
+    # topic targets; the body limit is 256 KB. Auto-selected when
+    # all targets are SNS topics (no phone numbers present).
+    TOPIC = "topic"
+
+
+# All valid SNS operating modes
+SNS_MODES = (
+    SNSMode.SMS,
+    SNSMode.TOPIC,
+)
+
+
 class NotifySNS(NotifyBase):
     """A wrapper for AWS SNS (Amazon Simple Notification)"""
 
@@ -85,16 +106,20 @@ class NotifySNS(NotifyBase):
     # can occur in much shorter bursts
     request_rate_per_sec = 2.5
 
-    # The maximum length of the body
+    # body_maxlen and title_maxlen are defined as @property methods below
+    # since the limits differ by mode: SMS mode caps the body at 160
+    # characters and has no title field (title_maxlen = 0 causes the
+    # framework to fold the title into the body automatically); Topic
+    # mode allows up to 256 KB and passes the title as the SNS Subject
+    # field (title_maxlen = 100).
     # Source: https://docs.aws.amazon.com/sns/latest/api/API_Publish.html
-    body_maxlen = 160
-
-    # A title can not be used for SMS Messages.  Setting this to zero will
-    # cause any title (if defined) to get placed into the message body.
-    title_maxlen = 0
 
     # Define object templates
     templates = (
+        # With session token (for temporary/IAM credentials)
+        "{schema}://{token}@{access_key_id}"
+        "/{secret_access_key}/{region}/{targets}",
+        # Without session token (standard long-term credentials)
         "{schema}://{access_key_id}/{secret_access_key}/{region}/{targets}",
     )
 
@@ -102,6 +127,13 @@ class NotifySNS(NotifyBase):
     template_tokens = dict(
         NotifyBase.template_tokens,
         **{
+            "token": {
+                # Session token for temporary/IAM credentials (optional)
+                "name": _("Session Token"),
+                "type": "string",
+                "private": True,
+                "map_to": "session_token",
+            },
             "access_key_id": {
                 "name": _("Access Key ID"),
                 "type": "string",
@@ -149,7 +181,15 @@ class NotifySNS(NotifyBase):
             "to": {
                 "alias_of": "targets",
             },
+            "token": {
+                # ?token= kwarg mirrors the {token} URL path entry
+                "alias_of": "token",
+            },
             "access": {
+                "alias_of": "access_key_id",
+            },
+            "key": {
+                # Intuitive alias for access_key_id
                 "alias_of": "access_key_id",
             },
             "secret": {
@@ -157,6 +197,12 @@ class NotifySNS(NotifyBase):
             },
             "region": {
                 "alias_of": "region",
+            },
+            "mode": {
+                "name": _("Mode"),
+                "type": "choice:string",
+                "values": SNS_MODES,
+                "default": SNSMode.SMS,
             },
         },
     )
@@ -167,10 +213,15 @@ class NotifySNS(NotifyBase):
         secret_access_key,
         region_name,
         targets=None,
+        session_token=None,
+        mode=None,
         **kwargs,
     ):
         """Initialize Notify AWS SNS Object."""
         super().__init__(**kwargs)
+
+        # Store optional session token for temporary/IAM credentials
+        self.aws_session_token = session_token if session_token else None
 
         # Store our AWS API Access Key
         self.aws_access_key_id = validate_regex(access_key_id)
@@ -235,6 +286,28 @@ class NotifySNS(NotifyBase):
                 f"Dropped invalid phone/topic ({target}) specified.",
             )
 
+        # Determine operating mode: explicit override wins, otherwise
+        # auto-detect from target composition
+        if mode and isinstance(mode, str):
+            # Resolve via prefix match (e.g. "t" -> "topic")
+            self.mode = next(
+                (m for m in SNS_MODES if m.startswith(mode.lower())),
+                None,
+            )
+            if self.mode not in SNS_MODES:
+                msg = f"The AWS SNS mode specified ({mode}) is invalid."
+                self.logger.warning(msg)
+                raise TypeError(msg)
+
+        else:
+            # Auto-detect: topic mode when all targets are SNS topics
+            # (no phone numbers); SMS mode for phones or mixed sets
+            self.mode = (
+                SNSMode.TOPIC
+                if self.topics and not self.phone
+                else SNSMode.SMS
+            )
+
         return
 
     def send(self, body, title="", notify_type=NotifyType.INFO, **kwargs):
@@ -254,14 +327,21 @@ class NotifySNS(NotifyBase):
         topics = list(self.topics)
 
         while len(phone) > 0:
-
             # Get Phone No
             no = phone.pop(0)
+
+            # In topic mode the framework passes the title through
+            # separately; SMS has no Subject field so the title is
+            # prepended to the body manually when present
+            if self.mode == SNSMode.TOPIC and title:
+                sms_body = "{}\r\n{}".format(title, body)
+            else:
+                sms_body = body
 
             # Prepare SNS Message Payload
             payload = {
                 "Action": "Publish",
-                "Message": body,
+                "Message": sms_body,
                 "Version": "2010-03-31",
                 "PhoneNumber": no,
             }
@@ -272,7 +352,6 @@ class NotifySNS(NotifyBase):
 
         # Send all our defined topic id's
         while len(topics):
-
             # Get Topic
             topic = topics.pop(0)
 
@@ -302,6 +381,12 @@ class NotifySNS(NotifyBase):
                 "TopicArn": topic_arn,
                 "Message": body,
             }
+
+            # In topic mode, use the title as the SNS Subject field
+            # when a title was provided; email subscribers will see
+            # it as the message subject line
+            if self.mode == SNSMode.TOPIC and title:
+                payload["Subject"] = title
 
             # Send our payload to AWS
             (result, _) = self._post(payload=payload, to=topic)
@@ -345,6 +430,7 @@ class NotifySNS(NotifyBase):
                 headers=headers,
                 verify=self.verify_certificate,
                 timeout=self.request_timeout,
+                allow_redirects=self.redirects,
             )
 
             if r.status_code != requests.codes.ok:
@@ -364,7 +450,8 @@ class NotifySNS(NotifyBase):
                 )
 
                 self.logger.debug(
-                    "Response Details:\r\n%r", (r.content or b"")[:2000])
+                    "Response Details:\r\n%r", (r.content or b"")[:2000]
+                )
 
                 return (False, NotifySNS.aws_response_to_dict(r.text))
 
@@ -416,55 +503,71 @@ class NotifySNS(NotifyBase):
         )
 
         # Similar to headers; but a subset.  keys must be lowercase
-        signed_headers = OrderedDict([
-            ("content-type", headers["Content-Type"]),
-            (
-                "host",
-                f"{self.aws_service_name}"
-                f".{self.aws_region_name}.amazonaws.com",
-            ),
-            ("x-amz-date", headers["X-Amz-Date"]),
-        ])
+        signed_headers = OrderedDict(
+            [
+                ("content-type", headers["Content-Type"]),
+                (
+                    "host",
+                    f"{self.aws_service_name}"
+                    f".{self.aws_region_name}.amazonaws.com",
+                ),
+                ("x-amz-date", headers["X-Amz-Date"]),
+            ]
+        )
+
+        # Include session token in signed headers for temporary credentials;
+        # x-amz-security-token sorts after x-amz-date alphabetically and
+        # must appear after it to keep the canonical request valid.
+        if self.aws_session_token:
+            headers["X-Amz-Security-Token"] = self.aws_session_token
+            signed_headers["x-amz-security-token"] = self.aws_session_token
 
         #
         # Build Canonical Request Object
         #
-        canonical_request = "\n".join([
-            # Method
-            "POST",
-            # URL
-            self.aws_canonical_uri,
-            # Query String (none set for POST)
-            "",
-            # Header Content (must include \n at end!)
-            # All entries except characters in amazon date must be
-            # lowercase
-            "\n".join([f"{k}:{v}" for k, v in signed_headers.items()]) + "\n",
-            # Header Entries (in same order identified above)
-            ";".join(signed_headers.keys()),
-            # Payload
-            sha256(payload.encode("utf-8")).hexdigest(),
-        ])
+        canonical_request = "\n".join(
+            [
+                # Method
+                "POST",
+                # URL
+                self.aws_canonical_uri,
+                # Query String (none set for POST)
+                "",
+                # Header Content (must include \n at end!)
+                # All entries except characters in amazon date must be
+                # lowercase
+                "\n".join([f"{k}:{v}" for k, v in signed_headers.items()])
+                + "\n",
+                # Header Entries (in same order identified above)
+                ";".join(signed_headers.keys()),
+                # Payload
+                sha256(payload.encode("utf-8")).hexdigest(),
+            ]
+        )
 
         # Prepare Unsigned Signature
-        to_sign = "\n".join([
-            self.aws_auth_algorithm,
-            amzdate,
-            scope,
-            sha256(canonical_request.encode("utf-8")).hexdigest(),
-        ])
+        to_sign = "\n".join(
+            [
+                self.aws_auth_algorithm,
+                amzdate,
+                scope,
+                sha256(canonical_request.encode("utf-8")).hexdigest(),
+            ]
+        )
 
         # Our Authorization header
-        headers["Authorization"] = ", ".join([
-            (
-                f"{self.aws_auth_algorithm} "
-                f"Credential={self.aws_access_key_id}/{scope}"
-            ),
-            "SignedHeaders={signed_headers}".format(
-                signed_headers=";".join(signed_headers.keys()),
-            ),
-            f"Signature={self.aws_auth_signature(to_sign, reference)}",
-        ])
+        headers["Authorization"] = ", ".join(
+            [
+                (
+                    f"{self.aws_auth_algorithm} "
+                    f"Credential={self.aws_access_key_id}/{scope}"
+                ),
+                "SignedHeaders={signed_headers}".format(
+                    signed_headers=";".join(signed_headers.keys()),
+                ),
+                f"Signature={self.aws_auth_signature(to_sign, reference)}",
+            ]
+        )
 
         return headers
 
@@ -580,16 +683,46 @@ class NotifySNS(NotifyBase):
             self.aws_region_name,
         )
 
+    @property
+    def title_maxlen(self):
+        """Maximum title length: 100 for topic mode, 0 for SMS."""
+        # Return 100 in topic mode so the framework passes the title
+        # to send() separately; return 0 for SMS so the framework
+        # folds the title into the body automatically before send()
+        return 100 if self.mode == SNSMode.TOPIC else 0
+
+    @property
+    def body_maxlen(self):
+        """Maximum body length: 256 KB for topic mode, 160 for SMS."""
+        # Topic publishes support up to 256 KB; SMS is capped at 160
+        return 256000 if self.mode == SNSMode.TOPIC else 160
+
     def url(self, privacy=False, *args, **kwargs):
         """Returns the URL built dynamically based on specified arguments."""
 
         # Our URL parameters
         params = self.url_parameters(privacy=privacy, *args, **kwargs)
 
+        # Always include mode so the round-trip preserves the setting
+        params["mode"] = self.mode
+
+        # Prepare session token prefix when using temporary credentials;
+        # + and = are RFC 3986 sub-delimiters safe in the userinfo position
+        # and look nicer unencoded; / must stay encoded (%2F) because an
+        # unencoded slash terminates the URL authority and breaks parsing
+        token_prefix = (
+            "{token}@".format(
+                token=self.pprint(self.aws_session_token, privacy, safe="+="),
+            )
+            if self.aws_session_token
+            else ""
+        )
+
         return (
-            "{schema}://{key_id}/{key_secret}/{region}/{targets}/"
-            "?{params}".format(
+            "{schema}://{token_prefix}{key_id}/{key_secret}"
+            "/{region}/{targets}/?{params}".format(
                 schema=self.secure_protocol,
+                token_prefix=token_prefix,
                 key_id=self.pprint(self.aws_access_key_id, privacy, safe=""),
                 key_secret=self.pprint(
                     self.aws_secret_access_key,
@@ -598,15 +731,17 @@ class NotifySNS(NotifyBase):
                     safe="",
                 ),
                 region=NotifySNS.quote(self.aws_region_name, safe=""),
-                targets="/".join([
-                    NotifySNS.quote(x)
-                    for x in chain(
-                        # Phone # are already prefixed with a plus symbol
-                        self.phone,
-                        # Topics are prefixed with a pound/hashtag symbol
-                        [f"#{x}" for x in self.topics],
-                    )
-                ]),
+                targets="/".join(
+                    [
+                        NotifySNS.quote(x)
+                        for x in chain(
+                            # Phone # are already prefixed with a plus symbol
+                            self.phone,
+                            # Topics are prefixed with a pound/hashtag symbol
+                            [f"#{x}" for x in self.topics],
+                        )
+                    ]
+                ),
                 params=NotifySNS.urlencode(params),
             )
         )
@@ -645,7 +780,6 @@ class NotifySNS(NotifyBase):
         # Section 1: Get Region and Access Secret
         index = 0
         for i, entry in enumerate(entries):
-
             # Are we at the region yet?
             result = IS_REGION.match(entry)
             if result:
@@ -686,8 +820,11 @@ class NotifySNS(NotifyBase):
         else:
             results["secret_access_key"] = secret_access_key
 
-        # Handle access key id over-ride
-        if "access" in results["qsd"] and len(results["qsd"]["access"]):
+        # Handle access key id override; ?key= is the preferred alias,
+        # ?access= is retained for backwards compatibility
+        if "key" in results["qsd"] and len(results["qsd"]["key"]):
+            results["access_key_id"] = NotifySNS.unquote(results["qsd"]["key"])
+        elif "access" in results["qsd"] and len(results["qsd"]["access"]):
             results["access_key_id"] = NotifySNS.unquote(
                 results["qsd"]["access"]
             )
@@ -701,6 +838,22 @@ class NotifySNS(NotifyBase):
             )
         else:
             results["region_name"] = region_name
+
+        # Session token: userinfo position ({token}@{host}) takes first pass;
+        # ?token= kwarg overrides it when both appear
+        results["session_token"] = None
+        if results.get("user"):
+            results["session_token"] = NotifySNS.unquote(results["user"])
+        if "token" in results["qsd"] and len(results["qsd"]["token"]):
+            results["session_token"] = NotifySNS.unquote(
+                results["qsd"]["token"]
+            )
+
+        # Read mode parameter if supplied; None triggers auto-detection
+        # in __init__ based on target composition
+        results["mode"] = None
+        if "mode" in results["qsd"] and results["qsd"]["mode"]:
+            results["mode"] = NotifySNS.unquote(results["qsd"]["mode"])
 
         # Return our result set
         return results

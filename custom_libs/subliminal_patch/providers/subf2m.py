@@ -376,6 +376,16 @@ class Subf2mProvider(Provider):
             paths = self._search_tv_show_season(video.series, video.season, video.year)
         else:
             paths = self._search_movie(video.title, video.year)
+            if not paths and video.imdb_id:
+                # video.title may be a localized title that subf2m doesn't index
+                # (e.g. Radarr providing a non-English title). subf2m's
+                # searchbytitle also accepts an IMDB id, so fall back to it.
+                logger.debug(
+                    "No results for title %r; retrying search with IMDB id %s",
+                    video.title,
+                    video.imdb_id,
+                )
+                paths = self._search_movie(video.imdb_id, video.year)
 
         if not paths:
             logger.debug("No results")

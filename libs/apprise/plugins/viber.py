@@ -72,43 +72,46 @@ class NotifyViber(NotifyBase):
     viber_sender_name_limit = 28
 
     # Minimal URL; endpoint is fixed, token is the first path entry.
-    templates = (
-        "{schema}://{token}/{targets}",
+    templates = ("{schema}://{token}/{targets}",)
+
+    template_tokens = dict(
+        NotifyBase.template_tokens,
+        **{
+            "token": {
+                "name": _("Authentication Token"),
+                "type": "string",
+                "private": True,
+                "required": True,
+            },
+            "targets": {
+                "name": _("Receiver IDs"),
+                "type": "list:string",
+                "required": True,
+            },
+        },
     )
 
-    template_tokens = dict(NotifyBase.template_tokens, **{
-        "token": {
-            "name": _("Authentication Token"),
-            "type": "string",
-            "private": True,
-            "required": True,
+    template_args = dict(
+        NotifyBase.template_args,
+        **{
+            # Viber requires sender.name
+            "from": {
+                "name": _("Bot Name"),
+                "type": "string",
+                "map_to": "source",
+            },
+            # Optional sender.avatar URL
+            "avatar": {
+                "name": _("Bot Avatar URL"),
+                "type": "string",
+            },
+            "token": {
+                "alias_of": "token",
+            },
+            # Allow targets to also come from query string
+            "to": {"alias_of": "targets"},
         },
-        "targets": {
-            "name": _("Receiver IDs"),
-            "type": "list:string",
-        },
-    })
-
-    template_args = dict(NotifyBase.template_args, **{
-        # Viber requires sender.name
-        "from": {
-            "name": _("Bot Name"),
-            "type": "string",
-            "map_to": "source",
-        },
-        # Optional sender.avatar URL
-        "avatar": {
-            "name": _("Bot Avatar URL"),
-            "type": "string",
-        },
-        "token": {
-            "alias_of": "token",
-        },
-        # Allow targets to also come from query string
-        "to": {
-            "alias_of": "targets"
-        }
-    })
+    )
 
     def __init__(
         self,
@@ -131,8 +134,9 @@ class NotifyViber(NotifyBase):
         if len(sourcev) > self.viber_sender_name_limit:
             self.logger.warning(
                 f"Viber sender name exceeds {self.viber_sender_name_limit} "
-                "characters, truncating.")
-            sourcev = sourcev[:self.viber_sender_name_limit]
+                "characters, truncating."
+            )
+            sourcev = sourcev[: self.viber_sender_name_limit]
         self.source: str = sourcev
 
         self.avatar: Optional[str] = (avatar or "").strip() or None
@@ -163,12 +167,15 @@ class NotifyViber(NotifyBase):
 
         # Token in first path element
         token = self.pprint(
-            self.token, privacy, mode=PrivacyMode.Secret, safe="")
+            self.token, privacy, mode=PrivacyMode.Secret, safe=""
+        )
 
         query = self.urlencode(params)
         return (
             f"{self.secure_protocol}://{token}/"
-            + tgt + (f"?{query}" if query else ""))
+            + tgt
+            + (f"?{query}" if query else "")
+        )
 
     @property
     def url_identifier(self) -> str:
@@ -204,8 +211,10 @@ class NotifyViber(NotifyBase):
             "type": "text",
             "text": body,
             "sender": {
-                "name": self.source if self.source
-                else self.app_desc[:self.viber_sender_name_limit]},
+                "name": self.source
+                if self.source
+                else self.app_desc[: self.viber_sender_name_limit]
+            },
         }
 
         if self.avatar:
@@ -226,6 +235,7 @@ class NotifyViber(NotifyBase):
                     headers=headers,
                     verify=self.verify_certificate,
                     timeout=self.request_timeout,
+                    allow_redirects=self.redirects,
                 )
 
                 # Viber returns the following on success:
@@ -241,7 +251,8 @@ class NotifyViber(NotifyBase):
                     content = {}
                     self.logger.warning(
                         "Invalid JSON response from Viber sending "
-                        f"notification to {dest}")
+                        f"notification to {dest}"
+                    )
                     self.logger.debug("Response Details:\n%s", r.content)
                     has_error = True
                     continue
@@ -251,9 +262,7 @@ class NotifyViber(NotifyBase):
                     status_str = (
                         content.get("status_message")
                         if content.get("status_message")
-                        else self.http_response_code_lookup(
-                            r.status_code
-                        )
+                        else self.http_response_code_lookup(r.status_code)
                     )
                     self.logger.warning(
                         f"Failed to send Viber notification to {dest} - "
@@ -302,12 +311,11 @@ class NotifyViber(NotifyBase):
         # Prepare a Full path to work with
         results["targets"] = [
             NotifyViber.unquote(results["host"]),
-            *NotifyViber.split_path(results["fullpath"])]
+            *NotifyViber.split_path(results["fullpath"]),
+        ]
 
         if "token" in results["qsd"] and len(results["qsd"]["token"]):
-            results["token"] = NotifyViber.unquote(
-                results["qsd"]["token"]
-            )
+            results["token"] = NotifyViber.unquote(results["qsd"]["token"])
 
         else:
             results["token"] = results["targets"][0]
@@ -320,14 +328,10 @@ class NotifyViber(NotifyBase):
 
         # Map 'from' -> source
         if "from" in results["qsd"] and len(results["qsd"]["from"]):
-            results["source"] = NotifyViber.unquote(
-                results["qsd"]["from"]
-            )
+            results["source"] = NotifyViber.unquote(results["qsd"]["from"])
 
         # Map avatar
         if "avatar" in results["qsd"] and len(results["qsd"]["avatar"]):
-            results["avatar"] = NotifyViber.unquote(
-                results["qsd"]["avatar"]
-            )
+            results["avatar"] = NotifyViber.unquote(results["qsd"]["avatar"])
 
         return results

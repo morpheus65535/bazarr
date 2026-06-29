@@ -13,6 +13,7 @@ transparent proxied access to the endpoint of an association object.
 See the example ``examples/association/proxied_association.py``.
 
 """
+
 from __future__ import annotations
 
 import operator

@@ -104,7 +104,7 @@ class TmpFormat(FormatBase):
                         fragment = f"<s>{fragment}</s>"
                 body.append(fragment)
 
-            return re.sub("\n+", "\n", "".join(body).strip())
+            return re.sub("\n+", "|", "".join(body).strip())
 
         for line in subs.get_text_events():
             start = cls.ms_to_timestamp(line.start)

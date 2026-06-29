@@ -3220,8 +3220,7 @@ class MSDialect(default.DefaultDialect):
 
             view_name = f"sys.{row[0]}"
 
-            cursor.execute(
-                """
+            cursor.execute("""
                     SELECT CASE transaction_isolation_level
                     WHEN 0 THEN NULL
                     WHEN 1 THEN 'READ UNCOMMITTED'
@@ -3232,10 +3231,7 @@ class MSDialect(default.DefaultDialect):
                     AS TRANSACTION_ISOLATION_LEVEL
                     FROM {}
                     where session_id = @@SPID
-                """.format(
-                    view_name
-                )
-            )
+                """.format(view_name))
         except self.dbapi.Error as err:
             raise NotImplementedError(
                 "Can't fetch isolation level;  encountered error {} when "
@@ -3254,13 +3250,6 @@ class MSDialect(default.DefaultDialect):
         self._setup_supports_comments(connection)
 
     def _setup_version_attributes(self):
-        if self.server_version_info[0] not in list(range(8, 17)):
-            util.warn(
-                "Unrecognized server version info '%s'.  Some SQL Server "
-                "features may not function properly."
-                % ".".join(str(x) for x in self.server_version_info)
-            )
-
         if self.server_version_info >= MS_2008_VERSION:
             self.supports_multivalues_insert = True
         else:
@@ -3439,8 +3428,7 @@ class MSDialect(default.DefaultDialect):
             else "NULL as filter_definition"
         )
         rp = connection.execution_options(future_result=True).execute(
-            sql.text(
-                f"""
+            sql.text(f"""
 select
     ind.index_id,
     ind.is_unique,
@@ -3460,8 +3448,7 @@ where
     and ind.type != 0
 order by
     ind.name
-                """
-            )
+                """)
             .bindparams(
                 sql.bindparam("tabname", tablename, ischema.CoerceUnicode()),
                 sql.bindparam("schname", owner, ischema.CoerceUnicode()),
@@ -3489,8 +3476,7 @@ order by
                 do["mssql_where"] = row["filter_definition"]
 
         rp = connection.execution_options(future_result=True).execute(
-            sql.text(
-                """
+            sql.text("""
 select
     ind_col.index_id,
     col.name,
@@ -3510,8 +3496,7 @@ where
 order by
     ind_col.index_id,
     ind_col.key_ordinal
-            """
-            )
+            """)
             .bindparams(
                 sql.bindparam("tabname", tablename, ischema.CoerceUnicode()),
                 sql.bindparam("schname", owner, ischema.CoerceUnicode()),
@@ -3641,6 +3626,7 @@ order by
     def get_columns(self, connection, tablename, dbname, owner, schema, **kw):
         sys_columns = ischema.sys_columns
         sys_types = ischema.sys_types
+        sys_base_types = ischema.sys_types.alias("base_types")
         sys_default_constraints = ischema.sys_default_constraints
         computed_cols = ischema.computed_columns
         identity_cols = ischema.identity_columns
@@ -3682,6 +3668,7 @@ order by
             sql.select(
                 sys_columns.c.name,
                 sys_types.c.name,
+                sys_base_types.c.name.label("base_type"),
                 sys_columns.c.is_nullable,
                 sys_columns.c.max_length,
                 sys_columns.c.precision,
@@ -3700,6 +3687,15 @@ order by
                 sys_types,
                 onclause=sys_columns.c.user_type_id
                 == sys_types.c.user_type_id,
+            )
+            .outerjoin(
+                sys_base_types,
+                onclause=sql.and_(
+                    sys_types.c.system_type_id
+                    == sys_base_types.c.system_type_id,
+                    sys_base_types.c.user_type_id
+                    == sys_base_types.c.system_type_id,
+                ),
             )
             .outerjoin(
                 sys_default_constraints,
@@ -3747,6 +3743,7 @@ order by
         for row in c.mappings():
             name = row[sys_columns.c.name]
             type_ = row[sys_types.c.name]
+            base_type = row["base_type"]
             nullable = row[sys_columns.c.is_nullable] == 1
             maxlen = row[sys_columns.c.max_length]
             numericprec = row[sys_columns.c.precision]
@@ -3760,7 +3757,17 @@ order by
             identity_increment = row[identity_cols.c.increment_value]
             comment = row[extended_properties.c.value]
 
+            # Try to resolve the user type first (e.g., "sysname"),
+            # then fall back to the base type (e.g., "nvarchar").
+            # base_type may be None for CLR types (geography, geometry,
+            # hierarchyid) which have no corresponding base type.
             coltype = self.ischema_names.get(type_, None)
+            if (
+                coltype is None
+                and base_type is not None
+                and base_type != type_
+            ):
+                coltype = self.ischema_names.get(base_type, None)
 
             kwargs = {}
 
@@ -3788,10 +3795,16 @@ order by
                     kwargs["collation"] = collation
 
             if coltype is None:
-                util.warn(
-                    "Did not recognize type '%s' of column '%s'"
-                    % (type_, name)
-                )
+                if base_type is not None and base_type != type_:
+                    util.warn(
+                        "Did not recognize type '%s' (user type) or '%s' "
+                        "(base type) of column '%s'" % (type_, base_type, name)
+                    )
+                else:
+                    util.warn(
+                        "Did not recognize type '%s' of column '%s'"
+                        % (type_, name)
+                    )
                 coltype = sqltypes.NULLTYPE
             else:
                 if issubclass(coltype, sqltypes.Numeric):
@@ -3909,8 +3922,7 @@ order by
     ):
         # Foreign key constraints
         s = (
-            text(
-                """\
+            text("""\
 WITH fk_info AS (
     SELECT
         ischema_ref_con.constraint_schema,
@@ -4010,8 +4022,7 @@ index_info AS (
 
     ORDER BY fk_info.constraint_schema, fk_info.constraint_name,
         fk_info.ordinal_position
-"""
-            )
+""")
             .bindparams(
                 sql.bindparam("tablename", tablename, ischema.CoerceUnicode()),
                 sql.bindparam("owner", owner, ischema.CoerceUnicode()),

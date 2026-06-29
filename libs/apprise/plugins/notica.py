@@ -238,6 +238,7 @@ class NotifyNotica(NotifyBase):
                 auth=auth,
                 verify=self.verify_certificate,
                 timeout=self.request_timeout,
+                allow_redirects=self.redirects,
             )
             if r.status_code != requests.codes.ok:
                 # We had a problem
@@ -252,7 +253,8 @@ class NotifyNotica(NotifyBase):
                 )
 
                 self.logger.debug(
-                    "Response Details:\r\n%r", (r.content or b"")[:2000])
+                    "Response Details:\r\n%r", (r.content or b"")[:2000]
+                )
 
                 # Return; we're done
                 return False
@@ -324,21 +326,18 @@ class NotifyNotica(NotifyBase):
             )
 
         default_port = 443 if self.secure else 80
-        return (
-            "{schema}://{auth}{hostname}{port}{fullpath}{token}/?{params}"
-            .format(
-                schema=self.secure_protocol if self.secure else self.protocol,
-                auth=auth,
-                hostname=NotifyNotica.quote(self.host, safe=""),
-                port=(
-                    ""
-                    if self.port is None or self.port == default_port
-                    else f":{self.port}"
-                ),
-                fullpath=NotifyNotica.quote(self.fullpath, safe="/"),
-                token=self.pprint(self.token, privacy, safe=""),
-                params=NotifyNotica.urlencode(params),
-            )
+        return "{schema}://{auth}{hostname}{port}{fullpath}{token}/?{params}".format(
+            schema=self.secure_protocol if self.secure else self.protocol,
+            auth=auth,
+            hostname=NotifyNotica.quote(self.host, safe=""),
+            port=(
+                ""
+                if self.port is None or self.port == default_port
+                else f":{self.port}"
+            ),
+            fullpath=NotifyNotica.quote(self.fullpath, safe="/"),
+            token=self.pprint(self.token, privacy, safe=""),
+            params=NotifyNotica.urlencode(params),
         )
 
     @staticmethod

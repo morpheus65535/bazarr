@@ -167,9 +167,6 @@ class NotifyBark(NotifyBase):
     template_args = dict(
         NotifyBase.template_args,
         **{
-            "to": {
-                "alias_of": "targets",
-            },
             "sound": {
                 "name": _("Sound"),
                 "type": "choice:string",
@@ -217,6 +214,9 @@ class NotifyBark(NotifyBase):
                 "name": _("Call"),
                 "type": "bool",
                 "default": False,
+            },
+            "to": {
+                "alias_of": "targets",
             },
         },
     )
@@ -436,6 +436,7 @@ class NotifyBark(NotifyBase):
                     auth=auth,
                     verify=self.verify_certificate,
                     timeout=self.request_timeout,
+                    allow_redirects=self.redirects,
                 )
                 if r.status_code != requests.codes.ok:
                     # We had a problem
@@ -454,7 +455,8 @@ class NotifyBark(NotifyBase):
                     )
 
                     self.logger.debug(
-                        "Response Details:\r\n%r", (r.content or b"")[:2000])
+                        "Response Details:\r\n%r", (r.content or b"")[:2000]
+                    )
 
                     # Mark our failure
                     has_error = True
@@ -633,8 +635,6 @@ class NotifyBark(NotifyBase):
             )
 
         # Call
-        results["call"] = parse_bool(
-            results["qsd"].get("call", False)
-        )
+        results["call"] = parse_bool(results["qsd"].get("call", False))
 
         return results

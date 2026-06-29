@@ -45,6 +45,7 @@ charset/collation will allow connectivity.
 
 
 """  # noqa
+
 from __future__ import annotations
 
 import re
@@ -110,8 +111,8 @@ class IdentifierPreparerCommon_mysqlconnector:
 
     def _escape_identifier(self, value: str) -> str:
         value = value.replace(
-            self.escape_quote,  # type:ignore[attr-defined]
-            self.escape_to_quote,  # type:ignore[attr-defined]
+            self.escape_quote,  # type: ignore[attr-defined]
+            self.escape_to_quote,  # type: ignore[attr-defined]
         )
         return value
 

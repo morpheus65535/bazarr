@@ -145,9 +145,6 @@ class NotifyBulkSMS(NotifyBase):
     template_args = dict(
         NotifyBase.template_args,
         **{
-            "to": {
-                "alias_of": "targets",
-            },
             "from": {
                 "name": _("From Phone No"),
                 "type": "string",
@@ -165,6 +162,9 @@ class NotifyBulkSMS(NotifyBase):
                 "name": _("Unicode Characters"),
                 "type": "bool",
                 "default": True,
+            },
+            "to": {
+                "alias_of": "targets",
             },
             "batch": {
                 "name": _("Batch Mode"),
@@ -291,9 +291,11 @@ class NotifyBulkSMS(NotifyBase):
         }
 
         if self.source:
-            payload.update({
-                "from": self.source,
-            })
+            payload.update(
+                {
+                    "from": self.source,
+                }
+            )
 
         # Authentication
         auth = (self.user, self.password)
@@ -343,6 +345,7 @@ class NotifyBulkSMS(NotifyBase):
                     auth=auth,
                     verify=self.verify_certificate,
                     timeout=self.request_timeout,
+                    allow_redirects=self.redirects,
                 )
 
                 # The responsne might look like:
@@ -388,7 +391,8 @@ class NotifyBulkSMS(NotifyBase):
                     )
 
                     self.logger.debug(
-                        "Response Details:\r\n%r", (r.content or b"")[:2000])
+                        "Response Details:\r\n%r", (r.content or b"")[:2000]
+                    )
 
                     # Mark our failure
                     has_error = True

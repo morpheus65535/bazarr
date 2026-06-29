@@ -7,5 +7,4 @@
 
 from .. import util as _sa_util
 
-
 _sa_util.preloaded.import_prefix("sqlalchemy.ext")

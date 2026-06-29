@@ -278,7 +278,6 @@ class NotifyStreamlabs(NotifyBase):
             "User-Agent": self.app_id,
         }
         if self.call == StrmlabsCall.ALERT:
-
             data = {
                 "access_token": self.access_token,
                 "type": self.alert_type.lower(),
@@ -297,6 +296,7 @@ class NotifyStreamlabs(NotifyBase):
                     data=data,
                     verify=self.verify_certificate,
                     timeout=self.request_timeout,
+                    allow_redirects=self.redirects,
                 )
                 if r.status_code != requests.codes.ok:
                     # We had a problem
@@ -314,7 +314,8 @@ class NotifyStreamlabs(NotifyBase):
                     )
 
                     self.logger.debug(
-                        "Response Details:\r\n%r", (r.content or b"")[:2000])
+                        "Response Details:\r\n%r", (r.content or b"")[:2000]
+                    )
                     return False
 
                 else:
@@ -344,6 +345,7 @@ class NotifyStreamlabs(NotifyBase):
                     data=data,
                     verify=self.verify_certificate,
                     timeout=self.request_timeout,
+                    allow_redirects=self.redirects,
                 )
                 if r.status_code != requests.codes.ok:
                     # We had a problem

@@ -588,6 +588,7 @@ SQLAlchemy type (or a subclass of such).
 .. versionadded:: 2.0.0 added support for the python-oracledb driver.
 
 """  # noqa
+
 from __future__ import annotations
 
 import collections

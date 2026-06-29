@@ -95,6 +95,7 @@ of the :ref:`psycopg2 <psycopg2_isolation_level>` dialect:
 
 
 """  # noqa
+
 import decimal
 import re
 
@@ -587,11 +588,8 @@ class PGDialect_pg8000(PGDialect):
 
     def _set_client_encoding(self, dbapi_connection, client_encoding):
         cursor = dbapi_connection.cursor()
-        cursor.execute(
-            f"""SET CLIENT_ENCODING TO '{
-                client_encoding.replace("'", "''")
-            }'"""
-        )
+        cursor.execute(f"""
+            SET CLIENT_ENCODING TO '{client_encoding.replace("'", "''")}'""")
         cursor.execute("COMMIT")
         cursor.close()
 

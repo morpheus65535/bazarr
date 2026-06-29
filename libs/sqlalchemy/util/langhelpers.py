@@ -10,6 +10,7 @@
 modules, classes, hierarchies, attributes, functions, and methods.
 
 """
+
 from __future__ import annotations
 
 import collections
@@ -277,21 +278,15 @@ def decorator(target: Callable[..., Any]) -> Callable[[_Fn], _Fn]:
         # more kinds of methods that use @decorator, things may have to
         # be further improved in this area
         if "__" in repr(spec[0]):
-            code = (
-                """\
+            code = """\
 %(prefix)sdef %(name)s%(grouped_args)s:
     return %(target_prefix)s%(target)s(%(fn)s, %(apply_pos)s)
-"""
-                % metadata
-            )
+""" % metadata
         else:
-            code = (
-                """\
+            code = """\
 %(prefix)sdef %(name)s%(grouped_args)s:
     return %(target_prefix)s%(target)s(%(fn)s, %(apply_kw)s)
-"""
-                % metadata
-            )
+""" % metadata
 
         env: Dict[str, Any] = {
             targ_name: target,
@@ -476,7 +471,11 @@ def get_callable_argspec(
     """
     if inspect.isbuiltin(fn):
         raise TypeError("Can't inspect builtin: %s" % fn)
-    elif inspect.isfunction(fn):
+    elif inspect.isfunction(fn) or (
+        hasattr(fn, "__code__")
+        and not inspect.isclass(fn)
+        and not inspect.ismethod(fn)
+    ):
         if _is_init and no_self:
             spec = compat.inspect_getfullargspec(fn)
             return compat.FullArgSpec(
@@ -1564,9 +1563,13 @@ class hybridmethod(Generic[_T]):
 
     def __get__(self, instance: Any, owner: Any) -> Callable[..., _T]:
         if instance is None:
-            return self.clslevel.__get__(owner, owner.__class__)  # type:ignore
+            return self.clslevel.__get__(  # type: ignore[no-any-return]
+                owner, owner.__class__
+            )
         else:
-            return self.func.__get__(instance, owner)  # type:ignore
+            return self.func.__get__(  # type: ignore[no-any-return]
+                instance, owner
+            )
 
     def classlevel(self, func: Callable[..., Any]) -> hybridmethod[_T]:
         self.clslevel = func
@@ -1862,7 +1865,7 @@ def _warnings_warn(
 
             if frame.f_code in _warning_tags:
                 warning_tag_found = True
-                (_suffix, _category) = _warning_tags[frame.f_code]
+                _suffix, _category = _warning_tags[frame.f_code]
                 category = category or _category
                 message = f"{message} ({_suffix})"
 

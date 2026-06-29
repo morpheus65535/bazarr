@@ -28,6 +28,7 @@ Since these objects are part of the SQL expression language, they are usable
 as components in SQL expressions.
 
 """
+
 from __future__ import annotations
 
 from abc import ABC
@@ -2357,11 +2358,9 @@ class Column(DialectKWArgs, SchemaItem, ColumnClause[_T]):
             if existing_col is not self:
                 if not allow_replacements:
                     raise exc.DuplicateColumnError(
-                        f"A column with {conflicts_on} "
-                        f"""'{
+                        f"A column with {conflicts_on} " f"""'{
                             self.key if conflicts_on == 'key' else self.name
-                        }' """
-                        f"is already present in table '{table.name}'."
+                        }' """ f"is already present in table '{table.name}'."
                     )
                 for fk in existing_col.foreign_keys:
                     table.foreign_keys.remove(fk)
@@ -5357,7 +5356,10 @@ class Index(
         )
 
 
-_NamingSchemaCallable = Callable[[Constraint, Table], str]
+_NamingSchemaCallable = Union[
+    Callable[[Constraint, Table], str],
+    Callable[[Index, Table], str],
+]
 _NamingSchemaDirective = Union[str, _NamingSchemaCallable]
 
 

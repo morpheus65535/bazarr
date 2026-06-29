@@ -102,7 +102,7 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
       {
         type: "text",
         key: "cookies",
-        name: "Cookies, e.g., PHPSESSID=abc; wikisubtitlesuser=xyz; wikisubtitlespass=efg",
+        name: "Cookies, you must copy the whole value from your browser",
       },
       {
         type: "text",
@@ -110,6 +110,11 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
         name: "User-Agent, e.g., Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:95.0) Gecko/20100101 Firefox/95.0",
       },
     ],
+  },
+  {
+    key: "bayflix",
+    name: "Bayflix",
+    description: "Bulgarian Subtitles Provider",
   },
   {
     key: "assrt",
@@ -148,7 +153,7 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
       {
         type: "text",
         key: "cookies",
-        name: "Cookies, e.g., PHPSESSID=abc; wikisubtitlesuser=xyz; wikisubtitlespass=efg",
+        name: "Cookies, you must copy the whole value from your browser",
       },
       {
         type: "text",
@@ -702,6 +707,11 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     description: "Bulgarian Subtitles Provider",
   },
   { key: "yifysubtitles", name: "YIFY Subtitles" },
+  {
+    key: "vladoonmooo",
+    name: "Vladoon Mooo",
+    description: "Bulgarian Subtitles Provider",
+  },
   {
     key: "zimuku",
     name: "Zimuku",

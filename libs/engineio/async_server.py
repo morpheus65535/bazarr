@@ -462,7 +462,6 @@ class AsyncServer(base_server.BaseServer):
             'maxPayload': self.max_http_buffer_size,
         })
         await s.send(pkt)
-        s.schedule_ping()
 
         ret = await self._trigger_event('connect', sid, environ,
                                         run_async=False)
@@ -470,6 +469,8 @@ class AsyncServer(base_server.BaseServer):
             del self.sockets[sid]
             self.logger.warning('Application rejected connection')
             return self._unauthorized(ret or None)
+
+        s.schedule_ping()
 
         if transport == 'websocket':
             ret = await s.handle_get_request(environ)

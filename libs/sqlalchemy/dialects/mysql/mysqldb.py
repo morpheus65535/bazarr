@@ -84,6 +84,7 @@ Server Side Cursors
 The mysqldb dialect supports server-side cursors. See :ref:`mysql_ss_cursors`.
 
 """
+
 from __future__ import annotations
 
 import re

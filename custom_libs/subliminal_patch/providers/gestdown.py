@@ -3,7 +3,7 @@
 import logging
 import time
 
-from requests import HTTPError
+from requests import HTTPError, JSONDecodeError
 from requests import Session
 from subliminal.score import get_equivalent_release_groups
 from subliminal.utils import sanitize_release_group
@@ -118,7 +118,14 @@ class GestdownProvider(Provider):
         # TODO: implement rate limiting
         response.raise_for_status()
 
-        matching_subtitles = response.json()["matchingSubtitles"]
+        try:
+            matching_subtitles = response.json()["matchingSubtitles"]
+        except JSONDecodeError:
+            logger.debug("Couldn't parse JSON from response for %s", video)
+            return None
+        except KeyError:
+            logger.debug("Couldn't get matching subtitles from JSON for %s", video)
+            return None
 
         if not matching_subtitles:
             logger.debug("No episodes found for '%s' language", language)
@@ -138,11 +145,20 @@ class GestdownProvider(Provider):
                 f"{_BASE_URL}/shows/external/tvdb/{video.series_tvdb_id}"
             )
             response.raise_for_status()
-            return response.json()["shows"]
         except HTTPError as error:
             if error.response.status_code == 404:
                 return None
             raise
+        else:
+            try:
+                shows = response.json()["shows"]
+            except JSONDecodeError:
+                logger.debug("Couldn't parse JSON from response for %s", video)
+                return None
+            except KeyError:
+                logger.debug("Couldn't get shows from JSON for %s", video)
+                return None
+            return shows
 
     @_retry_on_423
     def list_subtitles(self, video, languages):

@@ -45,7 +45,6 @@ from .base import VARCHAR
 from .base import XML
 from ...sql import try_cast
 
-
 base.dialect = dialect = pyodbc.dialect
 
 

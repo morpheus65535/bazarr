@@ -1,0 +1,16 @@
+platformdirs-4.10.0.dist-info/INSTALLER,sha256=zuuue4knoyJ-UwPPXg8fezS7VCrXJQrAP7zeNuwvFQg,4
+platformdirs-4.10.0.dist-info/METADATA,sha256=xO4Y9bbSs4USowwokgCxRj8pioJhyPpj8lhOqX6Tz3g,5463
+platformdirs-4.10.0.dist-info/RECORD,,
+platformdirs-4.10.0.dist-info/REQUESTED,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
+platformdirs-4.10.0.dist-info/WHEEL,sha256=mffPy8wBnZQn2VnJUU5jE99KsxaSfiyMHV9Yt0aLVxs,87
+platformdirs-4.10.0.dist-info/licenses/LICENSE,sha256=KeD9YukphQ6G6yjD_czwzv30-pSHkBHP-z0NS-1tTbY,1089
+platformdirs/__init__.py,sha256=j-8oWLg3d5yoqzoiISxjwOuoHijzs2ehIoyjQgWMteI,32329
+platformdirs/__main__.py,sha256=H36IZqfc9v0ePzWsua50wmq4ShRCONCYv66rzpIVptI,1761
+platformdirs/_xdg.py,sha256=5w6S07vVabEROhaUB_X7i0hmLNbdYtC9aEvPbsEIS8M,7894
+platformdirs/android.py,sha256=BBj3wfw-dfuVxsCsKsvFByKVspRDgfv8gwIzhpE1JRQ,11566
+platformdirs/api.py,sha256=EaIsFgXGu8cDTb41WM3hse_SrIoOUht8_TCo5XdOOSM,14887
+platformdirs/macos.py,sha256=PWudeDZAY9UuwLP_5rN3exSRFtYdY542hDhjah4dSWA,9538
+platformdirs/py.typed,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
+platformdirs/unix.py,sha256=X7Cip1xOHFOnSVveqKWzU1P7jn4zuDGpRgmVxJnk4vk,13317
+platformdirs/version.py,sha256=dJvdm7L_7wobEcxrNoJtH7CtmYcG_VR5yNmtBshJ-xs,522
+platformdirs/windows.py,sha256=YOdSGNhdpxm_ydZq7uG74i9mX2_WWbcMSA4fobXwL0M,15798

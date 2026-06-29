@@ -1,4 +1,4 @@
-from typing import List, Any
+from typing import Any
 
 __all__ = [
     "Pysubs2Error",
@@ -71,7 +71,7 @@ class FormatAutodetectionError(Pysubs2Error):
         content (str): Analyzed subtitle file content
         formats (list[str]): Format identifiers for detected formats
     """
-    def __init__(self, content: str, formats: List[str]) -> None:
+    def __init__(self, content: str, formats: list[str]) -> None:
         self.content = content
         self.formats = formats
         if not formats:

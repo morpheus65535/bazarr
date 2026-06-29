@@ -9,6 +9,7 @@
 Mypy plugin for SQLAlchemy ORM.
 
 """
+
 from __future__ import annotations
 
 from typing import Callable

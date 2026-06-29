@@ -250,7 +250,7 @@ BEGIN.
 
 * **Using SQLAlchemy to emit BEGIN in lieu of SQLite's transaction control** (all Python versions, sqlite3 and aiosqlite)
 
-  For older versions of ``sqlite3`` or for cross-compatiblity with older and
+  For older versions of ``sqlite3`` or for cross-compatibility with older and
   newer versions, SQLAlchemy can also take over the job of transaction control.
   This is achieved by using the :meth:`.ConnectionEvents.begin` hook
   to emit the "BEGIN" command directly, while also disabling SQLite's control
@@ -847,13 +847,11 @@ The bug, entirely outside of SQLAlchemy, can be illustrated thusly::
     cursor.execute("select x.a, x.b from x")
     assert [c[0] for c in cursor.description] == ["a", "b"]
 
-    cursor.execute(
-        """
+    cursor.execute("""
         select x.a, x.b from x where a=1
         union
         select x.a, x.b from x where a=2
-        """
-    )
+        """)
     assert [c[0] for c in cursor.description] == ["a", "b"], [
         c[0] for c in cursor.description
     ]
@@ -888,13 +886,11 @@ to filter these out::
     result = conn.exec_driver_sql("select x.a, x.b from x")
     assert result.keys() == ["a", "b"]
 
-    result = conn.exec_driver_sql(
-        """
+    result = conn.exec_driver_sql("""
         select x.a, x.b from x where a=1
         union
         select x.a, x.b from x where a=2
-        """
-    )
+        """)
     assert result.keys() == ["a", "b"]
 
 Note that above, even though SQLAlchemy filters out the dots, *both
@@ -987,6 +983,7 @@ passed to methods such as :meth:`_schema.MetaData.reflect` or
     documentation.
 
 '''  # noqa
+
 from __future__ import annotations
 
 import datetime
@@ -2212,7 +2209,7 @@ class SQLiteDialect(default.DefaultDialect):
                 14,
             )
 
-            if self.dbapi.sqlite_version_info < (3, 35) or util.pypy:
+            if self.dbapi.sqlite_version_info < (3, 35):
                 self.update_returning = self.delete_returning = (
                     self.insert_returning
                 ) = False
@@ -2582,7 +2579,7 @@ class SQLiteDialect(default.DefaultDialect):
         fks = {}
 
         for row in pragma_fks:
-            (numerical_id, rtbl, lcol, rcol) = (row[0], row[2], row[3], row[4])
+            numerical_id, rtbl, lcol, rcol = (row[0], row[2], row[3], row[4])
 
             if not rcol:
                 # no referred column, which means it was not named in the

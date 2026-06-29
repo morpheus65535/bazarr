@@ -28,7 +28,6 @@ from ...sql.expression import alias
 from ...sql.selectable import NamedFromClause
 from ...util.typing import Self
 
-
 __all__ = ("Insert", "insert")
 
 

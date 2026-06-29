@@ -4,10 +4,11 @@ import os
 import time
 import io
 import json
+from typing import Callable
 
 from zipfile import ZipFile, is_zipfile
 from urllib.parse import urljoin
-from requests import Session
+from requests import Session, Response
 
 from subzero.language import Language
 from subliminal import Episode, Movie
@@ -108,18 +109,14 @@ class LegendasNetProvider(ProviderRetryMixin, Provider):
         })
 
         response = self.retry(
-            lambda: self.session.request("POST", self.server_url() + 'login', data=payload, headers=headersList, timeout=30),
+            lambda: self.checked(
+                lambda: self.session.request("POST", self.server_url() + 'login', data=payload, headers=headersList,
+                                             timeout=30),
+                is_login=True,
+            ),
             amount=retry_amount,
             retry_timeout=retry_timeout
         )
-
-        if response.status_code == 429:
-            raise APIThrottled('Too many requests')
-        elif response.status_code in (401, 403):
-            self.session.headers.pop('Authorization', None)
-            raise ConfigurationError('Invalid username or password')
-        elif response.status_code != 200:
-            response.raise_for_status()
 
         self.access_token = response.json().get('access_token')
         if not self.access_token:
@@ -141,45 +138,36 @@ class LegendasNetProvider(ProviderRetryMixin, Provider):
         # query the server
         if isinstance(self.video, Episode):
             res = self.retry(
-                lambda: self.session.get(self.server_url() + 'search/tv',
-                                         json={
-                                             'name': video.series,
-                                             'page': 1,
-                                             'per_page': 25,
-                                             'tv_episode': video.episode,
-                                             'tv_season': video.season,
-                                             'imdb_id': video.series_imdb_id
-                                         },
-                                         headers={'Content-Type': 'application/json'},
-                                         timeout=30),
+                lambda: self.checked(
+                    lambda: self.session.get(self.server_url() + 'search/tv',
+                                             json={
+                                                 'name': video.series,
+                                                 'page': 1,
+                                                 'per_page': 25,
+                                                 'tv_episode': video.episode,
+                                                 'tv_season': video.season,
+                                                 'imdb_id': video.series_imdb_id
+                                             },
+                                             headers={'Content-Type': 'application/json'},
+                                             timeout=30)),
                 amount=retry_amount,
                 retry_timeout=retry_timeout
             )
         else:
             res = self.retry(
-                lambda: self.session.get(self.server_url() + 'search/movie',
-                                         json={
-                                             'name': video.title,
-                                             'page': 1,
-                                             'per_page': 25,
-                                             'imdb_id': video.imdb_id
-                                         },
-                                         headers={'Content-Type': 'application/json'},
-                                         timeout=30),
+                lambda: self.checked(
+                    lambda: self.session.get(self.server_url() + 'search/movie',
+                                             json={
+                                                 'name': video.title,
+                                                 'page': 1,
+                                                 'per_page': 25,
+                                                 'imdb_id': video.imdb_id
+                                             },
+                                             headers={'Content-Type': 'application/json'},
+                                             timeout=30)),
                 amount=retry_amount,
                 retry_timeout=retry_timeout
             )
-
-        if res.status_code == 404:
-            logger.error(f"Endpoint not found: {res.url}")
-            raise ProviderError("Endpoint not found")
-        elif res.status_code == 429:
-            raise APIThrottled("Too many requests")
-        elif res.status_code in (401, 403):
-            self.session.headers.pop('Authorization', None)
-            raise ConfigurationError("Invalid access token")
-        elif res.status_code != 200:
-            res.raise_for_status()
 
         subtitles = []
 
@@ -246,18 +234,13 @@ class LegendasNetProvider(ProviderRetryMixin, Provider):
         download_link = urljoin("https://legendas.net", subtitle.download_link)
 
         r = self.retry(
-            lambda: self.session.get(download_link, timeout=30),
+            lambda: self.checked(
+                lambda: self.session.get(download_link, timeout=30),
+                is_download=True
+            ),
             amount=retry_amount,
             retry_timeout=retry_timeout
         )
-
-        if r.status_code == 429:
-            raise DownloadLimitExceeded("Daily download limit exceeded")
-        elif r.status_code in (401, 403):
-            self.session.headers.pop('Authorization', None)
-            raise ConfigurationError("Invalid access token")
-        elif r.status_code != 200:
-            r.raise_for_status()
 
         if not r:
             logger.error(f'Could not download subtitle from {download_link}')
@@ -275,3 +258,63 @@ class LegendasNetProvider(ProviderRetryMixin, Provider):
                 subtitle_content = r.content
                 subtitle.content = fix_line_ending(subtitle_content)
                 return
+
+    def checked(self, fn: Callable, is_retry: bool = False, is_download: bool = False, is_login: bool = False) -> Response:
+        """
+        Executes the provided function and performs error handling and response validation for API calls.
+
+        The method handles various HTTP status codes such as 401, 403, 404, and 429, and retries
+        login if access tokens are invalid. Additionally, it ensures unhandled exceptions are logged
+        and raises appropriate custom exceptions when needed.
+
+        :param fn: The callable function that makes the HTTP request.
+        :type fn: Callable
+        :param is_retry: Indicates if the function is being retried due to a previous failed attempt.
+        :type is_retry: bool
+        :param is_download: Specifies if the function call is related to downloading subtitles. Helps in defining
+            behavior in case of API throttling or limiting conditions.
+        :type is_download: bool
+        :param is_login: Specifies if the function call is for a login operation. Used to handle cases
+            of invalid credentials.
+        :type is_login: bool
+        :return: The HTTP response object returned by the provided function if the status code is valid.
+        :rtype: Response
+        :raises ProviderError: If an unhandled exception occurs or the endpoint is not found.
+        :raises DownloadLimitExceeded: If the daily download limit is exceeded.
+        :raises APIThrottled: If too many requests are sent in a short period.
+        :raises ConfigurationError: If login credentials or access tokens are invalid.
+        """
+        response = None
+        try:
+            response = fn()
+        except Exception:
+            logger.exception('Unhandled exception raised.')
+            raise ProviderError('Unhandled exception raised. Check log.')
+        else:
+            status_code = response.status_code
+            if status_code == 404:
+                logger.error(f"Endpoint not found: {response.url}")
+                raise ProviderError("Endpoint not found")
+            elif status_code == 429:
+                if is_download:
+                    raise DownloadLimitExceeded("Daily download limit exceeded")
+                else:
+                    raise APIThrottled("Too many requests")
+            elif status_code in (401, 403):
+                self.session.headers.pop('Authorization', None)
+                if is_login:
+                    raise ConfigurationError('Invalid username or password')
+                else:
+                    if is_retry:
+                        logger.debug("Access token is still invalid, giving up")
+                        raise ConfigurationError("Invalid access token")
+                    else:
+                        logger.debug("Access token invalid, retrying login")
+                        time.sleep(1)
+                        self.login()
+                        time.sleep(1)
+                        return self.checked(fn, is_retry=True, is_download=is_download)
+            elif status_code != 200:
+                response.raise_for_status()
+
+        return response

@@ -7,6 +7,7 @@
 # mypy: allow-untyped-defs, allow-untyped-calls
 
 """High level utilities which build upon other modules here."""
+
 from __future__ import annotations
 
 from collections import deque
@@ -852,7 +853,7 @@ def splice_joins(
     adapter = ClauseAdapter(left)
     ret = None
     while stack:
-        (right, prevright) = stack.pop()
+        right, prevright = stack.pop()
         if isinstance(right, Join) and right is not stop_on:
             right = right._clone()
             right.onclause = adapter.traverse(right.onclause)

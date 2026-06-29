@@ -244,6 +244,7 @@ class NotifyRyver(NotifyBase):
                 headers=headers,
                 verify=self.verify_certificate,
                 timeout=self.request_timeout,
+                allow_redirects=self.redirects,
             )
 
             if r.status_code != requests.codes.ok:
@@ -259,7 +260,8 @@ class NotifyRyver(NotifyBase):
                 )
 
                 self.logger.debug(
-                    "Response Details:\r\n%r", (r.content or b"")[:2000])
+                    "Response Details:\r\n%r", (r.content or b"")[:2000]
+                )
 
                 # Return; we're done
                 return False
@@ -270,8 +272,7 @@ class NotifyRyver(NotifyBase):
         except requests.RequestException as e:
             self.logger.warning(
                 "A Connection error occurred sending"
-                f" Ryver:{self.organization} "
-                + "notification."
+                f" Ryver:{self.organization} " + "notification."
             )
             self.logger.debug(f"Socket Exception: {e!s}")
             return False

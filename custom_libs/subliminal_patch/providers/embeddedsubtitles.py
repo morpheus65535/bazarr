@@ -61,6 +61,29 @@ class EmbeddedSubtitle(Subtitle):
 
 
 _ALLOWED_CODECS = ("ass", "subrip", "webvtt", "mov_text")
+_CHINESE_TRADITIONAL_IETF_MARKERS = ("zh-hant", "zh-tw", "zh-hk", "zh-mo", "hant")
+_CHINESE_SIMPLIFIED_IETF_MARKERS = ("zh-hans", "zh-cn", "zh-sg", "hans")
+_CHINESE_TRADITIONAL_TITLE_MARKERS = (
+    "zh-tw",
+    "zht",
+    "zh-hant",
+    "zhhant",
+    "hant",
+    "big5",
+    "traditional",
+    "繁體",
+    "繁体",
+)
+_CHINESE_SIMPLIFIED_TITLE_MARKERS = (
+    "zh-cn",
+    "zhs",
+    "zh-hans",
+    "zhhans",
+    "hans",
+    "simplified",
+    "簡體",
+    "简体",
+)
 
 
 class EmbeddedSubtitlesProvider(Provider):
@@ -215,6 +238,7 @@ class EmbeddedSubtitlesProvider(Provider):
             # Extract all subittle streams to avoid reading the entire
             # container over and over
             subs = list(_filter_subtitles(container.get_subtitles()))
+            _rebuild_langs(subs)
 
             extracted = container.copy_subtitles(
                 subs,
@@ -308,9 +332,38 @@ def _check_hi_fallback(streams, languages):
 def _rebuild_langs(streams):
     for stream in streams:
         kwargs = stream.disposition.language_kwargs()
-        stream.language = Language.rebuild(stream.language, **kwargs)
+        language = _get_chinese_language_from_tags(stream) or stream.language
+        stream.language = Language.rebuild(language, **kwargs)
 
         logger.debug("Rebuild language: %r", stream.language)
+
+
+def _get_chinese_language_from_tags(stream):
+    if stream.language.alpha3 != "zho":
+        return None
+
+    data = getattr(stream.tags, "_data", {}) or {}
+    language_ietf = data.get("language_ietf")
+    if language_ietf:
+        language_ietf = language_ietf.lower().replace("_", "-")
+        if any(
+            marker in language_ietf
+            for marker in _CHINESE_TRADITIONAL_IETF_MARKERS
+        ):
+            return Language("zho", "TW")
+        if any(
+            marker in language_ietf
+            for marker in _CHINESE_SIMPLIFIED_IETF_MARKERS
+        ):
+            return Language("zho")
+
+    title = data.get("title", "").lower()
+    if any(marker in title for marker in _CHINESE_TRADITIONAL_TITLE_MARKERS):
+        return Language("zho", "TW")
+    if any(marker in title for marker in _CHINESE_SIMPLIFIED_TITLE_MARKERS):
+        return Language("zho")
+
+    return None
 
 
 def _discard_possible_incomplete_subtitles(streams):

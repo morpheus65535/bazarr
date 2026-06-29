@@ -13,6 +13,7 @@ SQL annotation and aliasing behavior focused on the `primaryjoin`
 and `secondaryjoin` aspects of :func:`_orm.relationship`.
 
 """
+
 from __future__ import annotations
 
 import collections
@@ -728,7 +729,7 @@ class RelationshipProperty(
             many-to-one comparisons:
 
             * Comparisons against collections are not supported.
-              Use :meth:`~.Relationship.Comparator.contains`.
+              Use :meth:`~.RelationshipProperty.Comparator.contains`.
             * Compared to a scalar one-to-many, will produce a
               clause that compares the target columns in the parent to
               the given target.
@@ -739,7 +740,7 @@ class RelationshipProperty(
               queries that go beyond simple AND conjunctions of
               comparisons, such as those which use OR. Use
               explicit joins, outerjoins, or
-              :meth:`~.Relationship.Comparator.has` for
+              :meth:`~.RelationshipProperty.Comparator.has` for
               more comprehensive non-many-to-one scalar
               membership tests.
             * Comparisons against ``None`` given in a one-to-many
@@ -891,12 +892,12 @@ class RelationshipProperty(
                 EXISTS (SELECT 1 FROM related WHERE related.my_id=my_table.id
                 AND related.x=2)
 
-            Because :meth:`~.Relationship.Comparator.any` uses
+            Because :meth:`~.RelationshipProperty.Comparator.any` uses
             a correlated subquery, its performance is not nearly as
             good when compared against large target tables as that of
             using a join.
 
-            :meth:`~.Relationship.Comparator.any` is particularly
+            :meth:`~.RelationshipProperty.Comparator.any` is particularly
             useful for testing for empty collections::
 
                 session.query(MyClass).filter(~MyClass.somereference.any())
@@ -909,10 +910,10 @@ class RelationshipProperty(
                 NOT (EXISTS (SELECT 1 FROM related WHERE
                 related.my_id=my_table.id))
 
-            :meth:`~.Relationship.Comparator.any` is only
+            :meth:`~.RelationshipProperty.Comparator.any` is only
             valid for collections, i.e. a :func:`_orm.relationship`
             that has ``uselist=True``.  For scalar references,
-            use :meth:`~.Relationship.Comparator.has`.
+            use :meth:`~.RelationshipProperty.Comparator.has`.
 
             """
             if not self.property.uselist:
@@ -945,15 +946,15 @@ class RelationshipProperty(
                 EXISTS (SELECT 1 FROM related WHERE
                 related.id==my_table.related_id AND related.x=2)
 
-            Because :meth:`~.Relationship.Comparator.has` uses
+            Because :meth:`~.RelationshipProperty.Comparator.has` uses
             a correlated subquery, its performance is not nearly as
             good when compared against large target tables as that of
             using a join.
 
-            :meth:`~.Relationship.Comparator.has` is only
+            :meth:`~.RelationshipProperty.Comparator.has` is only
             valid for scalar references, i.e. a :func:`_orm.relationship`
             that has ``uselist=False``.  For collection references,
-            use :meth:`~.Relationship.Comparator.any`.
+            use :meth:`~.RelationshipProperty.Comparator.any`.
 
             """
             if self.property.uselist:
@@ -968,7 +969,7 @@ class RelationshipProperty(
             """Return a simple expression that tests a collection for
             containment of a particular item.
 
-            :meth:`~.Relationship.Comparator.contains` is
+            :meth:`~.RelationshipProperty.Comparator.contains` is
             only valid for a collection, i.e. a
             :func:`_orm.relationship` that implements
             one-to-many or many-to-many with ``uselist=True``.
@@ -987,12 +988,12 @@ class RelationshipProperty(
             Where ``<some id>`` is the value of the foreign key
             attribute on ``other`` which refers to the primary
             key of its parent object. From this it follows that
-            :meth:`~.Relationship.Comparator.contains` is
+            :meth:`~.RelationshipProperty.Comparator.contains` is
             very useful when used with simple one-to-many
             operations.
 
             For many-to-many operations, the behavior of
-            :meth:`~.Relationship.Comparator.contains`
+            :meth:`~.RelationshipProperty.Comparator.contains`
             has more caveats. The association table will be
             rendered in the statement, producing an "implicit"
             join, that is, includes multiple tables in the FROM
@@ -1011,14 +1012,14 @@ class RelationshipProperty(
 
             Where ``<some id>`` would be the primary key of
             ``other``. From the above, it is clear that
-            :meth:`~.Relationship.Comparator.contains`
+            :meth:`~.RelationshipProperty.Comparator.contains`
             will **not** work with many-to-many collections when
             used in queries that move beyond simple AND
             conjunctions, such as multiple
-            :meth:`~.Relationship.Comparator.contains`
+            :meth:`~.RelationshipProperty.Comparator.contains`
             expressions joined by OR. In such cases subqueries or
             explicit "outer joins" will need to be used instead.
-            See :meth:`~.Relationship.Comparator.any` for
+            See :meth:`~.RelationshipProperty.Comparator.any` for
             a less-performant alternative using EXISTS, or refer
             to :meth:`_query.Query.outerjoin`
             as well as :ref:`orm_queryguide_joins`
@@ -1118,7 +1119,7 @@ class RelationshipProperty(
 
             * Comparisons against collections are not supported.
               Use
-              :meth:`~.Relationship.Comparator.contains`
+              :meth:`~.RelationshipProperty.Comparator.contains`
               in conjunction with :func:`_expression.not_`.
             * Compared to a scalar one-to-many, will produce a
               clause that compares the target columns in the parent to
@@ -1130,7 +1131,7 @@ class RelationshipProperty(
               queries that go beyond simple AND conjunctions of
               comparisons, such as those which use OR. Use
               explicit joins, outerjoins, or
-              :meth:`~.Relationship.Comparator.has` in
+              :meth:`~.RelationshipProperty.Comparator.has` in
               conjunction with :func:`_expression.not_` for
               more comprehensive non-many-to-one scalar
               membership tests.
@@ -3318,8 +3319,14 @@ class JoinCondition:
                 )
 
                 if (
+                    # NOTE: it's not clear yet if this needs to test for
+                    # parentmapper_for_element.isa(self.prop.parent).  so far
+                    # we have not come up with a test.
                     parentmapper_for_element is not self.prop.parent
-                    and parentmapper_for_element is not self.prop.mapper
+                    and (
+                        parentmapper_for_element is None
+                        or not parentmapper_for_element.isa(self.prop.mapper)
+                    )
                     and elem not in self._secondary_lineage_set
                 ):
                     return _safe_annotate(elem, annotations)
