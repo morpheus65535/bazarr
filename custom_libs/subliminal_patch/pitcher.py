@@ -5,6 +5,7 @@ import os
 import time
 import logging
 import json
+import base64
 import requests
 from subliminal.cache import region
 from dogpile.cache.api import NO_VALUE
@@ -361,6 +362,99 @@ class CaptchaAIPitcher(CaptchaAIProxyLessPitcher):
         if self.user_agent:
             params.update({"userAgent": self.user_agent})
         return params
+
+
+@registry.register
+class CaptchaAIImageToTextPitcher(Pitcher):
+    name = "CaptchaAIImageToText"
+    source = "captchaai.com"
+    host = "https://ocr.captchaai.com"
+    timeout = 180
+    image_fp = None
+
+    def __init__(self, website_name, image_fp, tries=3, client_key=None, *args, **kwargs):
+        super().__init__(website_name, tries, client_key, *args, **kwargs)
+        self.tries = tries
+        self.client_key = client_key or os.environ.get("ANTICAPTCHA_ACCOUNT_KEY")
+        if not self.client_key:
+            raise Exception("CaptchaAI key not given, exiting")
+        self.website_name = website_name
+        self.image_fp = image_fp
+        self.success = False
+        self.solve_time = None
+
+    def get_client(self):
+        # CaptchaAI exposes a 2Captcha-compatible HTTP API (in.php/res.php), so a
+        # plain requests session is all that is needed.
+        return requests.Session()
+
+    def get_job(self):
+        # The image task is created in _throw() through the in.php endpoint.
+        pass
+
+    @property
+    def in_params(self):
+        # Read the image bytes and submit them as base64 (method=base64).
+        try:
+            self.image_fp.seek(0)
+        except (AttributeError, ValueError):
+            pass
+        body = base64.b64encode(self.image_fp.read()).decode("ascii")
+        return {
+            "key": self.client_key,
+            "method": "base64",
+            "body": body,
+            "json": 1,
+        }
+
+    def _throw(self):
+        self.client = self.get_client()
+        for i in range(self.tries):
+            try:
+                resp = self.client.post("%s/in.php" % self.host, data=self.in_params, timeout=30)
+                payload = resp.json()
+                if payload.get("status") != 1:
+                    request = payload.get("request")
+                    if request == "ERROR_ZERO_BALANCE":
+                        logger.error("%s: No balance left on captcha solving service. Exiting", self.website_name)
+                        return
+                    elif request == "ERROR_NO_SLOT_AVAILABLE":
+                        logger.info("%s: No captcha solving slot available, retrying", self.website_name)
+                        time.sleep(5.0)
+                        continue
+                    elif request in ("ERROR_KEY_DOES_NOT_EXIST", "ERROR_WRONG_USER_KEY"):
+                        logger.error("%s: Bad CaptchaAI API key", self.website_name)
+                        return
+                    logger.error("%s: CaptchaAI returned an error: %s", self.website_name, request)
+                    if i >= self.tries - 1:
+                        return
+                    continue
+
+                job_id = payload.get("request")
+                deadline = time.time() + self.timeout
+                while time.time() < deadline:
+                    time.sleep(5.0)
+                    res = self.client.get(
+                        "%s/res.php" % self.host,
+                        params={"key": self.client_key, "action": "get", "id": job_id, "json": 1},
+                        timeout=30,
+                    )
+                    res_payload = res.json()
+                    if res_payload.get("status") == 1:
+                        self.success = True
+                        return res_payload.get("request")
+                    if res_payload.get("request") == "CAPCHA_NOT_READY":
+                        continue
+                    logger.error("%s: CaptchaAI returned an error: %s", self.website_name,
+                                 res_payload.get("request"))
+                    break
+                logger.info("%s: Captcha solving timed out, retrying", self.website_name)
+            except Exception:
+                if i >= self.tries - 1:
+                    logger.error("%s: Captcha solving finally failed. Exiting", self.website_name)
+                    return
+                logger.info("%s: Captcha solving failed, retrying", self.website_name)
+                time.sleep(5.0)
 
 
 @registry.register

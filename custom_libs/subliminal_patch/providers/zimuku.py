@@ -124,9 +124,14 @@ class ZimukuProvider(Provider):
                 return img_fp
 
             fp = bmp_to_image(image_content)
-            pitcher = pitchers.get_pitcher("AntiCaptchaImageToText" if
-                                           os.environ["ANTICAPTCHA_CLASS"] == 'AntiCaptchaProxyLess' else
-                                           "DeathByCaptchaImageToText")("Zimuku", fp)
+            anticaptcha_class = os.environ["ANTICAPTCHA_CLASS"]
+            if anticaptcha_class == 'AntiCaptchaProxyLess':
+                image_pitcher = "AntiCaptchaImageToText"
+            elif anticaptcha_class == 'CaptchaAIProxyLess':
+                image_pitcher = "CaptchaAIImageToText"
+            else:
+                image_pitcher = "DeathByCaptchaImageToText"
+            pitcher = pitchers.get_pitcher(image_pitcher)("Zimuku", fp)
             return pitcher.throw()
 
         i = -1
