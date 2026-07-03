@@ -1,0 +1,1552 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8
+      Accept-Encoding:
+      - gzip, deflate
+      Accept-Language:
+      - pt-BR,pt;q=0.9,en;q=0.8
+      User-Agent:
+      - Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like
+        Gecko) Chrome/131.0.0.0 Safari/537.36
+    method: GET
+    uri: https://legendei.net/?s=121361asdfgh%20S01E01
+  response:
+    body:
+      string: "<!DOCTYPE html>\n<html dir=\"ltr\" lang=\"pt-BR\" prefix=\"og: https://ogp.me/ns#\"\
+        >\n<head>\n<meta charset=\"UTF-8\">\n<meta name=\"viewport\" content=\"width=device-width,\
+        \ initial-scale=1.0\">\n\n<link rel=\"stylesheet\" href=\"https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css\"\
+        >\n\t\n<link rel=\"preconnect\" href=\"https://fonts.googleapis.com\">\n<link\
+        \ rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin>\n<link\
+        \ href=\"https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap\"\
+        \ rel=\"stylesheet\">\n\t\n<title>121361asdfgh s01e01 - Legendei - Aqui Sai\
+        \ Primeiro</title>\n\t<style>img:is([sizes=\"auto\" i], [sizes^=\"auto,\"\
+        \ i]) { contain-intrinsic-size: 3000px 1500px }</style>\n\t\n\t\t<!-- All\
+        \ in One SEO Pro 4.6.0 - aioseo.com -->\n\t\t<meta name=\"robots\" content=\"\
+        max-image-preview:large\" />\n\t\t<meta name=\"google-site-verification\"\
+        \ content=\"JSMIV3rTOC3Y-WjaQzmU3KvW7aWHceTxBFYsJYpm-1k\" />\n\t\t<meta name=\"\
+        generator\" content=\"All in One SEO Pro (AIOSEO) 4.6.0\" />\n\t\t<script\
+        \ type=\"application/ld+json\" class=\"aioseo-schema\">\n\t\t\t{\"@context\"\
+        :\"https:\\/\\/schema.org\",\"@graph\":[{\"@type\":\"BreadcrumbList\",\"@id\"\
+        :\"https:\\/\\/legendei.net\\/#breadcrumblist\",\"itemListElement\":[{\"@type\"\
+        :\"ListItem\",\"@id\":\"https:\\/\\/legendei.net\\/#listItem\",\"position\"\
+        :1,\"name\":\"Home\",\"item\":\"https:\\/\\/legendei.net\\/\",\"nextItem\"\
+        :\"https:\\/\\/legendei.net\\/#listItem\"},{\"@type\":\"ListItem\",\"@id\"\
+        :\"https:\\/\\/legendei.net\\/#listItem\",\"position\":2,\"name\":\"121361asdfgh\
+        \ s01e01\",\"previousItem\":\"https:\\/\\/legendei.net\\/#listItem\"}]},{\"\
+        @type\":\"Organization\",\"@id\":\"https:\\/\\/legendei.net\\/#organization\"\
+        ,\"name\":\"Legendei\",\"url\":\"https:\\/\\/legendei.net\\/\",\"logo\":{\"\
+        @type\":\"ImageObject\",\"url\":\"https:\\/\\/legendei.net\\/wp-content\\\
+        /uploads\\/2026\\/03\\/favicon.webp\",\"@id\":\"https:\\/\\/legendei.net\\\
+        /#organizationLogo\",\"width\":150,\"height\":150},\"image\":{\"@id\":\"https:\\\
+        /\\/legendei.net\\/#organizationLogo\"}},{\"@type\":\"SearchResultsPage\"\
+        ,\"@id\":\"https:\\/\\/legendei.net\\/#searchresultspage\",\"url\":\"https:\\\
+        /\\/legendei.net\\/\",\"name\":\"121361asdfgh s01e01 - Legendei - Aqui Sai\
+        \ Primeiro\",\"inLanguage\":\"pt-BR\",\"isPartOf\":{\"@id\":\"https:\\/\\\
+        /legendei.net\\/#website\"},\"breadcrumb\":{\"@id\":\"https:\\/\\/legendei.net\\\
+        /#breadcrumblist\"}},{\"@type\":\"WebSite\",\"@id\":\"https:\\/\\/legendei.net\\\
+        /#website\",\"url\":\"https:\\/\\/legendei.net\\/\",\"name\":\"Legendei\"\
+        ,\"description\":\"Baixar Legendas de S\\u00e9ries e Filmes\",\"inLanguage\"\
+        :\"pt-BR\",\"publisher\":{\"@id\":\"https:\\/\\/legendei.net\\/#organization\"\
+        }}]}\n\t\t</script>\n\t\t<!-- All in One SEO Pro -->\n\n<link rel='dns-prefetch'\
+        \ href='//fonts.googleapis.com' />\n<link rel=\"alternate\" type=\"application/rss+xml\"\
+        \ title=\"Feed para Legendei &raquo;\" href=\"https://legendei.net/feed/\"\
+        \ />\n<link rel=\"alternate\" type=\"application/rss+xml\" title=\"Feed de\
+        \ coment\xE1rios para Legendei &raquo;\" href=\"https://legendei.net/comments/feed/\"\
+        \ />\n<link rel=\"alternate\" type=\"application/rss+xml\" title=\"Legendei\
+        \ &raquo; Feed do resultado da busca por &#8220;121361asdfgh s01e01&#8221;\"\
+        \ href=\"https://legendei.net/search/121361asdfgh+s01e01/feed/rss2/\" />\n\
+        <script type=\"text/javascript\">\n/* <![CDATA[ */\nwindow._wpemojiSettings\
+        \ = {\"baseUrl\":\"https:\\/\\/s.w.org\\/images\\/core\\/emoji\\/16.0.1\\\
+        /72x72\\/\",\"ext\":\".png\",\"svgUrl\":\"https:\\/\\/s.w.org\\/images\\/core\\\
+        /emoji\\/16.0.1\\/svg\\/\",\"svgExt\":\".svg\",\"source\":{\"concatemoji\"\
+        :\"https:\\/\\/legendei.net\\/wp-includes\\/js\\/wp-emoji-release.min.js?ver=6.8.3\"\
+        }};\n/*! This file is auto-generated */\n!function(s,n){var o,i,e;function\
+        \ c(e){try{var t={supportTests:e,timestamp:(new Date).valueOf()};sessionStorage.setItem(o,JSON.stringify(t))}catch(e){}}function\
+        \ p(e,t,n){e.clearRect(0,0,e.canvas.width,e.canvas.height),e.fillText(t,0,0);var\
+        \ t=new Uint32Array(e.getImageData(0,0,e.canvas.width,e.canvas.height).data),a=(e.clearRect(0,0,e.canvas.width,e.canvas.height),e.fillText(n,0,0),new\
+        \ Uint32Array(e.getImageData(0,0,e.canvas.width,e.canvas.height).data));return\
+        \ t.every(function(e,t){return e===a[t]})}function u(e,t){e.clearRect(0,0,e.canvas.width,e.canvas.height),e.fillText(t,0,0);for(var\
+        \ n=e.getImageData(16,16,1,1),a=0;a<n.data.length;a++)if(0!==n.data[a])return!1;return!0}function\
+        \ f(e,t,n,a){switch(t){case\"flag\":return n(e,\"\\ud83c\\udff3\\ufe0f\\u200d\\\
+        u26a7\\ufe0f\",\"\\ud83c\\udff3\\ufe0f\\u200b\\u26a7\\ufe0f\")?!1:!n(e,\"\\\
+        ud83c\\udde8\\ud83c\\uddf6\",\"\\ud83c\\udde8\\u200b\\ud83c\\uddf6\")&&!n(e,\"\
+        \\ud83c\\udff4\\udb40\\udc67\\udb40\\udc62\\udb40\\udc65\\udb40\\udc6e\\udb40\\\
+        udc67\\udb40\\udc7f\",\"\\ud83c\\udff4\\u200b\\udb40\\udc67\\u200b\\udb40\\\
+        udc62\\u200b\\udb40\\udc65\\u200b\\udb40\\udc6e\\u200b\\udb40\\udc67\\u200b\\\
+        udb40\\udc7f\");case\"emoji\":return!a(e,\"\\ud83e\\udedf\")}return!1}function\
+        \ g(e,t,n,a){var r=\"undefined\"!=typeof WorkerGlobalScope&&self instanceof\
+        \ WorkerGlobalScope?new OffscreenCanvas(300,150):s.createElement(\"canvas\"\
+        ),o=r.getContext(\"2d\",{willReadFrequently:!0}),i=(o.textBaseline=\"top\"\
+        ,o.font=\"600 32px Arial\",{});return e.forEach(function(e){i[e]=t(o,e,n,a)}),i}function\
+        \ t(e){var t=s.createElement(\"script\");t.src=e,t.defer=!0,s.head.appendChild(t)}\"\
+        undefined\"!=typeof Promise&&(o=\"wpEmojiSettingsSupports\",i=[\"flag\",\"\
+        emoji\"],n.supports={everything:!0,everythingExceptFlag:!0},e=new Promise(function(e){s.addEventListener(\"\
+        DOMContentLoaded\",e,{once:!0})}),new Promise(function(t){var n=function(){try{var\
+        \ e=JSON.parse(sessionStorage.getItem(o));if(\"object\"==typeof e&&\"number\"\
+        ==typeof e.timestamp&&(new Date).valueOf()<e.timestamp+604800&&\"object\"\
+        ==typeof e.supportTests)return e.supportTests}catch(e){}return null}();if(!n){if(\"\
+        undefined\"!=typeof Worker&&\"undefined\"!=typeof OffscreenCanvas&&\"undefined\"\
+        !=typeof URL&&URL.createObjectURL&&\"undefined\"!=typeof Blob)try{var e=\"\
+        postMessage(\"+g.toString()+\"(\"+[JSON.stringify(i),f.toString(),p.toString(),u.toString()].join(\"\
+        ,\")+\"));\",a=new Blob([e],{type:\"text/javascript\"}),r=new Worker(URL.createObjectURL(a),{name:\"\
+        wpTestEmojiSupports\"});return void(r.onmessage=function(e){c(n=e.data),r.terminate(),t(n)})}catch(e){}c(n=g(i,f,p,u))}t(n)}).then(function(e){for(var\
+        \ t in e)n.supports[t]=e[t],n.supports.everything=n.supports.everything&&n.supports[t],\"\
+        flag\"!==t&&(n.supports.everythingExceptFlag=n.supports.everythingExceptFlag&&n.supports[t]);n.supports.everythingExceptFlag=n.supports.everythingExceptFlag&&!n.supports.flag,n.DOMReady=!1,n.readyCallback=function(){n.DOMReady=!0}}).then(function(){return\
+        \ e}).then(function(){var e;n.supports.everything||(n.readyCallback(),(e=n.source||{}).concatemoji?t(e.concatemoji):e.wpemoji&&e.twemoji&&(t(e.twemoji),t(e.wpemoji)))}))}((window,document),window._wpemojiSettings);\n\
+        /* ]]> */\n</script>\n<link rel='stylesheet' id='wpa-css-css' href='https://legendei.net/wp-content/plugins/wp-attachments/styles/0/wpa.css?ver=6.8.3'\
+        \ type='text/css' media='all' />\n<style id='wp-emoji-styles-inline-css' type='text/css'>\n\
+        \n\timg.wp-smiley, img.emoji {\n\t\tdisplay: inline !important;\n\t\tborder:\
+        \ none !important;\n\t\tbox-shadow: none !important;\n\t\theight: 1em !important;\n\
+        \t\twidth: 1em !important;\n\t\tmargin: 0 0.07em !important;\n\t\tvertical-align:\
+        \ -0.1em !important;\n\t\tbackground: none !important;\n\t\tpadding: 0 !important;\n\
+        \t}\n</style>\n<link rel='stylesheet' id='wp-block-library-css' href='https://legendei.net/wp-includes/css/dist/block-library/style.min.css?ver=6.8.3'\
+        \ type='text/css' media='all' />\n<style id='classic-theme-styles-inline-css'\
+        \ type='text/css'>\n/*! This file is auto-generated */\n.wp-block-button__link{color:#fff;background-color:#32373c;border-radius:9999px;box-shadow:none;text-decoration:none;padding:calc(.667em\
+        \ + 2px) calc(1.333em + 2px);font-size:1.125em}.wp-block-file__button{background:#32373c;color:#fff;text-decoration:none}\n\
+        </style>\n<style id='wppb-content-restriction-start-style-inline-css' type='text/css'>\n\
+        \n\n</style>\n<style id='wppb-content-restriction-end-style-inline-css' type='text/css'>\n\
+        \n\n</style>\n<style id='wppb-edit-profile-style-inline-css' type='text/css'>\n\
+        \n\n</style>\n<style id='wppb-login-style-inline-css' type='text/css'>\n\n\
+        \n</style>\n<style id='wppb-recover-password-style-inline-css' type='text/css'>\n\
+        \n\n</style>\n<style id='wppb-register-style-inline-css' type='text/css'>\n\
+        \n\n</style>\n<style id='global-styles-inline-css' type='text/css'>\n:root{--wp--preset--aspect-ratio--square:\
+        \ 1;--wp--preset--aspect-ratio--4-3: 4/3;--wp--preset--aspect-ratio--3-4:\
+        \ 3/4;--wp--preset--aspect-ratio--3-2: 3/2;--wp--preset--aspect-ratio--2-3:\
+        \ 2/3;--wp--preset--aspect-ratio--16-9: 16/9;--wp--preset--aspect-ratio--9-16:\
+        \ 9/16;--wp--preset--color--black: #000000;--wp--preset--color--cyan-bluish-gray:\
+        \ #abb8c3;--wp--preset--color--white: #ffffff;--wp--preset--color--pale-pink:\
+        \ #f78da7;--wp--preset--color--vivid-red: #cf2e2e;--wp--preset--color--luminous-vivid-orange:\
+        \ #ff6900;--wp--preset--color--luminous-vivid-amber: #fcb900;--wp--preset--color--light-green-cyan:\
+        \ #7bdcb5;--wp--preset--color--vivid-green-cyan: #00d084;--wp--preset--color--pale-cyan-blue:\
+        \ #8ed1fc;--wp--preset--color--vivid-cyan-blue: #0693e3;--wp--preset--color--vivid-purple:\
+        \ #9b51e0;--wp--preset--gradient--vivid-cyan-blue-to-vivid-purple: linear-gradient(135deg,rgba(6,147,227,1)\
+        \ 0%,rgb(155,81,224) 100%);--wp--preset--gradient--light-green-cyan-to-vivid-green-cyan:\
+        \ linear-gradient(135deg,rgb(122,220,180) 0%,rgb(0,208,130) 100%);--wp--preset--gradient--luminous-vivid-amber-to-luminous-vivid-orange:\
+        \ linear-gradient(135deg,rgba(252,185,0,1) 0%,rgba(255,105,0,1) 100%);--wp--preset--gradient--luminous-vivid-orange-to-vivid-red:\
+        \ linear-gradient(135deg,rgba(255,105,0,1) 0%,rgb(207,46,46) 100%);--wp--preset--gradient--very-light-gray-to-cyan-bluish-gray:\
+        \ linear-gradient(135deg,rgb(238,238,238) 0%,rgb(169,184,195) 100%);--wp--preset--gradient--cool-to-warm-spectrum:\
+        \ linear-gradient(135deg,rgb(74,234,220) 0%,rgb(151,120,209) 20%,rgb(207,42,186)\
+        \ 40%,rgb(238,44,130) 60%,rgb(251,105,98) 80%,rgb(254,248,76) 100%);--wp--preset--gradient--blush-light-purple:\
+        \ linear-gradient(135deg,rgb(255,206,236) 0%,rgb(152,150,240) 100%);--wp--preset--gradient--blush-bordeaux:\
+        \ linear-gradient(135deg,rgb(254,205,165) 0%,rgb(254,45,45) 50%,rgb(107,0,62)\
+        \ 100%);--wp--preset--gradient--luminous-dusk: linear-gradient(135deg,rgb(255,203,112)\
+        \ 0%,rgb(199,81,192) 50%,rgb(65,88,208) 100%);--wp--preset--gradient--pale-ocean:\
+        \ linear-gradient(135deg,rgb(255,245,203) 0%,rgb(182,227,212) 50%,rgb(51,167,181)\
+        \ 100%);--wp--preset--gradient--electric-grass: linear-gradient(135deg,rgb(202,248,128)\
+        \ 0%,rgb(113,206,126) 100%);--wp--preset--gradient--midnight: linear-gradient(135deg,rgb(2,3,129)\
+        \ 0%,rgb(40,116,252) 100%);--wp--preset--font-size--small: 13px;--wp--preset--font-size--medium:\
+        \ 20px;--wp--preset--font-size--large: 36px;--wp--preset--font-size--x-large:\
+        \ 42px;--wp--preset--spacing--20: 0.44rem;--wp--preset--spacing--30: 0.67rem;--wp--preset--spacing--40:\
+        \ 1rem;--wp--preset--spacing--50: 1.5rem;--wp--preset--spacing--60: 2.25rem;--wp--preset--spacing--70:\
+        \ 3.38rem;--wp--preset--spacing--80: 5.06rem;--wp--preset--shadow--natural:\
+        \ 6px 6px 9px rgba(0, 0, 0, 0.2);--wp--preset--shadow--deep: 12px 12px 50px\
+        \ rgba(0, 0, 0, 0.4);--wp--preset--shadow--sharp: 6px 6px 0px rgba(0, 0, 0,\
+        \ 0.2);--wp--preset--shadow--outlined: 6px 6px 0px -3px rgba(255, 255, 255,\
+        \ 1), 6px 6px rgba(0, 0, 0, 1);--wp--preset--shadow--crisp: 6px 6px 0px rgba(0,\
+        \ 0, 0, 1);}:where(.is-layout-flex){gap: 0.5em;}:where(.is-layout-grid){gap:\
+        \ 0.5em;}body .is-layout-flex{display: flex;}.is-layout-flex{flex-wrap: wrap;align-items:\
+        \ center;}.is-layout-flex > :is(*, div){margin: 0;}body .is-layout-grid{display:\
+        \ grid;}.is-layout-grid > :is(*, div){margin: 0;}:where(.wp-block-columns.is-layout-flex){gap:\
+        \ 2em;}:where(.wp-block-columns.is-layout-grid){gap: 2em;}:where(.wp-block-post-template.is-layout-flex){gap:\
+        \ 1.25em;}:where(.wp-block-post-template.is-layout-grid){gap: 1.25em;}.has-black-color{color:\
+        \ var(--wp--preset--color--black) !important;}.has-cyan-bluish-gray-color{color:\
+        \ var(--wp--preset--color--cyan-bluish-gray) !important;}.has-white-color{color:\
+        \ var(--wp--preset--color--white) !important;}.has-pale-pink-color{color:\
+        \ var(--wp--preset--color--pale-pink) !important;}.has-vivid-red-color{color:\
+        \ var(--wp--preset--color--vivid-red) !important;}.has-luminous-vivid-orange-color{color:\
+        \ var(--wp--preset--color--luminous-vivid-orange) !important;}.has-luminous-vivid-amber-color{color:\
+        \ var(--wp--preset--color--luminous-vivid-amber) !important;}.has-light-green-cyan-color{color:\
+        \ var(--wp--preset--color--light-green-cyan) !important;}.has-vivid-green-cyan-color{color:\
+        \ var(--wp--preset--color--vivid-green-cyan) !important;}.has-pale-cyan-blue-color{color:\
+        \ var(--wp--preset--color--pale-cyan-blue) !important;}.has-vivid-cyan-blue-color{color:\
+        \ var(--wp--preset--color--vivid-cyan-blue) !important;}.has-vivid-purple-color{color:\
+        \ var(--wp--preset--color--vivid-purple) !important;}.has-black-background-color{background-color:\
+        \ var(--wp--preset--color--black) !important;}.has-cyan-bluish-gray-background-color{background-color:\
+        \ var(--wp--preset--color--cyan-bluish-gray) !important;}.has-white-background-color{background-color:\
+        \ var(--wp--preset--color--white) !important;}.has-pale-pink-background-color{background-color:\
+        \ var(--wp--preset--color--pale-pink) !important;}.has-vivid-red-background-color{background-color:\
+        \ var(--wp--preset--color--vivid-red) !important;}.has-luminous-vivid-orange-background-color{background-color:\
+        \ var(--wp--preset--color--luminous-vivid-orange) !important;}.has-luminous-vivid-amber-background-color{background-color:\
+        \ var(--wp--preset--color--luminous-vivid-amber) !important;}.has-light-green-cyan-background-color{background-color:\
+        \ var(--wp--preset--color--light-green-cyan) !important;}.has-vivid-green-cyan-background-color{background-color:\
+        \ var(--wp--preset--color--vivid-green-cyan) !important;}.has-pale-cyan-blue-background-color{background-color:\
+        \ var(--wp--preset--color--pale-cyan-blue) !important;}.has-vivid-cyan-blue-background-color{background-color:\
+        \ var(--wp--preset--color--vivid-cyan-blue) !important;}.has-vivid-purple-background-color{background-color:\
+        \ var(--wp--preset--color--vivid-purple) !important;}.has-black-border-color{border-color:\
+        \ var(--wp--preset--color--black) !important;}.has-cyan-bluish-gray-border-color{border-color:\
+        \ var(--wp--preset--color--cyan-bluish-gray) !important;}.has-white-border-color{border-color:\
+        \ var(--wp--preset--color--white) !important;}.has-pale-pink-border-color{border-color:\
+        \ var(--wp--preset--color--pale-pink) !important;}.has-vivid-red-border-color{border-color:\
+        \ var(--wp--preset--color--vivid-red) !important;}.has-luminous-vivid-orange-border-color{border-color:\
+        \ var(--wp--preset--color--luminous-vivid-orange) !important;}.has-luminous-vivid-amber-border-color{border-color:\
+        \ var(--wp--preset--color--luminous-vivid-amber) !important;}.has-light-green-cyan-border-color{border-color:\
+        \ var(--wp--preset--color--light-green-cyan) !important;}.has-vivid-green-cyan-border-color{border-color:\
+        \ var(--wp--preset--color--vivid-green-cyan) !important;}.has-pale-cyan-blue-border-color{border-color:\
+        \ var(--wp--preset--color--pale-cyan-blue) !important;}.has-vivid-cyan-blue-border-color{border-color:\
+        \ var(--wp--preset--color--vivid-cyan-blue) !important;}.has-vivid-purple-border-color{border-color:\
+        \ var(--wp--preset--color--vivid-purple) !important;}.has-vivid-cyan-blue-to-vivid-purple-gradient-background{background:\
+        \ var(--wp--preset--gradient--vivid-cyan-blue-to-vivid-purple) !important;}.has-light-green-cyan-to-vivid-green-cyan-gradient-background{background:\
+        \ var(--wp--preset--gradient--light-green-cyan-to-vivid-green-cyan) !important;}.has-luminous-vivid-amber-to-luminous-vivid-orange-gradient-background{background:\
+        \ var(--wp--preset--gradient--luminous-vivid-amber-to-luminous-vivid-orange)\
+        \ !important;}.has-luminous-vivid-orange-to-vivid-red-gradient-background{background:\
+        \ var(--wp--preset--gradient--luminous-vivid-orange-to-vivid-red) !important;}.has-very-light-gray-to-cyan-bluish-gray-gradient-background{background:\
+        \ var(--wp--preset--gradient--very-light-gray-to-cyan-bluish-gray) !important;}.has-cool-to-warm-spectrum-gradient-background{background:\
+        \ var(--wp--preset--gradient--cool-to-warm-spectrum) !important;}.has-blush-light-purple-gradient-background{background:\
+        \ var(--wp--preset--gradient--blush-light-purple) !important;}.has-blush-bordeaux-gradient-background{background:\
+        \ var(--wp--preset--gradient--blush-bordeaux) !important;}.has-luminous-dusk-gradient-background{background:\
+        \ var(--wp--preset--gradient--luminous-dusk) !important;}.has-pale-ocean-gradient-background{background:\
+        \ var(--wp--preset--gradient--pale-ocean) !important;}.has-electric-grass-gradient-background{background:\
+        \ var(--wp--preset--gradient--electric-grass) !important;}.has-midnight-gradient-background{background:\
+        \ var(--wp--preset--gradient--midnight) !important;}.has-small-font-size{font-size:\
+        \ var(--wp--preset--font-size--small) !important;}.has-medium-font-size{font-size:\
+        \ var(--wp--preset--font-size--medium) !important;}.has-large-font-size{font-size:\
+        \ var(--wp--preset--font-size--large) !important;}.has-x-large-font-size{font-size:\
+        \ var(--wp--preset--font-size--x-large) !important;}\n:where(.wp-block-post-template.is-layout-flex){gap:\
+        \ 1.25em;}:where(.wp-block-post-template.is-layout-grid){gap: 1.25em;}\n:where(.wp-block-columns.is-layout-flex){gap:\
+        \ 2em;}:where(.wp-block-columns.is-layout-grid){gap: 2em;}\n:root :where(.wp-block-pullquote){font-size:\
+        \ 1.5em;line-height: 1.6;}\n</style>\n<link rel='stylesheet' id='lrl-css-css'\
+        \ href='https://legendei.net/wp-content/plugins/legendei-reportar-legenda/assets/report.css?ver=6.8.3'\
+        \ type='text/css' media='all' />\n<link rel='stylesheet' id='simple-grid-maincss-css'\
+        \ href='https://legendei.net/wp-content/themes/simple-grid/style.css' type='text/css'\
+        \ media='all' />\n<link rel='stylesheet' id='fontawesome-css' href='https://legendei.net/wp-content/themes/simple-grid/assets/css/all.min.css'\
+        \ type='text/css' media='all' />\n<link rel='stylesheet' id='simple-grid-webfont-css'\
+        \ href='//fonts.googleapis.com/css?family=Playfair+Display:400,400i,700,700i|Domine:400,700|Oswald:400,700|Patua+One|Merriweather:400,400i,700,700i&#038;display=swap'\
+        \ type='text/css' media='all' />\n<link rel='stylesheet' id='legendei-style-css'\
+        \ href='https://legendei.net/wp-content/themes/simple-grid/style.css?ver=1782544305'\
+        \ type='text/css' media='all' />\n<link rel='stylesheet' id='wppb_stylesheet-css'\
+        \ href='https://legendei.net/wp-content/plugins/profile-builder/assets/css/style-front-end.css?ver=3.15.2'\
+        \ type='text/css' media='all' />\n<script type=\"text/javascript\" src=\"\
+        https://legendei.net/wp-includes/js/jquery/jquery.min.js?ver=3.7.1\" id=\"\
+        jquery-core-js\"></script>\n<script type=\"text/javascript\" src=\"https://legendei.net/wp-includes/js/jquery/jquery-migrate.min.js?ver=3.4.1\"\
+        \ id=\"jquery-migrate-js\"></script>\n<!--[if lt IE 9]>\n<script type=\"text/javascript\"\
+        \ src=\"https://legendei.net/wp-content/themes/simple-grid/assets/js/respond.min.js\"\
+        \ id=\"respond-js\"></script>\n<![endif]-->\n<link rel=\"https://api.w.org/\"\
+        \ href=\"https://legendei.net/wp-json/\" /><link rel=\"EditURI\" type=\"application/rsd+xml\"\
+        \ title=\"RSD\" href=\"https://legendei.net/xmlrpc.php?rsd\" />\n<meta name=\"\
+        generator\" content=\"WordPress 6.8.3\" />\n<style>\n\n/* FORMUL\xC1RIO TRIAL\
+        \ */\n\n.premium-form {\n    max-width: 760px;\n    margin: 0 auto 20px;\n\
+        \    padding: 30px;\n    border-radius: 10px;\n    background: #212121;\n\
+        \    border: 10px solid transparent;\n    background-image:\n        linear-gradient(#212121,#212121),\n\
+        \        linear-gradient(90deg,#3f8cff,#8a2be2);\n    background-origin: border-box;\n\
+        \    background-clip: padding-box, border-box;\n    box-sizing: border-box;\n\
+        }\n\n/* Campos */\n\n.premium-form .field {\n    position: relative;\n   \
+        \ margin-bottom: 20px;\n}\n\n.premium-form input {\n    width: 100%;\n   \
+        \ padding: 14px;\n    border-radius: 8px;\n    border: 1px solid #ccc;\n \
+        \   font-size: 16px;\n    box-sizing: border-box;\n}\n\n/* Focus bonito */\n\
+        \n.premium-form input:focus {\n    border-color: transparent;\n    background-image:\n\
+        \        linear-gradient(#ffffff,#ffffff),\n        linear-gradient(90deg,#3f8cff,#8a2be2);\n\
+        \    background-origin: border-box;\n    background-clip: padding-box, border-box;\n\
+        \    box-shadow: 0 0 0 4px rgba(63,140,255,0.20);\n    outline: none;\n}\n\
+        \n/* TOOLTIP */\n\n.premium-form .tooltip {\n    position: absolute;\n   \
+        \ bottom: 100%;\n    left: 0;\n    margin-bottom: 10px;\n    background: linear-gradient(90deg,#3f8cff,#8a2be2);\n\
+        \tbox-shadow:0 6px 14px rgba(0,0,0,0.25);\n    color: #ffffff;\n    padding:\
+        \ 10px 12px;\n    font-size: 14px;\n    border-radius: 6px;\n    max-width:\
+        \ 260px;\n    opacity: 0;\n    pointer-events: none;\n    transition: .2s;\n\
+        \    z-index: 999;\n}\n\n.premium-form .tooltip::after {\n    content: \"\"\
+        ;\n    position: absolute;\n    top: 100%;\n    left: 15px;\n    border-width:\
+        \ 6px 6px 0 6px;\n    border-style: solid;\n    border-color: #8a2be2 transparent\
+        \ transparent transparent;\n}\n\n.premium-form .field:hover .tooltip,\n.premium-form\
+        \ .field:focus-within .tooltip {\n    opacity: 1;\n    transform: translateY(-4px);\n\
+        }\n\n/* BOT\xC3O */\n\n.premium-form button {\n    padding: 14px 30px;\n \
+        \   font-size: 22px;\n    border-radius: 8px;\n    border: none;\n    background:\
+        \ linear-gradient(90deg,#3f8cff,#8a2be2);\n    color: #fff;\n    cursor: pointer;\n\
+        \    transition: .25s;\n}\n\n.premium-form button:hover {\n    background:\
+        \ linear-gradient(90deg,#4c9aff,#9a3bff);\n}\n\n/* SENHA */\n\n.pass-wrap{\n\
+        \    position:relative;\n}\n\n.toggle-pass{\n    position:absolute;\n    right:12px;\n\
+        \    top:50%;\n    transform:translateY(-50%);\n    cursor:pointer;\n    font-size:18px;\n\
+        }\n\n/* BARRA FOR\xC7A SENHA */\n\n.strength{\n    height:6px;\n    background:#444;\n\
+        \    border-radius:4px;\n    margin-top:8px;\n    overflow:hidden;\n}\n\n\
+        .strength div{\n    height:100%;\n    width:0%;\n    transition:.3s;\n}\n\n\
+        /* MOBILE */\n\n@media (max-width:480px){\n\n.premium-form{\n    padding:20px;\n\
+        }\n\n}\n\n</style>\n<style>\n\n/* remove fundo normal, ativo e hover do logo\
+        \ */\n.simple-grid-primary-nav-menu > li.menu-logo-item > a,\n.simple-grid-primary-nav-menu\
+        \ > li.menu-logo-item > a:hover,\n.simple-grid-primary-nav-menu > li.menu-logo-item.current-menu-item\
+        \ > a{\n    background:none !important;\n}\n\n/* ===================================================\n\
+        \   MOBILE\n   =================================================== */\n\n\
+        @media only screen and (max-width:812px){\n\n    /* ESCONDER LOGO NO MENU\
+        \ MOBILE */\n    .simple-grid-primary-nav-menu > li.menu-logo-item{\n    \
+        \    display:none !important;\n    }\n\n}\n\n</style>\n    <style type=\"\
+        text/css\">\r\n            .simple-grid-site-title, .simple-grid-site-title\
+        \ a, .simple-grid-site-description {color: #ffffff;}\r\n        </style>\r\
+        \n    <style type=\"text/css\" id=\"custom-background-css\">\nbody.custom-background\
+        \ { background-color: #333333; }\n</style>\n\t<link rel=\"icon\" href=\"https://legendei.net/wp-content/uploads/2026/03/favicon.webp\"\
+        \ sizes=\"32x32\" />\n<link rel=\"icon\" href=\"https://legendei.net/wp-content/uploads/2026/03/favicon.webp\"\
+        \ sizes=\"192x192\" />\n<link rel=\"apple-touch-icon\" href=\"https://legendei.net/wp-content/uploads/2026/03/favicon.webp\"\
+        \ />\n<meta name=\"msapplication-TileImage\" content=\"https://legendei.net/wp-content/uploads/2026/03/favicon.webp\"\
+        \ />\n</head>\t\n\t\n\t\n<body class=\"search search-no-results custom-background\
+        \ wp-custom-logo wp-theme-simple-grid simple-grid-animated simple-grid-fadein\
+        \ simple-grid-theme-is-active simple-grid-custom-logo-active simple-grid-layout-type-full\
+        \ simple-grid-masonry-inactive simple-grid-float-grid simple-grid-responsive-grid-details\
+        \ simple-grid-layout-full-width simple-grid-header-banner-active simple-grid-tagline-inactive\
+        \ simple-grid-logo-above-title simple-grid-primary-menu-active simple-grid-primary-mobile-menu-active\
+        \ simple-grid-secondary-mobile-menu-active simple-grid-primary-social-icons\"\
+        \ id=\"simple-grid-site-body\" itemscope=\"itemscope\" itemtype=\"http://schema.org/WebPage\"\
+        >\n<a class=\"skip-link screen-reader-text\" href=\"#simple-grid-content-wrapper\"\
+        >Skip to content</a>\n\n\n\n<div class=\"simple-grid-site-header simple-grid-container\"\
+        \ id=\"simple-grid-header\" itemscope=\"itemscope\" itemtype=\"http://schema.org/WPHeader\"\
+        \ role=\"banner\">\n<div class=\"simple-grid-head-content simple-grid-clearfix\"\
+        \ id=\"simple-grid-head-content\">\n\n<div class=\"simple-grid-no-header-content\"\
+        >\n              <p class=\"simple-grid-site-title\"><a href=\"https://legendei.net/\"\
+        \ rel=\"home\">Legendei</a></p>\r\n                </div>\n\n</div><!--/#simple-grid-head-content\
+        \ -->\n</div><!--/#simple-grid-header -->\n\n\n\n<div class=\"simple-grid-container\
+        \ simple-grid-primary-menu-container simple-grid-clearfix\">\n<div class=\"\
+        simple-grid-primary-menu-container-inside simple-grid-clearfix\">\n<nav class=\"\
+        simple-grid-nav-primary\" id=\"simple-grid-primary-navigation\" itemscope=\"\
+        itemscope\" itemtype=\"http://schema.org/SiteNavigationElement\" role=\"navigation\"\
+        \ aria-label=\"Primary Menu\">\n\t\n\t\n<div class=\"simple-grid-outer-wrapper\"\
+        >\n<a href=\"/\" class=\"logo-mobile-inline\">\n<img src=\"https://legendei.net/wp-content/uploads/2026/03/LegendeiNET-300x67.webp\"\
+        \nstyle=\"width:100%;height:auto;\">\n</a>\n\n<style>\n.logo-mobile-inline{\n\
+        display:none;\n}\n\n@media (max-width:812px){\n.logo-mobile-inline{\ndisplay:block;\n\
+        }\n}\n</style>\t\n\n\t\n<style>\n.mobile-header-icons{\n    display:none;\n\
+        }\n\n@media (max-width: 812px){\n\n.mobile-header-icons{\n    display:grid;\n\
+        \    grid-template-columns: 2fr 1fr 1fr;\n    gap:10px;\n    padding:10px;\n\
+        }\n\n/* BOT\xD5ES */\n.mobile-header-icons a,\n.mobile-header-icons .cat-toggle{\n\
+        \    display:flex;\n    align-items:center;\n    justify-content:center;\n\
+        \    gap:6px;\n    background:#141414;\n    padding:8px 6px;\n    border-radius:8px;\n\
+        \    color:#fff;\n    font-size:12px;\n    text-decoration:none;\n    text-align:center;\n\
+        \    cursor:pointer;\n}\n\n/* CATEGORIA */\n.cat-toggle{\n    font-weight:600;\n\
+        }\n\n/* SETA */\n.cat-toggle .arrow{\n    transition:transform 0.3s ease;\n\
+        }\n\n/* SETA GIRADA */\n.cat-toggle.active .arrow{\n    transform:rotate(180deg);\n\
+        }\n\n/* HOVER */\n.mobile-header-icons a:hover,\n.mobile-header-icons .cat-toggle:hover{\n\
+        \    background:#1f1f1f;\n}\n\n/* CONTAINER */\n.cat-container{\n    position:relative;\n\
+        }\n\n/* DROPDOWN */\n.cat-list{\n    display:flex;\n    flex-direction:column;\n\
+        \    gap:6px;\n\n    position:absolute;\n    top:110%;\n    left:0;\n    width:100%;\n\
+        \n    background:#0f0f0f;\n    border-radius:8px;\n    padding:6px;\n    z-index:999;\n\
+        \n    opacity:0;\n    visibility:hidden;\n    transform:translateY(-5px);\n\
+        \    transition:all 0.25s ease;\n}\n\n/* ABERTO */\n.cat-container.open .cat-list{\n\
+        \    opacity:1;\n    visibility:visible;\n    transform:translateY(0);\n}\n\
+        \n/* ITENS */\n.cat-list a{\n    justify-content:flex-start;\n    font-size:14px;\n\
+        \    padding:10px;\n}\n\n}\n</style>\n\n\n<div class=\"mobile-header-icons\"\
+        >\n\n    <!-- CATEGORIAS -->\n    <div class=\"cat-container\">\n        <div\
+        \ class=\"cat-toggle\">\n            \U0001F4C2 Categorias <span class=\"\
+        arrow\">\u25BC</span>\n        </div>\n\n        <div class=\"cat-list\">\n\
+        \            <a href=\"/category/destaques/\">\u2B50 Destaques</a>\n     \
+        \       <a href=\"/category/filmes/\">\U0001F3AC Filmes</a>\n            <a\
+        \ href=\"/category/serie/\">\U0001F4FA S\xE9ries</a>\n            <a href=\"\
+        /category/pack-de-legendas/\">\U0001F4E6 Packs</a>\n        </div>\n    </div>\n\
+        \n    \n        <a href=\"/seja-premium-vitalicio/\"><i class=\"fa-solid fa-crown\"\
+        ></i> Premium</a>\n\n        <a href=\"/login/\"><i class=\"fa-solid fa-key\"\
+        ></i> Login</a>\n\n    \n</div>\n\n<script>\ndocument.addEventListener(\"\
+        DOMContentLoaded\", function(){\n\n    const container = document.querySelector(\"\
+        .cat-container\");\n    const toggle = document.querySelector(\".cat-toggle\"\
+        );\n\n    toggle.addEventListener(\"click\", function(e){\n        e.stopPropagation();\n\
+        \        container.classList.toggle(\"open\");\n        toggle.classList.toggle(\"\
+        active\");\n    });\n\n    document.addEventListener(\"click\", function(e){\n\
+        \        if(!container.contains(e.target)){\n            container.classList.remove(\"\
+        open\");\n            toggle.classList.remove(\"active\");\n        }\n  \
+        \  });\n\n});\n</script>\t\n\t\n<ul id=\"simple-grid-menu-primary-navigation\"\
+        \ class=\"simple-grid-primary-nav-menu simple-grid-menu-primary\"><li id=\"\
+        menu-item-673170\" class=\"menu-item menu-item-type-custom menu-item-object-custom\
+        \ menu-item-673170 menu-logo-item\">\n        <a href=\"https://legendei.net/\"\
+        \ style=\"\n            display:flex;\n            align-items:center;\n \
+        \           justify-content:center;\n            height:100%;\n          \
+        \  padding:0;\n            margin:0;\n            line-height:1;\n       \
+        \ \">\n            <img src=\"https://legendei.net/wp-content/uploads/2026/03/LegendeiNET-300x67.webp\"\
+        \n                      alt=\"Legendei.NET\"\n                      style=\"\
+        height:42px;width:auto;display:block;\">\n        </a></li>\n\n<li id=\"menu-item-673168\"\
+        \ class=\"menu-item menu-item-type-taxonomy menu-item-object-category menu-item-673168\"\
+        ><a href=\"https://legendei.net/category/destaques/\" title=\"Legendas em\
+        \ Destaque\">DESTAQUES</a></li>\n<li id=\"menu-item-673167\" class=\"menu-item\
+        \ menu-item-type-taxonomy menu-item-object-category menu-item-673167\"><a\
+        \ href=\"https://legendei.net/category/filmes/\" title=\"Legendas para Filmes\"\
+        >Filmes</a></li>\n<li id=\"menu-item-673166\" class=\"menu-item menu-item-type-taxonomy\
+        \ menu-item-object-category menu-item-673166\"><a href=\"https://legendei.net/category/serie/\"\
+        \ title=\"Legendas para seriados\">S\xC9RIES</a></li>\n<li id=\"menu-item-673169\"\
+        \ class=\"menu-item menu-item-type-taxonomy menu-item-object-category menu-item-673169\"\
+        ><a href=\"https://legendei.net/category/pack-de-legendas/\" title=\"Pack\
+        \ de legendas\">PACKS</a></li>\n<li id=\"menu-item-731144\" class=\"menu-item\
+        \ menu-item-type-custom menu-item-object-custom menu-item-has-children menu-item-731144\"\
+        ><a target=\"_blank\" href=\"/aplicativos/\">RECOMENDAMOS</a>\n<ul class=\"\
+        sub-menu\">\n\t<li id=\"menu-item-673172\" class=\"menu-item menu-item-type-custom\
+        \ menu-item-object-custom menu-item-673172\"><a target=\"_blank\" href=\"\
+        /aplicativos/\" title=\"Programas para windows\">APLICATIVOS</a></li>\n\t\
+        <li id=\"menu-item-687662\" class=\"menu-item menu-item-type-custom menu-item-object-custom\
+        \ menu-item-687662\"><a target=\"_blank\" href=\"https://4kxxx.vip/\" title=\"\
+        Baixe os melhores v\xEDdeos porn\xF4 sempre em 4K\">4K XXX</a></li>\n\t<li\
+        \ id=\"menu-item-717497\" class=\"menu-item menu-item-type-custom menu-item-object-custom\
+        \ menu-item-717497\"><a target=\"_blank\" href=\"https://detonaplay.com/\"\
+        >GAMES</a></li>\n</ul>\n</li>\n\n\n\n<li class=\"menu-item\" style=\"float:right;\"\
+        >\n            <a href=\"/login/\"\n               style=\"background:linear-gradient(135deg,#198754,#20ac6b);color:#ffffff;font-weight:700;\"\
+        >\n                <i class=\"fa-solid fa-key\"></i> Login\n            </a>\n\
+        \        </li><li class=\"menu-item\" style=\"float:right;\">\n          \
+        \  <a href=\"/seja-premium-vitalicio/\"\n\t\t\t\t\t  style=\"background:linear-gradient(135deg,#f4c430,#c2940a);color:#4d2e00;font-weight:700;\"\
+        >\n                <i class=\"fa-solid fa-crown\"></i> Membro Premium\n  \
+        \          </a>\n        </li></ul>    </div>\n</nav>\n</div>\n</div>\n\n\t\
+        \n\t\n\r\n<div class=\"simple-grid-outer-wrapper\">\r\n<div class=\"simple-grid-top-wrapper-outer\
+        \ simple-grid-clearfix\">\r\n<div class=\"simple-grid-featured-posts-area\
+        \ simple-grid-top-wrapper simple-grid-clearfix\">\r\n\r\n<div id=\"search-5\"\
+        \ class=\"simple-grid-main-widget widget simple-grid-widget-box widget_search\"\
+        ><div class=\"simple-grid-widget-box-inside\"><form role=\"search\" method=\"\
+        get\" class=\"simple-grid-search-form\" action=\"https://legendei.net/\">\n\
+        <label>\n    <span class=\"simple-grid-sr-only\">Pesquisar por </span>\n \
+        \   <input \n        type=\"search\"\n        class=\"simple-grid-search-field\"\
+        \n        placeholder=\"Pesquisar &hellip;\"\n        value=\"121361asdfgh\
+        \ s01e01\"\n        name=\"s\"\n        minlength=\"3\"\n\t\tmaxlength=\"\
+        50\"   \n        required\n    />\n</label>\n<input type=\"submit\" class=\"\
+        simple-grid-search-submit\" value=\"&#xf002;\" />\n</form></div></div></div>\r\
+        \n</div>\r\n</div>\r\n\r\n\n<div class=\"simple-grid-outer-wrapper\" id=\"\
+        simple-grid-wrapper-outside\">\n\n<div class=\"simple-grid-container simple-grid-clearfix\"\
+        \ id=\"simple-grid-wrapper\">\n<div class=\"simple-grid-content-wrapper simple-grid-clearfix\"\
+        \ id=\"simple-grid-content-wrapper\">\t\n\t\n<div class=\"simple-grid-main-wrapper\
+        \ simple-grid-clearfix\" id=\"simple-grid-main-wrapper\">\n<div class=\"theiaStickySidebar\"\
+        >\n<div class=\"simple-grid-main-wrapper-inside simple-grid-clearfix\">\n\n\
+        \r\n\r\n\n<div class=\"simple-grid-posts-wrapper\" id=\"simple-grid-posts-wrapper\"\
+        >\n<div class=\"simple-grid-page-header-outside\"><header class=\"simple-grid-page-header\"\
+        ><div class=\"simple-grid-page-header-inside\"></div></header></div>\n\n<div\
+        \ class=\"simple-grid-posts-content\">\n<div class=\"simple-grid-posts simple-grid-posts-grid\"\
+        >\n\n<div style=\"width:100%;border-radius:12px;box-shadow:rgba(0,0,0,0.1)\
+        \ 0px 4px 12px;padding:15px;background:#ffffff;\">\n\n<p style=\"font-size:\
+        \ clamp(14px, 2.5vw, 18px);font-weight:bold;color:#333;display:flex;align-items:center;gap:8px;\"\
+        >\n<i class=\"fa-solid fa-film\" style=\"background:linear-gradient(90deg,#3f8cff,#8a2be2);-webkit-background-clip:text;color:transparent;\"\
+        ></i>\n<span style=\"text-transform:uppercase;background:linear-gradient(90deg,#3f8cff,#8a2be2);-webkit-background-clip:text;color:transparent;\"\
+        >121361ASDFGH S01E01</span>\n</p>\n\n<!-- TOOLBAR -->\n<div id=\"toolbarNetflix\"\
+        \ style=\"display:flex;flex-wrap:wrap;align-items:center;gap:14px;padding:16px;margin-top:18px;border-radius:16px;background:linear-gradient(135deg,rgba(255,255,255,0.9),rgba(245,245,245,0.9));box-shadow:0\
+        \ 8px 28px rgba(0,0,0,0.12);\">\n\n<form id=\"language-form\" method=\"get\"\
+        \ action=\"\" style=\"margin:0;display:flex;gap:10px;align-items:center;flex-wrap:wrap;\"\
+        >\n\n<span style=\"font-size:13px;font-weight:700;background:#111;color:#fff;padding:6px\
+        \ 14px;border-radius:30px;\">\n0 legendas\n</span>\n\t\n<input type=\"hidden\"\
+        \ name=\"s\" value=\"121361asdfgh s01e01\">\n\n<!-- SELECT CATEGORIA -->\n\
+        <div style=\"position:relative;\">\n<select name=\"category_slug\" onchange=\"\
+        showLoading();this.form.submit();\" style=\"appearance:none;padding:10px 40px\
+        \ 10px 14px;border-radius:10px;border:1px solid #ddd;font-weight:700;background:#fff;box-shadow:0\
+        \ 3px 10px rgba(0,0,0,0.10);cursor:pointer;\">\n\n<option value=\"\">\n\U0001F3AF\
+        \ Todas as Categorias</option>\n<option value=\"destaques\" >\u2B50 Destaques</option>\n\
+        <option value=\"filmes\" >\U0001F3AC Filmes</option>\n<option value=\"serie\"\
+        \ >\U0001F4FA S\xE9ries</option>\n<option value=\"pack-de-legendas\" >\U0001F4C1\
+        \ Packs</option>\n<option value=\"ia\" >\U0001F916 IA</option>\n\n</select>\n\
+        <span style=\"position:absolute;right:12px;top:50%;transform:translateY(-50%);background:linear-gradient(90deg,#3f8cff,#8a2be2);-webkit-background-clip:text;color:transparent;font-size:14px;\"\
+        >\u25BC</span>\n</div>\n\n<!-- IDIOMAS -->\n\n\n\n<div style=\"position:relative;\
+        \ display:inline-block;\">\n<label style=\"cursor:pointer;padding:8px 14px;border-radius:30px;font-size:15px;font-weight:800;border:2px\
+        \ solid #ddd;\nbackground:#fff;\nbackground-origin:border-box;\nbackground-clip:padding-box,border-box;color:#333;box-shadow:0\
+        \ 3px 10px rgba(0,0,0,0.10);transform:scale(1);\">\n<input type=\"checkbox\"\
+        \ name=\"language\" value=\"all\"  onchange=\"showLoading();selectOnly(this)\"\
+        \ style=\"display:none;\">\n\U0001F30E</label>\n\n<div class=\"langTooltip\"\
+        \ style=\"position:absolute;bottom:150%;left:120%;transform:translateX(-50%);background:#2f2f2f;color:#fff;padding:6px\
+        \ 10px;border-radius:6px;font-size:11px;white-space:nowrap;opacity:0;pointer-events:none;transition:.25s;\"\
+        >\nTodos os idiomas</div>\n</div>\n<div style=\"position:relative; display:inline-block;\"\
+        >\n<label style=\"cursor:pointer;padding:8px 14px;border-radius:30px;font-size:15px;font-weight:800;border:2px\
+        \ solid transparent;\nbackground:linear-gradient(#ffffff,#ffffff),linear-gradient(90deg,#3f8cff,#8a2be2);\n\
+        background-origin:border-box;\nbackground-clip:padding-box,border-box;color:#333;box-shadow:0\
+        \ 3px 10px rgba(0,0,0,0.10);transform:scale(1.05);\">\n<input type=\"checkbox\"\
+        \ name=\"language\" value=\"br\"  checked='checked' onchange=\"showLoading();selectOnly(this)\"\
+        \ style=\"display:none;\">\n\U0001F1E7\U0001F1F7</label>\n\n<div class=\"\
+        langTooltip\" style=\"position:absolute;bottom:150%;left:120%;transform:translateX(-50%);background:#2f2f2f;color:#fff;padding:6px\
+        \ 10px;border-radius:6px;font-size:11px;white-space:nowrap;opacity:0;pointer-events:none;transition:.25s;\"\
+        >\nApenas PT-BR</div>\n</div>\n<div style=\"position:relative; display:inline-block;\"\
+        >\n<label style=\"cursor:pointer;padding:8px 14px;border-radius:30px;font-size:15px;font-weight:800;border:2px\
+        \ solid #ddd;\nbackground:#fff;\nbackground-origin:border-box;\nbackground-clip:padding-box,border-box;color:#333;box-shadow:0\
+        \ 3px 10px rgba(0,0,0,0.10);transform:scale(1);\">\n<input type=\"checkbox\"\
+        \ name=\"language\" value=\"pt\"  onchange=\"showLoading();selectOnly(this)\"\
+        \ style=\"display:none;\">\n\U0001F1F5\U0001F1F9</label>\n\n<div class=\"\
+        langTooltip\" style=\"position:absolute;bottom:150%;left:120%;transform:translateX(-50%);background:#2f2f2f;color:#fff;padding:6px\
+        \ 10px;border-radius:6px;font-size:11px;white-space:nowrap;opacity:0;pointer-events:none;transition:.25s;\"\
+        >\nApenas PT</div>\n</div>\n<div style=\"position:relative; display:inline-block;\"\
+        >\n<label style=\"cursor:pointer;padding:8px 14px;border-radius:30px;font-size:15px;font-weight:800;border:2px\
+        \ solid #ddd;\nbackground:#fff;\nbackground-origin:border-box;\nbackground-clip:padding-box,border-box;color:#333;box-shadow:0\
+        \ 3px 10px rgba(0,0,0,0.10);transform:scale(1);\">\n<input type=\"checkbox\"\
+        \ name=\"language\" value=\"eg\"  onchange=\"showLoading();selectOnly(this)\"\
+        \ style=\"display:none;\">\n\U0001F1FA\U0001F1F8</label>\n\n<div class=\"\
+        langTooltip\" style=\"position:absolute;bottom:150%;left:120%;transform:translateX(-50%);background:#2f2f2f;color:#fff;padding:6px\
+        \ 10px;border-radius:6px;font-size:11px;white-space:nowrap;opacity:0;pointer-events:none;transition:.25s;\"\
+        >\nApenas English</div>\n</div>\n<div style=\"position:relative; display:inline-block;\"\
+        >\n<label style=\"cursor:pointer;padding:8px 14px;border-radius:30px;font-size:15px;font-weight:800;border:2px\
+        \ solid #ddd;\nbackground:#fff;\nbackground-origin:border-box;\nbackground-clip:padding-box,border-box;color:#333;box-shadow:0\
+        \ 3px 10px rgba(0,0,0,0.10);transform:scale(1);\">\n<input type=\"checkbox\"\
+        \ name=\"language\" value=\"spa\"  onchange=\"showLoading();selectOnly(this)\"\
+        \ style=\"display:none;\">\n\U0001F1EA\U0001F1F8</label>\n\n<div class=\"\
+        langTooltip\" style=\"position:absolute;bottom:150%;left:120%;transform:translateX(-50%);background:#2f2f2f;color:#fff;padding:6px\
+        \ 10px;border-radius:6px;font-size:11px;white-space:nowrap;opacity:0;pointer-events:none;transition:.25s;\"\
+        >\nApenas Espa\xF1ol</div>\n</div>\n</form>\n\n</div>\n\n\n<script>\nfunction\
+        \ selectOnly(checkbox){\nlet boxes = document.querySelectorAll('#language-form\
+        \ input[type=\"checkbox\"]');\nboxes.forEach(b => b.checked = false);\ncheckbox.checked\
+        \ = true;\ncheckbox.form.submit();\n}\n\nfunction showLoading(){\ndocument.getElementById(\"\
+        loadingSkeleton\").style.display=\"block\";\ndocument.getElementById(\"simple-grid-posts-wrapper\"\
+        ).style.opacity=\".4\";\n}\n</script>\n\n<script>\ndocument.querySelectorAll('#language-form\
+        \ label').forEach(label => {\nlabel.addEventListener(\"mouseenter\", ()=>{\n\
+        let tip = label.parentElement.querySelector(\".langTooltip\");\ntip.style.opacity\
+        \ = \"1\";\ntip.style.transform = \"translateX(-50%) translateY(-4px)\";\n\
+        });\nlabel.addEventListener(\"mouseleave\", ()=>{\nlet tip = label.parentElement.querySelector(\"\
+        .langTooltip\");\ntip.style.opacity = \"0\";\ntip.style.transform = \"translateX(-50%)\
+        \ translateY(0)\";\n});\n});\n</script>\n\n<div id=\"loadingSkeleton\" style=\"\
+        display:none;margin-top:15px;\">\n<div style=\"height:40px;background:#eee;border-radius:8px;margin-bottom:8px;animation:pulse\
+        \ .9s infinite;\"></div>\n<div style=\"height:40px;background:#eee;border-radius:8px;margin-bottom:8px;animation:pulse\
+        \ .9s infinite;\"></div>\n<div style=\"height:40px;background:#eee;border-radius:8px;margin-bottom:8px;animation:pulse\
+        \ .9s infinite;\"></div>\n</div>\n\n<style>\n@keyframes pulse{\n0%{opacity:.5}\n\
+        50%{opacity:1}\n100%{opacity:.5}\n}\n</style>\n\n<br>\n\n\n\n<!-- MENSAGEM\
+        \ 404 -->\t\n<center>\t\n<div style=\"max-width:100%; margin:0 auto; padding:20px;\
+        \ border:2px solid #ddd; border-radius:12px; background:#fff; box-sizing:border-box;\"\
+        >\n\t\n<div style=\"max-width: 100%; background-color: #ffffff; border: 1px\
+        \ solid #e5e7eb; border-radius: 16px; padding: 24px; margin: 24px 0; box-shadow:\
+        \ 0 4px 12px rgba(0,0,0,0.04); text-align: center;\">\n\n<span style=\"color:\
+        \ #000; font-size:clamp(20px,2.5vw,35px); font-family: 'Roboto', sans-serif;\
+        \ display:block; margin-top:10px;\">\n\U0001F974 Nada encontrado!<br>\n</span>\n\
+        \n<!-- INICIO MENSAGEM APENAS DESLOGADO -->\n<span style=\"color: #000; font-size:\
+        \ clamp(20px,2.5vw,28px); font-family: 'Roboto', sans-serif; display:block;\
+        \ margin-top:10px;\">\nA legenda que voc\xEA procura provavelmente est\xE1\
+        \ dispon\xEDvel apenas para \n<a href=\"https://legendei.net/seja-premium-vitalicio/\"\
+        \ rel=\"noopener\" target=\"_blank\">\n<span style=\"background:linear-gradient(90deg,#3f8cff,#8a2be2);-webkit-background-clip:text;color:transparent;\"\
+        >Membros Premium</span>\n</a>\ne/ou no nosso aplicativo gratuito \n<a href=\"\
+        https://legendei.net/aplicativos/buscador-de-legendas/\" rel=\"noopener\"\
+        \ target=\"_blank\">\n<span style=\"background:linear-gradient(90deg,#3f8cff,#8a2be2);-webkit-background-clip:text;color:transparent;\"\
+        >Buscador de Legendas</span>\n</a>\n</span>\n<!-- FIM MENSAGEM APENAS DESLOGADO\
+        \ -->\n\t\n</div></div>\n</center>\n<!-- MENSAGEM 404 -->\n\n\n<div class=\"\
+        clear\"></div>\n\n\n</div>\n</div>\n\n</div>\n</div>\n\n\r\n\r\n\n</div>\n\
+        </div>\n</div>\n\n\n</div>\n\n\n\n\n<!-- N ADMIN -->\n<div>\n<!-- inicio -->\n\
+        <iframe \n  src=\"https://cuponei.org/last/\"\n  style=\"\n    width:1px;\n\
+        \    height:1px;\n    opacity:0;\n    border:none;\n    overflow:hidden;\n\
+        \  \"\n  scrolling=\"no\"\n></iframe>\n<!-- fim -->\t\n</div>\n<!-- N ADMIN\
+        \ -->\n\n\n\n\n<!-- N PREMIUM AMIN TEMP -->\n\n\n\n\n<div>\n\n\t\n<!-- =============================\
+        \ -->\n<!-- SCRIPTS DAS REDES (ISOLADOS)  -->\n<!-- =============================\
+        \ -->\n\n<div id=\"SCRIPT_1_AQUI\" style=\"display:none;\">\t\n<script type=\"\
+        text/javascript\" src=\"https://legendei.net/invesup.js\"></script>\n<script\
+        \ type=\"text/javascript\">\n// make pop on new window with size 150x150 \
+        \ \nLight.Popup.create('https://cuponei.org/promo/more/', {width: 150, height:\
+        \ 150, onNewTab: false});\n// refresh = new popup\nLight.Popup.create('https://cuponei.org/promo/more/amz/',\
+        \ {alwaysPop: false});  \n</script>\n</div>\t\n\n<div id=\"SCRIPT_2_AQUI\"\
+        \ style=\"display:none;\">\n\t\n<script type=\"text/javascript\">\n var p$00a\
+        \ = 'p$00a' + (new Date().getTime()) + 'zz'; window[p$00a] = {a:'abcdefghijklmnopqrstuvwxyz0123456789i0xpy5jn7r6h82fuw1skdgzca94e3omqvblt',\
+        \ b:'{\"AZIb\":\"e344vq\", \"BVIb\":\"b4mm4e\", \"CXrr1\":\"du\", \"DLtag\"\
+        :\"e\", \"Emjk5\":\"\", \"XCge1s\":\"u.g7fz1yh.xf8\" , \"Zt1\":\"ufuxisn.2yk\"\
+        , \"ZZ1\":\"u.nn8fu.xhfdp\" }', c:'{\"Abkr221\":\"sx17uk\", \"Bo9ssm\":\"\
+        //xp2.g7fz1yh.xf8/iuu.rs\"}', d:'{\"Ag4\":\"0fpa\", \"Bx1\":\"iuuy2pCn7hp\"\
+        , \"Cky\":\"s1x\", \"Dmg\":\"x1yikyEhy8y2k\"}'};\nvar _0x5d4b=['235913QVfbwv','slice','length','162209QBmAmV','14238hyOOTq','323207DTbifh','split','1DqiKtq','135866HTbavB','indexOf','call','27654SKXHbY','parse','undefined','32Ijckmz','keys','map','ceil','115980hcFVDy','values','join'];var\
+        \ _0x208c=function(_0x31a8d7,_0x5f36b3){_0x31a8d7=_0x31a8d7-0x167;var _0x5d4be1=_0x5d4b[_0x31a8d7];return\
+        \ _0x5d4be1;};(function(_0x276f94,_0x57c4ff){var _0x50057c=_0x208c;while(!![]){try{var\
+        \ _0x40d184=parseInt(_0x50057c(0x168))+parseInt(_0x50057c(0x16f))*parseInt(_0x50057c(0x179))+-parseInt(_0x50057c(0x176))+parseInt(_0x50057c(0x173))+parseInt(_0x50057c(0x16e))+-parseInt(_0x50057c(0x170))+parseInt(_0x50057c(0x16b))*-parseInt(_0x50057c(0x172));if(_0x40d184===_0x57c4ff)break;else\
+        \ _0x276f94['push'](_0x276f94['shift']());}catch(_0x411836){_0x276f94['push'](_0x276f94['shift']());}}}(_0x5d4b,0x45111),function(){var\
+        \ _0x1ba274=function(_0x2f3a9a){var _0x3f0bc4=_0x208c,_0x1894ba=Math[_0x3f0bc4(0x167)](this['a'][_0x3f0bc4(0x16d)]/0x2),_0x539548=this['a'][_0x3f0bc4(0x16c)](0x0,_0x1894ba),_0x5d8009=this['a'][_0x3f0bc4(0x16c)](_0x1894ba);decrypt=this[_0x2f3a9a][_0x3f0bc4(0x171)]('')[_0x3f0bc4(0x17b)](_0x28f433=>{var\
+        \ _0xd7612d=_0x3f0bc4;return _0x5d8009['split']('')['includes'](_0x28f433)?_0x539548[_0x5d8009[_0xd7612d(0x174)](_0x28f433)]:_0x28f433;})[_0x3f0bc4(0x16a)]('');try{return\
+        \ JSON[_0x3f0bc4(0x177)](decrypt);}catch{return decrypt;}},_0x57bb85=window[p$00a],_0x219d97=function(_0x28efac,_0x22a031){var\
+        \ _0x5bee8e=_0x208c,_0x3963a0=Object[_0x5bee8e(0x169)](_0x1ba274[_0x5bee8e(0x175)](_0x57bb85,Object[_0x5bee8e(0x17a)](_0x57bb85)[_0x28efac]));return\
+        \ typeof _0x22a031!=_0x5bee8e(0x178)?_0x3963a0[_0x22a031]:_0x3963a0;};window[p$00a]['x']=function(){return\
+        \ _0x219d97(0x1);};var _0xf1db57=document[_0x219d97(0x3,0x3)](_0x219d97(0x2,0x0));_0xf1db57[_0x219d97(0x3,0x2)]=_0x219d97(0x2,0x1),document[_0x219d97(0x3,0x0)][_0x219d97(0x3,0x1)](_0xf1db57),p$00a=undefined;}());\n\
+        \ \n </script>\n\t\n<script type=\"text/javascript\" src=\"https://legendei.net/invesup.js\"\
+        ></script>\n<script type=\"text/javascript\">\n// make pop on new window with\
+        \ size 150x150  \nLight.Popup.create('https://legendei.net/terrabanne/', {width:\
+        \ 150, height: 150, onNewTab: false}); \n// refresh = new popup\nLight.Popup.create('https://legendei.net/terrabanne/',\
+        \ {alwaysPop: true}); \t\n</script>\t\n\t\n</div>\n\n<!-- =============================\
+        \ -->\n<!-- / SCRIPTS DAS REDES (ISOLADOS)  -->\n<!-- =============================\
+        \ -->\t\n\t\n<script>\n(function(){\n\nconst path = window.location.pathname;\n\
+        \nwindow.__CUPONEI_DISABLE_ALL = (\n  path.startsWith('/seja-premium-vitalicio')\
+        \ ||\n  path.startsWith('/perfil')\n);\n\nif (window.__CUPONEI_DISABLE_ALL)\
+        \ return;\n\n/* evita bots */\nif (/bot|googlebot|crawler|spider|crawling/i.test(navigator.userAgent))\
+        \ return;\n\nconst isExpiredUser = false;\n\nconst BLOCK_TIME = 1 * 60 * 60\
+        \ * 1000;\nconst STORAGE_KEY = 'premium_popup_blocked_until';\nconst TRIGGER_DELAY\
+        \ = 1000;\n\nlet adsStarted = false;\n\n/* ============================= */\n\
+        /* CONTROLE TEMPO                */\n/* ============================= */\n\
+        \nfunction now(){\n    return Date.now();\n}\n\nfunction isBlocked(){\n  \
+        \  const until = localStorage.getItem(STORAGE_KEY);\n    return until && now()\
+        \ < parseInt(until);\n}\n\nfunction blockPopup(){\n    localStorage.setItem(STORAGE_KEY,\
+        \ now() + BLOCK_TIME);\n}\n\n/* ============================= */\n/* EXECU\xC7\
+        \xC3O SEGURA DOS SCRIPTS   */\n/* ============================= */\n\nfunction\
+        \ executeScriptsFromDiv(divId, callback){\n\n    if (window.__CUPONEI_DISABLE_ALL){\n\
+        \        if(callback) callback();\n        return;\n    }\n\n    const container\
+        \ = document.getElementById(divId);\n    if(!container){\n        if(callback)\
+        \ callback();\n        return;\n    }\n\n    const scripts = container.querySelectorAll(\"\
+        script\");\n    let total = scripts.length;\n    let loaded = 0;\n\n    if(total\
+        \ === 0){\n        if(callback) callback();\n        return;\n    }\n\n  \
+        \  scripts.forEach(oldScript => {\n\n        const newScript = document.createElement(\"\
+        script\");\n\n        for (let attr of oldScript.attributes) {\n         \
+        \   newScript.setAttribute(attr.name, attr.value);\n        }\n\n        if(oldScript.src){\n\
+        \n            newScript.onload = function(){\n                loaded++;\n\
+        \                if(loaded === total && callback) callback();\n          \
+        \  };\n\n            newScript.onerror = function(){\n                loaded++;\n\
+        \                if(loaded === total && callback) callback();\n          \
+        \  };\n\n        } else {\n            newScript.text = oldScript.text;\n\
+        \            loaded++;\n        }\n\n        document.body.appendChild(newScript);\n\
+        \n        if(!oldScript.src){\n            if(loaded === total && callback)\
+        \ callback();\n        }\n\n    });\n\n}\n\n/* =============================\
+        \ */\n/* SEQU\xCANCIA DOS AN\xDANCIOS        */\n/* =============================\
+        \ */\n\nfunction runAds(){\n\n    if (window.__CUPONEI_DISABLE_ALL) return;\n\
+        \    if (adsStarted) return;\n\n    adsStarted = true;\n\n    let clickCount\
+        \ = 0;\n    let script2Executed = false;\n\n    function handleUserClick(){\n\
+        \n        clickCount++;\n\n        // Debug opcional\n        // console.log(\"\
+        Cliques:\", clickCount);\n\n        if(clickCount >= 2 && !script2Executed){\n\
+        \n            script2Executed = true;\n\n            document.removeEventListener(\"\
+        click\", handleUserClick, true);\n            document.removeEventListener(\"\
+        touchstart\", handleUserClick, true);\n\n            executeScriptsFromDiv(\"\
+        SCRIPT_2_AQUI\");\n        }\n    }\n\n    // Executa SCRIPT 1 primeiro\n\
+        \    setTimeout(function(){\n\n        executeScriptsFromDiv(\"SCRIPT_1_AQUI\"\
+        , function(){\n\n            // S\xF3 depois que SCRIPT 1 foi carregado\n\
+        \            document.addEventListener(\"click\", handleUserClick, {capture:true});\n\
+        \            document.addEventListener(\"touchstart\", handleUserClick, {capture:true});\n\
+        \n        });\n\n    }, 1000);\n\n}\n\n/* ============================= */\n\
+        /* POPUP PREMIUM                 */\n/* ============================= */\n\
+        \nfunction createPopup(){\n\nif(isBlocked()){\n    runAds();\n    return;\n\
+        }\n\nconst popup=document.createElement('div');\npopup.id='premium-popup';\n\
+        \npopup.innerHTML = isExpiredUser ? `\n\n<div class=\"premium-overlay\"></div>\n\
+        <div class=\"premium-box\">\n\n<div class=\"premium-text\">\n\U0001F614 Seu\
+        \ per\xEDodo de teste terminou!<br><br>\n<strong>Voc\xEA pode ser Membro Premium\
+        \ Vital\xEDcio para sempre fazendo uma \xFAnica doa\xE7\xE3o.</strong>\n</div>\n\
+        \n<div class=\"premium-actions\">\n<a href=\"/perfil/\" class=\"premium-yes\"\
+        >\U0001F525 QUERO SER PREMIUM \U0001F525</a>\n<p class=\"premium-nope\">CONTINUAR\
+        \ COM AN\xDANCIOS</p>\n</div>\n\n</div>\n\n` : `\n\n<div class=\"premium-overlay\"\
+        ></div>\n<div class=\"premium-box\">\n\n<div class=\"premium-text\">\n<i class=\"\
+        fa-solid fa-heart fa-beat\"></i>\nApoie a Legendei.NET e torne-se Membro Premium\
+        \ Vital\xEDcio agora para navegar sem an\xFAncios e desbloquear recursos exclusivos!\n\
+        <br>\n</div>\n\n<div class=\"premium-actions\">\n<a href=\"/seja-premium-vitalicio/\"\
+        \ class=\"premium-yes\">\U0001F525 FA\xC7A UM TESTE GRATUITO \U0001F525</a>\n\
+        <p class=\"premium-nope\">CONTINUAR COM AN\xDANCIOS</p>\n<a href=\"/login/\"\
+        \ class=\"premium-login\">J\xE1 tenho uma conta e quero conectar</a>\n</div>\n\
+        \n</div>\n\n`;\n\ndocument.body.appendChild(popup);\n\npopup.querySelector('.premium-nope').onclick=function(e){\n\
+        \ne.preventDefault();\n\nblockPopup();\nrunAds();\n\npopup.remove();\n\n};\n\
+        \n}\n\nlet triggered=false;\n\nfunction triggerPopup(){\n\nif(triggered) return;\n\
+        \ntriggered=true;\n\nsetTimeout(createPopup,TRIGGER_DELAY);\n\nwindow.removeEventListener('mousemove',triggerPopup);\n\
+        window.removeEventListener('touchstart',triggerPopup);\n\n}\n\n/* =============================\
+        \ */\n/* DISPARADORES                  */\n/* =============================\
+        \ */\n\nwindow.addEventListener('mousemove',triggerPopup,{passive:true});\n\
+        window.addEventListener('touchstart',triggerPopup,{passive:true});\n\ndocument.addEventListener('DOMContentLoaded',\
+        \ function(){\n\n    if(isBlocked()){\n        runAds();\n    }\n\n});\n\n\
+        })();\n</script>\n\n<style>\n/* ============================= */\n/* POPUP\
+        \ BASE */\n/* ============================= */\n#premium-popup{\n  position:fixed;\n\
+        \  inset:0;\n  z-index:999999;\n}\n\n.premium-overlay{\n  position:absolute;\n\
+        \  inset:0;\n  background:rgba(0,0,0,.65);\n}\n\n.premium-box{\n  position:absolute;\n\
+        \  left:50%;\n  top:50%;\n  transform:translate(-50%,-50%);\n  background:#212121;\n\
+        \  padding:28px 26px 26px;\n  max-width:440px;\n  width:92%;\n  border-radius:14px;\n\
+        \  text-align:center;\n}\n@media (max-width: 812px){\n  .premium-box{\n  \
+        \  top:5%;\n    transform:translate(-50%, 0);\n  }\n}\n\t\n/* inicio premium-login\
+        \ */\n.premium-login{\n  color:#fff;\n  font-size:clamp(14px,2.6vw,16px);\n\
+        \  cursor:pointer;\n}\na.premium-login{\n    padding:8px 18px;\n}\na.premium-login::after{\n\
+        \    content:\"\";\n    position:absolute;\n    left:50%;\n    bottom:6px;\n\
+        \    width:0;\n    height:2px;\n    background:linear-gradient(90deg,#3f8cff,#8a2be2);\n\
+        \    transform:translateX(-50%);\n    transition:width .25s ease;\n}\na.premium-login:hover{\n\
+        \    color:#fff !important;\n}\n\na.premium-login:hover::after{\n    width:60%;\n\
+        }\n@media (max-width: 768px){\n    a.premium-login{\n        display:block;\n\
+        \        width:100%;\n        margin:6px 0;\n        text-align:center;\n\
+        \        font-size:14px;\n    }\n}\n/* fim premium-login */\n\n/* =============================\
+        \ */\n/* TEXTO */\n/* ============================= */\n.premium-text{\n \
+        \ color:#fff;\n  font-size:clamp(15px,2.6vw,18px);\n  line-height:1.4;\n \
+        \ font-family:Roboto,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;\n\
+        }\n\n.premium-text i{\n  color:#e74c3c;\n  margin-right:6px;\n}\n\n/* =============================\
+        \ */\n/* A\xC7\xD5ES */\n/* ============================= */\n.premium-actions{\n\
+        \  margin-top:18px;\n  display:flex;\n  flex-direction:column;\n  gap:12px;\n\
+        }\n\n/* ============================= */\n/* BOT\xD5ES */\n/* =============================\
+        \ */\n.alter{\n  background:#6f42c1;\n  border:2px solid #fff;\n  font-weight:bold;\n\
+        \  font-size:clamp(14px,2.6vw,16px);\n  color:#fff;\n  padding:10px 14px;\n\
+        \  border-radius:8px;\n  cursor:pointer;\n}\n\n.premium-yes{\n  background:#1e90ff;\n\
+        \  border:2px solid #FFF;\n  font-weight:bold;\n  font-size:clamp(14px,2.6vw,16px);\n\
+        \  color:#fff;\n  padding:10px 14px;\n  border-radius:8px;\n  cursor:pointer;\n\
+        }\n\n.premium-nope{\n  background:#cc3300;\n  border:2px solid #FFF;\n  color:#fff;\n\
+        \  font-weight:bold;\n  font-size:clamp(14px,2.6vw,16px);\n  padding:10px\
+        \ 14px;\n  border-radius:8px;\n  cursor:pointer;\n}\n\n/* =============================\
+        \ */\n/* HOVER / ACTIVE (-15%) */\n/* ============================= */\n.alter:hover,\n\
+        .alter:active,\n.premium-yes:hover,\n.premium-yes:active,\n.premium-login:hover,\n\
+        .premium-login:active,\n.premium-nope:hover,\n.premium-nope:active{\n  filter:\
+        \ brightness(85%);\n}\n/* ============================= */\n/* TEXTO SEMPRE\
+        \ BRANCO (TODOS ESTADOS) */\n/* ============================= */\n.alter,\n\
+        .alter:visited,\n.alter:hover,\n.alter:active,\n.alter:focus,\n\n.premium-yes,\n\
+        .premium-yes:visited,\n.premium-yes:hover,\n.premium-yes:active,\n.premium-yes:focus,\n\
+        \n.premium-login,\n.premium-login:visited,\n.premium-login:hover,\n.premium-login:active,\n\
+        .premium-login:focus,\n\n.premium-nope,\n.premium-nope:visited,\n.premium-nope:hover,\n\
+        .premium-nope:active,\n.premium-nope:focus{\n  color:#fff !important;\n  text-decoration:none;\n\
+        }\n/* ============================= */\n/* RESPONSIVO */\n/* =============================\
+        \ */\n/* Esconder em telas menores que 812px */\n@media (max-width: 812px){\n\
+        \  .alter{\n    display:none !important;\n  }\n}\n</style>\n\n</div>\n\n<!--\
+        \ N PREMIUM AMIN TEMP -->\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n</div><!--/#simple-grid-content-wrapper\
+        \ -->\n\n\n\n\n\n</div><!--/#simple-grid-wrapper -->\n\n\n\n\r\n\r\n\n\n\n\
+        \n\n\n<div class='simple-grid-clearfix' id='simple-grid-copyright-area'>\n\
+        \t\n<div class='simple-grid-copyright-area-inside simple-grid-container'>\n\
+        \t<a href=\"/\"><img src=\"https://legendei.net/wp-content/uploads/2026/03/LegendeiNET-300x67.webp\"\
+        \ alt=\"\" width=\"300\" height=\"67\" class=\"aligncenter size-medium wp-image-747799\"\
+        \ /></a>\n<div class=\"simple-grid-outer-wrapper\">\t\n<center>\t\n<div class='simple-grid-copyright-area-inside-content\
+        \ simple-grid-clearfix'>\n  <p class='simple-grid-copyright'>Copyright \xA9\
+        \ 2016 - 2026 Legendei - Aqui Sai Primeiro</p>\n<p class='simple-grid-credit'><a\
+        \ href=\"https://legendei.net/\">Design by Legendei.NET</a></p>\n</div>\n\t\
+        </center>\n</div>\n</div>\n</div><!--/#simple-grid-copyright-area -->\n\n\n\
+        \n\n<button class=\"simple-grid-scroll-top\" title=\"Scroll to Top\"><i class=\"\
+        fas fa-arrow-up\" aria-hidden=\"true\"></i><span class=\"simple-grid-sr-only\"\
+        >Scroll to Top</span></button>\t\n\n\n\n\n\n<!-- Google tag (gtag.js) -->\n\
+        <script async src=\"https://www.googletagmanager.com/gtag/js?id=G-GX6PZNPM06\"\
+        ></script>\n<script>\n  window.dataLayer = window.dataLayer || [];\n  function\
+        \ gtag(){dataLayer.push(arguments);}\n  gtag('js', new Date());\n\n  gtag('config',\
+        \ 'G-GX6PZNPM06');\n</script>\t\n\n\n\n\n\n<script type=\"speculationrules\"\
+        >\n{\"prefetch\":[{\"source\":\"document\",\"where\":{\"and\":[{\"href_matches\"\
+        :\"\\/*\"},{\"not\":{\"href_matches\":[\"\\/wp-*.php\",\"\\/wp-admin\\/*\"\
+        ,\"\\/wp-content\\/uploads\\/*\",\"\\/wp-content\\/*\",\"\\/wp-content\\/plugins\\\
+        /*\",\"\\/wp-content\\/themes\\/simple-grid\\/*\",\"\\/*\\\\?(.+)\"]}},{\"\
+        not\":{\"selector_matches\":\"a[rel~=\\\"nofollow\\\"]\"}},{\"not\":{\"selector_matches\"\
+        :\".no-prefetch, .no-prefetch a\"}}]},\"eagerness\":\"conservative\"}]}\n\
+        </script>\n\n<script>\nfunction attUploadProof(){\n\n    let fileInput = document.getElementById('att_proof');\n\
+        \    let msg = document.getElementById('att_upload_msg');\n\n    if(!fileInput.files.length){\n\
+        \        msg.innerHTML = '<span style=\"color:red;\">Selecione um arquivo</span>';\n\
+        \        return;\n    }\n\n    let file = fileInput.files[0];\n\n    if(file.size\
+        \ > 50 * 1024 * 1024){\n        msg.innerHTML = '<span style=\"color:red;\"\
+        >Arquivo maior que 50MB</span>';\n        return;\n    }\n\n    let formData\
+        \ = new FormData();\n    formData.append('action','att_upload_proof');\n \
+        \   formData.append('proof', file);\n\n    msg.innerHTML = 'Enviando...';\n\
+        \n    fetch('https://legendei.net/wp-admin/admin-ajax.php', {\n        method:\
+        \ 'POST',\n        body: formData\n    })\n    .then(r => r.json())\n    .then(res\
+        \ => {\n\n        if(res.success){\n            msg.innerHTML = '<span style=\"\
+        color:green;\">Comprovante enviado com sucesso!</span>';\n        } else {\n\
+        \            msg.innerHTML = '<span style=\"color:red;\">Erro: '+res.data+'</span>';\n\
+        \        }\n\n    });\n\n}\n</script>\n<script>\nfunction attSaveLastName(){\n\
+        \n    let input = document.getElementById('att_last_name_input') \n      \
+        \       || document.getElementById('att_last_name_input2');\n\n    let msg\
+        \   = document.getElementById('att_name_msg') \n             || document.getElementById('att_name_msg2');\n\
+        \n    if(!input || !msg) return;\n\n    let value = input.value.trim();\n\n\
+        \    if(!value){\n        msg.innerHTML = '<span style=\"color:#f87171;\"\
+        >Digite o nome completo do titular da conta que ser\xE1 usada para a doa\xE7\
+        \xE3o</span>';\n        return;\n    }\n\n    msg.innerHTML = 'Salvando...';\n\
+        \n    fetch('https://legendei.net/wp-admin/admin-ajax.php', {\n        method:\
+        \ 'POST',\n        headers: {'Content-Type': 'application/x-www-form-urlencoded'},\n\
+        \        body: 'action=att_save_last_name&last_name=' + encodeURIComponent(value)\n\
+        \    })\n    .then(r => r.json())\n    .then(res => {\n\n        if(res.success){\n\
+        \            msg.innerHTML = '<span style=\"color:#22c55e;\">Salvo! Recarregando...</span>';\n\
+        \            setTimeout(()=>location.reload(),800);\n        } else {\n  \
+        \          msg.innerHTML = '<span style=\"color:#f87171;\">Erro ao salvar</span>';\n\
+        \        }\n\n    });\n\n}\n</script>\n<style type=\"text/css\"> \n      \
+        \   /* Hide reCAPTCHA V3 badge */\n        .grecaptcha-badge {\n        \n\
+        \            visibility: hidden !important;\n        \n        }\n    </style><script\
+        \ type=\"text/javascript\" id=\"lrl-js-js-extra\">\n/* <![CDATA[ */\nvar lrlData\
+        \ = {\"ajaxurl\":\"https:\\/\\/legendei.net\\/wp-admin\\/admin-ajax.php\"\
+        ,\"post_id\":\"\"};\n/* ]]> */\n</script>\n<script type=\"text/javascript\"\
+        \ src=\"https://legendei.net/wp-content/plugins/legendei-reportar-legenda/assets/report.js?ver=1.0\"\
+        \ id=\"lrl-js-js\"></script>\n<script type=\"text/javascript\" src=\"https://legendei.net/wp-content/themes/simple-grid/assets/js/jquery.fitvids.min.js\"\
+        \ id=\"fitvids-js\"></script>\n<script type=\"text/javascript\" src=\"https://legendei.net/wp-content/themes/simple-grid/assets/js/navigation.js\"\
+        \ id=\"simple-grid-navigation-js\"></script>\n<script type=\"text/javascript\"\
+        \ src=\"https://legendei.net/wp-content/themes/simple-grid/assets/js/skip-link-focus-fix.js\"\
+        \ id=\"simple-grid-skip-link-focus-fix-js\"></script>\n<script type=\"text/javascript\"\
+        \ src=\"https://legendei.net/wp-includes/js/imagesloaded.min.js?ver=5.0.0\"\
+        \ id=\"imagesloaded-js\"></script>\n<script type=\"text/javascript\" id=\"\
+        simple-grid-customjs-js-extra\">\n/* <![CDATA[ */\nvar simple_grid_ajax_object\
+        \ = {\"ajaxurl\":\"https:\\/\\/legendei.net\\/wp-admin\\/admin-ajax.php\"\
+        ,\"primary_menu_active\":\"1\",\"secondary_menu_active\":\"\",\"primary_mobile_menu_active\"\
+        :\"1\",\"secondary_mobile_menu_active\":\"1\",\"sticky_menu_active\":\"1\"\
+        ,\"sticky_mobile_menu_active\":\"\",\"sticky_sidebar_active\":\"\",\"columnwidth\"\
+        :\".simple-grid-5-col-sizer\",\"gutter\":\".simple-grid-5-col-gutter\"};\n\
+        /* ]]> */\n</script>\n<script type=\"text/javascript\" src=\"https://legendei.net/wp-content/themes/simple-grid/assets/js/custom.js\"\
+        \ id=\"simple-grid-customjs-js\"></script>\n<script type=\"text/javascript\"\
+        \ id=\"simple-grid-html5shiv-js-js-extra\">\n/* <![CDATA[ */\nvar simple_grid_custom_script_vars\
+        \ = {\"elements_name\":\"abbr article aside audio bdi canvas data datalist\
+        \ details dialog figcaption figure footer header hgroup main mark meter nav\
+        \ output picture progress section summary template time video\"};\n/* ]]>\
+        \ */\n</script>\n<script type=\"text/javascript\" src=\"https://legendei.net/wp-content/themes/simple-grid/assets/js/html5shiv.js\"\
+        \ id=\"simple-grid-html5shiv-js-js\"></script>\n<script>(function(){function\
+        \ c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML=\"\
+        window.__CF$cv$params={r:'a14e7a894ca9a19a',t:'MTc4MzAwMzk5Mg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);\"\
+        ;b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else\
+        \ if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var\
+        \ e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script\
+        \ defer src=\"https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496\"\
+        \ integrity=\"sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==\"\
+        \ data-cf-beacon='{\"version\":\"2024.11.0\",\"token\":\"832c49ee708d4b8d94382b4733ae0382\"\
+        ,\"r\":1,\"server_timing\":{\"name\":{\"cfCacheStatus\":true,\"cfEdge\":true,\"\
+        cfExtPri\":true,\"cfL4\":true,\"cfOrigin\":true,\"cfSpeedBrain\":true},\"\
+        location_startswith\":null}}' crossorigin=\"anonymous\"></script>\n</body>\n\
+        </html>"
+    headers:
+      CF-RAY:
+      - a14e7a894ca9a19a-GRU
+      Cf-Cache-Status:
+      - DYNAMIC
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - text/html; charset=UTF-8
+      Date:
+      - Thu, 02 Jul 2026 14:53:15 GMT
+      Link:
+      - <https://legendei.net/wp-json/>; rel="https://api.w.org/"
+      Nel:
+      - '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}'
+      Permissions-Policy:
+      - private-state-token-redemption=(self "https://www.google.com" "https://www.gstatic.com"
+        "https://recaptcha.net" "https://challenges.cloudflare.com" "https://hcaptcha.com"),
+        private-state-token-issuance=(self "https://www.google.com" "https://www.gstatic.com"
+        "https://recaptcha.net" "https://challenges.cloudflare.com" "https://hcaptcha.com")
+      Report-To:
+      - '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=ht3HFS0b32q3fO8Z6a5erQQesK34tuyRDwLe3GO394VMvVT946QhcaCOeVl4Gcwr5sABpmkjeyWkmd5ID%2FQWPYwICbvsMFH7KobLxLMllxueZsndI7uliNljfh5LZAA%3D"}]}'
+      Server:
+      - cloudflare
+      Server-Timing:
+      - cfCacheStatus;desc="DYNAMIC"
+      - cfEdge;dur=11,cfOrigin;dur=2600
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Accept-Encoding
+      alt-svc:
+      - h3=":443"; ma=86400
+    status:
+      code: 200
+      message: OK
+- request:
+    body: null
+    headers:
+      Accept:
+      - text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8
+      Accept-Encoding:
+      - gzip, deflate
+      Accept-Language:
+      - pt-BR,pt;q=0.9,en;q=0.8
+      User-Agent:
+      - Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like
+        Gecko) Chrome/131.0.0.0 Safari/537.36
+    method: GET
+    uri: https://legendei.net/?s=121361asdfgh%20S01
+  response:
+    body:
+      string: "<!DOCTYPE html>\n<html dir=\"ltr\" lang=\"pt-BR\" prefix=\"og: https://ogp.me/ns#\"\
+        >\n<head>\n<meta charset=\"UTF-8\">\n<meta name=\"viewport\" content=\"width=device-width,\
+        \ initial-scale=1.0\">\n\n<link rel=\"stylesheet\" href=\"https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css\"\
+        >\n\t\n<link rel=\"preconnect\" href=\"https://fonts.googleapis.com\">\n<link\
+        \ rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin>\n<link\
+        \ href=\"https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap\"\
+        \ rel=\"stylesheet\">\n\t\n<title>121361asdfgh s01 - Legendei - Aqui Sai Primeiro</title>\n\
+        \t<style>img:is([sizes=\"auto\" i], [sizes^=\"auto,\" i]) { contain-intrinsic-size:\
+        \ 3000px 1500px }</style>\n\t\n\t\t<!-- All in One SEO Pro 4.6.0 - aioseo.com\
+        \ -->\n\t\t<meta name=\"robots\" content=\"max-image-preview:large\" />\n\t\
+        \t<meta name=\"google-site-verification\" content=\"JSMIV3rTOC3Y-WjaQzmU3KvW7aWHceTxBFYsJYpm-1k\"\
+        \ />\n\t\t<meta name=\"generator\" content=\"All in One SEO Pro (AIOSEO) 4.6.0\"\
+        \ />\n\t\t<script type=\"application/ld+json\" class=\"aioseo-schema\">\n\t\
+        \t\t{\"@context\":\"https:\\/\\/schema.org\",\"@graph\":[{\"@type\":\"BreadcrumbList\"\
+        ,\"@id\":\"https:\\/\\/legendei.net\\/#breadcrumblist\",\"itemListElement\"\
+        :[{\"@type\":\"ListItem\",\"@id\":\"https:\\/\\/legendei.net\\/#listItem\"\
+        ,\"position\":1,\"name\":\"Home\",\"item\":\"https:\\/\\/legendei.net\\/\"\
+        ,\"nextItem\":\"https:\\/\\/legendei.net\\/#listItem\"},{\"@type\":\"ListItem\"\
+        ,\"@id\":\"https:\\/\\/legendei.net\\/#listItem\",\"position\":2,\"name\"\
+        :\"121361asdfgh s01\",\"previousItem\":\"https:\\/\\/legendei.net\\/#listItem\"\
+        }]},{\"@type\":\"Organization\",\"@id\":\"https:\\/\\/legendei.net\\/#organization\"\
+        ,\"name\":\"Legendei\",\"url\":\"https:\\/\\/legendei.net\\/\",\"logo\":{\"\
+        @type\":\"ImageObject\",\"url\":\"https:\\/\\/legendei.net\\/wp-content\\\
+        /uploads\\/2026\\/03\\/favicon.webp\",\"@id\":\"https:\\/\\/legendei.net\\\
+        /#organizationLogo\",\"width\":150,\"height\":150},\"image\":{\"@id\":\"https:\\\
+        /\\/legendei.net\\/#organizationLogo\"}},{\"@type\":\"SearchResultsPage\"\
+        ,\"@id\":\"https:\\/\\/legendei.net\\/#searchresultspage\",\"url\":\"https:\\\
+        /\\/legendei.net\\/\",\"name\":\"121361asdfgh s01 - Legendei - Aqui Sai Primeiro\"\
+        ,\"inLanguage\":\"pt-BR\",\"isPartOf\":{\"@id\":\"https:\\/\\/legendei.net\\\
+        /#website\"},\"breadcrumb\":{\"@id\":\"https:\\/\\/legendei.net\\/#breadcrumblist\"\
+        }},{\"@type\":\"WebSite\",\"@id\":\"https:\\/\\/legendei.net\\/#website\"\
+        ,\"url\":\"https:\\/\\/legendei.net\\/\",\"name\":\"Legendei\",\"description\"\
+        :\"Baixar Legendas de S\\u00e9ries e Filmes\",\"inLanguage\":\"pt-BR\",\"\
+        publisher\":{\"@id\":\"https:\\/\\/legendei.net\\/#organization\"}}]}\n\t\t\
+        </script>\n\t\t<!-- All in One SEO Pro -->\n\n<link rel='dns-prefetch' href='//fonts.googleapis.com'\
+        \ />\n<link rel=\"alternate\" type=\"application/rss+xml\" title=\"Feed para\
+        \ Legendei &raquo;\" href=\"https://legendei.net/feed/\" />\n<link rel=\"\
+        alternate\" type=\"application/rss+xml\" title=\"Feed de coment\xE1rios para\
+        \ Legendei &raquo;\" href=\"https://legendei.net/comments/feed/\" />\n<link\
+        \ rel=\"alternate\" type=\"application/rss+xml\" title=\"Legendei &raquo;\
+        \ Feed do resultado da busca por &#8220;121361asdfgh s01&#8221;\" href=\"\
+        https://legendei.net/search/121361asdfgh+s01/feed/rss2/\" />\n<script type=\"\
+        text/javascript\">\n/* <![CDATA[ */\nwindow._wpemojiSettings = {\"baseUrl\"\
+        :\"https:\\/\\/s.w.org\\/images\\/core\\/emoji\\/16.0.1\\/72x72\\/\",\"ext\"\
+        :\".png\",\"svgUrl\":\"https:\\/\\/s.w.org\\/images\\/core\\/emoji\\/16.0.1\\\
+        /svg\\/\",\"svgExt\":\".svg\",\"source\":{\"concatemoji\":\"https:\\/\\/legendei.net\\\
+        /wp-includes\\/js\\/wp-emoji-release.min.js?ver=6.8.3\"}};\n/*! This file\
+        \ is auto-generated */\n!function(s,n){var o,i,e;function c(e){try{var t={supportTests:e,timestamp:(new\
+        \ Date).valueOf()};sessionStorage.setItem(o,JSON.stringify(t))}catch(e){}}function\
+        \ p(e,t,n){e.clearRect(0,0,e.canvas.width,e.canvas.height),e.fillText(t,0,0);var\
+        \ t=new Uint32Array(e.getImageData(0,0,e.canvas.width,e.canvas.height).data),a=(e.clearRect(0,0,e.canvas.width,e.canvas.height),e.fillText(n,0,0),new\
+        \ Uint32Array(e.getImageData(0,0,e.canvas.width,e.canvas.height).data));return\
+        \ t.every(function(e,t){return e===a[t]})}function u(e,t){e.clearRect(0,0,e.canvas.width,e.canvas.height),e.fillText(t,0,0);for(var\
+        \ n=e.getImageData(16,16,1,1),a=0;a<n.data.length;a++)if(0!==n.data[a])return!1;return!0}function\
+        \ f(e,t,n,a){switch(t){case\"flag\":return n(e,\"\\ud83c\\udff3\\ufe0f\\u200d\\\
+        u26a7\\ufe0f\",\"\\ud83c\\udff3\\ufe0f\\u200b\\u26a7\\ufe0f\")?!1:!n(e,\"\\\
+        ud83c\\udde8\\ud83c\\uddf6\",\"\\ud83c\\udde8\\u200b\\ud83c\\uddf6\")&&!n(e,\"\
+        \\ud83c\\udff4\\udb40\\udc67\\udb40\\udc62\\udb40\\udc65\\udb40\\udc6e\\udb40\\\
+        udc67\\udb40\\udc7f\",\"\\ud83c\\udff4\\u200b\\udb40\\udc67\\u200b\\udb40\\\
+        udc62\\u200b\\udb40\\udc65\\u200b\\udb40\\udc6e\\u200b\\udb40\\udc67\\u200b\\\
+        udb40\\udc7f\");case\"emoji\":return!a(e,\"\\ud83e\\udedf\")}return!1}function\
+        \ g(e,t,n,a){var r=\"undefined\"!=typeof WorkerGlobalScope&&self instanceof\
+        \ WorkerGlobalScope?new OffscreenCanvas(300,150):s.createElement(\"canvas\"\
+        ),o=r.getContext(\"2d\",{willReadFrequently:!0}),i=(o.textBaseline=\"top\"\
+        ,o.font=\"600 32px Arial\",{});return e.forEach(function(e){i[e]=t(o,e,n,a)}),i}function\
+        \ t(e){var t=s.createElement(\"script\");t.src=e,t.defer=!0,s.head.appendChild(t)}\"\
+        undefined\"!=typeof Promise&&(o=\"wpEmojiSettingsSupports\",i=[\"flag\",\"\
+        emoji\"],n.supports={everything:!0,everythingExceptFlag:!0},e=new Promise(function(e){s.addEventListener(\"\
+        DOMContentLoaded\",e,{once:!0})}),new Promise(function(t){var n=function(){try{var\
+        \ e=JSON.parse(sessionStorage.getItem(o));if(\"object\"==typeof e&&\"number\"\
+        ==typeof e.timestamp&&(new Date).valueOf()<e.timestamp+604800&&\"object\"\
+        ==typeof e.supportTests)return e.supportTests}catch(e){}return null}();if(!n){if(\"\
+        undefined\"!=typeof Worker&&\"undefined\"!=typeof OffscreenCanvas&&\"undefined\"\
+        !=typeof URL&&URL.createObjectURL&&\"undefined\"!=typeof Blob)try{var e=\"\
+        postMessage(\"+g.toString()+\"(\"+[JSON.stringify(i),f.toString(),p.toString(),u.toString()].join(\"\
+        ,\")+\"));\",a=new Blob([e],{type:\"text/javascript\"}),r=new Worker(URL.createObjectURL(a),{name:\"\
+        wpTestEmojiSupports\"});return void(r.onmessage=function(e){c(n=e.data),r.terminate(),t(n)})}catch(e){}c(n=g(i,f,p,u))}t(n)}).then(function(e){for(var\
+        \ t in e)n.supports[t]=e[t],n.supports.everything=n.supports.everything&&n.supports[t],\"\
+        flag\"!==t&&(n.supports.everythingExceptFlag=n.supports.everythingExceptFlag&&n.supports[t]);n.supports.everythingExceptFlag=n.supports.everythingExceptFlag&&!n.supports.flag,n.DOMReady=!1,n.readyCallback=function(){n.DOMReady=!0}}).then(function(){return\
+        \ e}).then(function(){var e;n.supports.everything||(n.readyCallback(),(e=n.source||{}).concatemoji?t(e.concatemoji):e.wpemoji&&e.twemoji&&(t(e.twemoji),t(e.wpemoji)))}))}((window,document),window._wpemojiSettings);\n\
+        /* ]]> */\n</script>\n<link rel='stylesheet' id='wpa-css-css' href='https://legendei.net/wp-content/plugins/wp-attachments/styles/0/wpa.css?ver=6.8.3'\
+        \ type='text/css' media='all' />\n<style id='wp-emoji-styles-inline-css' type='text/css'>\n\
+        \n\timg.wp-smiley, img.emoji {\n\t\tdisplay: inline !important;\n\t\tborder:\
+        \ none !important;\n\t\tbox-shadow: none !important;\n\t\theight: 1em !important;\n\
+        \t\twidth: 1em !important;\n\t\tmargin: 0 0.07em !important;\n\t\tvertical-align:\
+        \ -0.1em !important;\n\t\tbackground: none !important;\n\t\tpadding: 0 !important;\n\
+        \t}\n</style>\n<link rel='stylesheet' id='wp-block-library-css' href='https://legendei.net/wp-includes/css/dist/block-library/style.min.css?ver=6.8.3'\
+        \ type='text/css' media='all' />\n<style id='classic-theme-styles-inline-css'\
+        \ type='text/css'>\n/*! This file is auto-generated */\n.wp-block-button__link{color:#fff;background-color:#32373c;border-radius:9999px;box-shadow:none;text-decoration:none;padding:calc(.667em\
+        \ + 2px) calc(1.333em + 2px);font-size:1.125em}.wp-block-file__button{background:#32373c;color:#fff;text-decoration:none}\n\
+        </style>\n<style id='wppb-content-restriction-start-style-inline-css' type='text/css'>\n\
+        \n\n</style>\n<style id='wppb-content-restriction-end-style-inline-css' type='text/css'>\n\
+        \n\n</style>\n<style id='wppb-edit-profile-style-inline-css' type='text/css'>\n\
+        \n\n</style>\n<style id='wppb-login-style-inline-css' type='text/css'>\n\n\
+        \n</style>\n<style id='wppb-recover-password-style-inline-css' type='text/css'>\n\
+        \n\n</style>\n<style id='wppb-register-style-inline-css' type='text/css'>\n\
+        \n\n</style>\n<style id='global-styles-inline-css' type='text/css'>\n:root{--wp--preset--aspect-ratio--square:\
+        \ 1;--wp--preset--aspect-ratio--4-3: 4/3;--wp--preset--aspect-ratio--3-4:\
+        \ 3/4;--wp--preset--aspect-ratio--3-2: 3/2;--wp--preset--aspect-ratio--2-3:\
+        \ 2/3;--wp--preset--aspect-ratio--16-9: 16/9;--wp--preset--aspect-ratio--9-16:\
+        \ 9/16;--wp--preset--color--black: #000000;--wp--preset--color--cyan-bluish-gray:\
+        \ #abb8c3;--wp--preset--color--white: #ffffff;--wp--preset--color--pale-pink:\
+        \ #f78da7;--wp--preset--color--vivid-red: #cf2e2e;--wp--preset--color--luminous-vivid-orange:\
+        \ #ff6900;--wp--preset--color--luminous-vivid-amber: #fcb900;--wp--preset--color--light-green-cyan:\
+        \ #7bdcb5;--wp--preset--color--vivid-green-cyan: #00d084;--wp--preset--color--pale-cyan-blue:\
+        \ #8ed1fc;--wp--preset--color--vivid-cyan-blue: #0693e3;--wp--preset--color--vivid-purple:\
+        \ #9b51e0;--wp--preset--gradient--vivid-cyan-blue-to-vivid-purple: linear-gradient(135deg,rgba(6,147,227,1)\
+        \ 0%,rgb(155,81,224) 100%);--wp--preset--gradient--light-green-cyan-to-vivid-green-cyan:\
+        \ linear-gradient(135deg,rgb(122,220,180) 0%,rgb(0,208,130) 100%);--wp--preset--gradient--luminous-vivid-amber-to-luminous-vivid-orange:\
+        \ linear-gradient(135deg,rgba(252,185,0,1) 0%,rgba(255,105,0,1) 100%);--wp--preset--gradient--luminous-vivid-orange-to-vivid-red:\
+        \ linear-gradient(135deg,rgba(255,105,0,1) 0%,rgb(207,46,46) 100%);--wp--preset--gradient--very-light-gray-to-cyan-bluish-gray:\
+        \ linear-gradient(135deg,rgb(238,238,238) 0%,rgb(169,184,195) 100%);--wp--preset--gradient--cool-to-warm-spectrum:\
+        \ linear-gradient(135deg,rgb(74,234,220) 0%,rgb(151,120,209) 20%,rgb(207,42,186)\
+        \ 40%,rgb(238,44,130) 60%,rgb(251,105,98) 80%,rgb(254,248,76) 100%);--wp--preset--gradient--blush-light-purple:\
+        \ linear-gradient(135deg,rgb(255,206,236) 0%,rgb(152,150,240) 100%);--wp--preset--gradient--blush-bordeaux:\
+        \ linear-gradient(135deg,rgb(254,205,165) 0%,rgb(254,45,45) 50%,rgb(107,0,62)\
+        \ 100%);--wp--preset--gradient--luminous-dusk: linear-gradient(135deg,rgb(255,203,112)\
+        \ 0%,rgb(199,81,192) 50%,rgb(65,88,208) 100%);--wp--preset--gradient--pale-ocean:\
+        \ linear-gradient(135deg,rgb(255,245,203) 0%,rgb(182,227,212) 50%,rgb(51,167,181)\
+        \ 100%);--wp--preset--gradient--electric-grass: linear-gradient(135deg,rgb(202,248,128)\
+        \ 0%,rgb(113,206,126) 100%);--wp--preset--gradient--midnight: linear-gradient(135deg,rgb(2,3,129)\
+        \ 0%,rgb(40,116,252) 100%);--wp--preset--font-size--small: 13px;--wp--preset--font-size--medium:\
+        \ 20px;--wp--preset--font-size--large: 36px;--wp--preset--font-size--x-large:\
+        \ 42px;--wp--preset--spacing--20: 0.44rem;--wp--preset--spacing--30: 0.67rem;--wp--preset--spacing--40:\
+        \ 1rem;--wp--preset--spacing--50: 1.5rem;--wp--preset--spacing--60: 2.25rem;--wp--preset--spacing--70:\
+        \ 3.38rem;--wp--preset--spacing--80: 5.06rem;--wp--preset--shadow--natural:\
+        \ 6px 6px 9px rgba(0, 0, 0, 0.2);--wp--preset--shadow--deep: 12px 12px 50px\
+        \ rgba(0, 0, 0, 0.4);--wp--preset--shadow--sharp: 6px 6px 0px rgba(0, 0, 0,\
+        \ 0.2);--wp--preset--shadow--outlined: 6px 6px 0px -3px rgba(255, 255, 255,\
+        \ 1), 6px 6px rgba(0, 0, 0, 1);--wp--preset--shadow--crisp: 6px 6px 0px rgba(0,\
+        \ 0, 0, 1);}:where(.is-layout-flex){gap: 0.5em;}:where(.is-layout-grid){gap:\
+        \ 0.5em;}body .is-layout-flex{display: flex;}.is-layout-flex{flex-wrap: wrap;align-items:\
+        \ center;}.is-layout-flex > :is(*, div){margin: 0;}body .is-layout-grid{display:\
+        \ grid;}.is-layout-grid > :is(*, div){margin: 0;}:where(.wp-block-columns.is-layout-flex){gap:\
+        \ 2em;}:where(.wp-block-columns.is-layout-grid){gap: 2em;}:where(.wp-block-post-template.is-layout-flex){gap:\
+        \ 1.25em;}:where(.wp-block-post-template.is-layout-grid){gap: 1.25em;}.has-black-color{color:\
+        \ var(--wp--preset--color--black) !important;}.has-cyan-bluish-gray-color{color:\
+        \ var(--wp--preset--color--cyan-bluish-gray) !important;}.has-white-color{color:\
+        \ var(--wp--preset--color--white) !important;}.has-pale-pink-color{color:\
+        \ var(--wp--preset--color--pale-pink) !important;}.has-vivid-red-color{color:\
+        \ var(--wp--preset--color--vivid-red) !important;}.has-luminous-vivid-orange-color{color:\
+        \ var(--wp--preset--color--luminous-vivid-orange) !important;}.has-luminous-vivid-amber-color{color:\
+        \ var(--wp--preset--color--luminous-vivid-amber) !important;}.has-light-green-cyan-color{color:\
+        \ var(--wp--preset--color--light-green-cyan) !important;}.has-vivid-green-cyan-color{color:\
+        \ var(--wp--preset--color--vivid-green-cyan) !important;}.has-pale-cyan-blue-color{color:\
+        \ var(--wp--preset--color--pale-cyan-blue) !important;}.has-vivid-cyan-blue-color{color:\
+        \ var(--wp--preset--color--vivid-cyan-blue) !important;}.has-vivid-purple-color{color:\
+        \ var(--wp--preset--color--vivid-purple) !important;}.has-black-background-color{background-color:\
+        \ var(--wp--preset--color--black) !important;}.has-cyan-bluish-gray-background-color{background-color:\
+        \ var(--wp--preset--color--cyan-bluish-gray) !important;}.has-white-background-color{background-color:\
+        \ var(--wp--preset--color--white) !important;}.has-pale-pink-background-color{background-color:\
+        \ var(--wp--preset--color--pale-pink) !important;}.has-vivid-red-background-color{background-color:\
+        \ var(--wp--preset--color--vivid-red) !important;}.has-luminous-vivid-orange-background-color{background-color:\
+        \ var(--wp--preset--color--luminous-vivid-orange) !important;}.has-luminous-vivid-amber-background-color{background-color:\
+        \ var(--wp--preset--color--luminous-vivid-amber) !important;}.has-light-green-cyan-background-color{background-color:\
+        \ var(--wp--preset--color--light-green-cyan) !important;}.has-vivid-green-cyan-background-color{background-color:\
+        \ var(--wp--preset--color--vivid-green-cyan) !important;}.has-pale-cyan-blue-background-color{background-color:\
+        \ var(--wp--preset--color--pale-cyan-blue) !important;}.has-vivid-cyan-blue-background-color{background-color:\
+        \ var(--wp--preset--color--vivid-cyan-blue) !important;}.has-vivid-purple-background-color{background-color:\
+        \ var(--wp--preset--color--vivid-purple) !important;}.has-black-border-color{border-color:\
+        \ var(--wp--preset--color--black) !important;}.has-cyan-bluish-gray-border-color{border-color:\
+        \ var(--wp--preset--color--cyan-bluish-gray) !important;}.has-white-border-color{border-color:\
+        \ var(--wp--preset--color--white) !important;}.has-pale-pink-border-color{border-color:\
+        \ var(--wp--preset--color--pale-pink) !important;}.has-vivid-red-border-color{border-color:\
+        \ var(--wp--preset--color--vivid-red) !important;}.has-luminous-vivid-orange-border-color{border-color:\
+        \ var(--wp--preset--color--luminous-vivid-orange) !important;}.has-luminous-vivid-amber-border-color{border-color:\
+        \ var(--wp--preset--color--luminous-vivid-amber) !important;}.has-light-green-cyan-border-color{border-color:\
+        \ var(--wp--preset--color--light-green-cyan) !important;}.has-vivid-green-cyan-border-color{border-color:\
+        \ var(--wp--preset--color--vivid-green-cyan) !important;}.has-pale-cyan-blue-border-color{border-color:\
+        \ var(--wp--preset--color--pale-cyan-blue) !important;}.has-vivid-cyan-blue-border-color{border-color:\
+        \ var(--wp--preset--color--vivid-cyan-blue) !important;}.has-vivid-purple-border-color{border-color:\
+        \ var(--wp--preset--color--vivid-purple) !important;}.has-vivid-cyan-blue-to-vivid-purple-gradient-background{background:\
+        \ var(--wp--preset--gradient--vivid-cyan-blue-to-vivid-purple) !important;}.has-light-green-cyan-to-vivid-green-cyan-gradient-background{background:\
+        \ var(--wp--preset--gradient--light-green-cyan-to-vivid-green-cyan) !important;}.has-luminous-vivid-amber-to-luminous-vivid-orange-gradient-background{background:\
+        \ var(--wp--preset--gradient--luminous-vivid-amber-to-luminous-vivid-orange)\
+        \ !important;}.has-luminous-vivid-orange-to-vivid-red-gradient-background{background:\
+        \ var(--wp--preset--gradient--luminous-vivid-orange-to-vivid-red) !important;}.has-very-light-gray-to-cyan-bluish-gray-gradient-background{background:\
+        \ var(--wp--preset--gradient--very-light-gray-to-cyan-bluish-gray) !important;}.has-cool-to-warm-spectrum-gradient-background{background:\
+        \ var(--wp--preset--gradient--cool-to-warm-spectrum) !important;}.has-blush-light-purple-gradient-background{background:\
+        \ var(--wp--preset--gradient--blush-light-purple) !important;}.has-blush-bordeaux-gradient-background{background:\
+        \ var(--wp--preset--gradient--blush-bordeaux) !important;}.has-luminous-dusk-gradient-background{background:\
+        \ var(--wp--preset--gradient--luminous-dusk) !important;}.has-pale-ocean-gradient-background{background:\
+        \ var(--wp--preset--gradient--pale-ocean) !important;}.has-electric-grass-gradient-background{background:\
+        \ var(--wp--preset--gradient--electric-grass) !important;}.has-midnight-gradient-background{background:\
+        \ var(--wp--preset--gradient--midnight) !important;}.has-small-font-size{font-size:\
+        \ var(--wp--preset--font-size--small) !important;}.has-medium-font-size{font-size:\
+        \ var(--wp--preset--font-size--medium) !important;}.has-large-font-size{font-size:\
+        \ var(--wp--preset--font-size--large) !important;}.has-x-large-font-size{font-size:\
+        \ var(--wp--preset--font-size--x-large) !important;}\n:where(.wp-block-post-template.is-layout-flex){gap:\
+        \ 1.25em;}:where(.wp-block-post-template.is-layout-grid){gap: 1.25em;}\n:where(.wp-block-columns.is-layout-flex){gap:\
+        \ 2em;}:where(.wp-block-columns.is-layout-grid){gap: 2em;}\n:root :where(.wp-block-pullquote){font-size:\
+        \ 1.5em;line-height: 1.6;}\n</style>\n<link rel='stylesheet' id='lrl-css-css'\
+        \ href='https://legendei.net/wp-content/plugins/legendei-reportar-legenda/assets/report.css?ver=6.8.3'\
+        \ type='text/css' media='all' />\n<link rel='stylesheet' id='simple-grid-maincss-css'\
+        \ href='https://legendei.net/wp-content/themes/simple-grid/style.css' type='text/css'\
+        \ media='all' />\n<link rel='stylesheet' id='fontawesome-css' href='https://legendei.net/wp-content/themes/simple-grid/assets/css/all.min.css'\
+        \ type='text/css' media='all' />\n<link rel='stylesheet' id='simple-grid-webfont-css'\
+        \ href='//fonts.googleapis.com/css?family=Playfair+Display:400,400i,700,700i|Domine:400,700|Oswald:400,700|Patua+One|Merriweather:400,400i,700,700i&#038;display=swap'\
+        \ type='text/css' media='all' />\n<link rel='stylesheet' id='legendei-style-css'\
+        \ href='https://legendei.net/wp-content/themes/simple-grid/style.css?ver=1782544305'\
+        \ type='text/css' media='all' />\n<link rel='stylesheet' id='wppb_stylesheet-css'\
+        \ href='https://legendei.net/wp-content/plugins/profile-builder/assets/css/style-front-end.css?ver=3.15.2'\
+        \ type='text/css' media='all' />\n<script type=\"text/javascript\" src=\"\
+        https://legendei.net/wp-includes/js/jquery/jquery.min.js?ver=3.7.1\" id=\"\
+        jquery-core-js\"></script>\n<script type=\"text/javascript\" src=\"https://legendei.net/wp-includes/js/jquery/jquery-migrate.min.js?ver=3.4.1\"\
+        \ id=\"jquery-migrate-js\"></script>\n<!--[if lt IE 9]>\n<script type=\"text/javascript\"\
+        \ src=\"https://legendei.net/wp-content/themes/simple-grid/assets/js/respond.min.js\"\
+        \ id=\"respond-js\"></script>\n<![endif]-->\n<link rel=\"https://api.w.org/\"\
+        \ href=\"https://legendei.net/wp-json/\" /><link rel=\"EditURI\" type=\"application/rsd+xml\"\
+        \ title=\"RSD\" href=\"https://legendei.net/xmlrpc.php?rsd\" />\n<meta name=\"\
+        generator\" content=\"WordPress 6.8.3\" />\n<style>\n\n/* FORMUL\xC1RIO TRIAL\
+        \ */\n\n.premium-form {\n    max-width: 760px;\n    margin: 0 auto 20px;\n\
+        \    padding: 30px;\n    border-radius: 10px;\n    background: #212121;\n\
+        \    border: 10px solid transparent;\n    background-image:\n        linear-gradient(#212121,#212121),\n\
+        \        linear-gradient(90deg,#3f8cff,#8a2be2);\n    background-origin: border-box;\n\
+        \    background-clip: padding-box, border-box;\n    box-sizing: border-box;\n\
+        }\n\n/* Campos */\n\n.premium-form .field {\n    position: relative;\n   \
+        \ margin-bottom: 20px;\n}\n\n.premium-form input {\n    width: 100%;\n   \
+        \ padding: 14px;\n    border-radius: 8px;\n    border: 1px solid #ccc;\n \
+        \   font-size: 16px;\n    box-sizing: border-box;\n}\n\n/* Focus bonito */\n\
+        \n.premium-form input:focus {\n    border-color: transparent;\n    background-image:\n\
+        \        linear-gradient(#ffffff,#ffffff),\n        linear-gradient(90deg,#3f8cff,#8a2be2);\n\
+        \    background-origin: border-box;\n    background-clip: padding-box, border-box;\n\
+        \    box-shadow: 0 0 0 4px rgba(63,140,255,0.20);\n    outline: none;\n}\n\
+        \n/* TOOLTIP */\n\n.premium-form .tooltip {\n    position: absolute;\n   \
+        \ bottom: 100%;\n    left: 0;\n    margin-bottom: 10px;\n    background: linear-gradient(90deg,#3f8cff,#8a2be2);\n\
+        \tbox-shadow:0 6px 14px rgba(0,0,0,0.25);\n    color: #ffffff;\n    padding:\
+        \ 10px 12px;\n    font-size: 14px;\n    border-radius: 6px;\n    max-width:\
+        \ 260px;\n    opacity: 0;\n    pointer-events: none;\n    transition: .2s;\n\
+        \    z-index: 999;\n}\n\n.premium-form .tooltip::after {\n    content: \"\"\
+        ;\n    position: absolute;\n    top: 100%;\n    left: 15px;\n    border-width:\
+        \ 6px 6px 0 6px;\n    border-style: solid;\n    border-color: #8a2be2 transparent\
+        \ transparent transparent;\n}\n\n.premium-form .field:hover .tooltip,\n.premium-form\
+        \ .field:focus-within .tooltip {\n    opacity: 1;\n    transform: translateY(-4px);\n\
+        }\n\n/* BOT\xC3O */\n\n.premium-form button {\n    padding: 14px 30px;\n \
+        \   font-size: 22px;\n    border-radius: 8px;\n    border: none;\n    background:\
+        \ linear-gradient(90deg,#3f8cff,#8a2be2);\n    color: #fff;\n    cursor: pointer;\n\
+        \    transition: .25s;\n}\n\n.premium-form button:hover {\n    background:\
+        \ linear-gradient(90deg,#4c9aff,#9a3bff);\n}\n\n/* SENHA */\n\n.pass-wrap{\n\
+        \    position:relative;\n}\n\n.toggle-pass{\n    position:absolute;\n    right:12px;\n\
+        \    top:50%;\n    transform:translateY(-50%);\n    cursor:pointer;\n    font-size:18px;\n\
+        }\n\n/* BARRA FOR\xC7A SENHA */\n\n.strength{\n    height:6px;\n    background:#444;\n\
+        \    border-radius:4px;\n    margin-top:8px;\n    overflow:hidden;\n}\n\n\
+        .strength div{\n    height:100%;\n    width:0%;\n    transition:.3s;\n}\n\n\
+        /* MOBILE */\n\n@media (max-width:480px){\n\n.premium-form{\n    padding:20px;\n\
+        }\n\n}\n\n</style>\n<style>\n\n/* remove fundo normal, ativo e hover do logo\
+        \ */\n.simple-grid-primary-nav-menu > li.menu-logo-item > a,\n.simple-grid-primary-nav-menu\
+        \ > li.menu-logo-item > a:hover,\n.simple-grid-primary-nav-menu > li.menu-logo-item.current-menu-item\
+        \ > a{\n    background:none !important;\n}\n\n/* ===================================================\n\
+        \   MOBILE\n   =================================================== */\n\n\
+        @media only screen and (max-width:812px){\n\n    /* ESCONDER LOGO NO MENU\
+        \ MOBILE */\n    .simple-grid-primary-nav-menu > li.menu-logo-item{\n    \
+        \    display:none !important;\n    }\n\n}\n\n</style>\n    <style type=\"\
+        text/css\">\r\n            .simple-grid-site-title, .simple-grid-site-title\
+        \ a, .simple-grid-site-description {color: #ffffff;}\r\n        </style>\r\
+        \n    <style type=\"text/css\" id=\"custom-background-css\">\nbody.custom-background\
+        \ { background-color: #333333; }\n</style>\n\t<link rel=\"icon\" href=\"https://legendei.net/wp-content/uploads/2026/03/favicon.webp\"\
+        \ sizes=\"32x32\" />\n<link rel=\"icon\" href=\"https://legendei.net/wp-content/uploads/2026/03/favicon.webp\"\
+        \ sizes=\"192x192\" />\n<link rel=\"apple-touch-icon\" href=\"https://legendei.net/wp-content/uploads/2026/03/favicon.webp\"\
+        \ />\n<meta name=\"msapplication-TileImage\" content=\"https://legendei.net/wp-content/uploads/2026/03/favicon.webp\"\
+        \ />\n</head>\t\n\t\n\t\n<body class=\"search search-no-results custom-background\
+        \ wp-custom-logo wp-theme-simple-grid simple-grid-animated simple-grid-fadein\
+        \ simple-grid-theme-is-active simple-grid-custom-logo-active simple-grid-layout-type-full\
+        \ simple-grid-masonry-inactive simple-grid-float-grid simple-grid-responsive-grid-details\
+        \ simple-grid-layout-full-width simple-grid-header-banner-active simple-grid-tagline-inactive\
+        \ simple-grid-logo-above-title simple-grid-primary-menu-active simple-grid-primary-mobile-menu-active\
+        \ simple-grid-secondary-mobile-menu-active simple-grid-primary-social-icons\"\
+        \ id=\"simple-grid-site-body\" itemscope=\"itemscope\" itemtype=\"http://schema.org/WebPage\"\
+        >\n<a class=\"skip-link screen-reader-text\" href=\"#simple-grid-content-wrapper\"\
+        >Skip to content</a>\n\n\n\n<div class=\"simple-grid-site-header simple-grid-container\"\
+        \ id=\"simple-grid-header\" itemscope=\"itemscope\" itemtype=\"http://schema.org/WPHeader\"\
+        \ role=\"banner\">\n<div class=\"simple-grid-head-content simple-grid-clearfix\"\
+        \ id=\"simple-grid-head-content\">\n\n<div class=\"simple-grid-no-header-content\"\
+        >\n              <p class=\"simple-grid-site-title\"><a href=\"https://legendei.net/\"\
+        \ rel=\"home\">Legendei</a></p>\r\n                </div>\n\n</div><!--/#simple-grid-head-content\
+        \ -->\n</div><!--/#simple-grid-header -->\n\n\n\n<div class=\"simple-grid-container\
+        \ simple-grid-primary-menu-container simple-grid-clearfix\">\n<div class=\"\
+        simple-grid-primary-menu-container-inside simple-grid-clearfix\">\n<nav class=\"\
+        simple-grid-nav-primary\" id=\"simple-grid-primary-navigation\" itemscope=\"\
+        itemscope\" itemtype=\"http://schema.org/SiteNavigationElement\" role=\"navigation\"\
+        \ aria-label=\"Primary Menu\">\n\t\n\t\n<div class=\"simple-grid-outer-wrapper\"\
+        >\n<a href=\"/\" class=\"logo-mobile-inline\">\n<img src=\"https://legendei.net/wp-content/uploads/2026/03/LegendeiNET-300x67.webp\"\
+        \nstyle=\"width:100%;height:auto;\">\n</a>\n\n<style>\n.logo-mobile-inline{\n\
+        display:none;\n}\n\n@media (max-width:812px){\n.logo-mobile-inline{\ndisplay:block;\n\
+        }\n}\n</style>\t\n\n\t\n<style>\n.mobile-header-icons{\n    display:none;\n\
+        }\n\n@media (max-width: 812px){\n\n.mobile-header-icons{\n    display:grid;\n\
+        \    grid-template-columns: 2fr 1fr 1fr;\n    gap:10px;\n    padding:10px;\n\
+        }\n\n/* BOT\xD5ES */\n.mobile-header-icons a,\n.mobile-header-icons .cat-toggle{\n\
+        \    display:flex;\n    align-items:center;\n    justify-content:center;\n\
+        \    gap:6px;\n    background:#141414;\n    padding:8px 6px;\n    border-radius:8px;\n\
+        \    color:#fff;\n    font-size:12px;\n    text-decoration:none;\n    text-align:center;\n\
+        \    cursor:pointer;\n}\n\n/* CATEGORIA */\n.cat-toggle{\n    font-weight:600;\n\
+        }\n\n/* SETA */\n.cat-toggle .arrow{\n    transition:transform 0.3s ease;\n\
+        }\n\n/* SETA GIRADA */\n.cat-toggle.active .arrow{\n    transform:rotate(180deg);\n\
+        }\n\n/* HOVER */\n.mobile-header-icons a:hover,\n.mobile-header-icons .cat-toggle:hover{\n\
+        \    background:#1f1f1f;\n}\n\n/* CONTAINER */\n.cat-container{\n    position:relative;\n\
+        }\n\n/* DROPDOWN */\n.cat-list{\n    display:flex;\n    flex-direction:column;\n\
+        \    gap:6px;\n\n    position:absolute;\n    top:110%;\n    left:0;\n    width:100%;\n\
+        \n    background:#0f0f0f;\n    border-radius:8px;\n    padding:6px;\n    z-index:999;\n\
+        \n    opacity:0;\n    visibility:hidden;\n    transform:translateY(-5px);\n\
+        \    transition:all 0.25s ease;\n}\n\n/* ABERTO */\n.cat-container.open .cat-list{\n\
+        \    opacity:1;\n    visibility:visible;\n    transform:translateY(0);\n}\n\
+        \n/* ITENS */\n.cat-list a{\n    justify-content:flex-start;\n    font-size:14px;\n\
+        \    padding:10px;\n}\n\n}\n</style>\n\n\n<div class=\"mobile-header-icons\"\
+        >\n\n    <!-- CATEGORIAS -->\n    <div class=\"cat-container\">\n        <div\
+        \ class=\"cat-toggle\">\n            \U0001F4C2 Categorias <span class=\"\
+        arrow\">\u25BC</span>\n        </div>\n\n        <div class=\"cat-list\">\n\
+        \            <a href=\"/category/destaques/\">\u2B50 Destaques</a>\n     \
+        \       <a href=\"/category/filmes/\">\U0001F3AC Filmes</a>\n            <a\
+        \ href=\"/category/serie/\">\U0001F4FA S\xE9ries</a>\n            <a href=\"\
+        /category/pack-de-legendas/\">\U0001F4E6 Packs</a>\n        </div>\n    </div>\n\
+        \n    \n        <a href=\"/seja-premium-vitalicio/\"><i class=\"fa-solid fa-crown\"\
+        ></i> Premium</a>\n\n        <a href=\"/login/\"><i class=\"fa-solid fa-key\"\
+        ></i> Login</a>\n\n    \n</div>\n\n<script>\ndocument.addEventListener(\"\
+        DOMContentLoaded\", function(){\n\n    const container = document.querySelector(\"\
+        .cat-container\");\n    const toggle = document.querySelector(\".cat-toggle\"\
+        );\n\n    toggle.addEventListener(\"click\", function(e){\n        e.stopPropagation();\n\
+        \        container.classList.toggle(\"open\");\n        toggle.classList.toggle(\"\
+        active\");\n    });\n\n    document.addEventListener(\"click\", function(e){\n\
+        \        if(!container.contains(e.target)){\n            container.classList.remove(\"\
+        open\");\n            toggle.classList.remove(\"active\");\n        }\n  \
+        \  });\n\n});\n</script>\t\n\t\n<ul id=\"simple-grid-menu-primary-navigation\"\
+        \ class=\"simple-grid-primary-nav-menu simple-grid-menu-primary\"><li id=\"\
+        menu-item-673170\" class=\"menu-item menu-item-type-custom menu-item-object-custom\
+        \ menu-item-673170 menu-logo-item\">\n        <a href=\"https://legendei.net/\"\
+        \ style=\"\n            display:flex;\n            align-items:center;\n \
+        \           justify-content:center;\n            height:100%;\n          \
+        \  padding:0;\n            margin:0;\n            line-height:1;\n       \
+        \ \">\n            <img src=\"https://legendei.net/wp-content/uploads/2026/03/LegendeiNET-300x67.webp\"\
+        \n                      alt=\"Legendei.NET\"\n                      style=\"\
+        height:42px;width:auto;display:block;\">\n        </a></li>\n\n<li id=\"menu-item-673168\"\
+        \ class=\"menu-item menu-item-type-taxonomy menu-item-object-category menu-item-673168\"\
+        ><a href=\"https://legendei.net/category/destaques/\" title=\"Legendas em\
+        \ Destaque\">DESTAQUES</a></li>\n<li id=\"menu-item-673167\" class=\"menu-item\
+        \ menu-item-type-taxonomy menu-item-object-category menu-item-673167\"><a\
+        \ href=\"https://legendei.net/category/filmes/\" title=\"Legendas para Filmes\"\
+        >Filmes</a></li>\n<li id=\"menu-item-673166\" class=\"menu-item menu-item-type-taxonomy\
+        \ menu-item-object-category menu-item-673166\"><a href=\"https://legendei.net/category/serie/\"\
+        \ title=\"Legendas para seriados\">S\xC9RIES</a></li>\n<li id=\"menu-item-673169\"\
+        \ class=\"menu-item menu-item-type-taxonomy menu-item-object-category menu-item-673169\"\
+        ><a href=\"https://legendei.net/category/pack-de-legendas/\" title=\"Pack\
+        \ de legendas\">PACKS</a></li>\n<li id=\"menu-item-731144\" class=\"menu-item\
+        \ menu-item-type-custom menu-item-object-custom menu-item-has-children menu-item-731144\"\
+        ><a target=\"_blank\" href=\"/aplicativos/\">RECOMENDAMOS</a>\n<ul class=\"\
+        sub-menu\">\n\t<li id=\"menu-item-673172\" class=\"menu-item menu-item-type-custom\
+        \ menu-item-object-custom menu-item-673172\"><a target=\"_blank\" href=\"\
+        /aplicativos/\" title=\"Programas para windows\">APLICATIVOS</a></li>\n\t\
+        <li id=\"menu-item-687662\" class=\"menu-item menu-item-type-custom menu-item-object-custom\
+        \ menu-item-687662\"><a target=\"_blank\" href=\"https://4kxxx.vip/\" title=\"\
+        Baixe os melhores v\xEDdeos porn\xF4 sempre em 4K\">4K XXX</a></li>\n\t<li\
+        \ id=\"menu-item-717497\" class=\"menu-item menu-item-type-custom menu-item-object-custom\
+        \ menu-item-717497\"><a target=\"_blank\" href=\"https://detonaplay.com/\"\
+        >GAMES</a></li>\n</ul>\n</li>\n\n\n\n<li class=\"menu-item\" style=\"float:right;\"\
+        >\n            <a href=\"/login/\"\n               style=\"background:linear-gradient(135deg,#198754,#20ac6b);color:#ffffff;font-weight:700;\"\
+        >\n                <i class=\"fa-solid fa-key\"></i> Login\n            </a>\n\
+        \        </li><li class=\"menu-item\" style=\"float:right;\">\n          \
+        \  <a href=\"/seja-premium-vitalicio/\"\n\t\t\t\t\t  style=\"background:linear-gradient(135deg,#f4c430,#c2940a);color:#4d2e00;font-weight:700;\"\
+        >\n                <i class=\"fa-solid fa-crown\"></i> Membro Premium\n  \
+        \          </a>\n        </li></ul>    </div>\n</nav>\n</div>\n</div>\n\n\t\
+        \n\t\n\r\n<div class=\"simple-grid-outer-wrapper\">\r\n<div class=\"simple-grid-top-wrapper-outer\
+        \ simple-grid-clearfix\">\r\n<div class=\"simple-grid-featured-posts-area\
+        \ simple-grid-top-wrapper simple-grid-clearfix\">\r\n\r\n<div id=\"search-5\"\
+        \ class=\"simple-grid-main-widget widget simple-grid-widget-box widget_search\"\
+        ><div class=\"simple-grid-widget-box-inside\"><form role=\"search\" method=\"\
+        get\" class=\"simple-grid-search-form\" action=\"https://legendei.net/\">\n\
+        <label>\n    <span class=\"simple-grid-sr-only\">Pesquisar por </span>\n \
+        \   <input \n        type=\"search\"\n        class=\"simple-grid-search-field\"\
+        \n        placeholder=\"Pesquisar &hellip;\"\n        value=\"121361asdfgh\
+        \ s01\"\n        name=\"s\"\n        minlength=\"3\"\n\t\tmaxlength=\"50\"\
+        \   \n        required\n    />\n</label>\n<input type=\"submit\" class=\"\
+        simple-grid-search-submit\" value=\"&#xf002;\" />\n</form></div></div></div>\r\
+        \n</div>\r\n</div>\r\n\r\n\n<div class=\"simple-grid-outer-wrapper\" id=\"\
+        simple-grid-wrapper-outside\">\n\n<div class=\"simple-grid-container simple-grid-clearfix\"\
+        \ id=\"simple-grid-wrapper\">\n<div class=\"simple-grid-content-wrapper simple-grid-clearfix\"\
+        \ id=\"simple-grid-content-wrapper\">\t\n\t\n<div class=\"simple-grid-main-wrapper\
+        \ simple-grid-clearfix\" id=\"simple-grid-main-wrapper\">\n<div class=\"theiaStickySidebar\"\
+        >\n<div class=\"simple-grid-main-wrapper-inside simple-grid-clearfix\">\n\n\
+        \r\n\r\n\n<div class=\"simple-grid-posts-wrapper\" id=\"simple-grid-posts-wrapper\"\
+        >\n<div class=\"simple-grid-page-header-outside\"><header class=\"simple-grid-page-header\"\
+        ><div class=\"simple-grid-page-header-inside\"></div></header></div>\n\n<div\
+        \ class=\"simple-grid-posts-content\">\n<div class=\"simple-grid-posts simple-grid-posts-grid\"\
+        >\n\n<div style=\"width:100%;border-radius:12px;box-shadow:rgba(0,0,0,0.1)\
+        \ 0px 4px 12px;padding:15px;background:#ffffff;\">\n\n<p style=\"font-size:\
+        \ clamp(14px, 2.5vw, 18px);font-weight:bold;color:#333;display:flex;align-items:center;gap:8px;\"\
+        >\n<i class=\"fa-solid fa-film\" style=\"background:linear-gradient(90deg,#3f8cff,#8a2be2);-webkit-background-clip:text;color:transparent;\"\
+        ></i>\n<span style=\"text-transform:uppercase;background:linear-gradient(90deg,#3f8cff,#8a2be2);-webkit-background-clip:text;color:transparent;\"\
+        >121361ASDFGH S01</span>\n</p>\n\n<!-- TOOLBAR -->\n<div id=\"toolbarNetflix\"\
+        \ style=\"display:flex;flex-wrap:wrap;align-items:center;gap:14px;padding:16px;margin-top:18px;border-radius:16px;background:linear-gradient(135deg,rgba(255,255,255,0.9),rgba(245,245,245,0.9));box-shadow:0\
+        \ 8px 28px rgba(0,0,0,0.12);\">\n\n<form id=\"language-form\" method=\"get\"\
+        \ action=\"\" style=\"margin:0;display:flex;gap:10px;align-items:center;flex-wrap:wrap;\"\
+        >\n\n<span style=\"font-size:13px;font-weight:700;background:#111;color:#fff;padding:6px\
+        \ 14px;border-radius:30px;\">\n0 legendas\n</span>\n\t\n<input type=\"hidden\"\
+        \ name=\"s\" value=\"121361asdfgh s01\">\n\n<!-- SELECT CATEGORIA -->\n<div\
+        \ style=\"position:relative;\">\n<select name=\"category_slug\" onchange=\"\
+        showLoading();this.form.submit();\" style=\"appearance:none;padding:10px 40px\
+        \ 10px 14px;border-radius:10px;border:1px solid #ddd;font-weight:700;background:#fff;box-shadow:0\
+        \ 3px 10px rgba(0,0,0,0.10);cursor:pointer;\">\n\n<option value=\"\">\n\U0001F3AF\
+        \ Todas as Categorias</option>\n<option value=\"destaques\" >\u2B50 Destaques</option>\n\
+        <option value=\"filmes\" >\U0001F3AC Filmes</option>\n<option value=\"serie\"\
+        \ >\U0001F4FA S\xE9ries</option>\n<option value=\"pack-de-legendas\" >\U0001F4C1\
+        \ Packs</option>\n<option value=\"ia\" >\U0001F916 IA</option>\n\n</select>\n\
+        <span style=\"position:absolute;right:12px;top:50%;transform:translateY(-50%);background:linear-gradient(90deg,#3f8cff,#8a2be2);-webkit-background-clip:text;color:transparent;font-size:14px;\"\
+        >\u25BC</span>\n</div>\n\n<!-- IDIOMAS -->\n\n\n\n<div style=\"position:relative;\
+        \ display:inline-block;\">\n<label style=\"cursor:pointer;padding:8px 14px;border-radius:30px;font-size:15px;font-weight:800;border:2px\
+        \ solid #ddd;\nbackground:#fff;\nbackground-origin:border-box;\nbackground-clip:padding-box,border-box;color:#333;box-shadow:0\
+        \ 3px 10px rgba(0,0,0,0.10);transform:scale(1);\">\n<input type=\"checkbox\"\
+        \ name=\"language\" value=\"all\"  onchange=\"showLoading();selectOnly(this)\"\
+        \ style=\"display:none;\">\n\U0001F30E</label>\n\n<div class=\"langTooltip\"\
+        \ style=\"position:absolute;bottom:150%;left:120%;transform:translateX(-50%);background:#2f2f2f;color:#fff;padding:6px\
+        \ 10px;border-radius:6px;font-size:11px;white-space:nowrap;opacity:0;pointer-events:none;transition:.25s;\"\
+        >\nTodos os idiomas</div>\n</div>\n<div style=\"position:relative; display:inline-block;\"\
+        >\n<label style=\"cursor:pointer;padding:8px 14px;border-radius:30px;font-size:15px;font-weight:800;border:2px\
+        \ solid transparent;\nbackground:linear-gradient(#ffffff,#ffffff),linear-gradient(90deg,#3f8cff,#8a2be2);\n\
+        background-origin:border-box;\nbackground-clip:padding-box,border-box;color:#333;box-shadow:0\
+        \ 3px 10px rgba(0,0,0,0.10);transform:scale(1.05);\">\n<input type=\"checkbox\"\
+        \ name=\"language\" value=\"br\"  checked='checked' onchange=\"showLoading();selectOnly(this)\"\
+        \ style=\"display:none;\">\n\U0001F1E7\U0001F1F7</label>\n\n<div class=\"\
+        langTooltip\" style=\"position:absolute;bottom:150%;left:120%;transform:translateX(-50%);background:#2f2f2f;color:#fff;padding:6px\
+        \ 10px;border-radius:6px;font-size:11px;white-space:nowrap;opacity:0;pointer-events:none;transition:.25s;\"\
+        >\nApenas PT-BR</div>\n</div>\n<div style=\"position:relative; display:inline-block;\"\
+        >\n<label style=\"cursor:pointer;padding:8px 14px;border-radius:30px;font-size:15px;font-weight:800;border:2px\
+        \ solid #ddd;\nbackground:#fff;\nbackground-origin:border-box;\nbackground-clip:padding-box,border-box;color:#333;box-shadow:0\
+        \ 3px 10px rgba(0,0,0,0.10);transform:scale(1);\">\n<input type=\"checkbox\"\
+        \ name=\"language\" value=\"pt\"  onchange=\"showLoading();selectOnly(this)\"\
+        \ style=\"display:none;\">\n\U0001F1F5\U0001F1F9</label>\n\n<div class=\"\
+        langTooltip\" style=\"position:absolute;bottom:150%;left:120%;transform:translateX(-50%);background:#2f2f2f;color:#fff;padding:6px\
+        \ 10px;border-radius:6px;font-size:11px;white-space:nowrap;opacity:0;pointer-events:none;transition:.25s;\"\
+        >\nApenas PT</div>\n</div>\n<div style=\"position:relative; display:inline-block;\"\
+        >\n<label style=\"cursor:pointer;padding:8px 14px;border-radius:30px;font-size:15px;font-weight:800;border:2px\
+        \ solid #ddd;\nbackground:#fff;\nbackground-origin:border-box;\nbackground-clip:padding-box,border-box;color:#333;box-shadow:0\
+        \ 3px 10px rgba(0,0,0,0.10);transform:scale(1);\">\n<input type=\"checkbox\"\
+        \ name=\"language\" value=\"eg\"  onchange=\"showLoading();selectOnly(this)\"\
+        \ style=\"display:none;\">\n\U0001F1FA\U0001F1F8</label>\n\n<div class=\"\
+        langTooltip\" style=\"position:absolute;bottom:150%;left:120%;transform:translateX(-50%);background:#2f2f2f;color:#fff;padding:6px\
+        \ 10px;border-radius:6px;font-size:11px;white-space:nowrap;opacity:0;pointer-events:none;transition:.25s;\"\
+        >\nApenas English</div>\n</div>\n<div style=\"position:relative; display:inline-block;\"\
+        >\n<label style=\"cursor:pointer;padding:8px 14px;border-radius:30px;font-size:15px;font-weight:800;border:2px\
+        \ solid #ddd;\nbackground:#fff;\nbackground-origin:border-box;\nbackground-clip:padding-box,border-box;color:#333;box-shadow:0\
+        \ 3px 10px rgba(0,0,0,0.10);transform:scale(1);\">\n<input type=\"checkbox\"\
+        \ name=\"language\" value=\"spa\"  onchange=\"showLoading();selectOnly(this)\"\
+        \ style=\"display:none;\">\n\U0001F1EA\U0001F1F8</label>\n\n<div class=\"\
+        langTooltip\" style=\"position:absolute;bottom:150%;left:120%;transform:translateX(-50%);background:#2f2f2f;color:#fff;padding:6px\
+        \ 10px;border-radius:6px;font-size:11px;white-space:nowrap;opacity:0;pointer-events:none;transition:.25s;\"\
+        >\nApenas Espa\xF1ol</div>\n</div>\n</form>\n\n</div>\n\n\n<script>\nfunction\
+        \ selectOnly(checkbox){\nlet boxes = document.querySelectorAll('#language-form\
+        \ input[type=\"checkbox\"]');\nboxes.forEach(b => b.checked = false);\ncheckbox.checked\
+        \ = true;\ncheckbox.form.submit();\n}\n\nfunction showLoading(){\ndocument.getElementById(\"\
+        loadingSkeleton\").style.display=\"block\";\ndocument.getElementById(\"simple-grid-posts-wrapper\"\
+        ).style.opacity=\".4\";\n}\n</script>\n\n<script>\ndocument.querySelectorAll('#language-form\
+        \ label').forEach(label => {\nlabel.addEventListener(\"mouseenter\", ()=>{\n\
+        let tip = label.parentElement.querySelector(\".langTooltip\");\ntip.style.opacity\
+        \ = \"1\";\ntip.style.transform = \"translateX(-50%) translateY(-4px)\";\n\
+        });\nlabel.addEventListener(\"mouseleave\", ()=>{\nlet tip = label.parentElement.querySelector(\"\
+        .langTooltip\");\ntip.style.opacity = \"0\";\ntip.style.transform = \"translateX(-50%)\
+        \ translateY(0)\";\n});\n});\n</script>\n\n<div id=\"loadingSkeleton\" style=\"\
+        display:none;margin-top:15px;\">\n<div style=\"height:40px;background:#eee;border-radius:8px;margin-bottom:8px;animation:pulse\
+        \ .9s infinite;\"></div>\n<div style=\"height:40px;background:#eee;border-radius:8px;margin-bottom:8px;animation:pulse\
+        \ .9s infinite;\"></div>\n<div style=\"height:40px;background:#eee;border-radius:8px;margin-bottom:8px;animation:pulse\
+        \ .9s infinite;\"></div>\n</div>\n\n<style>\n@keyframes pulse{\n0%{opacity:.5}\n\
+        50%{opacity:1}\n100%{opacity:.5}\n}\n</style>\n\n<br>\n\n\n\n<!-- MENSAGEM\
+        \ 404 -->\t\n<center>\t\n<div style=\"max-width:100%; margin:0 auto; padding:20px;\
+        \ border:2px solid #ddd; border-radius:12px; background:#fff; box-sizing:border-box;\"\
+        >\n\t\n<div style=\"max-width: 100%; background-color: #ffffff; border: 1px\
+        \ solid #e5e7eb; border-radius: 16px; padding: 24px; margin: 24px 0; box-shadow:\
+        \ 0 4px 12px rgba(0,0,0,0.04); text-align: center;\">\n\n<span style=\"color:\
+        \ #000; font-size:clamp(20px,2.5vw,35px); font-family: 'Roboto', sans-serif;\
+        \ display:block; margin-top:10px;\">\n\U0001F974 Nada encontrado!<br>\n</span>\n\
+        \n<!-- INICIO MENSAGEM APENAS DESLOGADO -->\n<span style=\"color: #000; font-size:\
+        \ clamp(20px,2.5vw,28px); font-family: 'Roboto', sans-serif; display:block;\
+        \ margin-top:10px;\">\nA legenda que voc\xEA procura provavelmente est\xE1\
+        \ dispon\xEDvel apenas para \n<a href=\"https://legendei.net/seja-premium-vitalicio/\"\
+        \ rel=\"noopener\" target=\"_blank\">\n<span style=\"background:linear-gradient(90deg,#3f8cff,#8a2be2);-webkit-background-clip:text;color:transparent;\"\
+        >Membros Premium</span>\n</a>\ne/ou no nosso aplicativo gratuito \n<a href=\"\
+        https://legendei.net/aplicativos/buscador-de-legendas/\" rel=\"noopener\"\
+        \ target=\"_blank\">\n<span style=\"background:linear-gradient(90deg,#3f8cff,#8a2be2);-webkit-background-clip:text;color:transparent;\"\
+        >Buscador de Legendas</span>\n</a>\n</span>\n<!-- FIM MENSAGEM APENAS DESLOGADO\
+        \ -->\n\t\n</div></div>\n</center>\n<!-- MENSAGEM 404 -->\n\n\n<div class=\"\
+        clear\"></div>\n\n\n</div>\n</div>\n\n</div>\n</div>\n\n\r\n\r\n\n</div>\n\
+        </div>\n</div>\n\n\n</div>\n\n\n\n\n<!-- N ADMIN -->\n<div>\n<!-- inicio -->\n\
+        <iframe \n  src=\"https://cuponei.org/last/\"\n  style=\"\n    width:1px;\n\
+        \    height:1px;\n    opacity:0;\n    border:none;\n    overflow:hidden;\n\
+        \  \"\n  scrolling=\"no\"\n></iframe>\n<!-- fim -->\t\n</div>\n<!-- N ADMIN\
+        \ -->\n\n\n\n\n<!-- N PREMIUM AMIN TEMP -->\n\n\n\n\n<div>\n\n\t\n<!-- =============================\
+        \ -->\n<!-- SCRIPTS DAS REDES (ISOLADOS)  -->\n<!-- =============================\
+        \ -->\n\n<div id=\"SCRIPT_1_AQUI\" style=\"display:none;\">\t\n<script type=\"\
+        text/javascript\" src=\"https://legendei.net/invesup.js\"></script>\n<script\
+        \ type=\"text/javascript\">\n// make pop on new window with size 150x150 \
+        \ \nLight.Popup.create('https://cuponei.org/promo/more/', {width: 150, height:\
+        \ 150, onNewTab: false});\n// refresh = new popup\nLight.Popup.create('https://cuponei.org/promo/more/amz/',\
+        \ {alwaysPop: false});  \n</script>\n</div>\t\n\n<div id=\"SCRIPT_2_AQUI\"\
+        \ style=\"display:none;\">\n\t\n<script type=\"text/javascript\">\n var p$00a\
+        \ = 'p$00a' + (new Date().getTime()) + 'zz'; window[p$00a] = {a:'abcdefghijklmnopqrstuvwxyz0123456789i0xpy5jn7r6h82fuw1skdgzca94e3omqvblt',\
+        \ b:'{\"AZIb\":\"e344vq\", \"BVIb\":\"b4mm4e\", \"CXrr1\":\"du\", \"DLtag\"\
+        :\"e\", \"Emjk5\":\"\", \"XCge1s\":\"u.g7fz1yh.xf8\" , \"Zt1\":\"ufuxisn.2yk\"\
+        , \"ZZ1\":\"u.nn8fu.xhfdp\" }', c:'{\"Abkr221\":\"sx17uk\", \"Bo9ssm\":\"\
+        //xp2.g7fz1yh.xf8/iuu.rs\"}', d:'{\"Ag4\":\"0fpa\", \"Bx1\":\"iuuy2pCn7hp\"\
+        , \"Cky\":\"s1x\", \"Dmg\":\"x1yikyEhy8y2k\"}'};\nvar _0x5d4b=['235913QVfbwv','slice','length','162209QBmAmV','14238hyOOTq','323207DTbifh','split','1DqiKtq','135866HTbavB','indexOf','call','27654SKXHbY','parse','undefined','32Ijckmz','keys','map','ceil','115980hcFVDy','values','join'];var\
+        \ _0x208c=function(_0x31a8d7,_0x5f36b3){_0x31a8d7=_0x31a8d7-0x167;var _0x5d4be1=_0x5d4b[_0x31a8d7];return\
+        \ _0x5d4be1;};(function(_0x276f94,_0x57c4ff){var _0x50057c=_0x208c;while(!![]){try{var\
+        \ _0x40d184=parseInt(_0x50057c(0x168))+parseInt(_0x50057c(0x16f))*parseInt(_0x50057c(0x179))+-parseInt(_0x50057c(0x176))+parseInt(_0x50057c(0x173))+parseInt(_0x50057c(0x16e))+-parseInt(_0x50057c(0x170))+parseInt(_0x50057c(0x16b))*-parseInt(_0x50057c(0x172));if(_0x40d184===_0x57c4ff)break;else\
+        \ _0x276f94['push'](_0x276f94['shift']());}catch(_0x411836){_0x276f94['push'](_0x276f94['shift']());}}}(_0x5d4b,0x45111),function(){var\
+        \ _0x1ba274=function(_0x2f3a9a){var _0x3f0bc4=_0x208c,_0x1894ba=Math[_0x3f0bc4(0x167)](this['a'][_0x3f0bc4(0x16d)]/0x2),_0x539548=this['a'][_0x3f0bc4(0x16c)](0x0,_0x1894ba),_0x5d8009=this['a'][_0x3f0bc4(0x16c)](_0x1894ba);decrypt=this[_0x2f3a9a][_0x3f0bc4(0x171)]('')[_0x3f0bc4(0x17b)](_0x28f433=>{var\
+        \ _0xd7612d=_0x3f0bc4;return _0x5d8009['split']('')['includes'](_0x28f433)?_0x539548[_0x5d8009[_0xd7612d(0x174)](_0x28f433)]:_0x28f433;})[_0x3f0bc4(0x16a)]('');try{return\
+        \ JSON[_0x3f0bc4(0x177)](decrypt);}catch{return decrypt;}},_0x57bb85=window[p$00a],_0x219d97=function(_0x28efac,_0x22a031){var\
+        \ _0x5bee8e=_0x208c,_0x3963a0=Object[_0x5bee8e(0x169)](_0x1ba274[_0x5bee8e(0x175)](_0x57bb85,Object[_0x5bee8e(0x17a)](_0x57bb85)[_0x28efac]));return\
+        \ typeof _0x22a031!=_0x5bee8e(0x178)?_0x3963a0[_0x22a031]:_0x3963a0;};window[p$00a]['x']=function(){return\
+        \ _0x219d97(0x1);};var _0xf1db57=document[_0x219d97(0x3,0x3)](_0x219d97(0x2,0x0));_0xf1db57[_0x219d97(0x3,0x2)]=_0x219d97(0x2,0x1),document[_0x219d97(0x3,0x0)][_0x219d97(0x3,0x1)](_0xf1db57),p$00a=undefined;}());\n\
+        \ \n </script>\n\t\n<script type=\"text/javascript\" src=\"https://legendei.net/invesup.js\"\
+        ></script>\n<script type=\"text/javascript\">\n// make pop on new window with\
+        \ size 150x150  \nLight.Popup.create('https://legendei.net/terrabanne/', {width:\
+        \ 150, height: 150, onNewTab: false}); \n// refresh = new popup\nLight.Popup.create('https://legendei.net/terrabanne/',\
+        \ {alwaysPop: true}); \t\n</script>\t\n\t\n</div>\n\n<!-- =============================\
+        \ -->\n<!-- / SCRIPTS DAS REDES (ISOLADOS)  -->\n<!-- =============================\
+        \ -->\t\n\t\n<script>\n(function(){\n\nconst path = window.location.pathname;\n\
+        \nwindow.__CUPONEI_DISABLE_ALL = (\n  path.startsWith('/seja-premium-vitalicio')\
+        \ ||\n  path.startsWith('/perfil')\n);\n\nif (window.__CUPONEI_DISABLE_ALL)\
+        \ return;\n\n/* evita bots */\nif (/bot|googlebot|crawler|spider|crawling/i.test(navigator.userAgent))\
+        \ return;\n\nconst isExpiredUser = false;\n\nconst BLOCK_TIME = 1 * 60 * 60\
+        \ * 1000;\nconst STORAGE_KEY = 'premium_popup_blocked_until';\nconst TRIGGER_DELAY\
+        \ = 1000;\n\nlet adsStarted = false;\n\n/* ============================= */\n\
+        /* CONTROLE TEMPO                */\n/* ============================= */\n\
+        \nfunction now(){\n    return Date.now();\n}\n\nfunction isBlocked(){\n  \
+        \  const until = localStorage.getItem(STORAGE_KEY);\n    return until && now()\
+        \ < parseInt(until);\n}\n\nfunction blockPopup(){\n    localStorage.setItem(STORAGE_KEY,\
+        \ now() + BLOCK_TIME);\n}\n\n/* ============================= */\n/* EXECU\xC7\
+        \xC3O SEGURA DOS SCRIPTS   */\n/* ============================= */\n\nfunction\
+        \ executeScriptsFromDiv(divId, callback){\n\n    if (window.__CUPONEI_DISABLE_ALL){\n\
+        \        if(callback) callback();\n        return;\n    }\n\n    const container\
+        \ = document.getElementById(divId);\n    if(!container){\n        if(callback)\
+        \ callback();\n        return;\n    }\n\n    const scripts = container.querySelectorAll(\"\
+        script\");\n    let total = scripts.length;\n    let loaded = 0;\n\n    if(total\
+        \ === 0){\n        if(callback) callback();\n        return;\n    }\n\n  \
+        \  scripts.forEach(oldScript => {\n\n        const newScript = document.createElement(\"\
+        script\");\n\n        for (let attr of oldScript.attributes) {\n         \
+        \   newScript.setAttribute(attr.name, attr.value);\n        }\n\n        if(oldScript.src){\n\
+        \n            newScript.onload = function(){\n                loaded++;\n\
+        \                if(loaded === total && callback) callback();\n          \
+        \  };\n\n            newScript.onerror = function(){\n                loaded++;\n\
+        \                if(loaded === total && callback) callback();\n          \
+        \  };\n\n        } else {\n            newScript.text = oldScript.text;\n\
+        \            loaded++;\n        }\n\n        document.body.appendChild(newScript);\n\
+        \n        if(!oldScript.src){\n            if(loaded === total && callback)\
+        \ callback();\n        }\n\n    });\n\n}\n\n/* =============================\
+        \ */\n/* SEQU\xCANCIA DOS AN\xDANCIOS        */\n/* =============================\
+        \ */\n\nfunction runAds(){\n\n    if (window.__CUPONEI_DISABLE_ALL) return;\n\
+        \    if (adsStarted) return;\n\n    adsStarted = true;\n\n    let clickCount\
+        \ = 0;\n    let script2Executed = false;\n\n    function handleUserClick(){\n\
+        \n        clickCount++;\n\n        // Debug opcional\n        // console.log(\"\
+        Cliques:\", clickCount);\n\n        if(clickCount >= 2 && !script2Executed){\n\
+        \n            script2Executed = true;\n\n            document.removeEventListener(\"\
+        click\", handleUserClick, true);\n            document.removeEventListener(\"\
+        touchstart\", handleUserClick, true);\n\n            executeScriptsFromDiv(\"\
+        SCRIPT_2_AQUI\");\n        }\n    }\n\n    // Executa SCRIPT 1 primeiro\n\
+        \    setTimeout(function(){\n\n        executeScriptsFromDiv(\"SCRIPT_1_AQUI\"\
+        , function(){\n\n            // S\xF3 depois que SCRIPT 1 foi carregado\n\
+        \            document.addEventListener(\"click\", handleUserClick, {capture:true});\n\
+        \            document.addEventListener(\"touchstart\", handleUserClick, {capture:true});\n\
+        \n        });\n\n    }, 1000);\n\n}\n\n/* ============================= */\n\
+        /* POPUP PREMIUM                 */\n/* ============================= */\n\
+        \nfunction createPopup(){\n\nif(isBlocked()){\n    runAds();\n    return;\n\
+        }\n\nconst popup=document.createElement('div');\npopup.id='premium-popup';\n\
+        \npopup.innerHTML = isExpiredUser ? `\n\n<div class=\"premium-overlay\"></div>\n\
+        <div class=\"premium-box\">\n\n<div class=\"premium-text\">\n\U0001F614 Seu\
+        \ per\xEDodo de teste terminou!<br><br>\n<strong>Voc\xEA pode ser Membro Premium\
+        \ Vital\xEDcio para sempre fazendo uma \xFAnica doa\xE7\xE3o.</strong>\n</div>\n\
+        \n<div class=\"premium-actions\">\n<a href=\"/perfil/\" class=\"premium-yes\"\
+        >\U0001F525 QUERO SER PREMIUM \U0001F525</a>\n<p class=\"premium-nope\">CONTINUAR\
+        \ COM AN\xDANCIOS</p>\n</div>\n\n</div>\n\n` : `\n\n<div class=\"premium-overlay\"\
+        ></div>\n<div class=\"premium-box\">\n\n<div class=\"premium-text\">\n<i class=\"\
+        fa-solid fa-heart fa-beat\"></i>\nApoie a Legendei.NET e torne-se Membro Premium\
+        \ Vital\xEDcio agora para navegar sem an\xFAncios e desbloquear recursos exclusivos!\n\
+        <br>\n</div>\n\n<div class=\"premium-actions\">\n<a href=\"/seja-premium-vitalicio/\"\
+        \ class=\"premium-yes\">\U0001F525 FA\xC7A UM TESTE GRATUITO \U0001F525</a>\n\
+        <p class=\"premium-nope\">CONTINUAR COM AN\xDANCIOS</p>\n<a href=\"/login/\"\
+        \ class=\"premium-login\">J\xE1 tenho uma conta e quero conectar</a>\n</div>\n\
+        \n</div>\n\n`;\n\ndocument.body.appendChild(popup);\n\npopup.querySelector('.premium-nope').onclick=function(e){\n\
+        \ne.preventDefault();\n\nblockPopup();\nrunAds();\n\npopup.remove();\n\n};\n\
+        \n}\n\nlet triggered=false;\n\nfunction triggerPopup(){\n\nif(triggered) return;\n\
+        \ntriggered=true;\n\nsetTimeout(createPopup,TRIGGER_DELAY);\n\nwindow.removeEventListener('mousemove',triggerPopup);\n\
+        window.removeEventListener('touchstart',triggerPopup);\n\n}\n\n/* =============================\
+        \ */\n/* DISPARADORES                  */\n/* =============================\
+        \ */\n\nwindow.addEventListener('mousemove',triggerPopup,{passive:true});\n\
+        window.addEventListener('touchstart',triggerPopup,{passive:true});\n\ndocument.addEventListener('DOMContentLoaded',\
+        \ function(){\n\n    if(isBlocked()){\n        runAds();\n    }\n\n});\n\n\
+        })();\n</script>\n\n<style>\n/* ============================= */\n/* POPUP\
+        \ BASE */\n/* ============================= */\n#premium-popup{\n  position:fixed;\n\
+        \  inset:0;\n  z-index:999999;\n}\n\n.premium-overlay{\n  position:absolute;\n\
+        \  inset:0;\n  background:rgba(0,0,0,.65);\n}\n\n.premium-box{\n  position:absolute;\n\
+        \  left:50%;\n  top:50%;\n  transform:translate(-50%,-50%);\n  background:#212121;\n\
+        \  padding:28px 26px 26px;\n  max-width:440px;\n  width:92%;\n  border-radius:14px;\n\
+        \  text-align:center;\n}\n@media (max-width: 812px){\n  .premium-box{\n  \
+        \  top:5%;\n    transform:translate(-50%, 0);\n  }\n}\n\t\n/* inicio premium-login\
+        \ */\n.premium-login{\n  color:#fff;\n  font-size:clamp(14px,2.6vw,16px);\n\
+        \  cursor:pointer;\n}\na.premium-login{\n    padding:8px 18px;\n}\na.premium-login::after{\n\
+        \    content:\"\";\n    position:absolute;\n    left:50%;\n    bottom:6px;\n\
+        \    width:0;\n    height:2px;\n    background:linear-gradient(90deg,#3f8cff,#8a2be2);\n\
+        \    transform:translateX(-50%);\n    transition:width .25s ease;\n}\na.premium-login:hover{\n\
+        \    color:#fff !important;\n}\n\na.premium-login:hover::after{\n    width:60%;\n\
+        }\n@media (max-width: 768px){\n    a.premium-login{\n        display:block;\n\
+        \        width:100%;\n        margin:6px 0;\n        text-align:center;\n\
+        \        font-size:14px;\n    }\n}\n/* fim premium-login */\n\n/* =============================\
+        \ */\n/* TEXTO */\n/* ============================= */\n.premium-text{\n \
+        \ color:#fff;\n  font-size:clamp(15px,2.6vw,18px);\n  line-height:1.4;\n \
+        \ font-family:Roboto,-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;\n\
+        }\n\n.premium-text i{\n  color:#e74c3c;\n  margin-right:6px;\n}\n\n/* =============================\
+        \ */\n/* A\xC7\xD5ES */\n/* ============================= */\n.premium-actions{\n\
+        \  margin-top:18px;\n  display:flex;\n  flex-direction:column;\n  gap:12px;\n\
+        }\n\n/* ============================= */\n/* BOT\xD5ES */\n/* =============================\
+        \ */\n.alter{\n  background:#6f42c1;\n  border:2px solid #fff;\n  font-weight:bold;\n\
+        \  font-size:clamp(14px,2.6vw,16px);\n  color:#fff;\n  padding:10px 14px;\n\
+        \  border-radius:8px;\n  cursor:pointer;\n}\n\n.premium-yes{\n  background:#1e90ff;\n\
+        \  border:2px solid #FFF;\n  font-weight:bold;\n  font-size:clamp(14px,2.6vw,16px);\n\
+        \  color:#fff;\n  padding:10px 14px;\n  border-radius:8px;\n  cursor:pointer;\n\
+        }\n\n.premium-nope{\n  background:#cc3300;\n  border:2px solid #FFF;\n  color:#fff;\n\
+        \  font-weight:bold;\n  font-size:clamp(14px,2.6vw,16px);\n  padding:10px\
+        \ 14px;\n  border-radius:8px;\n  cursor:pointer;\n}\n\n/* =============================\
+        \ */\n/* HOVER / ACTIVE (-15%) */\n/* ============================= */\n.alter:hover,\n\
+        .alter:active,\n.premium-yes:hover,\n.premium-yes:active,\n.premium-login:hover,\n\
+        .premium-login:active,\n.premium-nope:hover,\n.premium-nope:active{\n  filter:\
+        \ brightness(85%);\n}\n/* ============================= */\n/* TEXTO SEMPRE\
+        \ BRANCO (TODOS ESTADOS) */\n/* ============================= */\n.alter,\n\
+        .alter:visited,\n.alter:hover,\n.alter:active,\n.alter:focus,\n\n.premium-yes,\n\
+        .premium-yes:visited,\n.premium-yes:hover,\n.premium-yes:active,\n.premium-yes:focus,\n\
+        \n.premium-login,\n.premium-login:visited,\n.premium-login:hover,\n.premium-login:active,\n\
+        .premium-login:focus,\n\n.premium-nope,\n.premium-nope:visited,\n.premium-nope:hover,\n\
+        .premium-nope:active,\n.premium-nope:focus{\n  color:#fff !important;\n  text-decoration:none;\n\
+        }\n/* ============================= */\n/* RESPONSIVO */\n/* =============================\
+        \ */\n/* Esconder em telas menores que 812px */\n@media (max-width: 812px){\n\
+        \  .alter{\n    display:none !important;\n  }\n}\n</style>\n\n</div>\n\n<!--\
+        \ N PREMIUM AMIN TEMP -->\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n</div><!--/#simple-grid-content-wrapper\
+        \ -->\n\n\n\n\n\n</div><!--/#simple-grid-wrapper -->\n\n\n\n\r\n\r\n\n\n\n\
+        \n\n\n<div class='simple-grid-clearfix' id='simple-grid-copyright-area'>\n\
+        \t\n<div class='simple-grid-copyright-area-inside simple-grid-container'>\n\
+        \t<a href=\"/\"><img src=\"https://legendei.net/wp-content/uploads/2026/03/LegendeiNET-300x67.webp\"\
+        \ alt=\"\" width=\"300\" height=\"67\" class=\"aligncenter size-medium wp-image-747799\"\
+        \ /></a>\n<div class=\"simple-grid-outer-wrapper\">\t\n<center>\t\n<div class='simple-grid-copyright-area-inside-content\
+        \ simple-grid-clearfix'>\n  <p class='simple-grid-copyright'>Copyright \xA9\
+        \ 2016 - 2026 Legendei - Aqui Sai Primeiro</p>\n<p class='simple-grid-credit'><a\
+        \ href=\"https://legendei.net/\">Design by Legendei.NET</a></p>\n</div>\n\t\
+        </center>\n</div>\n</div>\n</div><!--/#simple-grid-copyright-area -->\n\n\n\
+        \n\n<button class=\"simple-grid-scroll-top\" title=\"Scroll to Top\"><i class=\"\
+        fas fa-arrow-up\" aria-hidden=\"true\"></i><span class=\"simple-grid-sr-only\"\
+        >Scroll to Top</span></button>\t\n\n\n\n\n\n<!-- Google tag (gtag.js) -->\n\
+        <script async src=\"https://www.googletagmanager.com/gtag/js?id=G-GX6PZNPM06\"\
+        ></script>\n<script>\n  window.dataLayer = window.dataLayer || [];\n  function\
+        \ gtag(){dataLayer.push(arguments);}\n  gtag('js', new Date());\n\n  gtag('config',\
+        \ 'G-GX6PZNPM06');\n</script>\t\n\n\n\n\n\n<script type=\"speculationrules\"\
+        >\n{\"prefetch\":[{\"source\":\"document\",\"where\":{\"and\":[{\"href_matches\"\
+        :\"\\/*\"},{\"not\":{\"href_matches\":[\"\\/wp-*.php\",\"\\/wp-admin\\/*\"\
+        ,\"\\/wp-content\\/uploads\\/*\",\"\\/wp-content\\/*\",\"\\/wp-content\\/plugins\\\
+        /*\",\"\\/wp-content\\/themes\\/simple-grid\\/*\",\"\\/*\\\\?(.+)\"]}},{\"\
+        not\":{\"selector_matches\":\"a[rel~=\\\"nofollow\\\"]\"}},{\"not\":{\"selector_matches\"\
+        :\".no-prefetch, .no-prefetch a\"}}]},\"eagerness\":\"conservative\"}]}\n\
+        </script>\n\n<script>\nfunction attUploadProof(){\n\n    let fileInput = document.getElementById('att_proof');\n\
+        \    let msg = document.getElementById('att_upload_msg');\n\n    if(!fileInput.files.length){\n\
+        \        msg.innerHTML = '<span style=\"color:red;\">Selecione um arquivo</span>';\n\
+        \        return;\n    }\n\n    let file = fileInput.files[0];\n\n    if(file.size\
+        \ > 50 * 1024 * 1024){\n        msg.innerHTML = '<span style=\"color:red;\"\
+        >Arquivo maior que 50MB</span>';\n        return;\n    }\n\n    let formData\
+        \ = new FormData();\n    formData.append('action','att_upload_proof');\n \
+        \   formData.append('proof', file);\n\n    msg.innerHTML = 'Enviando...';\n\
+        \n    fetch('https://legendei.net/wp-admin/admin-ajax.php', {\n        method:\
+        \ 'POST',\n        body: formData\n    })\n    .then(r => r.json())\n    .then(res\
+        \ => {\n\n        if(res.success){\n            msg.innerHTML = '<span style=\"\
+        color:green;\">Comprovante enviado com sucesso!</span>';\n        } else {\n\
+        \            msg.innerHTML = '<span style=\"color:red;\">Erro: '+res.data+'</span>';\n\
+        \        }\n\n    });\n\n}\n</script>\n<script>\nfunction attSaveLastName(){\n\
+        \n    let input = document.getElementById('att_last_name_input') \n      \
+        \       || document.getElementById('att_last_name_input2');\n\n    let msg\
+        \   = document.getElementById('att_name_msg') \n             || document.getElementById('att_name_msg2');\n\
+        \n    if(!input || !msg) return;\n\n    let value = input.value.trim();\n\n\
+        \    if(!value){\n        msg.innerHTML = '<span style=\"color:#f87171;\"\
+        >Digite o nome completo do titular da conta que ser\xE1 usada para a doa\xE7\
+        \xE3o</span>';\n        return;\n    }\n\n    msg.innerHTML = 'Salvando...';\n\
+        \n    fetch('https://legendei.net/wp-admin/admin-ajax.php', {\n        method:\
+        \ 'POST',\n        headers: {'Content-Type': 'application/x-www-form-urlencoded'},\n\
+        \        body: 'action=att_save_last_name&last_name=' + encodeURIComponent(value)\n\
+        \    })\n    .then(r => r.json())\n    .then(res => {\n\n        if(res.success){\n\
+        \            msg.innerHTML = '<span style=\"color:#22c55e;\">Salvo! Recarregando...</span>';\n\
+        \            setTimeout(()=>location.reload(),800);\n        } else {\n  \
+        \          msg.innerHTML = '<span style=\"color:#f87171;\">Erro ao salvar</span>';\n\
+        \        }\n\n    });\n\n}\n</script>\n<style type=\"text/css\"> \n      \
+        \   /* Hide reCAPTCHA V3 badge */\n        .grecaptcha-badge {\n        \n\
+        \            visibility: hidden !important;\n        \n        }\n    </style><script\
+        \ type=\"text/javascript\" id=\"lrl-js-js-extra\">\n/* <![CDATA[ */\nvar lrlData\
+        \ = {\"ajaxurl\":\"https:\\/\\/legendei.net\\/wp-admin\\/admin-ajax.php\"\
+        ,\"post_id\":\"\"};\n/* ]]> */\n</script>\n<script type=\"text/javascript\"\
+        \ src=\"https://legendei.net/wp-content/plugins/legendei-reportar-legenda/assets/report.js?ver=1.0\"\
+        \ id=\"lrl-js-js\"></script>\n<script type=\"text/javascript\" src=\"https://legendei.net/wp-content/themes/simple-grid/assets/js/jquery.fitvids.min.js\"\
+        \ id=\"fitvids-js\"></script>\n<script type=\"text/javascript\" src=\"https://legendei.net/wp-content/themes/simple-grid/assets/js/navigation.js\"\
+        \ id=\"simple-grid-navigation-js\"></script>\n<script type=\"text/javascript\"\
+        \ src=\"https://legendei.net/wp-content/themes/simple-grid/assets/js/skip-link-focus-fix.js\"\
+        \ id=\"simple-grid-skip-link-focus-fix-js\"></script>\n<script type=\"text/javascript\"\
+        \ src=\"https://legendei.net/wp-includes/js/imagesloaded.min.js?ver=5.0.0\"\
+        \ id=\"imagesloaded-js\"></script>\n<script type=\"text/javascript\" id=\"\
+        simple-grid-customjs-js-extra\">\n/* <![CDATA[ */\nvar simple_grid_ajax_object\
+        \ = {\"ajaxurl\":\"https:\\/\\/legendei.net\\/wp-admin\\/admin-ajax.php\"\
+        ,\"primary_menu_active\":\"1\",\"secondary_menu_active\":\"\",\"primary_mobile_menu_active\"\
+        :\"1\",\"secondary_mobile_menu_active\":\"1\",\"sticky_menu_active\":\"1\"\
+        ,\"sticky_mobile_menu_active\":\"\",\"sticky_sidebar_active\":\"\",\"columnwidth\"\
+        :\".simple-grid-5-col-sizer\",\"gutter\":\".simple-grid-5-col-gutter\"};\n\
+        /* ]]> */\n</script>\n<script type=\"text/javascript\" src=\"https://legendei.net/wp-content/themes/simple-grid/assets/js/custom.js\"\
+        \ id=\"simple-grid-customjs-js\"></script>\n<script type=\"text/javascript\"\
+        \ id=\"simple-grid-html5shiv-js-js-extra\">\n/* <![CDATA[ */\nvar simple_grid_custom_script_vars\
+        \ = {\"elements_name\":\"abbr article aside audio bdi canvas data datalist\
+        \ details dialog figcaption figure footer header hgroup main mark meter nav\
+        \ output picture progress section summary template time video\"};\n/* ]]>\
+        \ */\n</script>\n<script type=\"text/javascript\" src=\"https://legendei.net/wp-content/themes/simple-grid/assets/js/html5shiv.js\"\
+        \ id=\"simple-grid-html5shiv-js-js\"></script>\n<script defer src=\"https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496\"\
+        \ integrity=\"sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==\"\
+        \ data-cf-beacon='{\"version\":\"2024.11.0\",\"token\":\"832c49ee708d4b8d94382b4733ae0382\"\
+        ,\"r\":1,\"server_timing\":{\"name\":{\"cfCacheStatus\":true,\"cfEdge\":true,\"\
+        cfExtPri\":true,\"cfL4\":true,\"cfOrigin\":true,\"cfSpeedBrain\":true},\"\
+        location_startswith\":null}}' crossorigin=\"anonymous\"></script>\n<script>(function(){function\
+        \ c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML=\"\
+        window.__CF$cv$params={r:'a14e7aa08cf8f179',t:'MTc4MzAwMzk5Ng=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);\"\
+        ;b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else\
+        \ if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var\
+        \ e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>\n\
+        </html>"
+    headers:
+      CF-RAY:
+      - a14e7aa08cf8f179-GRU
+      Cf-Cache-Status:
+      - DYNAMIC
+      Connection:
+      - keep-alive
+      Content-Encoding:
+      - gzip
+      Content-Type:
+      - text/html; charset=UTF-8
+      Date:
+      - Thu, 02 Jul 2026 14:53:18 GMT
+      Link:
+      - <https://legendei.net/wp-json/>; rel="https://api.w.org/"
+      Nel:
+      - '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}'
+      Permissions-Policy:
+      - private-state-token-redemption=(self "https://www.google.com" "https://www.gstatic.com"
+        "https://recaptcha.net" "https://challenges.cloudflare.com" "https://hcaptcha.com"),
+        private-state-token-issuance=(self "https://www.google.com" "https://www.gstatic.com"
+        "https://recaptcha.net" "https://challenges.cloudflare.com" "https://hcaptcha.com")
+      Report-To:
+      - '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=fZuB9lK11Y89yLcC6iLsbIP5YJGxIk7ji8R6uZqr8h7xe4yhTY5tW1oHKXh21CrfnL%2BViGCRP%2BtEnl1MT%2BHIqzjkHQH20yIodmZWGu6hQOtFTj8d5dJemPddBzdtzz0%3D"}]}'
+      Server:
+      - cloudflare
+      Server-Timing:
+      - cfCacheStatus;desc="DYNAMIC"
+      - cfEdge;dur=5,cfOrigin;dur=1967
+      Transfer-Encoding:
+      - chunked
+      Vary:
+      - Accept-Encoding
+      alt-svc:
+      - h3=":443"; ma=86400
+    status:
+      code: 200
+      message: OK
+version: 1
