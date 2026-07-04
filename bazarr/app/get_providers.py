@@ -344,6 +344,8 @@ def get_providers_auth():
         },
         "subdl": {
             'api_key': settings.subdl.api_key,
+            'ai_translate': settings.subdl.ai_translate,
+            'include_ai_translated': settings.subdl.include_ai_translated,
         },
         'turkcealtyaziorg': {
             'cookies': settings.turkcealtyaziorg.cookies,
