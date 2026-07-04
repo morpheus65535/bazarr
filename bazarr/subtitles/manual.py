@@ -31,6 +31,20 @@ from .utils import get_video, _get_lang_obj, _get_scores, _set_forced_providers
 from .processing import process_subtitle
 
 
+def _build_release_info(subtitle):
+    releases = []
+    if hasattr(subtitle, 'release_info') and subtitle.release_info is not None:
+        for s_item in subtitle.release_info.split(','):
+            if s_item.strip():
+                releases.append(s_item)
+
+    extra_release_info = getattr(subtitle, 'extra_release_info', None)
+    if extra_release_info:
+        releases.extend(extra_release_info)
+
+    return releases
+
+
 @update_pools
 def manual_search(path, profile_id, providers, sceneName, title, media_type):
     logging.debug(f'BAZARR Manually searching subtitles for this file: {path}')
@@ -105,12 +119,7 @@ def manual_search(path, profile_id, providers, sceneName, title, media_type):
                     s.score = score
                     not_matched = set()
 
-                releases = []
-                if hasattr(s, 'release_info'):
-                    if s.release_info is not None:
-                        for s_item in s.release_info.split(','):
-                            if s_item.strip():
-                                releases.append(s_item)
+                releases = _build_release_info(s)
 
                 if s.uploader and s.uploader.strip():
                     s_uploader = s.uploader.strip()
