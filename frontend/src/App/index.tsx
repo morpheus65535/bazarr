@@ -4,6 +4,7 @@ import { AppShell } from "@mantine/core";
 import { useWindowEvent } from "@mantine/hooks";
 import { showNotification } from "@mantine/notifications";
 import AppNavbar from "@/App/Navbar";
+import AppSpotlight from "@/components/AppSpotlight";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import NavbarProvider from "@/contexts/Navbar";
 import OnlineProvider from "@/contexts/Online";
@@ -69,6 +70,7 @@ const App: FunctionComponent = () => {
               <Outlet></Outlet>
             </AppShell.Main>
           </AppShell>
+          <AppSpotlight></AppSpotlight>
         </OnlineProvider>
       </NavbarProvider>
     </ErrorBoundary>
