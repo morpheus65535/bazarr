@@ -32,17 +32,15 @@ const buildNavActions = (
     for (const route of routeList) {
       if (route.hidden) continue;
 
-      let fullPath: string;
-      if (route.path?.startsWith("/")) {
-        fullPath = route.path;
-      } else if (route.path) {
-        fullPath = parentPath
-          ? `${parentPath}/${route.path}`
-          : `/${route.path}`;
-      } else {
-        fullPath = parentPath;
-      }
-      fullPath = fullPath.replace(/\/+/g, "/");
+      const fullPath = (
+        route.path?.startsWith("/")
+          ? route.path
+          : route.path
+            ? parentPath
+              ? `${parentPath}/${route.path}`
+              : `/${route.path}`
+            : parentPath
+      ).replace(/\/+/g, "/");
 
       if (fullPath.includes(":")) continue;
 
