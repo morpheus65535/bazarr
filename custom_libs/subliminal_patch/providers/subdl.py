@@ -794,7 +794,15 @@ class SubdlProvider(Provider):
             raise
         else:
             status_code = response.status_code
-            if status_code == 403:
+            if status_code == 402:
+                # Payment required: this request needs an active paid SubDL
+                # subscription. Retrying won't help until the user upgrades.
+                message = "Active paid SubDL subscription required"
+                payload = self._safe_json(response)
+                if payload.get('message'):
+                    message = payload['message']
+                raise ProviderError(message)
+            elif status_code == 403:
                 raise AuthenticationError("Invalid API key")
             elif status_code == 404:
                 raise ProviderError("Resource not found")

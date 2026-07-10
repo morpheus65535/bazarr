@@ -259,6 +259,25 @@ def test_download_ai_translation_quota_exhausted_never_raises(requests_mock):
     assert sub.content is None
 
 
+def test_search_402_raises_provider_error(requests_mock):
+    from subliminal.exceptions import ProviderError
+
+    requests_mock.get(
+        SEARCH_URL,
+        status_code=402,
+        json={
+            "status": False,
+            "error": "paid_api_required",
+            "message": "Active paid API subscription required",
+        },
+    )
+
+    with SubdlProvider("fake-key") as provider:
+        with pytest.raises(ProviderError, match="Active paid API subscription required"):
+            provider.checked(
+                lambda: provider.session.get(SEARCH_URL, timeout=30))
+
+
 def test_download_ai_translation_job_failure(requests_mock, mocker):
     mocker.patch("time.sleep")
     requests_mock.post(
