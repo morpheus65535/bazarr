@@ -194,11 +194,13 @@ def sync_episodes(series_id, defer_search=False, is_signalr=False):
                 if (previous_episode_file_id != updated_episode['episode_file_id'] or
                         previous_episode_path != updated_episode['path']):
                     # Store subtitles for updated episode where path or episode_file_id changed
-                    logging.debug(f'BAZARR updating subtitles for episode {updated_episode["path"]}')
+                    logging.debug(f'BAZARR updating subtitles for episode '
+                                  f'{path_mappings.path_replace(updated_episode["path"])}')
                     store_subtitles(previous_episode_id)
                 else:
-                    logging.debug(f'BAZARR skipping subtitle update for episode {updated_episode["path"]} as path '
-                                  f'and episode_file_id unchanged')
+                    logging.debug(f'BAZARR skipping subtitle update for episode '
+                                  f'{path_mappings.path_replace(updated_episode["path"])} as path and episode_file_id '
+                                  f'unchanged')
                 event_stream(type='episode', action='update', payload=previous_episode_id)
 
     # Downloading missing subtitles
@@ -299,7 +301,14 @@ def sync_one_episode(episode_id, defer_search=False, is_signalr=False):
         except IntegrityError as e:
             logging.error(f"BAZARR cannot update episode {episode['path']} because of {e}")
         else:
-            store_subtitles(episode_id)
+            if (existing_episode.episode_file_id != episode['episode_file_id'] or
+                    existing_episode.path != episode['path']):
+                # Store subtitles for updated episode where path or episode_file_id changed
+                logging.debug(f'BAZARR updating subtitles for episode {path_mappings.path_replace(episode["path"])}')
+                store_subtitles(episode_id)
+            else:
+                logging.debug(f'BAZARR skipping subtitle update for episode '
+                              f'{path_mappings.path_replace(episode["path"])} as path and episode_file_id unchanged')
             event_stream(type='episode', action='update', payload=int(episode_id))
             logging.debug(
                 f'BAZARR updated this episode into the database:{path_mappings.path_replace(episode["path"])}')
