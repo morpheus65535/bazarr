@@ -458,7 +458,7 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
         type: "switch",
         key: "include_ai_translated",
         name: "Include AI-translated subtitles in search results",
-        defaultValue: true,
+        defaultValue: false,
       },
     ],
     message:

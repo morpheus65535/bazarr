@@ -124,7 +124,7 @@ class SubdlProvider(Provider):
 
     video_types = (Episode, Movie)
 
-    def __init__(self, api_key=None, ai_translate=False, include_ai_translated=True):
+    def __init__(self, api_key=None, ai_translate=False, include_ai_translated=False):
         if not api_key:
             raise ConfigurationError('Api_key must be specified')
 
