@@ -19,6 +19,27 @@ from subliminal_patch.providers import Provider
 from subliminal_patch.subtitle import Subtitle
 from subzero.language import Language
 
+
+def _get_ffprobe_path(ffmpeg_path):
+    """Derive the ffprobe executable path from the configured ffmpeg path.
+
+    Bazarr stores the full path to the ffmpeg binary and ffprobe ships in the
+    same directory. Probing with a bare 'ffprobe' relies on it being on the
+    system PATH, which isn't guaranteed (e.g. on Windows service installs the
+    service may not have inherited Bazarr's bundled binaries on the PATH),
+    raising FileNotFoundError even though the executable location is known.
+    Fall back to 'ffprobe' when no directory is configured to preserve the
+    previous behaviour.
+    """
+    if not ffmpeg_path:
+        return "ffprobe"
+    directory = os.path.dirname(ffmpeg_path)
+    if not directory:
+        return "ffprobe"
+    ffprobe_name = "ffprobe.exe" if os.name == "nt" else "ffprobe"
+    return os.path.join(directory, ffprobe_name)
+
+
 # These are all the languages Whisper supports.
 # from whisper.tokenizer import LANGUAGES
 
@@ -346,7 +367,7 @@ class WhisperAIProvider(Provider):
         try:
             # Command: Get Stream Metadata and Packet Data (30s scan)
             cmd = [
-                'ffprobe',
+                _get_ffprobe_path(self.ffmpeg_path),
                 '-v', 'error',
                 '-select_streams', 'a', 
                 '-read_intervals', '%+30',
@@ -453,7 +474,7 @@ class WhisperAIProvider(Provider):
             # Mapping by language tag alone (0:a:m:language:X) selects all streams sharing
             # that tag — s16le only supports one audio stream, so files with duplicate-language
             # tracks (e.g. stereo + 5.1 both tagged eng) would fail.
-            probe = ffmpeg.probe(path)
+            probe = ffmpeg.probe(path, cmd=_get_ffprobe_path(ffmpeg_path))
             stream_index = next(
                 (s['index'] for s in probe['streams']
                  if s['codec_type'] == 'audio'
