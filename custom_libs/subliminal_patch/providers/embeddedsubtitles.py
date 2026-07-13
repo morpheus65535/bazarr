@@ -44,6 +44,7 @@ class EmbeddedSubtitle(Subtitle):
         self.forced = stream.disposition.forced
         self.page_link = self.container.path
         self.release_info = _get_pretty_release_name(stream, container)
+        self.extra_release_info = _get_extra_release_info(stream)
         self.media_type = media_type
         self.matches = matches or set()
 
@@ -403,6 +404,27 @@ def _discard_possible_incomplete_subtitles(streams):
 def _get_pretty_release_name(stream, container):
     bname = os.path.basename(container.path)
     return f"{os.path.splitext(bname)[0]}.{stream.suffix}"
+
+
+def _get_extra_release_info(stream):
+    info = []
+    # stream.duration reflects the whole container's duration for every subtitle
+    # stream, so it can't tell same-language tracks apart. The per-track MKV
+    # DURATION tag (when present) actually differs between tracks. For same-language
+    # tracks mkvmerge/ffprobe often reports the tag language-suffixed (DURATION-eng),
+    # which fese exposes as duration_eng, so fall back to that before the container.
+    duration = getattr(stream.tags, "duration", None)
+    if duration is None:
+        duration = getattr(stream.tags, "duration_eng", None)
+    if duration is None:
+        duration = stream.duration
+    if duration:
+        info.append(f"Duration: {_format_duration(duration)}")
+    return info
+
+
+def _format_duration(duration):
+    return str(duration).split(".")[0]
 
 
 def _basename_callback(path: str):

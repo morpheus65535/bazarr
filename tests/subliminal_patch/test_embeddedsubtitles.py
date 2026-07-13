@@ -11,6 +11,7 @@ from subliminal_patch.core import Movie
 from subliminal_patch.providers.embeddedsubtitles import (
     _discard_possible_incomplete_subtitles,
 )
+from subliminal_patch.providers.embeddedsubtitles import _get_extra_release_info
 from subliminal_patch.providers.embeddedsubtitles import _get_pretty_release_name
 from subliminal_patch.providers.embeddedsubtitles import _MemoizedFFprobeVideoContainer
 from subliminal_patch.providers.embeddedsubtitles import _rebuild_langs
@@ -349,6 +350,53 @@ def test_get_pretty_release_name():
     )
     container = FFprobeVideoContainer("foo.mkv")
     assert _get_pretty_release_name(stream, container) == "foo.en.forced.srt"
+
+
+def test_get_extra_release_info_with_duration():
+    stream = FFprobeSubtitleStream(
+        {
+            "index": 1,
+            "codec_name": "subrip",
+            "duration": "6138",
+            "tags": {"language": "eng"},
+        }
+    )
+    assert _get_extra_release_info(stream) == ["Duration: 1:42:18"]
+
+
+def test_get_extra_release_info_without_duration():
+    stream = FFprobeSubtitleStream(
+        {
+            "index": 1,
+            "codec_name": "subrip",
+            "tags": {"language": "eng"},
+        }
+    )
+    assert _get_extra_release_info(stream) == []
+
+
+def test_get_extra_release_info_mkv_tag_duration_wins_over_container_duration():
+    stream = FFprobeSubtitleStream(
+        {
+            "index": 1,
+            "codec_name": "subrip",
+            "duration": "6138",
+            "tags": {"language": "eng", "DURATION": "00:05:00.000000000"},
+        }
+    )
+    assert _get_extra_release_info(stream) == ["Duration: 0:05:00"]
+
+
+def test_get_extra_release_info_mkv_language_suffixed_tag_wins_over_container_duration():
+    stream = FFprobeSubtitleStream(
+        {
+            "index": 1,
+            "codec_name": "subrip",
+            "duration": "6138",
+            "tags": {"language": "eng", "DURATION-eng": "00:05:00.000000000"},
+        }
+    )
+    assert _get_extra_release_info(stream) == ["Duration: 0:05:00"]
 
 
 @pytest.mark.parametrize(
