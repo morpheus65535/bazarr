@@ -311,9 +311,9 @@ def dispatcher(data):
                              is_signalr=True)
     except Exception as e:
         logging.debug(f'BAZARR an exception occurred while parsing SignalR feed: {repr(e)}')
-    finally:
-        event_stream(type='badges')
-        return
+
+    event_stream(type='badges')
+    return
 
 
 def filter_nested_dict(data: dict) -> dict:

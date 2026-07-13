@@ -540,8 +540,7 @@ def get_throttled_providers():
         # set empty content in throttled_providers.dat
         logging.error("Invalid content in throttled_providers.dat. Resetting")
         set_throttled_providers(str(providers))
-    finally:
-        return providers
+    return providers
 
 
 def set_throttled_providers(data):
