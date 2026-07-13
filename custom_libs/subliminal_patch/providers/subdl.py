@@ -31,7 +31,8 @@ class SubdlSubtitle(Subtitle):
     hearing_impaired_verifiable = True
 
     def __init__(self, language, forced, hearing_impaired, page_link, download_link, file_id, release_names, uploader,
-                 season=None, episode=None, absolute_episode=None, is_pack=False, is_direct_file=False):
+                 season=None, episode=None, absolute_episode=None, is_pack=False, is_direct_file=False,
+                 is_ai_translation=False, ai_source_n_id=None, ai_source_language=None, ai_target_language=None):
         super().__init__(language)
         language = Language.rebuild(language, hi=hearing_impaired, forced=forced)
 
@@ -50,6 +51,14 @@ class SubdlSubtitle(Subtitle):
         self.download_link = download_link
         self.uploader = uploader
         self.matches = set()
+        # On-demand AI translation candidate: no download_link yet — the file is
+        # produced by the SubDL translation API when this subtitle is picked.
+        self.is_ai_translation = is_ai_translation
+        self.ai_source_n_id = ai_source_n_id
+        self.ai_source_language = ai_source_language
+        self.ai_target_language = ai_target_language
+        if is_ai_translation:
+            self.release_info = f'AI translation (SubDL) from {ai_source_language}: {self.release_info}'
 
     @property
     def id(self):
@@ -115,15 +124,19 @@ class SubdlProvider(Provider):
 
     video_types = (Episode, Movie)
 
-    def __init__(self, api_key=None):
+    def __init__(self, api_key=None, ai_translate=False, include_ai_translated=False):
         if not api_key:
             raise ConfigurationError('Api_key must be specified')
 
         self.session = Session()
         self.session.headers = {'User-Agent': os.environ.get("SZ_USER_AGENT", "Sub-Zero/2")}
         self.api_key = api_key
+        self.ai_translate = ai_translate
+        self.include_ai_translated = include_ai_translated
         self.video = None
         self._started = None
+        # One informational log per video for AI-translate availability notices.
+        self._ai_notices_logged = set()
 
     def initialize(self):
         self._started = time.time()
@@ -273,6 +286,10 @@ class SubdlProvider(Provider):
 
         result = res.json()
 
+        # AI-translation availability for the requested languages (subdl api
+        # returns this only for bazarr=1 requests; absent on older API versions).
+        translation_block = result.get('translation') if isinstance(result, dict) else None
+
         if ('success' in result and not result['success']) or ('status' in result and not result['status']):
             logger.debug(result)
             if 'error' in result and "can't find" in result['error'].lower():
@@ -343,6 +360,8 @@ class SubdlProvider(Provider):
 
         if len(all_items):
             for item in all_items:
+                if item.get('ai_translated') and not self.include_ai_translated:
+                    continue
                 is_pack = False
                 is_direct_file = False
                 download_link = item['url']
@@ -398,6 +417,10 @@ class SubdlProvider(Provider):
                                 f'{item_episode} instead of pack {item["name"]}'
                             )
 
+                uploader = item.get('author', '')
+                if item.get('ai_translated'):
+                    uploader = f'{uploader} (AI translated)' if uploader else 'AI translated'
+
                 subtitle = SubdlSubtitle(
                     language=Language.fromsubdl(item['language']),
                     forced=self._is_forced(item),
@@ -406,7 +429,7 @@ class SubdlProvider(Provider):
                     download_link=download_link,
                     file_id=file_id,
                     release_names=item.get('releases', []),
-                    uploader=item.get('author', ''),
+                    uploader=uploader,
                     season=item_season,
                     episode=item_episode,
                     absolute_episode=absolute_episode,
@@ -417,7 +440,96 @@ class SubdlProvider(Provider):
                 if subtitle.language in languages:  # make sure only desired subtitles variants are returned
                     subtitles.append(subtitle)
 
+        self._add_ai_translation_candidates(translation_block, languages, subtitles)
+
         return subtitles
+
+    def _log_ai_notice_once(self, message):
+        key = (getattr(self.video, 'name', None) or getattr(self.video, 'title', ''), message)
+        if key in self._ai_notices_logged:
+            return
+        self._ai_notices_logged.add(key)
+        logger.info(message)
+
+    def _add_ai_translation_candidates(self, translation, languages, subtitles):
+        """Append virtual 'AI translation' candidates for wanted languages the
+        API reported as missing but translatable (SubDL Plus/Pro feature)."""
+        if not self.ai_translate or not isinstance(translation, dict):
+            return
+
+        missing = set(translation.get('missing_languages') or [])
+        if not missing:
+            return
+
+        if not translation.get('entitled'):
+            upgrade_url = translation.get('upgrade_url') or 'https://subdl.com/pro?ref=bazarr'
+            self._log_ai_notice_once(
+                f'subdl: missing languages ({", ".join(sorted(missing))}) can be AI-translated '
+                f'in about a minute with a SubDL Plus/Pro subscription: {upgrade_url}')
+            return
+
+        sources = translation.get('sources') or []
+        if not sources:
+            reset_at = translation.get('quota_reset_at') or 'the 1st of next month'
+            self._log_ai_notice_once(
+                f'subdl: AI translation quota exhausted; more translations available after {reset_at}')
+            return
+
+        # Translations inherit the source subtitle's timing, so pick the source
+        # whose release names best match the video.
+        def source_score(source):
+            matches = set()
+            utils.update_matches(matches, self.video, source.get('releases') or [])
+            return len(matches)
+
+        best_source = max(sources, key=source_score)
+        source_releases = best_source.get('releases') or []
+        source_n_id = best_source.get('n_id')
+        if not source_n_id:
+            return
+
+        existing_languages = {(sub.language.alpha3, sub.language.country, sub.language.script)
+                              for sub in subtitles}
+
+        for language in languages:
+            # Only plain variants: a forced/HI subtitle can't be produced by
+            # translating a regular source.
+            if language.forced or getattr(language, 'hi', False):
+                continue
+            if (language.alpha3, language.country, language.script) in existing_languages:
+                continue
+            try:
+                target_code = language_converters['subdl'].convert(
+                    language.alpha3, language.country, language.script)
+            except Exception:
+                continue
+            if target_code not in missing:
+                continue
+
+            season = self.video.season if isinstance(self.video, Episode) else None
+            episode = self.video.episode if isinstance(self.video, Episode) else None
+
+            candidate = SubdlSubtitle(
+                language=language,
+                forced=False,
+                hearing_impaired=False,
+                page_link='https://subdl.com/pro?ref=bazarr',
+                download_link=None,
+                file_id=f'ai:{source_n_id}:{target_code}',
+                release_names=source_releases,
+                uploader='SubDL AI',
+                season=season,
+                episode=episode,
+                is_ai_translation=True,
+                ai_source_n_id=source_n_id,
+                ai_source_language=best_source.get('language') or '',
+                ai_target_language=target_code,
+            )
+            candidate.get_matches(self.video)
+            logger.debug(
+                f'Offering AI translation candidate for {target_code} '
+                f'from source {source_n_id} ({best_source.get("language")})')
+            subtitles.append(candidate)
 
     @staticmethod
     def _is_hi(item):
@@ -472,8 +584,19 @@ class SubdlProvider(Provider):
     def list_subtitles(self, video, languages):
         return self.query(languages, video)
 
+    # AI translation jobs normally finish in well under a minute; poll with a
+    # generous ceiling so a slow job still lands in the same download call.
+    AI_TRANSLATE_POLL_INTERVAL = 4
+    AI_TRANSLATE_MIN_DEADLINE = 90
+    AI_TRANSLATE_MAX_DEADLINE = 180
+
     def download_subtitle(self, subtitle):
         logger.debug('Downloading subtitle %r', subtitle)
+
+        if getattr(subtitle, 'is_ai_translation', False):
+            self._download_ai_translation(subtitle)
+            return
+
         download_link = urljoin("https://dl.subdl.com", subtitle.download_link)
 
         r = self.checked(
@@ -525,6 +648,125 @@ class SubdlProvider(Provider):
                 subtitle.content = None
                 return
 
+    @staticmethod
+    def _safe_json(response):
+        try:
+            payload = response.json()
+        except Exception:
+            return {}
+        return payload if isinstance(payload, dict) else {}
+
+    def _download_ai_translation(self, subtitle):
+        """Submit a translation job for the chosen source subtitle, wait for it
+        and return the translated file.
+
+        Failures set subtitle.content to None instead of raising: a missed
+        translation must never throttle the provider's regular downloads. If
+        the deadline passes, the job still finishes server-side — the result is
+        published as a regular subtitle and any retry is answered instantly
+        from the finished job (no extra quota).
+        """
+        base = self.server_url()
+        params = {'api_key': self.api_key}
+        subtitle.content = None
+
+        try:
+            response = self.session.post(
+                base + 'pro/translate/subtitles',
+                params=params,
+                json={'n_id': subtitle.ai_source_n_id,
+                      'target_language': subtitle.ai_target_language},
+                timeout=30,
+            )
+        except Exception:
+            logger.exception('subdl: AI translation request failed')
+            return
+
+        if response.status_code not in (200, 202):
+            payload = self._safe_json(response)
+            error = payload.get('error')
+            message = payload.get('message') or error or f'HTTP {response.status_code}'
+            if error == 'translation_quota_exhausted':
+                self._log_ai_notice_once(
+                    'subdl: AI translation quota exhausted; more translations available next month')
+            elif error == 'translation_not_entitled':
+                self._log_ai_notice_once(
+                    'subdl: AI translation requires a SubDL Plus/Pro subscription: '
+                    'https://subdl.com/pro?ref=bazarr')
+            else:
+                logger.error(f'subdl: AI translation request rejected: {message}')
+            return
+
+        payload = self._safe_json(response)
+        request_id = payload.get('request_id')
+        if not request_id:
+            logger.error(f'subdl: AI translation response missing request_id: {payload}')
+            return
+
+        job = payload.get('job') or {}
+        estimated_ms = payload.get('estimated_duration_ms') or job.get('eta_ms') or 60000
+        deadline_seconds = min(
+            max((estimated_ms / 1000.0) * 2, self.AI_TRANSLATE_MIN_DEADLINE),
+            self.AI_TRANSLATE_MAX_DEADLINE,
+        )
+        deadline = time.time() + deadline_seconds
+        download_ready = bool(job.get('download_ready'))
+        poll_failures = 0
+
+        logger.debug(
+            f'subdl: AI translation job {request_id} submitted '
+            f'(estimated {estimated_ms / 1000.0:.0f}s, deadline {deadline_seconds:.0f}s, '
+            f'reused={payload.get("reused")})')
+
+        while not download_ready and time.time() < deadline:
+            time.sleep(self.AI_TRANSLATE_POLL_INTERVAL)
+            try:
+                poll = self.session.get(
+                    f'{base}pro/translate/jobs/{request_id}', params=params, timeout=30)
+            except Exception:
+                poll_failures += 1
+                if poll_failures >= 5:
+                    logger.exception('subdl: AI translation polling failed repeatedly')
+                    return
+                continue
+
+            if poll.status_code != 200:
+                poll_failures += 1
+                if poll_failures >= 5:
+                    logger.error(
+                        f'subdl: AI translation polling failed repeatedly '
+                        f'(HTTP {poll.status_code})')
+                    return
+                continue
+
+            poll_failures = 0
+            job = self._safe_json(poll).get('job') or {}
+            if job.get('status') == 'failed':
+                logger.error(f'subdl: AI translation job {request_id} failed: {job.get("error")}')
+                return
+            download_ready = bool(job.get('download_ready'))
+
+        if not download_ready:
+            logger.info(
+                f'subdl: AI translation job {request_id} still running; the finished '
+                f'translation will be available as a regular subtitle on the next search')
+            return
+
+        try:
+            download = self.session.get(
+                f'{base}pro/translate/jobs/{request_id}/download', params=params, timeout=30)
+        except Exception:
+            logger.exception('subdl: AI translation download failed')
+            return
+
+        if download.status_code != 200 or not download.content:
+            logger.error(
+                f'subdl: AI translation download failed (HTTP {download.status_code})')
+            return
+
+        subtitle.content = fix_line_ending(download.content)
+        logger.debug(f'subdl: AI translation job {request_id} downloaded')
+
     def checked(self, fn: Callable, is_retry: bool = False, retry_attempt=0) -> Response:
         """
         Executes a given callable and handles API-related errors, including authentication errors, rate limits,
@@ -552,7 +794,15 @@ class SubdlProvider(Provider):
             raise
         else:
             status_code = response.status_code
-            if status_code == 403:
+            if status_code == 402:
+                # Payment required: this request needs an active paid SubDL
+                # subscription. Retrying won't help until the user upgrades.
+                message = "Active paid SubDL subscription required"
+                payload = self._safe_json(response)
+                if payload.get('message'):
+                    message = payload['message']
+                raise ProviderError(message)
+            elif status_code == 403:
                 raise AuthenticationError("Invalid API key")
             elif status_code == 404:
                 raise ProviderError("Resource not found")

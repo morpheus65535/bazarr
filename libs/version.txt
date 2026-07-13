@@ -9,7 +9,8 @@ charset-normalizer==3.4.7
 deep-translator==1.11.4
 dogpile.cache==1.5.0
 dynaconf==3.2.13
-fese==0.3.0
+# fese fork that include latest PR not yet merged in upstream
+git+https://github.com/morpheus65535/fese.git
 ffsubsync==0.5.0
 flask-cors==6.0.5
 flask-migrate==4.1.0

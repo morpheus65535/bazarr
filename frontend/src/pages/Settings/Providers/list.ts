@@ -448,7 +448,21 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
         type: "text",
         key: "api_key",
       },
+      {
+        type: "switch",
+        key: "ai_translate",
+        name: "AI-translate missing languages (SubDL Plus/Pro, uses your monthly translation quota)",
+        defaultValue: false,
+      },
+      {
+        type: "switch",
+        key: "include_ai_translated",
+        name: "Include AI-translated subtitles in search results",
+        defaultValue: false,
+      },
     ],
+    message:
+      "AI translation delivers missing languages in about a minute using your SubDL Plus/Pro translation quota. Get a plan at https://subdl.com/pro",
   },
   {
     key: "subf2m",

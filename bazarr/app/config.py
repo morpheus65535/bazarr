@@ -429,6 +429,8 @@ validators = [
 
     # subdl section
     Validator('subdl.api_key', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('subdl.ai_translate', must_exist=True, default=False, is_type_of=bool),
+    Validator('subdl.include_ai_translated', must_exist=True, default=False, is_type_of=bool),
 
     # turkcealtyaziorg section
     Validator('turkcealtyaziorg.cookies', must_exist=True, default='', is_type_of=str),
