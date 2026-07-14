@@ -16,6 +16,7 @@ import {
   Group,
   Stack,
   Text,
+  UnstyledButton,
   useComputedColorScheme,
   useMantineColorScheme,
 } from "@mantine/core";
@@ -23,12 +24,14 @@ import { useHover } from "@mantine/hooks";
 import {
   faHeart,
   faMoon,
+  faSearch,
   faSun,
   IconDefinition,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import clsx from "clsx";
-import { Action } from "@/components";
+import { Action, KeyboardShortcut } from "@/components";
+import { spotlightApi } from "@/components/AppSpotlight";
 import { useNavbar } from "@/contexts/Navbar";
 import { useRouteItems } from "@/Router";
 import { CustomRouteObject, Route } from "@/Router/type";
@@ -119,6 +122,8 @@ const AppNavbar: FunctionComponent = () => {
           style={{ overflowY: "auto", scrollbarWidth: "none" }}
         >
           <Stack gap={0}>
+            <NavbarSearchItem />
+            <Divider my="xs" visibleFrom="sm" />
             {routes.map((route, idx) => (
               <RouteItem
                 key={BuildKey("nav", idx)}
@@ -227,6 +232,26 @@ const RouteItem: FunctionComponent<{
       ></NavbarItem>
     );
   }
+};
+
+const NavbarSearchItem: FunctionComponent = () => {
+  const { ref, hovered } = useHover();
+
+  return (
+    <UnstyledButton
+      visibleFrom="sm"
+      onClick={() => spotlightApi.open()}
+      className={clsx(styles.anchor, { [styles.hover]: hovered })}
+    >
+      <Text ref={ref} inline p="xs" size="sm" className={styles.text} span>
+        <FontAwesomeIcon className={styles.icon} icon={faSearch} />
+        Search
+        <span className={styles.shortcut}>
+          <KeyboardShortcut keys={["mod", "K"]} />
+        </span>
+      </Text>
+    </UnstyledButton>
+  );
 };
 
 interface NavbarItemProps {

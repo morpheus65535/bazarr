@@ -31,6 +31,14 @@
   box-shadow: var(--mantine-shadow-xs);
 }
 
+.shortcut {
+  margin-left: auto;
+  display: inline-flex;
+  gap: 2px;
+  align-items: center;
+  white-space: nowrap;
+}
+
 .icon {
   width: 1.4rem;
   margin-right: var(--mantine-spacing-xs);
