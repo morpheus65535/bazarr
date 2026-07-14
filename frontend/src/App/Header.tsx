@@ -22,7 +22,7 @@ import { Action, Search } from "@/components";
 import { useNavbar } from "@/contexts/Navbar";
 import { useIsOnline } from "@/contexts/Online";
 import { Environment, useGotoHomepage } from "@/utilities";
-import NotificationDrawer from "./NotificationDrawer";
+import JobsManager from "./JobsManager";
 import styles from "./Header.module.scss";
 
 const AppHeader: FunctionComponent = () => {
@@ -110,10 +110,7 @@ const AppHeader: FunctionComponent = () => {
           </Menu>
         </Group>
       </Group>
-      <NotificationDrawer
-        opened={jobsManagerOpened}
-        onClose={closeJobsManager}
-      />
+      <JobsManager opened={jobsManagerOpened} onClose={closeJobsManager} />
     </AppShell.Header>
   );
 };

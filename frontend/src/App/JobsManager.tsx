@@ -2,6 +2,7 @@ import { FunctionComponent, useEffect, useMemo, useState } from "react";
 import TimeAgo from "react-timeago";
 import {
   ActionIcon,
+  Badge,
   Card,
   Collapse,
   Drawer,
@@ -27,23 +28,27 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useSystemJobs } from "@/apis/hooks";
 import Jobs = System.Jobs;
+import { showNotification } from "@mantine/notifications";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { startCase } from "lodash";
 import { debounce } from "lodash";
 import { QueryKeys } from "@/apis/queries/keys";
 import api from "@/apis/raw";
-import classes from "./NotificationDrawer.module.css";
+import { useModals } from "@/modules/modals";
+import { notification } from "@/modules/task/notification";
+import classes from "./JobsManager.module.css";
 
-interface NotificationDrawerProps {
+interface JobsManagerProps {
   opened: boolean;
   onClose: () => void;
 }
 
-const NotificationDrawer: FunctionComponent<NotificationDrawerProps> = ({
+const JobsManager: FunctionComponent<JobsManagerProps> = ({
   opened,
   onClose,
 }) => {
   const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({});
+  const modals = useModals();
 
   useEffect(() => {
     if (!opened) {
@@ -73,16 +78,41 @@ const NotificationDrawer: FunctionComponent<NotificationDrawerProps> = ({
       void client.invalidateQueries({
         queryKey: [QueryKeys.System, QueryKeys.Jobs],
       });
+      showNotification(
+        notification.success(
+          "Job Cancelled",
+          "The job has been removed from the queue",
+        ),
+      );
+    },
+    onError: () => {
+      showNotification(
+        notification.error("Cancel Failed", "Unable to cancel the job"),
+      );
     },
   });
 
   const { mutate: clearQueue } = useMutation({
     mutationKey: [QueryKeys.System, QueryKeys.Jobs, "clear"],
     mutationFn: (queueName: string) => api.system.clearJobs(queueName),
-    onSuccess: () => {
+    onSuccess: (_, queueName) => {
       void client.invalidateQueries({
         queryKey: [QueryKeys.System, QueryKeys.Jobs],
       });
+      showNotification(
+        notification.success(
+          "Queue Cleared",
+          `All ${queueName} jobs have been cleared`,
+        ),
+      );
+    },
+    onError: (_, queueName) => {
+      showNotification(
+        notification.error(
+          "Clear Failed",
+          `Unable to clear ${queueName} queue`,
+        ),
+      );
     },
   });
 
@@ -90,10 +120,25 @@ const NotificationDrawer: FunctionComponent<NotificationDrawerProps> = ({
     mutationKey: [QueryKeys.System, QueryKeys.Jobs, "action"],
     mutationFn: (param: { id: number; action: string }) =>
       api.system.actionOnJobs(param.id, param.action),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       void client.invalidateQueries({
         queryKey: [QueryKeys.System, QueryKeys.Jobs],
       });
+      const actionLabels: Record<string, string> = {
+        move_top: "Moved to top",
+        move_bottom: "Moved to bottom",
+        force_start: "Force started",
+      };
+      const label = actionLabels[variables.action] || "Action completed";
+      showNotification(notification.success("Job Updated", label));
+    },
+    onError: () => {
+      showNotification(
+        notification.error(
+          "Action Failed",
+          "Unable to perform the requested action",
+        ),
+      );
     },
   });
 
@@ -120,6 +165,14 @@ const NotificationDrawer: FunctionComponent<NotificationDrawerProps> = ({
       ...prev,
       [section]: !prev[section],
     }));
+  };
+
+  const statusColors: Record<string, string> = {
+    running: "blue",
+    pending: "yellow",
+    failed: "red",
+    completed: "green",
+    unknown: "gray",
   };
 
   return (
@@ -173,7 +226,12 @@ const NotificationDrawer: FunctionComponent<NotificationDrawerProps> = ({
                   .filter((status) => grouped[status as string]?.length)
                   .map((status) => (
                     <Stack key={status} mt="md">
-                      <Group justify="space-between" wrap="nowrap">
+                      <Group
+                        justify="space-between"
+                        wrap="nowrap"
+                        onClick={() => toggleSection(status)}
+                        style={{ cursor: "pointer" }}
+                      >
                         <Group gap="xs">
                           <FontAwesomeIcon
                             icon={
@@ -182,55 +240,78 @@ const NotificationDrawer: FunctionComponent<NotificationDrawerProps> = ({
                                 : faChevronUp
                             }
                             size="sm"
-                            style={{ opacity: 0.5, cursor: "pointer" }}
-                            onClick={() => toggleSection(status)}
+                            style={{ opacity: 0.5 }}
                           />
                           <Title order={3}>{startCase(status)}</Title>
+                          <Badge
+                            color={statusColors[status] || "gray"}
+                            variant="light"
+                            size="sm"
+                          >
+                            {grouped[status as string].length}
+                          </Badge>
                           {status !== "running" && (
-                            <Menu
-                              position="bottom-end"
-                              withArrow
-                              opened={openMenus[`queue-${status}`] || false}
-                              onChange={(opened) =>
-                                setOpenMenus((prev) => ({
-                                  ...prev,
-                                  [`queue-${status}`]: opened,
-                                }))
-                              }
-                            >
-                              <Menu.Target>
-                                <ActionIcon
-                                  variant="subtle"
-                                  color="gray"
-                                  size="sm"
-                                >
-                                  <FontAwesomeIcon icon={faEllipsis} />
-                                </ActionIcon>
-                              </Menu.Target>
-                              <Menu.Dropdown>
-                                <Menu.Item
-                                  color="red"
-                                  leftSection={
-                                    <FontAwesomeIcon icon={faXmark} />
-                                  }
-                                  onClick={() =>
-                                    handleMenuAction(
-                                      0,
-                                      () => clearQueue(status),
-                                      `queue-${status}`,
-                                    )
-                                  }
-                                >
-                                  Clear this queue
-                                </Menu.Item>
-                              </Menu.Dropdown>
-                            </Menu>
+                            <div onClick={(e) => e.stopPropagation()}>
+                              <Menu
+                                position="bottom-end"
+                                withArrow
+                                opened={openMenus[`queue-${status}`] || false}
+                                onChange={(opened) =>
+                                  setOpenMenus((prev) => ({
+                                    ...prev,
+                                    [`queue-${status}`]: opened,
+                                  }))
+                                }
+                              >
+                                <Menu.Target>
+                                  <ActionIcon
+                                    variant="subtle"
+                                    color="gray"
+                                    size="sm"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <FontAwesomeIcon icon={faEllipsis} />
+                                  </ActionIcon>
+                                </Menu.Target>
+                                <Menu.Dropdown>
+                                  <Menu.Item
+                                    leftSection={
+                                      <FontAwesomeIcon
+                                        icon={faXmark}
+                                        color="red"
+                                      />
+                                    }
+                                    onClick={() =>
+                                      handleMenuAction(
+                                        0,
+                                        () =>
+                                          modals.openConfirmModal({
+                                            title: "Clear Queue",
+                                            children: (
+                                              <Text size="sm">
+                                                Are you sure you want to clear
+                                                all {startCase(status)} jobs
+                                                from the queue?
+                                              </Text>
+                                            ),
+                                            labels: {
+                                              confirm: "Clear",
+                                              cancel: "Cancel",
+                                            },
+                                            confirmProps: { color: "red" },
+                                            onConfirm: () => clearQueue(status),
+                                          }),
+                                        `queue-${status}`,
+                                      )
+                                    }
+                                  >
+                                    Clear this queue
+                                  </Menu.Item>
+                                </Menu.Dropdown>
+                              </Menu>
+                            </div>
                           )}
                         </Group>
-                        <Text size="xs" c="dimmed">
-                          {grouped[status as string].length} job
-                          {grouped[status as string].length > 1 ? "s" : ""}
-                        </Text>
                       </Group>
 
                       <Collapse expanded={!collapsedSections[status]}>
@@ -250,18 +331,33 @@ const NotificationDrawer: FunctionComponent<NotificationDrawerProps> = ({
                                 : 0;
                               return bTime - aTime;
                             })
-                            .map((job) => (
+                            .map((job, index) => (
                               <Card
                                 key={`job-${job?.job_id}-${job?.status}`}
                                 withBorder
                                 radius="md"
                                 padding="xs"
+                                className={classes.jobCard}
+                                style={{
+                                  borderLeftColor: `var(--mantine-color-${statusColors[status] || "gray"}-6)`,
+                                  borderLeftWidth: "3px",
+                                }}
                               >
                                 <Group
                                   gap="xs"
                                   align="flex-start"
                                   wrap="nowrap"
                                 >
+                                  {status === "pending" && (
+                                    <Badge
+                                      size="sm"
+                                      variant="filled"
+                                      color="yellow"
+                                      circle
+                                    >
+                                      {index + 1}
+                                    </Badge>
+                                  )}
                                   {job?.is_progress && status !== "pending" && (
                                     <Tooltip
                                       label={`${job.progress_value}/${job.progress_max}`}
@@ -432,20 +528,38 @@ const NotificationDrawer: FunctionComponent<NotificationDrawerProps> = ({
                                               </Menu.Item>
                                               <Menu.Divider />
                                               <Menu.Item
-                                                color="red"
                                                 leftSection={
                                                   <FontAwesomeIcon
                                                     icon={faXmark}
+                                                    color="red"
                                                   />
                                                 }
                                                 onClick={() =>
                                                   handleMenuAction(
                                                     job?.job_id || 0,
                                                     () =>
-                                                      job?.job_id &&
-                                                      debouncedDeleteJob(
-                                                        job.job_id,
-                                                      ),
+                                                      modals.openConfirmModal({
+                                                        title: "Cancel Job",
+                                                        children: (
+                                                          <Text size="sm">
+                                                            Are you sure you
+                                                            want to cancel this
+                                                            job?
+                                                          </Text>
+                                                        ),
+                                                        labels: {
+                                                          confirm: "Cancel Job",
+                                                          cancel: "Cancel",
+                                                        },
+                                                        confirmProps: {
+                                                          color: "red",
+                                                        },
+                                                        onConfirm: () =>
+                                                          job?.job_id &&
+                                                          debouncedDeleteJob(
+                                                            job.job_id,
+                                                          ),
+                                                      }),
                                                     `job-${job?.job_id}`,
                                                   )
                                                 }
@@ -503,4 +617,4 @@ const NotificationDrawer: FunctionComponent<NotificationDrawerProps> = ({
   );
 };
 
-export default NotificationDrawer;
+export default JobsManager;
