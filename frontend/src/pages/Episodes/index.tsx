@@ -26,7 +26,7 @@ import {
   faTriangleExclamation,
   faWrench,
 } from "@fortawesome/free-solid-svg-icons";
-import { Table as TableInstance } from "@tanstack/table-core/build/lib/types";
+import { type Table as TableInstance } from "@tanstack/table-core";
 import {
   useEpisodesBySeriesId,
   useIsAnyActionRunning,
