@@ -20,25 +20,6 @@ from subliminal_patch.subtitle import Subtitle
 from subzero.language import Language
 
 
-def _get_ffprobe_path():
-    """Return the ffprobe executable Bazarr is configured to use.
-
-    Resolve it through Bazarr's own binary helper (the same one subsyncer.py
-    uses) so the configured/bundled ffprobe is used instead of relying on a
-    bare 'ffprobe' being on the system PATH, which isn't guaranteed (e.g. on
-    Windows service installs the service may not have inherited Bazarr's
-    bundled binaries on the PATH), raising FileNotFoundError.
-    """
-    from utilities.binaries import get_binary
-
-    ffprobe_exe = get_binary('ffprobe')
-    if not ffprobe_exe:
-        logging.debug('BAZARR FFprobe not found!')
-        return "ffprobe.exe" if os.name == "nt" else "ffprobe"
-    logging.debug('BAZARR FFprobe used is %s', ffprobe_exe)
-    return ffprobe_exe
-
-
 # These are all the languages Whisper supports.
 # from whisper.tokenizer import LANGUAGES
 
@@ -323,7 +304,8 @@ class WhisperAIProvider(Provider):
     languages = wlm.get_all_language_objects()
     video_types = (Episode, Movie)
 
-    def __init__(self, endpoint=None, response=None, timeout=None, ffmpeg_path=None, pass_video_name=None, loglevel=None):
+    def __init__(self, endpoint=None, response=None, timeout=None, ffmpeg_path=None, ffprobe_path=None,
+                 pass_video_name=None, loglevel=None):
         set_log_level(loglevel)
         if not endpoint:
             raise ConfigurationError('Whisper Web Service Endpoint must be provided')
@@ -345,6 +327,9 @@ class WhisperAIProvider(Provider):
         self.timeout = int(timeout)
         self.session = None
         self.ffmpeg_path = ffmpeg_path
+        # ffprobe ships next to ffmpeg; Bazarr resolves it in get_providers and
+        # passes it in. Fall back to the bare name when it isn't provided.
+        self.ffprobe_path = ffprobe_path or ("ffprobe.exe" if os.name == "nt" else "ffprobe")
         self.pass_video_name = pass_video_name
 
         # Use provided ambiguous language codes directly without fallback
@@ -366,7 +351,7 @@ class WhisperAIProvider(Provider):
         try:
             # Command: Get Stream Metadata and Packet Data (30s scan)
             cmd = [
-                _get_ffprobe_path(),
+                self.ffprobe_path,
                 '-v', 'error',
                 '-select_streams', 'a', 
                 '-read_intervals', '%+30',
@@ -473,7 +458,7 @@ class WhisperAIProvider(Provider):
             # Mapping by language tag alone (0:a:m:language:X) selects all streams sharing
             # that tag — s16le only supports one audio stream, so files with duplicate-language
             # tracks (e.g. stereo + 5.1 both tagged eng) would fail.
-            probe = ffmpeg.probe(path, cmd=_get_ffprobe_path())
+            probe = ffmpeg.probe(path, cmd=self.ffprobe_path)
             stream_index = next(
                 (s['index'] for s in probe['streams']
                  if s['codec_type'] == 'audio'
