@@ -16,6 +16,7 @@ import {
   Tooltip,
 } from "@mantine/core";
 import {
+  faCheck,
   faChevronDown,
   faChevronUp,
   faEllipsis,
@@ -125,8 +126,11 @@ const JobsManager: FunctionComponent<JobsManagerProps> = ({
         queryKey: [QueryKeys.System, QueryKeys.Jobs],
       });
       const actionLabels: Record<string, string> = {
+        // eslint-disable-next-line camelcase
         move_top: "Moved to top",
+        // eslint-disable-next-line camelcase
         move_bottom: "Moved to bottom",
+        // eslint-disable-next-line camelcase
         force_start: "Force started",
       };
       const label = actionLabels[variables.action] || "Action completed";
@@ -358,61 +362,83 @@ const JobsManager: FunctionComponent<JobsManagerProps> = ({
                                       {index + 1}
                                     </Badge>
                                   )}
-                                  {job?.is_progress && status !== "pending" && (
-                                    <Tooltip
-                                      label={`${job.progress_value}/${job.progress_max}`}
-                                      position="right"
-                                    >
-                                      <RingProgress
-                                        size={status === "running" ? 60 : 42}
-                                        thickness={status === "running" ? 6 : 4}
-                                        sections={[
-                                          {
-                                            value:
-                                              status === "completed" &&
+                                  {status !== "pending" &&
+                                    (job?.is_progress ? (
+                                      <Tooltip
+                                        label={`${job.progress_value}/${job.progress_max}`}
+                                        position="right"
+                                      >
+                                        <RingProgress
+                                          size={status === "running" ? 60 : 42}
+                                          thickness={
+                                            status === "running" ? 6 : 4
+                                          }
+                                          sections={[
+                                            {
+                                              value:
+                                                status === "completed" &&
+                                                job.progress_max == 0 &&
+                                                job.progress_value == 0
+                                                  ? 100
+                                                  : job.progress_max > 0
+                                                    ? (job.progress_value /
+                                                        job.progress_max) *
+                                                      100
+                                                    : 0,
+                                              color: "brand",
+                                            },
+                                          ]}
+                                          label={
+                                            <Text
+                                              ta="center"
+                                              size={
+                                                status === "running"
+                                                  ? "xs"
+                                                  : "9px"
+                                              }
+                                              fw={700}
+                                            >
+                                              {status === "completed" &&
                                               job.progress_max == 0 &&
                                               job.progress_value == 0
                                                 ? 100
                                                 : job.progress_max > 0
-                                                  ? (job.progress_value /
-                                                      job.progress_max) *
-                                                    100
-                                                  : 0,
-                                            color: "brand",
-                                          },
-                                        ]}
-                                        label={
-                                          <Text
-                                            ta="center"
-                                            size={
-                                              status === "running"
-                                                ? "xs"
-                                                : "9px"
-                                            }
-                                            fw={700}
-                                          >
-                                            {status === "completed" &&
-                                            job.progress_max == 0 &&
-                                            job.progress_value == 0
-                                              ? 100
-                                              : job.progress_max > 0
-                                                ? Math.round(
-                                                    (job.progress_value /
-                                                      job.progress_max) *
-                                                      100,
-                                                  )
-                                                : 0}
-                                            %
-                                          </Text>
-                                        }
-                                        className={
-                                          status === "running"
-                                            ? classes.pulse
-                                            : undefined
-                                        }
-                                      />
-                                    </Tooltip>
-                                  )}
+                                                  ? Math.round(
+                                                      (job.progress_value /
+                                                        job.progress_max) *
+                                                        100,
+                                                    )
+                                                  : 0}
+                                              %
+                                            </Text>
+                                          }
+                                          className={
+                                            status === "running"
+                                              ? classes.pulse
+                                              : undefined
+                                          }
+                                        />
+                                      </Tooltip>
+                                    ) : (
+                                      <Group
+                                        justify="center"
+                                        style={{ width: 42, height: 42 }}
+                                      >
+                                        <FontAwesomeIcon
+                                          icon={
+                                            status === "completed"
+                                              ? faCheck
+                                              : faXmark
+                                          }
+                                          color={
+                                            status === "completed"
+                                              ? "green"
+                                              : "red"
+                                          }
+                                          size="lg"
+                                        />
+                                      </Group>
+                                    ))}
                                   <Stack
                                     gap={4}
                                     style={{ flex: 1, minWidth: 0 }}
