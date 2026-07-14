@@ -2,11 +2,7 @@ declare namespace SocketIO {
   type EventType = NumEventType | NullEventType | SpecialEventType;
 
   type NumEventType =
-    | "movie"
-    | "series"
-    | "episode"
-    | "episode-wanted"
-    | "movie-wanted";
+    "movie" | "series" | "episode" | "episode-wanted" | "movie-wanted";
 
   type NullEventType =
     | "connect"
