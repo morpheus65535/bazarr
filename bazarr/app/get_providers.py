@@ -336,6 +336,7 @@ def get_providers_auth():
             'response': settings.whisperai.response,
             'timeout': settings.whisperai.timeout,
             'ffmpeg_path': _FFMPEG_BINARY,
+            'ffprobe_path': _FFPROBE_BINARY,
             'loglevel': settings.whisperai.loglevel,
             'pass_video_name': settings.whisperai.pass_video_name,
         },
