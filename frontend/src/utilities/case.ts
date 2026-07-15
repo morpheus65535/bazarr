@@ -1,26 +1,21 @@
-export function toCamelCase(value: string): string {
-  return value.replace(/_(.)/g, (_, char) => char.toUpperCase());
-}
+export const toCamelCase = (value: string): string =>
+  value.replace(/_(.)/g, (_, char) => char.toUpperCase());
 
-export function toSnakeCase(value: string): string {
-  return value
+export const toSnakeCase = (value: string): string =>
+  value
     .replace(/([A-Z]+)/g, (_, chars) => `_${chars.toLowerCase()}`)
     .replace(/^_/, "");
-}
 
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    !Array.isArray(value) &&
-    !(value instanceof Date) &&
-    !(value instanceof File) &&
-    !(value instanceof Blob) &&
-    !(value instanceof RegExp)
-  );
-}
+const isPlainObject = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" &&
+  value !== null &&
+  !Array.isArray(value) &&
+  !(value instanceof Date) &&
+  !(value instanceof File) &&
+  !(value instanceof Blob) &&
+  !(value instanceof RegExp);
 
-export function camelCaseKeys<T>(value: T): CamelCaseKeys<T> {
+export const camelCaseKeys = <T>(value: T): CamelCaseKeys<T> => {
   if (Array.isArray(value)) {
     return value.map(camelCaseKeys) as CamelCaseKeys<T>;
   }
@@ -36,9 +31,9 @@ export function camelCaseKeys<T>(value: T): CamelCaseKeys<T> {
   }
 
   return value as CamelCaseKeys<T>;
-}
+};
 
-export function snakeCaseKeys<T>(value: T): LooseObject {
+export const snakeCaseKeys = <T>(value: T): LooseObject => {
   if (Array.isArray(value)) {
     return value.map(snakeCaseKeys);
   }
@@ -54,4 +49,4 @@ export function snakeCaseKeys<T>(value: T): LooseObject {
   }
 
   return value as LooseObject;
-}
+};
