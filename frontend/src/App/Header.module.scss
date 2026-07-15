@@ -1,9 +1,31 @@
 .header {
+  padding: var(--mantine-spacing-md);
+
+  @include mantine.larger-than(mantine.$mantine-breakpoint-sm) {
+    padding-left: 0;
+  }
+
   @include mantine.light {
     color: var(--mantine-color-gray-0);
   }
 
   @include mantine.dark {
     color: var(--mantine-color-dark-0);
+  }
+}
+
+.brand {
+  @include mantine.larger-than(mantine.$mantine-breakpoint-sm) {
+    padding-left: var(--mantine-spacing-md);
+    width: var(--navbar-width);
+  }
+}
+
+.searchArea {
+  flex: 1;
+  justify-content: flex-end;
+
+  @include mantine.larger-than(mantine.$mantine-breakpoint-sm) {
+    justify-content: space-between;
   }
 }

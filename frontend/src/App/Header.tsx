@@ -4,8 +4,10 @@ import {
   AppShell,
   Avatar,
   Badge,
+  Box,
   Burger,
   Divider,
+  Flex,
   Group,
   Menu,
 } from "@mantine/core";
@@ -24,6 +26,7 @@ import { useIsOnline } from "@/contexts/Online";
 import { Environment, useGotoHomepage } from "@/utilities";
 import JobsManager from "./JobsManager";
 import styles from "./Header.module.scss";
+import styleVars from "@/assets/_variables.module.scss";
 
 const AppHeader: FunctionComponent = () => {
   const { data: settings } = useSystemSettings();
@@ -45,10 +48,15 @@ const AppHeader: FunctionComponent = () => {
 
   const { data: jobs } = useSystemJobs();
 
+  const navbarWidth = Number(styleVars.navBarWidth);
+
   return (
-    <AppShell.Header p="md" className={styles.header}>
-      <Group justify="space-between" wrap="nowrap">
-        <Group wrap="nowrap">
+    <AppShell.Header
+      className={styles.header}
+      style={{ "--navbar-width": `${navbarWidth}px` }}
+    >
+      <Flex align="center" wrap="nowrap" w="100%">
+        <Flex align="center" gap="xs" wrap="nowrap" className={styles.brand}>
           <Burger
             opened={showed}
             onClick={() => show(!showed)}
@@ -65,6 +73,7 @@ const AppHeader: FunctionComponent = () => {
           <Badge size="lg" radius="sm" variant="brand" visibleFrom="sm">
             Bazarr
           </Badge>
+<<<<<<< HEAD
         </Group>
         <Group gap="xs" justify="right" wrap="nowrap">
           <Search></Search>
@@ -111,6 +120,66 @@ const AppHeader: FunctionComponent = () => {
         </Group>
       </Group>
       <JobsManager opened={jobsManagerOpened} onClose={closeJobsManager} />
+=======
+        </Flex>
+        <Flex
+          align="center"
+          gap="xs"
+          wrap="nowrap"
+          className={styles.searchArea}
+        >
+          <Box style={{ flex: "0 0 auto" }}>
+            <Search></Search>
+          </Box>
+          <Group gap="xs" justify="right" wrap="nowrap">
+            <Action
+              label="Jobs Manager"
+              tooltip={{ position: "left", openDelay: 2000 }}
+              icon={faListCheck}
+              size="sm"
+              isLoading={Boolean(
+                jobs?.filter((job) => job.status === "running").length,
+              )}
+              onClick={openJobsManager}
+            ></Action>
+            <Menu>
+              <Menu.Target>
+                <Action
+                  label="System"
+                  tooltip={{ position: "left", openDelay: 2000 }}
+                  loading={offline}
+                  c={offline ? "yellow" : undefined}
+                  icon={faGear}
+                  size="lg"
+                ></Action>
+              </Menu.Target>
+              <Menu.Dropdown>
+                <Menu.Item
+                  leftSection={<FontAwesomeIcon icon={faArrowRotateLeft} />}
+                  onClick={() => restart()}
+                >
+                  Restart
+                </Menu.Item>
+                <Menu.Item
+                  leftSection={<FontAwesomeIcon icon={faPowerOff} />}
+                  onClick={() => shutdown()}
+                >
+                  Shutdown
+                </Menu.Item>
+                <Divider hidden={!hasLogout}></Divider>
+                <Menu.Item hidden={!hasLogout} onClick={() => logout()}>
+                  Logout
+                </Menu.Item>
+              </Menu.Dropdown>
+            </Menu>
+          </Group>
+        </Flex>
+      </Flex>
+      <NotificationDrawer
+        opened={jobsManagerOpened}
+        onClose={closeJobsManager}
+      />
+>>>>>>> a3bb05e85 (feat: Adjust styles)
     </AppShell.Header>
   );
 };

@@ -44,7 +44,10 @@ const buildNavActions = (
 
       if (fullPath.includes(":")) continue;
 
-      if (route.name && route.element) {
+      if (
+        route.name &&
+        (route.element || route.children?.some((c) => c.index))
+      ) {
         const icon = route.icon || parentIcon;
         actions.push({
           id: fullPath,
