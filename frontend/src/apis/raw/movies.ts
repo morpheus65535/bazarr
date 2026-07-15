@@ -1,3 +1,4 @@
+import { camelCaseKeys, snakeCaseKeys } from "@/utilities/case";
 import BaseApi from "./base";
 
 class MovieApi extends BaseApi {
@@ -7,16 +8,16 @@ class MovieApi extends BaseApi {
 
   async blacklist() {
     const response =
-      await this.get<DataWrapper<Blacklist.Movie[]>>("/blacklist");
-    return response.data;
+      await this.get<DataWrapper<Blacklist.RawMovie[]>>("/blacklist");
+    return response.data.map(camelCaseKeys);
   }
 
   async addBlacklist(radarrid: number, form: FormType.AddBlacklist) {
-    await this.post("/blacklist", form, { radarrid });
+    await this.post("/blacklist", snakeCaseKeys(form), { radarrid });
   }
 
   async deleteBlacklist(all?: boolean, form?: FormType.DeleteBlacklist) {
-    await this.delete("/blacklist", form, { all });
+    await this.delete("/blacklist", snakeCaseKeys(form), { all });
   }
 
   async movies(radarrid?: number[]) {
@@ -57,19 +58,19 @@ class MovieApi extends BaseApi {
   }
 
   async history(params: Parameter.Range) {
-    const response = await this.get<DataWrapperWithTotal<History.Movie>>(
+    const response = await this.get<DataWrapperWithTotal<History.RawMovie>>(
       "/history",
       params,
     );
-    return response;
+    return camelCaseKeys(response);
   }
 
   async historyBy(radarrid: number) {
-    const response = await this.get<DataWrapperWithTotal<History.Movie>>(
+    const response = await this.get<DataWrapperWithTotal<History.RawMovie>>(
       "/history",
       { radarrid },
     );
-    return response.data;
+    return response.data.map(camelCaseKeys);
   }
 
   async action(action: FormType.MoviesAction) {

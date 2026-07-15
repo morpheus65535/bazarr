@@ -75,7 +75,6 @@ const MovieDetailView: FunctionComponent = () => {
           forced,
           provider,
           subtitle,
-          // eslint-disable-next-line camelcase
           original_format: originalFormat,
         },
       });

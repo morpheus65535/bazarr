@@ -248,7 +248,6 @@ const SubtitleToolView: FunctionComponent<SubtitleToolViewProps> = ({
                 episodeLabel,
                 language: v.code2,
                 path: v.path,
-                // eslint-disable-next-line camelcase
                 raw_language: v,
                 season: isMovie(item) ? undefined : item.season,
                 name,

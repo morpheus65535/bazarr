@@ -28,9 +28,7 @@ const defaultCutoffOptions: SelectorOption<Language.ProfileItem>[] = [
     label: "Any",
     value: {
       id: anyCutoff,
-      // eslint-disable-next-line camelcase
       audio_exclude: "False",
-      // eslint-disable-next-line camelcase
       audio_only_include: "False",
       forced: "False",
       hi: "False",
@@ -159,9 +157,7 @@ const ProfileEditForm: FunctionComponent<Props> = ({
       const item: Language.ProfileItem = {
         id,
         language,
-        // eslint-disable-next-line camelcase
         audio_exclude: "False",
-        // eslint-disable-next-line camelcase
         audio_only_include: "False",
         hi: "False",
         forced: "False",
@@ -246,9 +242,7 @@ const ProfileEditForm: FunctionComponent<Props> = ({
             if (value) {
               action.mutate(index, {
                 ...item,
-                // eslint-disable-next-line camelcase
                 audio_exclude: value === "audio_exclude" ? "True" : "False",
-                // eslint-disable-next-line camelcase
                 audio_only_include:
                   value === "audio_only_include" ? "True" : "False",
               });

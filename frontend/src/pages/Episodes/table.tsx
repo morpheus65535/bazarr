@@ -61,7 +61,6 @@ const Table = forwardRef<TableInstance<Item.Episode> | null, Props>(
             forced,
             provider,
             subtitle,
-            // eslint-disable-next-line camelcase
             original_format: originalFormat,
           },
         });

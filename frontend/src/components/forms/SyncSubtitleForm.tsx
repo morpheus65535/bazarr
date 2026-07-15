@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 import { FunctionComponent } from "react";
 import {
   Alert,

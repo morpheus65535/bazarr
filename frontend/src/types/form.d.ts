@@ -63,14 +63,14 @@ declare namespace FormType {
 
   interface AddBlacklist {
     provider: string;
-    subs_id: string;
+    subsId: string;
     language: Language.CodeType;
-    subtitles_path: string;
+    subtitlesPath: string;
   }
 
   interface DeleteBlacklist {
     provider: string;
-    subs_id: string;
+    subsId: string;
   }
 
   interface ManualDownload {

@@ -1,3 +1,4 @@
+import { camelCaseKeys, snakeCaseKeys } from "@/utilities/case";
 import BaseApi from "./base";
 
 class EpisodeApi extends BaseApi {
@@ -36,19 +37,19 @@ class EpisodeApi extends BaseApi {
   }
 
   async history(params: Parameter.Range) {
-    const response = await this.get<DataWrapperWithTotal<History.Episode>>(
+    const response = await this.get<DataWrapperWithTotal<History.RawEpisode>>(
       "/history",
       params,
     );
-    return response;
+    return camelCaseKeys(response);
   }
 
   async historyBy(episodeid: number) {
-    const response = await this.get<DataWrapperWithTotal<History.Episode>>(
+    const response = await this.get<DataWrapperWithTotal<History.RawEpisode>>(
       "/history",
       { episodeid },
     );
-    return response.data;
+    return response.data.map(camelCaseKeys);
   }
 
   async downloadSubtitles(
@@ -77,8 +78,8 @@ class EpisodeApi extends BaseApi {
 
   async blacklist() {
     const response =
-      await this.get<DataWrapper<Blacklist.Episode[]>>("/blacklist");
-    return response.data;
+      await this.get<DataWrapper<Blacklist.RawEpisode[]>>("/blacklist");
+    return response.data.map(camelCaseKeys);
   }
 
   async addBlacklist(
@@ -86,11 +87,11 @@ class EpisodeApi extends BaseApi {
     episodeid: number,
     form: FormType.AddBlacklist,
   ) {
-    await this.post("/blacklist", form, { seriesid, episodeid });
+    await this.post("/blacklist", snakeCaseKeys(form), { seriesid, episodeid });
   }
 
   async deleteBlacklist(all?: boolean, form?: FormType.DeleteBlacklist) {
-    await this.delete("/blacklist", form, { all });
+    await this.delete("/blacklist", snakeCaseKeys(form), { all });
   }
 }
 

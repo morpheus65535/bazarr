@@ -14,7 +14,6 @@ const createMinimalItem = (overrides: Partial<Item.Base> = {}): Item.Base =>
     monitored: true,
     tags: [],
     alternativeTitles: [],
-    // eslint-disable-next-line camelcase
     audio_language: [],
     profileId: undefined,
     overview: "Test overview",

@@ -203,23 +203,27 @@ declare namespace Wanted {
 }
 
 declare namespace Blacklist {
-  type Base = ItemHistoryType & {
+  type RawBase = ItemHistoryType & {
     parsed_timestamp: string;
     timestamp: string;
     subs_id: string;
   };
 
-  type Movie = Base & MovieIdType & TitleType;
+  type RawMovie = RawBase & MovieIdType & TitleType;
 
-  type Episode = Base &
+  type RawEpisode = RawBase &
     EpisodeTitleType &
     SeriesIdType & {
       episode_number: string;
     };
+
+  type Base = CamelCaseKeys<RawBase>;
+  type Movie = CamelCaseKeys<RawMovie>;
+  type Episode = CamelCaseKeys<RawEpisode>;
 }
 
 declare namespace History {
-  type Base = SubtitlePathType &
+  type RawBase = SubtitlePathType &
     TagType &
     MonitoredType &
     Partial<ItemHistoryType> & {
@@ -235,13 +239,17 @@ declare namespace History {
       dont_matches: string[];
     };
 
-  type Movie = History.Base & MovieIdType & TitleType;
+  type RawMovie = RawBase & MovieIdType & TitleType;
 
-  type Episode = History.Base &
+  type RawEpisode = RawBase &
     EpisodeIdType &
     EpisodeTitleType & {
       episode_number: string;
     };
+
+  type Base = CamelCaseKeys<RawBase>;
+  type Movie = CamelCaseKeys<RawMovie>;
+  type Episode = CamelCaseKeys<RawEpisode>;
 
   type StatItem = {
     count: number;

@@ -76,7 +76,6 @@ class NewPlexApi extends BaseApi {
   async deleteWebhook(webhookUrl: string) {
     const response = await this.post<DataWrapper<Plex.WebhookResult>>(
       "/webhook/delete",
-      // eslint-disable-next-line camelcase
       { webhook_url: webhookUrl },
     );
 

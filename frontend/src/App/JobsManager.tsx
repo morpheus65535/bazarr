@@ -126,11 +126,8 @@ const JobsManager: FunctionComponent<JobsManagerProps> = ({
         queryKey: [QueryKeys.System, QueryKeys.Jobs],
       });
       const actionLabels: Record<string, string> = {
-        // eslint-disable-next-line camelcase
         move_top: "Moved to top",
-        // eslint-disable-next-line camelcase
         move_bottom: "Moved to bottom",
-        // eslint-disable-next-line camelcase
         force_start: "Force started",
       };
       const label = actionLabels[variables.action] || "Action completed";
