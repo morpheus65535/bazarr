@@ -106,11 +106,11 @@ def check_status():
             os.remove(restart_file)
         except Exception:
             print('Unable to delete restart file.')
-        finally:
-            terminate_child()
-            print("Bazarr is restarting...")
-            child_process = start_bazarr()
-            return
+
+        terminate_child()
+        print("Bazarr is restarting...")
+        child_process = start_bazarr()
+        return
         
     if not is_process_running(child_process):
         print("Bazarr child process has stopped unexpectedly. Shutting down...")
