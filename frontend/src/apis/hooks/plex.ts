@@ -18,7 +18,7 @@ export const usePlexAuthValidationQuery = () => {
         // Return a default value when API is not available
         return {
           valid: false,
-          auth_method: "oauth",
+          authMethod: "oauth",
           error: "API unavailable",
         };
       }

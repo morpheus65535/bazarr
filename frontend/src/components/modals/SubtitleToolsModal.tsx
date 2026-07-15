@@ -41,7 +41,7 @@ import { fromPython, isMovie, toPython } from "@/utilities";
 type SupportType = Item.Episode | Item.Movie;
 
 type TableColumnType = FormType.ModifySubtitle & {
-  raw_language: Language.Info;
+  rawLanguage: Language.Info;
   episode?: number;
   episodeLabel: string;
   seriesId: number;
@@ -115,10 +115,10 @@ function getEpisodeLabel(item: SupportType) {
 
   const {
     episode,
-    episode_number: episodeNumber,
+    episodeNumber: episodeNumber,
     season,
   } = item as Item.Episode & {
-    episode_number?: string;
+    episodeNumber?: string;
   };
 
   if (season === undefined || episode === undefined) {
@@ -184,7 +184,7 @@ const SubtitleToolView: FunctionComponent<SubtitleToolViewProps> = ({
         accessorKey: "language",
         cell: ({
           row: {
-            original: { raw_language: rawLanguage },
+            original: { rawLanguage: rawLanguage },
           },
         }) => (
           <Badge color="secondary">
@@ -248,7 +248,7 @@ const SubtitleToolView: FunctionComponent<SubtitleToolViewProps> = ({
                 episodeLabel,
                 language: v.code2,
                 path: v.path,
-                raw_language: v,
+                rawLanguage: v,
                 season: isMovie(item) ? undefined : item.season,
                 name,
                 hi: toPython(v.hi),
@@ -271,7 +271,7 @@ const SubtitleToolView: FunctionComponent<SubtitleToolViewProps> = ({
     const item = new Map<string, string>();
 
     data.forEach((row) => {
-      const languageValue = getLanguageValue(row.raw_language);
+      const languageValue = getLanguageValue(row.rawLanguage);
       language.set(languageValue, languageValue);
       item.set(row.name.toLowerCase(), row.name);
 
@@ -389,7 +389,7 @@ const SubtitleToolView: FunctionComponent<SubtitleToolViewProps> = ({
               case "item":
                 return original.name.toLowerCase().includes(filter.value);
               case "language":
-                return getLanguageValue(original.raw_language) === filter.value;
+                return getLanguageValue(original.rawLanguage) === filter.value;
               case "season":
                 return original.season?.toString() === filter.value;
             }

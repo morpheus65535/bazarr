@@ -45,7 +45,7 @@ const ItemEditForm: FunctionComponent<Props> = ({
 
   // Item code2 may be undefined or null if the audio language is Unknown
   const options = useSelectorOptions(
-    item?.audio_language ?? [],
+    item?.audioLanguage ?? [],
     (v) => v.name,
     (v) => v.code2 ?? "",
   );
@@ -59,7 +59,7 @@ const ItemEditForm: FunctionComponent<Props> = ({
           const itemId = GetItemId(item);
           if (itemId) {
             mutate(
-              { id: [itemId], profileid: [profile?.profileId ?? null] },
+              { id: [itemId], profileId: [profile?.profileId ?? null] },
               {
                 onSuccess: () => {
                   showNotification(
@@ -94,7 +94,7 @@ const ItemEditForm: FunctionComponent<Props> = ({
           label="Audio Languages"
           disabled
           {...options}
-          value={item?.audio_language ?? []}
+          value={item?.audioLanguage ?? []}
         ></MultiSelector>
         <Selector
           {...profileOptions}

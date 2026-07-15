@@ -1,3 +1,4 @@
+import { camelCaseKeys, snakeCaseKeys } from "@/utilities/case";
 import BaseApi from "./base";
 
 class ProviderApi extends BaseApi {
@@ -17,25 +18,25 @@ class ProviderApi extends BaseApi {
   }
 
   async movies(id: number) {
-    const response = await this.get<DataWrapper<SearchResultType[]>>(
+    const response = await this.get<DataWrapper<RawSearchResultType[]>>(
       "/movies",
       { radarrid: id },
     );
-    return response.data;
+    return response.data.map(camelCaseKeys);
   }
 
   async downloadMovieSubtitle(radarrid: number, form: FormType.ManualDownload) {
-    await this.post("/movies", form, { radarrid });
+    await this.post("/movies", snakeCaseKeys(form), { radarrid });
   }
 
   async episodes(episodeid: number) {
-    const response = await this.get<DataWrapper<SearchResultType[]>>(
+    const response = await this.get<DataWrapper<RawSearchResultType[]>>(
       "/episodes",
       {
         episodeid,
       },
     );
-    return response.data;
+    return response.data.map(camelCaseKeys);
   }
 
   async downloadEpisodeSubtitle(
@@ -43,7 +44,7 @@ class ProviderApi extends BaseApi {
     episodeid: number,
     form: FormType.ManualDownload,
   ) {
-    await this.post("/episodes", form, { seriesid, episodeid });
+    await this.post("/episodes", snakeCaseKeys(form), { seriesid, episodeid });
   }
 }
 

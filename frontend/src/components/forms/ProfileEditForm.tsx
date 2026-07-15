@@ -28,8 +28,8 @@ const defaultCutoffOptions: SelectorOption<Language.ProfileItem>[] = [
     label: "Any",
     value: {
       id: anyCutoff,
-      audio_exclude: "False",
-      audio_only_include: "False",
+      audioExclude: "False",
+      audioOnlyInclude: "False",
       forced: "False",
       hi: "False",
       language: "any",
@@ -59,11 +59,11 @@ const inclusionOptions: SelectorOption<string>[] = [
   },
   {
     label: "audio track matches",
-    value: "audio_only_include",
+    value: "audioOnlyInclude",
   },
   {
     label: "no audio track matches",
-    value: "audio_exclude",
+    value: "audioExclude",
   },
 ];
 
@@ -157,8 +157,8 @@ const ProfileEditForm: FunctionComponent<Props> = ({
       const item: Language.ProfileItem = {
         id,
         language,
-        audio_exclude: "False",
-        audio_only_include: "False",
+        audioExclude: "False",
+        audioOnlyInclude: "False",
         hi: "False",
         forced: "False",
       };
@@ -225,14 +225,14 @@ const ProfileEditForm: FunctionComponent<Props> = ({
   const InclusionCell = React.memo(
     ({ item, index }: { item: Language.ProfileItem; index: number }) => {
       const selectValue = useMemo(() => {
-        if (item.audio_exclude === "True") {
-          return "audio_exclude";
-        } else if (item.audio_only_include === "True") {
-          return "audio_only_include";
+        if (item.audioExclude === "True") {
+          return "audioExclude";
+        } else if (item.audioOnlyInclude === "True") {
+          return "audioOnlyInclude";
         } else {
           return "always_include";
         }
-      }, [item.audio_exclude, item.audio_only_include]);
+      }, [item.audioExclude, item.audioOnlyInclude]);
 
       return (
         <Select
@@ -242,9 +242,9 @@ const ProfileEditForm: FunctionComponent<Props> = ({
             if (value) {
               action.mutate(index, {
                 ...item,
-                audio_exclude: value === "audio_exclude" ? "True" : "False",
-                audio_only_include:
-                  value === "audio_only_include" ? "True" : "False",
+                audioExclude: value === "audioExclude" ? "True" : "False",
+                audioOnlyInclude:
+                  value === "audioOnlyInclude" ? "True" : "False",
               });
             }
           }}
@@ -275,7 +275,7 @@ const ProfileEditForm: FunctionComponent<Props> = ({
       },
       {
         header: "Search only when...",
-        accessorKey: "audio_exclude",
+        accessorKey: "audioExclude",
         cell: ({ row: { original: item, index } }) => {
           return <InclusionCell item={item} index={index} />;
         },

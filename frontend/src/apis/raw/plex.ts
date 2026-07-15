@@ -1,3 +1,4 @@
+import { camelCaseKeys } from "@/utilities/case";
 import BaseApi from "./base";
 
 class NewPlexApi extends BaseApi {
@@ -47,9 +48,9 @@ class NewPlexApi extends BaseApi {
 
   async validateAuth() {
     const response =
-      await this.get<DataWrapper<Plex.ValidationResult>>(`/oauth/validate`);
+      await this.get<DataWrapper<Plex.RawValidationResult>>(`/oauth/validate`);
 
-    return response.data;
+    return camelCaseKeys(response.data);
   }
 
   async libraries() {
@@ -61,16 +62,16 @@ class NewPlexApi extends BaseApi {
 
   async createWebhook() {
     const response =
-      await this.post<DataWrapper<Plex.WebhookResult>>("/webhook/create");
+      await this.post<DataWrapper<Plex.RawWebhookResult>>("/webhook/create");
 
-    return response.data;
+    return camelCaseKeys(response.data);
   }
 
   async listWebhooks() {
     const response =
-      await this.get<DataWrapper<Plex.WebhookList>>("/webhook/list");
+      await this.get<DataWrapper<Plex.RawWebhookList>>("/webhook/list");
 
-    return response.data;
+    return camelCaseKeys(response.data);
   }
 
   async deleteWebhook(webhookUrl: string) {
@@ -84,9 +85,9 @@ class NewPlexApi extends BaseApi {
 
   async getAutopulseConfig() {
     const response =
-      await this.get<DataWrapper<Plex.AutopulseConfig>>("/autopulse/config");
+      await this.get<DataWrapper<Plex.RawAutopulseConfig>>("/autopulse/config");
 
-    return response.data;
+    return camelCaseKeys(response.data);
   }
 }
 

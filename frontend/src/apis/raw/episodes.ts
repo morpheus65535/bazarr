@@ -7,33 +7,39 @@ class EpisodeApi extends BaseApi {
   }
 
   async bySeriesId(seriesid: number[]) {
-    const response = await this.get<DataWrapper<Item.Episode[]>>("", {
+    const response = await this.get<DataWrapper<Item.RawEpisode[]>>("", {
       seriesid,
     });
-    return response.data;
+    return response.data.map(camelCaseKeys);
   }
 
   async byEpisodeId(episodeid: number[]) {
-    const response = await this.get<DataWrapper<Item.Episode[]>>("", {
+    const response = await this.get<DataWrapper<Item.RawEpisode[]>>("", {
       episodeid,
     });
-    return response.data;
+    return response.data.map(camelCaseKeys);
   }
 
   async wanted(params: Parameter.Range) {
-    const response = await this.get<DataWrapperWithTotal<Wanted.Episode>>(
+    const response = await this.get<DataWrapperWithTotal<Wanted.RawEpisode>>(
       "/wanted",
       params,
     );
-    return response;
+    return {
+      ...response,
+      data: response.data.map(camelCaseKeys),
+    };
   }
 
   async wantedBy(episodeid: number[]) {
-    const response = await this.get<DataWrapperWithTotal<Wanted.Episode>>(
+    const response = await this.get<DataWrapperWithTotal<Wanted.RawEpisode>>(
       "/wanted",
       { episodeid },
     );
-    return response;
+    return {
+      ...response,
+      data: response.data.map(camelCaseKeys),
+    };
   }
 
   async history(params: Parameter.Range) {

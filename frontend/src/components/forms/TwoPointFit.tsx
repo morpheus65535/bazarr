@@ -30,7 +30,7 @@ const totalMs = (t: { hour: number; min: number; sec: number; ms: number }) =>
   t.hour * 3600000 + t.min * 60000 + t.sec * 1000 + t.ms;
 
 const lineStartMs = (t: SubtitleContents.LineTime) =>
-  t.total_seconds * 1000 + Math.round(t.microseconds / 1000);
+  t.totalSeconds * 1000 + Math.round(t.microseconds / 1000);
 
 const lineStartToTime = (t: SubtitleContents.LineTime) => ({
   hour: t.hours,

@@ -44,11 +44,11 @@ const Table = forwardRef<TableInstance<Item.Episode> | null, Props>(
       (item: Item.Episode, result: SearchResultType) => {
         const {
           language,
-          hearing_impaired: hi,
+          hearingImpaired: hi,
           forced,
           provider,
           subtitle,
-          original_format: originalFormat,
+          originalFormat,
         } = result;
         const { sonarrSeriesId: seriesId, sonarrEpisodeId: episodeId } = item;
 
@@ -61,7 +61,7 @@ const Table = forwardRef<TableInstance<Item.Episode> | null, Props>(
             forced,
             provider,
             subtitle,
-            original_format: originalFormat,
+            originalFormat,
           },
         });
       },
@@ -75,7 +75,7 @@ const Table = forwardRef<TableInstance<Item.Episode> | null, Props>(
         const elements = useMemo(() => {
           const episodeId = episode.sonarrEpisodeId;
 
-          const missing = episode.missing_subtitles.map((val, idx) => (
+          const missing = episode.missingSubtitles.map((val, idx) => (
             <Subtitle
               missing
               key={BuildKey(idx, val.code2, "missing")}
@@ -162,16 +162,16 @@ const Table = forwardRef<TableInstance<Item.Episode> | null, Props>(
         },
         {
           header: "Audio",
-          accessorKey: "audio_language",
+          accessorKey: "audioLanguage",
           cell: ({
             row: {
-              original: { audio_language: audioLanguage },
+              original: { audioLanguage: audioLanguage },
             },
           }) => <AudioList audios={audioLanguage}></AudioList>,
         },
         {
           header: "Subtitles",
-          accessorKey: "missing_subtitles",
+          accessorKey: "missingSubtitles",
           cell: ({ row: { original } }) => {
             return <SubtitlesCell episode={original} />;
           },

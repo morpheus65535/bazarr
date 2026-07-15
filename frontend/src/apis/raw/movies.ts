@@ -21,40 +21,49 @@ class MovieApi extends BaseApi {
   }
 
   async movies(radarrid?: number[]) {
-    const response = await this.get<DataWrapperWithTotal<Item.Movie>>("", {
+    const response = await this.get<DataWrapperWithTotal<Item.RawMovie>>("", {
       radarrid,
     });
-    return response.data;
+    return response.data.map(camelCaseKeys);
   }
 
   async moviesBy(params: Parameter.Range) {
-    const response = await this.get<DataWrapperWithTotal<Item.Movie>>(
+    const response = await this.get<DataWrapperWithTotal<Item.RawMovie>>(
       "",
       params,
     );
-    return response;
+    return {
+      ...response,
+      data: response.data.map(camelCaseKeys),
+    };
   }
 
   async modify(form: FormType.ModifyItem) {
-    await this.post("", { radarrid: form.id, profileid: form.profileid });
+    await this.post("", { radarrid: form.id, profileid: form.profileId });
   }
 
   async wanted(params: Parameter.Range) {
-    const response = await this.get<DataWrapperWithTotal<Wanted.Movie>>(
+    const response = await this.get<DataWrapperWithTotal<Wanted.RawMovie>>(
       "/wanted",
       params,
     );
-    return response;
+    return {
+      ...response,
+      data: response.data.map(camelCaseKeys),
+    };
   }
 
   async wantedBy(radarrid: number[]) {
-    const response = await this.get<DataWrapperWithTotal<Wanted.Movie>>(
+    const response = await this.get<DataWrapperWithTotal<Wanted.RawMovie>>(
       "/wanted",
       {
         radarrid,
       },
     );
-    return response;
+    return {
+      ...response,
+      data: response.data.map(camelCaseKeys),
+    };
   }
 
   async history(params: Parameter.Range) {
@@ -74,7 +83,7 @@ class MovieApi extends BaseApi {
   }
 
   async action(action: FormType.MoviesAction) {
-    await this.patch("", action);
+    await this.patch("", snakeCaseKeys(action));
   }
 
   async downloadSubtitles(radarrid: number, form: FormType.Subtitle) {

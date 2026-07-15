@@ -51,7 +51,7 @@ const AuthSection = () => {
   }
 
   const isAuthenticated = Boolean(
-    authData?.valid && authData?.auth_method === "oauth",
+    authData?.valid && authData?.authMethod === "oauth",
   );
 
   const handleAuth = async () => {
