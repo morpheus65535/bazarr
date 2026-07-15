@@ -130,6 +130,8 @@ class SubsourceConverter(LanguageReverseConverter):
     def convert(self, alpha3, country=None, script=None):
         if (alpha3, country, script) in self.to_subsource:
             return self.to_subsource[(alpha3, country, script)]
+        if country and (alpha3, country) in self.to_subsource:
+            return self.to_subsource[(alpha3, country)]
         if (alpha3,) in self.to_subsource:
             return self.to_subsource[(alpha3,)]
 
