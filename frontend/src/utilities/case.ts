@@ -1,10 +1,8 @@
-export const toCamelCase = (value: string): string =>
-  value.replace(/_(.)/g, (_, char) => char.toUpperCase());
+import { camelCase, snakeCase } from "lodash";
 
-export const toSnakeCase = (value: string): string =>
-  value
-    .replace(/([A-Z]+)/g, (_, chars) => `_${chars.toLowerCase()}`)
-    .replace(/^_/, "");
+export const toCamelCase = (value: string): string => camelCase(value);
+
+export const toSnakeCase = (value: string): string => snakeCase(value);
 
 const isPlainObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" &&
@@ -24,7 +22,7 @@ export const camelCaseKeys = <T>(value: T): CamelCaseKeys<T> => {
     const result: Record<string, unknown> = {};
 
     for (const [key, val] of Object.entries(value)) {
-      result[toCamelCase(key)] = camelCaseKeys(val);
+      result[camelCase(key)] = camelCaseKeys(val);
     }
 
     return result as CamelCaseKeys<T>;
@@ -42,7 +40,7 @@ export const snakeCaseKeys = <T>(value: T): LooseObject => {
     const result: Record<string, unknown> = {};
 
     for (const [key, val] of Object.entries(value)) {
-      result[toSnakeCase(key)] = snakeCaseKeys(val);
+      result[snakeCase(key)] = snakeCaseKeys(val);
     }
 
     return result;
