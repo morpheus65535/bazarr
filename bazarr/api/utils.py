@@ -4,7 +4,6 @@ import ast
 
 from functools import wraps
 from flask import request, abort
-from operator import itemgetter
 
 from app.config import settings, base_url
 from languages.get_languages import language_from_alpha2, alpha3_from_alpha2
@@ -14,6 +13,16 @@ from utilities.path_mappings import path_mappings
 None_Keys = ['null', 'undefined', '', None]
 
 False_Keys = ['False', 'false', '0']
+
+
+def normalize_flag_token(value):
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized == "true":
+            return "True"
+        if normalized == "false":
+            return "False"
+    return "False"
 
 
 def authenticate(actual_method):
@@ -63,8 +72,8 @@ def postprocess(item):
 
     if settings.general.embedded_subs_show_desired and item.get('profileId'):
         desired_lang_list = get_desired_languages(item['profileId'])
-        item['subtitles'] = [x for x in item['subtitles'] if x['code2'] in desired_lang_list or x['path']]
-        item['subtitles'] = sorted(item['subtitles'], key=itemgetter('name', 'forced'))
+        item['subtitles'] = [x for x in item['subtitles'] if isinstance(x, dict) and (x.get('code2') in desired_lang_list or x.get('path'))]
+        item['subtitles'] = sorted(item['subtitles'], key=lambda x: (x.get('name', ''), x.get('forced', False)))
 
     # Parse missing subtitles
     if item.get('missing_subtitles'):

@@ -32,8 +32,10 @@ def delete_subtitles(media_type, language, forced, hi, media_path, subtitles_pat
         logging.error('BAZARR can only delete subtitles files.')
         return False
 
-    language_log = language
-    language_string = language_from_alpha2(language)
+    language_log = language if isinstance(language, str) and language else "unknown"
+    language_string = language_from_alpha2(language) if isinstance(language, str) else None
+    if not language_string:
+        language_string = language if isinstance(language, str) and language else "Unknown"
     if hi in [True, 'true', 'True']:
         language_log += ':hi'
         language_string += ' HI'
@@ -81,10 +83,10 @@ def delete_subtitles(media_type, language, forced, hi, media_path, subtitles_pat
             event_stream(type='series', action='update', payload=sonarr_series_id)
             event_stream(type='episode-wanted', action='update', payload=sonarr_episode_id)
 
-            if settings.general.use_plex and settings.plex.update_series_library:
+            if settings.general.use_plex and settings.plex.update_series_library and metadata:
                 plex_refresh_item(metadata.imdbId, is_movie=False, season=metadata.season,
                                   episode=metadata.episode)
-            if settings.general.use_jellyfin and settings.jellyfin.update_series_library:
+            if settings.general.use_jellyfin and settings.jellyfin.update_series_library and metadata:
                 jellyfin_refresh_item(metadata.imdbId, is_movie=False, season=metadata.season,
                                       episode=metadata.episode, tvdb_id=metadata.tvdbId)
 
@@ -110,9 +112,9 @@ def delete_subtitles(media_type, language, forced, hi, media_path, subtitles_pat
             notify_radarr(radarr_id)
             event_stream(type='movie-wanted', action='update', payload=radarr_id)
 
-            if settings.general.use_plex and settings.plex.update_movie_library:
+            if settings.general.use_plex and settings.plex.update_movie_library and metadata:
                 plex_refresh_item(metadata.imdbId, is_movie=True)
-            if settings.general.use_jellyfin and settings.jellyfin.update_movie_library:
+            if settings.general.use_jellyfin and settings.jellyfin.update_movie_library and metadata:
                 jellyfin_refresh_item(metadata.imdbId, is_movie=True,
                                       tmdb_id=metadata.tmdbId)
 

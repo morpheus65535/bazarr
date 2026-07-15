@@ -17,7 +17,7 @@ from app.event_handler import event_stream
 from app.config import settings
 from app.jobs_queue import jobs_queue
 
-from ..utils import authenticate
+from ..utils import authenticate, normalize_flag_token
 
 api_ns_movies_subtitles = Namespace('Movies Subtitles', description='Download, upload or delete movies subtitles')
 
@@ -42,8 +42,8 @@ class MoviesSubtitles(Resource):
         args = self.patch_request_parser.parse_args()
 
         movie_download_specific_subtitles(radarr_id=args.get('radarrid'), language=args.get('language'),
-                                          hi=args.get('hi').capitalize(),
-                                          forced=args.get('forced').capitalize(), job_id=None)
+                                          hi=normalize_flag_token(args.get('hi')),
+                                          forced=normalize_flag_token(args.get('forced')), job_id=None)
 
         return '', 204
 
@@ -147,4 +147,3 @@ class MoviesSubtitles(Resource):
             return '', 204
         else:
             return 'Subtitles file not found or permission issue.', 500
-

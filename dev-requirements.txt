@@ -1,6 +1,6 @@
 sympy
 vcrpy>=1.6.1
-pytest
+pytest<9
 pytest-pep8
 pytest-flakes
 pytest-cov
