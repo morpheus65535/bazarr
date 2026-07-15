@@ -39,6 +39,7 @@ const WantedSeriesView: FunctionComponent = () => {
         accessorKey: "episodeNumber",
       },
       {
+        header: "Episode Title",
         accessorKey: "episodeTitle",
       },
       {
