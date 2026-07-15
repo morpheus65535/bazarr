@@ -10,6 +10,7 @@ import {
 import ThemeLoader from "@/App/ThemeLoader";
 import "@mantine/core/styles.layer.css";
 import "@mantine/notifications/styles.layer.css";
+import "@mantine/spotlight/styles.layer.css";
 import styleVars from "@/assets/_variables.module.scss";
 import actionIconClasses from "@/assets/action_icon.module.scss";
 import badgeClasses from "@/assets/badge.module.scss";
