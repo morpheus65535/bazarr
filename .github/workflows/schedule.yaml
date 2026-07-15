@@ -2,7 +2,8 @@ name: Schedule Trigger
 
 on:
   schedule:
-    - cron: '0 6 * * *'
+    - cron: '0 1 * * *'
+      timezone: "America/Toronto"
   workflow_dispatch:
 
 jobs:
@@ -10,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Execute
-        uses: benc-uk/workflow-dispatch@v1.2.4
+        uses: benc-uk/workflow-dispatch@v1.3.2
         with:
           workflow: "release_beta_to_dev"
           token: ${{ secrets.WF_GITHUB_TOKEN }}
