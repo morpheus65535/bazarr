@@ -73,54 +73,6 @@ const AppHeader: FunctionComponent = () => {
           <Badge size="lg" radius="sm" variant="brand" visibleFrom="sm">
             Bazarr
           </Badge>
-<<<<<<< HEAD
-        </Group>
-        <Group gap="xs" justify="right" wrap="nowrap">
-          <Search></Search>
-          <Action
-            label="Jobs Manager"
-            tooltip={{ position: "left", openDelay: 2000 }}
-            icon={faListCheck}
-            size="sm"
-            isLoading={Boolean(
-              jobs?.filter((job) => job.status === "running").length,
-            )}
-            onClick={openJobsManager}
-          ></Action>
-          <Menu>
-            <Menu.Target>
-              <Action
-                label="System"
-                tooltip={{ position: "left", openDelay: 2000 }}
-                loading={offline}
-                c={offline ? "yellow" : undefined}
-                icon={faGear}
-                size="lg"
-              ></Action>
-            </Menu.Target>
-            <Menu.Dropdown>
-              <Menu.Item
-                leftSection={<FontAwesomeIcon icon={faArrowRotateLeft} />}
-                onClick={() => restart()}
-              >
-                Restart
-              </Menu.Item>
-              <Menu.Item
-                leftSection={<FontAwesomeIcon icon={faPowerOff} />}
-                onClick={() => shutdown()}
-              >
-                Shutdown
-              </Menu.Item>
-              <Divider hidden={!hasLogout}></Divider>
-              <Menu.Item hidden={!hasLogout} onClick={() => logout()}>
-                Logout
-              </Menu.Item>
-            </Menu.Dropdown>
-          </Menu>
-        </Group>
-      </Group>
-      <JobsManager opened={jobsManagerOpened} onClose={closeJobsManager} />
-=======
         </Flex>
         <Flex
           align="center"
@@ -175,11 +127,7 @@ const AppHeader: FunctionComponent = () => {
           </Group>
         </Flex>
       </Flex>
-      <NotificationDrawer
-        opened={jobsManagerOpened}
-        onClose={closeJobsManager}
-      />
->>>>>>> a3bb05e85 (feat: Adjust styles)
+      <JobsManager opened={jobsManagerOpened} onClose={closeJobsManager} />
     </AppShell.Header>
   );
 };
