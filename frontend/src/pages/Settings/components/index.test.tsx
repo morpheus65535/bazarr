@@ -85,13 +85,11 @@ describe("Settings test buttons", () => {
   });
 
   it("URLTestButton shows an error when the test fails", async () => {
-    const urlTest = vitest
-      .fn()
-      .mockResolvedValue({
-        status: false,
-        error: "Connection failed",
-        code: 500,
-      });
+    const urlTest = vitest.fn().mockResolvedValue({
+      status: false,
+      error: "Connection failed",
+      code: 500,
+    });
     vi.spyOn(api.utils, "urlTest").mockImplementation(urlTest);
 
     renderWithSettings(
