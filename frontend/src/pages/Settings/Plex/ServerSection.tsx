@@ -104,30 +104,6 @@ const ServerSection = () => {
     setIsSaved(false);
   };
 
-  // Unified initialization logic
-  const handleInitialization = () => {
-    // First priority: initialize from saved server
-    if (savedSelectedServer && !selectedServer && !isSaved) {
-      setSelectedServer(savedSelectedServer);
-      setIsSaved(true);
-      return;
-    }
-
-    // Second priority: auto-select single server
-    if (
-      isAuthenticated &&
-      servers.length === 1 &&
-      servers[0].bestConnection &&
-      !selectedServer &&
-      !isSaved &&
-      !savedSelectedServer
-    ) {
-      const server = servers[0];
-      setSelectedServer(server);
-      void selectAndSaveServer(server);
-    }
-  };
-
   // Run initialization when data is available
   useEffect(() => {
     if (!isAuthenticated) {

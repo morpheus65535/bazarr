@@ -203,7 +203,9 @@ describe("Selector", () => {
 
   describe("DefaultKeyBuilder", () => {
     it("renders an error when an object option is provided without a getkey builder", () => {
-      const spy = vitest.spyOn(console, "error").mockImplementation(() => {});
+      const spy = vitest
+        .spyOn(console, "error")
+        .mockImplementation(vitest.fn());
       const objectOptions: SelectorOption<{ name: string }>[] = [
         {
           label: "Option 1",

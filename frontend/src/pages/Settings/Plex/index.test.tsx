@@ -226,12 +226,16 @@ async function renderPage(
   hookOverrides?: HookOverrides,
 ) {
   setupMocks(overrides, hookOverrides);
-  let result: ReturnType<typeof customRender>;
+  let renderResult: ReturnType<typeof customRender>;
+  // eslint-disable-next-line testing-library/no-unnecessary-act
   await act(async () => {
-    result = customRender(<SettingsPlexView />);
+    renderResult = customRender(<SettingsPlexView />);
+    // Flush microtasks from void promises and Mantine Popover transitions
+    for (let i = 0; i < 3; i++) {
+      await Promise.resolve();
+    }
   });
-  await new Promise((resolve) => setTimeout(resolve, 0));
-  return result!;
+  return renderResult!;
 }
 
 describe("SettingsPlexView", async () => {
