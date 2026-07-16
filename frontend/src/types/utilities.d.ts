@@ -42,5 +42,4 @@ type Override<T, U> = T & Omit<U, keyof T>;
 
 type Sure<T> = Exclude<T, null | undefined>;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type GenericFunction<T = void> = (...args: any[]) => T;
+type GenericFunction<T = void> = (...args: never[]) => T;

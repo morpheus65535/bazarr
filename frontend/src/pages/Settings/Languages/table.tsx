@@ -11,7 +11,10 @@ import {
 import SimpleTable from "@/components/tables/SimpleTable";
 import { useModals } from "@/modules/modals";
 import { languageProfileKey } from "@/pages/Settings/keys";
-import { useFormActions } from "@/pages/Settings/utilities/FormValues";
+import {
+  HookType,
+  useFormActions,
+} from "@/pages/Settings/utilities/FormValues";
 import { BuildKey, useArrayAction } from "@/utilities";
 import { snakeCaseKeys } from "@/utilities/case";
 import { useLatestEnabledLanguages, useLatestProfiles } from ".";
@@ -34,7 +37,7 @@ const Table: FunctionComponent = () => {
 
   const submitProfiles = useCallback(
     (list: Language.Profile[]) => {
-      setValue(list, languageProfileKey, (value: Language.Profile[]) => {
+      setValue(list, languageProfileKey, ((value: Language.Profile[]) => {
         const raw: Language.RawProfile[] = value.map((profile) => ({
           ...profile,
           items: profile.items.map(
@@ -43,7 +46,7 @@ const Table: FunctionComponent = () => {
         }));
 
         return JSON.stringify(raw);
-      });
+      }) as HookType);
     },
     [setValue],
   );
