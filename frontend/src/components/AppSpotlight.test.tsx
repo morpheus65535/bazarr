@@ -4,6 +4,7 @@ import { useSpotlight } from "@mantine/spotlight";
 import { useServerSearch } from "@/apis/hooks";
 import { useRouteItems } from "@/Router";
 import { useDebouncedValue } from "@/utilities";
+import { CustomRouteObject } from "@/Router/type";
 import { customRender } from "@/tests";
 import AppSpotlight from "./AppSpotlight";
 
@@ -48,7 +49,9 @@ describe("AppSpotlight", () => {
     mockUseSpotlight.mockReturnValue({ query: "ab" } as ReturnType<
       typeof useSpotlight
     >);
-    mockUseServerSearch.mockReturnValue({ data: undefined });
+    mockUseServerSearch.mockReturnValue({
+      data: undefined,
+    } as unknown as ReturnType<typeof useServerSearch>);
     mockUseDebouncedValue.mockReturnValue("ab");
 
     customRender(<AppSpotlight />);
@@ -63,7 +66,9 @@ describe("AppSpotlight", () => {
     mockUseSpotlight.mockReturnValue({ query: "" } as ReturnType<
       typeof useSpotlight
     >);
-    mockUseServerSearch.mockReturnValue({ data: [] });
+    mockUseServerSearch.mockReturnValue({ data: [] } as unknown as ReturnType<
+      typeof useServerSearch
+    >);
     mockUseDebouncedValue.mockReturnValue("");
 
     customRender(<AppSpotlight />);
@@ -83,7 +88,7 @@ describe("AppSpotlight", () => {
         { sonarrSeriesId: 1, title: "Series", year: "2020", poster: "" },
         { radarrId: 2, title: "Movie", year: "2021", poster: "" },
       ],
-    });
+    } as unknown as ReturnType<typeof useServerSearch>);
     mockUseDebouncedValue.mockReturnValue("ab");
 
     customRender(<AppSpotlight />);

@@ -54,7 +54,9 @@ function renderForm(translatorType: string, geminiModel?: string) {
       },
     },
   } as unknown as ReturnType<typeof useSystemSettings>);
-  mockUseEnabledLanguages.mockReturnValue({ data: languages });
+  mockUseEnabledLanguages.mockReturnValue({
+    data: languages,
+  } as unknown as ReturnType<typeof useEnabledLanguages>);
   mockUseSubtitleAction.mockReturnValue({
     mutateAsync: vitest.fn(),
     isPending: false,
