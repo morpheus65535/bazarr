@@ -209,11 +209,7 @@ const SubtitleToolView: FunctionComponent<SubtitleToolViewProps> = ({
             original: { path },
           },
         }) => {
-          let idx = path.lastIndexOf("/");
-
-          if (idx === -1) {
-            idx = path.lastIndexOf("\\");
-          }
+          const idx = Math.max(path.lastIndexOf("/"), path.lastIndexOf("\\"));
 
           if (idx !== -1) {
             return <Text>{path.slice(idx + 1)}</Text>;

@@ -70,10 +70,8 @@ export default function BaseTable<T extends object>(props: BaseTableProps<T>) {
   const pageSize = usePageSize();
   const isLoading = useIsLoading();
 
-  let body: ReactNode;
-
-  if (isLoading) {
-    body = Array(tableStyles?.placeholder ?? pageSize)
+  const body: ReactNode = isLoading ? (
+    Array(tableStyles?.placeholder ?? pageSize)
       .fill(0)
       .map((_, i) => (
         <Table.Tr key={i}>
@@ -81,20 +79,18 @@ export default function BaseTable<T extends object>(props: BaseTableProps<T>) {
             <Skeleton height={24}></Skeleton>
           </Table.Td>
         </Table.Tr>
-      ));
-  } else if (empty && tableStyles?.emptyText) {
-    body = (
-      <Table.Tr>
-        <Table.Td colSpan={colCount}>
-          <Text ta="center">{tableStyles.emptyText}</Text>
-        </Table.Td>
-      </Table.Tr>
-    );
-  } else {
-    body = instance.getRowModel().rows.map((row) => {
+      ))
+  ) : empty && tableStyles?.emptyText ? (
+    <Table.Tr>
+      <Table.Td colSpan={colCount}>
+        <Text ta="center">{tableStyles.emptyText}</Text>
+      </Table.Td>
+    </Table.Tr>
+  ) : (
+    instance.getRowModel().rows.map((row) => {
       return rowRenderer(row);
-    });
-  }
+    })
+  );
 
   return (
     <Box className={styles.container}>

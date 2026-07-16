@@ -10,12 +10,12 @@ export function LOG(type: LoggerType, msg: string, ...payload: unknown[]) {
   }
 
   if (!isProdEnv) {
-    let logger = console.log;
-    if (type === "warning") {
-      logger = console.warn;
-    } else if (type === "error") {
-      logger = console.error;
-    }
+    const logger =
+      type === "warning"
+        ? console.warn
+        : type === "error"
+          ? console.error
+          : console.log;
     logger(`[${type}] ${msg}`, ...payload);
   }
 }

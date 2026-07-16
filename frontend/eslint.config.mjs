@@ -55,6 +55,13 @@ export default tseslint.config(
       "react-hooks/refs": "off",
       "react-hooks/static-components": "off",
       "react-hooks/incompatible-library": "off",
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "VariableDeclaration[kind='let']",
+          message: "Use const instead of let.",
+        },
+      ],
     },
   },
   {

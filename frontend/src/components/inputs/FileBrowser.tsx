@@ -13,11 +13,7 @@ import { useFileSystem } from "@/apis/hooks";
 const backKey = "⏎ Back";
 
 function getLastSeparator(path: string): number {
-  let idx = path.lastIndexOf("/");
-  if (idx === -1) {
-    idx = path.lastIndexOf("\\");
-  }
-  return idx;
+  return Math.max(path.lastIndexOf("/"), path.lastIndexOf("\\"));
 }
 
 function extractPath(raw: string) {

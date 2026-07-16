@@ -23,10 +23,10 @@ interface Props {
 
 const UIError: FunctionComponent<Props> = ({ error }) => {
   const stack = useMemo(() => {
-    let callStack = error.stack ?? "";
-
-    // Remove sensitive information from the stack
-    callStack = callStack.replaceAll(window.location.host, Placeholder);
+    const callStack = (error.stack ?? "").replaceAll(
+      window.location.host,
+      Placeholder,
+    );
 
     return callStack;
   }, [error.stack]);
