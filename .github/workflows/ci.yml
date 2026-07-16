@@ -100,3 +100,17 @@ jobs:
       - name: Unit Tests
         run: |
           bash '${{ env.SCRIPTS_DIRECTORY }}/build_test.sh'
+
+  Outcome:
+    runs-on: ubuntu-latest
+    needs: Backend
+    if: ${{ always() }}
+    steps:
+      - name: Save outcome
+        run: echo "${{ needs.Backend.result }}" > outcome.txt
+
+      - name: Upload outcome as artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: shared-metadata
+          path: outcome.txt

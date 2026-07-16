@@ -51,17 +51,23 @@ jobs:
         run: npm run build
         working-directory: ${{ env.UI_DIRECTORY }}
 
-      - name: Validate CI
-        id: check-ci
-        uses: LASER-Yi/workflow-status@v0.1.0
+      - name: Download outcome artifact from Workflow CI
+        uses: dawidd6/action-download-artifact@v21
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
           workflow: ci.yml
-          event: push
-          branch: development
+          workflow_conclusion: completed
+          name: shared-metadata
+          path: ./upstream-data
+
+      - name: Read the CI output value
+        id: check-ci
+        run: |
+          CONCLUSION=$(cat ./upstream-data/outcome.txt)
+          echo "The value from the last CI run was: $CONCLUSION"
+          echo "CONCLUSION=$CONCLUSION" >> "$GITHUB_OUTPUT"
 
       - name: Create Release (Conditional)
-        if: ${{ steps.check-ci.outputs.conclusion == 'success' }}
+        if: ${{ steps.check-ci.outputs.CONCLUSION == 'success' }}
         run: |
           git config user.name "${{github.actor}}"
           git config user.email "${{github.actor}}@users.noreply.github.com"
