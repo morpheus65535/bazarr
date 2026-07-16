@@ -136,7 +136,10 @@ def _get_language(tags) -> Language:
 
         try:
             if len(og_lang) == 3:
-                lang = Language.fromalpha3b(og_lang)
+                try:
+                    lang = Language.fromalpha3b(og_lang)
+                except LanguageError:
+                    lang = Language.fromalpha3t(og_lang)
             else:
                 lang = Language.fromalpha2(og_lang[:2])
 
