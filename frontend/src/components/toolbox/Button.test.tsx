@@ -1,7 +1,7 @@
+import { faTrash } from "@fortawesome/free-solid-svg-icons";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vitest } from "vitest";
 import { customRender, screen, waitFor } from "@/tests";
-import userEvent from "@testing-library/user-event";
-import { faTrash } from "@fortawesome/free-solid-svg-icons";
 import ToolboxButton, { ToolboxMutateButton } from "./Button";
 
 describe("ToolboxButton", () => {

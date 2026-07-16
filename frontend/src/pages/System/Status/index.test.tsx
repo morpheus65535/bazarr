@@ -1,8 +1,7 @@
-import { act, customRender, screen } from "@/tests";
-import userEvent from "@testing-library/user-event";
 import { Mock, vi, vitest } from "vitest";
 import { useSystemHealth, useSystemStatus } from "@/apis/hooks";
 import { useInstanceName } from "@/apis/hooks/site";
+import { act, customRender, screen } from "@/tests";
 import SystemStatusView from "./index";
 
 vi.mock("@/apis/hooks", async (importOriginal) => {

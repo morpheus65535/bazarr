@@ -1,8 +1,8 @@
 import { waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Mock, vi, vitest } from "vitest";
-import api from "@/apis/raw";
 import { useSettingsMutation, useSystemSettings } from "@/apis/hooks/system";
+import api from "@/apis/raw";
 import { customRender, screen } from "@/tests";
 import SettingsNotificationsView from "./index";
 

@@ -1,9 +1,9 @@
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vitest } from "vitest";
 import { useSubtitleAction } from "@/apis/hooks";
-import { customRender, screen } from "@/tests";
-import userEvent from "@testing-library/user-event";
 import { useModals } from "@/modules/modals";
 import { task } from "@/modules/task";
+import { customRender, screen } from "@/tests";
 import SubtitleToolsMenu from "./SubtitleToolsMenu";
 
 vitest.mock("@/apis/hooks", async (importOriginal) => {

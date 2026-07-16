@@ -363,9 +363,6 @@ describe("SettingsLanguagesView", () => {
     });
 
     const hiCheckboxes = screen.getAllByRole("checkbox", { name: "HI" });
-    const forcedCheckboxes = screen.getAllByRole("checkbox", {
-      name: "Forced",
-    });
 
     expect(hiCheckboxes[0]).not.toBeChecked();
 

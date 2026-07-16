@@ -35,6 +35,7 @@ const historyEntry = {
   subtitlesPath: "/path/to/sub.srt",
 } as unknown as History.Movie;
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const context = {} as any;
 
 describe("HistoryModal", () => {

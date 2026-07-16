@@ -1,7 +1,7 @@
-import { describe, expect, it, vitest } from "vitest";
 import { UseQueryResult } from "@tanstack/react-query";
-import { customRender, screen } from "@/tests";
 import userEvent from "@testing-library/user-event";
+import { describe, expect, it, vitest } from "vitest";
+import { customRender, screen } from "@/tests";
 import { MovieSearchModal } from "./ManualSearchModal";
 
 const item = {
@@ -49,6 +49,7 @@ describe("ManualSearchModal", () => {
 
     customRender(
       <MovieSearchModal
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         context={{} as any}
         id="test"
         innerProps={{ item, query, download }}
@@ -68,6 +69,7 @@ describe("ManualSearchModal", () => {
 
     customRender(
       <MovieSearchModal
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         context={{} as any}
         id="test"
         innerProps={{ item, query, download }}
@@ -88,6 +90,7 @@ describe("ManualSearchModal", () => {
 
     customRender(
       <MovieSearchModal
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         context={{} as any}
         id="test"
         innerProps={{ item, query, download }}
@@ -109,6 +112,7 @@ describe("ManualSearchModal", () => {
 
     customRender(
       <MovieSearchModal
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         context={{} as any}
         id="test"
         innerProps={{ item, query, download }}

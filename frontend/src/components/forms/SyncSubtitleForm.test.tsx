@@ -1,13 +1,12 @@
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vitest } from "vitest";
 import {
-  useSubtitleAction,
-  useRefTracksByMovieId,
   useRefTracksByEpisodeId,
+  useRefTracksByMovieId,
+  useSubtitleAction,
 } from "@/apis/hooks";
-import { customRender, screen, waitFor } from "@/tests";
-import userEvent from "@testing-library/user-event";
 import { useModals } from "@/modules/modals";
-import { task } from "@/modules/task";
+import { customRender, screen, waitFor } from "@/tests";
 import SyncSubtitleForm from "./SyncSubtitleForm";
 
 vitest.mock("@/apis/hooks", async (importOriginal) => {

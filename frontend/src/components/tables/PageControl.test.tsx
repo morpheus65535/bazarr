@@ -1,5 +1,5 @@
-import { describe, expect, it, vitest } from "vitest";
 import userEvent from "@testing-library/user-event";
+import { describe, expect, it, vitest } from "vitest";
 import { customRender, screen } from "@/tests";
 import PageControl from "./PageControl";
 

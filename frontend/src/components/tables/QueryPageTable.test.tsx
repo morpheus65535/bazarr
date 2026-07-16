@@ -1,7 +1,7 @@
-import { describe, expect, it, vitest } from "vitest";
-import { customRender, screen } from "@/tests";
 import userEvent from "@testing-library/user-event";
+import { describe, expect, it, vitest } from "vitest";
 import { UsePaginationQueryResult } from "@/apis/queries/hooks";
+import { customRender, screen } from "@/tests";
 import QueryPageTable from "./QueryPageTable";
 
 interface Row {

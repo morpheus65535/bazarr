@@ -1,6 +1,6 @@
+import userEvent from "@testing-library/user-event";
 import { http } from "msw";
 import { HttpResponse } from "msw";
-import userEvent from "@testing-library/user-event";
 import { customRender, screen, waitFor } from "@/tests";
 import server from "@/tests/mocks/node";
 import SystemAnnouncementsView from ".";
@@ -55,10 +55,12 @@ describe("System Announcements", () => {
     const dismissButtons = screen.getAllByLabelText("Dismiss announcement");
 
     const dismissableButton = dismissButtons.find((button) =>
+      // eslint-disable-next-line testing-library/no-node-access
       button.closest("tr")?.textContent?.includes("New Subtitle Provider!"),
     );
 
     const nonDismissableButton = dismissButtons.find((button) =>
+      // eslint-disable-next-line testing-library/no-node-access
       button.closest("tr")?.textContent?.includes("Python Deprecated!"),
     );
 

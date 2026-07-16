@@ -1,8 +1,8 @@
-import { describe, expect, it, vitest } from "vitest";
 import { useOs } from "@mantine/hooks";
+import userEvent from "@testing-library/user-event";
+import { describe, expect, it, vitest } from "vitest";
 import { spotlightApi } from "@/components/AppSpotlight";
 import { customRender, screen } from "@/tests";
-import userEvent from "@testing-library/user-event";
 import Search from "./Search";
 
 vitest.mock("@mantine/hooks", async (importOriginal) => {

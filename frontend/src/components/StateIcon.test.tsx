@@ -1,7 +1,7 @@
+import { useMediaQuery } from "@mantine/hooks";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vitest } from "vitest";
 import { customRender, screen, waitFor } from "@/tests";
-import userEvent from "@testing-library/user-event";
-import { useMediaQuery } from "@mantine/hooks";
 import StateIcon from "./StateIcon";
 
 vitest.mock("@mantine/hooks", async (importOriginal) => {
@@ -17,6 +17,7 @@ describe("StateIcon", () => {
   });
 
   async function openPopover(container: HTMLElement) {
+    // eslint-disable-next-line testing-library/no-node-access
     const svg = container.querySelector("svg");
     expect(svg).toBeTruthy();
     await userEvent.click(svg!);

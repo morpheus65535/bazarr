@@ -1,8 +1,7 @@
 import { describe, expect, it, vitest } from "vitest";
 import { useSubtitleAction, useSubtitleContents } from "@/apis/hooks";
-import { customRender, screen } from "@/tests";
 import { useModals } from "@/modules/modals";
-import { task } from "@/modules/task";
+import { customRender, screen } from "@/tests";
 import TwoPointFitForm from "./TwoPointFit";
 
 vitest.mock("@/apis/hooks", async (importOriginal) => {

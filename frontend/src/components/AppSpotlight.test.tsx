@@ -1,11 +1,11 @@
-import { describe, expect, it, vitest } from "vitest";
 import { useNavigate } from "react-router";
 import { useSpotlight } from "@mantine/spotlight";
+import { describe, expect, it, vitest } from "vitest";
 import { useServerSearch } from "@/apis/hooks";
 import { useRouteItems } from "@/Router";
-import { useDebouncedValue } from "@/utilities";
 import { CustomRouteObject } from "@/Router/type";
 import { customRender } from "@/tests";
+import { useDebouncedValue } from "@/utilities";
 import AppSpotlight from "./AppSpotlight";
 
 vitest.mock("react-router", async (importOriginal) => {

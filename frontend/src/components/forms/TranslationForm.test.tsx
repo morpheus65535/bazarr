@@ -1,8 +1,8 @@
 import { describe, expect, it, vitest } from "vitest";
 import { useSubtitleAction, useSystemSettings } from "@/apis/hooks";
+import { useModals } from "@/modules/modals";
 import { customRender, screen } from "@/tests";
 import { useEnabledLanguages } from "@/utilities/languages";
-import { useModals } from "@/modules/modals";
 import TranslationForm from "./TranslationForm";
 
 vitest.mock("@/apis/hooks", async (importOriginal) => {

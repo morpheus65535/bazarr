@@ -1,7 +1,7 @@
-import { fireEvent, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { useClipboard } from "@mantine/hooks";
 import { notifications } from "@mantine/notifications";
+import { fireEvent, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { Mock, vi, vitest } from "vitest";
 import {
   useSettingsMutation,

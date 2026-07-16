@@ -1,9 +1,9 @@
 import { fireEvent, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { Mock, vi, vitest } from "vitest";
 import { useInstanceName } from "@/apis/hooks/site";
 import { useSettingsMutation, useSystemSettings } from "@/apis/hooks/system";
 import { customRender, screen } from "@/tests";
-import { Mock, vi, vitest } from "vitest";
 import SettingsPlexView from "./index";
 
 vi.mock("@/apis/hooks/system", async (importOriginal) => {
@@ -54,6 +54,7 @@ vi.mock("@mantine/notifications", async (importOriginal) => {
   };
 });
 
+import { notifications } from "@mantine/notifications";
 import {
   usePlexAuthValidationQuery,
   usePlexAutopulseConfigQuery,
@@ -62,13 +63,12 @@ import {
   usePlexPinCheckQuery,
   usePlexPinMutation,
   usePlexSelectedServerQuery,
-  usePlexServersQuery,
   usePlexServerSelectionMutation,
+  usePlexServersQuery,
   usePlexWebhookCreateMutation,
   usePlexWebhookDeleteMutation,
   usePlexWebhookListQuery,
 } from "@/apis/hooks/plex";
-import { notifications } from "@mantine/notifications";
 
 const mockedUseSystemSettings = useSystemSettings as Mock;
 const mockedUseSettingsMutation = useSettingsMutation as Mock;
@@ -972,9 +972,7 @@ describe("SettingsPlexView", () => {
 
     rerender(<SettingsPlexView />);
 
-    await waitFor(() =>
-      expect(screen.getByText(/Connected/i)).toBeInTheDocument(),
-    );
+    expect(await screen.findByText(/Connected/i)).toBeInTheDocument();
   });
 
   it("should refresh the server list", async () => {
