@@ -203,6 +203,7 @@ describe("Selector", () => {
 
   describe("DefaultKeyBuilder", () => {
     it("renders an error when an object option is provided without a getkey builder", () => {
+      const spy = vitest.spyOn(console, "error").mockImplementation(() => {});
       const objectOptions: SelectorOption<{ name: string }>[] = [
         {
           label: "Option 1",
@@ -217,6 +218,8 @@ describe("Selector", () => {
           /Invalid type \(object\) in the SelectorOption, please provide a label builder/,
         ).length,
       ).toBeGreaterThan(0);
+
+      spy.mockRestore();
     });
 
     it("works with number option values", async () => {

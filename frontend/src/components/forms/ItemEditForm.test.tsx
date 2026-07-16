@@ -1,3 +1,4 @@
+import { act } from "react";
 import { UseMutationResult } from "@tanstack/react-query";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vitest } from "vitest";
@@ -111,7 +112,9 @@ describe("ItemEditForm", () => {
     expect(options.onSuccess).toBeInstanceOf(Function);
     expect(options.onError).toBeInstanceOf(Function);
 
-    options.onSuccess();
+    act(() => {
+      options.onSuccess();
+    });
 
     expect(onComplete).toHaveBeenCalledTimes(1);
     expect(closeSelf).toHaveBeenCalledTimes(1);
@@ -123,7 +126,9 @@ describe("ItemEditForm", () => {
 
     await user.click(screen.getByRole("button", { name: "Save" }));
 
-    mutate.mock.calls[0][1].onError();
+    act(() => {
+      mutate.mock.calls[0][1].onError();
+    });
 
     expect(onComplete).not.toHaveBeenCalled();
     expect(closeSelf).not.toHaveBeenCalled();
