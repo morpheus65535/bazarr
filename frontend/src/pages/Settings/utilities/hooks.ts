@@ -93,9 +93,9 @@ export function useUpdateArray<T>(
   const compareRef = useRef(compare);
   compareRef.current = compare;
 
-  const staged: T[] = useMemo(() => {
+  const staged: Readonly<T[]> = useMemo(() => {
     if (key in stagedValue) {
-      return stagedValue[key];
+      return stagedValue[key] as T[];
     } else {
       return current;
     }

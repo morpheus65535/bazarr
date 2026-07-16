@@ -31,8 +31,9 @@ class SystemApi extends BaseApi {
     return response;
   }
 
-  async updateSettings(data: object) {
-    await this.post("/settings", data);
+  async updateSettings(data: unknown) {
+    const response = await this.post("/settings", data);
+    return response.data;
   }
 
   async languages(history = false) {

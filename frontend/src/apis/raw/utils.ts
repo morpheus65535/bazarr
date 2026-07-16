@@ -13,7 +13,7 @@ type UrlTestResponse =
     };
 
 class RequestUtils {
-  async urlTest(protocol: string, url: string, params?: LooseObject) {
+  async urlTest(protocol: string, url: string, params?: unknown) {
     try {
       const result = await client.axios.get<UrlTestResponse>(
         `../test/${protocol}/${url}api/system/status`,
@@ -34,7 +34,7 @@ class RequestUtils {
     }
   }
 
-  async providerUrlTest(protocol: string, url: string, params?: LooseObject) {
+  async providerUrlTest(protocol: string, url: string, params?: unknown) {
     const result = await client.axios.get<UrlTestResponse>(
       `../test/${protocol}/${url}status`,
       { params },

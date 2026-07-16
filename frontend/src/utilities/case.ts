@@ -31,7 +31,11 @@ export const camelCaseKeys = <T>(value: T): CamelCaseKeys<T> => {
   return value as CamelCaseKeys<T>;
 };
 
-export const snakeCaseKeys = <T>(value: T): LooseObject => {
+export function snakeCaseKeys<T>(value: T[]): Record<string, unknown>[];
+export function snakeCaseKeys<T>(value: T): Record<string, unknown>;
+export function snakeCaseKeys<T>(
+  value: T | T[],
+): Record<string, unknown> | Record<string, unknown>[] {
   if (Array.isArray(value)) {
     return value.map(snakeCaseKeys);
   }
@@ -46,5 +50,5 @@ export const snakeCaseKeys = <T>(value: T): LooseObject => {
     return result;
   }
 
-  return value as LooseObject;
-};
+  return value as Record<string, unknown>;
+}

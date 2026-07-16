@@ -20,11 +20,6 @@ type CamelCaseKeys<T> =
         ? { [K in keyof T as CamelCase<K & string>]: CamelCaseKeys<T[K]> }
         : T;
 
-type LooseObject = {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  [key: string]: any;
-};
-
 type StrictObject<T> = {
   [key: string]: T;
 };

@@ -61,7 +61,8 @@ export function useSettingsMutation() {
   const client = useQueryClient();
   return useMutation({
     mutationKey: [QueryKeys.System, QueryKeys.Settings],
-    mutationFn: (data: LooseObject) => api.system.updateSettings(data),
+    mutationFn: (data: Record<string, unknown>) =>
+      api.system.updateSettings(data),
 
     onSuccess: () => {
       void client.invalidateQueries({
