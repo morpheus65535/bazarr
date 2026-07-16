@@ -1,11 +1,10 @@
 /* eslint-disable no-console */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { isProdEnv } from ".";
 
 type LoggerType = "info" | "warning" | "error";
 
-export function LOG(type: LoggerType, msg: string, ...payload: any[]) {
+export function LOG(type: LoggerType, msg: string, ...payload: unknown[]) {
   if (import.meta.env.MODE === "test") {
     return;
   }
@@ -21,7 +20,7 @@ export function LOG(type: LoggerType, msg: string, ...payload: any[]) {
   }
 }
 
-export function ENSURE(condition: boolean, msg: string, ...payload: any[]) {
+export function ENSURE(condition: boolean, msg: string, ...payload: unknown[]) {
   if (condition) {
     LOG("error", msg, payload);
   }

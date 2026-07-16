@@ -34,7 +34,7 @@ export function useBaseInput<T, V>(props: T & BaseInput<V>) {
       const moddedValue =
         (newValue && settingOptions?.onSaved?.(newValue)) ?? newValue;
 
-      setValue(moddedValue, settingKey, settingOptions?.onSubmit);
+      setValue(moddedValue, settingKey, settingOptions?.onSubmit as HookType);
     },
     [settingOptions, setValue, settingKey],
   );
