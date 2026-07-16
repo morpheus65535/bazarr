@@ -22,7 +22,7 @@ export function LOG(type: LoggerType, msg: string, ...payload: unknown[]) {
 
 export function ENSURE(condition: boolean, msg: string, ...payload: unknown[]) {
   if (condition) {
-    LOG("error", msg, payload);
+    LOG("error", msg, ...payload);
   }
 }
 

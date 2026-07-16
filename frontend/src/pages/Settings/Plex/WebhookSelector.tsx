@@ -227,6 +227,7 @@ const WebhookSelector: FunctionComponent<WebhookSelectorProps> = (props) => {
           </Alert>
         )}
         <Select
+          data-testid="webhook-select"
           placeholder="Select webhook..."
           data={selectData}
           value={currentValue}

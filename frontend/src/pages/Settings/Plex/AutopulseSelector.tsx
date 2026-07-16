@@ -133,6 +133,7 @@ const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = (
             </Group>
             <Tooltip label="Copy configuration">
               <ActionIcon
+                aria-label="Copy configuration"
                 variant="subtle"
                 size="sm"
                 onClick={async () => {

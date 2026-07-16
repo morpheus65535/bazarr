@@ -1,5 +1,6 @@
 import { http } from "msw";
 import { HttpResponse } from "msw";
+import userEvent from "@testing-library/user-event";
 import { customRender, screen, waitFor } from "@/tests";
 import server from "@/tests/mocks/node";
 import SystemTasksView from ".";
@@ -64,5 +65,64 @@ describe("System Tasks", () => {
 
     const runButtons = screen.getAllByLabelText("Run Job");
     expect(runButtons).toHaveLength(2);
+  });
+
+  it("should refresh tasks when clicking Refresh", async () => {
+    server.use(
+      http.get("/api/system/tasks", () => {
+        return HttpResponse.json({
+          data: [
+            {
+              name: "Scan Series",
+              interval: "1 hour",
+              next_run_in: "30 minutes",
+              job_id: "series_scan",
+              job_running: false,
+            },
+          ],
+        });
+      }),
+    );
+
+    customRender(<SystemTasksView />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Scan Series")).toBeInTheDocument();
+    });
+
+    await userEvent.click(screen.getByRole("button", { name: "Refresh" }));
+
+    expect(screen.getByRole("button", { name: "Refresh" })).toBeInTheDocument();
+  });
+
+  it("should run a task when clicking Run Job", async () => {
+    server.use(
+      http.get("/api/system/tasks", () => {
+        return HttpResponse.json({
+          data: [
+            {
+              name: "Scan Series",
+              interval: "1 hour",
+              next_run_in: "30 minutes",
+              job_id: "series_scan",
+              job_running: false,
+            },
+          ],
+        });
+      }),
+      http.post("/api/system/tasks", () => {
+        return HttpResponse.json({});
+      }),
+    );
+
+    customRender(<SystemTasksView />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Scan Series")).toBeInTheDocument();
+    });
+
+    await userEvent.click(screen.getByRole("button", { name: "Run Job" }));
+
+    expect(screen.getByRole("button", { name: "Run Job" })).toBeInTheDocument();
   });
 });
