@@ -544,7 +544,7 @@ class SubdlProvider(Provider):
             return True
 
         # Comments or release names include some specific strings
-        hi_keys = [item.get('comment', '').lower(), [x.lower() for x in item.get('releases', [])]]
+        hi_keys = [item.get('comment', '').lower()] + [x.lower() for x in item.get('releases', [])]
         hi_tag = ['_hi_', ' hi ', '.hi.', 'hi ', ' hi', 'sdh', '𝓢𝓓𝓗']
         for key in hi_keys:
             if any(x in key for x in hi_tag):

@@ -299,6 +299,39 @@ def test_download_ai_translation_job_failure(requests_mock, mocker):
     assert sub.content is None
 
 
+def test_is_hi_marker_in_comment():
+    # An HI/SDH marker in the uploader comment flags the subtitle as hearing impaired.
+    item = {
+        "comment": "SDH version",
+        "name": "dune-en.zip",
+        "releases": [MATCHING_RELEASE],
+    }
+    assert SubdlProvider._is_hi(item) is True
+
+
+def test_is_hi_marker_in_release_name():
+    # An HI/SDH marker present only in a release name must be detected too. This
+    # used to be a dead branch: the release names were nested as a list inside
+    # hi_keys, so `x in key` did exact list membership instead of the intended
+    # substring scan and never matched a real release name.
+    item = {
+        "comment": "",
+        "name": "dune-en.zip",
+        "releases": ["Dune.2021.1080p.WEBRip.DD5.1.x264.SDH-SHITBOX"],
+    }
+    assert SubdlProvider._is_hi(item) is True
+
+
+def test_is_hi_negative():
+    # No HI markers anywhere: not hearing impaired.
+    item = {
+        "comment": "great subtitle",
+        "name": "dune-en.zip",
+        "releases": [MATCHING_RELEASE, OTHER_RELEASE],
+    }
+    assert SubdlProvider._is_hi(item) is False
+
+
 def test_list_subtitles_movie(provider, movies, languages):
     for sub in provider.list_subtitles(movies["dune"], {languages["en"]}):
         assert sub.language == languages["en"]
