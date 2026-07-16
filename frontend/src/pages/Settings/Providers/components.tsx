@@ -336,7 +336,10 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
           return;
         case "testbutton":
           elements.push(
-            <ProviderTestButton category={key}></ProviderTestButton>,
+            <ProviderTestButton
+              key={BuildKey(itemKey, key)}
+              category={key}
+            ></ProviderTestButton>,
           );
           return;
         case "chips":

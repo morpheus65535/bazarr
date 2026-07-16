@@ -17,6 +17,13 @@ const cases: RenderTestCase[] = [
   {
     name: "general page",
     ui: SettingsGeneralView,
+    setupEach: () => {
+      server.use(
+        http.get("/api/system/status", () => {
+          return HttpResponse.json({});
+        }),
+      );
+    },
   },
   {
     name: "languages page",
