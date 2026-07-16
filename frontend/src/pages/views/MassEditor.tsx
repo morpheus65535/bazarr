@@ -70,14 +70,14 @@ function MassEditor<T extends Item.Base>(props: MassEditorProps<T>) {
 
     const form: FormType.ModifyItem = {
       id: [],
-      profileid: [],
+      profileId: [],
     };
 
     dirties.forEach((v) => {
       const id = GetItemId(v);
       if (id) {
         form.id.push(id);
-        form.profileid.push(v.profileId);
+        form.profileId.push(v.profileId);
       }
     });
 
@@ -92,13 +92,13 @@ function MassEditor<T extends Item.Base>(props: MassEditorProps<T>) {
 
       await mutateAsync({
         id: chunkIds,
-        profileid: chunkProfileIds,
+        profileId: chunkProfileIds,
       });
 
       await mutateInChunks(ids.slice(chunkSize), profileIds.slice(chunkSize));
     };
 
-    return mutateInChunks(form.id, form.profileid);
+    return mutateInChunks(form.id, form.profileId);
   }, [dirties, mutateAsync]);
 
   const setProfiles = useCallback(

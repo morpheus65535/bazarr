@@ -46,10 +46,10 @@ const MovieMassEditor: FunctionComponent = () => {
       },
       {
         header: "Audio",
-        accessorKey: "audio_language",
+        accessorKey: "audioLanguage",
         cell: ({
           row: {
-            original: { audio_language: audioLanguage },
+            original: { audioLanguage: audioLanguage },
           },
         }) => {
           return <AudioList audios={audioLanguage}></AudioList>;

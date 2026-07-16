@@ -25,7 +25,7 @@ const WebhookSelector: FunctionComponent<WebhookSelectorProps> = (props) => {
   // Check if user is authenticated with OAuth
   const { data: authData } = usePlexAuthValidationQuery();
   const isAuthenticated = Boolean(
-    authData?.valid && authData?.auth_method === "oauth",
+    authData?.valid && authData?.authMethod === "oauth",
   );
 
   // Fetch webhooks if authenticated
@@ -51,7 +51,7 @@ const WebhookSelector: FunctionComponent<WebhookSelectorProps> = (props) => {
 
   // Check Plex Pass subscription status for webhooks feature
   const plexPassSubscription = webhooks?.plexPassSubscription;
-  const hasWebhooksFeature = plexPassSubscription?.has_webhooks_feature ?? true;
+  const hasWebhooksFeature = plexPassSubscription?.hasWebhooksFeature ?? true;
 
   // Create select data with Bazarr webhook first if it exists
   const selectData =

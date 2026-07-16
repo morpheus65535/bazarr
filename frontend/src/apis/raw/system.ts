@@ -1,3 +1,4 @@
+import { camelCaseKeys } from "@/utilities/case";
 import BaseApi from "./base";
 
 class SystemApi extends BaseApi {
@@ -42,8 +43,10 @@ class SystemApi extends BaseApi {
   }
 
   async languagesProfileList() {
-    const response = await this.get<Language.Profile[]>("/languages/profiles");
-    return response;
+    const response = await this.get<Language.RawProfile[]>(
+      "/languages/profiles",
+    );
+    return response.map((profile) => camelCaseKeys(profile));
   }
 
   async status() {

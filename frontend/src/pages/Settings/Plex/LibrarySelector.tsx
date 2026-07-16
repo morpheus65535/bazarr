@@ -28,7 +28,7 @@ const LibrarySelector: FunctionComponent<LibrarySelectorProps> = (props) => {
 
   const { data: authData } = usePlexAuthValidationQuery();
   const isAuthenticated = Boolean(
-    authData?.valid && authData?.auth_method === "oauth",
+    authData?.valid && authData?.authMethod === "oauth",
   );
 
   const { data: servers = [] } = usePlexServersQuery();

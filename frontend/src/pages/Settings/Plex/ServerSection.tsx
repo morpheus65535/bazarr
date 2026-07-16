@@ -42,13 +42,13 @@ const ServerSection = () => {
   const { mutateAsync: selectServerMutation } =
     usePlexServerSelectionMutation();
   const { data: savedSelectedServer } = usePlexSelectedServerQuery({
-    enabled: Boolean(authData?.valid && authData?.auth_method === "oauth"),
+    enabled: Boolean(authData?.valid && authData?.authMethod === "oauth"),
   });
   const { setValue } = useFormActions();
 
   // Determine authentication status
   const isAuthenticated = Boolean(
-    authData?.valid && authData?.auth_method === "oauth",
+    authData?.valid && authData?.authMethod === "oauth",
   );
 
   // Reset state when authentication changes from false to true (re-authentication)

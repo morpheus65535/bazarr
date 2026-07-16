@@ -59,11 +59,11 @@ const MovieDetailView: FunctionComponent = () => {
     (item: Item.Movie, result: SearchResultType) => {
       const {
         language,
-        hearing_impaired: hi,
+        hearingImpaired: hi,
         forced,
         provider,
         subtitle,
-        original_format: originalFormat,
+        originalFormat,
       } = result;
       const { radarrId } = item;
 
@@ -75,8 +75,7 @@ const MovieDetailView: FunctionComponent = () => {
           forced,
           provider,
           subtitle,
-          // eslint-disable-next-line camelcase
-          original_format: originalFormat,
+          originalFormat,
         },
       });
     },
@@ -135,7 +134,7 @@ const MovieDetailView: FunctionComponent = () => {
                 if (movie) {
                   await action({
                     action: "sync",
-                    radarrid: id,
+                    radarrId: id,
                   });
                 }
               }}
@@ -149,7 +148,7 @@ const MovieDetailView: FunctionComponent = () => {
                 if (movie) {
                   task.create(movie.title, TaskGroup.ScanDisk, action, {
                     action: "scan-disk",
-                    radarrid: id,
+                    radarrId: id,
                   });
                 }
               }}
@@ -164,7 +163,7 @@ const MovieDetailView: FunctionComponent = () => {
                 if (movie) {
                   await action({
                     action: "search-missing",
-                    radarrid: id,
+                    radarrId: id,
                   });
                 }
               }}

@@ -1,11 +1,14 @@
+import { camelCaseKeys } from "@/utilities/case";
 import BaseApi from "./base";
 
-interface JellyfinTestResult {
+interface RawJellyfinTestResult {
   success: boolean;
   server_name?: string;
   version?: string;
   error?: string;
 }
+
+type JellyfinTestResult = CamelCaseKeys<RawJellyfinTestResult>;
 
 interface JellyfinLibrary {
   id: string;
@@ -18,13 +21,19 @@ class JellyfinApi extends BaseApi {
     super("/jellyfin");
   }
 
-  async testConnection(url: string, apikey: string) {
-    const response = await this.post<JellyfinTestResult>("/test-connection", {
-      url,
-      apikey,
-    });
+  async testConnection(
+    url: string,
+    apikey: string,
+  ): Promise<JellyfinTestResult> {
+    const response = await this.post<RawJellyfinTestResult>(
+      "/test-connection",
+      {
+        url,
+        apikey,
+      },
+    );
 
-    return response.data;
+    return camelCaseKeys(response.data);
   }
 
   async libraries(url?: string, apikey?: string) {

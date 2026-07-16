@@ -74,7 +74,9 @@ export const FileBrowser: FunctionComponent<FileBrowserProps> = ({
     const newPath = extractPath(value);
     if (newPath !== path) {
       setPath(newPath);
-      onChange && onChange(newPath);
+      if (onChange) {
+        onChange(newPath);
+      }
     }
   }, [path, value, onChange]);
 

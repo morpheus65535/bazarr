@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 import { FunctionComponent, useMemo } from "react";
 import { Badge, Center, Text } from "@mantine/core";
 import { faFileExcel, faInfoCircle } from "@fortawesome/free-solid-svg-icons";
@@ -77,7 +76,7 @@ const MovieHistoryView: FunctionComponent<MovieHistoryViewProps> = ({
         id: "matches",
         cell: ({
           row: {
-            original: { matches, dont_matches: dont },
+            original: { matches, dontMatches: dont },
           },
         }) => {
           if (matches.length || dont.length) {
@@ -98,7 +97,7 @@ const MovieHistoryView: FunctionComponent<MovieHistoryViewProps> = ({
         accessorKey: "timestamp",
         cell: ({
           row: {
-            original: { timestamp, parsed_timestamp: parsedTimestamp },
+            original: { timestamp, parsedTimestamp },
           },
         }) => {
           return (
@@ -117,13 +116,13 @@ const MovieHistoryView: FunctionComponent<MovieHistoryViewProps> = ({
               blacklisted,
               radarrId,
               provider,
-              subs_id,
+              subsId,
               language,
-              subtitles_path,
+              subtitlesPath,
             },
           },
         }) => {
-          if (subs_id && provider && language) {
+          if (subsId && provider && language) {
             return (
               <MutateAction
                 label="Add to Blacklist"
@@ -134,8 +133,8 @@ const MovieHistoryView: FunctionComponent<MovieHistoryViewProps> = ({
                   id: radarrId,
                   form: {
                     provider,
-                    subs_id,
-                    subtitles_path,
+                    subsId,
+                    subtitlesPath,
                     language: language.code2,
                   },
                 })}
@@ -223,7 +222,7 @@ const EpisodeHistoryView: FunctionComponent<EpisodeHistoryViewProps> = ({
       {
         id: "matches",
         cell: (row) => {
-          const { matches, dont_matches: dont } = row.row.original;
+          const { matches, dontMatches: dont } = row.row.original;
           if (matches.length || dont.length) {
             return (
               <StateIcon
@@ -242,7 +241,7 @@ const EpisodeHistoryView: FunctionComponent<EpisodeHistoryViewProps> = ({
         accessorKey: "timestamp",
         cell: ({
           row: {
-            original: { timestamp, parsed_timestamp: parsedTimestamp },
+            original: { timestamp, parsedTimestamp },
           },
         }) => {
           return (
@@ -276,13 +275,13 @@ const EpisodeHistoryView: FunctionComponent<EpisodeHistoryViewProps> = ({
               sonarrEpisodeId,
               sonarrSeriesId,
               provider,
-              subs_id,
+              subsId,
               language,
-              subtitles_path,
+              subtitlesPath,
             },
           },
         }) => {
-          if (subs_id && provider && language) {
+          if (subsId && provider && language) {
             return (
               <MutateAction
                 label="Add to Blacklist"
@@ -294,8 +293,8 @@ const EpisodeHistoryView: FunctionComponent<EpisodeHistoryViewProps> = ({
                   episodeId: sonarrEpisodeId,
                   form: {
                     provider,
-                    subs_id,
-                    subtitles_path,
+                    subsId,
+                    subtitlesPath,
                     language: language.code2,
                   },
                 })}

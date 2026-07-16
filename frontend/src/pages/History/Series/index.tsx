@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 import { FunctionComponent, useMemo } from "react";
 import { Link } from "react-router";
 import { Anchor, Badge, Text } from "@mantine/core";
@@ -50,7 +49,7 @@ const SeriesHistoryView: FunctionComponent = () => {
       },
       {
         header: "Episode",
-        accessorKey: "episode_number",
+        accessorKey: "episodeNumber",
       },
       {
         header: "Title",
@@ -90,7 +89,7 @@ const SeriesHistoryView: FunctionComponent = () => {
         header: "Match",
         accessorKey: "matches",
         cell: (row) => {
-          const { matches, dont_matches: dont } = row.row.original;
+          const { matches, dontMatches: dont } = row.row.original;
           if (matches.length || dont.length) {
             return (
               <StateIcon
@@ -109,12 +108,12 @@ const SeriesHistoryView: FunctionComponent = () => {
         accessorKey: "timestamp",
         cell: ({
           row: {
-            original: { timestamp, parsed_timestamp },
+            original: { timestamp, parsedTimestamp },
           },
         }) => {
           if (timestamp) {
             return (
-              <TextPopover text={parsed_timestamp}>
+              <TextPopover text={parsedTimestamp}>
                 <Text>{timestamp}</Text>
               </TextPopover>
             );
@@ -165,12 +164,12 @@ const SeriesHistoryView: FunctionComponent = () => {
             sonarrEpisodeId,
             sonarrSeriesId,
             provider,
-            subs_id,
+            subsId,
             language,
-            subtitles_path,
+            subtitlesPath,
             blacklisted,
           } = row.original;
-          if (subs_id && provider && language) {
+          if (subsId && provider && language) {
             return (
               <MutateAction
                 label="Add to Blacklist"
@@ -182,8 +181,8 @@ const SeriesHistoryView: FunctionComponent = () => {
                   episodeId: sonarrEpisodeId,
                   form: {
                     provider,
-                    subs_id,
-                    subtitles_path,
+                    subsId,
+                    subtitlesPath,
                     language: language.code2,
                   },
                 })}

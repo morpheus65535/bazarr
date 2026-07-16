@@ -104,7 +104,7 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
         accessorKey: "language",
         cell: ({
           row: {
-            original: { language, hearing_impaired: hi, forced },
+            original: { language, hearingImpaired: hi, forced },
           },
         }) => {
           const lang: Language.Info = {
@@ -148,10 +148,10 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
       },
       {
         header: "Release",
-        accessorKey: "release_info",
+        accessorKey: "releaseInfo",
         cell: ({
           row: {
-            original: { release_info: releaseInfo },
+            original: { releaseInfo },
           },
         }) => {
           return <ReleaseInfoCell releaseInfo={releaseInfo} />;
@@ -172,7 +172,7 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
         header: "Match",
         accessorKey: "matches",
         cell: (row) => {
-          const { matches, dont_matches: dont } = row.row.original;
+          const { matches, dontMatches: dont } = row.row.original;
           return (
             <StateIcon
               matches={matches}
