@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
-
 import { http } from "msw";
 import { HttpResponse } from "msw";
 import { vi, vitest } from "vitest";
@@ -35,14 +33,20 @@ Object.defineProperty(window, "matchMedia", {
 
 // From https://github.com/mantinedev/mantine/blob/master/configuration/jest/jsdom.mocks.js
 class ResizeObserver {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
+  observe() {
+    return undefined;
+  }
+  unobserve() {
+    return undefined;
+  }
+  disconnect() {
+    return undefined;
+  }
 }
 
 window.ResizeObserver = ResizeObserver;
 
-window.scrollTo = () => {};
+window.scrollTo = () => undefined;
 
 beforeAll(() => {
   server.listen({ onUnhandledRequest: "error" });

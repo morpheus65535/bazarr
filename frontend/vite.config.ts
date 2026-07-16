@@ -1,5 +1,3 @@
-/* eslint-disable camelcase */
-
 /// <reference types="vitest" />
 /// <reference types="vite/client" />
 /// <reference types="node" />

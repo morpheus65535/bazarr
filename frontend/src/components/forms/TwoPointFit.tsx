@@ -92,8 +92,7 @@ const TwoPointFitForm: FunctionComponent<Props> = ({
     form.setFieldValue("first.to", lineStartToTime(firstLine.start));
     form.setFieldValue("last.line", lastLine);
     form.setFieldValue("last.to", lineStartToTime(lastLine.start));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lines]);
+  }, [form, lines]);
 
   const wrongOrder = useMemo(() => {
     const { first, last } = form.values;
