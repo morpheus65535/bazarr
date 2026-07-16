@@ -27,7 +27,7 @@ export function useFormActions() {
   const formRef = useRef(form);
   formRef.current = form;
 
-  const update = useCallback((object: LooseObject) => {
+  const update = useCallback((object: Record<string, unknown>) => {
     LOG("info", `Updating values`, object);
     formRef.current.setValues((values) => {
       const changes = { ...values.settings, ...object };
@@ -61,9 +61,7 @@ export type HookType = (value: unknown) => unknown;
 export type FormKey = keyof FormValues;
 export type FormValues = {
   // Settings that saved to the backend
-  settings: LooseObject;
-  // Settings that saved to the frontend
-  // storages: LooseObject;
+  settings: Record<string, unknown>;
 
   // submit hooks
   hooks: StrictObject<HookType>;

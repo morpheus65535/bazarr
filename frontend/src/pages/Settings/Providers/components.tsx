@@ -135,9 +135,9 @@ interface ProviderToolProps {
   payload: ProviderInfo | null;
   // TODO: Find a better solution to pass this info to modal
   enabledProviders: readonly string[];
-  staged: LooseObject;
+  staged: Record<string, unknown>;
   settings: Settings;
-  onChange: (v: LooseObject) => void;
+  onChange: (v: Record<string, unknown>) => void;
   availableOptions: Readonly<ProviderInfo[]>;
   settingsKey: Readonly<SettingsKey>;
 }

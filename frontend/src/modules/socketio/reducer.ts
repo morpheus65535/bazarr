@@ -230,11 +230,13 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
           // If progress_value is present (not null/undefined), apply (with progress_message and status) directly to
           // cache without an API call
           if (isNumber(payload.progress_value)) {
-            const current = queryClient.getQueryData<LooseObject[]>(keys) || [];
+            const current = queryClient.getQueryData<System.Jobs[]>(keys) || [];
             const idx = current.findIndex((j) => j.job_id === payload.job_id);
 
             const initialJob =
-              idx >= 0 ? { ...current[idx] } : { job_id: payload.job_id };
+              idx >= 0
+                ? { ...current[idx] }
+                : ({ job_id: payload.job_id } as System.Jobs);
 
             const updatedJob = {
               ...initialJob,
@@ -276,7 +278,7 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
           );
           void api.system
             .jobs(payload.job_id)
-            .then((resp: LooseObject[] | undefined) => {
+            .then((resp: System.Jobs[] | undefined) => {
               const incomingJobs = isArray(resp) ? resp : [];
               if (isEmpty(incomingJobs)) {
                 return;
@@ -284,7 +286,7 @@ export function createDefaultReducer(): SocketIO.Reducer[] {
               const incoming = incomingJobs[0];
 
               const current =
-                queryClient.getQueryData<LooseObject[]>(keys) || [];
+                queryClient.getQueryData<System.Jobs[]>(keys) || [];
 
               const idx = current.findIndex(
                 (j) => j.job_id === incoming.job_id,

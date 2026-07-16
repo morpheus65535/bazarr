@@ -41,7 +41,7 @@ const Table: FunctionComponent = () => {
         const raw: Language.RawProfile[] = value.map((profile) => ({
           ...profile,
           items: profile.items.map(
-            (item) => snakeCaseKeys(item) as Language.RawProfileItem,
+            (item) => snakeCaseKeys(item) as unknown as Language.RawProfileItem,
           ),
         }));
 
