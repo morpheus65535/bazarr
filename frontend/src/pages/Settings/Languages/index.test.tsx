@@ -300,8 +300,7 @@ describe("SettingsLanguagesView", () => {
 
     const nameInput = modalScope.getByRole("textbox", { name: "Name" });
 
-    await userEvent.clear(nameInput);
-    await userEvent.type(nameInput, "Updated Profile");
+    fireEvent.change(nameInput, { target: { value: "Updated Profile" } });
 
     await userEvent.click(modalScope.getByRole("button", { name: "Save" }));
 
