@@ -18,6 +18,7 @@ import MutateButton from "@/components/async/MutateButton";
 import { useModals, withModal } from "@/modules/modals";
 import { Card } from "@/pages/Settings/components";
 import { notificationsKey } from "@/pages/Settings/keys";
+import { HookType } from "@/pages/Settings/utilities/FormValues";
 import {
   useSettingValue,
   useUpdateArray,
@@ -160,7 +161,7 @@ export const NotificationView: FunctionComponent = () => {
 
   const updateWrapper = useCallback(
     (info: Settings.NotificationInfo) => {
-      update(info, notificationHook);
+      update(info, notificationHook as HookType);
     },
     [update],
   );

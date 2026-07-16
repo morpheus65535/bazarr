@@ -49,7 +49,9 @@ export function ToolboxMutateButton<R, T extends () => Promise<R>>(
     setLoading(true);
     promise().then((val) => {
       setLoading(false);
-      onSuccess && onSuccess(val);
+      if (onSuccess) {
+        onSuccess(val);
+      }
     });
   }, [onSuccess, promise]);
 

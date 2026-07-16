@@ -1,4 +1,4 @@
-import { MutableRefObject, useEffect, useMemo } from "react";
+import { MutableRefObject, useEffect, useMemo, useRef } from "react";
 import {
   getCoreRowModel,
   Row,
@@ -48,14 +48,14 @@ export default function SimpleTable<T extends object>(
 
   const memoizedRows = useMemo(() => selectedRows, [selectedRows]);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const memoizedRowSelectionChanged = useMemo(() => onRowSelectionChanged, []);
+  const onRowSelectionChangedRef = useRef(onRowSelectionChanged);
+  onRowSelectionChangedRef.current = onRowSelectionChanged;
 
   const isAllRowsExpanded = instance.getIsAllRowsExpanded();
 
   useEffect(() => {
-    memoizedRowSelectionChanged?.(memoizedRows);
-  }, [memoizedRowSelectionChanged, memoizedRows]);
+    onRowSelectionChangedRef.current?.(memoizedRows);
+  }, [memoizedRows]);
 
   useEffect(() => {
     onAllRowsExpandedChanged?.(isAllRowsExpanded);

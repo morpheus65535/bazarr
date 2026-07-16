@@ -36,7 +36,7 @@ export default tseslint.config(
     rules: {
       ...reactHooks.configs.recommended.rules,
       "no-console": "error",
-      camelcase: "warn",
+      camelcase: ["error", { properties: "never" }],
       "no-restricted-imports": [
         "error",
         {
@@ -45,11 +45,11 @@ export default tseslint.config(
       ],
       "simple-import-sort/imports": "error",
       "@typescript-eslint/explicit-module-boundary-types": "off",
-      "@typescript-eslint/no-empty-function": "warn",
+      "@typescript-eslint/no-empty-function": "error",
       "@typescript-eslint/no-empty-interface": "off",
-      "@typescript-eslint/no-unused-vars": "warn",
+      "@typescript-eslint/no-unused-vars": "error",
       "@typescript-eslint/no-empty-object-type": "off",
-      "@typescript-eslint/no-unused-expressions": "off",
+      "@typescript-eslint/no-unused-expressions": "error",
       "no-useless-assignment": "off",
       "react-hooks/set-state-in-effect": "off",
       "react-hooks/refs": "off",

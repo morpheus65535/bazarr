@@ -33,7 +33,7 @@ const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = (
   // Check if user is authenticated with OAuth
   const { data: authData } = usePlexAuthValidationQuery();
   const isAuthenticated = Boolean(
-    authData?.valid && authData?.auth_method === "oauth",
+    authData?.valid && authData?.authMethod === "oauth",
   );
 
   const {
@@ -136,7 +136,7 @@ const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = (
                 variant="subtle"
                 size="sm"
                 onClick={async () => {
-                  const yamlContent = configData?.config_yaml;
+                  const yamlContent = configData?.configYaml;
 
                   if (!yamlContent) {
                     notifications.show({
@@ -180,7 +180,7 @@ const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = (
           </Group>
 
           <Code block className={styles.configCodeBlock}>
-            {configData.config_yaml}
+            {configData.configYaml}
           </Code>
 
           <Stack gap="xs" mt="sm">
@@ -188,12 +188,12 @@ const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = (
               <Text component="span" fw={600}>
                 Server:
               </Text>{" "}
-              {configData.server_name}
+              {configData.serverName}
             </Text>
 
-            {configData.rewrite_suggestion && (
+            {configData.rewriteSuggestion && (
               <Alert
-                color={configData.rewrite_detected ? "yellow" : "brand"}
+                color={configData.rewriteDetected ? "yellow" : "brand"}
                 variant="light"
                 className={styles.alertMessage}
               >
@@ -201,14 +201,14 @@ const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = (
                   <Text component="span" fw={600}>
                     Configuration Notes:
                   </Text>{" "}
-                  {configData.rewrite_suggestion}
+                  {configData.rewriteSuggestion}
                 </Text>
               </Alert>
             )}
 
-            {configData.template_info && (
+            {configData.templateInfo && (
               <Text size="xs" c="dimmed">
-                {configData.template_info}
+                {configData.templateInfo}
               </Text>
             )}
           </Stack>

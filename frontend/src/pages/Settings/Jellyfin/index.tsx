@@ -40,7 +40,7 @@ const JellyfinTestButton: FunctionComponent = () => {
       {
         onSuccess: (data) => {
           if (data.success) {
-            setTitle(`${data.server_name} (v${data.version})`);
+            setTitle(`${data.serverName} (v${data.version})`);
             setColor("success");
           } else {
             setTitle(data.error || "Connection failed");

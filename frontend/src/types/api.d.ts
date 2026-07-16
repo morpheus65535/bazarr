@@ -24,7 +24,7 @@ declare namespace Language {
     forced?: boolean;
   }
 
-  interface ProfileItem {
+  interface RawProfileItem {
     id: number;
     audio_exclude: PythonBoolean;
     audio_only_include: PythonBoolean;
@@ -33,19 +33,23 @@ declare namespace Language {
     language: CodeType;
   }
 
-  interface Profile {
+  type ProfileItem = CamelCaseKeys<RawProfileItem>;
+
+  interface RawProfile {
     name: string;
     profileId: number;
     cutoff: number | null;
-    items: ProfileItem[];
+    items: RawProfileItem[];
     mustContain: string[];
     mustNotContain: string[];
     originalFormat: boolean | null;
     tag: string | undefined;
   }
+
+  type Profile = CamelCaseKeys<RawProfile>;
 }
 
-interface Subtitle {
+interface RawSubtitle {
   code2: Language.CodeType;
   name: string;
   forced: boolean;
@@ -54,13 +58,15 @@ interface Subtitle {
   embedded_track_id: number | null | undefined; // TODO: FIX ME!!!!!!
 }
 
+type Subtitle = CamelCaseKeys<RawSubtitle>;
+
 interface AudioTrack {
   stream: string;
   name: string;
   language: string;
 }
 
-interface SubtitleTrack {
+interface RawSubtitleTrack {
   stream: string;
   name: string;
   language: string;
@@ -68,13 +74,17 @@ interface SubtitleTrack {
   hearing_impaired: boolean;
 }
 
-interface ExternalSubtitle {
+type SubtitleTrack = CamelCaseKeys<RawSubtitleTrack>;
+
+interface RawExternalSubtitle {
   name: string;
   path: string;
   language: string;
   forced: boolean;
   hearing_impaired: boolean;
 }
+
+type ExternalSubtitle = CamelCaseKeys<RawExternalSubtitle>;
 
 interface PathType {
   path: string;
@@ -88,13 +98,17 @@ interface MonitoredType {
   monitored: boolean;
 }
 
-interface SubtitleType {
-  subtitles: Subtitle[];
+interface RawSubtitleType {
+  subtitles: RawSubtitle[];
 }
 
-interface MissingSubtitleType {
-  missing_subtitles: Subtitle[];
+type SubtitleType = CamelCaseKeys<RawSubtitleType>;
+
+interface RawMissingSubtitleType {
+  missing_subtitles: RawSubtitle[];
 }
+
+type MissingSubtitleType = CamelCaseKeys<RawMissingSubtitleType>;
 
 interface SceneNameType {
   sceneName?: string;
@@ -125,9 +139,11 @@ interface TitleType {
   title: string;
 }
 
-interface AudioLanguageType {
+interface RawAudioLanguageType {
   audio_language: Language.Info[];
 }
+
+type AudioLanguageType = CamelCaseKeys<RawAudioLanguageType>;
 
 interface ItemHistoryType {
   language: Language.Info;
@@ -135,11 +151,11 @@ interface ItemHistoryType {
 }
 
 declare namespace Item {
-  type Base = PathType &
+  type RawBase = PathType &
     TitleType &
     TagType &
     MonitoredType &
-    AudioLanguageType & {
+    RawAudioLanguageType & {
       profileId: number | null;
       fanart: string;
       overview: string;
@@ -149,7 +165,9 @@ declare namespace Item {
       year: string;
     };
 
-  type Series = Base &
+  type Base = CamelCaseKeys<RawBase>;
+
+  type RawSeries = RawBase &
     SeriesIdType & {
       episodeFileCount: number;
       episodeMissingCount: number;
@@ -159,67 +177,85 @@ declare namespace Item {
       tvdbId: number;
     };
 
-  type Movie = Base &
+  type Series = CamelCaseKeys<RawSeries>;
+
+  type RawMovie = RawBase &
     MovieIdType &
-    SubtitleType &
-    MissingSubtitleType &
+    RawSubtitleType &
+    RawMissingSubtitleType &
     SceneNameType;
 
-  type Episode = PathType &
+  type Movie = CamelCaseKeys<RawMovie>;
+
+  type RawEpisode = PathType &
     TitleType &
     MonitoredType &
     EpisodeIdType &
-    SubtitleType &
-    MissingSubtitleType &
+    RawSubtitleType &
+    RawMissingSubtitleType &
     SceneNameType &
-    AudioLanguageType & {
+    RawAudioLanguageType & {
       season: number;
       episode: number;
     };
 
-  type RefTracks = {
+  type Episode = CamelCaseKeys<RawEpisode>;
+
+  interface RawRefTracks {
     audio_tracks: AudioTrack[];
-    embedded_subtitles_tracks: SubtitleTrack[];
-    external_subtitles_tracks: ExternalSubtitle[];
-  };
+    embedded_subtitles_tracks: RawSubtitleTrack[];
+    external_subtitles_tracks: RawExternalSubtitle[];
+  }
+
+  type RefTracks = CamelCaseKeys<RawRefTracks>;
 }
 
 declare namespace Wanted {
-  type Base = MonitoredType &
+  type RawBase = MonitoredType &
     TagType &
     SceneNameType & {
       hearing_impaired: boolean;
-      missing_subtitles: Subtitle[];
+      missing_subtitles: RawSubtitle[];
     };
 
-  type Episode = Base &
+  type Base = CamelCaseKeys<RawBase>;
+
+  type RawEpisode = RawBase &
     EpisodeIdType &
     EpisodeTitleType & {
       episode_number: string;
       seriesType: SonarrSeriesType;
     };
 
-  type Movie = Base & MovieIdType & TitleType;
+  type Episode = CamelCaseKeys<RawEpisode>;
+
+  type RawMovie = RawBase & MovieIdType & TitleType;
+
+  type Movie = CamelCaseKeys<RawMovie>;
 }
 
 declare namespace Blacklist {
-  type Base = ItemHistoryType & {
+  type RawBase = ItemHistoryType & {
     parsed_timestamp: string;
     timestamp: string;
     subs_id: string;
   };
 
-  type Movie = Base & MovieIdType & TitleType;
+  type RawMovie = RawBase & MovieIdType & TitleType;
 
-  type Episode = Base &
+  type RawEpisode = RawBase &
     EpisodeTitleType &
     SeriesIdType & {
       episode_number: string;
     };
+
+  type Base = CamelCaseKeys<RawBase>;
+  type Movie = CamelCaseKeys<RawMovie>;
+  type Episode = CamelCaseKeys<RawEpisode>;
 }
 
 declare namespace History {
-  type Base = SubtitlePathType &
+  type RawBase = SubtitlePathType &
     TagType &
     MonitoredType &
     Partial<ItemHistoryType> & {
@@ -235,13 +271,17 @@ declare namespace History {
       dont_matches: string[];
     };
 
-  type Movie = History.Base & MovieIdType & TitleType;
+  type RawMovie = RawBase & MovieIdType & TitleType;
 
-  type Episode = History.Base &
+  type RawEpisode = RawBase &
     EpisodeIdType &
     EpisodeTitleType & {
       episode_number: string;
     };
+
+  type Base = CamelCaseKeys<RawBase>;
+  type Movie = CamelCaseKeys<RawMovie>;
+  type Episode = CamelCaseKeys<RawEpisode>;
 
   type StatItem = {
     count: number;
@@ -272,7 +312,7 @@ declare namespace Plex {
     authUrl: string;
   }
 
-  interface ValidationResult {
+  interface RawValidationResult {
     valid: boolean;
     auth_method?: string;
     username?: string;
@@ -280,6 +320,8 @@ declare namespace Plex {
     error?: string;
     code?: string;
   }
+
+  type ValidationResult = CamelCaseKeys<RawValidationResult>;
 
   interface PinCheckResult {
     authenticated: boolean;
@@ -322,41 +364,49 @@ declare namespace Plex {
     locations: string[];
   }
 
-  interface WebhookResult {
+  interface RawWebhookResult {
     success: boolean;
     message: string;
     webhook_url?: string;
     total_webhooks?: number;
   }
 
+  type WebhookResult = CamelCaseKeys<RawWebhookResult>;
+
   interface WebhookInfo {
     url: string;
   }
 
-  interface PlexPassSubscription {
+  interface RawPlexPassSubscription {
     active: boolean;
     has_webhooks_feature: boolean;
     plan: string | null;
   }
 
-  interface WebhookList {
+  type PlexPassSubscription = CamelCaseKeys<RawPlexPassSubscription>;
+
+  interface RawWebhookList {
     webhooks: WebhookInfo[];
     count: number;
-    plexPassSubscription?: PlexPassSubscription;
+    plexPassSubscription?: RawPlexPassSubscription;
   }
+
+  type WebhookList = CamelCaseKeys<RawWebhookList>;
 
   interface AutopulseResult {
     success: boolean;
     message: string;
   }
 
-  interface AutopulseConfig {
+  interface RawAutopulseConfig {
     config_yaml: string;
     server_name: string;
     rewrite_detected?: boolean;
     rewrite_suggestion?: string;
     template_info?: string;
   }
+
+  type AutopulseConfig = CamelCaseKeys<RawAutopulseConfig>;
 
   interface AutopulseLibrary {
     key: string;
@@ -366,7 +416,7 @@ declare namespace Plex {
   }
 }
 
-interface SearchResultType {
+interface RawSearchResultType {
   matches: string[];
   dont_matches: string[];
   language: string;
@@ -383,6 +433,8 @@ interface SearchResultType {
   original_format: PythonBoolean;
 }
 
+type SearchResultType = CamelCaseKeys<RawSearchResultType>;
+
 interface ReleaseInfo {
   current: boolean;
   date: string;
@@ -398,7 +450,7 @@ interface SubtitleInfo {
 }
 
 declare namespace SubtitleContents {
-  interface LineTime {
+  interface RawLineTime {
     hours: number;
     minutes: number;
     seconds: number;
@@ -406,14 +458,18 @@ declare namespace SubtitleContents {
     microseconds: number;
   }
 
-  interface Line {
+  type LineTime = CamelCaseKeys<RawLineTime>;
+
+  interface RawLine {
     index: number;
     content: string;
     proprietary: string;
-    start: LineTime;
-    end: LineTime;
+    start: RawLineTime;
+    end: RawLineTime;
     // duration: LineTime;
   }
+
+  type Line = CamelCaseKeys<RawLine>;
 
   // interface Contents extends Array<Line> {}
 }

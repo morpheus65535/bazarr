@@ -148,7 +148,7 @@ const SeriesEpisodesView: FunctionComponent = () => {
                 if (series) {
                   await action({
                     action: "sync",
-                    seriesid: id,
+                    seriesId: id,
                   });
                 }
               }}
@@ -162,7 +162,7 @@ const SeriesEpisodesView: FunctionComponent = () => {
                 if (series) {
                   task.create(series.title, TaskGroup.ScanDisk, action, {
                     action: "scan-disk",
-                    seriesid: id,
+                    seriesId: id,
                   });
                 }
               }}
@@ -175,7 +175,7 @@ const SeriesEpisodesView: FunctionComponent = () => {
                 if (series) {
                   await action({
                     action: "search-missing",
-                    seriesid: id,
+                    seriesId: id,
                   });
                 }
               }}

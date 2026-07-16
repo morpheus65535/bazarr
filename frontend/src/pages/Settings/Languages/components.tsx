@@ -6,7 +6,10 @@ import {
   SelectorOption,
 } from "@/components";
 import { Selector, SelectorProps } from "@/pages/Settings/components";
-import { useFormActions } from "@/pages/Settings/utilities/FormValues";
+import {
+  HookType,
+  useFormActions,
+} from "@/pages/Settings/utilities/FormValues";
 import { BaseInput } from "@/pages/Settings/utilities/hooks";
 import { useSelectorOptions } from "@/utilities";
 import { useLatestEnabledLanguages, useLatestProfiles } from ".";
@@ -33,9 +36,8 @@ export const LanguageSelector: FunctionComponent<
         value={enabled}
         searchable
         onChange={(val) => {
-          setValue(val, settingKey, (value: Language.Info[]) =>
-            value.map((v) => v.code2),
-          );
+          setValue(val, settingKey, ((value: Language.Info[]) =>
+            value.map((v) => v.code2)) as HookType);
         }}
       ></MultiSelector>
     </Input.Wrapper>

@@ -36,7 +36,7 @@ const Table: FunctionComponent<Props> = ({ blacklist }) => {
       },
       {
         header: "Episode",
-        accessorKey: "episode_number",
+        accessorKey: "episodeNumber",
       },
       {
         id: "episodeTitle",
@@ -65,7 +65,7 @@ const Table: FunctionComponent<Props> = ({ blacklist }) => {
         accessorKey: "timestamp",
         cell: ({
           row: {
-            original: { timestamp, parsed_timestamp: parsedTimestamp },
+            original: { timestamp, parsedTimestamp },
           },
         }) => {
           if (timestamp) {
@@ -80,10 +80,10 @@ const Table: FunctionComponent<Props> = ({ blacklist }) => {
         },
       },
       {
-        id: "subs_id",
+        id: "subsId",
         cell: ({
           row: {
-            original: { subs_id: subsId, provider },
+            original: { subsId, provider },
           },
         }) => {
           return (
@@ -95,8 +95,7 @@ const Table: FunctionComponent<Props> = ({ blacklist }) => {
                 all: false,
                 form: {
                   provider: provider,
-                  // eslint-disable-next-line camelcase
-                  subs_id: subsId,
+                  subsId,
                 },
               })}
             ></MutateAction>

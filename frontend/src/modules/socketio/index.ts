@@ -131,9 +131,10 @@ class SocketIOClient {
             ids = uniq(ids);
             const action = handler[key as SocketIO.ActionType];
             if (action) {
-              // FIXME: type
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              action(ids as any[]);
+              const typedAction = action as (
+                payload: SocketIO.PayloadType[],
+              ) => void;
+              typedAction(ids as SocketIO.PayloadType[]);
             } else if (anyAction === undefined) {
               LOG("warning", "Unhandled SocketIO event", key, type);
             }
