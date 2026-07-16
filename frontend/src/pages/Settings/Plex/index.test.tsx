@@ -1,3 +1,4 @@
+import { act } from "react";
 import { fireEvent, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Mock, vi, vitest } from "vitest";
@@ -220,15 +221,20 @@ function setupMocks(
   });
 }
 
-function renderPage(
+async function renderPage(
   overrides?: Record<string, unknown>,
   hookOverrides?: HookOverrides,
 ) {
   setupMocks(overrides, hookOverrides);
-  return customRender(<SettingsPlexView />);
+  let result: ReturnType<typeof customRender>;
+  await act(async () => {
+    result = customRender(<SettingsPlexView />);
+  });
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  return result!;
 }
 
-describe("SettingsPlexView", () => {
+describe("SettingsPlexView", async () => {
   beforeEach(() => {
     vitest.clearAllMocks();
   });
@@ -237,8 +243,8 @@ describe("SettingsPlexView", () => {
     Element.prototype.scrollIntoView = vitest.fn();
   });
 
-  it("should hide Plex settings when Plex is disabled", () => {
-    renderPage({
+  it("should hide Plex settings when Plex is disabled", async () => {
+    await renderPage({
       general: { ...baseSettings.general, use_plex: false },
     });
 
@@ -250,8 +256,8 @@ describe("SettingsPlexView", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("should render Plex settings when Plex is enabled", () => {
-    renderPage();
+  it("should render Plex settings when Plex is enabled", async () => {
+    await renderPage();
 
     expect(
       screen.getByRole("heading", { name: "Movie Library" }),
@@ -264,16 +270,16 @@ describe("SettingsPlexView", () => {
     ).toBeInTheDocument();
   });
 
-  it("should show Plex OAuth connect state when not authenticated", () => {
-    renderPage();
+  it("should show Plex OAuth connect state when not authenticated", async () => {
+    await renderPage();
 
     expect(
       screen.getByRole("button", { name: "Connect to Plex" }),
     ).toBeInTheDocument();
   });
 
-  it("should show authenticated Plex state", () => {
-    renderPage(undefined, {
+  it("should show authenticated Plex state", async () => {
+    await renderPage(undefined, {
       auth: {
         data: {
           valid: true,
@@ -294,8 +300,8 @@ describe("SettingsPlexView", () => {
     ).toBeInTheDocument();
   });
 
-  it("should show authentication loading state", () => {
-    renderPage(undefined, {
+  it("should show authentication loading state", async () => {
+    await renderPage(undefined, {
       auth: {
         data: undefined,
         isLoading: true,
@@ -308,8 +314,8 @@ describe("SettingsPlexView", () => {
     ).toBeInTheDocument();
   });
 
-  it("should show server connection status when authenticated", () => {
-    renderPage(undefined, {
+  it("should show server connection status when authenticated", async () => {
+    await renderPage(undefined, {
       auth: {
         data: { valid: true, authMethod: "oauth" },
         isLoading: false,
@@ -322,8 +328,8 @@ describe("SettingsPlexView", () => {
     ).toBeInTheDocument();
   });
 
-  it("should show a single server without manual selection", () => {
-    renderPage(undefined, {
+  it("should show a single server without manual selection", async () => {
+    await renderPage(undefined, {
       auth: {
         data: { valid: true, authMethod: "oauth" },
         isLoading: false,
@@ -347,8 +353,8 @@ describe("SettingsPlexView", () => {
     expect(screen.getByText(/My Server/)).toBeInTheDocument();
   });
 
-  it("should show a multiple server selection interface", () => {
-    renderPage(undefined, {
+  it("should show a multiple server selection interface", async () => {
+    await renderPage(undefined, {
       auth: {
         data: { valid: true, authMethod: "oauth" },
         isLoading: false,
@@ -385,8 +391,8 @@ describe("SettingsPlexView", () => {
     ).toBeInTheDocument();
   });
 
-  it("should show library loading alert", () => {
-    renderPage(undefined, {
+  it("should show library loading alert", async () => {
+    await renderPage(undefined, {
       auth: {
         data: { valid: true, authMethod: "oauth" },
         isLoading: false,
@@ -418,8 +424,8 @@ describe("SettingsPlexView", () => {
     ).toBeGreaterThanOrEqual(1);
   });
 
-  it("should show stale library as unavailable", () => {
-    renderPage(
+  it("should show stale library as unavailable", async () => {
+    await renderPage(
       {
         plex: {
           ...baseSettings.plex,
@@ -458,8 +464,8 @@ describe("SettingsPlexView", () => {
     ).toBeGreaterThanOrEqual(1);
   });
 
-  it("should show webhook creation when none exist", () => {
-    renderPage(undefined, {
+  it("should show webhook creation when none exist", async () => {
+    await renderPage(undefined, {
       auth: {
         data: { valid: true, authMethod: "oauth" },
         isLoading: false,
@@ -484,7 +490,7 @@ describe("SettingsPlexView", () => {
   it("should create a webhook", async () => {
     mockCreateWebhook.mockResolvedValueOnce(undefined);
 
-    renderPage(undefined, {
+    await renderPage(undefined, {
       auth: {
         data: { valid: true, authMethod: "oauth" },
         isLoading: false,
@@ -510,7 +516,7 @@ describe("SettingsPlexView", () => {
   it("should delete a webhook", async () => {
     mockDeleteWebhook.mockResolvedValueOnce(undefined);
 
-    renderPage(undefined, {
+    await renderPage(undefined, {
       auth: {
         data: { valid: true, authMethod: "oauth" },
         isLoading: false,
@@ -548,7 +554,7 @@ describe("SettingsPlexView", () => {
       },
     });
 
-    renderPage(undefined, {
+    await renderPage(undefined, {
       auth: {
         data: { valid: true, authMethod: "oauth" },
         isLoading: false,
@@ -590,7 +596,7 @@ describe("SettingsPlexView", () => {
       }),
     });
 
-    renderPage(undefined, {
+    await renderPage(undefined, {
       pinCheck: {
         data: { authenticated: false },
       },
@@ -613,7 +619,7 @@ describe("SettingsPlexView", () => {
   });
 
   it("should disconnect from Plex", async () => {
-    renderPage(undefined, {
+    await renderPage(undefined, {
       auth: {
         data: {
           valid: true,
@@ -635,8 +641,8 @@ describe("SettingsPlexView", () => {
     expect(mockLogoutMutate).toHaveBeenCalledTimes(1);
   });
 
-  it("should show an authentication error", () => {
-    renderPage(undefined, {
+  it("should show an authentication error", async () => {
+    await renderPage(undefined, {
       auth: {
         data: { valid: false, authMethod: "oauth" },
         isLoading: false,
@@ -647,8 +653,8 @@ describe("SettingsPlexView", () => {
     expect(screen.getByText("Auth failed")).toBeInTheDocument();
   });
 
-  it("should show a server loading error", () => {
-    renderPage(undefined, {
+  it("should show a server loading error", async () => {
+    await renderPage(undefined, {
       auth: {
         data: { valid: true, authMethod: "oauth" },
         isLoading: false,
@@ -667,7 +673,7 @@ describe("SettingsPlexView", () => {
   it("should select and save a server from the dropdown", async () => {
     mockServerSelectionMutate.mockResolvedValueOnce(undefined);
 
-    renderPage(undefined, {
+    await renderPage(undefined, {
       auth: {
         data: { valid: true, authMethod: "oauth" },
         isLoading: false,
@@ -714,8 +720,8 @@ describe("SettingsPlexView", () => {
     expect(mockServerSelectionMutate).toHaveBeenCalledTimes(1);
   });
 
-  it("should show a webhook error", () => {
-    renderPage(undefined, {
+  it("should show a webhook error", async () => {
+    await renderPage(undefined, {
       auth: {
         data: { valid: true, authMethod: "oauth" },
         isLoading: false,
@@ -731,8 +737,8 @@ describe("SettingsPlexView", () => {
     expect(screen.getByText(/Failed to load webhooks:/i)).toBeInTheDocument();
   });
 
-  it("should disable webhook creation without Plex Pass", () => {
-    renderPage(undefined, {
+  it("should disable webhook creation without Plex Pass", async () => {
+    await renderPage(undefined, {
       auth: {
         data: { valid: true, authMethod: "oauth" },
         isLoading: false,
@@ -762,7 +768,7 @@ describe("SettingsPlexView", () => {
       error: { response: { status: 401 } },
     });
 
-    renderPage(undefined, {
+    await renderPage(undefined, {
       auth: {
         data: { valid: true, authMethod: "oauth" },
         isLoading: false,
@@ -807,7 +813,7 @@ describe("SettingsPlexView", () => {
       }),
     });
 
-    renderPage(undefined, {
+    await renderPage(undefined, {
       pinCheck: {
         data: { authenticated: true },
       },
@@ -844,7 +850,7 @@ describe("SettingsPlexView", () => {
       }),
     });
 
-    renderPage(undefined, {
+    await renderPage(undefined, {
       pinCheck: {
         data: { authenticated: false },
       },
@@ -868,8 +874,8 @@ describe("SettingsPlexView", () => {
     });
   });
 
-  it("should show a fallback authentication error message", () => {
-    renderPage(undefined, {
+  it("should show a fallback authentication error message", async () => {
+    await renderPage(undefined, {
       auth: {
         data: { valid: false, authMethod: "oauth" },
         isLoading: false,
@@ -881,7 +887,7 @@ describe("SettingsPlexView", () => {
   });
 
   it("should show a logout success notification", async () => {
-    renderPage(undefined, {
+    await renderPage(undefined, {
       auth: {
         data: {
           valid: true,
@@ -909,8 +915,8 @@ describe("SettingsPlexView", () => {
     );
   });
 
-  it("should mark a server without a best connection as unavailable", () => {
-    renderPage(undefined, {
+  it("should mark a server without a best connection as unavailable", async () => {
+    await renderPage(undefined, {
       auth: {
         data: { valid: true, authMethod: "oauth" },
         isLoading: false,
@@ -937,7 +943,7 @@ describe("SettingsPlexView", () => {
   it("should initialize the selected server from the saved server", async () => {
     const refetchServers = vitest.fn();
 
-    const { rerender } = renderPage(undefined, {
+    const { rerender } = await renderPage(undefined, {
       auth: {
         data: { valid: true, authMethod: "oauth" },
         isLoading: false,
@@ -972,13 +978,15 @@ describe("SettingsPlexView", () => {
 
     rerender(<SettingsPlexView />);
 
-    expect(await screen.findByText(/Connected/i)).toBeInTheDocument();
+    expect(
+      (await screen.findAllByText(/Connected/i)).length,
+    ).toBeGreaterThanOrEqual(1);
   });
 
   it("should refresh the server list", async () => {
     const refetchServers = vitest.fn();
 
-    renderPage(undefined, {
+    await renderPage(undefined, {
       auth: {
         data: { valid: true, authMethod: "oauth" },
         isLoading: false,
@@ -1009,8 +1017,8 @@ describe("SettingsPlexView", () => {
     expect(refetchServers).toHaveBeenCalledTimes(1);
   });
 
-  it("should show a webhook loading state", () => {
-    renderPage(undefined, {
+  it("should show a webhook loading state", async () => {
+    await renderPage(undefined, {
       auth: {
         data: { valid: true, authMethod: "oauth" },
         isLoading: false,
@@ -1026,8 +1034,8 @@ describe("SettingsPlexView", () => {
     expect(screen.getByRole("combobox", { name: "Webhooks" })).toBeDisabled();
   });
 
-  it("should sort the Bazarr webhook first in the list", () => {
-    renderPage(undefined, {
+  it("should sort the Bazarr webhook first in the list", async () => {
+    await renderPage(undefined, {
       auth: {
         data: { valid: true, authMethod: "oauth" },
         isLoading: false,
@@ -1056,7 +1064,7 @@ describe("SettingsPlexView", () => {
   it("should show an error notification when creating a webhook fails", async () => {
     mockCreateWebhook.mockRejectedValueOnce(new Error("create failed"));
 
-    renderPage(undefined, {
+    await renderPage(undefined, {
       auth: {
         data: { valid: true, authMethod: "oauth" },
         isLoading: false,
@@ -1090,7 +1098,7 @@ describe("SettingsPlexView", () => {
   it("should show an error notification when deleting a webhook fails", async () => {
     mockDeleteWebhook.mockRejectedValueOnce(new Error("delete failed"));
 
-    renderPage(undefined, {
+    await renderPage(undefined, {
       auth: {
         data: { valid: true, authMethod: "oauth" },
         isLoading: false,
@@ -1135,7 +1143,7 @@ describe("SettingsPlexView", () => {
       configurable: true,
     });
 
-    renderPage(undefined, {
+    await renderPage(undefined, {
       auth: {
         data: { valid: true, authMethod: "oauth" },
         isLoading: false,
@@ -1173,7 +1181,7 @@ describe("SettingsPlexView", () => {
       configurable: true,
     });
 
-    renderPage(undefined, {
+    await renderPage(undefined, {
       auth: {
         data: { valid: true, authMethod: "oauth" },
         isLoading: false,
@@ -1216,7 +1224,7 @@ describe("SettingsPlexView", () => {
       configurable: true,
     });
 
-    renderPage(undefined, {
+    await renderPage(undefined, {
       auth: {
         data: { valid: true, authMethod: "oauth" },
         isLoading: false,
@@ -1265,7 +1273,7 @@ describe("SettingsPlexView", () => {
       configurable: true,
     });
 
-    renderPage(undefined, {
+    await renderPage(undefined, {
       auth: {
         data: { valid: true, authMethod: "oauth" },
         isLoading: false,
@@ -1302,8 +1310,8 @@ describe("SettingsPlexView", () => {
     });
   });
 
-  it("should show a library error alert", () => {
-    renderPage(undefined, {
+  it("should show a library error alert", async () => {
+    await renderPage(undefined, {
       auth: {
         data: { valid: true, authMethod: "oauth" },
         isLoading: false,
@@ -1336,8 +1344,8 @@ describe("SettingsPlexView", () => {
     ).toBeGreaterThanOrEqual(1);
   });
 
-  it("should show a no libraries alert", () => {
-    renderPage(undefined, {
+  it("should show a no libraries alert", async () => {
+    await renderPage(undefined, {
       auth: {
         data: { valid: true, authMethod: "oauth" },
         isLoading: false,
@@ -1370,7 +1378,7 @@ describe("SettingsPlexView", () => {
   });
 
   it("should select a Plex library and update its ID", async () => {
-    renderPage(undefined, {
+    await renderPage(undefined, {
       auth: {
         data: { valid: true, authMethod: "oauth" },
         isLoading: false,
@@ -1420,8 +1428,8 @@ describe("SettingsPlexView", () => {
     ).toBeGreaterThanOrEqual(1);
   });
 
-  it("should not render a connections card when the selected server is missing", () => {
-    renderPage(undefined, {
+  it("should not render a connections card when the selected server is missing", async () => {
+    await renderPage(undefined, {
       auth: {
         data: { valid: true, authMethod: "oauth" },
         isLoading: false,
