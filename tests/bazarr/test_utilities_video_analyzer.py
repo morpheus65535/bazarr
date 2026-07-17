@@ -230,9 +230,10 @@ def test_embedded_subs_reader(mocker, mediainfo_data, video_file):
         "bazarr.utilities.video_analyzer.alpha3_from_alpha2", return_value=None
     )
     result = video_analyzer.embedded_subs_reader(1e6, video_file)
-    assert ["spl", False, False, "SubRip"] in result
-    assert ["pob", False, False, "SubRip"] in result
-    assert ["zht", False, False, "SubRip"] in result
+    tracks_without_id = [row[1:] for row in result]
+    assert ["spl", False, False, "SubRip"] in tracks_without_id
+    assert ["pob", False, False, "SubRip"] in tracks_without_id
+    assert ["zht", False, False, "SubRip"] in tracks_without_id
 
 
 def test_embedded_audio_reader(mocker, mediainfo_data, video_file):
