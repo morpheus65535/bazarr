@@ -82,8 +82,14 @@ class MovieApi extends BaseApi {
     return response.data.map(camelCaseKeys);
   }
 
-  async action(action: FormType.MoviesAction) {
-    await this.patch("", snakeCaseKeys(action));
+  async action(form: FormType.MoviesAction) {
+    const payload: Record<string, unknown> = { action: form.action };
+
+    if (form.action !== "search-wanted") {
+      payload.radarrid = form.radarrId;
+    }
+
+    await this.patch("", payload);
   }
 
   async downloadSubtitles(radarrid: number, form: FormType.Subtitle) {
