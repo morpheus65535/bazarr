@@ -78,18 +78,27 @@ export const ProviderView: FunctionComponent<ProviderViewProps> = ({
 
   const modals = useModals();
 
+  const modalTitle =
+    settingsKey === "settings-general-enabled_integrations"
+      ? "Integration"
+      : "Provider";
+
   const select = useCallback(
     (v?: ProviderInfo) => {
       if (settings) {
-        modals.openContextModal(ProviderModal, {
-          payload: v ?? null,
-          enabledProviders: providers ?? [],
-          staged,
-          settings,
-          onChange: update,
-          availableOptions: availableOptions,
-          settingsKey: settingsKey,
-        });
+        modals.openContextModal(
+          ProviderModal,
+          {
+            payload: v ?? null,
+            enabledProviders: providers ?? [],
+            staged,
+            settings,
+            onChange: update,
+            availableOptions: availableOptions,
+            settingsKey: settingsKey,
+          },
+          { title: modalTitle },
+        );
       }
     },
     [
@@ -100,6 +109,7 @@ export const ProviderView: FunctionComponent<ProviderViewProps> = ({
       update,
       availableOptions,
       settingsKey,
+      modalTitle,
     ],
   );
 
@@ -448,9 +458,11 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
           </Stack>
           <Divider></Divider>
           <Group justify="right">
-            <Button hidden={!payload} color="red" onClick={deletePayload}>
-              Disable
-            </Button>
+            {payload ? (
+              <Button color="red" onClick={deletePayload}>
+                Disable
+              </Button>
+            ) : null}
             <Button
               disabled={!canSave}
               onClick={() => {

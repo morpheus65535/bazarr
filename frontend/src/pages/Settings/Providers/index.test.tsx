@@ -175,6 +175,19 @@ describe("SettingsProvidersView", () => {
     ).toBeInTheDocument();
   });
 
+  it("should not show the Disable button when adding a new provider", async () => {
+    renderPage();
+
+    await userEvent.click(getEnabledProviderAddButton());
+
+    const modal = await screen.findByRole("dialog");
+    const modalScope = within(modal);
+
+    expect(
+      modalScope.queryByRole("button", { name: "Disable" }),
+    ).not.toBeInTheDocument();
+  });
+
   it("should disable an existing provider from the modal", async () => {
     renderPage({
       general: {
