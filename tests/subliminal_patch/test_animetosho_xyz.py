@@ -104,36 +104,6 @@ def test_list_subtitles_no_anidb_episode_id():
         assert len(subtitles) == 0
 
 
-def test_provider_with_api_key(anime_episodes, requests_mock, data):
-    # Verify that the API key is correctly set in the session headers when provided.
-    # This is required for authenticated access to the AnimeTosho.xyz API.
-    language = Language("eng")
-    item = anime_episodes["crowned_s01e08"]
-
-    with open(os.path.join(data, 'animetosho_xyz_episode_response.json'), "rb") as f:
-        requests_mock.get(
-            'https://feed.animetosho.xyz/feed/json?eid=313249',
-            content=f.read()
-        )
-
-    with open(os.path.join(data, 'animetosho_xyz_series_response.json'), "rb") as f:
-        response = f.read()
-        requests_mock.get(
-            'https://feed.animetosho.xyz/json?show=torrent&id=622245',
-            content=response
-        )
-        requests_mock.get(
-            'https://feed.animetosho.xyz/json?show=torrent&id=622243',
-            content=response
-        )
-
-    with AnimeToshoXYZProvider(api_key="test_api_key_12345") as provider:
-        assert provider.api_key == "test_api_key_12345"
-        assert provider.session.headers.get('X-Api-Key') == "test_api_key_12345"
-        subtitles = provider.list_subtitles(item, languages={language})
-        assert len(subtitles) == 2
-
-
 def test_list_subtitles_with_episode_id_tuple(anime_episodes, requests_mock, data):
     # The AniDB refiner returns episode IDs as tuples (anime_id, episode_id), not lists.
     # This test ensures the provider correctly extracts the episode ID from a tuple,

@@ -330,9 +330,6 @@ validators = [
     Validator('animetosho.anidb_api_client', must_exist=True, default='', is_type_of=str, cast=str),
     Validator('animetosho.anidb_api_client_ver', must_exist=True, default=1, is_type_of=int, gte=1, lte=9),
 
-    # animetosho_xyz section
-    Validator('animetosho_xyz.api_key', must_exist=True, default='', is_type_of=str, cast=str),
-
     # avistaz section
     Validator('avistaz.cookies', must_exist=True, default='', is_type_of=str),
     Validator('avistaz.user_agent', must_exist=True, default='', is_type_of=str),

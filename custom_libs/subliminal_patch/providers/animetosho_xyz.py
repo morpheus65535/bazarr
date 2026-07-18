@@ -70,15 +70,12 @@ class AnimeToshoXYZProvider(Provider, ProviderSubtitleArchiveMixin):
     languages = {Language('por', 'BR')} | {Language(sl) for sl in supported_languages}
     video_types = Episode
 
-    def __init__(self, api_key=None):
+    def __init__(self):
         self.session = None
-        self.api_key = api_key
 
     def initialize(self):
         self.session = Session()
         self.session.headers.update({'User-Agent': os.environ.get("SZ_USER_AGENT", "Bazarr")})
-        if self.api_key:
-            self.session.headers.update({'X-Api-Key': self.api_key})
 
     def terminate(self):
         self.session.close()
