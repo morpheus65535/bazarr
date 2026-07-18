@@ -11,6 +11,7 @@ import {
   faUser,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 
 enum HistoryAction {
   Delete = 0,
@@ -26,7 +27,7 @@ const HistoryIcon: FunctionComponent<{
   action: number;
   title?: string;
 }> = ({ action, title }) => {
-  const actionMap = {
+  const actionMap: Record<number, { icon: IconDefinition; label: string }> = {
     [HistoryAction.Delete]: { icon: faTrash, label: "Delete" },
     [HistoryAction.Download]: { icon: faDownload, label: "Download" },
     [HistoryAction.Manual]: { icon: faUser, label: "Manual" },
