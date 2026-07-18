@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   ActionIcon,
   Alert,
@@ -52,40 +52,45 @@ const ServerSection = () => {
   );
 
   // Reset state when authentication changes from false to true (re-authentication)
-  if (isAuthenticated && !wasAuthenticated) {
-    setSelectedServer(null);
-    setIsSelecting(false);
-    setIsSaved(false);
-    setWasAuthenticated(true);
-  } else if (!isAuthenticated && wasAuthenticated) {
-    setWasAuthenticated(false);
-  }
+  useEffect(() => {
+    if (isAuthenticated && !wasAuthenticated) {
+      setSelectedServer(null);
+      setIsSelecting(false);
+      setIsSaved(false);
+      setWasAuthenticated(true);
+    } else if (!isAuthenticated && wasAuthenticated) {
+      setWasAuthenticated(false);
+    }
+  }, [isAuthenticated, wasAuthenticated]);
 
   // Consolidated server selection and saving logic
-  const selectAndSaveServer = async (server: Plex.Server) => {
-    if (!server.bestConnection) return;
+  const selectAndSaveServer = useCallback(
+    async (server: Plex.Server) => {
+      if (!server.bestConnection) return;
 
-    setIsSelecting(true);
-    try {
-      await selectServerMutation({
-        machineIdentifier: server.machineIdentifier,
-        name: server.name,
-        uri: server.bestConnection.uri,
-        local: server.bestConnection.local,
-        connections: server.connections?.map((conn) => conn.uri) || [
-          server.bestConnection.uri,
-        ],
-      });
-      setIsSaved(true);
-      // Save to Bazarr settings
-      setValue(server.bestConnection.uri, "plex_server");
-      setValue(server.name, "plex_server_name");
-    } catch {
-      // Error is handled by the mutation hook
-    } finally {
-      setIsSelecting(false);
-    }
-  };
+      setIsSelecting(true);
+      try {
+        await selectServerMutation({
+          machineIdentifier: server.machineIdentifier,
+          name: server.name,
+          uri: server.bestConnection.uri,
+          local: server.bestConnection.local,
+          connections: server.connections?.map((conn) => conn.uri) || [
+            server.bestConnection.uri,
+          ],
+        });
+        setIsSaved(true);
+        // Save to Bazarr settings
+        setValue(server.bestConnection.uri, "plex_server");
+        setValue(server.name, "plex_server_name");
+      } catch {
+        // Error is handled by the mutation hook
+      } finally {
+        setIsSelecting(false);
+      }
+    },
+    [selectServerMutation, setValue],
+  );
 
   // Handle server selection
   const handleServerSelect = async () => {
@@ -99,8 +104,12 @@ const ServerSection = () => {
     setIsSaved(false);
   };
 
-  // Unified initialization logic
-  const handleInitialization = () => {
+  // Run initialization when data is available
+  useEffect(() => {
+    if (!isAuthenticated) {
+      return;
+    }
+
     // First priority: initialize from saved server
     if (savedSelectedServer && !selectedServer && !isSaved) {
       setSelectedServer(savedSelectedServer);
@@ -110,7 +119,6 @@ const ServerSection = () => {
 
     // Second priority: auto-select single server
     if (
-      isAuthenticated &&
       servers.length === 1 &&
       servers[0].bestConnection &&
       !selectedServer &&
@@ -121,12 +129,14 @@ const ServerSection = () => {
       setSelectedServer(server);
       void selectAndSaveServer(server);
     }
-  };
-
-  // Run initialization when data is available
-  if (isAuthenticated && (savedSelectedServer || servers.length > 0)) {
-    handleInitialization();
-  }
+  }, [
+    isAuthenticated,
+    savedSelectedServer,
+    servers,
+    selectedServer,
+    isSaved,
+    selectAndSaveServer,
+  ]);
   if (!isAuthenticated) {
     return null;
   }

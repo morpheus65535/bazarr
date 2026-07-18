@@ -1,4 +1,4 @@
-import { camelCaseKeys, snakeCaseKeys } from "@/utilities/case";
+import { camelCaseKeys } from "@/utilities/case";
 import BaseApi from "./base";
 
 class SeriesApi extends BaseApi {
@@ -29,7 +29,13 @@ class SeriesApi extends BaseApi {
   }
 
   async action(form: FormType.SeriesAction) {
-    await this.patch("", snakeCaseKeys(form));
+    const payload: Record<string, unknown> = { action: form.action };
+
+    if (form.action !== "search-wanted") {
+      payload.seriesid = form.seriesId;
+    }
+
+    await this.patch("", payload);
   }
 }
 
