@@ -1,3 +1,5 @@
+import { ReactNode } from "react";
+import { Anchor } from "@mantine/core";
 import { SelectorOption } from "@/components";
 
 type Text = string | number;
@@ -26,7 +28,9 @@ export interface ProviderInfo {
   key: string;
   name?: string;
   description?: string;
-  message?: string;
+  // Extra information shown at the bottom of the provider/integration modal.
+  // Accepts rich content (e.g. text with inline links).
+  message?: ReactNode;
   // Key of an integration (from IntegrationList) this provider depends on.
   // When set, the provider modal warns if that integration is not configured.
   requiredIntegration?: string;
@@ -739,6 +743,19 @@ export const IntegrationList: Readonly<ProviderInfo[]> = [
     name: "AniDB",
     description:
       "AniDB is non-profit database of anime information that is freely open to the public.",
+    message: (
+      <>
+        Register an API client on{" "}
+        <Anchor
+          href="https://anidb.net/software/add"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          AniDB
+        </Anchor>{" "}
+        to obtain the API Client name and version below.
+      </>
+    ),
     inputs: [
       {
         type: "text",

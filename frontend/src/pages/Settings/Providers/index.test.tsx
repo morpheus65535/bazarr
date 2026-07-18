@@ -89,6 +89,24 @@ describe("SettingsProvidersView", () => {
     expect(screen.getByText("AniDB")).toBeInTheDocument();
   });
 
+  it("should render an inline link within the integration message", async () => {
+    renderPage({
+      general: {
+        ...baseSettings.general,
+        enabled_integrations: ["anidb"],
+      },
+    });
+
+    await userEvent.click(screen.getByRole("button", { name: /AniDB/i }));
+
+    const modal = await screen.findByRole("dialog");
+    const modalScope = within(modal);
+
+    const link = modalScope.getByRole("link", { name: "AniDB" });
+    expect(link).toBeInTheDocument();
+    expect(link).toHaveAttribute("href", "https://anidb.net/software/add");
+  });
+
   it("should expand anti-captcha fields when selecting a provider", async () => {
     renderPage();
 
