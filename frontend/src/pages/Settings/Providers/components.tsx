@@ -8,6 +8,7 @@ import {
   useState,
 } from "react";
 import {
+  Alert,
   AutocompleteProps,
   Button,
   Divider,
@@ -17,6 +18,11 @@ import {
   Text as MantineText,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
+import {
+  faCircleCheck,
+  faTriangleExclamation,
+} from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { capitalize } from "lodash";
 import { Selector } from "@/components";
 import { useModals, withModal } from "@/modules/modals";
@@ -44,7 +50,7 @@ import {
 } from "@/pages/Settings/utilities/SettingsProvider";
 import { BuildKey, useSelectorOptions } from "@/utilities";
 import { ASSERT } from "@/utilities/console";
-import { ProviderInfo, ProviderList } from "./list";
+import { IntegrationList, ProviderInfo, ProviderList } from "./list";
 
 type SettingsKey =
   | "settings-general-enabled_providers"
@@ -173,6 +179,59 @@ const validation = ProviderList.map((provider) => {
   .reduce((acc, item) => {
     return { ...acc, ...item };
   }, {});
+
+const RequiredIntegrationAlert: FunctionComponent<{
+  integrationKey: string;
+}> = ({ integrationKey }) => {
+  const integration = IntegrationList.find((v) => v.key === integrationKey);
+  const integrationName = integration?.name ?? capitalize(integrationKey);
+  // The first input of the integration is treated as its primary credential.
+  const primaryInputKey = integration?.inputs?.[0]?.key;
+
+  const enabledIntegrations = useSettingValue<string[]>(
+    "settings-general-enabled_integrations",
+  );
+  const primaryValue = useSettingValue<string | number>(
+    `settings-${integrationKey}-${primaryInputKey ?? ""}`,
+  );
+
+  const isEnabled = enabledIntegrations?.includes(integrationKey) ?? false;
+  const hasCredential =
+    primaryInputKey === undefined ||
+    (primaryValue !== null &&
+      primaryValue !== undefined &&
+      String(primaryValue).length > 0);
+
+  if (isEnabled && hasCredential) {
+    return (
+      <Alert
+        variant="light"
+        color="green"
+        icon={<FontAwesomeIcon icon={faCircleCheck} />}
+      >
+        This provider uses the {integrationName} integration, which is enabled
+        and configured.
+      </Alert>
+    );
+  }
+
+  return (
+    <Alert
+      variant="light"
+      color="yellow"
+      title={`${integrationName} integration required`}
+      icon={<FontAwesomeIcon icon={faTriangleExclamation} />}
+    >
+      {isEnabled
+        ? `This provider requires the ${integrationName} integration, which is enabled but missing its ${
+            integration?.inputs?.[0]?.name ?? "API credentials"
+          }. `
+        : `This provider requires the ${integrationName} integration, which is not enabled yet. `}
+      Enable and configure it in the Integrations section below for this
+      provider to work.
+    </Alert>
+  );
+};
 
 const ProviderTool: FunctionComponent<ProviderToolProps> = ({
   payload,
@@ -365,6 +424,11 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
     <SettingsProvider value={settings}>
       <FormContext.Provider value={form}>
         <Stack>
+          {info?.requiredIntegration ? (
+            <RequiredIntegrationAlert
+              integrationKey={info.requiredIntegration}
+            ></RequiredIntegrationAlert>
+          ) : null}
           <Stack gap="xs">
             <Selector
               data-autofocus

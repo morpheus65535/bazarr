@@ -27,6 +27,9 @@ export interface ProviderInfo {
   name?: string;
   description?: string;
   message?: string;
+  // Key of an integration (from IntegrationList) this provider depends on.
+  // When set, the provider modal warns if that integration is not configured.
+  requiredIntegration?: string;
   inputs?: AvailableInput[];
 }
 
@@ -86,7 +89,7 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
         name: "Search Threshold. Increase if you often cannot find subtitles for your Anime. Note that increasing the value will decrease the performance of the search for each Episode.",
       },
     ],
-    message: "Requires AniDB Integration.",
+    requiredIntegration: "anidb",
   },
   {
     key: "animetosho_xyz",
@@ -246,6 +249,7 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     description: "Japanese Subtitles Provider",
     message:
       "API key required. Subtitles stem from various sources and might have quality/timing issues.",
+    requiredIntegration: "anidb",
     inputs: [
       {
         type: "password",

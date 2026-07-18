@@ -199,6 +199,69 @@ describe("SettingsProvidersView", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("should warn when a provider's required integration is not enabled", async () => {
+    renderPage({
+      general: {
+        ...baseSettings.general,
+        enabled_providers: ["animetosho"],
+        enabled_integrations: [],
+      },
+    });
+
+    await userEvent.click(screen.getByRole("button", { name: /Anime Tosho/i }));
+
+    const modal = await screen.findByRole("dialog");
+    const modalScope = within(modal);
+
+    expect(
+      modalScope.getByText(/AniDB integration required/i),
+    ).toBeInTheDocument();
+    expect(modalScope.getByText(/is not enabled yet/i)).toBeInTheDocument();
+  });
+
+  it("should warn when the required integration is enabled but missing credentials", async () => {
+    renderPage({
+      general: {
+        ...baseSettings.general,
+        enabled_providers: ["animetosho"],
+        enabled_integrations: ["anidb"],
+      },
+    });
+
+    await userEvent.click(screen.getByRole("button", { name: /Anime Tosho/i }));
+
+    const modal = await screen.findByRole("dialog");
+    const modalScope = within(modal);
+
+    expect(
+      modalScope.getByText(/AniDB integration required/i),
+    ).toBeInTheDocument();
+    expect(modalScope.getByText(/missing its API Client/i)).toBeInTheDocument();
+  });
+
+  it("should confirm when the required integration is enabled and configured", async () => {
+    renderPage({
+      general: {
+        ...baseSettings.general,
+        enabled_providers: ["animetosho"],
+        enabled_integrations: ["anidb"],
+      },
+      anidb: {
+        api_client: "my-client",
+        api_client_ver: 1,
+      },
+    } as unknown as Partial<typeof baseSettings>);
+
+    await userEvent.click(screen.getByRole("button", { name: /Anime Tosho/i }));
+
+    const modal = await screen.findByRole("dialog");
+    const modalScope = within(modal);
+
+    expect(
+      modalScope.getByText(/is enabled and configured/i),
+    ).toBeInTheDocument();
+  });
+
   it("should test a provider connection from the modal", async () => {
     const providerTestSpy = vi
       .spyOn(api.utils, "providerUrlTest")
