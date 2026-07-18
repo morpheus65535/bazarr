@@ -9,7 +9,6 @@ jobs:
       STATUS_WORKFLOW_NAME: "ci.yml"
       UI_DIRECTORY: ./frontend
       ASSET_DIRECTORY: ./__builds__
-      FETCH_DEPTH: 15 # Should be enough
     steps:
       - name: Validate branch
         if: ${{ github.ref != 'refs/heads/development' }}
@@ -20,13 +19,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
         with:
-          fetch-depth: ${{ env.FETCH_DEPTH }}
+          fetch-depth: 0
           ref: development
 
       - name: Setup Git
         run: |
           git config --global user.name "github-actions" &&
-          git fetch --depth ${{ env.FETCH_DEPTH }} --tags
+          git fetch --tags
 
       - name: Cache node_modules
         uses: actions/cache@v6
