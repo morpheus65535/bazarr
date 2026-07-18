@@ -166,7 +166,7 @@ export const Chips: FunctionComponent<ChipsProp> = (props) => {
   const handleChange = (value: string[] | null) => {
     const sanitizedValues = props.sanitizeFn?.(value) ?? value;
 
-    update(sanitizedValues || null);
+    update(sanitizedValues);
   };
 
   return (

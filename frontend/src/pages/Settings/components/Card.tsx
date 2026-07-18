@@ -29,7 +29,12 @@ export const Card: FunctionComponent<CardProps> = ({
   titleStyles,
 }) => {
   return (
-    <UnstyledButton p="lg" onClick={onClick} className={styles.card}>
+    <UnstyledButton
+      p="lg"
+      onClick={onClick}
+      className={styles.card}
+      aria-label={plus ? "Add" : undefined}
+    >
       {plus ? (
         <Center>
           <FontAwesomeIcon size="2x" icon={faPlus}></FontAwesomeIcon>
