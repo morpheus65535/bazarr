@@ -10,38 +10,38 @@ describe("MovieApi", () => {
       ["scan-disk", 2],
       ["sync", 3],
     ] as const)("sends radarrid for '%s' action", async (action, radarrId) => {
-      let capturedBody: FormData | null = null;
+      const capturedBody = { current: null as FormData | null };
 
       server.use(
         http.patch("/api/movies", async ({ request }) => {
-          capturedBody = await request.formData();
+          capturedBody.current = await request.formData();
           return new HttpResponse();
         }),
       );
 
       await api.movies.action({ action, radarrId });
 
-      expect(capturedBody).not.toBeNull();
-      expect(capturedBody!.get("action")).toBe(action);
-      expect(capturedBody!.get("radarrid")).toBe(String(radarrId));
-      expect(capturedBody!.get("radarr_id")).toBeNull();
+      expect(capturedBody.current).not.toBeNull();
+      expect(capturedBody.current!.get("action")).toBe(action);
+      expect(capturedBody.current!.get("radarrid")).toBe(String(radarrId));
+      expect(capturedBody.current!.get("radarr_id")).toBeNull();
     });
 
     it("does not send radarrid for search-wanted action", async () => {
-      let capturedBody: FormData | null = null;
+      const capturedBody = { current: null as FormData | null };
 
       server.use(
         http.patch("/api/movies", async ({ request }) => {
-          capturedBody = await request.formData();
+          capturedBody.current = await request.formData();
           return new HttpResponse();
         }),
       );
 
       await api.movies.action({ action: "search-wanted" });
 
-      expect(capturedBody).not.toBeNull();
-      expect(capturedBody!.get("action")).toBe("search-wanted");
-      expect(capturedBody!.get("radarrid")).toBeNull();
+      expect(capturedBody.current).not.toBeNull();
+      expect(capturedBody.current!.get("action")).toBe("search-wanted");
+      expect(capturedBody.current!.get("radarrid")).toBeNull();
     });
   });
 });

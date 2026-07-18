@@ -10,38 +10,38 @@ describe("SeriesApi", () => {
       ["scan-disk", 2],
       ["sync", 3],
     ] as const)("sends seriesid for '%s' action", async (action, seriesId) => {
-      let capturedBody: FormData | null = null;
+      const capturedBody = { current: null as FormData | null };
 
       server.use(
         http.patch("/api/series", async ({ request }) => {
-          capturedBody = await request.formData();
+          capturedBody.current = await request.formData();
           return new HttpResponse();
         }),
       );
 
       await api.series.action({ action, seriesId });
 
-      expect(capturedBody).not.toBeNull();
-      expect(capturedBody!.get("action")).toBe(action);
-      expect(capturedBody!.get("seriesid")).toBe(String(seriesId));
-      expect(capturedBody!.get("series_id")).toBeNull();
+      expect(capturedBody.current).not.toBeNull();
+      expect(capturedBody.current!.get("action")).toBe(action);
+      expect(capturedBody.current!.get("seriesid")).toBe(String(seriesId));
+      expect(capturedBody.current!.get("series_id")).toBeNull();
     });
 
     it("does not send seriesid for search-wanted action", async () => {
-      let capturedBody: FormData | null = null;
+      const capturedBody = { current: null as FormData | null };
 
       server.use(
         http.patch("/api/series", async ({ request }) => {
-          capturedBody = await request.formData();
+          capturedBody.current = await request.formData();
           return new HttpResponse();
         }),
       );
 
       await api.series.action({ action: "search-wanted" });
 
-      expect(capturedBody).not.toBeNull();
-      expect(capturedBody!.get("action")).toBe("search-wanted");
-      expect(capturedBody!.get("seriesid")).toBeNull();
+      expect(capturedBody.current).not.toBeNull();
+      expect(capturedBody.current!.get("action")).toBe("search-wanted");
+      expect(capturedBody.current!.get("seriesid")).toBeNull();
     });
   });
 });

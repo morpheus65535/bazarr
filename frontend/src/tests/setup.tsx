@@ -49,7 +49,7 @@ window.ResizeObserver = ResizeObserver;
 window.scrollTo = () => undefined;
 
 const localStorageMock = (() => {
-  let store: Record<string, string> = {};
+  const store: Record<string, string> = {};
   return {
     getItem: vi.fn((key: string) => store[key] ?? null),
     setItem: vi.fn((key: string, value: string) => {
@@ -59,7 +59,7 @@ const localStorageMock = (() => {
       delete store[key];
     }),
     clear: vi.fn(() => {
-      store = {};
+      Object.keys(store).forEach((key) => delete store[key]);
     }),
   };
 })();
