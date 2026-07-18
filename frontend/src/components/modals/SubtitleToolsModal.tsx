@@ -209,7 +209,9 @@ const SubtitleToolView: FunctionComponent<SubtitleToolViewProps> = ({
             original: { path },
           },
         }) => {
-          const idx = Math.max(path.lastIndexOf("/"), path.lastIndexOf("\\"));
+          const forward = path.lastIndexOf("/");
+          const backslash = path.lastIndexOf("\\");
+          const idx = forward !== -1 ? forward : backslash;
 
           if (idx !== -1) {
             return <Text>{path.slice(idx + 1)}</Text>;
