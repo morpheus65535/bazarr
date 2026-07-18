@@ -124,7 +124,7 @@ export const ProviderView: FunctionComponent<ProviderViewProps> = ({
   }, [providers, select, availableOptions]);
 
   return (
-    <SimpleGrid cols={3}>
+    <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }}>
       {cards}
       <Card plus onClick={() => select()}></Card>
     </SimpleGrid>
@@ -404,5 +404,5 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
 
 const ProviderModal = withModal(ProviderTool, "provider-tool", {
   title: "Provider",
-  size: "calc(50vw)",
+  size: "lg",
 });
