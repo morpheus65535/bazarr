@@ -1,4 +1,5 @@
 import pytest
+from bs4 import BeautifulSoup
 from subliminal_patch.core import Episode
 from subliminal_patch.core import Movie
 from subliminal_patch.providers import subf2m
@@ -71,6 +72,40 @@ def test_init_empty_user_agent_raises_configurationerror():
 def test_search_tv_show_season(provider, series_title, season, year, expected_url):
     result = provider._search_tv_show_season(series_title, season, year)
     assert expected_url in result
+
+
+@pytest.mark.parametrize(
+    "season,season_word",
+    [
+        (12, "Twelfth"),
+        (13, "Thirteenth"),
+        (14, "Fourteenth"),
+        (15, "Fifteenth"),
+        (18, "Eighteenth"),
+        (20, "Twentieth"),
+    ],
+)
+def test_search_tv_show_season_ordinal_spelling(
+    provider, monkeypatch, season, season_word
+):
+    # Offline regression test: subf2m titles season pages with ordinal words
+    # (e.g. "Grey's Anatomy - Fourteenth Season  (2017)" at
+    # /subtitles/greys-anatomy-fourteenth-season). Seasons 13, 14, 18 and 20
+    # were unmatchable because _SEASONS misspelled them ("Thirdteenth",
+    # "Fourthteenth", "Eightheenth", "Tweentieth").
+    href = f"/subtitles/greys-anatomy-{season_word.lower()}-season"
+    html = (
+        "<li><div class='title'>"
+        f"<a href=\"{href}\">Grey&#39;s Anatomy - {season_word} Season  (2017)</a>"
+        "</div></li>"
+    )
+    tags = BeautifulSoup(html, "html.parser").select("li div[class='title'] a")
+    assert tags
+    monkeypatch.setattr(provider, "_gen_results", lambda query: iter(tags))
+
+    result = provider._search_tv_show_season("grey's anatomy", season)
+
+    assert result == {href}
 
 
 @pytest.mark.parametrize("language", [Language.fromalpha2("en"), Language("por", "BR")])
