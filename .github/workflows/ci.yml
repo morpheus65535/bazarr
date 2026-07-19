@@ -103,12 +103,18 @@ jobs:
       - name: Install media binaries
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg mediainfo
 
-      - uses: reporterplus/pytest-html-plus-action@v3
-        with:
-          test_path: tests/bazarr/**.py
-        if: always()
+      - name: Test with pytest
+        run: pytest tests/bazarr/ --junitxml report.xml
 
-      - name: Unit Tests
+      - name: Test report generation
+        uses: dorny/test-reporter@v3
+        if: always()
+        with:
+          name: Pytest Tests
+          path: report.xml
+          reporter: java-junit
+
+      - name: Bazarr execution test
         run: |
           bash '${{ env.SCRIPTS_DIRECTORY }}/build_test.sh'
 
