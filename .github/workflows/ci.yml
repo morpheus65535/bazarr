@@ -103,12 +103,11 @@ jobs:
       - name: Install media binaries
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg mediainfo
 
-      - uses: pavelzw/pytest-action@v2
+      - name: Backend test summary
+        uses: dariocurr/pytest-summary@main
         with:
-          emoji: true
-          verbose: false
-          job-summary: true
-          custom-arguments: tests/bazarr
+          paths: tests/bazarr/**.py
+        if: always()
 
       - name: Unit Tests
         run: |
