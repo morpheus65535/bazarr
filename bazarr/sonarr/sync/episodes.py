@@ -309,6 +309,8 @@ def sync_one_episode(episode_id, defer_search=False, is_signalr=False):
             else:
                 logging.debug(f'BAZARR skipping subtitle update for episode '
                               f'{path_mappings.path_replace(episode["path"])} as path and episode_file_id unchanged')
+                defer_search = True
+
             event_stream(type='episode', action='update', payload=int(episode_id))
             logging.debug(
                 f'BAZARR updated this episode into the database:{path_mappings.path_replace(episode["path"])}')

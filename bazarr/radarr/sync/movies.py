@@ -329,6 +329,7 @@ def update_one_movie(movie_id, action, defer_search=False, is_signalr=False):
             else:
                 logging.debug(f'BAZARR skipping subtitle update for movie '
                               f'{path_mappings.path_replace_movie(movie["path"])} as path and movie_file_id unchanged')
+                defer_search = True
 
             event_stream(type='movie', action='update', payload=int(movie_id))
             logging.debug(
