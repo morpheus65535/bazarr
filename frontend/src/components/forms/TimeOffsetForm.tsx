@@ -60,12 +60,9 @@ const TimeOffsetForm: FunctionComponent<Props> = ({ selections, onSubmit }) => {
   return (
     <form
       onSubmit={form.onSubmit(({ positive, hour, min, sec, ms }) => {
-        let action: string;
-        if (positive) {
-          action = convertToAction(hour, min, sec, ms);
-        } else {
-          action = convertToAction(-hour, -min, -sec, -ms);
-        }
+        const action = positive
+          ? convertToAction(hour, min, sec, ms)
+          : convertToAction(-hour, -min, -sec, -ms);
 
         selections.forEach((s) =>
           task.create(s.path, TaskName, mutateAsync, {

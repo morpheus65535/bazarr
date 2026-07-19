@@ -1,5 +1,6 @@
 import { FunctionComponent } from "react";
 import { Tooltip } from "@mantine/core";
+import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import {
   faClock,
   faClosedCaptioning,
@@ -26,42 +27,17 @@ const HistoryIcon: FunctionComponent<{
   action: number;
   title?: string;
 }> = ({ action, title }) => {
-  let icon = null;
-  let label = "Unknown";
-  switch (action) {
-    case HistoryAction.Delete:
-      icon = faTrash;
-      label = "Delete";
-      break;
-    case HistoryAction.Download:
-      icon = faDownload;
-      label = "Download";
-      break;
-    case HistoryAction.Manual:
-      icon = faUser;
-      label = "Manual";
-      break;
-    case HistoryAction.Sync:
-      icon = faClock;
-      label = "Sync";
-      break;
-    case HistoryAction.Upgrade:
-      icon = faRecycle;
-      label = "Upgrade";
-      break;
-    case HistoryAction.Upload:
-      icon = faCloudUploadAlt;
-      label = "Upload";
-      break;
-    case HistoryAction.Translated:
-      icon = faLanguage;
-      label = "Translated";
-      break;
-    default:
-      icon = faClosedCaptioning;
-      label = "Unknown";
-      break;
-  }
+  const actionMap: Record<number, { icon: IconDefinition; label: string }> = {
+    [HistoryAction.Delete]: { icon: faTrash, label: "Delete" },
+    [HistoryAction.Download]: { icon: faDownload, label: "Download" },
+    [HistoryAction.Manual]: { icon: faUser, label: "Manual" },
+    [HistoryAction.Sync]: { icon: faClock, label: "Sync" },
+    [HistoryAction.Upgrade]: { icon: faRecycle, label: "Upgrade" },
+    [HistoryAction.Upload]: { icon: faCloudUploadAlt, label: "Upload" },
+    [HistoryAction.Translated]: { icon: faLanguage, label: "Translated" },
+  };
+  const { icon = faClosedCaptioning, label = "Unknown" } =
+    actionMap[action] ?? {};
 
   if (icon) {
     return (

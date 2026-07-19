@@ -97,12 +97,12 @@ describe("System Announcements", () => {
   });
 
   it("should dismiss an announcement", async () => {
-    let dismissed = false;
+    const dismissed = { current: false };
 
     server.use(
       http.get("/api/system/announcements", () => {
         return HttpResponse.json({
-          data: dismissed
+          data: dismissed.current
             ? []
             : [
                 {
@@ -116,7 +116,7 @@ describe("System Announcements", () => {
         });
       }),
       http.post("/api/system/announcements", async () => {
-        dismissed = true;
+        dismissed.current = true;
         return HttpResponse.json({ data: [] });
       }),
     );

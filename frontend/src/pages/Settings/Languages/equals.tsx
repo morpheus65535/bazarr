@@ -66,12 +66,8 @@ export function decodeEqualData(
 }
 
 function encodeEqualTarget(data: GenericEqualTarget<Language.Server>): string {
-  let text = data.content.code3;
-  if (data.hi) {
-    text += "@hi";
-  } else if (data.forced) {
-    text += "@forced";
-  }
+  const text =
+    data.content.code3 + (data.hi ? "@hi" : data.forced ? "@forced" : "");
 
   return text;
 }

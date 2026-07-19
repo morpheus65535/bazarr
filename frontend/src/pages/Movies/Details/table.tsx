@@ -175,10 +175,9 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
         path: missingText,
       })) ?? [];
 
-    let rawSubtitles = movie?.subtitles ?? [];
-    if (onlyDesired) {
-      rawSubtitles = filterSubtitleBy(rawSubtitles, profileItems);
-    }
+    const rawSubtitles = onlyDesired
+      ? filterSubtitleBy(movie?.subtitles ?? [], profileItems)
+      : (movie?.subtitles ?? []);
 
     return [...rawSubtitles, ...missing];
   }, [movie, onlyDesired, profileItems]);

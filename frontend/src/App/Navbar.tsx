@@ -57,20 +57,21 @@ function useBadgeValue(route: Route.Item) {
       return badge;
     }
 
-    let value = badge ?? 0;
+    const base = badge ?? 0;
 
     if (children === undefined) {
-      return value;
+      return base;
     }
 
-    value +=
-      children.reduce((acc, child: Route.Item) => {
+    const value =
+      base +
+      (children.reduce((acc, child: Route.Item) => {
         const childBadgeValue = child.badge;
         if (typeof childBadgeValue === "number" && child.hidden !== true) {
           return acc + childBadgeValue;
         }
         return acc;
-      }, 0) ?? 0;
+      }, 0) ?? 0);
 
     return value === 0 ? undefined : value;
   }, [badge, children]);
