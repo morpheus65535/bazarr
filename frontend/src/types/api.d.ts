@@ -56,6 +56,7 @@ interface RawSubtitle {
   hi: boolean;
   path: string | null | undefined; // TODO: FIX ME!!!!!!
   embedded_track_id: number | null | undefined; // TODO: FIX ME!!!!!!
+  id: number;
 }
 
 type Subtitle = CamelCaseKeys<RawSubtitle>;
