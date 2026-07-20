@@ -156,81 +156,94 @@ const SubtitleToolsMenu: FunctionComponent<Props> = ({
     [selections],
   );
 
-  const isExternalToolsEnabled = isExternalOnly;
-  const isExtractEnabled = isSingleEmbedded;
-  const isSearchEnabled = selections.length === 0;
-  const isDeleteEnabled = isExternalOnly;
+  // Embedded subtitles only support extraction, so show a stripped-down menu
+  // that omits (rather than disables) the unsupported tools and actions. This
+  // avoids confusion such as "why can't I delete my embedded subtitles?".
+  const showTools = isExternalOnly;
+  const showSearch = selections.length === 0;
+  const showExtract = isSingleEmbedded;
+  const showDelete = isExternalOnly;
 
   return (
     <Menu withArrow withinPortal position="left-end" {...menu}>
       <Menu.Target>{children}</Menu.Target>
       <Menu.Dropdown>
-        <Menu.Label>Tools</Menu.Label>
-        {tools.map((tool) => (
+        {showTools && (
+          <>
+            <Menu.Label>Tools</Menu.Label>
+            {tools.map((tool) => (
+              <Menu.Item
+                key={tool.key}
+                leftSection={
+                  <FontAwesomeIcon icon={tool.icon}></FontAwesomeIcon>
+                }
+                onClick={() => {
+                  if (tool.modal) {
+                    modals.openContextModal(tool.modal, { selections });
+                  } else {
+                    process(tool.key, tool.name);
+                  }
+                }}
+              >
+                {tool.name}
+              </Menu.Item>
+            ))}
+            <Divider></Divider>
+          </>
+        )}
+        <Menu.Label>Actions</Menu.Label>
+        {showSearch && (
           <Menu.Item
-            key={tool.key}
-            disabled={!isExternalToolsEnabled}
-            leftSection={<FontAwesomeIcon icon={tool.icon}></FontAwesomeIcon>}
+            disabled={onAction === undefined}
+            leftSection={<FontAwesomeIcon icon={faSearch}></FontAwesomeIcon>}
             onClick={() => {
-              if (tool.modal) {
-                modals.openContextModal(tool.modal, { selections });
-              } else {
-                process(tool.key, tool.name);
-              }
+              onAction?.("search");
             }}
           >
-            {tool.name}
+            Search
           </Menu.Item>
-        ))}
-        <Divider></Divider>
-        <Menu.Label>Actions</Menu.Label>
-        <Menu.Item
-          disabled={!isSearchEnabled || onAction === undefined}
-          leftSection={<FontAwesomeIcon icon={faSearch}></FontAwesomeIcon>}
-          onClick={() => {
-            onAction?.("search");
-          }}
-        >
-          Search
-        </Menu.Item>
-        <Menu.Item
-          disabled={!isExtractEnabled}
-          leftSection={<FontAwesomeIcon icon={faBoxOpen}></FontAwesomeIcon>}
-          onClick={() => {
-            process("extract", "Extract");
-          }}
-        >
-          Extract
-        </Menu.Item>
-        <Menu.Item
-          disabled={!isDeleteEnabled || onAction === undefined}
-          color="red"
-          leftSection={<FontAwesomeIcon icon={faTrash}></FontAwesomeIcon>}
-          onClick={() => {
-            modals.openConfirmModal({
-              title: "The following subtitles will be deleted",
-              size: "lg",
-              children: (
-                <ScrollArea style={{ maxHeight: "20rem" }}>
-                  <List>
-                    {selections.map((s) => (
-                      <List.Item my="md" key={s.path}>
-                        {s.path}
-                      </List.Item>
-                    ))}
-                  </List>
-                </ScrollArea>
-              ),
-              onConfirm: () => {
-                onAction?.("delete");
-              },
-              labels: { confirm: "Delete", cancel: "Cancel" },
-              confirmProps: { color: "red" },
-            });
-          }}
-        >
-          Delete...
-        </Menu.Item>
+        )}
+        {showExtract && (
+          <Menu.Item
+            leftSection={<FontAwesomeIcon icon={faBoxOpen}></FontAwesomeIcon>}
+            onClick={() => {
+              process("extract", "Extract");
+            }}
+          >
+            Extract
+          </Menu.Item>
+        )}
+        {showDelete && (
+          <Menu.Item
+            disabled={onAction === undefined}
+            color="red"
+            leftSection={<FontAwesomeIcon icon={faTrash}></FontAwesomeIcon>}
+            onClick={() => {
+              modals.openConfirmModal({
+                title: "The following subtitles will be deleted",
+                size: "lg",
+                children: (
+                  <ScrollArea style={{ maxHeight: "20rem" }}>
+                    <List>
+                      {selections.map((s) => (
+                        <List.Item my="md" key={s.path}>
+                          {s.path}
+                        </List.Item>
+                      ))}
+                    </List>
+                  </ScrollArea>
+                ),
+                onConfirm: () => {
+                  onAction?.("delete");
+                },
+                labels: { confirm: "Delete", cancel: "Cancel" },
+                confirmProps: { color: "red" },
+              });
+            }}
+          >
+            Delete...
+          </Menu.Item>
+        )}
       </Menu.Dropdown>
     </Menu>
   );

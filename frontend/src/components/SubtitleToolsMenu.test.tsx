@@ -139,17 +139,16 @@ describe("SubtitleToolsMenu", () => {
     );
   });
 
-  it("disables the extract action for external subtitles", async () => {
+  it("hides the extract action for external subtitles", async () => {
     renderMenu();
     const user = userEvent.setup();
 
     await user.click(screen.getByText("Open"));
+    await screen.findByRole("menuitem", { name: "Delete..." });
 
     expect(
-      await screen.findByRole("menuitem", {
-        name: "Extract",
-      }),
-    ).toBeDisabled();
+      screen.queryByRole("menuitem", { name: "Extract" }),
+    ).not.toBeInTheDocument();
   });
 
   it("enables the extract action for embedded subtitles", async () => {
@@ -165,40 +164,19 @@ describe("SubtitleToolsMenu", () => {
     ).toBeEnabled();
   });
 
-  it("disables external tools for embedded subtitles", async () => {
+  it("hides external tools and unsupported actions for embedded subtitles", async () => {
     renderMenu({ selections: [embeddedSelection] });
     const user = userEvent.setup();
 
     await user.click(screen.getByText("Open"));
+    // The Extract action is the only item and confirms the menu is open.
+    await screen.findByRole("menuitem", { name: "Extract" });
 
     expect(
-      await screen.findByRole("menuitem", { name: "Remove HI Tags" }),
-    ).toBeDisabled();
-  });
-
-  it("does not fire search for embedded subtitles", async () => {
-    const onAction = vitest.fn();
-    renderMenu({ selections: [embeddedSelection], onAction });
-    const user = userEvent.setup();
-
-    await user.click(screen.getByText("Open"));
-    const searchItem = await screen.findByText("Search");
-    await user.click(searchItem);
-
-    expect(onAction).not.toHaveBeenCalled();
-  });
-
-  it("does not open delete confirmation for embedded subtitles", async () => {
-    const { openConfirmModal } = renderMenu({
-      selections: [embeddedSelection],
-    });
-    const user = userEvent.setup();
-
-    await user.click(screen.getByText("Open"));
-    const deleteItem = await screen.findByText("Delete...");
-    await user.click(deleteItem);
-
-    expect(openConfirmModal).not.toHaveBeenCalled();
+      screen.queryByRole("menuitem", { name: "Remove HI Tags" }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText("Search")).not.toBeInTheDocument();
+    expect(screen.queryByText("Delete...")).not.toBeInTheDocument();
   });
 
   it("creates an extract task when the extract action is clicked", async () => {
