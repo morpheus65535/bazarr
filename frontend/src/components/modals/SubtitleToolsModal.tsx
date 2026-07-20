@@ -41,6 +41,7 @@ import { fromPython, isMovie, toPython } from "@/utilities";
 type SupportType = Item.Episode | Item.Movie;
 
 type TableColumnType = FormType.ModifySubtitle & {
+  path: string;
   rawLanguage: Language.Info;
   episode?: number;
   episodeLabel: string;
@@ -134,7 +135,7 @@ interface SubtitleToolViewProps {
   payload: SupportType[];
 }
 
-const SubtitleToolView: FunctionComponent<SubtitleToolViewProps> = ({
+export const SubtitleToolView: FunctionComponent<SubtitleToolViewProps> = ({
   payload,
 }) => {
   const [selections, setSelections] = useState<TableColumnType[]>([]);
@@ -240,6 +241,7 @@ const SubtitleToolView: FunctionComponent<SubtitleToolViewProps> = ({
             return [
               {
                 id,
+                subtitlesId: v.id,
                 seriesId,
                 type,
                 episode: isMovie(item) ? undefined : item.episode,

@@ -38,9 +38,11 @@ declare namespace FormType {
 
   interface ModifySubtitle {
     id: number;
+    subtitlesId: number;
     type: "episode" | "movie";
     language: string;
-    path: string;
+    path: string | null;
+    mediaTitle?: string;
     forced?: PythonBoolean;
     hi?: PythonBoolean;
     originalFormat?: PythonBoolean;

@@ -27,6 +27,7 @@ const mockTaskCreate = vitest.mocked(task.create);
 
 const selection = {
   id: 1,
+  subtitlesId: 2,
   type: "episode",
   language: "en",
   path: "/subtitles/sub.srt",

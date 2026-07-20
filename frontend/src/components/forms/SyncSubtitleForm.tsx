@@ -29,18 +29,18 @@ import { fromPython, toPython } from "@/utilities";
 
 function useReferencedSubtitles(
   mediaType: "episode" | "movie",
-  mediaId: number,
+  id: number,
   subtitlesPath: string,
 ) {
   // We cannot call hooks conditionally, we rely on useQuery "enabled" option to do only the required API call
   const episodeData = useRefTracksByEpisodeId(
     subtitlesPath,
-    mediaId,
+    id,
     mediaType === "episode",
   );
   const movieData = useRefTracksByMovieId(
     subtitlesPath,
-    mediaId,
+    id,
     mediaType === "movie",
   );
 
@@ -133,10 +133,10 @@ const SyncSubtitleForm: FunctionComponent<Props> = ({
   const subtitle = selections[0];
 
   const mediaType = subtitle.type;
-  const mediaId = subtitle.id;
+  const id = subtitle.id;
   const subtitlesPath = subtitle.path;
 
-  const subtitles = useReferencedSubtitles(mediaType, mediaId, subtitlesPath);
+  const subtitles = useReferencedSubtitles(mediaType, id, subtitlesPath!);
 
   const form = useForm<FormValues>({
     initialValues: {

@@ -65,10 +65,15 @@ const TimeOffsetForm: FunctionComponent<Props> = ({ selections, onSubmit }) => {
           : convertToAction(-hour, -min, -sec, -ms);
 
         selections.forEach((s) =>
-          task.create(s.path, TaskName, mutateAsync, {
-            action,
-            form: s,
-          }),
+          task.create(
+            s.path ?? s.mediaTitle ?? "Unknown subtitle",
+            TaskName,
+            mutateAsync,
+            {
+              action,
+              form: s,
+            },
+          ),
         );
 
         onSubmit?.();
