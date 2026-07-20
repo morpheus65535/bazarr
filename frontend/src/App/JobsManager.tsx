@@ -421,19 +421,21 @@ const JobsManager: FunctionComponent<JobsManagerProps> = ({
                                         justify="center"
                                         style={{ width: 42, height: 42 }}
                                       >
-                                        <FontAwesomeIcon
-                                          icon={
-                                            status === "completed"
-                                              ? faCheck
-                                              : faXmark
-                                          }
-                                          color={
-                                            status === "completed"
-                                              ? "green"
-                                              : "red"
-                                          }
-                                          size="lg"
-                                        />
+                                        {status === "completed" ? (
+                                          <FontAwesomeIcon
+                                            icon={faCheck}
+                                            color="green"
+                                            size="lg"
+                                          />
+                                        ) : status === "failed" ? (
+                                          <FontAwesomeIcon
+                                            icon={faXmark}
+                                            color="red"
+                                            size="lg"
+                                          />
+                                        ) : (
+                                          <Loader size="sm" />
+                                        )}
                                       </Group>
                                     ))}
                                   <Stack
