@@ -9,13 +9,14 @@ from app.database import TableShows, TableEpisodes, TableMovies, database, selec
 from languages.get_languages import alpha3_from_alpha2
 from utilities.path_mappings import path_mappings
 from utilities.video_analyzer import subtitles_sync_references
-from subtitles.tools.subsyncer import SubSyncer
 from subtitles.tools.translate.main import translate_subtitles_file
 from subtitles.tools.mods import subtitles_apply_mods
 from subtitles.indexer.series import store_subtitles
 from subtitles.indexer.movies import store_subtitles_movie
+from subtitles.embedded import (extract_embedded_subtitle, BitmapSubtitlesNotSupportedError,
+                                EmbeddedSubtitlesExtractionError)
 from subtitles.sync import sync_subtitles
-from app.config import settings, empty_values, get_array_from
+from app.config import settings, empty_values
 from app.event_handler import event_stream
 from plex.operations import plex_refresh_item
 from jellyfin.operations import jellyfin_refresh_item
@@ -80,9 +81,9 @@ class Subtitles(Resource):
 
     patch_request_parser = reqparse.RequestParser()
     patch_request_parser.add_argument('action', type=str, required=True,
-                                      help='Action from ["sync", "translate" or mods name]')
+                                      help='Action from ["sync", "translate", "extract" or mods name]')
     patch_request_parser.add_argument('language', type=str, required=True, help='Language code2')
-    patch_request_parser.add_argument('path', type=str, required=True, help='Subtitles file path')
+    patch_request_parser.add_argument('path', type=str, required=False, help='Subtitles file path')
     patch_request_parser.add_argument('type', type=str, required=True, help='Media type from ["episode", "movie"]')
     patch_request_parser.add_argument('id', type=int, required=True, help='Media ID (episodeId, radarrId)')
     patch_request_parser.add_argument('forced', type=str, required=False,
@@ -99,14 +100,19 @@ class Subtitles(Resource):
                                       help='Don\'t try to fix framerate from ["True", "False"]')
     patch_request_parser.add_argument('gss', type=str, required=False,
                                       help='Use Golden-Section Search from ["True", "False"]')
+    patch_request_parser.add_argument('subtitles_id', type=int, required=False,
+                                      help='Subtitles database ID (required for the "extract" action)')
 
     @authenticate
     @api_ns_subtitles.doc(parser=patch_request_parser)
     @api_ns_subtitles.response(204, 'Success')
+    @api_ns_subtitles.response(400, 'Subtitles ID is required for extraction')
     @api_ns_subtitles.response(401, 'Not Authenticated')
     @api_ns_subtitles.response(404, 'Episode/movie not found')
-    @api_ns_subtitles.response(409, 'Unable to edit subtitles file. Check logs.')
+    @api_ns_subtitles.response(409, 'Unable to take action on subtitles file. Check logs.')
+    @api_ns_subtitles.response(415, 'Image based embedded subtitles cannot be extracted')
     @api_ns_subtitles.response(500, 'Subtitles file not found. Path mapping issue?')
+    @api_ns_subtitles.response(501, 'Path not provided and is required with this action.')
     @api_ns_subtitles.response(502, 'Translation failed. Check logs for more details.')
     def patch(self):
         """Apply mods/tools on external subtitles"""
@@ -120,8 +126,11 @@ class Subtitles(Resource):
         forced = True if args.get('forced') == 'True' else False
         hi = True if args.get('hi') == 'True' else False
 
-        if not os.path.exists(subtitles_path):
-            return 'Subtitles file not found. Path mapping issue?', 500
+        if action != 'extract':
+            if subtitles_path and not os.path.exists(subtitles_path):
+                return 'Subtitles file not found. Path mapping issue?', 500
+            if not subtitles_path:
+                return f'Path not provided and is required with this action: {action}', 501
 
         if media_type == 'episode':
             metadata = database.execute(
@@ -193,6 +202,16 @@ class Subtitles(Resource):
 
                 except OSError:
                     return 'Unable to edit subtitles file. Check logs.', 409
+        elif action == 'extract':
+            subtitles_id = args.get('subtitles_id')
+            if not subtitles_id:
+                return 'Subtitles ID is required for extraction', 400
+            try:
+                extract_embedded_subtitle(subtitles_id=subtitles_id, media_type=media_type)
+            except BitmapSubtitlesNotSupportedError:
+                return 'Image based embedded subtitles cannot be extracted', 415
+            except (EmbeddedSubtitlesExtractionError, OSError):
+                return 'Unable to take action on subtitles file. Check logs.', 409
         else:
             try:
                 subtitles_apply_mods(language=language, subtitle_path=subtitles_path, mods=[action],
