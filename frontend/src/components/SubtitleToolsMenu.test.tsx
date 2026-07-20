@@ -27,9 +27,21 @@ const mockTaskCreate = vitest.mocked(task.create);
 
 const selection = {
   id: 1,
+  subtitlesId: 2,
   type: "episode",
   language: "en",
   path: "/subtitles/sub.srt",
+  hi: "False",
+  forced: "False",
+} as FormType.ModifySubtitle;
+
+const embeddedSelection = {
+  id: 1,
+  subtitlesId: 2,
+  type: "episode",
+  language: "en",
+  path: null,
+  mediaTitle: "My Series - S01E01",
   hi: "False",
   forced: "False",
 } as FormType.ModifySubtitle;
@@ -123,6 +135,91 @@ describe("SubtitleToolsMenu", () => {
     expect(openConfirmModal).toHaveBeenCalledWith(
       expect.objectContaining({
         title: "The following subtitles will be deleted",
+      }),
+    );
+  });
+
+  it("disables the extract action for external subtitles", async () => {
+    renderMenu();
+    const user = userEvent.setup();
+
+    await user.click(screen.getByText("Open"));
+
+    expect(
+      await screen.findByRole("menuitem", {
+        name: "Extract",
+      }),
+    ).toBeDisabled();
+  });
+
+  it("enables the extract action for embedded subtitles", async () => {
+    renderMenu({ selections: [embeddedSelection] });
+    const user = userEvent.setup();
+
+    await user.click(screen.getByText("Open"));
+
+    expect(
+      await screen.findByRole("menuitem", {
+        name: "Extract",
+      }),
+    ).toBeEnabled();
+  });
+
+  it("disables external tools for embedded subtitles", async () => {
+    renderMenu({ selections: [embeddedSelection] });
+    const user = userEvent.setup();
+
+    await user.click(screen.getByText("Open"));
+
+    expect(
+      await screen.findByRole("menuitem", { name: "Remove HI Tags" }),
+    ).toBeDisabled();
+  });
+
+  it("does not fire search for embedded subtitles", async () => {
+    const onAction = vitest.fn();
+    renderMenu({ selections: [embeddedSelection], onAction });
+    const user = userEvent.setup();
+
+    await user.click(screen.getByText("Open"));
+    const searchItem = await screen.findByText("Search");
+    await user.click(searchItem);
+
+    expect(onAction).not.toHaveBeenCalled();
+  });
+
+  it("does not open delete confirmation for embedded subtitles", async () => {
+    const { openConfirmModal } = renderMenu({
+      selections: [embeddedSelection],
+    });
+    const user = userEvent.setup();
+
+    await user.click(screen.getByText("Open"));
+    const deleteItem = await screen.findByText("Delete...");
+    await user.click(deleteItem);
+
+    expect(openConfirmModal).not.toHaveBeenCalled();
+  });
+
+  it("creates an extract task when the extract action is clicked", async () => {
+    renderMenu({ selections: [embeddedSelection] });
+    const user = userEvent.setup();
+
+    await user.click(screen.getByText("Open"));
+    await user.click(
+      await screen.findByRole("menuitem", {
+        name: "Extract",
+      }),
+    );
+
+    expect(mockTaskCreate).toHaveBeenCalledTimes(1);
+    expect(mockTaskCreate).toHaveBeenCalledWith(
+      embeddedSelection.mediaTitle,
+      "Extract",
+      expect.any(Function),
+      expect.objectContaining({
+        action: "extract",
+        form: embeddedSelection,
       }),
     );
   });

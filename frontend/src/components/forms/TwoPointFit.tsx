@@ -51,7 +51,7 @@ const TwoPointFitForm: FunctionComponent<Props> = ({
   const { mutateAsync } = useSubtitleAction();
   const modals = useModals();
 
-  const query = useSubtitleContents(selections[0].path);
+  const query = useSubtitleContents(selections[0].path!);
   const lines = useMemo(() => query.data ?? [], [query]);
 
   const form = useForm({
@@ -130,10 +130,15 @@ const TwoPointFitForm: FunctionComponent<Props> = ({
         const action = convertToAction(r, first.to, scale);
 
         selections.forEach((s) =>
-          task.create(s.path, TaskName, mutateAsync, {
-            action,
-            form: s,
-          }),
+          task.create(
+            s.path ?? s.mediaTitle ?? "Unknown subtitle",
+            TaskName,
+            mutateAsync,
+            {
+              action,
+              form: s,
+            },
+          ),
         );
 
         onSubmit?.();

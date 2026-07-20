@@ -2,6 +2,7 @@ import { FunctionComponent, ReactElement, useCallback, useMemo } from "react";
 import { Divider, List, Menu, MenuProps, ScrollArea } from "@mantine/core";
 import {
   faAlignJustify,
+  faBoxOpen,
   faClock,
   faCode,
   faDeaf,
@@ -136,15 +137,8 @@ const SubtitleToolsMenu: FunctionComponent<Props> = ({
   const process = useCallback(
     (action: string, name: string) => {
       selections.forEach((s) => {
-        const form: FormType.ModifySubtitle = {
-          id: s.id,
-          type: s.type,
-          language: s.language,
-          path: s.path,
-          hi: s.hi,
-          forced: s.forced,
-        };
-        task.create(s.path, name, mutateAsync, { action, form });
+        const description = s.path ?? s.mediaTitle ?? "Unknown subtitle";
+        task.create(description, name, mutateAsync, { action, form: s });
       });
     },
     [mutateAsync, selections],
@@ -153,7 +147,19 @@ const SubtitleToolsMenu: FunctionComponent<Props> = ({
   const tools = useTools();
   const modals = useModals();
 
-  const disabledTools = selections.length === 0;
+  const isExternalOnly = useMemo(
+    () => selections.length > 0 && selections.every((s) => s.path !== null),
+    [selections],
+  );
+  const isSingleEmbedded = useMemo(
+    () => selections.length === 1 && selections[0].path === null,
+    [selections],
+  );
+
+  const isExternalToolsEnabled = isExternalOnly;
+  const isExtractEnabled = isSingleEmbedded;
+  const isSearchEnabled = selections.length === 0;
+  const isDeleteEnabled = isExternalOnly;
 
   return (
     <Menu withArrow withinPortal position="left-end" {...menu}>
@@ -163,7 +169,7 @@ const SubtitleToolsMenu: FunctionComponent<Props> = ({
         {tools.map((tool) => (
           <Menu.Item
             key={tool.key}
-            disabled={disabledTools}
+            disabled={!isExternalToolsEnabled}
             leftSection={<FontAwesomeIcon icon={tool.icon}></FontAwesomeIcon>}
             onClick={() => {
               if (tool.modal) {
@@ -179,7 +185,7 @@ const SubtitleToolsMenu: FunctionComponent<Props> = ({
         <Divider></Divider>
         <Menu.Label>Actions</Menu.Label>
         <Menu.Item
-          disabled={selections.length !== 0 || onAction === undefined}
+          disabled={!isSearchEnabled || onAction === undefined}
           leftSection={<FontAwesomeIcon icon={faSearch}></FontAwesomeIcon>}
           onClick={() => {
             onAction?.("search");
@@ -188,7 +194,16 @@ const SubtitleToolsMenu: FunctionComponent<Props> = ({
           Search
         </Menu.Item>
         <Menu.Item
-          disabled={selections.length === 0 || onAction === undefined}
+          disabled={!isExtractEnabled}
+          leftSection={<FontAwesomeIcon icon={faBoxOpen}></FontAwesomeIcon>}
+          onClick={() => {
+            process("extract", "Extract");
+          }}
+        >
+          Extract
+        </Menu.Item>
+        <Menu.Item
+          disabled={!isDeleteEnabled || onAction === undefined}
           color="red"
           leftSection={<FontAwesomeIcon icon={faTrash}></FontAwesomeIcon>}
           onClick={() => {
