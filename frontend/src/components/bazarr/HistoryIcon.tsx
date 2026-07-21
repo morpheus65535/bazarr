@@ -6,6 +6,7 @@ import {
   faClosedCaptioning,
   faCloudUploadAlt,
   faDownload,
+  faFileExport,
   faLanguage,
   faRecycle,
   faTrash,
@@ -21,6 +22,7 @@ enum HistoryAction {
   Upload,
   Sync,
   Translated,
+  Extracted,
 }
 
 const HistoryIcon: FunctionComponent<{
@@ -35,6 +37,7 @@ const HistoryIcon: FunctionComponent<{
     [HistoryAction.Upgrade]: { icon: faRecycle, label: "Upgrade" },
     [HistoryAction.Upload]: { icon: faCloudUploadAlt, label: "Upload" },
     [HistoryAction.Translated]: { icon: faLanguage, label: "Translated" },
+    [HistoryAction.Extracted]: { icon: faFileExport, label: "Extracted" },
   };
   const { icon = faClosedCaptioning, label = "Unknown" } =
     actionMap[action] ?? {};

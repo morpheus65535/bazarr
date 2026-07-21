@@ -11,6 +11,7 @@ describe("HistoryIcon", () => {
     [4, "Upload"],
     [5, "Sync"],
     [6, "Translated"],
+    [7, "Extracted"],
     [99, "Unknown"],
   ])("renders the expected icon for action %s", (action, label) => {
     customRender(<HistoryIcon action={action} />);

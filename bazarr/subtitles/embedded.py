@@ -6,16 +6,27 @@ import subprocess
 
 from fese import container, FFprobeVideoContainer
 from subzero.language import Language
+from subliminal_patch.core import get_subtitle_path
+from subliminal_patch.score import MAX_SCORES
 
+from app.config import settings
 from app.database import (TableShows, TableEpisodes, TableEpisodesSubtitles, TableMovies, TableMoviesSubtitles,
                           database, select)
 from app.event_handler import event_stream
 from app.jobs_queue import jobs_queue
+from app.notifier import send_notifications, send_notifications_movie
+from jellyfin.operations import jellyfin_refresh_item
 from languages.custom_lang import CustomLanguage
-from languages.get_languages import alpha3_from_alpha2
-from subliminal_patch.core import get_subtitle_path
+from languages.get_languages import alpha3_from_alpha2, language_from_alpha2
+from plex.operations import plex_refresh_item
+from radarr.history import history_log_movie
+from radarr.notify import notify_radarr
+from sonarr.history import history_log
+from sonarr.notify import notify_sonarr
 from subtitles.indexer.movies import store_subtitles_movie
 from subtitles.indexer.series import store_subtitles
+from subtitles.processing import ProcessSubtitlesResult
+from utilities.autopulse_webhook import call_external_webhook
 from utilities.binaries import get_binary
 from utilities.helper import get_target_folder
 from utilities.path_mappings import path_mappings
@@ -86,12 +97,16 @@ def extract_embedded_subtitle(subtitles_id, media_type, job_id=None):
                    TableEpisodesSubtitles.forced,
                    TableEpisodesSubtitles.hi,
                    TableEpisodesSubtitles.sonarrEpisodeId,
+                   TableEpisodesSubtitles.sonarrSeriesId,
                    TableEpisodes.path,
                    TableShows.title.label('seriesTitle'),
                    TableShows.year,
+                   TableShows.imdbId,
+                   TableShows.tvdbId,
                    TableEpisodes.season,
                    TableEpisodes.episode,
-                   TableEpisodes.title)
+                   TableEpisodes.title,
+                   TableEpisodes.audio_language,)
             .join(TableEpisodes, TableEpisodes.sonarrEpisodeId == TableEpisodesSubtitles.sonarrEpisodeId)
             .join(TableShows, TableShows.sonarrSeriesId == TableEpisodes.sonarrSeriesId)
             .where(TableEpisodesSubtitles.id == subtitles_id)) \
@@ -105,7 +120,10 @@ def extract_embedded_subtitle(subtitles_id, media_type, job_id=None):
                    TableMoviesSubtitles.radarrId,
                    TableMovies.path,
                    TableMovies.title,
-                   TableMovies.year)
+                   TableMovies.year,
+                   TableMovies.imdbId,
+                   TableMovies.tmdbId,
+                   TableMovies.audio_language,)
             .join(TableMovies, TableMovies.radarrId == TableMoviesSubtitles.radarrId)
             .where(TableMoviesSubtitles.id == subtitles_id)) \
             .first()
@@ -190,7 +208,7 @@ def extract_embedded_subtitle(subtitles_id, media_type, job_id=None):
             from error
 
     if not os.path.isfile(subtitles_path):
-        jobs_queue.update_job_name(job_id=job_id, new_job_name=f"Failed to extract embedded subtitles as file is "
+        jobs_queue.update_job_name(job_id=job_id, new_job_name=f"Failed to extract embedded subtitles since file is "
                                                                f"missing: {subtitles_path}")
         raise EmbeddedSubtitlesExtractionError(f"Extracted subtitles file is missing: {subtitles_path}")
 
@@ -202,6 +220,67 @@ def extract_embedded_subtitle(subtitles_id, media_type, job_id=None):
     else:
         store_subtitles_movie(media_id)
     event_stream(type=media_type, payload=media_id)
+
+    # Log the extraction to the history database (action 7 == extracted)
+    modifier = " HI" if data.hi else " forced" if data.forced else ""
+    if media_type == 'episode':
+        reversed_video_path = path_mappings.path_replace_reverse(video_path)
+        reversed_subtitles_path = path_mappings.path_replace_reverse(subtitles_path)
+    else:
+        reversed_video_path = path_mappings.path_replace_reverse_movie(video_path)
+        reversed_subtitles_path = path_mappings.path_replace_reverse_movie(subtitles_path)
+
+    result = ProcessSubtitlesResult(
+        message=f"{language_from_alpha2(data.language)}{modifier} subtitles extracted from embedded track "
+                f"{data.embedded_track_id}.",
+        reversed_path=reversed_video_path,
+        downloaded_language_code2=data.language,
+        downloaded_provider=None,
+        score=None,
+        forced=data.forced,
+        subtitle_id=f"{video_path}_{stream.index}",
+        reversed_subtitles_path=reversed_subtitles_path,
+        hearing_impaired=data.hi)
+
+    if media_type == 'episode':
+        history_log(7, data.sonarrSeriesId, media_id, result, fake_score=MAX_SCORES['episode'])
+        event_stream(type="episode-history")
+    else:
+        history_log_movie(7, media_id, result, fake_score=MAX_SCORES['movie'])
+        event_stream(type="movie-history")
+
+    # Notify apprise
+    if media_type == 'episode':
+        send_notifications(data.sonarrSeriesId, media_id, result.message)
+    else:
+        send_notifications_movie(media_id, result.message)
+
+    # Notify media downloader so they update their library so the newly extracted subtitles are picked up
+    if media_type == 'episode':
+        notify_sonarr(data.sonarrSeriesId)
+    else:
+        notify_radarr(media_id)
+
+    # Refresh the media servers so the newly extracted subtitles are picked up
+    if media_type == 'episode':
+        if settings.general.use_plex and settings.plex.update_series_library:
+            plex_refresh_item(data.imdbId, is_movie=False, season=data.season, episode=data.episode)
+        if settings.general.use_jellyfin and settings.jellyfin.update_series_library:
+            jellyfin_refresh_item(data.imdbId, is_movie=False, season=data.season, episode=data.episode,
+                                  tvdb_id=data.tvdbId)
+    else:
+        if settings.general.use_plex and settings.plex.update_movie_library:
+            plex_refresh_item(data.imdbId, is_movie=True)
+        if settings.general.use_jellyfin and settings.jellyfin.update_movie_library:
+            jellyfin_refresh_item(data.imdbId, is_movie=True, tmdb_id=data.tmdbId)
+
+    # Call external webhook after all processing is complete if enabled
+    call_external_webhook(
+        subtitle_path=subtitles_path,
+        media_path=video_path,
+        language=language,
+        media_type=media_type
+    )
 
     logging.debug(f"BAZARR extracted embedded subtitles to {subtitles_path}")
     jobs_queue.update_job_name(job_id=job_id, new_job_name=f"Extracted {subtitles_path}")
