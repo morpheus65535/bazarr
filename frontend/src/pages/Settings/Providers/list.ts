@@ -361,6 +361,11 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     ],
   },
   {
+    key: "legendei",
+    name: "Legendei.net",
+    description: "Brazilian Subtitles Provider",
+  },
+  {
     key: "napiprojekt",
     description: "Polish Subtitles Provider",
     inputs: [
