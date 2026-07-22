@@ -53,7 +53,12 @@ export function useSystemJobs() {
   return useQuery({
     queryKey: [QueryKeys.System, QueryKeys.Jobs],
     queryFn: () => api.system.jobs(),
-    staleTime: Infinity,
+    staleTime: 30_000,
+    refetchOnWindowFocus: true,
+    refetchInterval: (query) => {
+      const hasRunning = query.state.data?.some((j) => j.status === "running");
+      return hasRunning ? 10_000 : false;
+    },
   });
 }
 
