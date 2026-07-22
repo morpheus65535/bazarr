@@ -36,7 +36,13 @@ class SubtitlesApi extends BaseApi {
   }
 
   async modify(action: string, form: FormType.ModifySubtitle) {
-    await this.patch("", snakeCaseKeys(form), { action });
+    const payload = snakeCaseKeys(form);
+    const cleaned = Object.fromEntries(
+      Object.entries(payload)
+        .filter(([, value]) => value != null)
+        .filter(([key]) => key !== "media_title"),
+    );
+    await this.patch("", cleaned, { action });
   }
 
   async contents(subtitlePath: string) {

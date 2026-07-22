@@ -44,10 +44,15 @@ const FrameRateForm: FunctionComponent<Props> = ({ selections, onSubmit }) => {
         const action = convertToAction(from, to);
 
         selections.forEach((s) =>
-          task.create(s.path, TaskName, mutateAsync, {
-            action,
-            form: s,
-          }),
+          task.create(
+            s.path ?? s.mediaTitle ?? "Unknown subtitle",
+            TaskName,
+            mutateAsync,
+            {
+              action,
+              form: s,
+            },
+          ),
         );
 
         onSubmit?.();

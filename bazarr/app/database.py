@@ -695,7 +695,8 @@ def get_subtitles(sonarr_episode_id: int = None, radarr_id: int = None) -> List[
                    TableEpisodesSubtitles.forced,
                    TableEpisodesSubtitles.hi,
                    TableEpisodesSubtitles.size,
-                   TableEpisodesSubtitles.embedded_track_id)
+                   TableEpisodesSubtitles.embedded_track_id,
+                   TableEpisodesSubtitles.id)
             .where(TableEpisodesSubtitles.sonarrEpisodeId == sonarr_episode_id)
         ).all()
 
@@ -708,7 +709,8 @@ def get_subtitles(sonarr_episode_id: int = None, radarr_id: int = None) -> List[
                  "forced": episode_subtitles.forced,
                  "hi": episode_subtitles.hi,
                  "file_size": episode_subtitles.size,
-                 "embedded_track_id": episode_subtitles.embedded_track_id}
+                 "embedded_track_id": episode_subtitles.embedded_track_id,
+                 "id": episode_subtitles.id}
             )
     elif radarr_id:
         movies_subtitles = database.execute(
@@ -717,7 +719,8 @@ def get_subtitles(sonarr_episode_id: int = None, radarr_id: int = None) -> List[
                    TableMoviesSubtitles.forced,
                    TableMoviesSubtitles.hi,
                    TableMoviesSubtitles.size,
-                   TableMoviesSubtitles.embedded_track_id)
+                   TableMoviesSubtitles.embedded_track_id,
+                   TableMoviesSubtitles.id)
             .where(TableMoviesSubtitles.radarrId == radarr_id)
         ).all()
 
@@ -730,7 +733,8 @@ def get_subtitles(sonarr_episode_id: int = None, radarr_id: int = None) -> List[
                  "forced": movie_subtitles.forced,
                  "hi": movie_subtitles.hi,
                  "file_size": movie_subtitles.size,
-                 "embedded_track_id": movie_subtitles.embedded_track_id}
+                 "embedded_track_id": movie_subtitles.embedded_track_id,
+                 "id": movie_subtitles.id}
             )
 
     return sorted(subtitles, key=lambda i: (i['name'], i['forced']))

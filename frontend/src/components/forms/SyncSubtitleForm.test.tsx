@@ -36,6 +36,7 @@ const mockUseModals = vitest.mocked(useModals);
 
 const selection = {
   id: 1,
+  subtitlesId: 2,
   type: "episode",
   language: "en",
   path: "/subtitles/sub.srt",

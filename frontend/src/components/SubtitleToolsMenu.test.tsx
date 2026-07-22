@@ -27,9 +27,21 @@ const mockTaskCreate = vitest.mocked(task.create);
 
 const selection = {
   id: 1,
+  subtitlesId: 2,
   type: "episode",
   language: "en",
   path: "/subtitles/sub.srt",
+  hi: "False",
+  forced: "False",
+} as FormType.ModifySubtitle;
+
+const embeddedSelection = {
+  id: 1,
+  subtitlesId: 2,
+  type: "episode",
+  language: "en",
+  path: null,
+  mediaTitle: "My Series - S01E01",
   hi: "False",
   forced: "False",
 } as FormType.ModifySubtitle;
@@ -123,6 +135,69 @@ describe("SubtitleToolsMenu", () => {
     expect(openConfirmModal).toHaveBeenCalledWith(
       expect.objectContaining({
         title: "The following subtitles will be deleted",
+      }),
+    );
+  });
+
+  it("hides the extract action for external subtitles", async () => {
+    renderMenu();
+    const user = userEvent.setup();
+
+    await user.click(screen.getByText("Open"));
+    await screen.findByRole("menuitem", { name: "Delete..." });
+
+    expect(
+      screen.queryByRole("menuitem", { name: "Extract" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("enables the extract action for embedded subtitles", async () => {
+    renderMenu({ selections: [embeddedSelection] });
+    const user = userEvent.setup();
+
+    await user.click(screen.getByText("Open"));
+
+    expect(
+      await screen.findByRole("menuitem", {
+        name: "Extract",
+      }),
+    ).toBeEnabled();
+  });
+
+  it("hides external tools and unsupported actions for embedded subtitles", async () => {
+    renderMenu({ selections: [embeddedSelection] });
+    const user = userEvent.setup();
+
+    await user.click(screen.getByText("Open"));
+    // The Extract action is the only item and confirms the menu is open.
+    await screen.findByRole("menuitem", { name: "Extract" });
+
+    expect(
+      screen.queryByRole("menuitem", { name: "Remove HI Tags" }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText("Search")).not.toBeInTheDocument();
+    expect(screen.queryByText("Delete...")).not.toBeInTheDocument();
+  });
+
+  it("creates an extract task when the extract action is clicked", async () => {
+    renderMenu({ selections: [embeddedSelection] });
+    const user = userEvent.setup();
+
+    await user.click(screen.getByText("Open"));
+    await user.click(
+      await screen.findByRole("menuitem", {
+        name: "Extract",
+      }),
+    );
+
+    expect(mockTaskCreate).toHaveBeenCalledTimes(1);
+    expect(mockTaskCreate).toHaveBeenCalledWith(
+      embeddedSelection.mediaTitle,
+      "Extract",
+      expect.any(Function),
+      expect.objectContaining({
+        action: "extract",
+        form: embeddedSelection,
       }),
     );
   });

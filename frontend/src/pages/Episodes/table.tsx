@@ -81,6 +81,7 @@ const Table = forwardRef<TableInstance<Item.Episode> | null, Props>(
               key={BuildKey(idx, val.code2, "missing")}
               seriesId={seriesId}
               episodeId={episodeId}
+              mediaTitle={episode.title}
               subtitle={val}
             ></Subtitle>
           ));
@@ -94,6 +95,7 @@ const Table = forwardRef<TableInstance<Item.Episode> | null, Props>(
               key={BuildKey(idx, val.code2, "valid")}
               seriesId={seriesId}
               episodeId={episodeId}
+              mediaTitle={episode.title}
               subtitle={val}
             ></Subtitle>
           ));

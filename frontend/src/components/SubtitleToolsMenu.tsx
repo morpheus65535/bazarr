@@ -2,6 +2,7 @@ import { FunctionComponent, ReactElement, useCallback, useMemo } from "react";
 import { Divider, List, Menu, MenuProps, ScrollArea } from "@mantine/core";
 import {
   faAlignJustify,
+  faBoxOpen,
   faClock,
   faCode,
   faDeaf,
@@ -136,15 +137,8 @@ const SubtitleToolsMenu: FunctionComponent<Props> = ({
   const process = useCallback(
     (action: string, name: string) => {
       selections.forEach((s) => {
-        const form: FormType.ModifySubtitle = {
-          id: s.id,
-          type: s.type,
-          language: s.language,
-          path: s.path,
-          hi: s.hi,
-          forced: s.forced,
-        };
-        task.create(s.path, name, mutateAsync, { action, form });
+        const description = s.path ?? s.mediaTitle ?? "Unknown subtitle";
+        task.create(description, name, mutateAsync, { action, form: s });
       });
     },
     [mutateAsync, selections],
@@ -153,69 +147,103 @@ const SubtitleToolsMenu: FunctionComponent<Props> = ({
   const tools = useTools();
   const modals = useModals();
 
-  const disabledTools = selections.length === 0;
+  const isExternalOnly = useMemo(
+    () => selections.length > 0 && selections.every((s) => s.path !== null),
+    [selections],
+  );
+  const isSingleEmbedded = useMemo(
+    () => selections.length === 1 && selections[0].path === null,
+    [selections],
+  );
+
+  // Embedded subtitles only support extraction, so show a stripped-down menu
+  // that omits (rather than disables) the unsupported tools and actions. This
+  // avoids confusion such as "why can't I delete my embedded subtitles?".
+  const showTools = isExternalOnly;
+  const showSearch = selections.length === 0;
+  const showExtract = isSingleEmbedded;
+  const showDelete = isExternalOnly;
 
   return (
     <Menu withArrow withinPortal position="left-end" {...menu}>
       <Menu.Target>{children}</Menu.Target>
       <Menu.Dropdown>
-        <Menu.Label>Tools</Menu.Label>
-        {tools.map((tool) => (
+        {showTools && (
+          <>
+            <Menu.Label>Tools</Menu.Label>
+            {tools.map((tool) => (
+              <Menu.Item
+                key={tool.key}
+                leftSection={
+                  <FontAwesomeIcon icon={tool.icon}></FontAwesomeIcon>
+                }
+                onClick={() => {
+                  if (tool.modal) {
+                    modals.openContextModal(tool.modal, { selections });
+                  } else {
+                    process(tool.key, tool.name);
+                  }
+                }}
+              >
+                {tool.name}
+              </Menu.Item>
+            ))}
+            <Divider></Divider>
+          </>
+        )}
+        <Menu.Label>Actions</Menu.Label>
+        {showSearch && (
           <Menu.Item
-            key={tool.key}
-            disabled={disabledTools}
-            leftSection={<FontAwesomeIcon icon={tool.icon}></FontAwesomeIcon>}
+            disabled={onAction === undefined}
+            leftSection={<FontAwesomeIcon icon={faSearch}></FontAwesomeIcon>}
             onClick={() => {
-              if (tool.modal) {
-                modals.openContextModal(tool.modal, { selections });
-              } else {
-                process(tool.key, tool.name);
-              }
+              onAction?.("search");
             }}
           >
-            {tool.name}
+            Search
           </Menu.Item>
-        ))}
-        <Divider></Divider>
-        <Menu.Label>Actions</Menu.Label>
-        <Menu.Item
-          disabled={selections.length !== 0 || onAction === undefined}
-          leftSection={<FontAwesomeIcon icon={faSearch}></FontAwesomeIcon>}
-          onClick={() => {
-            onAction?.("search");
-          }}
-        >
-          Search
-        </Menu.Item>
-        <Menu.Item
-          disabled={selections.length === 0 || onAction === undefined}
-          color="red"
-          leftSection={<FontAwesomeIcon icon={faTrash}></FontAwesomeIcon>}
-          onClick={() => {
-            modals.openConfirmModal({
-              title: "The following subtitles will be deleted",
-              size: "lg",
-              children: (
-                <ScrollArea style={{ maxHeight: "20rem" }}>
-                  <List>
-                    {selections.map((s) => (
-                      <List.Item my="md" key={s.path}>
-                        {s.path}
-                      </List.Item>
-                    ))}
-                  </List>
-                </ScrollArea>
-              ),
-              onConfirm: () => {
-                onAction?.("delete");
-              },
-              labels: { confirm: "Delete", cancel: "Cancel" },
-              confirmProps: { color: "red" },
-            });
-          }}
-        >
-          Delete...
-        </Menu.Item>
+        )}
+        {showExtract && (
+          <Menu.Item
+            leftSection={<FontAwesomeIcon icon={faBoxOpen}></FontAwesomeIcon>}
+            onClick={() => {
+              process("extract", "Extract");
+            }}
+          >
+            Extract
+          </Menu.Item>
+        )}
+        {showDelete && (
+          <Menu.Item
+            disabled={onAction === undefined}
+            color="red"
+            leftSection={<FontAwesomeIcon icon={faTrash}></FontAwesomeIcon>}
+            onClick={() => {
+              modals.openConfirmModal({
+                title: "The following subtitles will be deleted",
+                size: "lg",
+                children: (
+                  <ScrollArea style={{ maxHeight: "20rem" }}>
+                    <List>
+                      {selections.map((s) => (
+                        <List.Item my="md" key={s.path}>
+                          {s.path}
+                        </List.Item>
+                      ))}
+                    </List>
+                  </ScrollArea>
+                ),
+                onConfirm: () => {
+                  onAction?.("delete");
+                },
+                labels: { confirm: "Delete", cancel: "Cancel" },
+                confirmProps: { color: "red" },
+              });
+            }}
+          >
+            Delete...
+          </Menu.Item>
+        )}
       </Menu.Dropdown>
     </Menu>
   );

@@ -12,7 +12,7 @@ from app.database import TableShows, TableEpisodes, TableMovies, database, selec
 from utilities.analytics import event_tracker
 from radarr.notify import notify_radarr
 from sonarr.notify import notify_sonarr
-from plex.operations import plex_set_movie_added_date_now, plex_update_library, plex_set_episode_added_date_now, plex_refresh_item
+from plex.operations import plex_set_movie_added_date_now, plex_set_episode_added_date_now, plex_refresh_item
 from jellyfin.operations import jellyfin_refresh_item
 from app.event_handler import event_stream
 
@@ -146,6 +146,7 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
         reversed_subtitles_path = path_mappings.path_replace_reverse(downloaded_path)
         notify_sonarr(episode_metadata.sonarrSeriesId)
         event_stream(type='series', action='update', payload=episode_metadata.sonarrSeriesId)
+        event_stream(type="episode-history")
         event_stream(type='episode-wanted', action='delete',
                      payload=episode_metadata.sonarrEpisodeId)
         if settings.general.use_plex is True:
@@ -165,6 +166,7 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
         reversed_path = path_mappings.path_replace_reverse_movie(path)
         reversed_subtitles_path = path_mappings.path_replace_reverse_movie(downloaded_path)
         notify_radarr(movie_metadata.radarrId)
+        event_stream(type="movie-history")
         event_stream(type='movie-wanted', action='delete', payload=movie_metadata.radarrId)
         if settings.general.use_plex is True:
             if settings.plex.set_movie_added is True:

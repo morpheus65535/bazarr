@@ -36,30 +36,32 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
   const { download, remove } = useMovieSubtitleModification();
 
   const CodeCell = React.memo(({ item }: { item: Subtitle }) => {
-    const { code2, path, hi, forced } = item;
+    const { code2, path, hi, forced, id } = item;
+
+    const { radarrId, title } = movie ?? {};
 
     const selections = useMemo(() => {
       const list: FormType.ModifySubtitle[] = [];
 
-      if (path && !isSubtitleMissing(path) && movie !== null) {
+      if (radarrId !== undefined && !isSubtitleMissing(path)) {
         list.push({
           type: "movie",
-          path,
-          id: movie.radarrId,
+          path: isSubtitleTrack(path) ? null : (path as string),
+          id: radarrId,
+          subtitlesId: id,
           language: code2,
+          mediaTitle: title,
           forced: toPython(forced),
           hi: toPython(hi),
         });
       }
 
       return list;
-    }, [code2, path, forced, hi]);
+    }, [code2, path, forced, hi, id, radarrId, title]);
 
     if (movie === null) {
       return null;
     }
-
-    const { radarrId } = movie;
 
     if (isSubtitleMissing(path)) {
       return (
@@ -70,7 +72,7 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
           loading={download.isPending}
           onClick={async () => {
             await download.mutateAsync({
-              radarrId,
+              radarrId: movie.radarrId,
               form: {
                 language: code2,
                 forced,
@@ -88,7 +90,7 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
         onAction={async (action) => {
           if (action === "delete" && path) {
             await remove.mutateAsync({
-              radarrId,
+              radarrId: movie.radarrId,
               form: {
                 language: code2,
                 forced,
@@ -101,11 +103,7 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
           }
         }}
       >
-        <Action
-          label="Subtitle Actions"
-          disabled={isSubtitleTrack(path)}
-          icon={faEllipsis}
-        ></Action>
+        <Action label="Subtitle Actions" icon={faEllipsis}></Action>
       </SubtitleToolsMenu>
     );
   });
