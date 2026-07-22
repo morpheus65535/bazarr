@@ -76,13 +76,13 @@ def _get_scores(media_type, min_movie=None, min_ep=None):
 
     max_score = MAX_SCORES['episode' if series else 'movie']
 
-    min_movie = min_movie or (max_score / 2)
-    min_ep = min_ep or (2/3 * max_score)
-    min_score = int(min_ep if series else min_movie)
+    min_movie = min_movie if min_movie is not None else (max_score / 2)
+    min_ep = min_ep if min_ep is not None else (2/3 * max_score)
+    min_score = min_ep if series else min_movie
 
     return (
-        max_score * min_score / 100,
-        max_score,
+        int(max_score * min_score / 100),
+        int(max_score),
         handler.keys(),
     )
 
