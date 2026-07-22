@@ -1,3 +1,5 @@
+import { ReactNode } from "react";
+import { Anchor } from "@mantine/core";
 import { SelectorOption } from "@/components";
 
 type Text = string | number;
@@ -26,7 +28,12 @@ export interface ProviderInfo {
   key: string;
   name?: string;
   description?: string;
-  message?: string;
+  // Extra information shown at the bottom of the provider/integration modal.
+  // Accepts rich content (e.g. text with inline links).
+  message?: ReactNode;
+  // Key of an integration (from IntegrationList) this provider depends on.
+  // When set, the provider modal warns if that integration is not configured.
+  requiredIntegration?: string;
   inputs?: AvailableInput[];
 }
 
@@ -86,14 +93,14 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
         name: "Search Threshold. Increase if you often cannot find subtitles for your Anime. Note that increasing the value will decrease the performance of the search for each Episode.",
       },
     ],
-    message: "Requires AniDB Integration.",
+    requiredIntegration: "anidb",
   },
   {
     key: "animetosho_xyz",
     name: "AnimeTosho.xyz",
     description:
       "AnimeTosho.xyz is a free, completely automated service which mirrors most torrents posted on TokyoTosho's anime category, Nyaa.si's English translated anime category and AniDex's anime category.",
-    message: "Requires AniDB Integration.",
+    requiredIntegration: "anidb",
   },
   {
     key: "animesubinfo",
@@ -246,6 +253,7 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     description: "Japanese Subtitles Provider",
     message:
       "API key required. Subtitles stem from various sources and might have quality/timing issues.",
+    requiredIntegration: "anidb",
     inputs: [
       {
         type: "password",
@@ -735,6 +743,19 @@ export const IntegrationList: Readonly<ProviderInfo[]> = [
     name: "AniDB",
     description:
       "AniDB is non-profit database of anime information that is freely open to the public.",
+    message: (
+      <>
+        Register an API client on{" "}
+        <Anchor
+          href="https://anidb.net/software/add"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          AniDB
+        </Anchor>{" "}
+        to obtain the API Client name and version below.
+      </>
+    ),
     inputs: [
       {
         type: "text",

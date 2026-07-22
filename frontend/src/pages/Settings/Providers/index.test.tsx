@@ -89,6 +89,24 @@ describe("SettingsProvidersView", () => {
     expect(screen.getByText("AniDB")).toBeInTheDocument();
   });
 
+  it("should render an inline link within the integration message", async () => {
+    renderPage({
+      general: {
+        ...baseSettings.general,
+        enabled_integrations: ["anidb"],
+      },
+    });
+
+    await userEvent.click(screen.getByRole("button", { name: /AniDB/i }));
+
+    const modal = await screen.findByRole("dialog");
+    const modalScope = within(modal);
+
+    const link = modalScope.getByRole("link", { name: "AniDB" });
+    expect(link).toBeInTheDocument();
+    expect(link).toHaveAttribute("href", "https://anidb.net/software/add");
+  });
+
   it("should expand anti-captcha fields when selecting a provider", async () => {
     renderPage();
 
@@ -175,6 +193,19 @@ describe("SettingsProvidersView", () => {
     ).toBeInTheDocument();
   });
 
+  it("should not show the Disable button when adding a new provider", async () => {
+    renderPage();
+
+    await userEvent.click(getEnabledProviderAddButton());
+
+    const modal = await screen.findByRole("dialog");
+    const modalScope = within(modal);
+
+    expect(
+      modalScope.queryByRole("button", { name: "Disable" }),
+    ).not.toBeInTheDocument();
+  });
+
   it("should disable an existing provider from the modal", async () => {
     renderPage({
       general: {
@@ -197,6 +228,69 @@ describe("SettingsProvidersView", () => {
     expect(
       screen.queryByRole("button", { name: /Addic7ed/i }),
     ).not.toBeInTheDocument();
+  });
+
+  it("should warn when a provider's required integration is not enabled", async () => {
+    renderPage({
+      general: {
+        ...baseSettings.general,
+        enabled_providers: ["animetosho"],
+        enabled_integrations: [],
+      },
+    });
+
+    await userEvent.click(screen.getByRole("button", { name: /Anime Tosho/i }));
+
+    const modal = await screen.findByRole("dialog");
+    const modalScope = within(modal);
+
+    expect(
+      modalScope.getByText(/AniDB integration required/i),
+    ).toBeInTheDocument();
+    expect(modalScope.getByText(/is not enabled yet/i)).toBeInTheDocument();
+  });
+
+  it("should warn when the required integration is enabled but missing credentials", async () => {
+    renderPage({
+      general: {
+        ...baseSettings.general,
+        enabled_providers: ["animetosho"],
+        enabled_integrations: ["anidb"],
+      },
+    });
+
+    await userEvent.click(screen.getByRole("button", { name: /Anime Tosho/i }));
+
+    const modal = await screen.findByRole("dialog");
+    const modalScope = within(modal);
+
+    expect(
+      modalScope.getByText(/AniDB integration required/i),
+    ).toBeInTheDocument();
+    expect(modalScope.getByText(/missing its API Client/i)).toBeInTheDocument();
+  });
+
+  it("should confirm when the required integration is enabled and configured", async () => {
+    renderPage({
+      general: {
+        ...baseSettings.general,
+        enabled_providers: ["animetosho"],
+        enabled_integrations: ["anidb"],
+      },
+      anidb: {
+        api_client: "my-client",
+        api_client_ver: 1,
+      },
+    } as unknown as Partial<typeof baseSettings>);
+
+    await userEvent.click(screen.getByRole("button", { name: /Anime Tosho/i }));
+
+    const modal = await screen.findByRole("dialog");
+    const modalScope = within(modal);
+
+    expect(
+      modalScope.getByText(/is enabled and configured/i),
+    ).toBeInTheDocument();
   });
 
   it("should test a provider connection from the modal", async () => {
