@@ -580,7 +580,7 @@ describe("SettingsPlexView", async () => {
       expect.objectContaining({
         title: "Success",
         message: "Autopulse configuration generated successfully",
-        color: "green",
+        color: "success",
       }),
     );
   });
@@ -794,7 +794,7 @@ describe("SettingsPlexView", async () => {
         title: "Error",
         message:
           "Plex OAuth authentication required. Please configure OAuth authentication above.",
-        color: "red",
+        color: "danger",
       }),
     );
   });
@@ -912,7 +912,7 @@ describe("SettingsPlexView", async () => {
       expect.objectContaining({
         title: "Disconnected from Plex",
         message: "All settings related to Plex were removed",
-        color: "green",
+        color: "success",
       }),
     );
   });
@@ -1091,7 +1091,7 @@ describe("SettingsPlexView", async () => {
         expect.objectContaining({
           title: "Error",
           message: "Failed to create webhook",
-          color: "red",
+          color: "danger",
         }),
       ),
     );
@@ -1129,7 +1129,7 @@ describe("SettingsPlexView", async () => {
         expect.objectContaining({
           title: "Error",
           message: "Failed to delete webhook",
-          color: "red",
+          color: "danger",
         }),
       ),
     );
@@ -1209,7 +1209,7 @@ describe("SettingsPlexView", async () => {
       expect(mockedNotificationsShow).toHaveBeenCalledWith(
         expect.objectContaining({
           title: "Cannot Copy",
-          color: "yellow",
+          color: "warning",
         }),
       ),
     );
@@ -1253,7 +1253,7 @@ describe("SettingsPlexView", async () => {
         expect.objectContaining({
           title: "Error",
           message: "No configuration to copy",
-          color: "red",
+          color: "danger",
         }),
       ),
     );
@@ -1301,7 +1301,7 @@ describe("SettingsPlexView", async () => {
       expect(mockedNotificationsShow).toHaveBeenCalledWith(
         expect.objectContaining({
           title: "Copy Failed",
-          color: "red",
+          color: "danger",
         }),
       ),
     );

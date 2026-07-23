@@ -118,7 +118,7 @@ const SettingsGeneralView: FunctionComponent = () => {
                   <Action
                     label="Copy API Key"
                     settingKey={settingApiKey}
-                    c={copied ? "green" : undefined}
+                    c={copied ? "success" : undefined}
                     icon={copied ? faCheck : faClipboard}
                     onClick={(update, value) => {
                       if (value) {
@@ -132,7 +132,7 @@ const SettingsGeneralView: FunctionComponent = () => {
               <Action
                 label="Regenerate"
                 settingKey={settingApiKey}
-                c="red"
+                c="danger"
                 icon={faSync}
                 onClick={(update) => {
                   update(generateApiKey());

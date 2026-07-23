@@ -20,13 +20,13 @@ const ExternalWebhookSelector: FunctionComponent = () => {
       notifications.show({
         title: result.data.success ? "Success" : "Error",
         message: result.data.message,
-        color: result.data.success ? "green" : "red",
+        color: result.data.success ? "success" : "danger",
       });
     } catch {
       notifications.show({
         title: "Error",
         message: "Failed to test external webhook connection",
-        color: "red",
+        color: "danger",
       });
     }
   };
@@ -38,7 +38,7 @@ const ExternalWebhookSelector: FunctionComponent = () => {
         downloaded.
         <br />
         For Autopulse auto-configuration with Plex OAuth, see the{" "}
-        <Text component={Link} to="/settings/plex" fw={500} c="blue" td="none">
+        <Text component={Link} to="/settings/plex" fw={500} c="info" td="none">
           Plex settings section
         </Text>
         .

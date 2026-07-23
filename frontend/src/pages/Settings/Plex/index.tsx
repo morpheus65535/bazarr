@@ -85,7 +85,7 @@ const SettingsPlexView = () => {
                   component={Link}
                   to="/settings/general"
                   fw={500}
-                  c="blue"
+                  c="info"
                   td="none"
                 >
                   Generic Webhook Configuration

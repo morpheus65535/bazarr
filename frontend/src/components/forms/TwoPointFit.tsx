@@ -156,7 +156,7 @@ const TwoPointFitForm: FunctionComponent<Props> = ({
           will fit (offset and scale) every sentence.
         </Alert>
         {wrongOrder && (
-          <Alert color="yellow" variant="filled">
+          <Alert color="warning" variant="filled">
             The first sentence appears after the last sentence in the subtitle
             file. Are the selections correct?
           </Alert>

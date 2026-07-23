@@ -100,7 +100,7 @@ const AppHeader: FunctionComponent = () => {
                   label="System"
                   tooltip={{ position: "left", openDelay: 2000 }}
                   loading={offline}
-                  c={offline ? "yellow" : undefined}
+                  c={offline ? "warning" : undefined}
                   icon={faGear}
                   size="lg"
                 ></Action>

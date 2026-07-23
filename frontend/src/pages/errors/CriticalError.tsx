@@ -12,13 +12,13 @@ const CriticalError: FunctionComponent<Props> = ({ message }) => (
   <Container my="xl">
     <Alert
       title="Something is wrong!"
-      color="red"
+      color="danger"
       icon={<FontAwesomeIcon icon={faExclamationTriangle} />}
       withCloseButton
       closeButtonLabel="Reload"
       onClose={Reload}
     >
-      <Text c="red">{message}</Text>
+      <Text c="danger">{message}</Text>
     </Alert>
   </Container>
 );

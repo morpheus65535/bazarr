@@ -185,7 +185,7 @@ const SyncSubtitleForm: FunctionComponent<Props> = ({
         <LoadingOverlay visible={isPending} />
         <Alert
           title="Subtitles"
-          color="gray"
+          color="secondary"
           icon={<FontAwesomeIcon icon={faInfoCircle}></FontAwesomeIcon>}
         >
           <Text size="sm">{selections.length} subtitles selected</Text>

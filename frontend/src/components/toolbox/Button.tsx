@@ -23,7 +23,7 @@ const ToolboxButton: FunctionComponent<ToolboxButtonProps> = ({
 }) => {
   return (
     <Button
-      color="dark"
+      color="secondary"
       variant="subtle"
       leftSection={<FontAwesomeIcon icon={icon}></FontAwesomeIcon>}
       {...props}

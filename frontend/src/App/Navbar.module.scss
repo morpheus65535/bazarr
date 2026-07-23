@@ -16,7 +16,7 @@
     }
   }
 
-  &.hover {
+  @include mantine.hover {
     background-color: var(--mantine-color-gray-0);
 
     @include mantine.dark {
@@ -37,10 +37,12 @@
 }
 
 .nav {
+  // Recessed rail: a step darker than the content canvas in both schemes
+  // (light gray-2 > gray-0 canvas; dark dark-9 > dark-8 canvas).
   background-color: var(--mantine-color-gray-2);
 
   @include mantine.dark {
-    background-color: var(--mantine-color-dark-8);
+    background-color: var(--mantine-color-dark-9);
   }
 }
 

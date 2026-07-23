@@ -97,7 +97,7 @@ const MovieView: FunctionComponent = () => {
               {missingSubtitles.map((v) => (
                 <Badge
                   mr="xs"
-                  color="yellow"
+                  color="warning"
                   key={uniqueId(`${BuildKey(v.code2, v.hi, v.forced)}_`)}
                 >
                   <Language.Text value={v}></Language.Text>

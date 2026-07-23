@@ -20,7 +20,7 @@ describe("Critical error page", () => {
 
     const computedColor = window.getComputedStyle(textElement).color;
     expect(computedColor).toMatch(
-      /(rgb\(255, 77, 77\)|var\(--mantine-color-red-text\))/,
+      /(rgb\(250, 82, 82\)|var\(--mantine-color-danger-text\))/,
     );
   });
 });

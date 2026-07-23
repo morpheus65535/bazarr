@@ -1,6 +1,6 @@
 import { FunctionComponent, useMemo } from "react";
 import { useNavigate } from "react-router";
-import { Image } from "@mantine/core";
+import { Image, rem } from "@mantine/core";
 import {
   createSpotlight,
   Spotlight,
@@ -142,6 +142,10 @@ const AppSpotlight: FunctionComponent = () => {
       actions={actions}
       nothingFound="No results found"
       scrollable
+      // Uniform row height so actions without a description (e.g. Series,
+      // Movies) match the taller two-line ones; content stays centered and
+      // long labels can still grow past it.
+      styles={{ action: { minHeight: rem(52) } }}
     />
   );
 };
