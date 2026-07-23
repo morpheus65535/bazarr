@@ -192,7 +192,7 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
             <Action
               label="Download"
               icon={isDownloaded ? faCloudDownloadAlt : faDownload}
-              color={isDownloaded ? "brand" : "gray"}
+              color={isDownloaded ? "brand" : "secondary"}
               disabled={item === null}
               onClick={async () => {
                 if (!item) return;
@@ -223,7 +223,7 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
     <Stack>
       <Alert
         title="Resource"
-        color="gray"
+        color="secondary"
         icon={<FontAwesomeIcon icon={faInfoCircle}></FontAwesomeIcon>}
       >
         <Text size="sm">{item?.path}</Text>

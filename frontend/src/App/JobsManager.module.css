@@ -3,6 +3,7 @@
   100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.5;
   }
@@ -12,15 +13,14 @@
   animation: pulse 2s ease-in-out infinite;
 }
 
+/* Cards sit on the same background as the drawer header (no canvas seam) and
+   are defined by their border plus a resting shadow so they lift in light,
+   with the border carrying the separation in dark where shadows are faint. */
 .jobCard {
-  transition:
-    background-color 0.2s ease,
-    box-shadow 0.2s ease;
+  box-shadow: var(--mantine-shadow-sm);
+  transition: box-shadow 0.2s ease;
 }
 
 .jobCard:hover {
-  background-color: light-dark(
-    var(--mantine-color-gray-0),
-    var(--mantine-color-dark-6)
-  );
+  box-shadow: var(--mantine-shadow-md);
 }

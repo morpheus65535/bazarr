@@ -144,6 +144,9 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
       p={24}
       m={0}
       style={{
+        // Fixed dark scrim over the (optional) fanart backdrop. This is
+        // intentionally theme-independent so the white text below stays
+        // readable in both light and dark mode.
         backgroundColor: "rgba(0,0,0,0.7)",
       }}
       styles={{
@@ -151,7 +154,16 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
       }}
     >
       <Grid.Col span={1} visibleFrom="sm">
-        <Image src={item?.poster || undefined} mx="auto" maw="250px"></Image>
+        <Image
+          src={item?.poster || undefined}
+          mx="auto"
+          w="100%"
+          maw="250px"
+          fit="cover"
+          // Reserve the poster's 2:3 footprint up front (scaled by width, no
+          // fixed height) so the layout doesn't shift when the image loads.
+          style={{ aspectRatio: "2 / 3" }}
+        ></Image>
       </Grid.Col>
       <Grid.Col span={8} maw="100%" style={{ overflow: "hidden" }}>
         <Stack align="flex-start" gap="xs" mx={6}>

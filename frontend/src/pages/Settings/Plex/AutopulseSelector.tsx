@@ -53,7 +53,7 @@ const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = (
         id: "autopulse-config",
         title: "Success",
         message: "Autopulse configuration generated successfully",
-        color: "green",
+        color: "success",
       });
     } else if (result.isError) {
       const status = (result.error as { response?: { status?: number } })
@@ -70,7 +70,7 @@ const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = (
         id: "autopulse-config",
         title: "Error",
         message: errorMessage,
-        color: "red",
+        color: "danger",
       });
     }
   };
@@ -111,7 +111,7 @@ const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = (
         </Button>
 
         {configData && (
-          <Badge color="green" variant="light" size="sm">
+          <Badge color="success" variant="light" size="sm">
             Dynamic
           </Badge>
         )}
@@ -143,7 +143,7 @@ const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = (
                     notifications.show({
                       title: "Error",
                       message: "No configuration to copy",
-                      color: "red",
+                      color: "danger",
                     });
                     return;
                   }
@@ -153,7 +153,7 @@ const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = (
                       title: "Cannot Copy",
                       message:
                         "Clipboard access requires a secure context (HTTPS or http://localhost). Please copy manually from the code block below.",
-                      color: "yellow",
+                      color: "warning",
                     });
                     return;
                   }
@@ -163,14 +163,14 @@ const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = (
                     notifications.show({
                       title: "Copied!",
                       message: "Autopulse configuration copied to clipboard",
-                      color: "green",
+                      color: "success",
                     });
                   } catch {
                     notifications.show({
                       title: "Copy Failed",
                       message:
                         "Failed to copy to clipboard. Please copy manually from the code block below.",
-                      color: "red",
+                      color: "danger",
                     });
                   }
                 }}
@@ -194,7 +194,7 @@ const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = (
 
             {configData.rewriteSuggestion && (
               <Alert
-                color={configData.rewriteDetected ? "yellow" : "brand"}
+                color={configData.rewriteDetected ? "warning" : "brand"}
                 variant="light"
                 className={styles.alertMessage}
               >

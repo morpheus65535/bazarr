@@ -272,7 +272,7 @@ describe("SettingsGeneralView", () => {
         expect.objectContaining({
           title: "Error",
           message: "bad webhook",
-          color: "red",
+          color: "danger",
         }),
       ),
     );
@@ -292,7 +292,7 @@ describe("SettingsGeneralView", () => {
         expect.objectContaining({
           title: "Error",
           message: "Failed to test external webhook connection",
-          color: "red",
+          color: "danger",
         }),
       ),
     );

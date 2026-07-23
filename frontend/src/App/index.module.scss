@@ -1,0 +1,9 @@
+.main {
+  // Subtle two-tone canvas: a soft off-white (light) / darker grey (dark)
+  // behind the content so white/`--mantine-color-body` surfaces (cards,
+  // header, toolbars) gently lift off it instead of sitting on flat white.
+  background-color: light-dark(
+    var(--mantine-color-gray-0),
+    var(--mantine-color-dark-8)
+  );
+}

@@ -117,7 +117,7 @@ const Table: FunctionComponent = () => {
             <>
               {mustContain.map((v, idx) => {
                 return (
-                  <Badge key={BuildKey(idx, v)} color="gray">
+                  <Badge key={BuildKey(idx, v)} color="secondary">
                     {v}
                   </Badge>
                 );
@@ -141,7 +141,7 @@ const Table: FunctionComponent = () => {
             <>
               {mustNotContain.map((v, idx) => {
                 return (
-                  <Badge key={BuildKey(idx, v)} color="gray">
+                  <Badge key={BuildKey(idx, v)} color="secondary">
                     {v}
                   </Badge>
                 );
@@ -159,7 +159,7 @@ const Table: FunctionComponent = () => {
               <Action
                 label="Edit Profile"
                 icon={faWrench}
-                c="gray"
+                c="secondary"
                 onClick={() => {
                   const lastId = maxBy(profile.items, "id")?.id || 0;
 
@@ -207,7 +207,7 @@ const Table: FunctionComponent = () => {
               <Action
                 label="Remove"
                 icon={faTrash}
-                c="red"
+                c="danger"
                 onClick={() => action.remove(row.index)}
               ></Action>
             </Group>
@@ -266,7 +266,7 @@ const ItemBadge: FunctionComponent<ItemProps> = ({ cutoff, item }) => {
   return (
     <Badge
       title={cutoff ? "Ignore others if this one is available" : undefined}
-      color={cutoff ? "primary" : "secondary"}
+      color={cutoff ? "brand" : "secondary"}
     >
       {text}
     </Badge>

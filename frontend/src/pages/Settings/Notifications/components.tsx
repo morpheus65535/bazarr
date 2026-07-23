@@ -123,7 +123,7 @@ const NotificationForm: FunctionComponent<Props> = ({
           </MutateButton>
           <Button
             hidden={payload === null}
-            color="red"
+            color="danger"
             onClick={() => {
               if (payload) {
                 onComplete({ ...payload, enabled: false });

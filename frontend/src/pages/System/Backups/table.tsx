@@ -83,7 +83,7 @@ const Table: FunctionComponent<Props> = ({ backups }) => {
                     </Text>
                   ),
                   labels: { confirm: "Restore", cancel: "Cancel" },
-                  confirmProps: { color: "red" },
+                  confirmProps: { color: "danger" },
                   onConfirm: () => restore.mutate(filename),
                 })
               }
@@ -104,7 +104,7 @@ const Table: FunctionComponent<Props> = ({ backups }) => {
           return (
             <Action
               label="Delete"
-              c="red"
+              c="danger"
               onClick={() =>
                 modals.openConfirmModal({
                   title: "Delete Backup",
@@ -114,7 +114,7 @@ const Table: FunctionComponent<Props> = ({ backups }) => {
                     </Text>
                   ),
                   labels: { confirm: "Delete", cancel: "Cancel" },
-                  confirmProps: { color: "red" },
+                  confirmProps: { color: "danger" },
                   onConfirm: () => remove.mutate(filename),
                 })
               }

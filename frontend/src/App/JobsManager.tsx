@@ -169,11 +169,11 @@ const JobsManager: FunctionComponent<JobsManagerProps> = ({
   };
 
   const statusColors: Record<string, string> = {
-    running: "blue",
-    pending: "yellow",
-    failed: "red",
-    completed: "green",
-    unknown: "gray",
+    running: "info",
+    pending: "warning",
+    failed: "danger",
+    completed: "success",
+    unknown: "secondary",
   };
 
   return (
@@ -194,7 +194,7 @@ const JobsManager: FunctionComponent<JobsManagerProps> = ({
 
       {!jobsLoading && jobsError && (
         <Card withBorder padding="md" radius="sm">
-          <Text c="red.6" size="sm">
+          <Text c="danger.6" size="sm">
             Failed to load jobs.
           </Text>
         </Card>
@@ -245,7 +245,7 @@ const JobsManager: FunctionComponent<JobsManagerProps> = ({
                           />
                           <Title order={3}>{startCase(status)}</Title>
                           <Badge
-                            color={statusColors[status] || "gray"}
+                            color={statusColors[status] || "secondary"}
                             variant="light"
                             size="sm"
                           >
@@ -267,7 +267,7 @@ const JobsManager: FunctionComponent<JobsManagerProps> = ({
                                 <Menu.Target>
                                   <ActionIcon
                                     variant="subtle"
-                                    color="gray"
+                                    color="secondary"
                                     size="sm"
                                     onClick={(e) => e.stopPropagation()}
                                   >
@@ -279,7 +279,7 @@ const JobsManager: FunctionComponent<JobsManagerProps> = ({
                                     leftSection={
                                       <FontAwesomeIcon
                                         icon={faXmark}
-                                        color="red"
+                                        color="var(--mantine-color-danger-6)"
                                       />
                                     }
                                     onClick={() =>
@@ -299,7 +299,7 @@ const JobsManager: FunctionComponent<JobsManagerProps> = ({
                                               confirm: "Clear",
                                               cancel: "Cancel",
                                             },
-                                            confirmProps: { color: "red" },
+                                            confirmProps: { color: "danger" },
                                             onConfirm: () => clearQueue(status),
                                           }),
                                         `queue-${status}`,
@@ -340,7 +340,7 @@ const JobsManager: FunctionComponent<JobsManagerProps> = ({
                                 padding="xs"
                                 className={classes.jobCard}
                                 style={{
-                                  borderLeftColor: `var(--mantine-color-${statusColors[status] || "gray"}-6)`,
+                                  borderLeftColor: `var(--mantine-color-${statusColors[status] || "secondary"}-6)`,
                                   borderLeftWidth: "3px",
                                 }}
                               >
@@ -353,7 +353,7 @@ const JobsManager: FunctionComponent<JobsManagerProps> = ({
                                     <Badge
                                       size="sm"
                                       variant="filled"
-                                      color="yellow"
+                                      color="warning"
                                       circle
                                     >
                                       {index + 1}
@@ -424,13 +424,13 @@ const JobsManager: FunctionComponent<JobsManagerProps> = ({
                                         {status === "completed" ? (
                                           <FontAwesomeIcon
                                             icon={faCheck}
-                                            color="green"
+                                            color="var(--mantine-color-success-6)"
                                             size="lg"
                                           />
                                         ) : status === "failed" ? (
                                           <FontAwesomeIcon
                                             icon={faXmark}
-                                            color="red"
+                                            color="var(--mantine-color-danger-6)"
                                             size="lg"
                                           />
                                         ) : (
@@ -478,7 +478,7 @@ const JobsManager: FunctionComponent<JobsManagerProps> = ({
                                             <Menu.Target>
                                               <ActionIcon
                                                 variant="subtle"
-                                                color="gray"
+                                                color="secondary"
                                                 size="sm"
                                               >
                                                 <FontAwesomeIcon
@@ -556,7 +556,7 @@ const JobsManager: FunctionComponent<JobsManagerProps> = ({
                                                 leftSection={
                                                   <FontAwesomeIcon
                                                     icon={faXmark}
-                                                    color="red"
+                                                    color="var(--mantine-color-danger-6)"
                                                   />
                                                 }
                                                 onClick={() =>
@@ -577,7 +577,7 @@ const JobsManager: FunctionComponent<JobsManagerProps> = ({
                                                           cancel: "Cancel",
                                                         },
                                                         confirmProps: {
-                                                          color: "red",
+                                                          color: "danger",
                                                         },
                                                         onConfirm: () =>
                                                           job?.job_id &&
