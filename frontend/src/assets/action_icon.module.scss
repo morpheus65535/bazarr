@@ -4,12 +4,14 @@
 
     @include mantine.light {
       color: var(--mantine-color-dark-2);
+
       --ai-hover: var(--mantine-color-gray-1);
       --ai-hover-color: var(--mantine-color-gray-1);
     }
 
     @include mantine.dark {
       color: var(--mantine-color-dark-0);
+
       --ai-hover: var(--mantine-color-gray-8);
 
       // `secondary` resolves to the near-black dark palette in dark mode, so

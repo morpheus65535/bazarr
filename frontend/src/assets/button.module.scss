@@ -2,6 +2,7 @@
   .root {
     @include mantine.dark {
       color: var(--mantine-color-dark-0);
+
       --mantine-color-brand-filled-hover: var(--mantine-color-brand-6);
 
       // `secondary` maps to the dark palette in dark mode, whose high shades
