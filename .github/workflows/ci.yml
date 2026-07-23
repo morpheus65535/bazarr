@@ -52,6 +52,10 @@ jobs:
         run: npm run check
         working-directory: ${{ env.UI_DIRECTORY }}
 
+      - name: Check CSS/SCSS
+        run: npm run check:style
+        working-directory: ${{ env.UI_DIRECTORY }}
+
       - name: Check Format
         run: npm run check:fmt
         working-directory: ${{ env.UI_DIRECTORY }}
