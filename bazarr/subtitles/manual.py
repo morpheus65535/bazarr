@@ -277,8 +277,6 @@ def episode_manually_download_specific_subtitle(sonarr_series_id, sonarr_episode
     except OSError:
         return 'Unable to save subtitles file', 500
     else:
-        if isinstance(result, tuple) and len(result):
-            result = result[0]
         if isinstance(result, str):
             return result, 500
         elif result:
@@ -329,8 +327,6 @@ def movie_manually_download_specific_subtitle(radarr_id, hi, forced, use_origina
     except OSError:
         return 'Unable to save subtitles file', 500
     else:
-        if isinstance(result, tuple) and len(result):
-            result = result[0]
         if isinstance(result, str):
             return result, 500
         elif result:

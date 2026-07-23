@@ -57,8 +57,6 @@ def _wanted_movie(movie, providers_list, job_id=None):
 
         if result:
             found_any = True
-            if isinstance(result, tuple) and len(result):
-                result = result[0]
             store_subtitles_movie(movie.radarrId)
             history_log_movie(1, movie.radarrId, result)
             send_notifications_movie(movie.radarrId, result.message)
