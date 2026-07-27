@@ -201,8 +201,6 @@ def manual_upload_subtitle(path, language, forced, hi, media_type, subtitle, fil
         logging.debug(f"BAZARR unable to process subtitles for this {'episode' if media_type == 'series' else 'movie'}:"
                       f" {path}")
     else:
-        if isinstance(result, tuple) and len(result):
-            result = result[0]
         provider = "manual"
         if media_type == 'series':
             store_subtitles(sonarrEpisodeId)
