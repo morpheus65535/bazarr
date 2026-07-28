@@ -84,6 +84,9 @@ def store_subtitles_movie(radarr_id, use_cache=True):
                     .where(TableMoviesSubtitles.path.is_(None))
                     .where(TableMoviesSubtitles.embedded_track_id.is_(None))
                 )
+
+                embedded_subtitles_id_list = []
+
                 if len(embedded_subtitles):
                     # Insert new embedded subtitles or update existing ones
                     embedded_stmt = insert(TableMoviesSubtitles).values(embedded_subtitles)
@@ -99,16 +102,15 @@ def store_subtitles_movie(radarr_id, use_cache=True):
                         index_where=TableMoviesSubtitles.path.is_(None)
                     )
                     database.execute(embedded_stmt)
-
-                    # Delete prior indexed embedded subtitles that don't exist anymore
                     embedded_subtitles_id_list = [x['embedded_track_id'] for x in embedded_subtitles]
-                    if len(embedded_subtitles_id_list):
-                        database.execute(
-                            delete(TableMoviesSubtitles)
-                            .where(TableMoviesSubtitles.radarrId == radarr_id)
-                            .where(TableMoviesSubtitles.path.is_(None))
-                            .where(TableMoviesSubtitles.embedded_track_id.not_in(embedded_subtitles_id_list))
-                        )
+
+                # Delete prior indexed embedded subtitles that don't exist anymore
+                database.execute(
+                    delete(TableMoviesSubtitles)
+                    .where(TableMoviesSubtitles.radarrId == radarr_id)
+                    .where(TableMoviesSubtitles.path.is_(None))
+                    .where(TableMoviesSubtitles.embedded_track_id.not_in(embedded_subtitles_id_list))
+                )
             except Exception:
                 logging.exception(
                     f"BAZARR error when trying to analyze this {os.path.splitext(mapped_path)[1]} file: "
