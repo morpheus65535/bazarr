@@ -2,7 +2,10 @@ import hashlib
 import io
 import logging
 import math
+import os
 import re
+import shutil
+import tempfile
 import time
 from pathlib import Path
 from http.cookies import SimpleCookie
@@ -23,10 +26,7 @@ from .utils import get_archive_from_bytes, get_subtitle_from_archive, FIRST_THOU
 logger = logging.getLogger(__name__)
 
 # ── Archive cache ──────────────────────────────────────────────────────────────
-# Extracted subtitle files are cached here so a full-season zip/rar is only
-# downloaded once — every subsequent episode just reads from disk.
-_CACHE_DIR = Path("/tmp/avistaz_sub_cache")
-_SUB_EXTS  = {'.srt', '.ass', '.ssa', '.vtt'}
+_SUB_EXTS = {'.srt', '.ass', '.ssa', '.vtt'}
 _SXXEXX    = re.compile(r"[Ss](\d{1,2})[Ee](\d{1,3})")
 _EXX       = re.compile(r"\.E(\d{1,3})\.")
 # ───────────────────────────────────────────────────────────────────────────────
@@ -274,12 +274,16 @@ class AvistazNetworkProviderBase(Provider):
     provider_name = None
     hash_verifiable = True
 
-    def __init__(self, cookies, user_agent=None):
+    def __init__(self, cookies, user_agent=None, cache_dir=None):
         self.session = None
         self.cookies = cookies
         self.user_agent = user_agent
+        self._cache_dir = os.path.join(
+            cache_dir or tempfile.gettempdir(), "avistaznetwork"
+        )
 
     def initialize(self):
+        os.makedirs(self._cache_dir, exist_ok=True)
         self.session = RetryingCFSession()
 
         if self.user_agent:
@@ -308,6 +312,7 @@ class AvistazNetworkProviderBase(Provider):
 
     def terminate(self):
         self.session.close()
+        shutil.rmtree(self._cache_dir, ignore_errors=True)
 
     def list_subtitles(self, video, languages):
         if video.info_url is None or not video.info_url.startswith(self.server_url):
@@ -422,7 +427,7 @@ class AvistazNetworkProviderBase(Provider):
     def _cache_dir_for(self, download_link):
         """Return a unique cache directory path for this download URL."""
         key = hashlib.md5(download_link.encode()).hexdigest()
-        return _CACHE_DIR / key
+        return Path(os.path.join(self._cache_dir, key))
 
     def _extract_to_cache(self, data, cache_dir):
         """Extract every subtitle file from a zip or rar into cache_dir."""
