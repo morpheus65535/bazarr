@@ -138,7 +138,7 @@ def _proxy_image(url_image):
     """
     try:
         req = requests.get(url_image, stream=True, timeout=15, verify=False, headers=HEADERS)
-    except Exception:
+    except requests.RequestException:
         return '', 404
     else:
         if req.status_code != 200:
