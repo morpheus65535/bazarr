@@ -2,6 +2,7 @@
 Test for Bazarr UI functionality including authentication decorators.
 """
 import pytest
+import requests
 from unittest.mock import Mock, patch
 from flask import Flask
 
@@ -244,7 +245,8 @@ def test_proxy_image_returns_not_found_on_request_exception():
     """
     app = Flask(__name__)
     with app.test_request_context():
-        with patch('bazarr.app.ui.requests.get', side_effect=ConnectionError("upstream down")):
+        with patch('bazarr.app.ui.requests.get',
+                   side_effect=requests.exceptions.ConnectionError("upstream down")):
             result = _proxy_image('http://sonarr/MediaCover/1/poster-250.jpg?apikey=key')
 
             assert result == ('', 404)
