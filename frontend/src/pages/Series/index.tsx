@@ -1,4 +1,4 @@
-import { FunctionComponent, useMemo } from "react";
+import { FunctionComponent, useCallback, useMemo } from "react";
 import { Link } from "react-router";
 import { Anchor, Container, Group, Progress } from "@mantine/core";
 import { useDocumentTitle } from "@mantine/hooks";
@@ -18,6 +18,8 @@ import LanguageProfileName from "@/components/bazarr/LanguageProfile";
 import { ItemEditModal } from "@/components/forms/ItemEditForm";
 import { useModals } from "@/modules/modals";
 import ItemView from "@/pages/views/ItemView";
+import { seriesViewModeKey } from "@/utilities/viewMode";
+import SeriesPosterCard from "./PosterCard";
 
 const SeriesView: FunctionComponent = () => {
   const mutation = useSeriesModification();
@@ -134,11 +136,38 @@ const SeriesView: FunctionComponent = () => {
     [mutation, modals],
   );
 
+  const renderPoster = useCallback(
+    (item: Item.Series) => (
+      <SeriesPosterCard
+        key={item.sonarrSeriesId}
+        item={item}
+        onEdit={() =>
+          modals.openContextModal(
+            ItemEditModal,
+            {
+              mutation,
+              item,
+            },
+            {
+              title: item.title,
+            },
+          )
+        }
+      ></SeriesPosterCard>
+    ),
+    [modals, mutation],
+  );
+
   useDocumentTitle(`Series - ${useInstanceName()}`);
 
   return (
     <Container px={0} fluid>
-      <ItemView query={query} columns={columns}></ItemView>
+      <ItemView
+        query={query}
+        columns={columns}
+        viewModeKey={seriesViewModeKey}
+        renderPoster={renderPoster}
+      ></ItemView>
     </Container>
   );
 };

@@ -1,4 +1,4 @@
-import { FunctionComponent, useMemo } from "react";
+import { FunctionComponent, useCallback, useMemo } from "react";
 import { Link } from "react-router";
 import { Anchor, Badge, Container, Tooltip } from "@mantine/core";
 import { useDocumentTitle } from "@mantine/hooks";
@@ -17,6 +17,8 @@ import { ItemEditModal } from "@/components/forms/ItemEditForm";
 import { useModals } from "@/modules/modals";
 import ItemView from "@/pages/views/ItemView";
 import { BuildKey } from "@/utilities";
+import { moviesViewModeKey } from "@/utilities/viewMode";
+import MoviePosterCard from "./PosterCard";
 
 const MovieView: FunctionComponent = () => {
   const modifyMovie = useMovieModification();
@@ -135,11 +137,38 @@ const MovieView: FunctionComponent = () => {
     [modals, modifyMovie],
   );
 
+  const renderPoster = useCallback(
+    (item: Item.Movie) => (
+      <MoviePosterCard
+        key={item.radarrId}
+        item={item}
+        onEdit={() =>
+          modals.openContextModal(
+            ItemEditModal,
+            {
+              mutation: modifyMovie,
+              item,
+            },
+            {
+              title: item.title,
+            },
+          )
+        }
+      ></MoviePosterCard>
+    ),
+    [modals, modifyMovie],
+  );
+
   useDocumentTitle(`Movies - ${useInstanceName()}`);
 
   return (
     <Container fluid px={0}>
-      <ItemView query={query} columns={columns}></ItemView>
+      <ItemView
+        query={query}
+        columns={columns}
+        viewModeKey={moviesViewModeKey}
+        renderPoster={renderPoster}
+      ></ItemView>
     </Container>
   );
 };

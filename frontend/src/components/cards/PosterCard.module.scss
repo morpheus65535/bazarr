@@ -1,0 +1,95 @@
+.card {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 2 / 3;
+  border-radius: var(--mantine-radius-md);
+  box-shadow: var(--mantine-shadow-xs);
+  background-color: light-dark(
+    var(--mantine-color-gray-2),
+    var(--mantine-color-dark-6)
+  );
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease;
+
+  @include mantine.hover {
+    transform: translateY(-2px);
+    box-shadow: var(--mantine-shadow-md);
+  }
+
+  &:hover,
+  &:focus-within {
+    .actions {
+      opacity: 1;
+    }
+  }
+}
+
+.link {
+  display: block;
+  width: 100%;
+  height: 100%;
+  color: inherit;
+
+  img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: light-dark(var(--mantine-color-gray-5), var(--mantine-color-dark-3));
+}
+
+.header {
+  position: absolute;
+  top: var(--mantine-spacing-xs);
+  left: var(--mantine-spacing-xs);
+  display: flex;
+  gap: var(--mantine-spacing-xs);
+  color: var(--mantine-color-white);
+  text-shadow: 0 1px 2px rgb(0 0 0 / 80%);
+}
+
+.actions {
+  position: absolute;
+  top: var(--mantine-spacing-xs);
+  right: var(--mantine-spacing-xs);
+  display: flex;
+  gap: var(--mantine-spacing-xs);
+  opacity: 0;
+  transition: opacity 150ms ease;
+
+  // Touch devices have no hover; keep actions reachable
+  @media (hover: none) {
+    opacity: 1;
+  }
+}
+
+.overlay {
+  position: absolute;
+  inset: auto 0 0;
+  padding: var(--mantine-spacing-xl) var(--mantine-spacing-xs)
+    var(--mantine-spacing-xs);
+  background: linear-gradient(180deg, transparent 0%, rgb(0 0 0 / 80%) 100%);
+  color: var(--mantine-color-white);
+}
+
+.title {
+  font-size: var(--mantine-font-size-sm);
+  font-weight: 600;
+  line-height: 1.2;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 80%);
+}
+
+.year {
+  font-size: var(--mantine-font-size-xs);
+  opacity: 0.8;
+}
