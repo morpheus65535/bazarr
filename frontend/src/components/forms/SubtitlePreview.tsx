@@ -10,6 +10,7 @@ import {
   LoadingOverlay,
   ScrollArea,
   Stack,
+  Tabs,
   Text,
   TextInput,
   Tooltip,
@@ -20,6 +21,7 @@ import {
   faMagnifyingGlass,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import DOMPurify from "dompurify";
 import { useSubtitleContents } from "@/apis/hooks";
 import { withModal } from "@/modules/modals";
 import styles from "./SubtitlePreview.module.scss";
@@ -35,27 +37,47 @@ const getBasename = (path: string) => path.split(/[\\/]/).pop() || path;
 
 const isTrue = (value?: PythonBoolean) => value === "True";
 
+type ViewMode = "rendered" | "raw";
+
+// Subtitle files come from external providers, so only the formatting tags
+// SRT actually supports survive sanitization; everything else is stripped.
+const sanitizeLine = (content: string) =>
+  DOMPurify.sanitize(content, {
+    ALLOWED_TAGS: ["i", "b", "u", "em", "strong", "font", "br"],
+    ALLOWED_ATTR: ["color"],
+  });
+
 interface LineRowProps {
   line: SubtitleContents.Line;
   highlight: string;
+  view: ViewMode;
 }
 
 const SubtitleLineRow = memo(function SubtitleLineRow({
   line,
   highlight,
+  view,
 }: LineRowProps) {
   return (
     <Group className={styles.line} gap="md" align="flex-start" wrap="nowrap">
       <Text ff="monospace" size="xs" c="dimmed" className={styles.timestamp}>
         {formatTimestamp(line.start)}
       </Text>
-      <Highlight
-        dir="auto"
-        highlight={highlight}
-        style={{ whiteSpace: "pre-wrap" }}
-      >
-        {line.content}
-      </Highlight>
+      {view === "rendered" ? (
+        <Text
+          dir="auto"
+          style={{ whiteSpace: "pre-wrap" }}
+          dangerouslySetInnerHTML={{ __html: sanitizeLine(line.content) }}
+        />
+      ) : (
+        <Highlight
+          dir="auto"
+          highlight={highlight}
+          style={{ whiteSpace: "pre-wrap" }}
+        >
+          {line.content}
+        </Highlight>
+      )}
     </Group>
   );
 });
@@ -78,16 +100,13 @@ const PreviewHeader: FunctionComponent<PreviewHeaderProps> = ({
       </Text>
     </Tooltip>
     {selection.language && (
-      <Badge variant="light">{selection.language.toUpperCase()}</Badge>
-    )}
-    {isTrue(selection.hi) && (
-      <Badge variant="light" color="cyan">
-        HI
-      </Badge>
-    )}
-    {isTrue(selection.forced) && (
-      <Badge variant="light" color="grape">
-        Forced
+      <Badge variant="light">
+        {selection.language.toUpperCase()}
+        {isTrue(selection.hi)
+          ? ":HI"
+          : isTrue(selection.forced)
+            ? ":Forced"
+            : ""}
       </Badge>
     )}
     {countLabel && (
@@ -109,6 +128,7 @@ const SubtitlePreviewView: FunctionComponent<Props> = ({ selections }) => {
   const isMobile = useMediaQuery(MOBILE_QUERY);
 
   const [search, setSearch] = useState("");
+  const [view, setView] = useState<ViewMode>("rendered");
   // Search is hidden on mobile, so ignore any term carried over from a
   // desktop-width search when the viewport shrinks.
   const term = isMobile ? "" : search.trim();
@@ -168,6 +188,15 @@ const SubtitlePreviewView: FunctionComponent<Props> = ({ selections }) => {
         </Alert>
       ) : (
         <>
+          <Tabs
+            value={view}
+            onChange={(value) => setView((value as ViewMode) ?? "rendered")}
+          >
+            <Tabs.List>
+              <Tabs.Tab value="rendered">Rendered</Tabs.Tab>
+              <Tabs.Tab value="raw">Raw</Tabs.Tab>
+            </Tabs.List>
+          </Tabs>
           {!isMobile && (
             <TextInput
               data-autofocus
@@ -204,6 +233,7 @@ const SubtitlePreviewView: FunctionComponent<Props> = ({ selections }) => {
                     key={line.index}
                     line={line}
                     highlight={term}
+                    view={view}
                   />
                 ))}
               </Stack>
