@@ -14,19 +14,23 @@ import {
   Collapse,
   Divider,
   Group,
+  MantineColorScheme,
   Stack,
   Text,
-  useComputedColorScheme,
   useMantineColorScheme,
 } from "@mantine/core";
 import {
+  faCircleHalfStroke,
   faHeart,
   faMoon,
   faSun,
   IconDefinition,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useQueryClient } from "@tanstack/react-query";
 import clsx from "clsx";
+import { useSettingsMutation, useSystemSettings } from "@/apis/hooks";
+import { QueryKeys } from "@/apis/queries/keys";
 import { Action } from "@/components";
 import { useNavbar } from "@/contexts/Navbar";
 import { useRouteItems } from "@/Router";
@@ -96,13 +100,73 @@ function useIsActive(parent: string, route: RouteObject) {
   );
 }
 
+const themeCycle: {
+  scheme: MantineColorScheme;
+  icon: IconDefinition;
+  label: string;
+  color: string;
+}[] = [
+  { scheme: "auto", icon: faCircleHalfStroke, label: "Auto", color: "brand" },
+  { scheme: "light", icon: faSun, label: "Light", color: "warning" },
+  { scheme: "dark", icon: faMoon, label: "Dark", color: "info" },
+];
+
+const ThemeSwitcher: FunctionComponent = () => {
+  const { setColorScheme } = useMantineColorScheme();
+
+  const client = useQueryClient();
+  const settings = useSystemSettings();
+  const { mutate } = useSettingsMutation({ silent: true });
+
+  const current = (settings.data?.general.theme ??
+    "auto") as MantineColorScheme;
+
+  const index = Math.max(
+    0,
+    themeCycle.findIndex((t) => t.scheme === current),
+  );
+  const active = themeCycle[index];
+
+  const cycle = () => {
+    const next = themeCycle[(index + 1) % themeCycle.length];
+
+    // Apply immediately for instant feedback.
+    setColorScheme(next.scheme);
+
+    // Optimistically update the cached settings so everything reading them
+    // (this button, ThemeLoader, Settings/UI) reflects the change instantly.
+    const queryKey = [QueryKeys.System, QueryKeys.Settings];
+    const previous = client.getQueryData<Settings>(queryKey);
+
+    client.setQueryData<Settings>(queryKey, (old) =>
+      old ? { ...old, general: { ...old.general, theme: next.scheme } } : old,
+    );
+
+    // Persist through the same settings system as Settings/UI, in the
+    // background; roll back if the save fails.
+    mutate(
+      { "settings-general-theme": next.scheme },
+      {
+        onError: () => {
+          client.setQueryData(queryKey, previous);
+          setColorScheme(current);
+        },
+      },
+    );
+  };
+
+  return (
+    <Action
+      label={`Theme: ${active.label}`}
+      icon={active.icon}
+      c={active.color}
+      onClick={cycle}
+    ></Action>
+  );
+};
+
 const AppNavbar: FunctionComponent = () => {
   const [selection, select] = useState<string | null>(null);
-
-  const { toggleColorScheme } = useMantineColorScheme();
-  const computedColorScheme = useComputedColorScheme("light");
-
-  const dark = computedColorScheme === "dark";
 
   const routes = useRouteItems();
 
@@ -131,12 +195,7 @@ const AppNavbar: FunctionComponent = () => {
         <Divider></Divider>
         <AppShell.Section mt="xs">
           <Group gap="xs">
-            <Action
-              label="Change Theme"
-              c={dark ? "warning" : "info"}
-              onClick={() => toggleColorScheme()}
-              icon={dark ? faSun : faMoon}
-            ></Action>
+            <ThemeSwitcher></ThemeSwitcher>
             <Anchor
               href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=XHHRWXT9YB7WE&source=url"
               target="_blank"
