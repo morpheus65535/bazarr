@@ -62,8 +62,9 @@ export function useSystemJobs() {
   });
 }
 
-export function useSettingsMutation() {
+export function useSettingsMutation(options?: { silent?: boolean }) {
   const client = useQueryClient();
+  const silent = options?.silent ?? false;
   return useMutation({
     mutationKey: [QueryKeys.System, QueryKeys.Settings],
     mutationFn: (data: Record<string, unknown>) =>
@@ -99,9 +100,11 @@ export function useSettingsMutation() {
         queryKey: [QueryKeys.Plex, "libraries"],
       });
 
-      showNotification(
-        notification.info("Settings saved", "Your changes have been saved"),
-      );
+      if (!silent) {
+        showNotification(
+          notification.info("Settings saved", "Your changes have been saved"),
+        );
+      }
     },
 
     onError: () => {
