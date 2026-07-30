@@ -7,6 +7,7 @@ from guessit import guessit
 from subzero.language import Language
 from rarfile import RarFile, is_rarfile
 from zipfile import ZipFile, is_zipfile
+from random import randint
 
 from subliminal.exceptions import ProviderError
 from subliminal.providers import ParserBeautifulSoup, Provider
@@ -14,6 +15,7 @@ from subliminal_patch.subtitle import guess_matches
 from subliminal.subtitle import SUBTITLE_EXTENSIONS, Subtitle, fix_line_ending
 from subliminal.utils import sanitize
 from subliminal.video import Episode
+from .utils import FIRST_THOUSAND_OR_SO_USER_AGENTS as AGENT_LIST
 
 try:
     from subliminal_patch.http import RetryingCFSession
@@ -80,6 +82,7 @@ class PrijevodiOnlineProvider(Provider):
 
     def initialize(self):
         self.session = RetryingCFSession()
+        self.session.headers['User-Agent'] = AGENT_LIST[randint(0, len(AGENT_LIST) - 1)]
 
     def terminate(self):
         self.session.close()
