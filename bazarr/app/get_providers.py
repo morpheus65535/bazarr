@@ -463,12 +463,17 @@ def throttled_count(name):
     else:
         throttle_count[name] = {"count": 1, "time": (datetime.datetime.now() + datetime.timedelta(seconds=120))}
 
-    if throttle_count[name]['count'] >= 5:
-        return True
+    # the window is evaluated first so that failures older than it cannot add up to a
+    # throttle: a provider that has been quiet since then starts counting again from one
     if throttle_count[name]['time'] <= datetime.datetime.now():
         throttle_count[name] = {"count": 1, "time": (datetime.datetime.now() + datetime.timedelta(seconds=120))}
-    logging.info("Provider %s throttle count %s of 5, waiting 5sec and trying again", name,
-                 throttle_count[name]['count'])
+    count = throttle_count[name]['count']
+    if count >= 5:
+        # spent on the throttle being applied, so the next one starts from a clean count.
+        # Searches run in parallel and can report the same provider, hence the tolerant pop
+        throttle_count.pop(name, None)
+        return True
+    logging.info("Provider %s throttle count %s of 5, waiting 5sec and trying again", name, count)
     time.sleep(5)
     return False
 
@@ -522,6 +527,8 @@ def reset_throttled_providers(only_auth_or_conf_error=False):
                                                                'PaymentRequired']:
             continue
         tp.pop(provider, None)
+        # the reset hands back a clean slate, including strikes not yet spent on a throttle
+        throttle_count.pop(provider, None)
     set_throttled_providers(str(tp))
     update_throttled_provider()
     if only_auth_or_conf_error:
