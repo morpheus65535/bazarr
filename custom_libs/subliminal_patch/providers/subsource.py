@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
 from __future__ import annotations
 import logging
+import math
 import os
 import time
 import io
 import datetime
 
 from typing import Set
-from typing import Optional, TYPE_CHECKING
+from typing import Callable, Optional, TYPE_CHECKING
 
 from babelfish import language_converters
 from zipfile import ZipFile, is_zipfile
@@ -32,6 +33,9 @@ logger = logging.getLogger(__name__)
 TITLES_EXPIRATION_TIME = datetime.timedelta(hours=6).total_seconds()
 QUERIES_EXPIRATION_TIME = datetime.timedelta(hours=1).total_seconds()
 ARCHIVES_EXPIRATION_TIME = datetime.timedelta(minutes=15).total_seconds()
+
+# the longest the per minute window can ask us to wait, so anything above is an hour or day quota
+MAX_INLINE_WAIT = int(datetime.timedelta(minutes=1).total_seconds())
 
 retry_amount = 3
 retry_timeout = 5
@@ -169,13 +173,9 @@ class SubsourceProvider(ProviderRetryMixin, Provider, ProviderSubtitleArchiveMix
         if season:
             parameters['season'] = season
 
-        results = self.retry(
-            lambda: self.session.get(self._server_url() + 'movies/search', params=parameters, timeout=30),
-            amount=retry_amount,
-            retry_timeout=retry_timeout
+        results = self.checked(
+            lambda: self.session.get(self._server_url() + 'movies/search', params=parameters, timeout=30)
         )
-
-        self._status_raiser(results)
 
         # deserialize results
         results_dict = results.json()['data']
@@ -191,13 +191,10 @@ class SubsourceProvider(ProviderRetryMixin, Provider, ProviderSubtitleArchiveMix
             if season:
                 parameters['season'] = season
 
-            results = self.retry(
-                lambda: self.session.get(self._server_url() + 'movies/search', params=parameters, timeout=30),
-                amount=retry_amount,
-                retry_timeout=retry_timeout
+            results = self.checked(
+                lambda: self.session.get(self._server_url() + 'movies/search', params=parameters, timeout=30)
             )
-            
-            self._status_raiser(results)
+
             results_dict = results.json()['data']
 
         def get_alternative_titles(video):
@@ -299,23 +296,17 @@ class SubsourceProvider(ProviderRetryMixin, Provider, ProviderSubtitleArchiveMix
         # query the server
         if isinstance(self.video, Episode):
             parameters += (('seasonNumber', self.video.season), ('episodeNumber', self.video.episode))
-            res = self.retry(
+            res = self.checked(
                 lambda: self.session.get(self._server_url() + 'subtitles',
                                          params=parameters,
-                                         timeout=30),
-                amount=retry_amount,
-                retry_timeout=retry_timeout
+                                         timeout=30)
             )
         else:
-            res = self.retry(
+            res = self.checked(
                 lambda: self.session.get(self._server_url() + 'subtitles',
                                          params=parameters,
-                                         timeout=30),
-                amount=retry_amount,
-                retry_timeout=retry_timeout
+                                         timeout=30)
             )
-
-        self._status_raiser(res)
 
         subtitles = []
 
@@ -453,6 +444,77 @@ class SubsourceProvider(ProviderRetryMixin, Provider, ProviderSubtitleArchiveMix
         return ''
 
     @staticmethod
+    def _retry_after(response: Response) -> Optional[int]:
+        """
+        Extracts the delay before the rate limit that rejected this response resets. The
+        server states it on every response through the X-RateLimit-* headers, and repeats
+        it in the body of a 429 as retryAfter. The absolute reset timestamp is preferred
+        as it stays accurate however long the response waited before being read.
+
+        Several windows are enforced (per minute, hour and day) and whichever one is
+        currently exhausted gets reported, so no assumption is made about its length.
+
+        :param response: A `Response` object from an HTTP request.
+        :type response: Response
+        :return: The number of seconds to wait, or None if the server didn't say.
+        :rtype: Optional[int]
+        """
+        delay = None
+        reset_at = response.headers.get('X-RateLimit-Reset')
+
+        if reset_at:
+            try:
+                reset_at = datetime.datetime.fromisoformat(reset_at.replace('Z', '+00:00'))
+            except ValueError:
+                logger.debug(f'Unparsable X-RateLimit-Reset value: {reset_at}')
+            else:
+                delay = (reset_at - datetime.datetime.now(datetime.timezone.utc)).total_seconds()
+
+        if delay is None:
+            try:
+                delay = response.json().get('retryAfter')
+            except (ValueError, AttributeError):
+                return None
+
+            if not isinstance(delay, (int, float)):
+                return None
+
+        # a reset already in the past still means we are being refused, so wait a little
+        return max(int(math.ceil(delay)), 1)
+
+    def checked(self, fn: Callable, is_retry: bool = False) -> Response:
+        """
+        Executes a given callable, retrying it on transient network failures, and turns the
+        API-related errors it may report into exceptions.
+
+        A rate limit that resets within the minute is waited out and the call retried once,
+        rather than raised: throttling the whole provider for an hour over a delay of
+        seconds would drop it from every remaining search. Anything longer is left to raise
+        so that the throttle map benches the provider instead.
+
+        :param fn: The callable to execute, expected to return a Response object.
+        :type fn: Callable
+        :param is_retry: Indicates whether the current execution already waited out a rate
+                         limit. Defaults to False.
+        :type is_retry: bool, optional
+        :return: The HTTP response object returned by the callable upon success.
+        :rtype: Response
+        """
+        response = self.retry(fn, amount=retry_amount, retry_timeout=retry_timeout)
+
+        if response.status_code == 429 and not is_retry:
+            retry_after = self._retry_after(response)
+
+            if retry_after is not None and retry_after <= MAX_INLINE_WAIT:
+                logger.debug(f'Rate limit exceeded, waiting {retry_after} seconds and trying again')
+                time.sleep(retry_after)
+                return self.checked(fn, is_retry=True)
+
+        self._status_raiser(response)
+
+        return response
+
+    @staticmethod
     def _status_raiser(response: Response):
         """
         Raises exceptions based on the HTTP response status code received.
@@ -555,8 +617,6 @@ class SubsourceProvider(ProviderRetryMixin, Provider, ProviderSubtitleArchiveMix
 
         r = self._get_subtitles_archive(download_link)
 
-        self._status_raiser(r)
-
         if not r:
             logger.error(f'Could not download subtitle from {download_link}')
             subtitle.content = None
@@ -576,15 +636,14 @@ class SubsourceProvider(ProviderRetryMixin, Provider, ProviderSubtitleArchiveMix
         """
         Fetches a subtitle archive from the given download link. The method uses caching
         to store the result for a defined expiration period and retries the network
-        request upon failure due to transient issues.
+        request upon failure due to transient issues. Errors are raised before the result
+        is cached, so a failed download is not replayed for the lifetime of the entry.
 
         :param download_link: The URL for the subtitles archive to download.
         :type download_link: str
         :return: The HTTP response object containing the subtitle archive.
         :rtype: Response
         """
-        return self.retry(
-            lambda: self.session.get(download_link, params={'api_key': self.api_key}, timeout=30),
-            amount=retry_amount,
-            retry_timeout=retry_timeout
+        return self.checked(
+            lambda: self.session.get(download_link, params={'api_key': self.api_key}, timeout=30)
         )
