@@ -24,6 +24,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import DOMPurify from "dompurify";
 import { useSubtitleContents } from "@/apis/hooks";
 import { withModal } from "@/modules/modals";
+import { toRenderable } from "@/utilities/subtitles";
 import styles from "./SubtitlePreview.module.scss";
 
 const MOBILE_QUERY = `(max-width: ${em(750)})`;
@@ -39,11 +40,10 @@ const isTrue = (value?: PythonBoolean) => value === "True";
 
 type ViewMode = "rendered" | "raw";
 
-// Subtitle files come from external providers, so only the formatting tags
-// SRT actually supports survive sanitization; everything else is stripped.
+// Subtitle files come from external providers and cannot be trusted
 const sanitizeLine = (content: string) =>
   DOMPurify.sanitize(content, {
-    ALLOWED_TAGS: ["i", "b", "u", "em", "strong", "font", "br"],
+    ALLOWED_TAGS: ["i", "b", "u", "s", "em", "strong", "font", "br"],
     ALLOWED_ATTR: ["color"],
   });
 
@@ -67,7 +67,9 @@ const SubtitleLineRow = memo(function SubtitleLineRow({
         <Text
           dir="auto"
           style={{ whiteSpace: "pre-wrap" }}
-          dangerouslySetInnerHTML={{ __html: sanitizeLine(line.content) }}
+          dangerouslySetInnerHTML={{
+            __html: sanitizeLine(toRenderable(line.content)),
+          }}
         />
       ) : (
         <Highlight
@@ -179,8 +181,8 @@ const SubtitlePreviewView: FunctionComponent<Props> = ({ selections }) => {
           icon={<FontAwesomeIcon icon={faCircleExclamation} />}
           title="Unable to read subtitle"
         >
-          This subtitle could not be read. Only UTF-8 encoded SRT files can be
-          previewed.
+          This subtitle could not be read. Only UTF-8 encoded SRT, SSA or ASS
+          files can be previewed.
         </Alert>
       ) : isEmpty ? (
         <Alert color="yellow" variant="light">
