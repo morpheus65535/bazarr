@@ -27,4 +27,16 @@ export function usePrompt(when: boolean, message: string) {
     }
     prevWhen.current = when;
   }, [blocker, message, when]);
+
+  useEffect(() => {
+    if (!when) return;
+
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = message;
+    };
+
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [when, message]);
 }
