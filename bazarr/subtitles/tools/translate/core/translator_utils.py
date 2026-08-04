@@ -117,7 +117,7 @@ def add_translator_info(dest_srt_file, info):
 
 def get_description(media_type, radarr_id, sonarr_series_id):
     try:
-        if media_type == 'movies':
+        if media_type in ('movies', 'movie'):
             movie = database.execute(
                 select(TableMovies.title, TableMovies.imdbId, TableMovies.year, TableMovies.overview)
                 .where(TableMovies.radarrId == radarr_id)
@@ -154,7 +154,7 @@ def get_title(
         sonarr_episode_id: Union[int, None] = None
 ) -> str:
     try:
-        if media_type == "movies":
+        if media_type in ("movies", "movie"):
             if radarr_id is None:
                 return ""
 

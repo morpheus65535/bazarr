@@ -1,6 +1,7 @@
 # coding=utf-8
 
 import logging
+import os
 import pysubs2
 import requests
 
@@ -130,6 +131,10 @@ class LingarrTranslatorService:
                 sonarr_series_id=self.sonarr_series_id,
                 sonarr_episode_id=self.sonarr_episode_id
             )
+            # Lingarr content API has no subtitle path field; put basename in title
+            # so the Translations UI is not blank when title lookup fails or is empty.
+            src_base = os.path.basename(self.source_srt_file or '') or 'subtitle.srt'
+            display_title = f'{title} · {src_base}' if (title or '').strip() else src_base
 
             if self.media_type == 'episode':
                 api_media_type = "Episode"
@@ -140,11 +145,14 @@ class LingarrTranslatorService:
 
             payload = {
                 "arrMediaId": arr_media_id,
-                "title": title,
+                "title": display_title,
                 "sourceLanguage": source_lang,
                 "targetLanguage": target_lang,
                 "mediaType": api_media_type,
-                "lines": lines_payload
+                "lines": lines_payload,
+                # Optional; ignored by older Lingarr, used when content API accepts paths
+                "sourceSubtitlePath": self.source_srt_file,
+                "translatedSubtitlePath": self.dest_srt_file,
             }
 
             logger.debug(f'BAZARR is sending {len(lines_payload)} lines to Lingarr with full media context')
