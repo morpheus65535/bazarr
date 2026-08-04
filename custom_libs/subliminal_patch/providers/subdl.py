@@ -185,9 +185,14 @@ class SubdlProvider(Provider):
     def server_url(self):
         return f'https://{self.server_hostname}/api/v1/'
 
-    # The API caps subs_per_page at 30, so a busy season needs several pages.
+    # The API caps subs_per_page at 30, so a popular title is truncated. Paging
+    # is deliberately shallow and only applied to the primary search: every page
+    # is a request against the caller's daily API quota (2000-30000/day), and a
+    # library-wide scan issues one search per episode. One extra page, only when
+    # the first came back full, keeps the worst case at ~1.5x the old request
+    # count instead of 2.5x.
     SUBS_PER_PAGE = 30
-    MAX_PAGES = 3
+    MAX_PAGES = 2
 
     # The API rejects these outright ("Film name contains potentially unsafe
     # characters"), which would otherwise 400 every apostrophe title such as
@@ -340,8 +345,10 @@ class SubdlProvider(Provider):
             # where episode 25 is stored internally as cour-2 episode 13).
             # The release name matching in get_matches() will identify the correct episode.
             logger.debug(f'Also searching by season only (no episode filter) for season {video.season}')
+            # Not paginated: this is a supplementary fallback, and paging it
+            # would double the per-episode request cost of a full library scan.
             merge(self._search(dict(base_params, type='tv', season_number=video.season),
-                               'season-only', paginate=True)[0], 'season-only')
+                               'season-only')[0], 'season-only')
 
             # Last resort: if all season-filtered searches returned nothing, search by title only
             # (no season/episode filter). This catches anime stored as season 0 on subdl (full series
