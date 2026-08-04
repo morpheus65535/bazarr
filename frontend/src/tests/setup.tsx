@@ -46,6 +46,22 @@ class ResizeObserver {
 
 window.ResizeObserver = ResizeObserver;
 
+// jsdom does not implement IntersectionObserver (used by infinite scroll)
+class IntersectionObserver {
+  observe() {
+    return undefined;
+  }
+  unobserve() {
+    return undefined;
+  }
+  disconnect() {
+    return undefined;
+  }
+}
+
+window.IntersectionObserver =
+  IntersectionObserver as unknown as typeof window.IntersectionObserver;
+
 window.scrollTo = () => undefined;
 
 const localStorageMock = (() => {

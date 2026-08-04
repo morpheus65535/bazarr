@@ -11,7 +11,11 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { ColumnDef } from "@tanstack/react-table";
-import { useSeriesModification, useSeriesPagination } from "@/apis/hooks";
+import {
+  seriesPaginationKey,
+  seriesPaginationQuery,
+  useSeriesModification,
+} from "@/apis/hooks";
 import { useInstanceName } from "@/apis/hooks/site";
 import { Action } from "@/components";
 import LanguageProfileName from "@/components/bazarr/LanguageProfile";
@@ -23,8 +27,6 @@ import SeriesPosterCard from "./PosterCard";
 
 const SeriesView: FunctionComponent = () => {
   const mutation = useSeriesModification();
-
-  const query = useSeriesPagination();
 
   const modals = useModals();
 
@@ -163,7 +165,8 @@ const SeriesView: FunctionComponent = () => {
   return (
     <Container px={0} fluid>
       <ItemView
-        query={query}
+        queryKey={seriesPaginationKey}
+        queryFn={seriesPaginationQuery}
         columns={columns}
         viewModeKey={seriesViewModeKey}
         renderPoster={renderPoster}

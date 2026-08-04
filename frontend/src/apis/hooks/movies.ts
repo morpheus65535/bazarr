@@ -43,10 +43,13 @@ export function useMovies() {
   return query;
 }
 
+export const moviesPaginationKey = [QueryKeys.Movies];
+
+export const moviesPaginationQuery: RangeQuery<Item.Movie> = (param) =>
+  api.movies.moviesBy(param);
+
 export function useMoviesPagination() {
-  return usePaginationQuery([QueryKeys.Movies], (param) =>
-    api.movies.moviesBy(param),
-  );
+  return usePaginationQuery(moviesPaginationKey, moviesPaginationQuery);
 }
 
 export function useMovieModification() {

@@ -7,7 +7,11 @@ import { faBookmark, faWrench } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { ColumnDef } from "@tanstack/react-table";
 import { uniqueId } from "lodash";
-import { useMovieModification, useMoviesPagination } from "@/apis/hooks";
+import {
+  moviesPaginationKey,
+  moviesPaginationQuery,
+  useMovieModification,
+} from "@/apis/hooks";
 import { useInstanceName } from "@/apis/hooks/site";
 import { Action } from "@/components";
 import { AudioList } from "@/components/bazarr";
@@ -24,8 +28,6 @@ const MovieView: FunctionComponent = () => {
   const modifyMovie = useMovieModification();
 
   const modals = useModals();
-
-  const query = useMoviesPagination();
 
   const columns = useMemo<ColumnDef<Item.Movie>[]>(
     () => [
@@ -164,7 +166,8 @@ const MovieView: FunctionComponent = () => {
   return (
     <Container fluid px={0}>
       <ItemView
-        query={query}
+        queryKey={moviesPaginationKey}
+        queryFn={moviesPaginationQuery}
         columns={columns}
         viewModeKey={moviesViewModeKey}
         renderPoster={renderPoster}

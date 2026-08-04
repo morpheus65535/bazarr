@@ -1,46 +1,51 @@
 import { useEffect } from "react";
-import { useSearchParams } from "react-router";
-import { UsePaginationQueryResult } from "@/apis/queries/hooks";
-import PageControl from "@/components/tables/PageControl";
+import { Box } from "@mantine/core";
+import { useIntersection } from "@mantine/hooks";
+import { UseInfinitePaginationQueryResult } from "@/apis/queries/hooks";
 import { LoadingProvider } from "@/contexts";
-import { ScrollToTop } from "@/utilities";
 import PosterGrid, { PosterGridProps } from "./PosterGrid";
 
-type Props<T extends object> = Omit<PosterGridProps<T>, "data"> & {
-  query: UsePaginationQueryResult<T>;
+type Props<T extends object> = Omit<
+  PosterGridProps<T>,
+  "data" | "loadingMoreCount"
+> & {
+  query: UseInfinitePaginationQueryResult<T>;
 };
 
 export default function QueryPosterGrid<T extends object>(props: Props<T>) {
   const { query, ...remain } = props;
 
   const {
-    data = { data: [], total: 0 },
-    paginationStatus: { page, pageCount, totalCount, pageSize, isPageLoading },
-    controls: { gotoPage },
+    items,
+    paginationStatus: {
+      isInitialLoading,
+      isFetchingNextPage,
+      hasNextPage,
+      pageSize,
+    },
+    controls: { fetchNextPage },
   } = query;
 
-  const [searchParams, setSearchParams] = useSearchParams();
+  const { ref, entry } = useIntersection({ rootMargin: "400px" });
+
+  const isIntersecting = entry?.isIntersecting ?? false;
 
   useEffect(() => {
-    ScrollToTop();
-  }, [page]);
+    if (isIntersecting) {
+      fetchNextPage();
+    }
+  }, [isIntersecting, fetchNextPage]);
 
   return (
-    <LoadingProvider value={isPageLoading}>
-      <PosterGrid {...remain} data={data.data}></PosterGrid>
-      <PageControl
-        count={pageCount}
-        index={page}
-        size={pageSize}
-        total={totalCount}
-        goto={(page) => {
-          searchParams.set("page", (page + 1).toString());
-
-          setSearchParams(searchParams, { replace: true });
-
-          gotoPage(page);
-        }}
-      ></PageControl>
+    <LoadingProvider value={isInitialLoading}>
+      <PosterGrid
+        {...remain}
+        data={items}
+        loadingMoreCount={isFetchingNextPage ? Math.min(pageSize, 10) : 0}
+      ></PosterGrid>
+      {hasNextPage && (
+        <Box ref={ref} data-testid="poster-grid-sentinel" h={1}></Box>
+      )}
     </LoadingProvider>
   );
 }

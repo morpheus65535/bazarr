@@ -60,10 +60,13 @@ export function useSeries() {
   return query;
 }
 
+export const seriesPaginationKey = [QueryKeys.Series];
+
+export const seriesPaginationQuery: RangeQuery<Item.Series> = (param) =>
+  api.series.seriesBy(param);
+
 export function useSeriesPagination() {
-  return usePaginationQuery([QueryKeys.Series], (param) =>
-    api.series.seriesBy(param),
-  );
+  return usePaginationQuery(seriesPaginationKey, seriesPaginationQuery);
 }
 
 export function useSeriesModification() {

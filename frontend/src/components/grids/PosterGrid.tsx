@@ -8,12 +8,15 @@ export interface PosterGridProps<T extends object> {
   data: T[];
   renderPoster: (item: T) => ReactNode;
   emptyText?: string;
+  // Number of skeleton posters appended after the data, shown while the next
+  // page of an infinite scroll is loading.
+  loadingMoreCount?: number;
 }
 
 export default function PosterGrid<T extends object>(
   props: PosterGridProps<T>,
 ) {
-  const { data, renderPoster, emptyText } = props;
+  const { data, renderPoster, emptyText, loadingMoreCount = 0 } = props;
 
   const isLoading = useIsLoading();
   const pageSize = usePageSize();
@@ -38,5 +41,14 @@ export default function PosterGrid<T extends object>(
     ) : null;
   }
 
-  return <Box className={styles.grid}>{data.map(renderPoster)}</Box>;
+  return (
+    <Box className={styles.grid}>
+      {data.map(renderPoster)}
+      {Array(loadingMoreCount)
+        .fill(0)
+        .map((_, i) => (
+          <Skeleton key={`loading-more-${i}`} className={styles.skeleton} />
+        ))}
+    </Box>
+  );
 }
