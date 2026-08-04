@@ -1,4 +1,4 @@
-import { FunctionComponent, memo, useMemo, useState } from "react";
+import { FunctionComponent, memo, useState } from "react";
 import {
   Alert,
   Badge,
@@ -29,14 +29,12 @@ import styles from "./SubtitlePreview.module.scss";
 
 const MOBILE_QUERY = `(max-width: ${em(750)})`;
 
-const formatTimestamp = (t: SubtitleContents.LineTime) => {
-  const pad = (value: number) => String(value).padStart(2, "0");
-  return `${pad(t.hours)}:${pad(t.minutes)}:${pad(t.seconds)}`;
-};
+const formatTimestamp = (t: SubtitleContents.LineTime) =>
+  [t.hours, t.minutes, t.seconds]
+    .map((v) => String(v).padStart(2, "0"))
+    .join(":");
 
 const getBasename = (path: string) => path.split(/[\\/]/).pop() || path;
-
-const isTrue = (value?: PythonBoolean) => value === "True";
 
 type ViewMode = "rendered" | "raw";
 
@@ -104,9 +102,9 @@ const PreviewHeader: FunctionComponent<PreviewHeaderProps> = ({
     {selection.language && (
       <Badge variant="light">
         {selection.language.toUpperCase()}
-        {isTrue(selection.hi)
+        {selection.hi === "True"
           ? ":HI"
-          : isTrue(selection.forced)
+          : selection.forced === "True"
             ? ":Forced"
             : ""}
       </Badge>
@@ -136,15 +134,13 @@ const SubtitlePreviewView: FunctionComponent<Props> = ({ selections }) => {
   const term = isMobile ? "" : search.trim();
 
   const query = useSubtitleContents(path ?? "");
-  const lines = useMemo(() => query.data ?? [], [query.data]);
+  const lines = query.data ?? [];
 
   const filtered = useMemo(() => {
     const needle = term.toLowerCase();
     if (!needle) return lines;
     return lines.filter((line) => line.content.toLowerCase().includes(needle));
   }, [lines, term]);
-
-  const isEmpty = !query.isLoading && !query.isError && lines.length === 0;
 
   const countLabel =
     query.isLoading || query.isError
