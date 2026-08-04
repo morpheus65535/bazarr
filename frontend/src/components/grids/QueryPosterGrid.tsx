@@ -5,6 +5,10 @@ import { UseInfinitePaginationQueryResult } from "@/apis/queries/hooks";
 import { LoadingProvider } from "@/contexts";
 import PosterGrid, { PosterGridProps } from "./PosterGrid";
 
+// Cap the trailing skeletons so a large configured page size does not render
+// dozens of placeholders on every page fetch
+const loadingMoreSkeletonCount = 10;
+
 type Props<T extends object> = Omit<
   PosterGridProps<T>,
   "data" | "loadingMoreCount"
@@ -41,7 +45,9 @@ export default function QueryPosterGrid<T extends object>(props: Props<T>) {
       <PosterGrid
         {...remain}
         data={items}
-        loadingMoreCount={isFetchingNextPage ? Math.min(pageSize, 10) : 0}
+        loadingMoreCount={
+          isFetchingNextPage ? Math.min(pageSize, loadingMoreSkeletonCount) : 0
+        }
       ></PosterGrid>
       {hasNextPage && (
         <Box ref={ref} data-testid="poster-grid-sentinel" h={1}></Box>

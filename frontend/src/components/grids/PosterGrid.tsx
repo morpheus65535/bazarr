@@ -47,7 +47,10 @@ export default function PosterGrid<T extends object>(
       {Array(loadingMoreCount)
         .fill(0)
         .map((_, i) => (
-          <Skeleton key={`loading-more-${i}`} className={styles.skeleton} />
+          <Skeleton
+            key={`loading-more-${i}`}
+            className={styles.skeleton}
+          ></Skeleton>
         ))}
     </Box>
   );

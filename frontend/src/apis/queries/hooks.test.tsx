@@ -1,8 +1,8 @@
 import { FunctionComponent, PropsWithChildren } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
+import { renderHook, waitFor } from "@testing-library/react";
 import { describe, expect, it, vitest } from "vitest";
 import queryClient from "@/apis/queries";
-import { renderHook, waitFor } from "@/tests";
 import { useInfinitePaginationQuery } from "./hooks";
 
 const wrapper: FunctionComponent<PropsWithChildren> = ({ children }) => (

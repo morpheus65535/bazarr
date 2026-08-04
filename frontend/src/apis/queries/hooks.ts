@@ -132,20 +132,22 @@ export function usePaginationQuery<
   };
 }
 
-export type UseInfinitePaginationQueryResult<T extends object> =
-  UseInfiniteQueryResult<InfiniteData<DataWrapperWithTotal<T>, number>> & {
-    items: T[];
-    controls: {
-      fetchNextPage: () => void;
-    };
-    paginationStatus: {
-      isInitialLoading: boolean;
-      isFetchingNextPage: boolean;
-      hasNextPage: boolean;
-      totalCount: number;
-      pageSize: number;
-    };
+export type UseInfinitePaginationQueryResult<T extends object> = Omit<
+  UseInfiniteQueryResult<InfiniteData<DataWrapperWithTotal<T>, number>>,
+  "fetchNextPage"
+> & {
+  items: T[];
+  controls: {
+    fetchNextPage: () => void;
   };
+  paginationStatus: {
+    isInitialLoading: boolean;
+    isFetchingNextPage: boolean;
+    hasNextPage: boolean;
+    totalCount: number;
+    pageSize: number;
+  };
+};
 
 // Accumulates range queries into a single growing list for infinite scroll.
 // Shares the QueryKeys.Range prefix with usePaginationQuery so prefix-based
@@ -202,7 +204,8 @@ export function useInfinitePaginationQuery<
     }
   }, [results.isSuccess, data, client, cacheIndividual, queryKey]);
 
-  const { hasNextPage, isFetchingNextPage, fetchNextPage: fetchNext } = results;
+  const { fetchNextPage: fetchNext, ...rest } = results;
+  const { hasNextPage, isFetchingNextPage } = results;
 
   const fetchNextPage = useCallback(() => {
     if (hasNextPage && !isFetchingNextPage) {
@@ -216,8 +219,10 @@ export function useInfinitePaginationQuery<
   );
   const totalCount = data?.pages[data.pages.length - 1]?.total ?? 0;
 
+  // Spread omits the raw fetchNextPage so controls.fetchNextPage is the only
+  // paging entry point, matching usePaginationQuery's controls shape
   return {
-    ...results,
+    ...rest,
     items,
     paginationStatus: {
       isInitialLoading: results.isLoading,

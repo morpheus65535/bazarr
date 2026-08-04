@@ -48,10 +48,6 @@ export const moviesPaginationKey = [QueryKeys.Movies];
 export const moviesPaginationQuery: RangeQuery<Item.Movie> = (param) =>
   api.movies.moviesBy(param);
 
-export function useMoviesPagination() {
-  return usePaginationQuery(moviesPaginationKey, moviesPaginationQuery);
-}
-
 export function useMovieModification() {
   const client = useQueryClient();
   return useMutation({

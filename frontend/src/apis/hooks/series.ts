@@ -5,7 +5,6 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { usePaginationQuery } from "@/apis/queries/hooks";
 import { QueryKeys } from "@/apis/queries/keys";
 import api from "@/apis/raw";
 
@@ -64,10 +63,6 @@ export const seriesPaginationKey = [QueryKeys.Series];
 
 export const seriesPaginationQuery: RangeQuery<Item.Series> = (param) =>
   api.series.seriesBy(param);
-
-export function useSeriesPagination() {
-  return usePaginationQuery(seriesPaginationKey, seriesPaginationQuery);
-}
 
 export function useSeriesModification() {
   const client = useQueryClient();

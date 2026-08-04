@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vitest } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vitest } from "vitest";
 import { UseInfinitePaginationQueryResult } from "@/apis/queries/hooks";
 import { customRender, screen, waitFor } from "@/tests";
 import QueryPosterGrid from "./QueryPosterGrid";
@@ -55,10 +55,16 @@ function renderPoster(item: Item.Movie) {
 }
 
 describe("QueryPosterGrid", () => {
+  const OriginalIntersectionObserver = window.IntersectionObserver;
+
   beforeEach(() => {
     observer.callback = undefined;
     window.IntersectionObserver =
       MockIntersectionObserver as unknown as typeof window.IntersectionObserver;
+  });
+
+  afterEach(() => {
+    window.IntersectionObserver = OriginalIntersectionObserver;
   });
 
   it("renders the posters and the sentinel while more pages exist", () => {
