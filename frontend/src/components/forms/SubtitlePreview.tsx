@@ -1,4 +1,4 @@
-import { FunctionComponent, memo, useState } from "react";
+import { FunctionComponent, memo, useMemo, useState } from "react";
 import {
   Alert,
   Badge,
@@ -134,7 +134,7 @@ const SubtitlePreviewView: FunctionComponent<Props> = ({ selections }) => {
   const term = isMobile ? "" : search.trim();
 
   const query = useSubtitleContents(path ?? "");
-  const lines = query.data ?? [];
+  const lines = useMemo(() => query.data ?? [], [query.data]);
 
   const filtered = useMemo(() => {
     const needle = term.toLowerCase();
@@ -180,7 +180,7 @@ const SubtitlePreviewView: FunctionComponent<Props> = ({ selections }) => {
           This subtitle could not be read. Only UTF-8 encoded SRT, SSA or ASS
           files can be previewed.
         </Alert>
-      ) : isEmpty ? (
+      ) : lines.length === 0 ? (
         <Alert color="yellow" variant="light">
           No content could be read from this subtitle file.
         </Alert>
