@@ -16,7 +16,7 @@ type Props<T extends object> = Omit<
   query: UseInfinitePaginationQueryResult<T>;
 };
 
-export default function QueryPosterGrid<T extends object>(props: Props<T>) {
+const QueryPosterGrid = <T extends object>(props: Props<T>) => {
   const { query, ...remain } = props;
 
   const {
@@ -54,4 +54,6 @@ export default function QueryPosterGrid<T extends object>(props: Props<T>) {
       )}
     </LoadingProvider>
   );
-}
+};
+
+export default QueryPosterGrid;

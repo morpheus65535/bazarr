@@ -28,14 +28,14 @@ export type UsePaginationQueryResult<T extends object> = UseQueryResult<
   };
 };
 
-export function usePaginationQuery<
+export const usePaginationQuery = <
   TObject extends object = object,
   TQueryKey extends QueryKey = QueryKey,
 >(
   queryKey: TQueryKey,
   queryFn: RangeQuery<TObject>,
   cacheIndividual = true,
-): UsePaginationQueryResult<TObject> {
+): UsePaginationQueryResult<TObject> => {
   const client = useQueryClient();
 
   const [searchParams] = useSearchParams();
@@ -130,7 +130,7 @@ export function usePaginationQuery<
       gotoPage,
     },
   };
-}
+};
 
 export type UseInfinitePaginationQueryResult<T extends object> = Omit<
   UseInfiniteQueryResult<InfiniteData<DataWrapperWithTotal<T>, number>>,
@@ -152,14 +152,14 @@ export type UseInfinitePaginationQueryResult<T extends object> = Omit<
 // Accumulates range queries into a single growing list for infinite scroll.
 // Shares the QueryKeys.Range prefix with usePaginationQuery so prefix-based
 // invalidation (e.g. [QueryKeys.Movies]) refetches all loaded pages.
-export function useInfinitePaginationQuery<
+export const useInfinitePaginationQuery = <
   TObject extends object = object,
   TQueryKey extends QueryKey = QueryKey,
 >(
   queryKey: TQueryKey,
   queryFn: RangeQuery<TObject>,
   cacheIndividual = true,
-): UseInfinitePaginationQueryResult<TObject> {
+): UseInfinitePaginationQueryResult<TObject> => {
   const client = useQueryClient();
 
   const pageSize = usePageSize();
@@ -235,4 +235,4 @@ export function useInfinitePaginationQuery<
       fetchNextPage,
     },
   };
-}
+};

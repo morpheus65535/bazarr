@@ -38,12 +38,12 @@ interface ToolboxProps {
   onViewModeChange: (mode: ViewMode) => void;
 }
 
-function ItemViewToolbox({
+const ItemViewToolbox = ({
   totalCount,
   viewMode,
   canShowPoster,
   onViewModeChange,
-}: ToolboxProps) {
+}: ToolboxProps) => {
   const navigate = useNavigate();
 
   return (
@@ -88,7 +88,7 @@ function ItemViewToolbox({
       )}
     </Toolbox>
   );
-}
+};
 
 interface ViewProps<T extends Item.Base> {
   queryKey: QueryKey;
@@ -96,12 +96,12 @@ interface ViewProps<T extends Item.Base> {
   toolbox: Omit<ToolboxProps, "totalCount">;
 }
 
-function ItemTableView<T extends Item.Base>({
+const ItemTableView = <T extends Item.Base>({
   queryKey,
   queryFn,
   columns,
   toolbox,
-}: ViewProps<T> & { columns: ColumnDef<T>[] }) {
+}: ViewProps<T> & { columns: ColumnDef<T>[] }) => {
   const query = usePaginationQuery(queryKey, queryFn);
 
   return (
@@ -117,14 +117,14 @@ function ItemTableView<T extends Item.Base>({
       ></QueryPageTable>
     </>
   );
-}
+};
 
-function ItemPosterView<T extends Item.Base>({
+const ItemPosterView = <T extends Item.Base>({
   queryKey,
   queryFn,
   renderPoster,
   toolbox,
-}: ViewProps<T> & { renderPoster: (item: T) => ReactNode }) {
+}: ViewProps<T> & { renderPoster: (item: T) => ReactNode }) => {
   const query = useInfinitePaginationQuery(queryKey, queryFn);
 
   return (
@@ -140,15 +140,15 @@ function ItemPosterView<T extends Item.Base>({
       ></QueryPosterGrid>
     </>
   );
-}
+};
 
-function ItemView<T extends Item.Base>({
+const ItemView = <T extends Item.Base>({
   queryKey,
   queryFn,
   columns,
   viewModeKey,
   renderPoster,
-}: Props<T>) {
+}: Props<T>) => {
   const [viewMode, setViewMode] = useViewMode(viewModeKey ?? "item-view-mode");
 
   const canShowPoster = viewModeKey !== undefined && renderPoster !== undefined;
@@ -181,6 +181,6 @@ function ItemView<T extends Item.Base>({
       toolbox={toolbox}
     ></ItemTableView>
   );
-}
+};
 
 export default ItemView;

@@ -13,14 +13,14 @@ const wrapper: FunctionComponent<PropsWithChildren> = ({ children }) => (
 // falls back to 50.
 const pageSize = 50;
 
-function buildItems(start: number, count: number): Item.Movie[] {
+const buildItems = (start: number, count: number): Item.Movie[] => {
   return Array(count)
     .fill(0)
     .map(
       (_, i) =>
         ({ radarrId: start + i, title: `Movie ${start + i}` }) as Item.Movie,
     );
-}
+};
 
 describe("useInfinitePaginationQuery", () => {
   it("accumulates pages and stops at the total count", async () => {

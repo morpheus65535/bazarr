@@ -13,9 +13,7 @@ export interface PosterGridProps<T extends object> {
   loadingMoreCount?: number;
 }
 
-export default function PosterGrid<T extends object>(
-  props: PosterGridProps<T>,
-) {
+const PosterGrid = <T extends object>(props: PosterGridProps<T>) => {
   const { data, renderPoster, emptyText, loadingMoreCount = 0 } = props;
 
   const isLoading = useIsLoading();
@@ -54,4 +52,6 @@ export default function PosterGrid<T extends object>(
         ))}
     </Box>
   );
-}
+};
+
+export default PosterGrid;

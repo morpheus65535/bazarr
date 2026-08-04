@@ -12,13 +12,13 @@ const columns: ColumnDef<Item.Series>[] = [
 
 const queryKey = ["test-item-view"];
 
-function buildQueryFn(total = 1): RangeQuery<Item.Series> {
+const buildQueryFn = (total = 1): RangeQuery<Item.Series> => {
   return vitest.fn(() => Promise.resolve({ data: [item], total }));
-}
+};
 
-function renderPoster(item: Item.Series) {
+const renderPoster = (item: Item.Series) => {
   return <div data-testid="poster-card">{item.title}</div>;
-}
+};
 
 describe("ItemView", () => {
   beforeEach(() => {

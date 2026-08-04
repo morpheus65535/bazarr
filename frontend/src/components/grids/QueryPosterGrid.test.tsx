@@ -22,21 +22,21 @@ class MockIntersectionObserver {
   }
 }
 
-function intersect(isIntersecting: boolean) {
+const intersect = (isIntersecting: boolean) => {
   observer.callback?.(
     [{ isIntersecting } as IntersectionObserverEntry],
     {} as IntersectionObserver,
   );
-}
+};
 
 interface QueryOverrides {
   hasNextPage?: boolean;
   isFetchingNextPage?: boolean;
 }
 
-function buildQuery(
+const buildQuery = (
   overrides: QueryOverrides = {},
-): UseInfinitePaginationQueryResult<Item.Movie> {
+): UseInfinitePaginationQueryResult<Item.Movie> => {
   return {
     items: [item],
     paginationStatus: {
@@ -48,11 +48,11 @@ function buildQuery(
     },
     controls: { fetchNextPage: vitest.fn() },
   } as unknown as UseInfinitePaginationQueryResult<Item.Movie>;
-}
+};
 
-function renderPoster(item: Item.Movie) {
+const renderPoster = (item: Item.Movie) => {
   return <div data-testid="poster-card">{item.title}</div>;
-}
+};
 
 describe("QueryPosterGrid", () => {
   const OriginalIntersectionObserver = window.IntersectionObserver;
