@@ -52,7 +52,7 @@ const TwoPointFitForm: FunctionComponent<Props> = ({
   const modals = useModals();
 
   const query = useSubtitleContents(selections[0].path!);
-  const lines = useMemo(() => query.data ?? [], [query]);
+  const lines = useMemo(() => query.data ?? [], [query.data]);
 
   const form = useForm({
     initialValues: {
@@ -82,7 +82,7 @@ const TwoPointFitForm: FunctionComponent<Props> = ({
 
   // Preselect default lines when data loads
   useEffect(() => {
-    if (lines.length === 0) return;
+    if (lines.length === 0 || form.values.first.line !== null) return;
 
     const firstLine = lines.length < 50 ? lines[0] : lines[9];
     const lastLine =

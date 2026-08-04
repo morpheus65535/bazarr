@@ -7,6 +7,7 @@ import {
   faCode,
   faDeaf,
   faExchangeAlt,
+  faEye,
   faFaceGrinStars,
   faFilm,
   faImage,
@@ -28,6 +29,7 @@ import { TranslationModal } from "@/components/forms/TranslationForm";
 import { useModals } from "@/modules/modals";
 import { ModalComponent } from "@/modules/modals/WithModal";
 import { task } from "@/modules/task";
+import { SubtitlePreviewModal } from "./forms/SubtitlePreview";
 import { SyncSubtitleModal } from "./forms/SyncSubtitleForm";
 import { TwoPointFitModal } from "./forms/TwoPointFit";
 import styles from "./SubtitleToolsMenu.module.scss";
@@ -44,6 +46,12 @@ export interface ToolOptions {
 export function useTools() {
   return useMemo<ToolOptions[]>(
     () => [
+      {
+        key: "preview",
+        icon: faEye,
+        name: "Preview...",
+        modal: SubtitlePreviewModal,
+      },
       {
         key: "sync",
         icon: faPlay,

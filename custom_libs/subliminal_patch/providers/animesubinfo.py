@@ -376,31 +376,34 @@ class AnimesubinfoProvider(Provider):
         # Try multiple search strategies
         search_strategies = []
 
-        # Strategy 1: For episodes, prioritize search with "epXX" pattern
-        if isinstance(video, Episode) and search_title_with_ep:
-            # Try original title first (Japanese), then English, then Polish
-            search_strategies.append(('org', search_title_with_ep))
-            search_strategies.append(('en', search_title_with_ep))
-            search_strategies.append(('pl', search_title_with_ep))
 
-        # Strategy 2: Search without episode number (for series packs or general search)
-        if not isinstance(video, Episode) or not search_title_with_ep:
-            search_strategies.append(('org', search_title))
-            search_strategies.append(('en', search_title))
-            search_strategies.append(('pl', search_title))
-
-        # Strategy 3: Try alternative titles if available
-        if isinstance(video, Episode) and video.alternative_series:
-            for alt_series in video.alternative_series[:2]:  # Limit to first 2 alternatives
+        if isinstance(video, Episode):
+            for search_title in [video.series] + video.alternative_series[:2]:  # Limit to first 2 alternatives
+                # For episodes, use pattern like "Kimetsu no Yaiba ep01"
                 if video.absolute_episode:
-                    search_strategies.append(('en', f'{alt_series} ep{video.absolute_episode}'))
+                    search_title_with_ep = f'{search_title} ep{video.absolute_episode}'
                 elif video.episode:
-                    search_strategies.append(('en', f'{alt_series} ep{video.episode:02d}'))
-                search_strategies.append(('en', alt_series))
-        elif isinstance(video, Movie) and video.alternative_titles:
-            for alt_title in video.alternative_titles[:2]:  # Limit to first 2 alternatives
-                search_strategies.append(('en', alt_title))
-                search_strategies.append(('org', alt_title))
+                    search_title_with_ep = f'{search_title} ep{video.episode:02d}'
+                else:
+                    search_title_with_ep = None
+
+                # Strategy 1: For episodes, prioritize search with "epXX" pattern
+                if search_title_with_ep:
+                    # Try original title first (Japanese), then English, then Polish
+                    search_strategies.append(('org', search_title_with_ep))
+                    search_strategies.append(('en', search_title_with_ep))
+                    search_strategies.append(('pl', search_title_with_ep))
+
+                # Strategy 2: Search without episode number (for series packs or general search)
+                if not search_title_with_ep:
+                    search_strategies.append(('org', search_title))
+                    search_strategies.append(('en', search_title))
+                    search_strategies.append(('pl', search_title))
+
+        elif isinstance(video, Movie):
+            for search_title in [video.title] + video.alternative_titles[:2]:  # Limit to first 2 alternatives
+                search_strategies.append(('en', search_title))
+                search_strategies.append(('org', search_title))
 
         # Execute searches
         seen_ids = set()

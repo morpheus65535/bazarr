@@ -61,7 +61,7 @@ def check_login(actual_method):
                     'WWW-Authenticate': 'Basic realm="Login Required"'
                 })
         elif settings.auth.type == 'form':
-            if 'logged_in' not in session:
+            if not session.get('logged_in'):
                 return abort(401)
         return actual_method(*args, **kwargs)
     return wrapper
@@ -87,7 +87,7 @@ def catch_all(path):
                 'WWW-Authenticate': 'Basic realm="Login Required"'
             })
     elif settings.auth.type == 'form':
-        if 'logged_in' not in session or not session['logged_in']:
+        if not session.get('logged_in'):
             auth = False
 
     try:
