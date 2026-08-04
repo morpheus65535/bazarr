@@ -11,6 +11,7 @@ from zipfile import ZipFile, is_zipfile
 from rarfile import RarFile, is_rarfile
 from urllib.parse import urljoin
 from requests import Session, Response
+from requests.exceptions import RequestException
 from guessit import guessit
 
 from babelfish import language_converters
@@ -47,7 +48,8 @@ class SubdlSubtitle(Subtitle):
 
     def __init__(self, language, forced, hearing_impaired, page_link, download_link, file_id, release_names, uploader,
                  season=None, episode=None, absolute_episode=None, is_pack=False, is_direct_file=False,
-                 is_full_season=False, episode_title=None, matched_id=False, matched_title=False,
+                 is_full_season=False, episode_title=None, target_episode=None,
+                 matched_id=False, matched_title=False,
                  is_ai_translation=False, ai_source_n_id=None, ai_source_language=None, ai_target_language=None):
         super().__init__(language)
         language = Language.rebuild(language, hi=hearing_impaired, forced=forced)
@@ -60,6 +62,11 @@ class SubdlSubtitle(Subtitle):
         # A pack covering a whole season carries no episode range: every episode
         # of `season` is inside it, so the archive must be searched by episode.
         self.is_full_season = is_full_season
+        # The episode we are searching FOR. Distinct from self.episode, which is
+        # whatever the API said about the item — for a pack that is the pack's
+        # own field (often None), so extracting on it would pull an arbitrary
+        # member out of a season archive.
+        self.target_episode = target_episode
         # Carried so download_subtitle can match a pack member by episode title
         # without reaching back into shared provider state.
         self.episode_title = episode_title
@@ -197,17 +204,17 @@ class SubdlProvider(Provider):
     # The API rejects these outright ("Film name contains potentially unsafe
     # characters"), which would otherwise 400 every apostrophe title such as
     # "Grey's Anatomy" and get the whole provider throttled.
-    # Apostrophes are dropped rather than spaced ("Grey's" -> "Greys"), which is
-    # how the catalogue stores such titles; the rest become separators.
-    APOSTROPHE_CHARS = re.compile(r"['`’]")
-    UNSAFE_TITLE_CHARS = re.compile(r'[<>{}\[\]";\\/]')
+    # Every one of these becomes a SPACE, never nothing. The search index stores
+    # "Grey's Anatomy" as the tokens grey|s|anatomy, so deleting the apostrophe
+    # would query "greys" and match nothing -- verified against the live API,
+    # where "Schitts Creek" returns 0 results and "Schitt s Creek" returns 8.
+    UNSAFE_TITLE_CHARS = re.compile(r'''[<>{}\[\]'"`´’;\\/]''')
 
     @classmethod
     def _sanitize_title(cls, title):
         if not title:
             return title
-        cleaned = cls.APOSTROPHE_CHARS.sub('', title)
-        cleaned = cls.UNSAFE_TITLE_CHARS.sub(' ', cleaned)
+        cleaned = cls.UNSAFE_TITLE_CHARS.sub(' ', title)
         cleaned = ' '.join(cleaned.split())
         if cleaned != title:
             logger.debug(f'Sanitized title for search: {title!r} -> {cleaned!r}')
@@ -228,7 +235,13 @@ class SubdlProvider(Provider):
 
         Never raises for this single search: a failure here must not discard
         results already gathered by the other searches, nor throttle the whole
-        provider. Transport/HTTP errors are logged and yield no items.
+        provider.
+
+        Only per-request and transport failures are absorbed. Anything that
+        describes the state of the ACCOUNT or the service — an invalid key, the
+        daily download limit, a rate limit, an outage — is re-raised so bazarr
+        can throttle and back off. Swallowing those would leave a client with a
+        revoked key searching forever at full rate.
         """
         items = []
         first_payload = {}
@@ -243,8 +256,11 @@ class SubdlProvider(Provider):
                     lambda: self.session.get(self.server_url() + 'subtitles',
                                              params=call_params, timeout=30)
                 )
-            except Exception as error:
-                logger.debug(f'subdl: {description} search failed, continuing without it: {error!r}')
+            except (SubdlRequestRejected, RequestException) as error:
+                # The api_key rides in the request URL, and requests puts that
+                # URL in the exception text.
+                logger.debug(f'subdl: {description} search failed, continuing '
+                             f'without it: {self._redact(repr(error))}')
                 break
 
             payload = self._safe_json(response)
@@ -403,7 +419,11 @@ class SubdlProvider(Provider):
             is_direct_file = False
             is_full_season = False
             download_link = item['url']
-            file_id = item.get('subtitlePage') or item['name']
+            # Keep the archive name as the public id: bazarr persists it in the
+            # blacklist and in history, so changing it would silently invalidate
+            # every existing subdl blacklist entry. Uniqueness is handled by
+            # deduping on subtitlePage in merge() instead.
+            file_id = item['name']
             item_season = item.get('season', None)
             item_episode = item.get('episode', None)
 
@@ -457,7 +477,7 @@ class SubdlProvider(Provider):
                     )
                     if unpack_entry:
                         download_link = unpack_entry['url']
-                        file_id = f"{file_id}/{unpack_entry['file_n_id']}"
+                        file_id = f"{item['name']}/{unpack_entry['file_n_id']}"
                         # `or` not `.get(default)`: the API sends season/episode
                         # as 0 rather than omitting them, so a dict default never
                         # applies and a correct season would be overwritten by 0.
@@ -491,6 +511,7 @@ class SubdlProvider(Provider):
                 is_direct_file=is_direct_file,
                 is_full_season=is_full_season,
                 episode_title=getattr(video, 'title', None) if isinstance(video, Episode) else None,
+                target_episode=video.episode if isinstance(video, Episode) else None,
                 matched_id=matched_id,
                 matched_title=matched_title,
             )
@@ -803,7 +824,7 @@ class SubdlProvider(Provider):
         if subtitle.is_pack or subtitle.is_full_season:
             # Match by episode number inside the archive. Only reached when the
             # server did not already expose the individual file via unpack=1.
-            target_episode = subtitle.episode or subtitle.absolute_episode
+            target_episode = subtitle.target_episode or subtitle.absolute_episode
             content = utils.get_subtitle_from_archive(
                 archive,
                 episode=target_episode,
@@ -914,10 +935,11 @@ class SubdlProvider(Provider):
             try:
                 poll = self.session.get(
                     f'{base}pro/translate/jobs/{request_id}', params=params, timeout=30)
-            except Exception:
+            except RequestException as error:
                 poll_failures += 1
                 if poll_failures >= 5:
-                    logger.exception('subdl: AI translation polling failed repeatedly')
+                    logger.error('subdl: AI translation polling failed repeatedly: '
+                                 f'{self._redact(repr(error))}')
                     return
                 continue
 
@@ -946,8 +968,8 @@ class SubdlProvider(Provider):
         try:
             download = self.session.get(
                 f'{base}pro/translate/jobs/{request_id}/download', params=params, timeout=30)
-        except Exception:
-            logger.exception('subdl: AI translation download failed')
+        except RequestException as error:
+            logger.error(f'subdl: AI translation download failed: {self._redact(repr(error))}')
             return
 
         if download.status_code != 200 or not download.content:
@@ -1015,7 +1037,10 @@ class SubdlProvider(Provider):
                 # provider for 12 hours; an edge/WAF 403 is transient.
                 payload = self._safe_json(response)
                 error = str(payload.get('error') or payload.get('message') or '').lower()
-                if not payload or 'key' in error or 'auth' in error or 'forbidden' in error:
+                # Only a JSON verdict from our own API may disable the provider
+                # for 12 hours. A 403 with no parseable body is an edge/WAF
+                # challenge — transient, and not a statement about the key.
+                if payload and ('key' in error or 'auth' in error or 'forbidden' in error):
                     raise AuthenticationError("Invalid API key")
                 raise APIThrottled(f"Request rejected with 403: {error or 'no reason given'}")
             elif status_code == 404:
