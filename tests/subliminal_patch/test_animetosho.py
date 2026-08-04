@@ -57,3 +57,50 @@ def test_list_subtitles(anime_episodes, requests_mock, data):
         subtitles = provider.list_subtitles(item, languages={language})
 
         assert len(subtitles) == 2
+
+
+def _torrent_response(sub_info):
+    return {
+        "files": [
+            {
+                "filename": "[EMBER] Ore dake Level Up na Ken S01E12 [1080p] [HEVC WEBRip].mkv",
+                "attachments": [
+                    {"id": 1, "filename": "subs.ass", "type": "subtitle", "info": sub_info},
+                ],
+            }
+        ]
+    }
+
+
+@pytest.mark.parametrize(
+    "info,expected",
+    [
+        # AnimeTosho reports both Portuguese variants as "por"; the attachment name is the only
+        # hint. The name is frequently absent altogether (the recorded API payload in
+        # data/animetosho_series_response.json carries no "name" key), and an unnamed track must
+        # stay plain Portuguese rather than be promoted to pt-BR.
+        ({"lang": "por"}, Language("por")),
+        ({"lang": "por", "name": "Portugues"}, Language("por")),
+        # A name that starts with "brazil" is still Brazilian Portuguese.
+        ({"lang": "por", "name": "Brazilian Portuguese"}, Language("por", "BR")),
+        ({"lang": "por", "name": "Portuguese (Brazil)"}, Language("por", "BR")),
+    ],
+)
+def test_portuguese_brazilian_detection(anime_episodes, requests_mock, info, expected):
+    item = anime_episodes["solo_leveling_s01e10"]
+
+    requests_mock.get(
+        'https://feed.animetosho.org/json?eid=277518',
+        json=[{"id": 608526, "timestamp": 1711853493, "status": "complete", "title": "Solo Leveling - 12"}],
+    )
+    requests_mock.get(
+        'https://feed.animetosho.org/json?show=torrent&id=608526',
+        json=_torrent_response(info),
+    )
+
+    with AnimeToshoProvider(1) as provider:
+        # Ask for both variants so nothing is filtered out and the resolved language is asserted.
+        subtitles = provider.list_subtitles(item, languages={Language("por"), Language("por", "BR")})
+
+        assert len(subtitles) == 1
+        assert subtitles[0].language == expected
