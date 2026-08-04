@@ -821,6 +821,18 @@ class SubdlProvider(Provider):
                 logger.error(f'Could not open subtitle archive from {safe_link}')
             return
 
+        # A corrupt archive, or a RAR when bazarr could not find its unrar binary
+        # (init.py sets rarfile.UNRAR_TOOL = None in that case), raises out of
+        # archive.read(). bazarr treats rarfile.BadRarFile as a reason to throttle
+        # the whole provider, so absorb it here: one unreadable archive is a
+        # per-subtitle problem.
+        try:
+            self._extract(subtitle, archive, safe_link)
+        except Exception as error:
+            logger.warning(f'subdl: could not read archive {safe_link}: {self._redact(repr(error))}')
+            subtitle.content = None
+
+    def _extract(self, subtitle, archive, safe_link):
         if subtitle.is_pack or subtitle.is_full_season:
             # Match by episode number inside the archive. Only reached when the
             # server did not already expose the individual file via unpack=1.
