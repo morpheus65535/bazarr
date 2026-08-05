@@ -2,6 +2,7 @@
 import logging
 import lzma
 import os
+import re
 from typing import Callable
 
 from guessit import guessit
@@ -35,6 +36,8 @@ supported_languages = [
     "tur",
     "vie",
 ]
+
+_BRAZILIAN_PORTUGUESE_RE = re.compile(r'brazil|\bbr\b', re.IGNORECASE)
 
 
 class AnimeToshoXYZSubtitle(Subtitle):
@@ -164,7 +167,10 @@ class AnimeToshoXYZProvider(Provider, ProviderSubtitleArchiveMixin):
                 lang_code = info.get('language_code', 'eng')
                 lang = Language.fromalpha3b(lang_code)
 
-                if lang.alpha3 == 'por' and 'brazil' in info.get('language', '').lower():
+                # Portuguese and Brazilian Portuguese share the same code, so the language name is
+                # the only thing telling them apart. The API labels it "Portuguese[BR]", but the
+                # spelled-out "Brazilian Portuguese" also shows up.
+                if lang.alpha3 == 'por' and _BRAZILIAN_PORTUGUESE_RE.search(info.get('language', '')):
                     lang = Language('por', 'BR')
 
                 subtitle = self.subtitle_class(
