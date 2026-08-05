@@ -7,6 +7,7 @@ import ItemView from "./ItemView";
 vi.mock("@/apis/hooks", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/apis/hooks")>()),
   useLanguageProfiles: () => ({ data: [] }),
+  useLanguages: () => ({ data: [] }),
 }));
 
 const item = {
@@ -36,7 +37,11 @@ const buildQueryFn = (total = 1): RangeQuery<Item.Series> => {
 };
 
 const renderPoster = (item: Item.Series) => {
-  return <div data-testid="poster-card">{item.title}</div>;
+  return (
+    <div key={item.sonarrSeriesId} data-testid="poster-card">
+      {item.title}
+    </div>
+  );
 };
 
 describe("ItemView", () => {

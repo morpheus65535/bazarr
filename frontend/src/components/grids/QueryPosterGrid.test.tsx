@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vitest } from "vitest";
 import { UseInfinitePaginationQueryResult } from "@/apis/queries/hooks";
-import { customRender, screen, waitFor } from "@/tests";
+import { act, customRender, screen, waitFor } from "@/tests";
 import QueryPosterGrid from "./QueryPosterGrid";
 
 const item = { title: "My Movie", radarrId: 1 } as Item.Movie;
@@ -51,7 +51,11 @@ const buildQuery = (
 };
 
 const renderPoster = (item: Item.Movie) => {
-  return <div data-testid="poster-card">{item.title}</div>;
+  return (
+    <div key={item.radarrId} data-testid="poster-card">
+      {item.title}
+    </div>
+  );
 };
 
 describe("QueryPosterGrid", () => {
@@ -81,7 +85,7 @@ describe("QueryPosterGrid", () => {
 
     customRender(<QueryPosterGrid query={query} renderPoster={renderPoster} />);
 
-    intersect(true);
+    act(() => intersect(true));
 
     await waitFor(() =>
       expect(query.controls.fetchNextPage).toHaveBeenCalledTimes(1),
@@ -93,7 +97,7 @@ describe("QueryPosterGrid", () => {
 
     customRender(<QueryPosterGrid query={query} renderPoster={renderPoster} />);
 
-    intersect(false);
+    act(() => intersect(false));
 
     await screen.findByTestId("poster-card");
     expect(query.controls.fetchNextPage).not.toHaveBeenCalled();

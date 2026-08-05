@@ -12,6 +12,7 @@
     "url": "https://github.com/morpheus65535/bazarr/issues"
   },
   "private": true,
+  "type": "module",
   "dependencies": {
     "@mantine/core": "^9.5.1",
     "@mantine/dropzone": "^9.5.1",
@@ -102,14 +103,14 @@
     "check:fmt": "prettier -c .",
     "check:style": "stylelint \"src/**/*.{css,scss}\" --max-warnings 0",
     "check:style:fix": "stylelint \"src/**/*.{css,scss}\" --fix",
-    "coverage": "vitest run --coverage",
+    "coverage": "NODE_OPTIONS='--disable-warning=ExperimentalWarning' vitest run --coverage",
     "format": "prettier -w .",
     "pwa-assets:generate": "pwa-assets-generator --preset minimal-2023 public/images/logo128.png",
     "prepare": "cd .. && husky frontend/.husky",
     "preview": "vite preview",
     "start": "vite",
-    "test": "vitest",
-    "test:ui": "vitest --ui"
+    "test": "NODE_OPTIONS='--disable-warning=ExperimentalWarning' vitest",
+    "test:ui": "NODE_OPTIONS='--disable-warning=ExperimentalWarning' vitest --ui"
   },
   "browserslist": {
     "production": [
