@@ -1,6 +1,7 @@
 # coding=utf-8
 
 import logging
+import re
 import pysubs2
 
 from retry.api import retry
@@ -73,11 +74,27 @@ class GoogleTranslatorService:
                 future = pool.submit(translate_line, i, line)
                 futures.append(future)
             pool.shutdown(wait=True)
+
+            # Surface per-line failures instead of silently swallowing them. Previously, a line
+            # that exhausted its retries (429/5xx/network error) was dropped, leaving its original
+            # text in place and the subtitle was saved as if translation had succeeded. We now
+            # collect those failures and abort so no partially-translated file is written.
+            line_errors = []
             for future in futures:
                 try:
                     future.result()
                 except Exception as e:
                     logger.error(f"Error in translation task: {e}")
+                    line_errors.append(e)
+
+            if line_errors:
+                first_error = line_errors[0]
+                message = (f'Google translation failed for {len(line_errors)}/{lines_list_len} line(s) '
+                           f'({first_error.__class__.__name__}: {first_error}). '
+                           f'Subtitle was not saved to avoid leaving partially-translated content.')
+                logger.error(message)
+                jobs_queue.update_job_progress(job_id=job_id, progress_message=message)
+                raise RequestError(message)
 
             for i, line in enumerate(translated_lines):
                 lines_list[line['id']] = line['line']
@@ -126,10 +143,20 @@ class GoogleTranslatorService:
     @retry(exceptions=(TooManyRequests, RequestError), tries=6, delay=1, backoff=2, jitter=(0, 1))
     def _translate_text(self, text, job_id):
         try:
-            return GoogleTranslator(
+            translated_text = GoogleTranslator(
                 source='auto',
                 target=self.language_code_convert_dict.get(self.lang_obj.alpha2, self.lang_obj.alpha2)
             ).translate(text=text)
+
+            # The free Google endpoint occasionally answers 200 OK with an error/captcha HTML page
+            # instead of a real translation. deep_translator then returns that error text (e.g.
+            # "Error 500", "Too Many Requests", raw HTML) as the translation, which used to get
+            # written straight into the subtitle. Detect and reject those so they are retried and,
+            # if they persist, surfaced as a failure instead of being baked into the output.
+            if translated_text is None or self._looks_like_error_response(translated_text):
+                raise RequestError(f'Google Translate returned an invalid response: {translated_text!r}')
+
+            return translated_text
         except (TooManyRequests, RequestError) as e:
             logger.error(f'Google Translate API error after retries: {str(e)}')
             jobs_queue.update_job_progress(job_id=job_id,
@@ -140,3 +167,24 @@ class GoogleTranslatorService:
             jobs_queue.update_job_progress(job_id=job_id,
                                            progress_message=f'Translation error: {str(e)}')
             raise
+
+    @staticmethod
+    def _looks_like_error_response(text: str) -> bool:
+        """Heuristic guard against Google serving an error/captcha page as a translation."""
+        if not text:
+            return False
+        # Raw HTML leaking through (error pages, captcha interstitials).
+        if re.search(r'<\s*(html|body|div|br|p|DOCTYPE)[^>]*>', text, re.IGNORECASE):
+            return True
+        lowered = text.lower()
+        error_markers = (
+            'too many requests', 'server error', 'internal server error',
+            'service unavailable', 'bad gateway', 'temporarily unavailable',
+            'captcha', 'unusual traffic', 'rate limit',
+        )
+        if any(marker in lowered for marker in error_markers):
+            return True
+        # "Error 500", "HTTP 429", standalone "500"/"429" style leftovers.
+        if re.search(r'\b(error|http)[ _-]?\d{3}\b', lowered):
+            return True
+        return False
