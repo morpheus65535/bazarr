@@ -70,6 +70,21 @@ export const parseListQuery = (
   };
 };
 
+const setOrDelete = (
+  params: URLSearchParams,
+  key: string,
+  value: string | undefined,
+) => {
+  if (value === undefined) {
+    params.delete(key);
+    return;
+  }
+  params.set(key, value);
+};
+
+const boolParam = (value: boolean | undefined) =>
+  value === undefined ? undefined : value ? "true" : "false";
+
 export const buildListSearchParams = (
   searchParams: URLSearchParams,
   query: Parameter.ListState,
@@ -78,46 +93,20 @@ export const buildListSearchParams = (
   const keys = keysFor(prefix);
   const next = new URLSearchParams(searchParams);
 
-  if (query.sortBy) {
-    next.set(keys.sortBy, query.sortBy);
-  } else {
-    next.delete(keys.sortBy);
-  }
-
-  if (query.sortOrder) {
-    next.set(keys.sortOrder, query.sortOrder);
-  } else {
-    next.delete(keys.sortOrder);
-  }
-
-  if (query.filters?.monitored !== undefined) {
-    next.set(keys.monitored, query.filters.monitored ? "true" : "false");
-  } else {
-    next.delete(keys.monitored);
-  }
-
-  if (query.filters?.missing !== undefined) {
-    next.set(keys.missing, query.filters.missing ? "true" : "false");
-  } else {
-    next.delete(keys.missing);
-  }
-
-  if (query.filters?.profileId !== undefined) {
-    next.set(
-      keys.profileId,
-      query.filters.profileId === 0
+  setOrDelete(next, keys.sortBy, query.sortBy);
+  setOrDelete(next, keys.sortOrder, query.sortOrder);
+  setOrDelete(next, keys.monitored, boolParam(query.filters?.monitored));
+  setOrDelete(next, keys.missing, boolParam(query.filters?.missing));
+  setOrDelete(
+    next,
+    keys.profileId,
+    query.filters?.profileId === undefined
+      ? undefined
+      : query.filters.profileId === 0
         ? NO_PROFILE
         : String(query.filters.profileId),
-    );
-  } else {
-    next.delete(keys.profileId);
-  }
-
-  if (query.filters?.audioLanguage !== undefined) {
-    next.set(keys.audioLanguage, query.filters.audioLanguage);
-  } else {
-    next.delete(keys.audioLanguage);
-  }
+  );
+  setOrDelete(next, keys.audioLanguage, query.filters?.audioLanguage);
 
   next.delete(keys.tags);
   if (query.filters?.tags && query.filters.tags.length > 0) {
@@ -157,9 +146,13 @@ export const useListQueryState = (prefix?: string) => {
     ) => {
       const filters: Parameter.ListFilters = { ...query.filters };
 
-      if (value === undefined || (Array.isArray(value) && value.length === 0)) {
+      const shouldRemove =
+        value === undefined || (Array.isArray(value) && value.length === 0);
+
+      if (shouldRemove) {
         delete filters[key];
-      } else {
+      }
+      if (!shouldRemove) {
         filters[key] = value;
       }
 

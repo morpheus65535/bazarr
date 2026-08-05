@@ -22,9 +22,8 @@ class RequestUtils {
       const { data } = result;
       if (data.status && data.version) {
         return data;
-      } else {
-        throw new Error("Cannot get response, fallback to v3 api");
       }
+      throw new Error("Cannot get response, fallback to v3 api");
     } catch {
       const result = await client.axios.get<UrlTestResponse>(
         `../test/${protocol}/${url}api/v3/system/status`,

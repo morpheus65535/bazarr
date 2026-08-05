@@ -224,9 +224,9 @@ const ItemViewSortControl = ({
   const handleSort = (field: string) => {
     if (field === sortBy) {
       setSort(sortBy, sortOrder === "asc" ? "desc" : "asc");
-    } else {
-      setSort(field, "asc");
+      return;
     }
+    setSort(field, "asc");
   };
 
   return (
@@ -398,10 +398,9 @@ const ItemViewToolbox = <T extends Item.Base>({
       if (!collapsed && groupEl.scrollWidth > groupEl.clientWidth + epsilon) {
         controlsWidth.current = groupEl.scrollWidth;
         setCollapsed(true);
-      } else if (
-        collapsed &&
-        groupEl.clientWidth >= controlsWidth.current + epsilon
-      ) {
+        return;
+      }
+      if (collapsed && groupEl.clientWidth >= controlsWidth.current + epsilon) {
         setCollapsed(false);
       }
     };

@@ -118,9 +118,9 @@ export const usePaginationQuery = <
   useEffect(() => {
     if (hasResetOnQueryChange.current) {
       setIndex(0);
-    } else {
-      hasResetOnQueryChange.current = true;
+      return;
     }
+    hasResetOnQueryChange.current = true;
   }, [queryKeySuffix]);
 
   // Reset page index if we out of bound
@@ -129,7 +129,9 @@ export const usePaginationQuery = <
 
     if (page >= pageCount) {
       setIndex(pageCount - 1);
-    } else if (page < 0) {
+      return;
+    }
+    if (page < 0) {
       setIndex(0);
     }
   }, [page, pageCount]);
