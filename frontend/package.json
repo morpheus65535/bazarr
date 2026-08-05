@@ -61,7 +61,7 @@
     "@typescript-eslint/eslint-plugin": "^8.64.0",
     "@typescript-eslint/parser": "^8.64.0",
     "@vite-pwa/assets-generator": "^1.0.2",
-    "@vitejs/plugin-react": "^6.0.3",
+    "@vitejs/plugin-react": "^6.0.5",
     "@vitest/coverage-v8": "^4.1.10",
     "@vitest/ui": "^4.1.10",
     "clsx": "^2.1.1",
@@ -125,6 +125,7 @@
   },
   "overrides": {
     "serialize-javascript": "^7.0.4",
+    "@babel/plugin-transform-runtime": "^7.29.0",
     "@vite-pwa/assets-generator": {
       "sharp": "^0.35.3"
     },
