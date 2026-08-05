@@ -37,6 +37,7 @@ const SimpleTable = <T extends RowData>(props: SimpleTableProps<T>) => {
     autoResetPageIndex: false,
     autoResetExpanded: false,
     pageCount: pageSize,
+    manualPagination: true,
   });
 
   if (instanceRef) {
