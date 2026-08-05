@@ -11,10 +11,10 @@ import {
 } from "@/components/tables/features";
 import SimpleTable, { SimpleTableProps } from "@/components/tables/SimpleTable";
 
-function renderCell<T extends RowData = RowData>(
+const renderCell = <T extends RowData = RowData>(
   cell: Cell<T, unknown>,
   row: Row<T>,
-) {
+) => {
   if (cell.getIsGrouped()) {
     return (
       <div>{flexRender(cell.column.columnDef.cell, cell.getContext())}</div>
@@ -24,9 +24,9 @@ function renderCell<T extends RowData = RowData>(
   } else {
     return flexRender(cell.column.columnDef.cell, cell.getContext());
   }
-}
+};
 
-function renderRow<T extends RowData>(row: Row<T>) {
+const renderRow = <T extends RowData>(row: Row<T>) => {
   if (row.getCanExpand()) {
     const cell = row.getVisibleCells().find((cell) => cell.getIsGrouped());
 
@@ -63,11 +63,11 @@ function renderRow<T extends RowData>(row: Row<T>) {
       </Table.Tr>
     );
   }
-}
+};
 
-function renderHeaders<T extends RowData>(
+const renderHeaders = <T extends RowData>(
   headers: Header<T, unknown>[],
-): React.JSX.Element[] {
+): React.JSX.Element[] => {
   return headers.map((header) => {
     if (header.column.getIsGrouped()) {
       return <Fragment key={header.id}></Fragment>;
@@ -79,14 +79,14 @@ function renderHeaders<T extends RowData>(
       </Table.Th>
     );
   });
-}
+};
 
 type Props<T extends RowData> = Omit<
   SimpleTableProps<T>,
   "headersRenderer" | "rowRenderer"
 >;
 
-function GroupTable<T extends RowData = RowData>(props: Props<T>) {
+const GroupTable = <T extends RowData = RowData>(props: Props<T>) => {
   return (
     <SimpleTable
       {...props}
@@ -95,6 +95,6 @@ function GroupTable<T extends RowData = RowData>(props: Props<T>) {
       tableStyles={{ headersRenderer: renderHeaders, rowRenderer: renderRow }}
     ></SimpleTable>
   );
-}
+};
 
 export default GroupTable;
