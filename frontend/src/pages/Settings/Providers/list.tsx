@@ -458,15 +458,17 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
   },
   {
     key: "subdl",
+    name: "SubDL",
     inputs: [
       {
-        type: "text",
+        type: "password",
         key: "api_key",
+        name: "API key",
       },
       {
         type: "switch",
         key: "ai_translate",
-        name: "AI-translate missing languages (SubDL Plus/Pro, uses your monthly translation quota)",
+        name: "AI-translate missing languages (requires SubDL Plus or Pro)",
         defaultValue: false,
       },
       {
@@ -476,8 +478,22 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
         defaultValue: false,
       },
     ],
-    message:
-      "AI translation delivers missing languages in about a minute using your SubDL Plus/Pro translation quota. Get a plan at https://subdl.com/pro",
+    message: (
+      <>
+        Everything above works on a free API key except AI translation. That one
+        fills in languages nobody has uploaded yet, in about a minute, using the
+        monthly translation quota that comes with{" "}
+        <Anchor
+          href="https://subdl.com/pro?ref=bazarr"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          SubDL Plus or Pro
+        </Anchor>
+        . Leave it off on a free key — it has no effect there, and searches
+        behave exactly as before.
+      </>
+    ),
   },
   {
     key: "subf2m",
