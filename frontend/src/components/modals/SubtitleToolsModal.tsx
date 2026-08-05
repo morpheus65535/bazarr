@@ -20,20 +20,17 @@ import {
   faXmark,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  ColumnDef,
-  flexRender,
-  getFilteredRowModel,
-  getSortedRowModel,
-  Header,
-  SortingState,
-} from "@tanstack/react-table";
+import { flexRender, SortingState } from "@tanstack/react-table";
 import {
   useEpisodeSubtitleModification,
   useMovieSubtitleModification,
 } from "@/apis/hooks";
 import Language from "@/components/bazarr/Language";
 import SubtitleToolsMenu from "@/components/SubtitleToolsMenu";
+import {
+  AppColumnDef as ColumnDef,
+  AppHeader as Header,
+} from "@/components/tables/features";
 import SimpleTable from "@/components/tables/SimpleTable";
 import { useModals, withModal } from "@/modules/modals";
 import { fromPython, isMovie, toPython } from "@/utilities";
@@ -163,19 +160,21 @@ export const SubtitleToolView: FunctionComponent<SubtitleToolViewProps> = ({
           return (
             <Checkbox
               id="table-header-selection"
-              indeterminate={table.getIsSomeRowsSelected()}
+              indeterminate={
+                table.getIsSomeRowsSelected() && !table.getIsAllRowsSelected()
+              }
               checked={table.getIsAllRowsSelected()}
               onChange={table.getToggleAllRowsSelectedHandler()}
             ></Checkbox>
           );
         },
-        cell: ({ row: { index, getIsSelected, getToggleSelectedHandler } }) => {
+        cell: ({ row }) => {
           return (
             <Checkbox
-              id={`table-cell-${index}`}
-              checked={getIsSelected()}
-              onChange={getToggleSelectedHandler()}
-              onClick={getToggleSelectedHandler()}
+              id={`table-cell-${row.index}`}
+              checked={row.getIsSelected()}
+              onChange={row.getToggleSelectedHandler()}
+              onClick={row.getToggleSelectedHandler()}
             ></Checkbox>
           );
         },
@@ -395,8 +394,6 @@ export const SubtitleToolView: FunctionComponent<SubtitleToolViewProps> = ({
             }
           });
         }}
-        getFilteredRowModel={getFilteredRowModel()}
-        getSortedRowModel={getSortedRowModel()}
         onRowSelectionChanged={(rows) =>
           setSelections(rows.map((r) => r.original))
         }

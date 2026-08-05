@@ -7,7 +7,6 @@ import {
   faRecycle,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { ColumnDef } from "@tanstack/react-table";
 import {
   useEpisodeAddBlacklist,
   useEpisodeHistoryPagination,
@@ -16,6 +15,7 @@ import { MutateAction } from "@/components/async";
 import { HistoryIcon } from "@/components/bazarr";
 import Language from "@/components/bazarr/Language";
 import StateIcon from "@/components/StateIcon";
+import { AppColumnDef as ColumnDef } from "@/components/tables/features";
 import TextPopover from "@/components/TextPopover";
 import HistoryView from "@/pages/views/HistoryView";
 

@@ -11,9 +11,9 @@ import {
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
-import { ColumnDef } from "@tanstack/react-table";
 import { Action, Selector, SelectorOption } from "@/components";
 import ChipInput from "@/components/inputs/ChipInput";
+import { AppColumnDef as ColumnDef } from "@/components/tables/features";
 import SimpleTable from "@/components/tables/SimpleTable";
 import { useModals, withModal } from "@/modules/modals";
 import { useArrayAction, useSelectorOptions } from "@/utilities";

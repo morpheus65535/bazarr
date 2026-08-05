@@ -1,11 +1,11 @@
 import { Container } from "@mantine/core";
 import { useDocumentTitle } from "@mantine/hooks";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
-import { ColumnDef } from "@tanstack/react-table";
 import { useIsAnyActionRunning } from "@/apis/hooks";
 import { useInstanceName } from "@/apis/hooks/site";
 import { UsePaginationQueryResult } from "@/apis/queries/hooks";
 import { QueryPageTable, Toolbox } from "@/components";
+import { AppColumnDef as ColumnDef } from "@/components/tables/features";
 
 interface Props<T extends Wanted.Base> {
   name: string;

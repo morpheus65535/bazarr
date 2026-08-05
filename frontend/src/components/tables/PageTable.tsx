@@ -1,33 +1,33 @@
 import { MutableRefObject, useEffect } from "react";
-import {
-  getCoreRowModel,
-  getPaginationRowModel,
-  Table,
-  TableOptions,
-  useReactTable,
-} from "@tanstack/react-table";
+import { useTable } from "@tanstack/react-table";
 import BaseTable, { TableStyleProps } from "@/components/tables/BaseTable";
+import {
+  AppTable as Table,
+  appTableFeatures,
+  AppTableOptions as TableOptions,
+  RowData,
+} from "@/components/tables/features";
 import { ScrollToTop } from "@/utilities";
 import { usePageSize } from "@/utilities/storage";
 import PageControl from "./PageControl";
 
-type Props<T extends object> = Omit<TableOptions<T>, "getCoreRowModel"> & {
+type Props<T extends RowData> = Omit<TableOptions<T>, "features"> & {
   instanceRef?: MutableRefObject<Table<T> | null>;
   tableStyles?: TableStyleProps<T>;
   autoScroll?: boolean;
 };
 
-export default function PageTable<T extends object>(props: Props<T>) {
+export default function PageTable<T extends RowData>(props: Props<T>) {
   const { instanceRef, autoScroll, ...options } = props;
 
   const pageSize = usePageSize();
 
-  const instance = useReactTable({
+  const instance = useTable({
+    features: appTableFeatures,
     ...options,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
     initialState: {
       pagination: {
+        pageIndex: 0,
         pageSize: pageSize,
       },
     },
@@ -37,7 +37,8 @@ export default function PageTable<T extends object>(props: Props<T>) {
     instanceRef.current = instance;
   }
 
-  const pageIndex = instance.getState().pagination.pageIndex;
+  const state = instance.state;
+  const pageIndex = state.pagination.pageIndex;
 
   // Scroll to top when page is changed
   useEffect(() => {
@@ -45,8 +46,6 @@ export default function PageTable<T extends object>(props: Props<T>) {
       ScrollToTop();
     }
   }, [pageIndex, autoScroll]);
-
-  const state = instance.getState();
 
   return (
     <>

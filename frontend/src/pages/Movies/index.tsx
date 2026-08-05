@@ -5,7 +5,6 @@ import { useDocumentTitle } from "@mantine/hooks";
 import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
 import { faBookmark, faWrench } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { ColumnDef } from "@tanstack/react-table";
 import { uniqueId } from "lodash";
 import {
   moviesPaginationKey,
@@ -18,6 +17,7 @@ import { AudioList } from "@/components/bazarr";
 import Language from "@/components/bazarr/Language";
 import LanguageProfileName from "@/components/bazarr/LanguageProfile";
 import { ItemEditModal } from "@/components/forms/ItemEditForm";
+import { AppColumnDef as ColumnDef } from "@/components/tables/features";
 import { useModals } from "@/modules/modals";
 import ItemView from "@/pages/views/ItemView";
 import { BuildKey } from "@/utilities";

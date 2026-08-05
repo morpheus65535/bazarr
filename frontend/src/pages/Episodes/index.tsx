@@ -26,7 +26,6 @@ import {
   faTriangleExclamation,
   faWrench,
 } from "@fortawesome/free-solid-svg-icons";
-import { type Table as TableInstance } from "@tanstack/table-core";
 import {
   useEpisodesBySeriesId,
   useIsAnyActionRunning,
@@ -40,6 +39,7 @@ import { QueryOverlay } from "@/components/async";
 import { ItemEditModal } from "@/components/forms/ItemEditForm";
 import { SeriesUploadModal } from "@/components/forms/SeriesUploadForm";
 import { SubtitleToolsModal } from "@/components/modals";
+import { type AppTable as TableInstance } from "@/components/tables/features";
 import { useModals } from "@/modules/modals";
 import { notification, task, TaskGroup } from "@/modules/task";
 import ItemOverview from "@/pages/views/ItemOverview";

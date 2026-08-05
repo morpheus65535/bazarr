@@ -1,12 +1,12 @@
 import { FunctionComponent, useMemo } from "react";
 import { Checkbox } from "@mantine/core";
 import { useDocumentTitle } from "@mantine/hooks";
-import { ColumnDef } from "@tanstack/react-table";
 import { useMovieModification, useMovies } from "@/apis/hooks";
 import { useInstanceName } from "@/apis/hooks/site";
 import { QueryOverlay } from "@/components/async";
 import { AudioList } from "@/components/bazarr";
 import LanguageProfileName from "@/components/bazarr/LanguageProfile";
+import { AppColumnDef as ColumnDef } from "@/components/tables/features";
 import MassEditor from "@/pages/views/MassEditor";
 
 const MovieMassEditor: FunctionComponent = () => {
@@ -23,19 +23,21 @@ const MovieMassEditor: FunctionComponent = () => {
           return (
             <Checkbox
               id="table-header-selection"
-              indeterminate={table.getIsSomeRowsSelected()}
+              indeterminate={
+                table.getIsSomeRowsSelected() && !table.getIsAllRowsSelected()
+              }
               checked={table.getIsAllRowsSelected()}
               onChange={table.getToggleAllRowsSelectedHandler()}
             ></Checkbox>
           );
         },
-        cell: ({ row: { index, getIsSelected, getToggleSelectedHandler } }) => {
+        cell: ({ row }) => {
           return (
             <Checkbox
-              id={`table-cell-${index}`}
-              checked={getIsSelected()}
-              onChange={getToggleSelectedHandler()}
-              onClick={getToggleSelectedHandler()}
+              id={`table-cell-${row.index}`}
+              checked={row.getIsSelected()}
+              onChange={row.getToggleSelectedHandler()}
+              onClick={row.getToggleSelectedHandler()}
             ></Checkbox>
           );
         },

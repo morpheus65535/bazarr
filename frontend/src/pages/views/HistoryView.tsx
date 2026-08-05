@@ -1,9 +1,9 @@
 import { Container } from "@mantine/core";
 import { useDocumentTitle } from "@mantine/hooks";
-import { ColumnDef } from "@tanstack/react-table";
 import { useInstanceName } from "@/apis/hooks/site";
 import { UsePaginationQueryResult } from "@/apis/queries/hooks";
 import { QueryPageTable } from "@/components";
+import { AppColumnDef as ColumnDef } from "@/components/tables/features";
 
 interface Props<T extends History.Base> {
   name: string;

@@ -1,13 +1,13 @@
 import { FunctionComponent, useCallback, useMemo } from "react";
 import { Badge, Button, Group } from "@mantine/core";
 import { faTrash, faWrench } from "@fortawesome/free-solid-svg-icons";
-import { ColumnDef } from "@tanstack/react-table";
 import { cloneDeep, includes, maxBy } from "lodash";
 import { Action } from "@/components";
 import {
   anyCutoff,
   ProfileEditModal,
 } from "@/components/forms/ProfileEditForm";
+import { AppColumnDef as ColumnDef } from "@/components/tables/features";
 import SimpleTable from "@/components/tables/SimpleTable";
 import { useModals } from "@/modules/modals";
 import { languageProfileKey } from "@/pages/Settings/keys";

@@ -1,17 +1,18 @@
 import { MutableRefObject, useEffect, useMemo, useRef } from "react";
-import {
-  getCoreRowModel,
-  Row,
-  Table,
-  TableOptions,
-  useReactTable,
-} from "@tanstack/react-table";
+import { useTable } from "@tanstack/react-table";
 import BaseTable, { TableStyleProps } from "@/components/tables/BaseTable";
+import {
+  AppRow as Row,
+  AppTable as Table,
+  appTableFeatures,
+  AppTableOptions as TableOptions,
+  RowData,
+} from "@/components/tables/features";
 import { usePageSize } from "@/utilities/storage";
 
-export type SimpleTableProps<T extends object> = Omit<
+export type SimpleTableProps<T extends RowData> = Omit<
   TableOptions<T>,
-  "getCoreRowModel"
+  "features"
 > & {
   instanceRef?: MutableRefObject<Table<T> | null>;
   tableStyles?: TableStyleProps<T>;
@@ -19,7 +20,7 @@ export type SimpleTableProps<T extends object> = Omit<
   onAllRowsExpandedChanged?: (isAllRowsExpanded: boolean) => void;
 };
 
-export default function SimpleTable<T extends object>(
+export default function SimpleTable<T extends RowData>(
   props: SimpleTableProps<T>,
 ) {
   const {
@@ -32,9 +33,9 @@ export default function SimpleTable<T extends object>(
 
   const pageSize = usePageSize();
 
-  const instance = useReactTable({
+  const instance = useTable({
+    features: appTableFeatures,
     ...options,
-    getCoreRowModel: getCoreRowModel(),
     autoResetPageIndex: false,
     autoResetExpanded: false,
     pageCount: pageSize,
