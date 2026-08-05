@@ -104,20 +104,22 @@ export const Check: FunctionComponent<CheckProps> = ({ label, ...props }) => {
 export type SelectorProps<T extends string | number> = BaseInput<T> &
   GlobalSelectorProps<T>;
 
-export function Selector<T extends string | number>(props: SelectorProps<T>) {
+export const Selector = <T extends string | number>(
+  props: SelectorProps<T>,
+) => {
   const { value, update, rest } = useBaseInput(props);
 
   return (
     <GlobalSelector {...rest} value={value} onChange={update}></GlobalSelector>
   );
-}
+};
 
 export type MultiSelectorProps<T extends string | number> = BaseInput<T[]> &
   GlobalMultiSelectorProps<T>;
 
-export function MultiSelector<T extends string | number>(
+export const MultiSelector = <T extends string | number>(
   props: MultiSelectorProps<T>,
-) {
+) => {
   const { value, update, rest } = useBaseInput(props);
 
   return (
@@ -127,7 +129,7 @@ export function MultiSelector<T extends string | number>(
       onChange={update}
     ></GlobalMultiSelector>
   );
-}
+};
 
 type SliderProps = BaseInput<number> &
   Omit<MantineSliderProps, "onChange" | "onChangeEnd" | "marks" | "label"> & {

@@ -44,7 +44,7 @@ const baseSettings = {
   },
 } as unknown as Settings;
 
-function setupMocks() {
+const setupMocks = () => {
   mockedUseSystemSettings.mockReturnValue({
     data: baseSettings,
     isLoading: false,
@@ -54,12 +54,12 @@ function setupMocks() {
     mutate: vitest.fn(),
     isPending: false,
   });
-}
+};
 
-function renderPage() {
+const renderPage = () => {
   setupMocks();
   return customRender(<SettingsSubtitlesView />);
-}
+};
 
 describe("SettingsSubtitlesView", () => {
   beforeEach(() => {

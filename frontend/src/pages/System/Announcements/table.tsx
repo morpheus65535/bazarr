@@ -95,11 +95,11 @@ interface LabelProps {
   children: string;
 }
 
-function Label(props: LabelProps): JSX.Element {
+const Label = (props: LabelProps): JSX.Element => {
   const { link, children } = props;
   return (
     <Anchor href={link} target="_blank" rel="noopener noreferrer">
       {children}
     </Anchor>
   );
-}
+};

@@ -60,7 +60,7 @@ const HistoryStats = lazy(
 );
 const SystemStatusView = lazy(() => import("@/pages/System/Status"));
 
-function useRoutes(): CustomRouteObject[] {
+const useRoutes = (): CustomRouteObject[] => {
   const { data } = useBadges();
   const { sonarr, radarr } = useEnabledStatus();
 
@@ -327,7 +327,7 @@ function useRoutes(): CustomRouteObject[] {
       sonarr,
     ],
   );
-}
+};
 
 const RouterItemContext = createContext<CustomRouteObject[]>([]);
 
@@ -350,6 +350,4 @@ export const Router: FunctionComponent = () => {
   );
 };
 
-export function useRouteItems() {
-  return useContext(RouterItemContext);
-}
+export const useRouteItems = () => useContext(RouterItemContext);

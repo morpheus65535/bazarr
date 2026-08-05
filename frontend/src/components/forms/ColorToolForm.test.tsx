@@ -40,9 +40,9 @@ describe("ColorToolForm", () => {
     vitest.clearAllMocks();
   });
 
-  function renderForm(
+  const renderForm = (
     props?: Partial<React.ComponentProps<typeof ColorToolForm>>,
-  ) {
+  ) => {
     const closeSelf = vitest.fn();
     mockUseModals.mockReturnValue({
       closeSelf,
@@ -54,7 +54,7 @@ describe("ColorToolForm", () => {
     customRender(<ColorToolForm selections={[selection]} {...props} />);
 
     return { closeSelf };
-  }
+  };
 
   it("submits the form and creates a color task", async () => {
     const onSubmit = vitest.fn();

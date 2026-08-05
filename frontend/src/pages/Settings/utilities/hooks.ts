@@ -22,7 +22,7 @@ export type SettingValueOptions<T> = {
   onSubmit?: (value: T) => unknown;
 };
 
-export function useBaseInput<T, V>(props: T & BaseInput<V>) {
+export const useBaseInput = <T, V>(props: T & BaseInput<V>) => {
   const { settingKey, settingOptions, ...rest } = props;
   // TODO: Opti options
   const value = useSettingValue<V>(settingKey, settingOptions);
@@ -40,12 +40,12 @@ export function useBaseInput<T, V>(props: T & BaseInput<V>) {
   );
 
   return { value, update, rest };
-}
+};
 
-export function useSettingValue<T>(
+export const useSettingValue = <T>(
   key: string,
   options?: SettingValueOptions<T>,
-): Readonly<Nullable<T>> {
+): Readonly<Nullable<T>> => {
   const settings = useSettings();
 
   const optionsRef = useRef(options);
@@ -80,13 +80,13 @@ export function useSettingValue<T>(
   } else {
     return originalValue;
   }
-}
+};
 
-export function useUpdateArray<T>(
+export const useUpdateArray = <T>(
   key: string,
   current: Readonly<T[]>,
   compare: keyof T,
-) {
+) => {
   const { setValue } = useFormActions();
   const stagedValue = useStagedValues();
 
@@ -108,4 +108,4 @@ export function useUpdateArray<T>(
     },
     [staged, setValue, key],
   );
-}
+};

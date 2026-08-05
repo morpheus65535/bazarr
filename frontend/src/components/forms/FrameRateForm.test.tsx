@@ -40,9 +40,9 @@ describe("FrameRateForm", () => {
     vitest.clearAllMocks();
   });
 
-  function renderForm(
+  const renderForm = (
     props?: Partial<React.ComponentProps<typeof FrameRateForm>>,
-  ) {
+  ) => {
     const closeSelf = vitest.fn();
     mockUseModals.mockReturnValue({
       closeSelf,
@@ -54,7 +54,7 @@ describe("FrameRateForm", () => {
     customRender(<FrameRateForm selections={[selection]} {...props} />);
 
     return { closeSelf };
-  }
+  };
 
   it("submits the form and creates a task for each selection", async () => {
     const onSubmit = vitest.fn();

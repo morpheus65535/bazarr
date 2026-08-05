@@ -16,12 +16,12 @@ describe("StateIcon", () => {
     mockUseMediaQuery.mockReturnValue(false);
   });
 
-  async function openPopover(container: HTMLElement) {
+  const openPopover = async (container: HTMLElement) => {
     // eslint-disable-next-line testing-library/no-node-access
     const svg = container.querySelector("svg");
     expect(svg).toBeTruthy();
     await userEvent.click(svg!);
-  }
+  };
 
   it("renders the ok icon variant and popover matches", async () => {
     const { container } = customRender(

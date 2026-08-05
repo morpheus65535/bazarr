@@ -38,9 +38,9 @@ type ToolboxMutateButtonProps<R, T extends () => Promise<R>> = {
   onSuccess?: (item: R) => void;
 } & Omit<ToolboxButtonProps, "onClick" | "loading">;
 
-export function ToolboxMutateButton<R, T extends () => Promise<R>>(
+export const ToolboxMutateButton = <R, T extends () => Promise<R>>(
   props: PropsWithChildren<ToolboxMutateButtonProps<R, T>>,
-): JSX.Element {
+): JSX.Element => {
   const { promise, onSuccess, ...button } = props;
 
   const [loading, setLoading] = useState(false);
@@ -62,6 +62,6 @@ export function ToolboxMutateButton<R, T extends () => Promise<R>>(
       {...button}
     ></ToolboxButton>
   );
-}
+};
 
 export default ToolboxButton;

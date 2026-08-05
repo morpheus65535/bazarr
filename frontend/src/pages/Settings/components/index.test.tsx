@@ -25,13 +25,12 @@ const providerSettings = {
   },
 } as unknown as Settings;
 
-function createForm(): UseFormReturnType<FormValues> {
-  return {
+const createForm = (): UseFormReturnType<FormValues> =>
+  ({
     values: { settings: {}, hooks: {} },
-  } as unknown as UseFormReturnType<FormValues>;
-}
+  }) as unknown as UseFormReturnType<FormValues>;
 
-function renderWithSettings(ui: ReactElement, settings: Settings) {
+const renderWithSettings = (ui: ReactElement, settings: Settings) => {
   const form = createForm();
   return render(
     <AllProviders>
@@ -40,7 +39,7 @@ function renderWithSettings(ui: ReactElement, settings: Settings) {
       </SettingsProvider>
     </AllProviders>,
   );
-}
+};
 
 describe("Settings test buttons", () => {
   it("URLTestButton tests the URL and shows the version", async () => {

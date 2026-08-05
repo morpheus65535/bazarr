@@ -10,9 +10,8 @@ import FormUtils from "@/utilities/form";
 
 const TaskName = "Changing Time";
 
-function convertToAction(h: number, m: number, s: number, ms: number) {
-  return `shift_offset(h=${h},m=${m},s=${s},ms=${ms})`;
-}
+const convertToAction = (h: number, m: number, s: number, ms: number) =>
+  `shift_offset(h=${h},m=${m},s=${s},ms=${ms})`;
 
 interface Props {
   selections: FormType.ModifySubtitle[];

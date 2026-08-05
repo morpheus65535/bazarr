@@ -89,14 +89,14 @@ const baseProfiles: Language.Profile[] = [
   },
 ];
 
-function setupMocks(
+const setupMocks = (
   overrides?: {
     settings?: Partial<typeof baseSettings>;
     languages?: Language.Server[];
     profiles?: Language.Profile[];
   },
   mutate?: ReturnType<typeof vitest.fn>,
-) {
+) => {
   const languageOverrides = overrides?.settings?.languages;
   const settings = {
     ...baseSettings,
@@ -138,19 +138,19 @@ function setupMocks(
     isLoading: false,
     isRefetching: false,
   });
-}
+};
 
-function renderPage(
+const renderPage = (
   overrides?: {
     settings?: Partial<typeof baseSettings>;
     languages?: Language.Server[];
     profiles?: Language.Profile[];
   },
   mutate?: ReturnType<typeof vitest.fn>,
-) {
+) => {
   setupMocks(overrides, mutate);
   return customRender(<SettingsLanguagesView />);
-}
+};
 
 describe("SettingsLanguagesView", () => {
   beforeEach(() => {

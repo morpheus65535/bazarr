@@ -42,12 +42,12 @@ const baseSettings = {
   },
 } as unknown as Settings;
 
-function setupMocks(
+const setupMocks = (
   logs: System.Log[] = [],
   settings?: Partial<Settings>,
   refetch?: ReturnType<typeof vitest.fn>,
   mutate?: ReturnType<typeof vitest.fn>,
-) {
+) => {
   mockedUseSystemLogs.mockReturnValue({
     data: logs,
     isLoading: false,
@@ -65,17 +65,17 @@ function setupMocks(
     isRefetching: false,
   });
   mockedUseInstanceName.mockReturnValue("Bazarr");
-}
+};
 
-function renderPage(
+const renderPage = (
   logs: System.Log[] = [],
   settings?: Partial<Settings>,
   refetch?: ReturnType<typeof vitest.fn>,
   mutate?: ReturnType<typeof vitest.fn>,
-) {
+) => {
   setupMocks(logs, settings, refetch, mutate);
   return customRender(<SystemLogsView />);
-}
+};
 
 describe("SystemLogsView", () => {
   beforeEach(() => {

@@ -43,8 +43,8 @@ export interface ToolOptions {
   }>;
 }
 
-export function useTools() {
-  return useMemo<ToolOptions[]>(
+export const useTools = () =>
+  useMemo<ToolOptions[]>(
     () => [
       {
         key: "preview",
@@ -126,7 +126,6 @@ export function useTools() {
     ],
     [],
   );
-}
 
 interface Props {
   selections: FormType.ModifySubtitle[];

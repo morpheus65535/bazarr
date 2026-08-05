@@ -29,7 +29,7 @@ const baseSettings = {
   },
 };
 
-function setupMocks(overrides?: Partial<typeof baseSettings>) {
+const setupMocks = (overrides?: Partial<typeof baseSettings>) => {
   mockedUseSystemSettings.mockReturnValue({
     data: {
       ...baseSettings,
@@ -42,12 +42,12 @@ function setupMocks(overrides?: Partial<typeof baseSettings>) {
     mutate: vitest.fn(),
     isPending: false,
   });
-}
+};
 
-function renderPage(overrides?: Partial<typeof baseSettings>) {
+const renderPage = (overrides?: Partial<typeof baseSettings>) => {
   setupMocks(overrides);
   return customRender(<SettingsProvidersView />);
-}
+};
 
 describe("SettingsProvidersView", () => {
   beforeEach(() => {
@@ -128,9 +128,8 @@ describe("SettingsProvidersView", () => {
     ).toBeInTheDocument();
   });
 
-  function getEnabledProviderAddButton() {
-    return screen.getAllByRole("button", { name: "Add" })[0];
-  }
+  const getEnabledProviderAddButton = () =>
+    screen.getAllByRole("button", { name: "Add" })[0];
 
   it("should open the provider modal for an enabled provider", async () => {
     renderPage({

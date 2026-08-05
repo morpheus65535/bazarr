@@ -45,7 +45,7 @@ const languages = [
   { code2: "zz", name: "Zzz" },
 ] as Language.Info[];
 
-function renderForm(translatorType: string, geminiModel?: string) {
+const renderForm = (translatorType: string, geminiModel?: string) => {
   mockUseSystemSettings.mockReturnValue({
     data: {
       general: { theme: "dark" },
@@ -67,7 +67,7 @@ function renderForm(translatorType: string, geminiModel?: string) {
   } as unknown as ReturnType<typeof useModals>);
 
   customRender(<TranslationForm selections={[selection]} />);
-}
+};
 
 describe("TranslationForm", () => {
   it("renders the Google Translate service text", () => {

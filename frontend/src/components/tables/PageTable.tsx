@@ -17,7 +17,7 @@ type Props<T extends RowData> = Omit<TableOptions<T>, "features"> & {
   autoScroll?: boolean;
 };
 
-export default function PageTable<T extends RowData>(props: Props<T>) {
+const PageTable = <T extends RowData>(props: Props<T>) => {
   const { instanceRef, autoScroll, ...options } = props;
 
   const pageSize = usePageSize();
@@ -59,4 +59,6 @@ export default function PageTable<T extends RowData>(props: Props<T>) {
       ></PageControl>
     </>
   );
-}
+};
+
+export default PageTable;

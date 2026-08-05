@@ -130,10 +130,10 @@ type HookOverrides = {
   pinCheck?: Record<string, unknown>;
 };
 
-function setupMocks(
+const setupMocks = (
   overrides?: Record<string, unknown>,
   hookOverrides?: HookOverrides,
-) {
+) => {
   mockedUseSystemSettings.mockReturnValue({
     data: { ...baseSettings, ...overrides } as unknown as Settings,
     isLoading: false,
@@ -219,12 +219,12 @@ function setupMocks(
     },
     ...hookOverrides?.autopulse,
   });
-}
+};
 
-async function renderPage(
+const renderPage = async (
   overrides?: Record<string, unknown>,
   hookOverrides?: HookOverrides,
-) {
+) => {
   setupMocks(overrides, hookOverrides);
   const utils = customRender(<SettingsPlexView />);
   // Flush microtasks from void promises and Mantine Popover transitions
@@ -234,7 +234,7 @@ async function renderPage(
     await Promise.resolve();
   });
   return utils;
-}
+};
 
 describe("SettingsPlexView", async () => {
   beforeEach(() => {

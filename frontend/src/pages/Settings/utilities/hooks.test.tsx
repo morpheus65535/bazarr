@@ -10,27 +10,26 @@ import {
 } from "@/pages/Settings/utilities/hooks";
 import { SettingsProvider } from "@/pages/Settings/utilities/SettingsProvider";
 
-function createForm(
+const createForm = (
   values: FormValues = { settings: {}, hooks: {} },
   setValues = vitest.fn(),
-): UseFormReturnType<FormValues> {
-  return {
+): UseFormReturnType<FormValues> =>
+  ({
     values,
     setValues,
-  } as unknown as UseFormReturnType<FormValues>;
-}
+  }) as unknown as UseFormReturnType<FormValues>;
 
-function createWrapper(
+const createWrapper = (
   form: UseFormReturnType<FormValues>,
   settings: Settings,
-) {
+) => {
   const Wrapper: FunctionComponent<PropsWithChildren> = ({ children }) => (
     <SettingsProvider value={settings}>
       <FormContext.Provider value={form}>{children}</FormContext.Provider>
     </SettingsProvider>
   );
   return Wrapper;
-}
+};
 
 describe("Settings hooks", () => {
   const settings = {

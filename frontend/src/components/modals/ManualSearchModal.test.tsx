@@ -32,16 +32,15 @@ describe("ManualSearchModal", () => {
     vitest.clearAllMocks();
   });
 
-  function createMockQuery(
+  const createMockQuery = (
     results: SearchResultType[] | undefined,
     isFetching = false,
-  ) {
-    return {
+  ) =>
+    ({
       data: results,
       isFetching,
       refetch: vitest.fn(),
-    } as unknown as UseQueryResult<SearchResultType[] | undefined>;
-  }
+    }) as unknown as UseQueryResult<SearchResultType[] | undefined>;
 
   it("renders the item info and search button", () => {
     const query = vitest.fn().mockReturnValue(createMockQuery(undefined));

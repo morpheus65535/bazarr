@@ -21,7 +21,7 @@ type QueryShape = {
   controls: { gotoPage: (page: number) => void };
 };
 
-function createQuery(overrides?: Partial<QueryShape>) {
+const createQuery = (overrides?: Partial<QueryShape>) => {
   const gotoPage = vitest.fn();
 
   const baseQuery: QueryShape = {
@@ -43,7 +43,7 @@ function createQuery(overrides?: Partial<QueryShape>) {
     } as unknown as UsePaginationQueryResult<Row>,
     gotoPage,
   };
-}
+};
 
 const columns = [{ header: "Name", accessorKey: "name" }];
 

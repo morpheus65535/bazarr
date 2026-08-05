@@ -11,7 +11,7 @@ type Props<T extends RowData> = Omit<SimpleTableProps<T>, "data"> & {
   query: UsePaginationQueryResult<T>;
 };
 
-export default function QueryPageTable<T extends RowData>(props: Props<T>) {
+const QueryPageTable = <T extends RowData>(props: Props<T>) => {
   const { query, ...remain } = props;
 
   const {
@@ -44,4 +44,6 @@ export default function QueryPageTable<T extends RowData>(props: Props<T>) {
       ></PageControl>
     </LoadingProvider>
   );
-}
+};
+
+export default QueryPageTable;

@@ -2,16 +2,16 @@ import { Dispatch } from "react";
 import { difference, differenceWith } from "lodash";
 import { isEpisode, isMovie, isSeries } from "./validate";
 
-export function toggleState(
+export const toggleState = (
   dispatch: Dispatch<boolean>,
   wait: number,
   start = false,
-) {
+) => {
   dispatch(!start);
   setTimeout(() => dispatch(start), wait);
-}
+};
 
-export function GetItemId<T extends object>(item: T): number | undefined {
+export const GetItemId = <T extends object>(item: T): number | undefined => {
   if (isMovie(item)) {
     return item.radarrId;
   } else if (isEpisode(item)) {
@@ -21,30 +21,28 @@ export function GetItemId<T extends object>(item: T): number | undefined {
   } else {
     return undefined;
   }
-}
+};
 
-export function BuildKey(...args: unknown[]) {
-  return args.join("-");
-}
+export const BuildKey = (...args: unknown[]) => args.join("-");
 
-export function Reload() {
+export const Reload = () => {
   window.location.reload();
-}
+};
 
-export function ScrollToTop() {
+export const ScrollToTop = () => {
   window.scrollTo(0, 0);
-}
+};
 
 const pathReplaceReg = new RegExp("/{1,}", "g");
-export function pathJoin(...parts: string[]) {
+export const pathJoin = (...parts: string[]) => {
   const separator = "/";
   return parts.join(separator).replace(pathReplaceReg, separator);
-}
+};
 
-export function filterSubtitleBy(
+export const filterSubtitleBy = (
   subtitles: Subtitle[],
   languages: Language.Info[],
-): Subtitle[] {
+): Subtitle[] => {
   if (languages.length === 0) {
     return subtitles.filter((subtitle) => {
       return subtitle.path !== null;
@@ -57,15 +55,13 @@ export function filterSubtitleBy(
     );
     return difference(subtitles, result);
   }
-}
+};
 
-export function fromPython(value: PythonBoolean | undefined): boolean {
-  return value === "True";
-}
+export const fromPython = (value: PythonBoolean | undefined): boolean =>
+  value === "True";
 
-export function toPython(value: boolean): PythonBoolean {
-  return value ? "True" : "False";
-}
+export const toPython = (value: boolean): PythonBoolean =>
+  value ? "True" : "False";
 
 export * from "./env";
 export * from "./hooks";

@@ -19,21 +19,21 @@ import { Message } from "./Message";
 
 type SupportType = "sonarr" | "radarr";
 
-function getSupportKey(type: SupportType) {
+const getSupportKey = (type: SupportType) => {
   if (type === "sonarr") {
     return pathMappingsKey;
   } else {
     return pathMappingsMovieKey;
   }
-}
+};
 
-function getEnabledKey(type: SupportType) {
+const getEnabledKey = (type: SupportType) => {
   if (type === "sonarr") {
     return seriesEnabledKey;
   } else {
     return moviesEnabledKey;
   }
-}
+};
 
 interface PathMappingItem {
   from: string;

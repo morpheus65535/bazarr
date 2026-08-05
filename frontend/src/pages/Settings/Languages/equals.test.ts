@@ -13,10 +13,10 @@ describe("Equals Parser", () => {
       expected: LanguageEqualImmediateData;
     }
 
-    function testParsedResult(
+    const testParsedResult = (
       text: string,
       expected: LanguageEqualImmediateData,
-    ) {
+    ) => {
       const result = decodeEqualData(text);
 
       if (result === undefined) {
@@ -28,7 +28,7 @@ describe("Equals Parser", () => {
         result,
         `${text} does not match with the expected equal data`,
       ).toStrictEqual(expected);
-    }
+    };
 
     const testValues: TestData[] = [
       {
@@ -182,14 +182,14 @@ describe("Equals Parser", () => {
       },
     ];
 
-    function testEncodeResult({ source, expected }: TestData) {
+    const testEncodeResult = ({ source, expected }: TestData) => {
       const encoded = encodeEqualData(source);
 
       expect(
         encoded,
         `Encoded result '${encoded}' is not matched to '${expected}'`,
       ).toEqual(expected);
-    }
+    };
 
     testValues.forEach(testEncodeResult);
   });

@@ -5,15 +5,14 @@ import { describe, expect, it, vitest } from "vitest";
 import { customRender, screen } from "@/tests";
 import MutateAction from "./MutateAction";
 
-function makeMutation(
+const makeMutation = (
   mutateAsync: () => Promise<string> = vitest
     .fn()
     .mockResolvedValue("result") as unknown as () => Promise<string>,
-) {
-  return {
+) =>
+  ({
     mutateAsync,
-  } as unknown as UseMutationResult<string, unknown, string>;
-}
+  }) as unknown as UseMutationResult<string, unknown, string>;
 
 describe("MutateAction", () => {
   it("calls the mutation and onSuccess when clicked", async () => {

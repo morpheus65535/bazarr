@@ -8,9 +8,8 @@ import FormUtils from "@/utilities/form";
 
 const TaskName = "Changing Frame Rate";
 
-function convertToAction(from: number, to: number) {
-  return `change_FPS(from=${from},to=${to})`;
-}
+const convertToAction = (from: number, to: number) =>
+  `change_FPS(from=${from},to=${to})`;
 
 interface Props {
   selections: FormType.ModifySubtitle[];

@@ -86,9 +86,7 @@ export const adaptiveSearchingDeltaOption: SelectorOption<string>[] = [
   },
 ];
 
-function buildColor(name: string) {
-  return `color(name=${name})`;
-}
+const buildColor = (name: string) => `color(name=${name})`;
 
 export const colorOptions: SelectorOption<string>[] = [
   {

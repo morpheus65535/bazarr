@@ -22,7 +22,7 @@ import { LanguageSelector, ProfileSelector } from "./components";
 import EqualsTable from "./equals";
 import Table from "./table";
 
-export function useLatestEnabledLanguages() {
+export const useLatestEnabledLanguages = () => {
   const { data } = useEnabledLanguages();
   const latest = useSettingValue<Language.Info[]>(enabledLanguageKey);
 
@@ -31,9 +31,9 @@ export function useLatestEnabledLanguages() {
   } else {
     return data;
   }
-}
+};
 
-export function useLatestProfiles() {
+export const useLatestProfiles = () => {
   const { data = [] } = useLanguageProfiles();
   const latest = useSettingValue<Language.Profile[]>(languageProfileKey);
 
@@ -42,7 +42,7 @@ export function useLatestProfiles() {
   } else {
     return data;
   }
-}
+};
 
 const SettingsLanguagesView: FunctionComponent = () => {
   const { data: languages } = useLanguages();

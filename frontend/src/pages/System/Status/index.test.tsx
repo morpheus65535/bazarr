@@ -41,10 +41,10 @@ const baseStatus: System.Status = {
   cpu_cores: 4,
 };
 
-function setupMocks(
+const setupMocks = (
   health: System.Health[] = [],
   status: Partial<System.Status> = {},
-) {
+) => {
   mockedUseSystemHealth.mockReturnValue({
     data: health,
     isLoading: false,
@@ -57,15 +57,15 @@ function setupMocks(
     isLoading: false,
   });
   mockedUseInstanceName.mockReturnValue("Bazarr");
-}
+};
 
-function renderPage(
+const renderPage = (
   health: System.Health[] = [],
   status: Partial<System.Status> = {},
-) {
+) => {
   setupMocks(health, status);
   return customRender(<SystemStatusView />);
-}
+};
 
 describe("SystemStatusView", () => {
   beforeEach(() => {

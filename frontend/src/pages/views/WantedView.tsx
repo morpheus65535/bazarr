@@ -14,12 +14,12 @@ interface Props<T extends Wanted.Base> {
   searchAll: () => Promise<void>;
 }
 
-function WantedView<T extends Wanted.Base>({
+const WantedView = <T extends Wanted.Base>({
   name,
   columns,
   query,
   searchAll,
-}: Props<T>) {
+}: Props<T>) => {
   const dataCount = query.paginationStatus.totalCount;
   const hasTask = useIsAnyActionRunning();
 
@@ -43,6 +43,6 @@ function WantedView<T extends Wanted.Base>({
       ></QueryPageTable>
     </Container>
   );
-}
+};
 
 export default WantedView;

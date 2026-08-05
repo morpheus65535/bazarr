@@ -25,18 +25,17 @@ const disabledSonarrSettings = {
   },
 } as unknown as Settings;
 
-function createForm(
+const createForm = (
   values: FormValues = { settings: {}, hooks: {} },
   setValues = vitest.fn(),
-): UseFormReturnType<FormValues> {
-  return { values, setValues } as unknown as UseFormReturnType<FormValues>;
-}
+): UseFormReturnType<FormValues> =>
+  ({ values, setValues }) as unknown as UseFormReturnType<FormValues>;
 
-function renderTable(
+const renderTable = (
   type: "sonarr" | "radarr",
   settings: Settings,
   setValues = vitest.fn(),
-) {
+) => {
   const form = createForm({ settings: {}, hooks: {} }, setValues);
 
   return render(
@@ -48,7 +47,7 @@ function renderTable(
       </SettingsProvider>
     </AllProviders>,
   );
-}
+};
 
 describe("PathMappingTable", () => {
   it("renders a message when the feature is disabled", () => {

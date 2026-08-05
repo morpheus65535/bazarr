@@ -35,7 +35,7 @@ interface Props<T extends SupportType> {
   item: T;
 }
 
-function ManualSearchView<T extends SupportType>(props: Props<T>) {
+const ManualSearchView = <T extends SupportType>(props: Props<T>) => {
   const { download, query: useSearch, item } = props;
 
   const [searchStarted, setSearchStarted] = useState(false);
@@ -244,7 +244,7 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
       </Button>
     </Stack>
   );
-}
+};
 
 export const MovieSearchModal = withModal<Props<Item.Movie>>(
   ManualSearchView,

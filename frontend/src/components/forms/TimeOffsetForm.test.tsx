@@ -40,9 +40,9 @@ describe("TimeOffsetForm", () => {
     vitest.clearAllMocks();
   });
 
-  function renderForm(
+  const renderForm = (
     props?: Partial<React.ComponentProps<typeof TimeOffsetForm>>,
-  ) {
+  ) => {
     const closeSelf = vitest.fn();
     mockUseModals.mockReturnValue({
       closeSelf,
@@ -54,7 +54,7 @@ describe("TimeOffsetForm", () => {
     customRender(<TimeOffsetForm selections={[selection]} {...props} />);
 
     return { closeSelf };
-  }
+  };
 
   it("submits the form with a positive offset", async () => {
     const onSubmit = vitest.fn();

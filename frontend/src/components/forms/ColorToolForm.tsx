@@ -9,9 +9,7 @@ import FormUtils from "@/utilities/form";
 
 const TaskName = "Changing Color";
 
-function convertToAction(color: string) {
-  return `color(name=${color})`;
-}
+const convertToAction = (color: string) => `color(name=${color})`;
 
 export const colorOptions: SelectorOption<string>[] = [
   {

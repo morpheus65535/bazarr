@@ -11,11 +11,11 @@ interface Props<T extends History.Base> {
   columns: ColumnDef<T>[];
 }
 
-function HistoryView<T extends History.Base = History.Base>({
+const HistoryView = <T extends History.Base = History.Base>({
   columns,
   name,
   query,
-}: Props<T>) {
+}: Props<T>) => {
   useDocumentTitle(`${name} History - ${useInstanceName()}`);
   return (
     <Container fluid px={0}>
@@ -26,6 +26,6 @@ function HistoryView<T extends History.Base = History.Base>({
       ></QueryPageTable>
     </Container>
   );
-}
+};
 
 export default HistoryView;
