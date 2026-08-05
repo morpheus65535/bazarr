@@ -13,7 +13,6 @@
   },
   "private": true,
   "dependencies": {
-    "@babel/plugin-transform-modules-systemjs": "^7.29.4",
     "@mantine/core": "^9.5.1",
     "@mantine/dropzone": "^9.5.1",
     "@mantine/form": "^9.4.1",
