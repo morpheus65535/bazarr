@@ -8,9 +8,13 @@ import { AudioList } from "@/components/bazarr";
 import LanguageProfileName from "@/components/bazarr/LanguageProfile";
 import { AppColumnDef as ColumnDef } from "@/components/tables/features";
 import MassEditor from "@/pages/views/MassEditor";
+import { useListQueryState } from "@/utilities";
 
 const SeriesMassEditor: FunctionComponent = () => {
-  const query = useSeries();
+  // Carry over the filters from the list page (preserved in the URL by the
+  // Mass Edit button) so the editor shows the same subset.
+  const { query: listState } = useListQueryState("series");
+  const query = useSeries(listState);
   const mutation = useSeriesModification();
 
   const columns = useMemo<ColumnDef<Item.Series>[]>(

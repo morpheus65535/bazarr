@@ -1,14 +1,33 @@
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vitest } from "vitest";
+import { beforeEach, describe, expect, it, vi, vitest } from "vitest";
 import { AppColumnDef as ColumnDef } from "@/components/tables/features";
 import { customRender, screen } from "@/tests";
 import ItemView from "./ItemView";
 
-const item = { title: "My Show", sonarrSeriesId: 1 } as Item.Series;
+vi.mock("@/apis/hooks", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/apis/hooks")>()),
+  useLanguageProfiles: () => ({ data: [] }),
+}));
+
+const item = {
+  title: "My Show",
+  sonarrSeriesId: 1,
+  tags: [],
+} as unknown as Item.Series;
 
 const columns: ColumnDef<Item.Series>[] = [
   { header: "Name", accessorKey: "title" },
 ];
+
+const filterConfig = {
+  sortFields: [{ value: "title", label: "Name" }],
+  filters: {
+    monitored: true,
+    missing: true,
+    profile: true,
+    tags: true,
+  },
+};
 
 const queryKey = ["test-item-view"];
 
@@ -23,6 +42,7 @@ const renderPoster = (item: Item.Series) => {
 describe("ItemView", () => {
   beforeEach(() => {
     window.localStorage.clear();
+    window.history.pushState({}, "", "/");
   });
 
   it("renders the table view by default", async () => {
@@ -33,6 +53,7 @@ describe("ItemView", () => {
         columns={columns}
         viewModeKey="test-view-mode"
         renderPoster={renderPoster}
+        filterConfig={filterConfig}
       ></ItemView>,
     );
 
@@ -50,9 +71,13 @@ describe("ItemView", () => {
         columns={columns}
         viewModeKey="test-view-mode"
         renderPoster={renderPoster}
+        filterConfig={filterConfig}
       ></ItemView>,
     );
 
+    await userEvent.click(
+      await screen.findByRole("button", { name: "View: table" }),
+    );
     await userEvent.click(await screen.findByText("Poster view"));
 
     expect(await screen.findByTestId("poster-card")).toBeInTheDocument();
@@ -72,6 +97,7 @@ describe("ItemView", () => {
         columns={columns}
         viewModeKey="test-view-mode"
         renderPoster={renderPoster}
+        filterConfig={filterConfig}
       ></ItemView>,
     );
 
@@ -88,9 +114,13 @@ describe("ItemView", () => {
         columns={columns}
         viewModeKey="test-view-mode"
         renderPoster={renderPoster}
+        filterConfig={filterConfig}
       ></ItemView>,
     );
 
+    await userEvent.click(
+      await screen.findByRole("button", { name: "View: poster" }),
+    );
     await userEvent.click(await screen.findByText("Table view"));
 
     expect(
@@ -99,12 +129,56 @@ describe("ItemView", () => {
     expect(screen.queryByTestId("poster-card")).not.toBeInTheDocument();
   });
 
+  it("sorts by clicking the column header", async () => {
+    customRender(
+      <ItemView
+        queryKey={queryKey}
+        queryFn={buildQueryFn()}
+        columns={columns}
+        viewModeKey="test-view-mode"
+        renderPoster={renderPoster}
+        filterConfig={filterConfig}
+      ></ItemView>,
+    );
+
+    const header = await screen.findByRole("columnheader", { name: "Name" });
+
+    await userEvent.click(header);
+    expect(window.location.search).toContain("sort_by=title");
+    expect(window.location.search).toContain("sort_order=asc");
+
+    await userEvent.click(header);
+    expect(window.location.search).toContain("sort_order=desc");
+  });
+
+  it("resets the page param when a filter changes", async () => {
+    window.history.pushState({}, "", "/?page=2");
+
+    customRender(
+      <ItemView
+        queryKey={queryKey}
+        queryFn={buildQueryFn()}
+        columns={columns}
+        viewModeKey="test-view-mode"
+        renderPoster={renderPoster}
+        filterConfig={filterConfig}
+      ></ItemView>,
+    );
+
+    await screen.findByRole("columnheader", { name: "Name" });
+    await userEvent.click(screen.getByText("Monitored"));
+
+    expect(window.location.search).toContain("monitored=true");
+    expect(window.location.search).not.toContain("page=");
+  });
+
   it("does not show the toggle without poster support", async () => {
     customRender(
       <ItemView
         queryKey={queryKey}
         queryFn={buildQueryFn()}
         columns={columns}
+        filterConfig={filterConfig}
       ></ItemView>,
     );
 

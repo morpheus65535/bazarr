@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router";
 import {
   InfiniteData,
@@ -35,6 +35,7 @@ export const usePaginationQuery = <
   queryKey: TQueryKey,
   queryFn: RangeQuery<TObject>,
   cacheIndividual = true,
+  query: Parameter.ListState = {},
 ): UsePaginationQueryResult<TObject> => {
   const client = useQueryClient();
 
@@ -44,17 +45,20 @@ export const usePaginationQuery = <
     searchParams.get("page") ? Number(searchParams.get("page")) - 1 : 0,
   );
 
+  const queryKeySuffix = useMemo(() => JSON.stringify(query), [query]);
+
   const pageSize = usePageSize();
 
   const start = page * pageSize;
 
   const results = useQuery({
-    queryKey: [...queryKey, QueryKeys.Range, { start, size: pageSize }],
+    queryKey: [...queryKey, QueryKeys.Range, { start, size: pageSize, query }],
 
     queryFn: () => {
-      const param: Parameter.Range = {
+      const param: Parameter.ListQuery = {
         start,
         length: pageSize,
+        ...query,
       };
       return queryFn(param);
     },
@@ -78,6 +82,7 @@ export const usePaginationQuery = <
     cacheIndividual,
     queryKey,
     page,
+    query,
   ]);
 
   const totalCount = data?.total ?? 0;
@@ -105,6 +110,18 @@ export const usePaginationQuery = <
       setIsPageLoading(false);
     }
   }, [results.isFetching]);
+
+  // Reset to the first page when the filter/sort query changes. The ref skips
+  // the effect on mount so a ?page= URL param is still honored on first load
+  // (useOnValueChange cannot be used here, it fires on mount).
+  const hasResetOnQueryChange = useRef(false);
+  useEffect(() => {
+    if (hasResetOnQueryChange.current) {
+      setIndex(0);
+    } else {
+      hasResetOnQueryChange.current = true;
+    }
+  }, [queryKeySuffix]);
 
   // Reset page index if we out of bound
   useEffect(() => {
@@ -159,6 +176,7 @@ export const useInfinitePaginationQuery = <
   queryKey: TQueryKey,
   queryFn: RangeQuery<TObject>,
   cacheIndividual = true,
+  query: Parameter.ListState = {},
 ): UseInfinitePaginationQueryResult<TObject> => {
   const client = useQueryClient();
 
@@ -171,12 +189,13 @@ export const useInfinitePaginationQuery = <
     QueryKey,
     number
   >({
-    queryKey: [...queryKey, QueryKeys.Range, { size: pageSize }],
+    queryKey: [...queryKey, QueryKeys.Range, { size: pageSize, query }],
 
     queryFn: ({ pageParam }) => {
-      const param: Parameter.Range = {
+      const param: Parameter.ListQuery = {
         start: pageParam,
         length: pageSize,
+        ...query,
       };
       return queryFn(param);
     },
@@ -202,7 +221,7 @@ export const useInfinitePaginationQuery = <
         });
       });
     }
-  }, [results.isSuccess, data, client, cacheIndividual, queryKey]);
+  }, [results.isSuccess, data, client, cacheIndividual, queryKey, query]);
 
   const { fetchNextPage: fetchNext, ...rest } = results;
   const { hasNextPage, isFetchingNextPage } = results;

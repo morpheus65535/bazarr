@@ -42,12 +42,26 @@ export const useSeriesById = (id: number) => {
   });
 };
 
-export const useSeries = () => {
+export const useSeries = (state: Parameter.ListState = {}) => {
   const client = useQueryClient();
 
+  // With an active filter/sort state (mass editor carrying over the list
+  // filters), use the filtered list endpoint; otherwise the plain full list.
+  const hasState = state.filters !== undefined || state.sortBy !== undefined;
+
   const query = useQuery({
-    queryKey: [QueryKeys.Series, QueryKeys.All],
-    queryFn: () => api.series.series(),
+    queryKey: [QueryKeys.Series, QueryKeys.All, state],
+    queryFn: async () => {
+      if (hasState) {
+        const response = await api.series.seriesBy({
+          start: 0,
+          length: -1,
+          ...state,
+        });
+        return response.data;
+      }
+      return api.series.series();
+    },
   });
 
   useEffect(() => {

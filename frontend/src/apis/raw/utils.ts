@@ -49,3 +49,40 @@ class RequestUtils {
 
 const requestUtils = new RequestUtils();
 export default requestUtils;
+
+// Maps the frontend list query state to the snake_case params expected by the
+// backend list endpoints (/series, /movies). Undefined values are dropped by
+// axios when building the query string.
+export const buildListParams = (
+  params: Parameter.ListQuery,
+): Record<string, unknown> => {
+  const { start, length, sortBy, sortOrder, filters } = params;
+  const result: Record<string, unknown> = { start, length };
+
+  if (sortBy) {
+    result.sort_by = sortBy;
+  }
+  if (sortOrder) {
+    result.sort_order = sortOrder;
+  }
+  if (filters) {
+    if (filters.monitored !== undefined) {
+      result.monitored = filters.monitored ? "true" : "false";
+    }
+    if (filters.missing !== undefined) {
+      result.missing = filters.missing ? "true" : "false";
+    }
+    if (filters.profileId !== undefined) {
+      // 0 means "items without a languages profile"
+      result.profileid = filters.profileId === 0 ? "none" : filters.profileId;
+    }
+    if (filters.audioLanguage !== undefined) {
+      result.audio_language = filters.audioLanguage;
+    }
+    if (filters.tags && filters.tags.length > 0) {
+      result.tags = filters.tags;
+    }
+  }
+
+  return result;
+};
