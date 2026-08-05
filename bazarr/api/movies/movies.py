@@ -12,7 +12,7 @@ from subtitles.mass_download import movies_download_subtitles
 from api.swaggerui import subtitles_model, subtitles_language_model, audio_language_model
 
 from api.utils import authenticate, None_Keys, postprocess, add_list_query_args, profile_filter_clause, \
-    tags_filter_clause, audio_language_filter_clause, apply_sort
+    monitored_filter_clause, tags_filter_clause, audio_language_filter_clause, apply_sort
 
 api_ns_movies = Namespace('Movies', description='List movies metadata, update movie languages profile or run actions '
                                                 'for specific movies.')
@@ -97,7 +97,7 @@ class Movies(Resource):
         if len(radarrId) != 0:
             where_clauses.append(TableMovies.radarrId.in_(radarrId))
         if monitored is not None:
-            where_clauses.append(TableMovies.monitored.is_(monitored == 'true'))
+            where_clauses.append(monitored_filter_clause(TableMovies.monitored, monitored))
         if profile_id is not None:
             where_clauses.append(profile_filter_clause(TableMovies.profileId, profile_id))
         if missing is not None:

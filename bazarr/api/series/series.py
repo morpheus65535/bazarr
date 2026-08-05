@@ -14,7 +14,7 @@ from app.event_handler import event_stream
 from api.swaggerui import subtitles_model, subtitles_language_model, audio_language_model
 
 from api.utils import authenticate, None_Keys, postprocess, add_list_query_args, profile_filter_clause, \
-    tags_filter_clause, audio_language_filter_clause, apply_sort
+    monitored_filter_clause, tags_filter_clause, audio_language_filter_clause, apply_sort
 
 api_ns_series = Namespace('Series', description='List series metadata, update series languages profile or run actions '
                                                 'for specific series.')
@@ -127,7 +127,7 @@ class Series(Resource):
         if len(seriesId) != 0:
             where_clauses.append(TableShows.sonarrSeriesId.in_(seriesId))
         if monitored is not None:
-            where_clauses.append(TableShows.monitored.is_(monitored == 'true'))
+            where_clauses.append(monitored_filter_clause(TableShows.monitored, monitored))
         if profile_id is not None:
             where_clauses.append(profile_filter_clause(TableShows.profileId, profile_id))
         if missing is not None:

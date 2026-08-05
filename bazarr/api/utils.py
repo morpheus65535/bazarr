@@ -50,6 +50,11 @@ def profile_filter_clause(column, value):
     return column == value
 
 
+def monitored_filter_clause(column, value):
+    # monitored is stored as the string 'True'/'False', not a boolean
+    return column == ('True' if value == 'true' else 'False')
+
+
 def tags_filter_clause(column, tags):
     # Tags are stored as a stringified list (e.g. "['tag1', 'tag2']"), match
     # any of the requested tags using the same pattern as get_exclusion_clause.
