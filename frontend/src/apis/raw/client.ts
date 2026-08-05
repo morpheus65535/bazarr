@@ -6,13 +6,16 @@ import { Environment } from "@/utilities";
 import { LOG } from "@/utilities/console";
 import { setAuthenticated } from "@/utilities/event";
 
-function GetErrorMessage(data: unknown, defaultMsg = "Unknown error"): string {
+const GetErrorMessage = (
+  data: unknown,
+  defaultMsg = "Unknown error",
+): string => {
   if (typeof data === "string") {
     return data;
   } else {
     return defaultMsg;
   }
-}
+};
 
 class BazarrClient {
   axios!: AxiosInstance;

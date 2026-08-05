@@ -49,11 +49,9 @@ const Selection = createContext<{
   },
 });
 
-function useSelection() {
-  return useContext(Selection);
-}
+const useSelection = () => useContext(Selection);
 
-function useBadgeValue(route: Route.Item) {
+const useBadgeValue = (route: Route.Item) => {
   const { badge, children } = route;
   return useMemo(() => {
     if (typeof badge === "string") {
@@ -78,9 +76,9 @@ function useBadgeValue(route: Route.Item) {
 
     return value === 0 ? undefined : value;
   }, [badge, children]);
-}
+};
 
-function useIsActive(parent: string, route: RouteObject) {
+const useIsActive = (parent: string, route: RouteObject) => {
   const { path, children } = route;
 
   const { pathname } = useLocation();
@@ -98,7 +96,7 @@ function useIsActive(parent: string, route: RouteObject) {
       paths.some((path) => matchPath(path, pathname)),
     [pathname, paths, root, selection],
   );
-}
+};
 
 const themeCycle: {
   scheme: MantineColorScheme;

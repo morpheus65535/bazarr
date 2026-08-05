@@ -47,9 +47,9 @@ describe("ItemEditForm", () => {
     vitest.clearAllMocks();
   });
 
-  function renderForm(
+  const renderForm = (
     props?: Partial<React.ComponentProps<typeof ItemEditForm>>,
-  ) {
+  ) => {
     const closeSelf = vitest.fn();
     mockUseModals.mockReturnValue({
       closeSelf,
@@ -84,7 +84,7 @@ describe("ItemEditForm", () => {
     );
 
     return { mutation, mutate, onComplete, onCancel, closeSelf };
-  }
+  };
 
   it("renders the form with the profile selector", () => {
     renderForm();

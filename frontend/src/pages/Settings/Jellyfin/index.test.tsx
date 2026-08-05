@@ -54,7 +54,7 @@ const baseSettings = {
   },
 };
 
-function setupMocks(overrides?: Partial<typeof baseSettings>) {
+const setupMocks = (overrides?: Partial<typeof baseSettings>) => {
   mockedUseSystemSettings.mockReturnValue({
     data: {
       ...baseSettings,
@@ -76,18 +76,18 @@ function setupMocks(overrides?: Partial<typeof baseSettings>) {
     mutate: mockMutate,
     isPending: false,
   });
-}
+};
 
-function renderPage(
+const renderPage = (
   overrides?: Partial<typeof baseSettings>,
   libraryQuery?: ReturnType<typeof mockedUseJellyfinLibrariesQuery>,
-) {
+) => {
   setupMocks(overrides);
   if (libraryQuery) {
     mockedUseJellyfinLibrariesQuery.mockReturnValue(libraryQuery);
   }
   return customRender(<SettingsJellyfinView />);
-}
+};
 
 describe("SettingsJellyfinView", () => {
   beforeEach(() => {

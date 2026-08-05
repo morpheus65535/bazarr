@@ -61,6 +61,10 @@ export default tseslint.config(
           selector: "VariableDeclaration[kind='let']",
           message: "Use const instead of let.",
         },
+        {
+          selector: "FunctionDeclaration",
+          message: "Use const instead of function declaration.",
+        },
       ],
     },
   },

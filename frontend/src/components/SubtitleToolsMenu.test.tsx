@@ -54,9 +54,9 @@ describe("SubtitleToolsMenu", () => {
     } as unknown as ReturnType<typeof useSubtitleAction>);
   });
 
-  function renderMenu(
+  const renderMenu = (
     props?: Partial<React.ComponentProps<typeof SubtitleToolsMenu>>,
-  ) {
+  ) => {
     const openContextModal = vitest.fn();
     const openConfirmModal = vitest.fn();
 
@@ -81,7 +81,7 @@ describe("SubtitleToolsMenu", () => {
     );
 
     return { openContextModal, openConfirmModal };
-  }
+  };
 
   it("processes a tool without a modal when clicked", async () => {
     renderMenu();

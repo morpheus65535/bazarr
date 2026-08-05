@@ -51,11 +51,7 @@ interface LineRowProps {
   view: ViewMode;
 }
 
-const SubtitleLineRow = memo(function SubtitleLineRow({
-  line,
-  highlight,
-  view,
-}: LineRowProps) {
+const SubtitleLineRow = memo(({ line, highlight, view }: LineRowProps) => {
   return (
     <Group className={styles.line} gap="md" align="flex-start" wrap="nowrap">
       <Text ff="monospace" size="xs" c="dimmed" className={styles.timestamp}>

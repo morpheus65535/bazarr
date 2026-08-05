@@ -12,11 +12,11 @@ export const StaticModals: ModalComponent[] = [];
 
 export const ModalIdContext = createContext<string | null>(null);
 
-export default function withModal<T extends {}>(
+const withModal = <T extends {}>(
   Content: FunctionComponent<T>,
   key: string,
   defaultSettings?: ModalSettings,
-) {
+) => {
   const Comp: ModalComponent<T> = (props) => {
     const { id, innerProps } = props;
 
@@ -31,4 +31,6 @@ export default function withModal<T extends {}>(
 
   StaticModals.push(Comp as ModalComponent);
   return Comp;
-}
+};
+
+export default withModal;

@@ -20,13 +20,11 @@ interface Props {
   profile?: Language.Profile;
 }
 
-function isSubtitleTrack(path: string | undefined | null) {
-  return !isString(path) || path.length === 0;
-}
+const isSubtitleTrack = (path: string | undefined | null) =>
+  !isString(path) || path.length === 0;
 
-function isSubtitleMissing(path: string | undefined | null) {
-  return path === missingText;
-}
+const isSubtitleMissing = (path: string | undefined | null) =>
+  path === missingText;
 
 const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
   const onlyDesired = useShowOnlyDesired();

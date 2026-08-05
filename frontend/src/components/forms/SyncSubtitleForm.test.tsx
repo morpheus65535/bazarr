@@ -59,9 +59,9 @@ describe("SyncSubtitleForm", () => {
     } as unknown as ReturnType<typeof useRefTracksByEpisodeId>);
   });
 
-  function renderForm(
+  const renderForm = (
     props?: Partial<React.ComponentProps<typeof SyncSubtitleForm>>,
-  ) {
+  ) => {
     const closeSelf = vitest.fn();
     mockUseModals.mockReturnValue({
       closeSelf,
@@ -70,7 +70,7 @@ describe("SyncSubtitleForm", () => {
     customRender(<SyncSubtitleForm selections={[selection]} {...props} />);
 
     return { closeSelf };
-  }
+  };
 
   it("renders the form and submits the sync", async () => {
     const mutateAsync = vitest.fn().mockResolvedValue(undefined);

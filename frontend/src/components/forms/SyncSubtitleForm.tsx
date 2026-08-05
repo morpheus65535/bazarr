@@ -27,11 +27,11 @@ import { notification } from "@/modules/task";
 import { syncMaxOffsetSecondsOptions } from "@/pages/Settings/Subtitles/options";
 import { fromPython, toPython } from "@/utilities";
 
-function useReferencedSubtitles(
+const useReferencedSubtitles = (
   mediaType: "episode" | "movie",
   id: number,
   subtitlesPath: string,
-) {
+) => {
   // We cannot call hooks conditionally, we rely on useQuery "enabled" option to do only the required API call
   const episodeData = useRefTracksByEpisodeId(
     subtitlesPath,
@@ -103,7 +103,7 @@ function useReferencedSubtitles(
 
     return subtitles;
   }
-}
+};
 
 interface Props {
   selections: FormType.ModifySubtitle[];

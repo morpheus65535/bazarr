@@ -7,11 +7,11 @@ import {
 
 const SettingsContext = createContext<Settings | null>(null);
 
-export function useSettings() {
+export const useSettings = () => {
   const context = useContext(SettingsContext);
 
   return context;
-}
+};
 
 type SettingsProviderProps = {
   value: Settings | null;

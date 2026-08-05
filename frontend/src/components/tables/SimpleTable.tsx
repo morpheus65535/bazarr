@@ -20,9 +20,7 @@ export type SimpleTableProps<T extends RowData> = Omit<
   onAllRowsExpandedChanged?: (isAllRowsExpanded: boolean) => void;
 };
 
-export default function SimpleTable<T extends RowData>(
-  props: SimpleTableProps<T>,
-) {
+const SimpleTable = <T extends RowData>(props: SimpleTableProps<T>) => {
   const {
     instanceRef,
     tableStyles,
@@ -63,4 +61,6 @@ export default function SimpleTable<T extends RowData>(
   }, [onAllRowsExpandedChanged, isAllRowsExpanded]);
 
   return <BaseTable tableStyles={tableStyles} instance={instance}></BaseTable>;
-}
+};
+
+export default SimpleTable;

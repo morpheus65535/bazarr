@@ -43,11 +43,11 @@ describe("hooks utilities", () => {
   });
 
   describe("useArrayAction", () => {
-    function useArrayActionWithState() {
+    const useArrayActionWithState = () => {
       const [data, setData] = useState<string[]>([]);
       const action = useArrayAction<string>(setData);
       return { data, action };
-    }
+    };
 
     it("adds rows", () => {
       const { result } = renderHook(() => useArrayActionWithState());

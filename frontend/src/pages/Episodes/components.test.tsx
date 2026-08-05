@@ -49,9 +49,9 @@ const embeddedSubtitle = {
   id: 2,
 } as Subtitle;
 
-function renderSubtitle(
+const renderSubtitle = (
   props?: Partial<React.ComponentProps<typeof Subtitle>>,
-) {
+) => {
   mockUseSubtitleAction.mockReturnValue({
     mutateAsync: vitest.fn(),
   } as unknown as ReturnType<typeof useSubtitleAction>);
@@ -77,7 +77,7 @@ function renderSubtitle(
       {...props}
     />,
   );
-}
+};
 
 describe("Subtitle", () => {
   it("renders an external subtitle", () => {

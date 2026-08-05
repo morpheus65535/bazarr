@@ -24,7 +24,7 @@ const defaultSettings = {
   general: { theme: "auto" },
 } as unknown as Settings;
 
-function Stager() {
+const Stager = () => {
   const { setValue } = useFormActions();
   return (
     <button
@@ -35,12 +35,12 @@ function Stager() {
       Stage
     </button>
   );
-}
+};
 
-function setupMocks(
+const setupMocks = (
   mutate = vitest.fn(),
   settings: Settings = defaultSettings,
-) {
+) => {
   mockedUseSystemSettings.mockReturnValue({
     data: settings,
     isLoading: false,
@@ -51,21 +51,21 @@ function setupMocks(
     isPending: false,
   });
   return mutate;
-}
+};
 
-function renderLayout(children: ReactNode, settings?: Settings) {
+const renderLayout = (children: ReactNode, settings?: Settings) => {
   const mutate = setupMocks(vitest.fn(), settings);
   return {
     mutate,
     ...customRender(<Layout name="Test">{children}</Layout>),
   };
-}
+};
 
-function renderLayoutModal(
+const renderLayoutModal = (
   children: ReactNode,
   callbackModal = vitest.fn(),
   settings?: Settings,
-) {
+) => {
   const mutate = setupMocks(vitest.fn(), settings);
   return {
     mutate,
@@ -74,7 +74,7 @@ function renderLayoutModal(
       <LayoutModal callbackModal={callbackModal}>{children}</LayoutModal>,
     ),
   };
-}
+};
 
 describe("Settings Layout", () => {
   beforeEach(() => {

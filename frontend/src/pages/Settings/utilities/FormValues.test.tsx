@@ -11,22 +11,21 @@ import {
   useStagedValues,
 } from "@/pages/Settings/utilities/FormValues";
 
-function createWrapper(form: UseFormReturnType<FormValues>) {
+const createWrapper = (form: UseFormReturnType<FormValues>) => {
   const Wrapper: FunctionComponent<PropsWithChildren> = ({ children }) => (
     <FormContext.Provider value={form}>{children}</FormContext.Provider>
   );
   return Wrapper;
-}
+};
 
-function createForm(
+const createForm = (
   values: FormValues = { settings: {}, hooks: {} },
   setValues = vitest.fn(),
-): UseFormReturnType<FormValues> {
-  return {
+): UseFormReturnType<FormValues> =>
+  ({
     values,
     setValues,
-  } as unknown as UseFormReturnType<FormValues>;
-}
+  }) as unknown as UseFormReturnType<FormValues>;
 
 describe("FormValues utilities", () => {
   describe("runHooks", () => {

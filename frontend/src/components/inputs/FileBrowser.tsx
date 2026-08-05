@@ -12,20 +12,20 @@ import { useFileSystem } from "@/apis/hooks";
 // TODO: use fortawesome icons
 const backKey = "⏎ Back";
 
-function getLastSeparator(path: string): number {
+const getLastSeparator = (path: string): number => {
   const forward = path.lastIndexOf("/");
   const backslash = path.lastIndexOf("\\");
   return forward !== -1 ? forward : backslash;
-}
+};
 
-function extractPath(raw: string) {
+const extractPath = (raw: string) => {
   if (raw.endsWith("/") || raw.endsWith("\\")) {
     return raw;
   } else {
     const idx = getLastSeparator(raw);
     return raw.slice(0, idx + 1);
   }
-}
+};
 
 export type FileBrowserProps = Omit<AutocompleteProps, "data"> & {
   type: "sonarr" | "radarr" | "bazarr";

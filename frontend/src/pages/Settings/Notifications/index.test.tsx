@@ -44,10 +44,10 @@ const baseProviders: Settings.NotificationInfo[] = [
   { name: "JSON", enabled: false, url: "" },
 ];
 
-function setupMocks(
+const setupMocks = (
   overrides?: Partial<typeof baseSettings>,
   mutate?: ReturnType<typeof vitest.fn>,
-) {
+) => {
   mockedUseSystemSettings.mockReturnValue({
     data: {
       ...baseSettings,
@@ -60,15 +60,15 @@ function setupMocks(
     mutate: mutate ?? vitest.fn(),
     isPending: false,
   });
-}
+};
 
-function renderPage(
+const renderPage = (
   overrides?: Partial<typeof baseSettings>,
   mutate?: ReturnType<typeof vitest.fn>,
-) {
+) => {
   setupMocks(overrides, mutate);
   return customRender(<SettingsNotificationsView />);
-}
+};
 
 describe("SettingsNotificationsView", () => {
   beforeEach(() => {

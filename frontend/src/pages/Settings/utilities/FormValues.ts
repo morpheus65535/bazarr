@@ -6,7 +6,7 @@ export const FormContext = createContext<UseFormReturnType<FormValues> | null>(
   null,
 );
 
-export function useFormValues() {
+export const useFormValues = () => {
   const context = useContext(FormContext);
 
   if (context === null) {
@@ -14,14 +14,14 @@ export function useFormValues() {
   }
 
   return context;
-}
+};
 
-export function useStagedValues() {
+export const useStagedValues = () => {
   const form = useFormValues();
   return { ...form.values.settings };
-}
+};
 
-export function useFormActions() {
+export const useFormActions = () => {
   const form = useFormValues();
 
   const formRef = useRef(form);
@@ -54,7 +54,7 @@ export function useFormActions() {
   }, []);
 
   return { update, setValue };
-}
+};
 
 export type HookType = (value: unknown) => unknown;
 
@@ -67,10 +67,10 @@ export type FormValues = {
   hooks: StrictObject<HookType>;
 };
 
-export function runHooks(
+export const runHooks = (
   hooks: FormValues["hooks"],
   settings: FormValues["settings"],
-) {
+) => {
   for (const key in settings) {
     if (key in hooks) {
       LOG("info", "Running submit hook for", key, settings[key]);
@@ -80,4 +80,4 @@ export function runHooks(
       LOG("info", "Finish submit hook", key, settings[key]);
     }
   }
-}
+};

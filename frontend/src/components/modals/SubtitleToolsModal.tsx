@@ -72,7 +72,7 @@ type LocalisedType = {
   isMovie: boolean;
 };
 
-function getLocalisedValues(item: SupportType): LocalisedType {
+const getLocalisedValues = (item: SupportType): LocalisedType => {
   if (isMovie(item)) {
     return {
       seriesId: 0,
@@ -90,23 +90,22 @@ function getLocalisedValues(item: SupportType): LocalisedType {
       isMovie: false,
     };
   }
-}
+};
 
 const CanSelectSubtitle = (item: TableColumnType) => {
   return item.path.endsWith(".srt");
 };
 
-function getFilterKey(filter: SubtitleFilter) {
-  return `${filter.category}:${filter.value}`;
-}
+const getFilterKey = (filter: SubtitleFilter) =>
+  `${filter.category}:${filter.value}`;
 
-function getLanguageValue(language: Language.Info) {
+const getLanguageValue = (language: Language.Info) => {
   const { code2, hi, forced } = language;
 
   return `${code2}${hi ? ":hi" : ""}${forced ? ":forced" : ""}`;
-}
+};
 
-function getEpisodeLabel(item: SupportType) {
+const getEpisodeLabel = (item: SupportType) => {
   if (isMovie(item)) {
     return "";
   }
@@ -126,7 +125,7 @@ function getEpisodeLabel(item: SupportType) {
   return `S${season.toString().padStart(2, "0")}E${episode
     .toString()
     .padStart(2, "0")}`;
-}
+};
 
 interface SubtitleToolViewProps {
   payload: SupportType[];

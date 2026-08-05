@@ -43,12 +43,12 @@ const baseBackup: System.Backups = {
   id: 1,
 };
 
-function setupMocks(
+const setupMocks = (
   backups: System.Backups[] = [],
   createMutate?: ReturnType<typeof vitest.fn>,
   restoreMutate?: ReturnType<typeof vitest.fn>,
   deleteMutate?: ReturnType<typeof vitest.fn>,
-) {
+) => {
   mockedUseSystemBackups.mockReturnValue({
     data: backups,
     isLoading: false,
@@ -69,17 +69,17 @@ function setupMocks(
     isPending: false,
   });
   mockedUseInstanceName.mockReturnValue("Bazarr");
-}
+};
 
-function renderPage(
+const renderPage = (
   backups: System.Backups[] = [],
   createMutate?: ReturnType<typeof vitest.fn>,
   restoreMutate?: ReturnType<typeof vitest.fn>,
   deleteMutate?: ReturnType<typeof vitest.fn>,
-) {
+) => {
   setupMocks(backups, createMutate, restoreMutate, deleteMutate);
   return customRender(<SystemBackupsView />);
-}
+};
 
 describe("SystemBackupsView", () => {
   beforeEach(() => {

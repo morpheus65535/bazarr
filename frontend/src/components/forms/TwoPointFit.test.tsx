@@ -48,11 +48,11 @@ describe("TwoPointFitForm", () => {
     } as unknown as ReturnType<typeof useModals>);
   });
 
-  function renderForm(
+  const renderForm = (
     props?: Partial<React.ComponentProps<typeof TwoPointFitForm>>,
-  ) {
+  ) => {
     customRender(<TwoPointFitForm selections={[selection]} {...props} />);
-  }
+  };
 
   it("shows a loading overlay while subtitle contents are being fetched", () => {
     mockUseSubtitleContents.mockReturnValue({

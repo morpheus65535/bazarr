@@ -19,24 +19,26 @@ vitest.mock("@/components/SubtitleToolsMenu", () => ({
 
 vitest.mock("@/components/tables/SimpleTable", async () => {
   const React = await import("react");
+  const SimpleTableMock = (props: SimpleTableMockProps) => {
+    const { data, onRowSelectionChanged } = props;
+    const onRowSelectionChangedRef = React.useRef(onRowSelectionChanged);
+    onRowSelectionChangedRef.current = onRowSelectionChanged;
+
+    React.useEffect(() => {
+      if (data.length > 0 && onRowSelectionChangedRef.current) {
+        onRowSelectionChangedRef.current([{ original: data[0] }]);
+      }
+    }, [data]);
+
+    return React.createElement(
+      "div",
+      { "data-testid": "simple-table" },
+      "Mocked Table",
+    );
+  };
+
   return {
-    default: function SimpleTableMock(props: SimpleTableMockProps) {
-      const { data, onRowSelectionChanged } = props;
-      const onRowSelectionChangedRef = React.useRef(onRowSelectionChanged);
-      onRowSelectionChangedRef.current = onRowSelectionChanged;
-
-      React.useEffect(() => {
-        if (data.length > 0 && onRowSelectionChangedRef.current) {
-          onRowSelectionChangedRef.current([{ original: data[0] }]);
-        }
-      }, [data]);
-
-      return React.createElement(
-        "div",
-        { "data-testid": "simple-table" },
-        "Mocked Table",
-      );
-    },
+    default: SimpleTableMock,
   };
 });
 

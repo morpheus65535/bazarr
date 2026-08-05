@@ -31,13 +31,13 @@ export const camelCaseKeys = <T>(value: T): CamelCaseKeys<T> => {
   return value as CamelCaseKeys<T>;
 };
 
-export function snakeCaseKeys<T>(value: T[]): Record<string, unknown>[];
-export function snakeCaseKeys<T>(value: T): Record<string, unknown>;
-export function snakeCaseKeys<T>(
-  value: T | T[],
-): Record<string, unknown> | Record<string, unknown>[] {
+type SnakeCaseKeys<T> = T extends unknown[]
+  ? Record<string, unknown>[]
+  : Record<string, unknown>;
+
+export const snakeCaseKeys = <T>(value: T): SnakeCaseKeys<T> => {
   if (Array.isArray(value)) {
-    return value.map(snakeCaseKeys);
+    return value.map(snakeCaseKeys) as SnakeCaseKeys<T>;
   }
 
   if (isPlainObject(value)) {
@@ -47,8 +47,8 @@ export function snakeCaseKeys<T>(
       result[snakeCase(key)] = snakeCaseKeys(val);
     }
 
-    return result;
+    return result as SnakeCaseKeys<T>;
   }
 
-  return value as Record<string, unknown>;
-}
+  return value as SnakeCaseKeys<T>;
+};

@@ -18,13 +18,12 @@ import { useSelectorOptions } from "@/utilities";
 
 const TaskName = "Two-Point Fit";
 
-function convertToAction(
+const convertToAction = (
   r: { hour: number; min: number; sec: number; ms: number }, // offset to zero
   o: { hour: number; min: number; sec: number; ms: number }, // offset
   s: { from: number; to: number }, // scale
-) {
-  return `two_point_fit(rh=${r.hour},rm=${r.min},rs=${r.sec},rms=${r.ms},oh=${o.hour},om=${o.min},os=${o.sec},oms=${o.ms},from=${s.from},to=${s.to})`;
-}
+) =>
+  `two_point_fit(rh=${r.hour},rm=${r.min},rs=${r.sec},rms=${r.ms},oh=${o.hour},om=${o.min},os=${o.sec},oms=${o.ms},from=${s.from},to=${s.to})`;
 
 const totalMs = (t: { hour: number; min: number; sec: number; ms: number }) =>
   t.hour * 3600000 + t.min * 60000 + t.sec * 1000 + t.ms;

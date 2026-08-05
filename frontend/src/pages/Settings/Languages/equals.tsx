@@ -28,9 +28,9 @@ export type LanguageEqualImmediateData =
 
 export type LanguageEqualData = LanguageEqualGenericData<Language.Server>;
 
-function decodeEqualTarget(
+const decodeEqualTarget = (
   text: string,
-): GenericEqualTarget<Language.CodeType> | undefined {
+): GenericEqualTarget<Language.CodeType> | undefined => {
   const [code, decoration] = text.split("@");
 
   if (code.length === 0) {
@@ -45,11 +45,11 @@ function decodeEqualTarget(
     forced,
     hi,
   };
-}
+};
 
-export function decodeEqualData(
+export const decodeEqualData = (
   text: string,
-): LanguageEqualImmediateData | undefined {
+): LanguageEqualImmediateData | undefined => {
   const [first, second] = text.split(":");
 
   const source = decodeEqualTarget(first);
@@ -63,23 +63,25 @@ export function decodeEqualData(
     source,
     target,
   };
-}
+};
 
-function encodeEqualTarget(data: GenericEqualTarget<Language.Server>): string {
+const encodeEqualTarget = (
+  data: GenericEqualTarget<Language.Server>,
+): string => {
   const text =
     data.content.code3 + (data.hi ? "@hi" : data.forced ? "@forced" : "");
 
   return text;
-}
+};
 
-export function encodeEqualData(data: LanguageEqualData): string {
+export const encodeEqualData = (data: LanguageEqualData): string => {
   const source = encodeEqualTarget(data.source);
   const target = encodeEqualTarget(data.target);
 
   return `${source}:${target}`;
-}
+};
 
-export function useLatestLanguageEquals(): LanguageEqualData[] {
+export const useLatestLanguageEquals = (): LanguageEqualData[] => {
   const { data } = useLanguages();
 
   const latest = useSettingValue<string[]>(languageEqualsKey);
@@ -112,7 +114,7 @@ export function useLatestLanguageEquals(): LanguageEqualData[] {
         .filter((v): v is LanguageEqualData => v !== undefined) ?? [],
     [data, latest],
   );
-}
+};
 
 interface EqualsTableProps {}
 

@@ -69,7 +69,7 @@ const movie = {
   missingSubtitles: [],
 } as Item.Movie;
 
-function renderTable(props?: Partial<React.ComponentProps<typeof Table>>) {
+const renderTable = (props?: Partial<React.ComponentProps<typeof Table>>) => {
   mockUseMovieSubtitleModification.mockReturnValue({
     download: { mutateAsync: vitest.fn(), isPending: false },
     remove: { mutateAsync: vitest.fn(), isPending: false },
@@ -79,7 +79,7 @@ function renderTable(props?: Partial<React.ComponentProps<typeof Table>>) {
   mockUseProfileItemsToLanguages.mockReturnValue([]);
 
   customRender(<Table movie={movie} {...props} />);
-}
+};
 
 describe("MovieDetailsTable", () => {
   it("renders external and embedded subtitles", () => {

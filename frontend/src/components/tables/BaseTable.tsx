@@ -26,31 +26,28 @@ export interface TableStyleProps<T extends RowData> {
   rowRenderer?: (row: Row<T>) => Nullable<React.JSX.Element>;
 }
 
-function DefaultHeaderRenderer<T extends RowData>(
+const DefaultHeaderRenderer = <T extends RowData>(
   headers: Header<T, unknown>[],
-): React.JSX.Element[] {
-  return headers.map((header) => (
+): React.JSX.Element[] =>
+  headers.map((header) => (
     <Table.Th style={{ whiteSpace: "nowrap" }} key={header.id}>
       {flexRender(header.column.columnDef.header, header.getContext())}
     </Table.Th>
   ));
-}
 
-function DefaultRowRenderer<T extends RowData>(
+const DefaultRowRenderer = <T extends RowData>(
   row: Row<T>,
-): React.JSX.Element | null {
-  return (
-    <Table.Tr key={row.id}>
-      {row.getVisibleCells().map((cell) => (
-        <Table.Td key={cell.id}>
-          {flexRender(cell.column.columnDef.cell, cell.getContext())}
-        </Table.Td>
-      ))}
-    </Table.Tr>
-  );
-}
+): React.JSX.Element | null => (
+  <Table.Tr key={row.id}>
+    {row.getVisibleCells().map((cell) => (
+      <Table.Td key={cell.id}>
+        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+      </Table.Td>
+    ))}
+  </Table.Tr>
+);
 
-export default function BaseTable<T extends RowData>(props: BaseTableProps<T>) {
+const BaseTable = <T extends RowData>(props: BaseTableProps<T>) => {
   const { instance, tableStyles } = props;
 
   const headersRenderer = tableStyles?.headersRenderer ?? DefaultHeaderRenderer;
@@ -111,4 +108,6 @@ export default function BaseTable<T extends RowData>(props: BaseTableProps<T>) {
       </Table>
     </Box>
   );
-}
+};
+
+export default BaseTable;

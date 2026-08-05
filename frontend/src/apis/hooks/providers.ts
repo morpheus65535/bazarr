@@ -2,15 +2,14 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { QueryKeys } from "@/apis/queries/keys";
 import api from "@/apis/raw";
 
-export function useSystemProviders(history?: boolean) {
-  return useQuery({
+export const useSystemProviders = (history?: boolean) =>
+  useQuery({
     queryKey: [QueryKeys.System, QueryKeys.Providers, history ?? false],
     queryFn: () => api.providers.providers(history),
   });
-}
 
-export function useMoviesProvider(radarrId?: number) {
-  return useQuery({
+export const useMoviesProvider = (radarrId?: number) =>
+  useQuery({
     queryKey: [
       QueryKeys.System,
       QueryKeys.Providers,
@@ -28,10 +27,9 @@ export function useMoviesProvider(radarrId?: number) {
 
     staleTime: 0,
   });
-}
 
-export function useEpisodesProvider(episodeId?: number) {
-  return useQuery({
+export const useEpisodesProvider = (episodeId?: number) =>
+  useQuery({
     queryKey: [
       QueryKeys.System,
       QueryKeys.Providers,
@@ -49,9 +47,8 @@ export function useEpisodesProvider(episodeId?: number) {
 
     staleTime: 0,
   });
-}
 
-export function useResetProvider() {
+export const useResetProvider = () => {
   const client = useQueryClient();
   return useMutation({
     mutationKey: [QueryKeys.System, QueryKeys.Providers],
@@ -63,9 +60,9 @@ export function useResetProvider() {
       });
     },
   });
-}
+};
 
-export function useDownloadEpisodeSubtitles() {
+export const useDownloadEpisodeSubtitles = () => {
   const client = useQueryClient();
 
   return useMutation({
@@ -93,9 +90,9 @@ export function useDownloadEpisodeSubtitles() {
       });
     },
   });
-}
+};
 
-export function useDownloadMovieSubtitles() {
+export const useDownloadMovieSubtitles = () => {
   const client = useQueryClient();
 
   return useMutation({
@@ -115,4 +112,4 @@ export function useDownloadMovieSubtitles() {
       });
     },
   });
-}
+};

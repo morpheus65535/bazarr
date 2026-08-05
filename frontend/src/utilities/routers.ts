@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import { useBlocker } from "react-router";
 import { modals } from "@mantine/modals";
 
-export function usePrompt(when: boolean, message: string) {
+export const usePrompt = (when: boolean, message: string) => {
   const blocker = useBlocker(
     ({ currentLocation, nextLocation }) =>
       when && currentLocation.pathname !== nextLocation.pathname,
@@ -39,4 +39,4 @@ export function usePrompt(when: boolean, message: string) {
     window.addEventListener("beforeunload", handler);
     return () => window.removeEventListener("beforeunload", handler);
   }, [when, message]);
-}
+};

@@ -101,7 +101,7 @@ const baseSettings = {
   },
 } as unknown as Settings;
 
-function setupMocks() {
+const setupMocks = () => {
   mockedUseSystemSettings.mockReturnValue({
     data: baseSettings,
     isLoading: false,
@@ -125,19 +125,19 @@ function setupMocks() {
     copied: false,
     error: null,
   });
-}
+};
 
-function renderPage(clipboard?: {
+const renderPage = (clipboard?: {
   copy: typeof vitest.fn;
   copied: boolean;
   error: unknown;
-}) {
+}) => {
   setupMocks();
   if (clipboard) {
     mockedUseClipboard.mockReturnValue(clipboard);
   }
   return customRender(<SettingsGeneralView />);
-}
+};
 
 describe("SettingsGeneralView", () => {
   const originalScrollIntoView = window.HTMLElement.prototype.scrollIntoView;

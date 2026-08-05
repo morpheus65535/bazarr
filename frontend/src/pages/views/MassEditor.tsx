@@ -19,7 +19,7 @@ interface MassEditorProps<T extends Item.Base = Item.Base> {
   mutation: UseMutationResult<void, unknown, FormType.ModifyItem>;
 }
 
-function MassEditor<T extends Item.Base>(props: MassEditorProps<T>) {
+const MassEditor = <T extends Item.Base>(props: MassEditorProps<T>) => {
   const { columns, data: raw, mutation } = props;
 
   const [selections, setSelections] = useState<T[]>([]);
@@ -165,6 +165,6 @@ function MassEditor<T extends Item.Base>(props: MassEditorProps<T>) {
       ></SimpleTable>
     </Container>
   );
-}
+};
 
 export default MassEditor;

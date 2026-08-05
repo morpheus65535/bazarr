@@ -134,6 +134,6 @@ describe("filterSubtitleBy", () => {
   });
 });
 
-function act(fn: () => void) {
+const act = (fn: () => void) => {
   fn();
-}
+};

@@ -2,9 +2,7 @@ import { describe, expect, it } from "vitest";
 import { customRender, screen } from "@/tests";
 import Lazy from "./Lazy";
 
-function Child() {
-  return <div>Loaded</div>;
-}
+const Child = () => <div>Loaded</div>;
 
 describe("Lazy", () => {
   it("renders its children", () => {

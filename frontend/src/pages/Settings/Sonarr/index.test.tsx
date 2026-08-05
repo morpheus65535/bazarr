@@ -41,7 +41,7 @@ const baseSettings = {
   },
 } as unknown as Settings;
 
-function setupMocks(enabled: boolean) {
+const setupMocks = (enabled: boolean) => {
   mockedUseSystemSettings.mockReturnValue({
     data: {
       ...baseSettings,
@@ -57,12 +57,12 @@ function setupMocks(enabled: boolean) {
     mutate: vitest.fn(),
     isPending: false,
   });
-}
+};
 
-function renderPage(enabled: boolean) {
+const renderPage = (enabled: boolean) => {
   setupMocks(enabled);
   return customRender(<SettingsSonarrView />);
-}
+};
 
 describe("SettingsSonarrView", () => {
   beforeEach(() => {
