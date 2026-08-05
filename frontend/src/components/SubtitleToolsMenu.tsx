@@ -165,12 +165,16 @@ const SubtitleToolsMenu: FunctionComponent<Props> = ({
     [selections],
   );
 
-  // Embedded subtitles only support extraction, so show a stripped-down menu
+  // Embedded subtitles only support a few actions, so show a stripped-down menu
   // that omits (rather than disables) the unsupported tools and actions. This
   // avoids confusion such as "why can't I delete my embedded subtitles?".
+  // Translating an embedded track extracts it first (server-side) and is only
+  // offered for a single selection, mirroring the Extract action.
+  const translationTool = tools.find((t) => t.key === "translation");
   const showTools = isExternalOnly;
   const showSearch = selections.length === 0;
   const showExtract = isSingleEmbedded;
+  const showEmbeddedTranslate = isSingleEmbedded;
   const showDelete = isExternalOnly;
 
   return (
@@ -200,7 +204,25 @@ const SubtitleToolsMenu: FunctionComponent<Props> = ({
             <Divider></Divider>
           </>
         )}
-        <Menu.Label>Actions</Menu.Label>
+        {showEmbeddedTranslate && translationTool?.modal && (
+          <>
+            <Menu.Label>Tools</Menu.Label>
+            <Menu.Item
+              leftSection={
+                <FontAwesomeIcon icon={translationTool.icon}></FontAwesomeIcon>
+              }
+              onClick={() => {
+                modals.openContextModal(translationTool.modal!, { selections });
+              }}
+            >
+              {translationTool.name}
+            </Menu.Item>
+            <Divider></Divider>
+          </>
+        )}
+        {(showSearch || showExtract || showDelete) && (
+          <Menu.Label>Actions</Menu.Label>
+        )}
         {showSearch && (
           <Menu.Item
             disabled={onAction === undefined}

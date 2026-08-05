@@ -31,6 +31,42 @@ def validate_translation_params(video_path, source_srt_file, from_lang, to_lang)
     return True
 
 
+def resolve_translation_source(subtitles, subtitles_path, subtitles_id, language_validator=alpha3_from_alpha2):
+    """
+    Resolve the source language for a translate request from the subtitles list returned by
+    `get_subtitles(...)`.
+
+    A translate target is either an external file (identified by its `path`) or an embedded track
+    (identified by its subtitles database `id`). For the embedded case the matched track id is
+    returned so the caller can extract it to an external file before translating.
+
+    :param language_validator: callable used to validate the resolved language code2. Defaults to
+        `alpha3_from_alpha2`; injected mainly for unit testing.
+    :return: tuple ``(from_language, embedded_subtitle_id)`` where ``embedded_subtitle_id`` is
+        ``None`` for an external subtitle.
+    :raises ValueError: with an API-friendly message if the source cannot be identified, is not a
+        valid language, or the supplied id does not point to an embedded track.
+    """
+    if subtitles_path:
+        for external_subtitles in subtitles:
+            if external_subtitles['path'] == subtitles_path:
+                from_language = external_subtitles['code2']
+                if from_language and language_validator(from_language):
+                    return from_language, None
+                break
+    elif subtitles_id is not None:
+        for embedded_subtitles in subtitles:
+            if embedded_subtitles['id'] == subtitles_id:
+                if embedded_subtitles.get('embedded_track_id') is None:
+                    raise ValueError('Selected subtitle is not an embedded track')
+                from_language = embedded_subtitles['code2']
+                if from_language and language_validator(from_language):
+                    return from_language, subtitles_id
+                break
+
+    raise ValueError('Invalid source language code')
+
+
 def convert_language_codes(to_lang, forced=False, hi=False):
     """Convert and validate language codes."""
     orig_to_lang = to_lang
