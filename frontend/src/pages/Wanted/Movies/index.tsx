@@ -3,13 +3,13 @@ import { Link } from "react-router";
 import { Anchor, Badge, Group } from "@mantine/core";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { ColumnDef } from "@tanstack/react-table";
 import {
   useMovieAction,
   useMovieSubtitleModification,
   useMovieWantedPagination,
 } from "@/apis/hooks";
 import Language from "@/components/bazarr/Language";
+import { AppColumnDef as ColumnDef } from "@/components/tables/features";
 import WantedView from "@/pages/views/WantedView";
 import { BuildKey } from "@/utilities";
 

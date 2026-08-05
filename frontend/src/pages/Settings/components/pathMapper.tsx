@@ -2,9 +2,9 @@ import { FunctionComponent, useCallback, useMemo } from "react";
 import { Button } from "@mantine/core";
 import { faArrowCircleRight, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { ColumnDef } from "@tanstack/react-table";
 import { capitalize } from "lodash";
 import { Action, FileBrowser } from "@/components";
+import { AppColumnDef as ColumnDef } from "@/components/tables/features";
 import SimpleTable from "@/components/tables/SimpleTable";
 import {
   moviesEnabledKey,

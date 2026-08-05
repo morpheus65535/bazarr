@@ -3,10 +3,13 @@ import { useNavigate } from "react-router";
 import { Box, Container, useCombobox } from "@mantine/core";
 import { faCheck, faUndo } from "@fortawesome/free-solid-svg-icons";
 import { UseMutationResult } from "@tanstack/react-query";
-import { ColumnDef, Table } from "@tanstack/react-table";
 import { uniqBy } from "lodash";
 import { useIsAnyMutationRunning, useLanguageProfiles } from "@/apis/hooks";
 import { GroupedSelector, GroupedSelectorOptions, Toolbox } from "@/components";
+import {
+  AppColumnDef as ColumnDef,
+  AppTable as Table,
+} from "@/components/tables/features";
 import SimpleTable from "@/components/tables/SimpleTable";
 import { GetItemId, useSelectorOptions } from "@/utilities";
 

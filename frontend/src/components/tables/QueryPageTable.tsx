@@ -1,16 +1,17 @@
 import { useEffect } from "react";
 import { useSearchParams } from "react-router";
 import { UsePaginationQueryResult } from "@/apis/queries/hooks";
+import { RowData } from "@/components/tables/features";
 import SimpleTable, { SimpleTableProps } from "@/components/tables/SimpleTable";
 import { LoadingProvider } from "@/contexts";
 import { ScrollToTop } from "@/utilities";
 import PageControl from "./PageControl";
 
-type Props<T extends object> = Omit<SimpleTableProps<T>, "data"> & {
+type Props<T extends RowData> = Omit<SimpleTableProps<T>, "data"> & {
   query: UsePaginationQueryResult<T>;
 };
 
-export default function QueryPageTable<T extends object>(props: Props<T>) {
+export default function QueryPageTable<T extends RowData>(props: Props<T>) {
   const { query, ...remain } = props;
 
   const {

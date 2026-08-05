@@ -1,5 +1,5 @@
-import { ColumnDef } from "@tanstack/react-table";
 import { describe, expect, it } from "vitest";
+import { AppColumnDef as ColumnDef } from "@/components/tables/features";
 import { customRender, screen } from "@/tests";
 import GroupTable from "./GroupTable";
 

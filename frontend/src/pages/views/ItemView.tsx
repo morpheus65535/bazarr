@@ -13,12 +13,12 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { QueryKey } from "@tanstack/react-query";
-import { ColumnDef } from "@tanstack/react-table";
 import {
   useInfinitePaginationQuery,
   usePaginationQuery,
 } from "@/apis/queries/hooks";
 import { QueryPageTable, QueryPosterGrid, Toolbox } from "@/components";
+import { AppColumnDef as ColumnDef } from "@/components/tables/features";
 import { useViewMode, ViewMode } from "@/utilities/viewMode";
 
 interface Props<T extends Item.Base = Item.Base> {

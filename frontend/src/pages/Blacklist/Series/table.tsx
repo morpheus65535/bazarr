@@ -2,10 +2,10 @@ import { FunctionComponent, useMemo } from "react";
 import { Link } from "react-router";
 import { Anchor, Text } from "@mantine/core";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
-import { ColumnDef } from "@tanstack/react-table";
 import { useEpisodeDeleteBlacklist } from "@/apis/hooks";
 import MutateAction from "@/components/async/MutateAction";
 import Language from "@/components/bazarr/Language";
+import { AppColumnDef as ColumnDef } from "@/components/tables/features";
 import PageTable from "@/components/tables/PageTable";
 import TextPopover from "@/components/TextPopover";
 

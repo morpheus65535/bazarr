@@ -2,17 +2,16 @@ import React, { Fragment } from "react";
 import { Box, Table, Text } from "@mantine/core";
 import { faChevronCircleRight } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { flexRender } from "@tanstack/react-table";
 import {
-  Cell,
-  flexRender,
-  getExpandedRowModel,
-  getGroupedRowModel,
-  Header,
-  Row,
-} from "@tanstack/react-table";
+  AppCell as Cell,
+  AppHeader as Header,
+  AppRow as Row,
+  RowData,
+} from "@/components/tables/features";
 import SimpleTable, { SimpleTableProps } from "@/components/tables/SimpleTable";
 
-function renderCell<T extends object = object>(
+function renderCell<T extends RowData = RowData>(
   cell: Cell<T, unknown>,
   row: Row<T>,
 ) {
@@ -27,7 +26,7 @@ function renderCell<T extends object = object>(
   }
 }
 
-function renderRow<T extends object>(row: Row<T>) {
+function renderRow<T extends RowData>(row: Row<T>) {
   if (row.getCanExpand()) {
     const cell = row.getVisibleCells().find((cell) => cell.getIsGrouped());
 
@@ -66,7 +65,7 @@ function renderRow<T extends object>(row: Row<T>) {
   }
 }
 
-function renderHeaders<T extends object>(
+function renderHeaders<T extends RowData>(
   headers: Header<T, unknown>[],
 ): React.JSX.Element[] {
   return headers.map((header) => {
@@ -82,19 +81,17 @@ function renderHeaders<T extends object>(
   });
 }
 
-type Props<T extends object> = Omit<
+type Props<T extends RowData> = Omit<
   SimpleTableProps<T>,
   "headersRenderer" | "rowRenderer"
 >;
 
-function GroupTable<T extends object = object>(props: Props<T>) {
+function GroupTable<T extends RowData = RowData>(props: Props<T>) {
   return (
     <SimpleTable
       {...props}
       enableGrouping
       enableExpanding
-      getGroupedRowModel={getGroupedRowModel()}
-      getExpandedRowModel={getExpandedRowModel()}
       tableStyles={{ headersRenderer: renderHeaders, rowRenderer: renderRow }}
     ></SimpleTable>
   );

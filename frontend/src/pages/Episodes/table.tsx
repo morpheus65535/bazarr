@@ -7,13 +7,16 @@ import {
   faUser,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { ColumnDef, Table as TableInstance } from "@tanstack/react-table";
 import { useDownloadEpisodeSubtitles, useEpisodesProvider } from "@/apis/hooks";
 import { useShowOnlyDesired } from "@/apis/hooks/site";
 import { Action, GroupTable } from "@/components";
 import { AudioList } from "@/components/bazarr";
 import { EpisodeHistoryModal } from "@/components/modals";
 import { EpisodeSearchModal } from "@/components/modals/ManualSearchModal";
+import {
+  AppColumnDef as ColumnDef,
+  AppTable as TableInstance,
+} from "@/components/tables/features";
 import TextPopover from "@/components/TextPopover";
 import { useModals } from "@/modules/modals";
 import { BuildKey, filterSubtitleBy } from "@/utilities";

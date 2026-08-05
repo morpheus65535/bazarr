@@ -1,9 +1,9 @@
 import { FunctionComponent, useMemo } from "react";
 import { Text } from "@mantine/core";
 import { faPlay } from "@fortawesome/free-solid-svg-icons";
-import { ColumnDef, getSortedRowModel } from "@tanstack/react-table";
 import { useRunTask } from "@/apis/hooks";
 import MutateAction from "@/components/async/MutateAction";
+import { AppColumnDef as ColumnDef } from "@/components/tables/features";
 import SimpleTable from "@/components/tables/SimpleTable";
 
 interface Props {
@@ -70,7 +70,6 @@ const Table: FunctionComponent<Props> = ({ tasks }) => {
       columns={columns}
       data={tasks}
       enableSorting
-      getSortedRowModel={getSortedRowModel()}
     ></SimpleTable>
   );
 };

@@ -1,6 +1,6 @@
-import { ColumnDef } from "@tanstack/react-table";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vitest } from "vitest";
+import { AppColumnDef as ColumnDef } from "@/components/tables/features";
 import { customRender, screen } from "@/tests";
 import ItemView from "./ItemView";
 

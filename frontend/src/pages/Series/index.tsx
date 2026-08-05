@@ -10,7 +10,6 @@ import {
   faWrench,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { ColumnDef } from "@tanstack/react-table";
 import {
   seriesPaginationKey,
   seriesPaginationQuery,
@@ -20,6 +19,7 @@ import { useInstanceName } from "@/apis/hooks/site";
 import { Action } from "@/components";
 import LanguageProfileName from "@/components/bazarr/LanguageProfile";
 import { ItemEditModal } from "@/components/forms/ItemEditForm";
+import { AppColumnDef as ColumnDef } from "@/components/tables/features";
 import { useModals } from "@/modules/modals";
 import ItemView from "@/pages/views/ItemView";
 import { seriesViewModeKey } from "@/utilities/viewMode";

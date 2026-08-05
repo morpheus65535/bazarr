@@ -2,7 +2,6 @@ import { FunctionComponent, useMemo } from "react";
 import { Badge, Center, Text } from "@mantine/core";
 import { faFileExcel, faInfoCircle } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { ColumnDef } from "@tanstack/react-table";
 import {
   useEpisodeAddBlacklist,
   useEpisodeHistory,
@@ -14,6 +13,7 @@ import QueryOverlay from "@/components/async/QueryOverlay";
 import { HistoryIcon } from "@/components/bazarr";
 import Language from "@/components/bazarr/Language";
 import StateIcon from "@/components/StateIcon";
+import { AppColumnDef as ColumnDef } from "@/components/tables/features";
 import PageTable from "@/components/tables/PageTable";
 import TextPopover from "@/components/TextPopover";
 import { withModal } from "@/modules/modals";

@@ -1,21 +1,22 @@
 import React, { ReactNode, useMemo } from "react";
 import { Box, Skeleton, Table, Text } from "@mantine/core";
+import { flexRender } from "@tanstack/react-table";
 import {
-  flexRender,
-  Header,
-  Row,
-  Table as TableInstance,
-} from "@tanstack/react-table";
+  AppHeader as Header,
+  AppRow as Row,
+  AppTable as TableInstance,
+  RowData,
+} from "@/components/tables/features";
 import { useIsLoading } from "@/contexts";
 import { usePageSize } from "@/utilities/storage";
 import styles from "@/components/tables/BaseTable.module.scss";
 
-export type BaseTableProps<T extends object> = {
+export type BaseTableProps<T extends RowData> = {
   instance: TableInstance<T>;
   tableStyles?: TableStyleProps<T>;
 };
 
-export interface TableStyleProps<T extends object> {
+export interface TableStyleProps<T extends RowData> {
   emptyText?: string;
   striped?: boolean;
   placeholder?: number;
@@ -25,7 +26,7 @@ export interface TableStyleProps<T extends object> {
   rowRenderer?: (row: Row<T>) => Nullable<React.JSX.Element>;
 }
 
-function DefaultHeaderRenderer<T extends object>(
+function DefaultHeaderRenderer<T extends RowData>(
   headers: Header<T, unknown>[],
 ): React.JSX.Element[] {
   return headers.map((header) => (
@@ -35,7 +36,7 @@ function DefaultHeaderRenderer<T extends object>(
   ));
 }
 
-function DefaultRowRenderer<T extends object>(
+function DefaultRowRenderer<T extends RowData>(
   row: Row<T>,
 ): React.JSX.Element | null {
   return (
@@ -49,7 +50,7 @@ function DefaultRowRenderer<T extends object>(
   );
 }
 
-export default function BaseTable<T extends object>(props: BaseTableProps<T>) {
+export default function BaseTable<T extends RowData>(props: BaseTableProps<T>) {
   const { instance, tableStyles } = props;
 
   const headersRenderer = tableStyles?.headersRenderer ?? DefaultHeaderRenderer;

@@ -18,11 +18,11 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { UseQueryResult } from "@tanstack/react-query";
-import { ColumnDef } from "@tanstack/react-table";
 import { isString } from "lodash";
 import { Action } from "@/components";
 import Language from "@/components/bazarr/Language";
 import StateIcon from "@/components/StateIcon";
+import { AppColumnDef as ColumnDef } from "@/components/tables/features";
 import PageTable from "@/components/tables/PageTable";
 import { withModal } from "@/modules/modals";
 import { GetItemId } from "@/utilities";
