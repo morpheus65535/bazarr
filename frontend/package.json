@@ -126,6 +126,9 @@
   },
   "overrides": {
     "serialize-javascript": "^7.0.4",
+    "@vite-pwa/assets-generator": {
+      "sharp": "^0.35.3"
+    },
     "eslint-plugin-react-hooks": {
       "eslint": "$eslint"
     }
