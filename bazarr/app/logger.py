@@ -18,7 +18,12 @@ logger = logging.getLogger()
 
 class FileHandlerFormatter(logging.Formatter):
     """Formatter that removes apikey from logs."""
-    APIKEY_RE = re.compile(r'apikey(?:=|%3D)([a-zA-Z0-9]+)')
+    # Matches `apikey=`, `api_key=` and `apiKey=`, url-encoded or not, and keys
+    # containing '-', '_' or '.'. The old pattern required the literal `apikey`
+    # and value chars [a-zA-Z0-9], so a provider using `api_key=` — or a key
+    # like `subdl_Cq…-5IU…` — was written to the log verbatim. These logs are
+    # routinely pasted into public issue reports.
+    APIKEY_RE = re.compile(r'api[-_]?key(?:=|%3D)([\w.\-]+)', re.IGNORECASE)
     IPv4_RE = re.compile(r'\b(?<!Failed\sauthentication\sfrom\s)(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.)'
                          r'{3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\b')
     PLEX_URL_RE = re.compile(r'(?:https?://)?[0-9\-]+\.[a-f0-9]+\.plex\.direct(?::\d+)?')
@@ -31,7 +36,9 @@ class FileHandlerFormatter(logging.Formatter):
         return repr(result)  # or format into one line however you want to
 
     def formatApikey(self, s):
-        return re.sub(self.APIKEY_RE, 'apikey=(removed)', s)
+        # Keep the parameter name the caller used so the log still reads
+        # naturally; only the value is removed.
+        return re.sub(self.APIKEY_RE, lambda m: f'{m.group(0)[:m.start(1) - m.start(0)]}(removed)', s)
 
     def formatIPv4(self, s):
         return re.sub(self.IPv4_RE, '***.***.***.***', s)

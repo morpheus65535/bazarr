@@ -52,7 +52,10 @@ _POOL_LIFETIME = datetime.timedelta(hours=12)
 HI_REGEX_WITHOUT_PARENTHESIS = re.compile(r'[*¶♫♪].{3,}[*¶♫♪]|[\[\{].{3,}[\]\}](?<!{\\an\d})')
 HI_REGEX_WITH_PARENTHESIS = re.compile(r'[*¶♫♪].{3,}[*¶♫♪]|[\[\(\{].{3,}[\]\)\}](?<!{\\an\d})')
 
-HI_REGEX_PARENTHESIS_EXCLUDED_LANGUAGES = ['ara']
+# Languages whose subtitles conventionally use parentheses for translator notes
+# rather than for sound cues, so the parenthesis arm of the HI heuristic would
+# mislabel ordinary subtitles as hearing-impaired.
+HI_REGEX_PARENTHESIS_EXCLUDED_LANGUAGES = ['ara', 'fas']
 
 
 def parse_for_hi_regex(subtitle_text, alpha3_language):
