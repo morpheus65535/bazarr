@@ -1,4 +1,4 @@
-import { FunctionComponent, useMemo } from "react";
+import { FunctionComponent, useCallback, useMemo } from "react";
 import { Link } from "react-router";
 import { Anchor, Badge, Container, Tooltip } from "@mantine/core";
 import { useDocumentTitle } from "@mantine/hooks";
@@ -7,7 +7,11 @@ import { faBookmark, faWrench } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { ColumnDef } from "@tanstack/react-table";
 import { uniqueId } from "lodash";
-import { useMovieModification, useMoviesPagination } from "@/apis/hooks";
+import {
+  moviesPaginationKey,
+  moviesPaginationQuery,
+  useMovieModification,
+} from "@/apis/hooks";
 import { useInstanceName } from "@/apis/hooks/site";
 import { Action } from "@/components";
 import { AudioList } from "@/components/bazarr";
@@ -17,13 +21,13 @@ import { ItemEditModal } from "@/components/forms/ItemEditForm";
 import { useModals } from "@/modules/modals";
 import ItemView from "@/pages/views/ItemView";
 import { BuildKey } from "@/utilities";
+import { moviesViewModeKey } from "@/utilities/viewMode";
+import MoviePosterCard from "./PosterCard";
 
 const MovieView: FunctionComponent = () => {
   const modifyMovie = useMovieModification();
 
   const modals = useModals();
-
-  const query = useMoviesPagination();
 
   const columns = useMemo<ColumnDef<Item.Movie>[]>(
     () => [
@@ -135,11 +139,39 @@ const MovieView: FunctionComponent = () => {
     [modals, modifyMovie],
   );
 
+  const renderPoster = useCallback(
+    (item: Item.Movie) => (
+      <MoviePosterCard
+        key={item.radarrId}
+        item={item}
+        onEdit={() =>
+          modals.openContextModal(
+            ItemEditModal,
+            {
+              mutation: modifyMovie,
+              item,
+            },
+            {
+              title: item.title,
+            },
+          )
+        }
+      ></MoviePosterCard>
+    ),
+    [modals, modifyMovie],
+  );
+
   useDocumentTitle(`Movies - ${useInstanceName()}`);
 
   return (
     <Container fluid px={0}>
-      <ItemView query={query} columns={columns}></ItemView>
+      <ItemView
+        queryKey={moviesPaginationKey}
+        queryFn={moviesPaginationQuery}
+        columns={columns}
+        viewModeKey={moviesViewModeKey}
+        renderPoster={renderPoster}
+      ></ItemView>
     </Container>
   );
 };

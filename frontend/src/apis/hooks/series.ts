@@ -5,17 +5,16 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { usePaginationQuery } from "@/apis/queries/hooks";
 import { QueryKeys } from "@/apis/queries/keys";
 import api from "@/apis/raw";
 
-function cacheSeries(client: QueryClient, series: Item.Series[]) {
+const cacheSeries = (client: QueryClient, series: Item.Series[]) => {
   series.forEach((item) => {
     client.setQueryData([QueryKeys.Series, item.sonarrSeriesId], item);
   });
-}
+};
 
-export function useSeriesByIds(ids: number[]) {
+export const useSeriesByIds = (ids: number[]) => {
   const client = useQueryClient();
 
   const query = useQuery({
@@ -30,9 +29,9 @@ export function useSeriesByIds(ids: number[]) {
   }, [query.isSuccess, query.data, client]);
 
   return query;
-}
+};
 
-export function useSeriesById(id: number) {
+export const useSeriesById = (id: number) => {
   return useQuery({
     queryKey: [QueryKeys.Series, id],
 
@@ -41,9 +40,9 @@ export function useSeriesById(id: number) {
       return response.length > 0 ? response[0] : undefined;
     },
   });
-}
+};
 
-export function useSeries() {
+export const useSeries = () => {
   const client = useQueryClient();
 
   const query = useQuery({
@@ -58,15 +57,14 @@ export function useSeries() {
   }, [query.isSuccess, query.data, client]);
 
   return query;
-}
+};
 
-export function useSeriesPagination() {
-  return usePaginationQuery([QueryKeys.Series], (param) =>
-    api.series.seriesBy(param),
-  );
-}
+export const seriesPaginationKey = [QueryKeys.Series];
 
-export function useSeriesModification() {
+export const seriesPaginationQuery: RangeQuery<Item.Series> = (param) =>
+  api.series.seriesBy(param);
+
+export const useSeriesModification = () => {
   const client = useQueryClient();
   return useMutation({
     mutationKey: [QueryKeys.Series],
@@ -83,9 +81,9 @@ export function useSeriesModification() {
       });
     },
   });
-}
+};
 
-export function useSeriesAction() {
+export const useSeriesAction = () => {
   const client = useQueryClient();
   return useMutation({
     mutationKey: [QueryKeys.Actions, QueryKeys.Series],
@@ -97,4 +95,4 @@ export function useSeriesAction() {
       });
     },
   });
-}
+};

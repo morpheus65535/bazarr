@@ -1,5 +1,5 @@
 import { FunctionComponent, useEffect, useState } from "react";
-import { Outlet, useNavigate } from "react-router";
+import { Outlet, ScrollRestoration, useNavigate } from "react-router";
 import { AppShell } from "@mantine/core";
 import { useWindowEvent } from "@mantine/hooks";
 import { showNotification } from "@mantine/notifications";
@@ -71,6 +71,7 @@ const App: FunctionComponent = () => {
               <Outlet></Outlet>
             </AppShell.Main>
           </AppShell>
+          <ScrollRestoration></ScrollRestoration>
           <AppSpotlight></AppSpotlight>
         </OnlineProvider>
       </NavbarProvider>

@@ -15,7 +15,7 @@ const cacheMovies = (client: QueryClient, movies: Item.Movie[]) => {
   });
 };
 
-export function useMovieById(id: number) {
+export const useMovieById = (id: number) => {
   return useQuery({
     queryKey: [QueryKeys.Movies, id],
 
@@ -24,9 +24,9 @@ export function useMovieById(id: number) {
       return response.length > 0 ? response[0] : undefined;
     },
   });
-}
+};
 
-export function useMovies() {
+export const useMovies = () => {
   const client = useQueryClient();
 
   const query = useQuery({
@@ -41,15 +41,14 @@ export function useMovies() {
   }, [query.isSuccess, query.data, client]);
 
   return query;
-}
+};
 
-export function useMoviesPagination() {
-  return usePaginationQuery([QueryKeys.Movies], (param) =>
-    api.movies.moviesBy(param),
-  );
-}
+export const moviesPaginationKey = [QueryKeys.Movies];
 
-export function useMovieModification() {
+export const moviesPaginationQuery: RangeQuery<Item.Movie> = (param) =>
+  api.movies.moviesBy(param);
+
+export const useMovieModification = () => {
   const client = useQueryClient();
   return useMutation({
     mutationKey: [QueryKeys.Movies],
@@ -68,9 +67,9 @@ export function useMovieModification() {
       });
     },
   });
-}
+};
 
-export function useMovieAction() {
+export const useMovieAction = () => {
   const client = useQueryClient();
   return useMutation({
     mutationKey: [QueryKeys.Actions, QueryKeys.Movies],
@@ -82,23 +81,23 @@ export function useMovieAction() {
       });
     },
   });
-}
+};
 
-export function useMovieWantedPagination() {
+export const useMovieWantedPagination = () => {
   return usePaginationQuery([QueryKeys.Movies, QueryKeys.Wanted], (param) =>
     api.movies.wanted(param),
   );
-}
+};
 
-export function useMovieBlacklist() {
+export const useMovieBlacklist = () => {
   return useQuery({
     queryKey: [QueryKeys.Movies, QueryKeys.Blacklist],
 
     queryFn: () => api.movies.blacklist(),
   });
-}
+};
 
-export function useMovieAddBlacklist() {
+export const useMovieAddBlacklist = () => {
   const client = useQueryClient();
   return useMutation({
     mutationKey: [QueryKeys.Movies, QueryKeys.Blacklist],
@@ -118,9 +117,9 @@ export function useMovieAddBlacklist() {
       });
     },
   });
-}
+};
 
-export function useMovieDeleteBlacklist() {
+export const useMovieDeleteBlacklist = () => {
   const client = useQueryClient();
   return useMutation({
     mutationKey: [QueryKeys.Movies, QueryKeys.Blacklist],
@@ -134,17 +133,17 @@ export function useMovieDeleteBlacklist() {
       });
     },
   });
-}
+};
 
-export function useMovieHistoryPagination() {
+export const useMovieHistoryPagination = () => {
   return usePaginationQuery(
     [QueryKeys.Movies, QueryKeys.History],
     (param) => api.movies.history(param),
     false,
   );
-}
+};
 
-export function useMovieHistory(radarrId?: number) {
+export const useMovieHistory = (radarrId?: number) => {
   return useQuery({
     queryKey: [QueryKeys.Movies, QueryKeys.History, radarrId],
 
@@ -156,4 +155,4 @@ export function useMovieHistory(radarrId?: number) {
       return [];
     },
   });
-}
+};

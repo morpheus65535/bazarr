@@ -124,37 +124,56 @@ def download_log():
     return send_file(get_log_file_path(), max_age=0, as_attachment=True)
 
 
+# Posters rarely change and every image request is proxied to Sonarr/Radarr.
+# Let the browser cache them to avoid re-proxying a whole grid of posters on
+# every page load.
+_IMAGE_CACHE_MAX_AGE = 86400
+
+
+def _proxy_image(url_image):
+    """Stream an image from Sonarr/Radarr back to the client with caching headers.
+
+    :param url_image: the Sonarr/Radarr MediaCover URL to proxy, apikey included
+    :returns: the proxied image response, or an empty 404 if unavailable
+    """
+    try:
+        req = requests.get(url_image, stream=True, timeout=15, verify=False, headers=HEADERS)
+    except requests.RequestException:
+        return '', 404
+    else:
+        if req.status_code != 200:
+            return '', 404
+        return Response(stream_with_context(req.iter_content(2048)),
+                        content_type=req.headers['content-type'],
+                        headers={'Cache-Control': f'private, max-age={_IMAGE_CACHE_MAX_AGE}'})
+
+
 @ui_bp.route('/images/series/<path:url>', methods=['GET'])
 @check_login
 def series_images(url):
     apikey = settings.sonarr.apikey
     baseUrl = settings.sonarr.base_url
     sonarr_api_base = url_api_sonarr()
-    
+
     # Validate that the URL is relative and doesn't contain suspicious patterns
     if url.startswith(('http://', 'https://', '//', 'file://')):
         return '', 404
-    
+
     # Construct the full URL
     url_image = urljoin(sonarr_api_base, url.lstrip(baseUrl))
-    
+
     # Verify the final URL is within the expected domain
     parsed_url = urlparse(url_image)
     parsed_base = urlparse(sonarr_api_base)
-    
+
     if parsed_url.netloc != parsed_base.netloc:
         return '', 404
-    
+
     # Add API key
     separator = '&' if '?' in url_image else '?'
     url_image = f'{url_image}{separator}apikey={apikey}'.replace('poster-250', 'poster-500')
-    
-    try:
-        req = requests.get(url_image, stream=True, timeout=15, verify=False, headers=HEADERS)
-    except Exception:
-        return '', 404
-    else:
-        return Response(stream_with_context(req.iter_content(2048)), content_type=req.headers['content-type'])
+
+    return _proxy_image(url_image)
 
 
 @ui_bp.route('/images/movies/<path:url>', methods=['GET'])
@@ -163,31 +182,26 @@ def movies_images(url):
     apikey = settings.radarr.apikey
     baseUrl = settings.radarr.base_url
     radarr_api_base = url_api_radarr()
-    
+
     # Validate that the URL is relative and doesn't contain suspicious patterns
     if url.startswith(('http://', 'https://', '//', 'file://')):
         return '', 404
-    
+
     # Construct the full URL
     url_image = urljoin(radarr_api_base, url.lstrip(baseUrl))
-    
+
     # Verify the final URL is within the expected domain
     parsed_url = urlparse(url_image)
     parsed_base = urlparse(radarr_api_base)
-    
+
     if parsed_url.netloc != parsed_base.netloc:
         return '', 404
-    
+
     # Add API key
     separator = '&' if '?' in url_image else '?'
     url_image = f'{url_image}{separator}apikey={apikey}'
-    
-    try:
-        req = requests.get(url_image, stream=True, timeout=15, verify=False, headers=HEADERS)
-    except Exception:
-        return '', 404
-    else:
-        return Response(stream_with_context(req.iter_content(2048)), content_type=req.headers['content-type'])
+
+    return _proxy_image(url_image)
 
 
 @ui_bp.route('/system/backup/download/<path:filename>', methods=['GET'])

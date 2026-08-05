@@ -1,4 +1,4 @@
-import { FunctionComponent, useMemo } from "react";
+import { FunctionComponent, useCallback, useMemo } from "react";
 import { Link } from "react-router";
 import { Anchor, Container, Group, Progress } from "@mantine/core";
 import { useDocumentTitle } from "@mantine/hooks";
@@ -11,18 +11,22 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { ColumnDef } from "@tanstack/react-table";
-import { useSeriesModification, useSeriesPagination } from "@/apis/hooks";
+import {
+  seriesPaginationKey,
+  seriesPaginationQuery,
+  useSeriesModification,
+} from "@/apis/hooks";
 import { useInstanceName } from "@/apis/hooks/site";
 import { Action } from "@/components";
 import LanguageProfileName from "@/components/bazarr/LanguageProfile";
 import { ItemEditModal } from "@/components/forms/ItemEditForm";
 import { useModals } from "@/modules/modals";
 import ItemView from "@/pages/views/ItemView";
+import { seriesViewModeKey } from "@/utilities/viewMode";
+import SeriesPosterCard from "./PosterCard";
 
 const SeriesView: FunctionComponent = () => {
   const mutation = useSeriesModification();
-
-  const query = useSeriesPagination();
 
   const modals = useModals();
 
@@ -134,11 +138,39 @@ const SeriesView: FunctionComponent = () => {
     [mutation, modals],
   );
 
+  const renderPoster = useCallback(
+    (item: Item.Series) => (
+      <SeriesPosterCard
+        key={item.sonarrSeriesId}
+        item={item}
+        onEdit={() =>
+          modals.openContextModal(
+            ItemEditModal,
+            {
+              mutation,
+              item,
+            },
+            {
+              title: item.title,
+            },
+          )
+        }
+      ></SeriesPosterCard>
+    ),
+    [modals, mutation],
+  );
+
   useDocumentTitle(`Series - ${useInstanceName()}`);
 
   return (
     <Container px={0} fluid>
-      <ItemView query={query} columns={columns}></ItemView>
+      <ItemView
+        queryKey={seriesPaginationKey}
+        queryFn={seriesPaginationQuery}
+        columns={columns}
+        viewModeKey={seriesViewModeKey}
+        renderPoster={renderPoster}
+      ></ItemView>
     </Container>
   );
 };
