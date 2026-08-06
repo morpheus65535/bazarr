@@ -12,6 +12,7 @@ from functools import reduce
 from constants import MINIMUM_VIDEO_SIZE
 from app.database import database, TableShows, TableEpisodes, delete, update, insert, select, get_exclusion_clause
 from app.config import settings
+from utilities.helper import bool_map
 from utilities.path_mappings import path_mappings
 from subtitles.indexer.series import store_subtitles, series_full_scan_subtitles
 from subtitles.mass_download import episode_download_subtitles
@@ -23,9 +24,6 @@ from subtitles.adaptive_searching import is_search_active
 
 from .parser import episodeParser
 from .utils import get_episodes_from_sonarr_api, get_episodesFiles_from_sonarr_api
-
-# map between booleans and strings in DB
-bool_map = {"True": True, "False": False}
 
 FEATURE_PREFIX = "SYNC_EPISODES "
 

@@ -11,6 +11,7 @@ from sqlalchemy import or_
 from app.config import settings, base_url
 from languages.get_languages import language_from_alpha2, alpha3_from_alpha2
 from app.database import get_audio_profile_languages, get_desired_languages, get_subtitles
+from utilities.helper import bool_map
 from utilities.path_mappings import path_mappings
 
 None_Keys = ['null', 'undefined', '', None]
@@ -52,7 +53,7 @@ def profile_filter_clause(column, value):
 
 def monitored_filter_clause(column, value):
     # monitored is stored as the string 'True'/'False', not a boolean
-    return column == ('True' if value == 'true' else 'False')
+    return column == str(bool_map[value])
 
 
 def tags_filter_clause(column, tags):

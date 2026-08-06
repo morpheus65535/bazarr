@@ -11,6 +11,10 @@ from bs4 import UnicodeDammit
 from app.config import settings
 
 
+# map between booleans and their string representation in DB and query params
+bool_map = {"True": True, "False": False, "true": True, "false": False}
+
+
 def check_credentials(user, pw, request, log_success=True):
     forwarded_for_ip_addr = request.environ.get('HTTP_X_FORWARDED_FOR')
     real_ip_addr = request.environ.get('HTTP_X_REAL_IP')
