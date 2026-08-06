@@ -31,6 +31,36 @@ def validate_translation_params(video_path, source_srt_file, from_lang, to_lang)
     return True
 
 
+# Subtitle extensions that Bazarr can produce a translated file in. The Google and Lingarr
+# translators go through pysubs2, which honours the destination path extension; the Gemini
+# translator only handles SRT (see get_translation_extension below).
+SUPPORTED_TRANSLATION_EXTENSIONS = ('.srt', '.ass', '.ssa', '.vtt')
+
+
+def get_translation_extension(source_srt_file, original_format, translator_type):
+    """
+    Return the extension to use for the translated subtitle file.
+
+    When ``original_format`` is true and the source has a supported text-based extension, that
+    extension is preserved so a ``.ass``/``.vtt`` source is translated into a ``.ass``/``.vtt``
+    file instead of always being converted to ``.srt``. The Gemini translator reads and writes
+    SRT only, so for any non-SRT source it falls back to ``.srt``.
+    """
+    if not original_format:
+        return '.srt'
+
+    src_ext = os.path.splitext(source_srt_file)[1].lower()
+    if src_ext not in SUPPORTED_TRANSLATION_EXTENSIONS:
+        return '.srt'
+
+    if translator_type == 'gemini' and src_ext != '.srt':
+        logger.info(f'Gemini translator cannot preserve the {src_ext} format; falling back to .srt '
+                    f'for {source_srt_file}')
+        return '.srt'
+
+    return src_ext
+
+
 def convert_language_codes(to_lang, forced=False, hi=False):
     """Convert and validate language codes."""
     orig_to_lang = to_lang
@@ -77,6 +107,12 @@ def create_process_result(message, video_path, orig_to_lang, forced, hi, dest_sr
 
 def add_translator_info(dest_srt_file, info):
     if settings.translator.translator_info:
+        # The info cue is injected via the SRT library, so it only applies to .srt outputs.
+        # For other formats (.ass/.vtt) we skip it rather than risk corrupting the file.
+        if os.path.splitext(dest_srt_file)[1].lower() != '.srt':
+            logger.debug(f'Skipping translator info cue for non-SRT file: {dest_srt_file}')
+            return
+
         # Load the SRT content
         with open(dest_srt_file, "r", encoding="utf-8") as f:
             srt_content = f.read()

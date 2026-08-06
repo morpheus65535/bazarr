@@ -195,6 +195,7 @@ class Subtitles(Resource):
                     translate_subtitles_file(video_path=video_path, source_srt_file=subtitles_path,
                                              from_lang=from_language, to_lang=dest_language, forced=forced, hi=hi,
                                              media_type=media_type,
+                                             original_format=args.get('original_format') == 'True',
                                              sonarr_series_id=metadata.sonarrSeriesId if media_type == "episode" else None,
                                              sonarr_episode_id=id,
                                              radarr_id=id,
