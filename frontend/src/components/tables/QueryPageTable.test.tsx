@@ -67,6 +67,29 @@ describe("QueryPageTable", () => {
     expect(gotoPage).toHaveBeenCalledWith(1);
   });
 
+  it("renders all rows of the server page without re-slicing them", () => {
+    const rows = Array.from({ length: 50 }, (_, i) => ({
+      id: i + 1,
+      name: `Row ${i + 1}`,
+    }));
+
+    const { query } = createQuery({
+      data: { data: rows, total: 50 },
+      paginationStatus: {
+        page: 0,
+        pageCount: 1,
+        totalCount: 50,
+        pageSize: 50,
+        isPageLoading: false,
+      },
+    });
+
+    customRender(<QueryPageTable query={query} columns={columns} />);
+
+    expect(screen.getByText("Row 1")).toBeInTheDocument();
+    expect(screen.getByText("Row 50")).toBeInTheDocument();
+  });
+
   it("hides pagination when only one page is available", () => {
     const { query } = createQuery({
       paginationStatus: {
