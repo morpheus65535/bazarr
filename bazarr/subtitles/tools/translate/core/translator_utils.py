@@ -31,6 +31,72 @@ def validate_translation_params(video_path, source_srt_file, from_lang, to_lang)
     return True
 
 
+def resolve_translation_source(subtitles, subtitles_path, subtitles_id, language_validator=alpha3_from_alpha2):
+    """
+    Resolve the source language for a translate request from the subtitles list returned by
+    `get_subtitles(...)`.
+
+    A translate target is either an external file (identified by its `path`) or an embedded track
+    (identified by its subtitles database `id`). For the embedded case the matched track id is
+    returned so the caller can extract it to an external file before translating.
+
+    :param language_validator: callable used to validate the resolved language code2. Defaults to
+        `alpha3_from_alpha2`; injected mainly for unit testing.
+    :return: tuple ``(from_language, embedded_subtitle_id)`` where ``embedded_subtitle_id`` is
+        ``None`` for an external subtitle.
+    :raises ValueError: with an API-friendly message if the source cannot be identified, is not a
+        valid language, or the supplied id does not point to an embedded track.
+    """
+    if subtitles_path:
+        for external_subtitles in subtitles:
+            if external_subtitles['path'] == subtitles_path:
+                from_language = external_subtitles['code2']
+                if from_language and language_validator(from_language):
+                    return from_language, None
+                break
+    elif subtitles_id is not None:
+        for embedded_subtitles in subtitles:
+            if embedded_subtitles['id'] == subtitles_id:
+                if embedded_subtitles.get('embedded_track_id') is None:
+                    raise ValueError('Selected subtitle is not an embedded track')
+                from_language = embedded_subtitles['code2']
+                if from_language and language_validator(from_language):
+                    return from_language, subtitles_id
+                break
+
+    raise ValueError('Invalid source language code')
+
+
+# Subtitle extensions that Bazarr can produce a translated file in. The Google and Lingarr
+# translators go through pysubs2, which honours the destination path extension; the Gemini
+# translator only handles SRT (see get_translation_extension below).
+SUPPORTED_TRANSLATION_EXTENSIONS = ('.srt', '.ass', '.ssa', '.vtt')
+
+
+def get_translation_extension(source_srt_file, original_format, translator_type):
+    """
+    Return the extension to use for the translated subtitle file.
+
+    When ``original_format`` is true and the source has a supported text-based extension, that
+    extension is preserved so a ``.ass``/``.vtt`` source is translated into a ``.ass``/``.vtt``
+    file instead of always being converted to ``.srt``. The Gemini translator reads and writes
+    SRT only, so for any non-SRT source it falls back to ``.srt``.
+    """
+    if not original_format:
+        return '.srt'
+
+    src_ext = os.path.splitext(source_srt_file)[1].lower()
+    if src_ext not in SUPPORTED_TRANSLATION_EXTENSIONS:
+        return '.srt'
+
+    if translator_type == 'gemini' and src_ext != '.srt':
+        logger.info(f'Gemini translator cannot preserve the {src_ext} format; falling back to .srt '
+                    f'for {source_srt_file}')
+        return '.srt'
+
+    return src_ext
+
+
 def convert_language_codes(to_lang, forced=False, hi=False):
     """Convert and validate language codes."""
     orig_to_lang = to_lang
@@ -77,6 +143,12 @@ def create_process_result(message, video_path, orig_to_lang, forced, hi, dest_sr
 
 def add_translator_info(dest_srt_file, info):
     if settings.translator.translator_info:
+        # The info cue is injected via the SRT library, so it only applies to .srt outputs.
+        # For other formats (.ass/.vtt) we skip it rather than risk corrupting the file.
+        if os.path.splitext(dest_srt_file)[1].lower() != '.srt':
+            logger.debug(f'Skipping translator info cue for non-SRT file: {dest_srt_file}')
+            return
+
         # Load the SRT content
         with open(dest_srt_file, "r", encoding="utf-8") as f:
             srt_content = f.read()
