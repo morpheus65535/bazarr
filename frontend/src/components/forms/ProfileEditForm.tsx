@@ -116,7 +116,7 @@ const ProfileEditForm: FunctionComponent<Props> = ({
           : v.forced === "True"
             ? ":forced"
             : v.hi === "Excluded"
-              ? ":nonhi"
+              ? ":non-hi"
               : "";
 
       return v.language + suffix;
