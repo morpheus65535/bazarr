@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router";
 import {
   InfiniteData,
+  keepPreviousData,
   QueryKey,
   useInfiniteQuery,
   UseInfiniteQueryResult,
@@ -9,7 +10,7 @@ import {
   useQueryClient,
   UseQueryResult,
 } from "@tanstack/react-query";
-import { GetItemId, useOnValueChange } from "@/utilities";
+import { GetItemId } from "@/utilities";
 import { usePageSize } from "@/utilities/storage";
 import { QueryKeys } from "./keys";
 
@@ -45,7 +46,15 @@ export const usePaginationQuery = <
     searchParams.get("page") ? Number(searchParams.get("page")) - 1 : 0,
   );
 
-  const queryKeySuffix = useMemo(() => JSON.stringify(query), [query]);
+  // Reset to the first page when the filter/sort query changes. Adjusting
+  // state during render skips the mount, so a ?page= URL param is still
+  // honored on first load.
+  const queryKeySuffix = JSON.stringify(query);
+  const [prevQueryKeySuffix, setPrevQueryKeySuffix] = useState(queryKeySuffix);
+  if (prevQueryKeySuffix !== queryKeySuffix) {
+    setPrevQueryKeySuffix(queryKeySuffix);
+    setIndex(0);
+  }
 
   const pageSize = usePageSize();
 
@@ -62,6 +71,8 @@ export const usePaginationQuery = <
       };
       return queryFn(param);
     },
+
+    placeholderData: keepPreviousData,
   });
 
   const { data } = results;
@@ -97,32 +108,6 @@ export const usePaginationQuery = <
     [pageCount],
   );
 
-  const [isPageLoading, setIsPageLoading] = useState(false);
-
-  useOnValueChange(page, () => {
-    if (results.isFetching) {
-      setIsPageLoading(true);
-    }
-  });
-
-  useEffect(() => {
-    if (!results.isFetching) {
-      setIsPageLoading(false);
-    }
-  }, [results.isFetching]);
-
-  // Reset to the first page when the filter/sort query changes. The ref skips
-  // the effect on mount so a ?page= URL param is still honored on first load
-  // (useOnValueChange cannot be used here, it fires on mount).
-  const hasResetOnQueryChange = useRef(false);
-  useEffect(() => {
-    if (hasResetOnQueryChange.current) {
-      setIndex(0);
-      return;
-    }
-    hasResetOnQueryChange.current = true;
-  }, [queryKeySuffix]);
-
   // Reset page index if we out of bound
   useEffect(() => {
     if (pageCount === 0) return;
@@ -139,7 +124,7 @@ export const usePaginationQuery = <
   return {
     ...results,
     paginationStatus: {
-      isPageLoading,
+      isPageLoading: results.isPlaceholderData,
       totalCount,
       pageCount,
       pageSize,

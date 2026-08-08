@@ -3,6 +3,7 @@ import {
   ReactNode,
   useCallback,
   useEffect,
+  useEffectEvent,
   useMemo,
   useRef,
   useState,
@@ -19,6 +20,7 @@ import {
   Stack,
   Table,
 } from "@mantine/core";
+import { useMergedRef, useResizeObserver } from "@mantine/hooks";
 import { IconDefinition } from "@fortawesome/fontawesome-common-types";
 import {
   faCaretDown,
@@ -129,26 +131,21 @@ interface TagsFilterProps {
 const TagsFilterSelector = ({ value, options, onChange }: TagsFilterProps) => {
   const [localValue, setLocalValue] = useState<string[]>(value);
   const dirty = useRef(false);
-  const localValueRef = useRef(localValue);
-  localValueRef.current = localValue;
-  const onChangeRef = useRef(onChange);
-  onChangeRef.current = onChange;
 
   useEffect(() => {
     setLocalValue(value);
-    localValueRef.current = value;
     dirty.current = false;
   }, [value]);
 
-  const commit = useCallback(() => {
+  const commit = (tags: string[]) => {
     if (dirty.current) {
       dirty.current = false;
-      const current = localValueRef.current;
-      onChangeRef.current(current.length === 0 ? undefined : current);
+      onChange(tags.length === 0 ? undefined : tags);
     }
-  }, []);
+  };
 
-  useEffect(() => commit, [commit]);
+  const commitOnUnmount = useEffectEvent(() => commit(localValue));
+  useEffect(() => commitOnUnmount, []);
 
   return (
     <MultiSelector<string>
@@ -163,7 +160,7 @@ const TagsFilterSelector = ({ value, options, onChange }: TagsFilterProps) => {
         dirty.current = true;
         setLocalValue(tags);
       }}
-      onDropdownClose={commit}
+      onDropdownClose={() => commit(localValue)}
     />
   );
 };
@@ -378,6 +375,8 @@ const ItemViewToolbox = <T extends Item.Base>({
   // longer fit next to the Mass Edit button. Records the width at which the
   // controls overflowed so they only expand again when there is room.
   const [groupEl, setGroupEl] = useState<HTMLDivElement | null>(null);
+  const [resizeRef, groupRect] = useResizeObserver();
+  const groupRef = useMergedRef(setGroupEl, resizeRef);
   const controlsWidth = useRef(0);
   const [collapsed, setCollapsed] = useState(false);
 
@@ -387,22 +386,15 @@ const ItemViewToolbox = <T extends Item.Base>({
     }
 
     const epsilon = 8;
-    const check = () => {
-      if (!collapsed && groupEl.scrollWidth > groupEl.clientWidth + epsilon) {
-        controlsWidth.current = groupEl.scrollWidth;
-        setCollapsed(true);
-        return;
-      }
-      if (collapsed && groupEl.clientWidth >= controlsWidth.current + epsilon) {
-        setCollapsed(false);
-      }
-    };
-
-    check();
-    const observer = new ResizeObserver(check);
-    observer.observe(groupEl);
-    return () => observer.disconnect();
-  }, [groupEl, collapsed]);
+    if (!collapsed && groupEl.scrollWidth > groupEl.clientWidth + epsilon) {
+      controlsWidth.current = groupEl.scrollWidth;
+      setCollapsed(true);
+      return;
+    }
+    if (collapsed && groupEl.clientWidth >= controlsWidth.current + epsilon) {
+      setCollapsed(false);
+    }
+  }, [groupEl, groupRect, collapsed]);
 
   const activeFilterCount = Object.keys(query.filters ?? {}).length;
 
@@ -426,7 +418,7 @@ const ItemViewToolbox = <T extends Item.Base>({
   return (
     <Toolbox>
       <Group
-        ref={setGroupEl}
+        ref={groupRef}
         gap="sm"
         wrap="nowrap"
         align="center"

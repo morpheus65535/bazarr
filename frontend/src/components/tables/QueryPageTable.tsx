@@ -26,8 +26,6 @@ const QueryPageTable = <T extends RowData>(props: Props<T>) => {
     ScrollToTop();
   }, [page]);
 
-  // isPending covers the first load and filter/sort changes (new query key
-  // with no cached data yet); isPageLoading covers page navigation.
   return (
     <LoadingProvider value={isPageLoading || query.isPending}>
       <SimpleTable {...remain} data={data.data}></SimpleTable>

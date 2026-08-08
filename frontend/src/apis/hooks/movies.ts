@@ -29,20 +29,15 @@ export const useMovieById = (id: number) => {
 export const useMovies = (state: Parameter.ListState = {}) => {
   const client = useQueryClient();
 
-  const hasState = state.filters !== undefined || state.sortBy !== undefined;
-
   const query = useQuery({
     queryKey: [QueryKeys.Movies, QueryKeys.All, state],
     queryFn: async () => {
-      if (hasState) {
-        const response = await api.movies.moviesBy({
-          start: 0,
-          length: -1,
-          ...state,
-        });
-        return response.data;
-      }
-      return api.movies.movies();
+      const response = await api.movies.moviesBy({
+        start: 0,
+        length: -1,
+        ...state,
+      });
+      return response.data;
     },
   });
 
