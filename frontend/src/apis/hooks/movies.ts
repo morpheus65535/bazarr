@@ -29,8 +29,6 @@ export const useMovieById = (id: number) => {
 export const useMovies = (state: Parameter.ListState = {}) => {
   const client = useQueryClient();
 
-  // With an active filter/sort state (mass editor carrying over the list
-  // filters), use the filtered list endpoint; otherwise the plain full list.
   const hasState = state.filters !== undefined || state.sortBy !== undefined;
 
   const query = useQuery({

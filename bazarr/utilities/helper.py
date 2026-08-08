@@ -11,7 +11,6 @@ from bs4 import UnicodeDammit
 from app.config import settings
 
 
-# map between booleans and their string representation in DB and query params
 bool_map = {"True": True, "False": False, "true": True, "false": False}
 
 

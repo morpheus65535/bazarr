@@ -28,7 +28,6 @@ def profile_id_type(value):
 
 
 def add_list_query_args(parser):
-    # Shared filter/sort args for the series and movies list endpoints.
     parser.add_argument('sort_by', type=str, required=False, default='title',
                         help='Column to sort by')
     parser.add_argument('sort_order', type=str, required=False, default='asc', choices=('asc', 'desc'),

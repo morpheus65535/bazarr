@@ -53,8 +53,6 @@ import {
 import { useListQueryState } from "@/utilities";
 import { useViewMode, ViewMode } from "@/utilities/viewMode";
 
-// Toolbox button with the icon stacked above the label, shared by all toolbox
-// controls so Mass Edit, sort, view and filters look the same.
 const ToolboxIconButton = ({
   icon,
   children,
@@ -178,8 +176,6 @@ interface TriStateFilterProps {
   onChange: (value: boolean | undefined) => void;
 }
 
-// Three-state (all/yes/no) filter as a segmented control: one click instead
-// of the two a dropdown would need, with an explicit neutral state.
 const TriStateFilter = ({
   ariaLabel,
   trueLabel,
@@ -206,9 +202,6 @@ interface SortControlProps {
   setSort: (by: string, order: "asc" | "desc") => void;
 }
 
-// Poster view sort: icon button opening a dropdown with one item per field.
-// Click a field to sort ascending, click the active field again to flip the
-// direction. Table view sorts via column header clicks instead.
 const ItemViewSortControl = ({
   query,
   filterConfig,
@@ -452,7 +445,6 @@ const ItemViewToolbox = <T extends Item.Base>({
           Mass Edit
         </ToolboxIconButton>
 
-        {/* Inline when they fit, filter popover button when they do not */}
         {!collapsed && (
           <Group
             gap="sm"

@@ -70,7 +70,7 @@ export const parseListQuery = (
   };
 };
 
-const setOrDelete = (
+const setParam = (
   params: URLSearchParams,
   key: string,
   value: string | undefined,
@@ -93,11 +93,11 @@ export const buildListSearchParams = (
   const keys = keysFor(prefix);
   const next = new URLSearchParams(searchParams);
 
-  setOrDelete(next, keys.sortBy, query.sortBy);
-  setOrDelete(next, keys.sortOrder, query.sortOrder);
-  setOrDelete(next, keys.monitored, boolParam(query.filters?.monitored));
-  setOrDelete(next, keys.missing, boolParam(query.filters?.missing));
-  setOrDelete(
+  setParam(next, keys.sortBy, query.sortBy);
+  setParam(next, keys.sortOrder, query.sortOrder);
+  setParam(next, keys.monitored, boolParam(query.filters?.monitored));
+  setParam(next, keys.missing, boolParam(query.filters?.missing));
+  setParam(
     next,
     keys.profileId,
     query.filters?.profileId === undefined
@@ -106,7 +106,7 @@ export const buildListSearchParams = (
         ? NO_PROFILE
         : String(query.filters.profileId),
   );
-  setOrDelete(next, keys.audioLanguage, query.filters?.audioLanguage);
+  setParam(next, keys.audioLanguage, query.filters?.audioLanguage);
 
   next.delete(keys.tags);
   if (query.filters?.tags && query.filters.tags.length > 0) {
