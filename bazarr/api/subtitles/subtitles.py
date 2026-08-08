@@ -10,6 +10,7 @@ from languages.get_languages import alpha3_from_alpha2
 from utilities.path_mappings import path_mappings
 from utilities.video_analyzer import subtitles_sync_references
 from subtitles.tools.translate.main import translate_subtitles_file
+from subtitles.tools.translate.core.translator_utils import resolve_translation_source
 from subtitles.tools.mods import subtitles_apply_mods
 from subtitles.indexer.series import store_subtitles
 from subtitles.indexer.movies import store_subtitles_movie
@@ -126,10 +127,19 @@ class Subtitles(Resource):
         forced = True if args.get('forced') == 'True' else False
         hi = True if args.get('hi') == 'True' else False
 
-        if action != 'extract':
+        subtitles_id = args.get('subtitles_id')
+
+        if action not in ('extract', 'translate'):
             if subtitles_path and not os.path.exists(subtitles_path):
                 return 'Subtitles file not found. Path mapping issue?', 500
             if not subtitles_path:
+                return f'Path not provided and is required with this action: {action}', 501
+        elif action == 'translate':
+            # translate can target either an external file (path) or an embedded track
+            # identified by its subtitles database id (which is extracted first).
+            if subtitles_path and not os.path.exists(subtitles_path):
+                return 'Subtitles file not found. Path mapping issue?', 500
+            if not subtitles_path and not subtitles_id:
                 return f'Path not provided and is required with this action: {action}', 501
 
         if media_type == 'episode':
@@ -177,33 +187,40 @@ class Subtitles(Resource):
                 return 'Unable to edit subtitles file. Check logs.', 409
         elif action == 'translate':
             dest_language = language
-            from_language = None
 
             subtitles = get_subtitles(sonarr_episode_id=id if media_type == "episode" else None,
                                       radarr_id=id if media_type == "movie" else None)
 
-            if subtitles:
-                for external_subtitles in subtitles:
-                    if external_subtitles['path'] == subtitles_path:
-                        from_language = external_subtitles['code2']
-                        break
+            try:
+                from_language, embedded_subtitle_id = resolve_translation_source(
+                    subtitles, subtitles_path, subtitles_id)
+            except ValueError as e:
+                return str(e), 400
 
-                if not from_language or not alpha3_from_alpha2(from_language):
-                    return 'Invalid source language code', 400
-
+            # Translating an embedded track requires extracting it to an external file first.
+            # extract_embedded_subtitle returns the path of the newly created external file.
+            if embedded_subtitle_id is not None:
                 try:
-                    translate_subtitles_file(video_path=video_path, source_srt_file=subtitles_path,
-                                             from_lang=from_language, to_lang=dest_language, forced=forced, hi=hi,
-                                             media_type=media_type,
-                                             sonarr_series_id=metadata.sonarrSeriesId if media_type == "episode" else None,
-                                             sonarr_episode_id=id,
-                                             radarr_id=id,
-                                             metadata=metadata)
+                    subtitles_path = extract_embedded_subtitle(
+                        subtitles_id=embedded_subtitle_id, media_type=media_type)
+                except BitmapSubtitlesNotSupportedError:
+                    return 'Image based embedded subtitles cannot be extracted', 415
+                except (EmbeddedSubtitlesExtractionError, OSError):
+                    return 'Unable to take action on subtitles file. Check logs.', 409
 
-                except OSError:
-                    return 'Unable to edit subtitles file. Check logs.', 409
+            try:
+                translate_subtitles_file(video_path=video_path, source_srt_file=subtitles_path,
+                                         from_lang=from_language, to_lang=dest_language, forced=forced, hi=hi,
+                                         media_type=media_type,
+                                         original_format=args.get('original_format') == 'True',
+                                         sonarr_series_id=metadata.sonarrSeriesId if media_type == "episode" else None,
+                                         sonarr_episode_id=id,
+                                         radarr_id=id,
+                                         metadata=metadata)
+
+            except OSError:
+                return 'Unable to edit subtitles file. Check logs.', 409
         elif action == 'extract':
-            subtitles_id = args.get('subtitles_id')
             if not subtitles_id:
                 return 'Subtitles ID is required for extraction', 400
             try:
