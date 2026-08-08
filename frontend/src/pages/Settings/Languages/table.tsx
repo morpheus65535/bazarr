@@ -260,7 +260,13 @@ const ItemBadge: FunctionComponent<ItemProps> = ({ cutoff, item }) => {
   const text = useMemo(() => {
     const result =
       item.language +
-      (item.hi === "True" ? ":HI" : item.forced === "True" ? ":Forced" : "");
+      (item.hi === "True"
+        ? ":HI"
+        : item.forced === "True"
+          ? ":Forced"
+          : item.hi === "Excluded"
+            ? ":Non-HI"
+            : "");
     return result;
   }, [item.hi, item.forced, item.language]);
   return (

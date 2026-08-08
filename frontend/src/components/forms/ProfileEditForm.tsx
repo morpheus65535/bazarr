@@ -47,6 +47,10 @@ const subtitlesTypeOptions: SelectorOption<string>[] = [
     value: "hi",
   },
   {
+    label: "Non-HI only (exclude hearing-impaired)",
+    value: "nonHi",
+  },
+  {
     label: "Forced (foreign part only)",
     value: "forced",
   },
@@ -107,7 +111,13 @@ const ProfileEditForm: FunctionComponent<Props> = ({
     form.values.items,
     (v) => {
       const suffix =
-        v.hi === "True" ? ":hi" : v.forced === "True" ? ":forced" : "";
+        v.hi === "True"
+          ? ":hi"
+          : v.forced === "True"
+            ? ":forced"
+            : v.hi === "Excluded"
+              ? ":nonhi"
+              : "";
 
       return v.language + suffix;
     },
@@ -199,6 +209,8 @@ const ProfileEditForm: FunctionComponent<Props> = ({
           return "forced";
         } else if (item.hi === "True") {
           return "hi";
+        } else if (item.hi === "Excluded") {
+          return "nonHi";
         } else {
           return "normal";
         }
@@ -212,7 +224,12 @@ const ProfileEditForm: FunctionComponent<Props> = ({
             if (value) {
               action.mutate(index, {
                 ...item,
-                hi: value === "hi" ? "True" : "False",
+                hi:
+                  value === "hi"
+                    ? "True"
+                    : value === "nonHi"
+                      ? "Excluded"
+                      : "False",
                 forced: value === "forced" ? "True" : "False",
               });
             }

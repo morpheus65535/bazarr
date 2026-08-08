@@ -8,6 +8,7 @@ import ast
 from subliminal_patch import core, search_external_subtitles
 
 from languages.custom_lang import CustomLanguage
+from constants import HI_EXCLUDED
 from app.database import get_profiles_list, get_profile_cutoff, TableMovies, get_audio_profile_languages, database, \
     update, select, TableMoviesSubtitles, get_subtitles, delete, insert
 from languages.get_languages import alpha2_from_alpha3, get_language_set
@@ -288,8 +289,8 @@ def list_missing_subtitles_movies(no=None):
                         cutoff_met = True
                     elif cutoff_language in actual_subtitles_list:
                         cutoff_met = True
-                    # HI is considered as good as normal
-                    elif (cutoff_language and
+                    # HI is considered as good as normal only if the language isn't set to exclude HI
+                    elif (cutoff_temp['hi'] == 'False' and cutoff_language and
                           {'language': cutoff_language['language'],
                            'forced': 'False',
                            'hi': 'True'} in actual_subtitles_list):
@@ -304,13 +305,23 @@ def list_missing_subtitles_movies(no=None):
                     if item not in actual_subtitles_list:
                         missing_subtitles_list.append(item)
 
-                # remove missing that have forced or hi subtitles for this language in existing
+                # get a dictionary of hi setting by language
+                hi_setting_by_language = {x['language']: x['hi'] for x in desired_subtitles_temp['items'] if x['forced'] == 'False'} if desired_subtitles_temp else {}
                 for item in actual_subtitles_list:
-                    if item['hi'] == 'True':
+                    if item['hi'] == 'True' and hi_setting_by_language.get(item['language']) != HI_EXCLUDED:
+                        # remove missing that have forced or hi subtitles for this language in existing (unless the language is set to exclude HI)
                         try:
                             missing_subtitles_list.remove({'language': item['language'],
                                                            'forced': 'False',
                                                            'hi': 'False'})
+                        except ValueError:
+                            pass
+                    elif item['hi'] == 'False' and hi_setting_by_language.get(item['language']) == HI_EXCLUDED:
+                        # remove explicitely excluded requested hi subtitles and existing hi subtitles
+                        try:
+                            missing_subtitles_list.remove({'language': item['language'],
+                                                           'forced': 'False',
+                                                           'hi': HI_EXCLUDED})
                         except ValueError:
                             pass
 

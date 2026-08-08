@@ -10,6 +10,7 @@ from functools import reduce
 from sqlalchemy import and_, or_
 
 from app.config import settings
+from constants import HI_EXCLUDED
 from app.database import (get_exclusion_clause, get_audio_profile_languages, TableShows, TableEpisodes, TableMovies,
      TableHistory, TableHistoryMovie, database, select, func, get_profiles_list, TableEpisodesSubtitles,
      TableMoviesSubtitles)
@@ -466,6 +467,8 @@ def _language_from_items(items):
             results.append(f'{item["language"]}:forced')
         elif item['hi'] == 'True':
             results.append(f'{item["language"]}:hi')
+        elif item['hi'] == HI_EXCLUDED:
+            results.append(item['language'])
         else:
             results.append(item['language'])
             results.append(f'{item["language"]}:hi')
