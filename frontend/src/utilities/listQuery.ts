@@ -164,9 +164,5 @@ export const useListQueryState = (prefix?: string) => {
     [query, update],
   );
 
-  const clearFilters = useCallback(() => {
-    update({ sortBy: query.sortBy, sortOrder: query.sortOrder });
-  }, [query, update]);
-
-  return { query, setSort, setFilter, clearFilters };
+  return { query, setSort, setFilter };
 };
