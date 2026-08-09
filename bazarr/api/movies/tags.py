@@ -2,7 +2,7 @@
 
 import ast
 
-from flask_restx import Resource, Namespace
+from flask_restx import Resource, Namespace, fields, marshal
 
 from app.database import TableMovies, database, select
 
@@ -13,6 +13,10 @@ api_ns_movies_tags = Namespace('Movies Tags', description='List tags assigned to
 
 @api_ns_movies_tags.route('movies/tags')
 class MoviesTags(Resource):
+    get_response_model = api_ns_movies_tags.model('MoviesTagsGetResponse', {
+        'tag': fields.String(),
+    })
+
     @authenticate
     @api_ns_movies_tags.response(200, 'Success')
     @api_ns_movies_tags.response(401, 'Not Authenticated')
@@ -24,4 +28,4 @@ class MoviesTags(Resource):
         for row in rows:
             if row.tags:
                 tags.update(ast.literal_eval(row.tags))
-        return sorted(tags)
+        return marshal([{'tag': tag} for tag in sorted(tags)], self.get_response_model, envelope='data')

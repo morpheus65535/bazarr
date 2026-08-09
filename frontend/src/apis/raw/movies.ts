@@ -44,7 +44,8 @@ class MovieApi extends BaseApi {
   }
 
   async tags() {
-    return this.get<string[]>("/tags");
+    const response = await this.get<DataWrapper<{ tag: string }[]>>("/tags");
+    return response.data.map(({ tag }) => tag);
   }
 
   async wanted(params: Parameter.Range) {
