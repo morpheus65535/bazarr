@@ -135,11 +135,23 @@ interface TagsFilterProps {
 // Keeps the selected tags in local state so picking an option does not push a
 // URL change (which closes the dropdown). The URL is updated once the dropdown
 // closes or the control unmounts (e.g. the mobile popover closes).
+const sameTags = (a: string[], b: string[]) =>
+  a.length === b.length && a.every((tag, i) => tag === b[i]);
+
 const TagsFilterSelector = ({ value, options, onChange }: TagsFilterProps) => {
   const [localValue, setLocalValue] = useState<string[]>(value);
   const dirty = useRef(false);
+  const syncedValue = useRef(value);
 
   useEffect(() => {
+    // A caller may pass a fresh-but-equal array on every render (e.g. a new
+    // `[]` literal, or a derived array from URL params); only resync when the
+    // committed value actually changed, so that doesn't clobber a pending
+    // (not-yet-committed) local selection.
+    if (sameTags(value, syncedValue.current)) {
+      return;
+    }
+    syncedValue.current = value;
     setLocalValue(value);
     dirty.current = false;
   }, [value]);
@@ -160,7 +172,10 @@ const TagsFilterSelector = ({ value, options, onChange }: TagsFilterProps) => {
       w={220}
       searchable
       hidePickedOptions={false}
-      styles={{ pillsList: { flexWrap: "nowrap", overflow: "hidden" } }}
+      styles={{
+        pillsList: { flexWrap: "nowrap" },
+        inputField: { minWidth: 0 },
+      }}
       placeholder={localValue.length === 0 ? "Tags" : undefined}
       value={localValue}
       options={options}
@@ -171,8 +186,8 @@ const TagsFilterSelector = ({ value, options, onChange }: TagsFilterProps) => {
       }}
       onDropdownClose={() => commit(localValue)}
       renderPill={({ option, value: tag, onRemove }) => {
-        const label = option?.label ?? tag ?? option?.value ?? "";
-        const index = localValue.indexOf(String(tag ?? option?.value));
+        const label = option?.label ?? tag ?? "";
+        const index = localValue.indexOf(tag ?? "");
         if (index === MAX_VISIBLE_TAGS) {
           return <Pill>+{localValue.length - MAX_VISIBLE_TAGS}</Pill>;
         }
@@ -425,9 +440,8 @@ const ItemViewToolbox = ({
   const { data: allTags } = useTags();
 
   const tagOptions = useMemo(() => {
-    const tags = new Set<string>(allTags ?? []);
     // allTags may lag behind a just-picked tag; keep active filters visible.
-    query.filters?.tags?.forEach((tag) => tags.add(tag));
+    const tags = new Set([...(allTags ?? []), ...(query.filters?.tags ?? [])]);
     return Array.from(tags)
       .sort()
       .map((tag) => ({ value: tag, label: tag }));
