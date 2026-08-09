@@ -55,6 +55,8 @@ import {
 import { useListQueryState } from "@/utilities";
 import { useViewMode, ViewMode } from "@/utilities/viewMode";
 
+const EMPTY_TAGS: string[] = [];
+
 const ToolboxIconButton = ({
   icon,
   children,
@@ -335,7 +337,7 @@ const ItemViewFilterControls = ({
 
       {filterConfig.filters?.tags && (
         <TagsFilterSelector
-          value={query.filters?.tags ?? []}
+          value={query.filters?.tags ?? EMPTY_TAGS}
           options={tagOptions}
           onChange={(value) => setFilter("tags", value)}
         />
