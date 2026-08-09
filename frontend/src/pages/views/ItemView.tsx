@@ -15,6 +15,7 @@ import {
   Group,
   Indicator,
   Menu,
+  Pill,
   Popover,
   SegmentedControl,
   Stack,
@@ -33,7 +34,7 @@ import {
   faTableList,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { QueryKey } from "@tanstack/react-query";
+import { QueryKey, UseQueryResult } from "@tanstack/react-query";
 import { flexRender } from "@tanstack/react-table";
 import { useLanguageProfiles, useLanguages } from "@/apis/hooks";
 import {
@@ -56,6 +57,7 @@ import { useListQueryState } from "@/utilities";
 import { useViewMode, ViewMode } from "@/utilities/viewMode";
 
 const EMPTY_TAGS: string[] = [];
+const MAX_VISIBLE_TAGS = 2;
 
 const ToolboxIconButton = ({
   icon,
@@ -109,6 +111,9 @@ interface Props<T extends Item.Base = Item.Base> {
   viewModeKey?: string;
   renderPoster?: (item: T) => ReactNode;
   filterConfig: FilterConfig;
+  // Required when filterConfig.filters.tags is set: fetches the full list of
+  // tags in use, independent of the currently loaded/filtered items.
+  useTags?: () => Pick<UseQueryResult<string[]>, "data">;
   // Scopes the filter/sort URL params (e.g. "series_sort_by") so state does
   // not bleed between pages sharing this view.
   statePrefix?: string;
@@ -152,8 +157,10 @@ const TagsFilterSelector = ({ value, options, onChange }: TagsFilterProps) => {
   return (
     <MultiSelector<string>
       size="sm"
-      w={180}
+      w={220}
       searchable
+      hidePickedOptions={false}
+      styles={{ pillsList: { flexWrap: "nowrap", overflow: "hidden" } }}
       placeholder={localValue.length === 0 ? "Tags" : undefined}
       value={localValue}
       options={options}
@@ -163,6 +170,21 @@ const TagsFilterSelector = ({ value, options, onChange }: TagsFilterProps) => {
         setLocalValue(tags);
       }}
       onDropdownClose={() => commit(localValue)}
+      renderPill={({ option, value: tag, onRemove }) => {
+        const label = option?.label ?? tag ?? option?.value ?? "";
+        const index = localValue.indexOf(String(tag ?? option?.value));
+        if (index === MAX_VISIBLE_TAGS) {
+          return <Pill>+{localValue.length - MAX_VISIBLE_TAGS}</Pill>;
+        }
+        if (index > MAX_VISIBLE_TAGS) {
+          return null;
+        }
+        return (
+          <Pill withRemoveButton onRemove={onRemove}>
+            {label}
+          </Pill>
+        );
+      }}
     />
   );
 };
@@ -346,29 +368,29 @@ const ItemViewFilterControls = ({
   );
 };
 
-interface ToolboxProps<T extends Item.Base> {
+interface ToolboxProps {
   totalCount: number;
-  items: T[];
   viewMode: ViewMode;
   canShowPoster: boolean;
   onViewModeChange: (mode: ViewMode) => void;
   query: Parameter.ListState;
   filterConfig: FilterConfig;
+  useTags?: () => Pick<UseQueryResult<string[]>, "data">;
   setSort: (by: string, order: "asc" | "desc") => void;
   setFilter: SetFilter;
 }
 
-const ItemViewToolbox = <T extends Item.Base>({
+const ItemViewToolbox = ({
   totalCount,
-  items,
   viewMode,
   canShowPoster,
   onViewModeChange,
   query,
   filterConfig,
+  useTags = () => ({ data: undefined }),
   setSort,
   setFilter,
-}: ToolboxProps<T>) => {
+}: ToolboxProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [filtersOpened, setFiltersOpened] = useState(false);
@@ -400,13 +422,16 @@ const ItemViewToolbox = <T extends Item.Base>({
 
   const activeFilterCount = Object.keys(query.filters ?? {}).length;
 
+  const { data: allTags } = useTags();
+
   const tagOptions = useMemo(() => {
-    const tags = new Set<string>();
-    items.forEach((item) => item.tags?.forEach((tag) => tags.add(tag)));
+    const tags = new Set<string>(allTags ?? []);
+    // allTags may lag behind a just-picked tag; keep active filters visible.
+    query.filters?.tags?.forEach((tag) => tags.add(tag));
     return Array.from(tags)
       .sort()
       .map((tag) => ({ value: tag, label: tag }));
-  }, [items]);
+  }, [allTags, query.filters?.tags]);
 
   const controls = (
     <ItemViewFilterControls
@@ -541,7 +566,7 @@ interface ViewProps<T extends Item.Base> {
   queryKey: QueryKey;
   queryFn: RangeQuery<T>;
   query: Parameter.ListState;
-  toolbox: Omit<ToolboxProps<T>, "totalCount" | "items">;
+  toolbox: Omit<ToolboxProps, "totalCount">;
 }
 
 const ItemTableView = <T extends Item.Base>({
@@ -606,7 +631,6 @@ const ItemTableView = <T extends Item.Base>({
       <ItemViewToolbox
         {...toolbox}
         totalCount={tableQuery.paginationStatus.totalCount}
-        items={tableQuery.data?.data ?? []}
       ></ItemViewToolbox>
       <QueryPageTable
         columns={columns}
@@ -636,7 +660,6 @@ const ItemPosterView = <T extends Item.Base>({
       <ItemViewToolbox
         {...toolbox}
         totalCount={posterQuery.paginationStatus.totalCount}
-        items={posterQuery.items}
       ></ItemViewToolbox>
       <QueryPosterGrid
         query={posterQuery}
@@ -654,6 +677,7 @@ const ItemView = <T extends Item.Base>({
   viewModeKey,
   renderPoster,
   filterConfig,
+  useTags,
   statePrefix,
 }: Props<T>) => {
   const [viewMode, setViewMode] = useViewMode(viewModeKey ?? "item-view-mode");
@@ -662,12 +686,13 @@ const ItemView = <T extends Item.Base>({
   const canShowPoster = viewModeKey !== undefined && renderPoster !== undefined;
   const showPoster = canShowPoster && viewMode === "poster";
 
-  const toolbox: Omit<ToolboxProps<T>, "totalCount" | "items"> = {
+  const toolbox: Omit<ToolboxProps, "totalCount"> = {
     viewMode,
     canShowPoster,
     onViewModeChange: setViewMode,
     query,
     filterConfig,
+    useTags,
     setSort,
     setFilter,
   };

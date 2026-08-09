@@ -10,6 +10,7 @@ import {
   moviesPaginationKey,
   moviesPaginationQuery,
   useMovieModification,
+  useMovieTags,
 } from "@/apis/hooks";
 import { useInstanceName } from "@/apis/hooks/site";
 import { Action } from "@/components";
@@ -199,6 +200,7 @@ const MovieView: FunctionComponent = () => {
         viewModeKey={moviesViewModeKey}
         renderPoster={renderPoster}
         filterConfig={moviesFilterConfig}
+        useTags={useMovieTags}
         statePrefix="movies"
       ></ItemView>
     </Container>

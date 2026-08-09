@@ -66,6 +66,13 @@ export const useSeries = (state: Parameter.ListState = {}) => {
   return query;
 };
 
+export const useSeriesTags = () =>
+  useQuery({
+    queryKey: [QueryKeys.Series, QueryKeys.Tags],
+    queryFn: () => api.series.tags(),
+    staleTime: Infinity,
+  });
+
 export const seriesPaginationKey = [QueryKeys.Series];
 
 export const seriesPaginationQuery: RangeQuery<Item.Series> = (param) =>

@@ -50,6 +50,13 @@ export const useMovies = (state: Parameter.ListState = {}) => {
   return query;
 };
 
+export const useMovieTags = () =>
+  useQuery({
+    queryKey: [QueryKeys.Movies, QueryKeys.Tags],
+    queryFn: () => api.movies.tags(),
+    staleTime: Infinity,
+  });
+
 export const moviesPaginationKey = [QueryKeys.Movies];
 
 export const moviesPaginationQuery: RangeQuery<Item.Movie> = (param) =>

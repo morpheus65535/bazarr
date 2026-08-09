@@ -43,6 +43,10 @@ class MovieApi extends BaseApi {
     await this.post("", { radarrid: form.id, profileid: form.profileId });
   }
 
+  async tags() {
+    return this.get<string[]>("/tags");
+  }
+
   async wanted(params: Parameter.Range) {
     const response = await this.get<DataWrapperWithTotal<Wanted.RawMovie>>(
       "/wanted",

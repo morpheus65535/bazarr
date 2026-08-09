@@ -149,6 +149,7 @@ export const MultiSelector = <T,>({
   onChange,
   getkey = DefaultKeyBuilder,
   buildOption,
+  hidePickedOptions = true,
   ...select
 }: MultiSelectorProps<T>) => {
   const labelRef = useRef(getkey);
@@ -196,7 +197,7 @@ export const MultiSelector = <T,>({
   return (
     <MultiSelect
       {...select}
-      hidePickedOptions
+      hidePickedOptions={hidePickedOptions}
       value={wrappedValue}
       defaultValue={wrappedDefaultValue}
       onChange={wrappedOnChange}

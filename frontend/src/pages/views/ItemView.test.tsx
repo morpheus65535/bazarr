@@ -247,17 +247,13 @@ describe("ItemView", () => {
   });
 
   it("commits the tags filter only when the dropdown closes", async () => {
-    const taggedItem = { ...item, tags: ["anime"] };
-    const queryFn: RangeQuery<Item.Series> = vitest.fn(() =>
-      Promise.resolve({ data: [taggedItem], total: 1 }),
-    );
-
     customRender(
       <ItemView
         queryKey={["test-item-view-tags"]}
-        queryFn={queryFn}
+        queryFn={buildQueryFn()}
         columns={columns}
         filterConfig={filterConfig}
+        useTags={() => ({ data: ["anime"] })}
       ></ItemView>,
     );
 

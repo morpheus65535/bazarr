@@ -29,6 +29,10 @@ class SeriesApi extends BaseApi {
     await this.post("", { seriesid: form.id, profileid: form.profileId });
   }
 
+  async tags() {
+    return this.get<string[]>("/tags");
+  }
+
   async action(form: FormType.SeriesAction) {
     const payload: Record<string, unknown> = { action: form.action };
 

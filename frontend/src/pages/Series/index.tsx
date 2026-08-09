@@ -14,6 +14,7 @@ import {
   seriesPaginationKey,
   seriesPaginationQuery,
   useSeriesModification,
+  useSeriesTags,
 } from "@/apis/hooks";
 import { useInstanceName } from "@/apis/hooks/site";
 import { Action } from "@/components";
@@ -199,6 +200,7 @@ const SeriesView: FunctionComponent = () => {
         viewModeKey={seriesViewModeKey}
         renderPoster={renderPoster}
         filterConfig={seriesFilterConfig}
+        useTags={useSeriesTags}
         statePrefix="series"
       ></ItemView>
     </Container>
