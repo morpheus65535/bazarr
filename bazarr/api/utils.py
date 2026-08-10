@@ -6,12 +6,12 @@ from functools import wraps
 from flask import request, abort
 from operator import itemgetter
 
-from sqlalchemy import or_
+from sqlalchemy import or_, and_
 
 from app.config import settings, base_url
 from languages.get_languages import language_from_alpha2, alpha3_from_alpha2
 from app.database import (get_audio_profile_languages, get_desired_languages, get_subtitles, database, TableEpisodes,
-                          select)
+                          TableShows, select)
 from utilities.helper import bool_map
 from utilities.path_mappings import path_mappings
 
@@ -66,6 +66,24 @@ def audio_language_filter_clause(column, language):
     # Audio languages are stored as a stringified list of language names
     # (e.g. "['English', 'French']").
     return column.contains(f"'{language}'")
+
+
+def series_audio_language_filter_clause(language):
+    # Series with an empty audio_language display the audio languages
+    # aggregated from their episodes (see postprocess), so the filter must
+    # match both the series value and the episodes values to stay consistent
+    # with what the table shows.
+    pattern = f"'{language}'"
+    return or_(
+        TableShows.audio_language.contains(pattern),
+        and_(
+            or_(TableShows.audio_language == '[]', TableShows.audio_language.is_(None)),
+            TableShows.sonarrSeriesId.in_(
+                select(TableEpisodes.sonarrSeriesId)
+                .where(TableEpisodes.audio_language.contains(pattern))
+            ),
+        ),
+    )
 
 
 def apply_sort(stmt, sort_columns, default_column, sort_by, sort_order):

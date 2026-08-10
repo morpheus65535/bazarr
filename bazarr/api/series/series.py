@@ -14,7 +14,7 @@ from app.event_handler import event_stream
 from api.swaggerui import subtitles_model, subtitles_language_model, audio_language_model
 
 from api.utils import authenticate, None_Keys, postprocess, add_list_query_args, profile_filter_clause, \
-    monitored_filter_clause, tags_filter_clause, audio_language_filter_clause, apply_sort
+    monitored_filter_clause, tags_filter_clause, series_audio_language_filter_clause, apply_sort
 
 api_ns_series = Namespace('Series', description='List series metadata, update series languages profile or run actions '
                                                 'for specific series.')
@@ -136,7 +136,7 @@ class Series(Resource):
                 missing_clause = func.coalesce(episodeMissingCount.c.episodeMissingCount, 0) == 0
             where_clauses.append(missing_clause)
         if audio_language is not None:
-            where_clauses.append(audio_language_filter_clause(TableShows.audio_language, audio_language))
+            where_clauses.append(series_audio_language_filter_clause(audio_language))
         if tags:
             where_clauses.append(tags_filter_clause(TableShows.tags, tags))
 
