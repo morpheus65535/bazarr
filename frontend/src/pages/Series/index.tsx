@@ -24,6 +24,7 @@ import { useModals } from "@/modules/modals";
 import ItemView from "@/pages/views/ItemView";
 import { seriesViewModeKey } from "@/utilities/viewMode";
 import SeriesPosterCard from "./PosterCard";
+import { AudioList } from "@/components/bazarr";
 
 const SeriesView: FunctionComponent = () => {
   const mutation = useSeriesModification();
@@ -58,6 +59,17 @@ const SeriesView: FunctionComponent = () => {
               {original.title}
             </Anchor>
           );
+        },
+      },
+      {
+        header: "Audio",
+        accessorKey: "audioLanguage",
+        cell: ({
+          row: {
+            original: { audioLanguage: audioLanguage },
+          },
+        }) => {
+          return <AudioList audios={audioLanguage}></AudioList>;
         },
       },
       {
