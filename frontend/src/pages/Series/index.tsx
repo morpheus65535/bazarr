@@ -18,6 +18,7 @@ import {
 } from "@/apis/hooks";
 import { useInstanceName } from "@/apis/hooks/site";
 import { Action } from "@/components";
+import { AudioList } from "@/components/bazarr";
 import LanguageProfileName from "@/components/bazarr/LanguageProfile";
 import { ItemEditModal } from "@/components/forms/ItemEditForm";
 import { AppColumnDef as ColumnDef } from "@/components/tables/features";
@@ -76,6 +77,17 @@ const SeriesView: FunctionComponent = () => {
               {original.title}
             </Anchor>
           );
+        },
+      },
+      {
+        header: "Audio",
+        accessorKey: "audioLanguage",
+        cell: ({
+          row: {
+            original: { audioLanguage: audioLanguage },
+          },
+        }) => {
+          return <AudioList audios={audioLanguage}></AudioList>;
         },
       },
       {

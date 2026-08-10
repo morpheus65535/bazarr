@@ -10,7 +10,8 @@ from sqlalchemy import or_
 
 from app.config import settings, base_url
 from languages.get_languages import language_from_alpha2, alpha3_from_alpha2
-from app.database import get_audio_profile_languages, get_desired_languages, get_subtitles
+from app.database import (get_audio_profile_languages, get_desired_languages, get_subtitles, database, TableEpisodes,
+                          select)
 from utilities.helper import bool_map
 from utilities.path_mappings import path_mappings
 
@@ -103,7 +104,33 @@ def postprocess(item):
 
     # Parse audio language
     if item.get('audio_language'):
-        item['audio_language'] = get_audio_profile_languages(item['audio_language'])
+        if item.get('sonarrSeriesId') and not item.get('sonarrEpisodeId') and item['audio_language'] == '[]':
+            # if, for a series, audio_language is empty, we need to get the audio_language from the episodes
+            episodes_audio_languages = database.execute(
+                select(TableEpisodes.audio_language)
+                .where(TableEpisodes.sonarrSeriesId == item['sonarrSeriesId'])
+            ).scalars()
+
+            # then parse the audio_languages for all episodes
+            audio_languages_ast_list_of_lists = []
+            for audio_languages in episodes_audio_languages:
+                try:
+                    audio_languages_ast_list_of_lists.append(ast.literal_eval(audio_languages))
+                except ValueError:
+                    print(toto)
+                    continue
+
+            # then flatten the list of lists as a set of unique audio languages
+            audio_languages_flattened_set = set([item for sublist in audio_languages_ast_list_of_lists for item in sublist])
+
+            # then convert the set to a string
+            audio_languages_str = str(list(audio_languages_flattened_set))
+
+            # to pass it to get_audio_profile_languages that will return a list of audio languages dicts
+            item['audio_language'] = get_audio_profile_languages(audio_languages_str)
+        else:
+            # in other cases, we can directly pass the audio_language string to get_audio_profile_languages
+            item['audio_language'] = get_audio_profile_languages(item['audio_language'])
 
     # Make sure profileId is a valid None value
     if item.get('profileId') in None_Keys:
