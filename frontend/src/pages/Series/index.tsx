@@ -17,6 +17,7 @@ import {
 } from "@/apis/hooks";
 import { useInstanceName } from "@/apis/hooks/site";
 import { Action } from "@/components";
+import { AudioList } from "@/components/bazarr";
 import LanguageProfileName from "@/components/bazarr/LanguageProfile";
 import { ItemEditModal } from "@/components/forms/ItemEditForm";
 import { AppColumnDef as ColumnDef } from "@/components/tables/features";
@@ -24,7 +25,6 @@ import { useModals } from "@/modules/modals";
 import ItemView from "@/pages/views/ItemView";
 import { seriesViewModeKey } from "@/utilities/viewMode";
 import SeriesPosterCard from "./PosterCard";
-import { AudioList } from "@/components/bazarr";
 
 const SeriesView: FunctionComponent = () => {
   const mutation = useSeriesModification();
