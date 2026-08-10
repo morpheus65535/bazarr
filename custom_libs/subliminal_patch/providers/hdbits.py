@@ -42,7 +42,7 @@ class HDBitsSubtitle(Subtitle):
         return f"{self.provider_name}_{self.item_id}"
 
 
-_SPECIAL_LANG_MAP = {"uk": ("eng",), "br": ("por", "BR"), "gr": ("ell",)}
+_SPECIAL_LANG_MAP = {"uk": ("eng",), "br": ("por", "BR"), "gr": ("ell",), "se": ("swe",)}
 _ALLOWED_EXTENSIONS = (".ass", ".srt", ".zip", ".rar")
 _FILTER = re.compile("extra|commentary|lyrics|forced")
 
