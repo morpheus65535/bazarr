@@ -16,15 +16,13 @@ from constants import MINIMUM_VIDEO_SIZE
 from radarr.rootfolder import check_radarr_rootfolder
 from subtitles.indexer.movies import store_subtitles_movie
 from subtitles.mass_download import movies_download_subtitles
+from utilities.helper import bool_map
 from utilities.path_mappings import path_mappings
 from subtitles.adaptive_searching import is_search_active
 
 from sqlalchemy.exc import IntegrityError
 from .parser import movieParser
 from .utils import get_profile_list, get_tags, get_movies_from_radarr_api
-
-# map between booleans and strings in DB
-bool_map = {"True": True, "False": False}
 
 FEATURE_PREFIX = "SYNC_MOVIES "
 

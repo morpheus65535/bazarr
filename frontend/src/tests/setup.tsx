@@ -98,6 +98,12 @@ beforeEach(() => {
         },
       });
     }),
+    http.get("/api/system/languages", () => {
+      return HttpResponse.json([]);
+    }),
+    http.get("/api/system/languages/profiles", () => {
+      return HttpResponse.json([]);
+    }),
   );
 });
 

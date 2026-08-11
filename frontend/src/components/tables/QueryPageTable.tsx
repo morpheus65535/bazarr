@@ -27,7 +27,7 @@ const QueryPageTable = <T extends RowData>(props: Props<T>) => {
   }, [page]);
 
   return (
-    <LoadingProvider value={isPageLoading}>
+    <LoadingProvider value={isPageLoading || query.isPending}>
       <SimpleTable {...remain} data={data.data}></SimpleTable>
       <PageControl
         count={pageCount}

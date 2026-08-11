@@ -14,6 +14,7 @@ import {
   seriesPaginationKey,
   seriesPaginationQuery,
   useSeriesModification,
+  useSeriesTags,
 } from "@/apis/hooks";
 import { useInstanceName } from "@/apis/hooks/site";
 import { Action } from "@/components";
@@ -25,6 +26,23 @@ import { useModals } from "@/modules/modals";
 import ItemView from "@/pages/views/ItemView";
 import { seriesViewModeKey } from "@/utilities/viewMode";
 import SeriesPosterCard from "./PosterCard";
+
+const seriesFilterConfig = {
+  sortFields: [
+    { value: "title", label: "Name" },
+    { value: "episodeFileCount", label: "Episodes" },
+    { value: "episodeMissingCount", label: "Missing" },
+    { value: "profileId", label: "Profile" },
+    { value: "createdAtTimestamp", label: "Added" },
+  ],
+  filters: {
+    monitored: true,
+    missing: true,
+    profile: true,
+    audio: true,
+    tags: true,
+  },
+};
 
 const SeriesView: FunctionComponent = () => {
   const mutation = useSeriesModification();
@@ -123,6 +141,17 @@ const SeriesView: FunctionComponent = () => {
         },
       },
       {
+        header: "Added",
+        accessorKey: "createdAtTimestamp",
+        cell: ({ row: { original } }) => (
+          <>
+            {original.createdAtTimestamp
+              ? new Date(original.createdAtTimestamp).toLocaleDateString()
+              : ""}
+          </>
+        ),
+      },
+      {
         id: "sonarrSeriesId",
         cell: ({ row: { original } }) => {
           return (
@@ -182,6 +211,9 @@ const SeriesView: FunctionComponent = () => {
         columns={columns}
         viewModeKey={seriesViewModeKey}
         renderPoster={renderPoster}
+        filterConfig={seriesFilterConfig}
+        useTags={useSeriesTags}
+        statePrefix="series"
       ></ItemView>
     </Container>
   );

@@ -42,12 +42,19 @@ export const useSeriesById = (id: number) => {
   });
 };
 
-export const useSeries = () => {
+export const useSeries = (state: Parameter.ListState = {}) => {
   const client = useQueryClient();
 
   const query = useQuery({
-    queryKey: [QueryKeys.Series, QueryKeys.All],
-    queryFn: () => api.series.series(),
+    queryKey: [QueryKeys.Series, QueryKeys.All, state],
+    queryFn: async () => {
+      const response = await api.series.seriesBy({
+        start: 0,
+        length: -1,
+        ...state,
+      });
+      return response.data;
+    },
   });
 
   useEffect(() => {
@@ -58,6 +65,13 @@ export const useSeries = () => {
 
   return query;
 };
+
+export const useSeriesTags = () =>
+  useQuery({
+    queryKey: [QueryKeys.Series, QueryKeys.Tags],
+    queryFn: () => api.series.tags(),
+    staleTime: Infinity,
+  });
 
 export const seriesPaginationKey = [QueryKeys.Series];
 

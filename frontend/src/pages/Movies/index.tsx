@@ -10,6 +10,7 @@ import {
   moviesPaginationKey,
   moviesPaginationQuery,
   useMovieModification,
+  useMovieTags,
 } from "@/apis/hooks";
 import { useInstanceName } from "@/apis/hooks/site";
 import { Action } from "@/components";
@@ -23,6 +24,22 @@ import ItemView from "@/pages/views/ItemView";
 import { BuildKey } from "@/utilities";
 import { moviesViewModeKey } from "@/utilities/viewMode";
 import MoviePosterCard from "./PosterCard";
+
+const moviesFilterConfig = {
+  sortFields: [
+    { value: "title", label: "Name" },
+    { value: "profileId", label: "Profile" },
+    { value: "audioLanguage", label: "Audio" },
+    { value: "createdAtTimestamp", label: "Added" },
+  ],
+  filters: {
+    monitored: true,
+    missing: true,
+    profile: true,
+    audio: true,
+    tags: true,
+  },
+};
 
 const MovieView: FunctionComponent = () => {
   const modifyMovie = useMovieModification();
@@ -112,6 +129,17 @@ const MovieView: FunctionComponent = () => {
         },
       },
       {
+        header: "Added",
+        accessorKey: "createdAtTimestamp",
+        cell: ({ row: { original } }) => (
+          <>
+            {original.createdAtTimestamp
+              ? new Date(original.createdAtTimestamp).toLocaleDateString()
+              : ""}
+          </>
+        ),
+      },
+      {
         id: "radarrId",
         cell: ({ row }) => {
           return (
@@ -171,6 +199,9 @@ const MovieView: FunctionComponent = () => {
         columns={columns}
         viewModeKey={moviesViewModeKey}
         renderPoster={renderPoster}
+        filterConfig={moviesFilterConfig}
+        useTags={useMovieTags}
+        statePrefix="movies"
       ></ItemView>
     </Container>
   );

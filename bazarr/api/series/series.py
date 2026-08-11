@@ -13,7 +13,8 @@ from subtitles.wanted import wanted_search_missing_subtitles_series
 from app.event_handler import event_stream
 from api.swaggerui import subtitles_model, subtitles_language_model, audio_language_model
 
-from api.utils import authenticate, None_Keys, postprocess
+from api.utils import authenticate, None_Keys, postprocess, add_list_query_args, profile_filter_clause, \
+    monitored_filter_clause, tags_filter_clause, series_audio_language_filter_clause, apply_sort
 
 api_ns_series = Namespace('Series', description='List series metadata, update series languages profile or run actions '
                                                 'for specific series.')
@@ -26,6 +27,7 @@ class Series(Resource):
     get_request_parser.add_argument('length', type=int, required=False, default=-1, help='Paging length integer')
     get_request_parser.add_argument('seriesid[]', type=int, action='append', required=False, default=[],
                                     help='Series IDs to get metadata for')
+    add_list_query_args(get_request_parser)
 
     get_subtitles_model = api_ns_series.model('subtitles_model', subtitles_model)
     get_subtitles_language_model = api_ns_series.model('subtitles_language_model', subtitles_language_model)
@@ -34,6 +36,7 @@ class Series(Resource):
     data_model = api_ns_series.model('series_data_model', {
         'alternativeTitles': fields.List(fields.String),
         'audio_language': fields.Nested(get_audio_language_model),
+        'created_at_timestamp': fields.String(),
         'episodeFileCount': fields.Integer(default=0),
         'ended': fields.Boolean(),
         'episodeMissingCount': fields.Integer(default=0),
@@ -68,6 +71,13 @@ class Series(Resource):
         start = args.get('start')
         length = args.get('length')
         seriesId = args.get('seriesid[]')
+        sort_by = args.get('sort_by')
+        sort_order = args.get('sort_order')
+        monitored = args.get('monitored')
+        profile_id = args.get('profileid')
+        missing = args.get('missing')
+        audio_language = args.get('audio_language')
+        tags = args.get('tags[]')
 
         episodeFileCount = select(TableShows.sonarrSeriesId,
                                   func.count(TableEpisodes.sonarrSeriesId).label('episodeFileCount')) \
@@ -91,6 +101,7 @@ class Series(Resource):
         stmt = select(TableShows.tvdbId,
                       TableShows.alternativeTitles,
                       TableShows.audio_language,
+                      TableShows.created_at_timestamp,
                       TableShows.fanart,
                       TableShows.imdbId,
                       TableShows.monitored,
@@ -109,18 +120,46 @@ class Series(Resource):
                       episodeMissingCount.c.episodeMissingCount) \
             .select_from(TableShows) \
             .join(episodeFileCount, TableShows.sonarrSeriesId == episodeFileCount.c.sonarrSeriesId, isouter=True) \
-            .join(episodeMissingCount, TableShows.sonarrSeriesId == episodeMissingCount.c.sonarrSeriesId, isouter=True)\
-            .order_by(TableShows.sortTitle)
+            .join(episodeMissingCount, TableShows.sonarrSeriesId == episodeMissingCount.c.sonarrSeriesId, isouter=True)
+
+        where_clauses = []
 
         if len(seriesId) != 0:
-            stmt = stmt.where(TableShows.sonarrSeriesId.in_(seriesId))
-        elif length > 0:
+            where_clauses.append(TableShows.sonarrSeriesId.in_(seriesId))
+        if monitored is not None:
+            where_clauses.append(monitored_filter_clause(TableShows.monitored, monitored))
+        if profile_id is not None:
+            where_clauses.append(profile_filter_clause(TableShows.profileId, profile_id))
+        if missing is not None:
+            missing_clause = func.coalesce(episodeMissingCount.c.episodeMissingCount, 0) > 0
+            if missing != 'true':
+                missing_clause = func.coalesce(episodeMissingCount.c.episodeMissingCount, 0) == 0
+            where_clauses.append(missing_clause)
+        if audio_language is not None:
+            where_clauses.append(series_audio_language_filter_clause(audio_language))
+        if tags:
+            where_clauses.append(tags_filter_clause(TableShows.tags, tags))
+
+        if where_clauses:
+            stmt = stmt.where(reduce(operator.and_, where_clauses))
+
+        stmt = apply_sort(stmt, {
+            'title': TableShows.sortTitle,
+            'year': TableShows.year,
+            'episodeFileCount': episodeFileCount.c.episodeFileCount,
+            'episodeMissingCount': episodeMissingCount.c.episodeMissingCount,
+            'profileId': TableShows.profileId,
+            'createdAtTimestamp': TableShows.created_at_timestamp,
+        }, TableShows.sortTitle, sort_by, sort_order)
+
+        if length > 0:
             stmt = stmt.limit(length).offset(start)
 
         results = [postprocess({
             'tvdbId': x.tvdbId,
             'alternativeTitles': x.alternativeTitles,
             'audio_language': x.audio_language,
+            'created_at_timestamp': x.created_at_timestamp,
             'fanart': x.fanart,
             'imdbId': x.imdbId,
             'monitored': x.monitored,
@@ -139,10 +178,14 @@ class Series(Resource):
             'episodeMissingCount': x.episodeMissingCount,
         }) for x in database.execute(stmt).all()]
 
-        count = database.execute(
-            select(func.count())
-            .select_from(TableShows)) \
-            .scalar()
+        count_stmt = select(func.count()) \
+            .select_from(TableShows) \
+            .join(episodeFileCount, TableShows.sonarrSeriesId == episodeFileCount.c.sonarrSeriesId, isouter=True) \
+            .join(episodeMissingCount, TableShows.sonarrSeriesId == episodeMissingCount.c.sonarrSeriesId, isouter=True)
+        if where_clauses:
+            count_stmt = count_stmt.where(reduce(operator.and_, where_clauses))
+
+        count = database.execute(count_stmt).scalar()
 
         return marshal({'data': results, 'total': count}, self.get_response_model)
 

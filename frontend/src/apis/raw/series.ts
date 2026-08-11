@@ -1,5 +1,6 @@
 import { camelCaseKeys } from "@/utilities/case";
 import BaseApi from "./base";
+import { buildListParams } from "./utils";
 
 class SeriesApi extends BaseApi {
   constructor() {
@@ -13,10 +14,10 @@ class SeriesApi extends BaseApi {
     return response.data.map(camelCaseKeys);
   }
 
-  async seriesBy(params: Parameter.Range) {
+  async seriesBy(params: Parameter.ListQuery) {
     const response = await this.get<DataWrapperWithTotal<Item.RawSeries>>(
       "",
-      params,
+      buildListParams(params),
     );
     return {
       ...response,
@@ -26,6 +27,11 @@ class SeriesApi extends BaseApi {
 
   async modify(form: FormType.ModifyItem) {
     await this.post("", { seriesid: form.id, profileid: form.profileId });
+  }
+
+  async tags() {
+    const response = await this.get<DataWrapper<{ tag: string }[]>>("/tags");
+    return response.data.map(({ tag }) => tag);
   }
 
   async action(form: FormType.SeriesAction) {

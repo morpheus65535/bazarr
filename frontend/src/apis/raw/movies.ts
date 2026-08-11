@@ -1,5 +1,6 @@
 import { camelCaseKeys, snakeCaseKeys } from "@/utilities/case";
 import BaseApi from "./base";
+import { buildListParams } from "./utils";
 
 class MovieApi extends BaseApi {
   constructor() {
@@ -27,10 +28,10 @@ class MovieApi extends BaseApi {
     return response.data.map(camelCaseKeys);
   }
 
-  async moviesBy(params: Parameter.Range) {
+  async moviesBy(params: Parameter.ListQuery) {
     const response = await this.get<DataWrapperWithTotal<Item.RawMovie>>(
       "",
-      params,
+      buildListParams(params),
     );
     return {
       ...response,
@@ -40,6 +41,11 @@ class MovieApi extends BaseApi {
 
   async modify(form: FormType.ModifyItem) {
     await this.post("", { radarrid: form.id, profileid: form.profileId });
+  }
+
+  async tags() {
+    const response = await this.get<DataWrapper<{ tag: string }[]>>("/tags");
+    return response.data.map(({ tag }) => tag);
   }
 
   async wanted(params: Parameter.Range) {

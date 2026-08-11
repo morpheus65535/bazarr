@@ -26,12 +26,19 @@ export const useMovieById = (id: number) => {
   });
 };
 
-export const useMovies = () => {
+export const useMovies = (state: Parameter.ListState = {}) => {
   const client = useQueryClient();
 
   const query = useQuery({
-    queryKey: [QueryKeys.Movies, QueryKeys.All],
-    queryFn: () => api.movies.movies(),
+    queryKey: [QueryKeys.Movies, QueryKeys.All, state],
+    queryFn: async () => {
+      const response = await api.movies.moviesBy({
+        start: 0,
+        length: -1,
+        ...state,
+      });
+      return response.data;
+    },
   });
 
   useEffect(() => {
@@ -42,6 +49,13 @@ export const useMovies = () => {
 
   return query;
 };
+
+export const useMovieTags = () =>
+  useQuery({
+    queryKey: [QueryKeys.Movies, QueryKeys.Tags],
+    queryFn: () => api.movies.tags(),
+    staleTime: Infinity,
+  });
 
 export const moviesPaginationKey = [QueryKeys.Movies];
 

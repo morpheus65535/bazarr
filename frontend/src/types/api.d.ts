@@ -157,6 +157,7 @@ declare namespace Item {
     TagType &
     MonitoredType &
     RawAudioLanguageType & {
+      created_at_timestamp?: string | null;
       profileId: number | null;
       fanart: string;
       overview: string;
@@ -303,6 +304,24 @@ declare namespace Parameter {
     start: number;
     length: number;
   }
+
+  interface ListFilters {
+    monitored?: boolean;
+    missing?: boolean;
+    profileId?: number;
+    audioLanguage?: string;
+    tags?: string[];
+  }
+
+  interface ListQuery extends Range {
+    sortBy?: string;
+    sortOrder?: "asc" | "desc";
+    filters?: ListFilters;
+  }
+
+  // ListQuery without the paging fields, as managed by the filter/sort UI
+  // state (URL params) and passed to the pagination hooks.
+  type ListState = Omit<ListQuery, "start" | "length">;
 }
 
 declare namespace Plex {
