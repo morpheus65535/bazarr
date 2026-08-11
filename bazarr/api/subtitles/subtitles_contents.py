@@ -7,6 +7,7 @@ from datetime import timedelta
 from flask_restx import Resource, Namespace, reqparse, fields, marshal
 
 from ..utils import authenticate
+from subtitles.indexer.utils import detect_encoding
 
 
 api_ns_subtitle_contents = Namespace('Subtitle Contents', description='Retrieve contents of subtitle file')
@@ -71,6 +72,7 @@ class SubtitleNameContents(Resource):
 
     @authenticate
     @api_ns_subtitle_contents.response(200, 'Success')
+    @api_ns_subtitle_contents.response(400, 'Invalid subtitle file encoding')
     @api_ns_subtitle_contents.response(401, 'Not Authenticated')
     @api_ns_subtitle_contents.doc(parser=get_request_parser)
     def get(self):
@@ -79,8 +81,13 @@ class SubtitleNameContents(Resource):
         args = self.get_request_parser.parse_args()
         path = args.get('subtitlePath')
 
+        # Detect subtitles file encoding
+        encoding = detect_encoding(path)
+        if encoding is None:
+            return 'Invalid subtitle file encoding', 400
+
         # Load the subtitles content
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, "r", encoding=encoding) as f:
             file_content = f.read()
 
         try:
