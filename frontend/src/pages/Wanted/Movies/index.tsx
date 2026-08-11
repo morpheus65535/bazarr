@@ -39,7 +39,7 @@ const WantedMoviesView: FunctionComponent = () => {
         accessorKey: "missingSubtitles",
         cell: ({
           row: {
-            original: { radarrId, missingSubtitles: missingSubtitles },
+            original: { radarrId, missingSubtitles },
           },
         }) => {
           return (

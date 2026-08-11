@@ -17,7 +17,10 @@ import {
 } from "@/pages/Settings/utilities/FormValues";
 import { BuildKey, useArrayAction } from "@/utilities";
 import { snakeCaseKeys } from "@/utilities/case";
-import { useLatestEnabledLanguages, useLatestProfiles } from ".";
+import {
+  useLatestEnabledLanguages,
+  useLatestProfiles,
+} from "./useLatestLanguages";
 
 const Table: FunctionComponent = () => {
   const profiles = useLatestProfiles();

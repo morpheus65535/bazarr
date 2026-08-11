@@ -44,10 +44,8 @@ import {
   useStagedValues,
 } from "@/pages/Settings/utilities/FormValues";
 import { useSettingValue } from "@/pages/Settings/utilities/hooks";
-import {
-  SettingsProvider,
-  useSettings,
-} from "@/pages/Settings/utilities/SettingsProvider";
+import { SettingsProvider } from "@/pages/Settings/utilities/SettingsProvider";
+import { useSettings } from "@/pages/Settings/utilities/useSettings";
 import { BuildKey, useSelectorOptions } from "@/utilities";
 import { ASSERT } from "@/utilities/console";
 import { IntegrationList, ProviderInfo, ProviderList } from "./list";

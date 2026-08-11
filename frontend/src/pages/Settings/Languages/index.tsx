@@ -1,6 +1,6 @@
 import { FunctionComponent } from "react";
 import { Text as MantineText } from "@mantine/core";
-import { useLanguageProfiles, useLanguages } from "@/apis/hooks";
+import { useLanguages } from "@/apis/hooks";
 import {
   Check,
   Chips,
@@ -14,35 +14,11 @@ import {
   defaultUndAudioLang,
   defaultUndEmbeddedSubtitlesLang,
   enabledLanguageKey,
-  languageProfileKey,
 } from "@/pages/Settings/keys";
-import { useSettingValue } from "@/pages/Settings/utilities/hooks";
 import { useEnabledLanguages } from "@/utilities/languages";
 import { LanguageSelector, ProfileSelector } from "./components";
 import EqualsTable from "./equals";
 import Table from "./table";
-
-export const useLatestEnabledLanguages = () => {
-  const { data } = useEnabledLanguages();
-  const latest = useSettingValue<Language.Info[]>(enabledLanguageKey);
-
-  if (latest) {
-    return latest;
-  } else {
-    return data;
-  }
-};
-
-export const useLatestProfiles = () => {
-  const { data = [] } = useLanguageProfiles();
-  const latest = useSettingValue<Language.Profile[]>(languageProfileKey);
-
-  if (latest) {
-    return latest;
-  } else {
-    return data;
-  }
-};
 
 const SettingsLanguagesView: FunctionComponent = () => {
   const { data: languages } = useLanguages();

@@ -47,11 +47,7 @@ const WantedSeriesView: FunctionComponent = () => {
         accessorKey: "missingSubtitles",
         cell: ({
           row: {
-            original: {
-              sonarrSeriesId,
-              sonarrEpisodeId,
-              missingSubtitles: missingSubtitles,
-            },
+            original: { sonarrSeriesId, sonarrEpisodeId, missingSubtitles },
           },
         }) => {
           const seriesId = sonarrSeriesId;
