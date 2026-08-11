@@ -1,7 +1,7 @@
 import { useOs } from "@mantine/hooks";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vitest } from "vitest";
-import { spotlightApi } from "@/components/AppSpotlight";
+import { spotlightApi } from "@/components/spotlight";
 import { customRender, screen } from "@/tests";
 import Search from "./Search";
 

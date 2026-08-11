@@ -169,7 +169,7 @@ const Table = forwardRef<TableInstance<Item.Episode> | null, Props>(
           accessorKey: "audioLanguage",
           cell: ({
             row: {
-              original: { audioLanguage: audioLanguage },
+              original: { audioLanguage },
             },
           }) => <AudioList audios={audioLanguage}></AudioList>,
         },

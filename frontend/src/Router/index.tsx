@@ -1,10 +1,4 @@
-import {
-  createContext,
-  FunctionComponent,
-  lazy,
-  useContext,
-  useMemo,
-} from "react";
+import { FunctionComponent, lazy, useMemo } from "react";
 import { createBrowserRouter, RouterProvider } from "react-router";
 import {
   faClock,
@@ -54,6 +48,7 @@ import { Environment } from "@/utilities";
 import Redirector from "./Redirector";
 import { RouterNames } from "./RouterNames";
 import { CustomRouteObject } from "./type";
+import { RouterItemContext } from "./useRouteItems";
 
 const HistoryStats = lazy(
   () => import("@/pages/History/Statistics/HistoryStats"),
@@ -329,8 +324,6 @@ const useRoutes = (): CustomRouteObject[] => {
   );
 };
 
-const RouterItemContext = createContext<CustomRouteObject[]>([]);
-
 export const Router: FunctionComponent = () => {
   const routes = useRoutes();
 
@@ -349,5 +342,3 @@ export const Router: FunctionComponent = () => {
     </RouterItemContext.Provider>
   );
 };
-
-export const useRouteItems = () => useContext(RouterItemContext);

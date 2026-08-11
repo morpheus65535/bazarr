@@ -83,7 +83,7 @@ const MovieView: FunctionComponent = () => {
         accessorKey: "audioLanguage",
         cell: ({
           row: {
-            original: { audioLanguage: audioLanguage },
+            original: { audioLanguage },
           },
         }) => {
           return <AudioList audios={audioLanguage}></AudioList>;
@@ -110,7 +110,7 @@ const MovieView: FunctionComponent = () => {
         accessorKey: "missingSubtitles",
         cell: ({
           row: {
-            original: { missingSubtitles: missingSubtitles },
+            original: { missingSubtitles },
           },
         }) => {
           return (

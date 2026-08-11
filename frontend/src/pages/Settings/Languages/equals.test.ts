@@ -4,7 +4,7 @@ import {
   encodeEqualData,
   LanguageEqualData,
   LanguageEqualImmediateData,
-} from "@/pages/Settings/Languages/equals";
+} from "@/pages/Settings/Languages/languageEquals";
 
 describe("Equals Parser", () => {
   it("should parse from string correctly", () => {

@@ -145,26 +145,23 @@ const setupMocks = (
   });
   mockedUseInstanceName.mockReturnValue("Bazarr");
   mockedUsePlexAuthValidationQuery.mockReturnValue({
-    ...{
-      data: { valid: false, authMethod: "oauth" },
-      isLoading: false,
-      error: null,
-      refetch: vitest.fn(),
+    data: {
+      valid: false,
+      authMethod: "oauth",
     },
+    isLoading: false,
+    error: null,
+    refetch: vitest.fn(),
     ...hookOverrides?.auth,
   });
   mockedUsePlexServersQuery.mockReturnValue({
-    ...{
-      data: [],
-      error: null,
-      refetch: vitest.fn(),
-    },
+    data: [],
+    error: null,
+    refetch: vitest.fn(),
     ...hookOverrides?.servers,
   });
   mockedUsePlexSelectedServerQuery.mockReturnValue({
-    ...{
-      data: null,
-    },
+    data: null,
     ...hookOverrides?.selectedServer,
   });
   mockedUsePlexPinMutation.mockReturnValue({
@@ -173,9 +170,7 @@ const setupMocks = (
     }),
   });
   mockedUsePlexPinCheckQuery.mockReturnValue({
-    ...{
-      data: null,
-    },
+    data: null,
     ...hookOverrides?.pinCheck,
   });
   mockedUsePlexLogoutMutation.mockReturnValue({
@@ -187,11 +182,9 @@ const setupMocks = (
     isPending: false,
   });
   mockedUsePlexLibrariesQuery.mockReturnValue({
-    ...{
-      data: [],
-      isLoading: false,
-      error: null,
-    },
+    data: [],
+    isLoading: false,
+    error: null,
     ...hookOverrides?.libraries,
   });
   mockedUsePlexWebhookCreateMutation.mockReturnValue({
@@ -199,12 +192,10 @@ const setupMocks = (
     isPending: false,
   });
   mockedUsePlexWebhookListQuery.mockReturnValue({
-    ...{
-      data: null,
-      isLoading: false,
-      error: null,
-      refetch: vitest.fn(),
-    },
+    data: null,
+    isLoading: false,
+    error: null,
+    refetch: vitest.fn(),
     ...hookOverrides?.webhooks,
   });
   mockedUsePlexWebhookDeleteMutation.mockReturnValue({
@@ -212,11 +203,9 @@ const setupMocks = (
     isPending: false,
   });
   mockedUsePlexAutopulseConfigQuery.mockReturnValue({
-    ...{
-      data: null,
-      refetch: mockRefetchAutopulse,
-      isFetching: false,
-    },
+    data: null,
+    refetch: mockRefetchAutopulse,
+    isFetching: false,
     ...hookOverrides?.autopulse,
   });
 };

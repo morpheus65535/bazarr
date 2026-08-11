@@ -2,8 +2,8 @@ import { useNavigate } from "react-router";
 import { useSpotlight } from "@mantine/spotlight";
 import { describe, expect, it, vitest } from "vitest";
 import { useServerSearch } from "@/apis/hooks";
-import { useRouteItems } from "@/Router";
 import { CustomRouteObject } from "@/Router/type";
+import { useRouteItems } from "@/Router/useRouteItems";
 import { customRender } from "@/tests";
 import { useDebouncedValue } from "@/utilities";
 import AppSpotlight from "./AppSpotlight";
@@ -13,8 +13,9 @@ vitest.mock("react-router", async (importOriginal) => {
   return { ...actual, useNavigate: vitest.fn() };
 });
 
-vitest.mock("@/Router", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/Router")>();
+vitest.mock("@/Router/useRouteItems", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("@/Router/useRouteItems")>();
   return { ...actual, useRouteItems: vitest.fn() };
 });
 

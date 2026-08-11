@@ -1,17 +1,5 @@
-import {
-  createContext,
-  FunctionComponent,
-  PropsWithChildren,
-  useContext,
-} from "react";
-
-const SettingsContext = createContext<Settings | null>(null);
-
-export const useSettings = () => {
-  const context = useContext(SettingsContext);
-
-  return context;
-};
+import { FunctionComponent, PropsWithChildren } from "react";
+import { SettingsContext } from "@/pages/Settings/utilities/useSettings";
 
 type SettingsProviderProps = {
   value: Settings | null;

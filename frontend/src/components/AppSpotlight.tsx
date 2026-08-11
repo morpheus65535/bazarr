@@ -2,7 +2,6 @@ import { FunctionComponent, useMemo } from "react";
 import { useNavigate } from "react-router";
 import { Image, rem } from "@mantine/core";
 import {
-  createSpotlight,
   Spotlight,
   SpotlightActionData,
   SpotlightActionGroupData,
@@ -11,11 +10,10 @@ import {
 import { IconDefinition } from "@fortawesome/fontawesome-common-types";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useServerSearch } from "@/apis/hooks";
-import { useRouteItems } from "@/Router";
 import { CustomRouteObject } from "@/Router/type";
+import { useRouteItems } from "@/Router/useRouteItems";
 import { useDebouncedValue } from "@/utilities";
-
-export const [spotlightStore, spotlightApi] = createSpotlight();
+import { spotlightStore } from "./spotlight";
 
 const buildNavActions = (
   routes: CustomRouteObject[],

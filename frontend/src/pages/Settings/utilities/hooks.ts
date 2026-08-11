@@ -5,7 +5,7 @@ import {
   useFormActions,
   useStagedValues,
 } from "@/pages/Settings/utilities/FormValues";
-import { useSettings } from "@/pages/Settings/utilities/SettingsProvider";
+import { useSettings } from "@/pages/Settings/utilities/useSettings";
 import { LOG } from "@/utilities/console";
 
 export interface BaseInput<T> {
