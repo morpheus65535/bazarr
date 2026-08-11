@@ -173,8 +173,8 @@ const SubtitlePreviewView: FunctionComponent<Props> = ({ selections }) => {
           icon={<FontAwesomeIcon icon={faCircleExclamation} />}
           title="Unable to read subtitle"
         >
-          This subtitle could not be read. Only UTF-8 encoded SRT, SSA or ASS
-          files can be previewed.
+          This subtitle could not be read. Only SRT, SSA or ASS files can be
+          previewed.
         </Alert>
       ) : lines.length === 0 ? (
         <Alert color="yellow" variant="light">

@@ -6,7 +6,7 @@ import logging
 from guess_language import guess_language
 from subliminal_patch import core
 from subzero.language import Language
-from charset_normalizer import detect
+from charset_normalizer import from_path
 
 from constants import MAXIMUM_SUBTITLE_SIZE
 from app.config import settings
@@ -68,16 +68,10 @@ def guess_external_subtitles(dest_folder, subtitles, previously_indexed_subtitle
                                   f"{subtitle_path}")
                     continue
 
-                with open(subtitle_path, 'rb') as f:
-                    text = f.read()
-
-                encoding = detect(text)
-                if encoding and 'encoding' in encoding and encoding['encoding']:
-                    encoding = detect(text)['encoding']
-                else:
-                    logging.debug(f"BAZARR skipping this subtitles because we can't guess the encoding. "
-                                  f"It's probably a binary file: {subtitle_path}")
+                encoding = detect_encoding(subtitle_path)
+                if encoding is None:
                     continue
+
                 text = text.decode(encoding)
 
                 detected_language = guess_language(text)
@@ -119,16 +113,10 @@ def guess_external_subtitles(dest_folder, subtitles, previously_indexed_subtitle
                                   f"{subtitle_path}")
                     continue
 
-                with open(subtitle_path, 'rb') as f:
-                    text = f.read()
-
-                encoding = detect(text)
-                if encoding and 'encoding' in encoding and encoding['encoding']:
-                    encoding = detect(text)['encoding']
-                else:
-                    logging.debug(f"BAZARR skipping this subtitles because we can't guess the encoding. "
-                                  f"It's probably a binary file: {subtitle_path}")
+                encoding = detect_encoding(subtitle_path)
+                if encoding is None:
                     continue
+
                 text = text.decode(encoding)
 
                 if os.path.splitext(subtitle_path)[1] == 'srt':
@@ -153,3 +141,42 @@ def _get_lang_from_str(x_found_lang, x_forced, x_hi):
         return Language.rebuild(x_custom_lang.subzero_language(), hi=x_hi, forced=x_forced)
     else:
         return Language.rebuild(Language.fromietf(x_found_lang), hi=x_hi, forced=x_forced)
+
+
+def detect_encoding(subtitle_path: str) -> str | None:
+    """
+    Detect the encoding of a subtitle file.
+
+    Attempts to determine the encoding of a subtitle file by analyzing its
+    content. Logs appropriate messages if the encoding cannot be determined,
+    or if errors occur during file access or detection.
+
+    Parameters:
+        subtitle_path (str): The file path to the subtitle file.
+
+    Returns:
+        str | None: The detected encoding of the subtitle file, or None if the
+        encoding could not be determined or an error occurs.
+    """
+    try:
+        detection = from_path(subtitle_path).best()
+        if detection is None:
+            logging.debug(f"BAZARR can't detect encoding for: {subtitle_path}")
+            return None
+
+        encoding = detection.encoding
+        if not encoding:
+            logging.debug(f"BAZARR can't guess this subtitles encoding. It's probably a binary file: {subtitle_path}")
+            return None
+        
+        return encoding
+        
+    except (FileNotFoundError, IOError) as e:
+        logging.warning(f"BAZARR can't read subtitle file: {subtitle_path} - {e}")
+        return None
+    except AttributeError:
+        logging.debug(f"BAZARR detection object missing encoding attribute for: {subtitle_path}")
+        return None
+    except Exception as e:
+        logging.exception(f"BAZARR unhandled exception while detecting encoding for: {subtitle_path}: {e}")
+        return None
