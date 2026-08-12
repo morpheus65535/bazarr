@@ -431,20 +431,33 @@ class TableSportsEvents(Base):
     format = mapped_column(Text)
     missing_subtitles = mapped_column(Text)
     monitored = mapped_column(Text)
+    id = mapped_column(Integer, primary_key=True)
     # Prelims, Main Card, Qualifying. Null when the event has a single file.
     partName = mapped_column(Text)
+    # Orders the parts, and identifies the row with the event. 0 when the event
+    # has a single file.
+    partNumber = mapped_column(Integer, nullable=False, default=0)
     path = mapped_column(Text, nullable=False)
     resolution = mapped_column(Text)
     # Release name, and only when a real grab produced the file. Sportarr
     # renames files, so the name on disk never matches a release.
     sceneName = mapped_column(Text)
     season = mapped_column(Integer, nullable=False)
-    sportarrEventId = mapped_column(Integer, primary_key=True)
+    sportarrEventId = mapped_column(Integer, nullable=False)
     sportarrLeagueId = mapped_column(Integer, ForeignKey('table_sports_leagues.sportarrLeagueId',
                                                         ondelete='CASCADE'))
     title = mapped_column(Text, nullable=False)
     updated_at_timestamp = mapped_column(DateTime)
     video_codec = mapped_column(Text)
+
+    # The event and its part identify a row, not the Sportarr event id alone.
+    # A card ships prelims and a main card under ONE event id, so that id
+    # cannot be the key. The file id cannot either, because Sportarr issues a
+    # new one when a quality upgrade replaces the file, and the row would be
+    # deleted and rebuilt on every upgrade, losing its subtitle history.
+    __table_args__ = (
+        UniqueConstraint('sportarrEventId', 'partNumber', name='uc_sports_event_part'),
+    )
 
     def to_dict(self):
         return {column.name: getattr(self, column.name) for column in self.__table__.columns}
@@ -460,15 +473,16 @@ class TableSportsEventsSubtitles(Base):
     path = mapped_column(Text, nullable=True)
     size = mapped_column(BigInteger, nullable=True)
     embedded_track_id = mapped_column(Integer, nullable=True)
-    sportarrEventId = mapped_column(Integer, ForeignKey('table_sports_events.sportarrEventId', ondelete='CASCADE'),
-                                    nullable=False)
+    # Points at the event row, which is one part, not at the Sportarr event id.
+    sportsEventId = mapped_column(Integer, ForeignKey('table_sports_events.id', ondelete='CASCADE'),
+                                  nullable=False)
     sportarrLeagueId = mapped_column(Integer, ForeignKey('table_sports_leagues.sportarrLeagueId', ondelete='CASCADE'),
                                      nullable=False)
 
     __table_args__ = (
-        UniqueConstraint('path', 'sportarrLeagueId', 'sportarrEventId', 'language', 'forced', 'hi',
+        UniqueConstraint('path', 'sportarrLeagueId', 'sportsEventId', 'language', 'forced', 'hi',
                          name='uc_external_sports_events_subtitles'),
-        UniqueConstraint('embedded_track_id', 'sportarrLeagueId', 'sportarrEventId', 'language', 'forced', 'hi',
+        UniqueConstraint('embedded_track_id', 'sportarrLeagueId', 'sportsEventId', 'language', 'forced', 'hi',
                          name='uc_embedded_sports_events_subtitles'),
     )
 

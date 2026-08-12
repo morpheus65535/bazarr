@@ -48,7 +48,7 @@ def upgrade():
     if 'table_sports_events' not in tables:
         op.create_table(
             'table_sports_events',
-            sa.Column('sportarrEventId', sa.Integer(), nullable=False),
+            sa.Column('id', sa.Integer(), nullable=False),
             sa.Column('audio_codec', sa.Text(), nullable=True),
             sa.Column('audio_language', sa.Text(), nullable=True),
             sa.Column('broadcastDate', sa.Text(), nullable=True),
@@ -63,17 +63,20 @@ def upgrade():
             sa.Column('missing_subtitles', sa.Text(), nullable=True),
             sa.Column('monitored', sa.Text(), nullable=True),
             sa.Column('partName', sa.Text(), nullable=True),
+            sa.Column('partNumber', sa.Integer(), nullable=False, server_default='0'),
             sa.Column('path', sa.Text(), nullable=False),
             sa.Column('resolution', sa.Text(), nullable=True),
             sa.Column('sceneName', sa.Text(), nullable=True),
             sa.Column('season', sa.Integer(), nullable=False),
+            sa.Column('sportarrEventId', sa.Integer(), nullable=False),
             sa.Column('sportarrLeagueId', sa.Integer(), nullable=True),
             sa.Column('title', sa.Text(), nullable=False),
             sa.Column('updated_at_timestamp', sa.DateTime(), nullable=True),
             sa.Column('video_codec', sa.Text(), nullable=True),
             sa.ForeignKeyConstraint(['sportarrLeagueId'], ['table_sports_leagues.sportarrLeagueId'],
                                     ondelete='CASCADE'),
-            sa.PrimaryKeyConstraint('sportarrEventId'),
+            sa.PrimaryKeyConstraint('id'),
+            sa.UniqueConstraint('sportarrEventId', 'partNumber', name='uc_sports_event_part'),
         )
 
     if 'table_sports_events_subtitles' not in tables:
@@ -86,15 +89,15 @@ def upgrade():
             sa.Column('path', sa.Text(), nullable=True),
             sa.Column('size', sa.BigInteger(), nullable=True),
             sa.Column('embedded_track_id', sa.Integer(), nullable=True),
-            sa.Column('sportarrEventId', sa.Integer(), nullable=False),
+            sa.Column('sportsEventId', sa.Integer(), nullable=False),
             sa.Column('sportarrLeagueId', sa.Integer(), nullable=False),
-            sa.ForeignKeyConstraint(['sportarrEventId'], ['table_sports_events.sportarrEventId'], ondelete='CASCADE'),
+            sa.ForeignKeyConstraint(['sportsEventId'], ['table_sports_events.id'], ondelete='CASCADE'),
             sa.ForeignKeyConstraint(['sportarrLeagueId'], ['table_sports_leagues.sportarrLeagueId'],
                                     ondelete='CASCADE'),
             sa.PrimaryKeyConstraint('id'),
-            sa.UniqueConstraint('path', 'sportarrLeagueId', 'sportarrEventId', 'language', 'forced', 'hi',
+            sa.UniqueConstraint('path', 'sportarrLeagueId', 'sportsEventId', 'language', 'forced', 'hi',
                                 name='uc_external_sports_events_subtitles'),
-            sa.UniqueConstraint('embedded_track_id', 'sportarrLeagueId', 'sportarrEventId', 'language', 'forced', 'hi',
+            sa.UniqueConstraint('embedded_track_id', 'sportarrLeagueId', 'sportsEventId', 'language', 'forced', 'hi',
                                 name='uc_embedded_sports_events_subtitles'),
         )
 
