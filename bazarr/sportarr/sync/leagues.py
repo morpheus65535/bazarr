@@ -13,6 +13,7 @@ from utilities.helper import bool_map
 from app.event_handler import event_stream
 from app.jobs_queue import jobs_queue
 
+from .events import sync_events
 from .parser import leagueParser
 from .utils import get_tags, get_leagues_from_sportarr_api
 
@@ -119,6 +120,9 @@ def update_leagues(job_id=None, wait_for_completion=False):
             # Update league in DB
             update_one_league(league['id'], action='updated', league_data=[league], tagsDict=tagsDict,
                               language_profiles=language_profiles)
+
+            # Update events in DB
+            sync_events(league_id=league['id'])
 
         # Calculate leagues to remove from DB
         removed_leagues = list(set(current_leagues_db) - set(current_leagues_sportarr))
