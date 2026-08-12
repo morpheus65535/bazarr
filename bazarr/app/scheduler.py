@@ -20,6 +20,7 @@ import logging
 
 from app.announcements import get_announcements_to_file
 from sonarr.sync.series import update_series
+from sportarr.sync.leagues import update_leagues
 from radarr.sync.movies import update_movies
 from subtitles.indexer.movies import movies_full_scan_subtitles
 from subtitles.indexer.series import series_full_scan_subtitles
@@ -103,6 +104,7 @@ class Scheduler:
     def update_configurable_tasks(self):
         self.__sonarr_update_task()
         self.__radarr_update_task()
+        self.__sportarr_update_task()
         self.__sonarr_full_update_task()
         self.__radarr_full_update_task()
         self.__update_bazarr_task()
@@ -209,6 +211,13 @@ class Scheduler:
             self.aps_scheduler.add_job(
                 update_movies, 'interval', minutes=int(settings.radarr.movies_sync), max_instances=1,
                 coalesce=True, misfire_grace_time=15, id='update_movies', name='Sync with Radarr',
+                replace_existing=True, kwargs=dict(wait_for_completion=True))
+
+    def __sportarr_update_task(self):
+        if settings.general.use_sportarr:
+            self.aps_scheduler.add_job(
+                update_leagues, 'interval', minutes=int(settings.sportarr.leagues_sync), max_instances=1,
+                coalesce=True, misfire_grace_time=15, id='update_leagues', name='Sync with Sportarr',
                 replace_existing=True, kwargs=dict(wait_for_completion=True))
 
     def __cache_cleanup_task(self):
