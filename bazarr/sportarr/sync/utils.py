@@ -31,6 +31,28 @@ def get_tags():
         return tagsDict.json()
 
 
+def get_event_from_sportarr_api(apikey_sportarr, event_id):
+    """Read a single event, mainly to learn which league it belongs to.
+
+    Some stream frames name only the event, so the league has to be looked up
+    before anything can be synced.
+    """
+    url_sportarr_api_event = f"{url_api_sportarr()}events/{event_id}?apikey={apikey_sportarr}"
+
+    try:
+        r = requests.get(url_sportarr_api_event, timeout=int(settings.sportarr.http_timeout), verify=False,
+                         headers=HEADERS)
+        r.raise_for_status()
+    except requests.exceptions.RequestException:
+        logging.exception(f"BAZARR Error trying to get event {event_id} from Sportarr.")
+        return
+    except Exception as e:
+        logging.exception(f"Exception raised while getting event from Sportarr API: {e}")
+        return
+    else:
+        return r.json()
+
+
 def get_events_from_sportarr_api(apikey_sportarr, league_id):
     """Walk every page of a league's events.
 
