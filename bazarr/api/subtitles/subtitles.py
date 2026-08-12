@@ -2,11 +2,11 @@
 
 import os
 import sys
+import logging
 
 from flask_restx import Resource, Namespace, reqparse, fields, marshal
 
 from app.database import TableShows, TableEpisodes, TableMovies, database, select, get_subtitles
-from languages.get_languages import alpha3_from_alpha2
 from utilities.path_mappings import path_mappings
 from utilities.video_analyzer import subtitles_sync_references
 from subtitles.tools.translate.main import translate_subtitles_file
@@ -231,6 +231,9 @@ class Subtitles(Resource):
                 return 'Unable to take action on subtitles file. Check logs.', 409
         else:
             try:
+                if os.path.splitext(subtitles_path)[1] != '.srt':
+                    logging.debug(f"BAZARR can't apply mods on unsupported subtitles file (not srt): {subtitles_path}")
+                    return 'Unable to take action on subtitles file. Check logs.', 409
                 subtitles_apply_mods(language=language, subtitle_path=subtitles_path, mods=[action],
                                      video_path=video_path)
                 postprocess_subtitles(subtitles_path, media_type, metadata, id)

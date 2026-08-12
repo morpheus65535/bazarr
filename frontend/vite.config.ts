@@ -144,7 +144,7 @@ export default defineConfig(({ mode, command }) => {
     },
     server: {
       proxy: {
-        "^/(api|images|test|bazarr.log)/.*": {
+        "^/(api|system|images|test|bazarr.log)/.*": {
           target,
           changeOrigin: true,
           secure,
