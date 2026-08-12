@@ -9,7 +9,9 @@ from constants import MINIMUM_VIDEO_SIZE
 from app.database import database, TableSportsLeagues, TableSportsEvents, delete, update, insert, select
 from app.config import settings
 from utilities.helper import bool_map
+from utilities.path_mappings import path_mappings
 from app.event_handler import event_stream
+from subtitles.indexer.sports import store_subtitles_sports
 
 from .parser import eventParser
 from .utils import get_events_from_sportarr_api
@@ -20,6 +22,15 @@ FEATURE_PREFIX = "SYNC_EVENTS "
 def trace(message):
     if settings.general.debug:
         logging.debug(FEATURE_PREFIX + message)
+
+
+def get_event_row_id(sportarr_event_id, part_number):
+    # The row id is not known until the insert runs, and the indexer needs it.
+    row = database.execute(
+        select(TableSportsEvents.id)
+        .where(TableSportsEvents.sportarrEventId == sportarr_event_id)
+        .where(TableSportsEvents.partNumber == part_number)).first()
+    return row[0] if row else None
 
 
 def get_events_monitored_table(league_id):
@@ -131,11 +142,20 @@ def sync_events(league_id):
             del added_event['created_at_timestamp']
             events_to_update.append(added_event)
         else:
+            row_id = get_event_row_id(added_event['sportarrEventId'], added_event['partNumber'])
+            if row_id:
+                store_subtitles_sports(row_id)
             event_stream(type='event', payload=added_event['sportarrEventId'])
 
     # Update existing events in DB
     for updated_event in events_to_update:
         try:
+            previous_event_data = database.execute(
+                select(TableSportsEvents.id, TableSportsEvents.file_id, TableSportsEvents.path)
+                .where(TableSportsEvents.sportarrEventId == updated_event['sportarrEventId'])
+                .where(TableSportsEvents.partNumber == updated_event['partNumber'])
+            ).first()
+
             updated_event['updated_at_timestamp'] = datetime.now()
             database.execute(
                 update(TableSportsEvents)
@@ -145,6 +165,14 @@ def sync_events(league_id):
         except IntegrityError as e:
             logging.error(f"BAZARR cannot update events because of {e}")
         else:
+            if previous_event_data and (previous_event_data.file_id != updated_event['file_id'] or
+                                        previous_event_data.path != updated_event['path']):
+                # Sportarr gives a new file_id when it replaces a file. The path can
+                # stay the same through an upgrade, so the id is what proves the
+                # media changed.
+                logging.debug(f'BAZARR updating subtitles for event '
+                              f'{path_mappings.path_replace_sports(updated_event["path"])}')
+                store_subtitles_sports(previous_event_data.id)
             event_stream(type='event', action='update', payload=updated_event['sportarrEventId'])
 
     league_title = database.execute(
