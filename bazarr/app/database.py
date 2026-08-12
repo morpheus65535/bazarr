@@ -382,6 +382,106 @@ class TableShowsRootfolder(Base):
     path = mapped_column(Text)
 
 
+class TableSportsLeagues(Base):
+    # A league is the sports equivalent of a show. It groups events the way a
+    # show groups episodes.
+    __tablename__ = 'table_sports_leagues'
+
+    audio_language = mapped_column(Text)
+    created_at_timestamp = mapped_column(DateTime)
+    # Sportarr id that survives a remove and re-add, unlike sportarrLeagueId.
+    # Match on this to keep subtitle history across that.
+    externalId = mapped_column(Text)
+    fanart = mapped_column(Text)
+    monitored = mapped_column(Text)
+    overview = mapped_column(Text)
+    path = mapped_column(Text, nullable=False, unique=True)
+    poster = mapped_column(Text)
+    profileId = mapped_column(Integer, ForeignKey('table_languages_profiles.profileId', ondelete='SET NULL'))
+    sortTitle = mapped_column(Text)
+    # Soccer, Fighting, Motorsport. The closest thing sports has to seriesType.
+    sport = mapped_column(Text)
+    sportarrLeagueId = mapped_column(Integer, primary_key=True)
+    tags = mapped_column(Text)
+    title = mapped_column(Text, nullable=False)
+    updated_at_timestamp = mapped_column(DateTime)
+
+    def to_dict(self):
+        return {column.name: getattr(self, column.name) for column in self.__table__.columns}
+
+
+class TableSportsEvents(Base):
+    # One row per playable file, not per event. A fight card ships prelims and
+    # a main card separately, and each needs its own subtitles. An event with
+    # one file is simply an event with one part.
+    __tablename__ = 'table_sports_events'
+
+    audio_codec = mapped_column(Text)
+    audio_language = mapped_column(Text)
+    broadcastDate = mapped_column(Text)
+    created_at_timestamp = mapped_column(DateTime)
+    episode = mapped_column(Integer, nullable=False)
+    externalId = mapped_column(Text)
+    failedAttempts = mapped_column(Text)
+    ffprobe_cache = mapped_column(LargeBinary)
+    # Sportarr's id for the file itself. It changes when a file is replaced, so
+    # a change here means the media changed even when the path did not.
+    file_id = mapped_column(Integer)
+    file_size = mapped_column(BigInteger)
+    format = mapped_column(Text)
+    missing_subtitles = mapped_column(Text)
+    monitored = mapped_column(Text)
+    # Prelims, Main Card, Qualifying. Null when the event has a single file.
+    partName = mapped_column(Text)
+    path = mapped_column(Text, nullable=False)
+    resolution = mapped_column(Text)
+    # Release name, and only when a real grab produced the file. Sportarr
+    # renames files, so the name on disk never matches a release.
+    sceneName = mapped_column(Text)
+    season = mapped_column(Integer, nullable=False)
+    sportarrEventId = mapped_column(Integer, primary_key=True)
+    sportarrLeagueId = mapped_column(Integer, ForeignKey('table_sports_leagues.sportarrLeagueId',
+                                                        ondelete='CASCADE'))
+    title = mapped_column(Text, nullable=False)
+    updated_at_timestamp = mapped_column(DateTime)
+    video_codec = mapped_column(Text)
+
+    def to_dict(self):
+        return {column.name: getattr(self, column.name) for column in self.__table__.columns}
+
+
+class TableSportsEventsSubtitles(Base):
+    __tablename__ = 'table_sports_events_subtitles'
+
+    id = mapped_column(Integer, primary_key=True)
+    language = mapped_column(Text, nullable=False)
+    hi = mapped_column(Boolean, nullable=False)
+    forced = mapped_column(Boolean, nullable=False)
+    path = mapped_column(Text, nullable=True)
+    size = mapped_column(BigInteger, nullable=True)
+    embedded_track_id = mapped_column(Integer, nullable=True)
+    sportarrEventId = mapped_column(Integer, ForeignKey('table_sports_events.sportarrEventId', ondelete='CASCADE'),
+                                    nullable=False)
+    sportarrLeagueId = mapped_column(Integer, ForeignKey('table_sports_leagues.sportarrLeagueId', ondelete='CASCADE'),
+                                     nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint('path', 'sportarrLeagueId', 'sportarrEventId', 'language', 'forced', 'hi',
+                         name='uc_external_sports_events_subtitles'),
+        UniqueConstraint('embedded_track_id', 'sportarrLeagueId', 'sportarrEventId', 'language', 'forced', 'hi',
+                         name='uc_embedded_sports_events_subtitles'),
+    )
+
+
+class TableSportsLeaguesRootfolder(Base):
+    __tablename__ = 'table_sports_leagues_rootfolder'
+
+    accessible = mapped_column(Integer)
+    error = mapped_column(Text)
+    id = mapped_column(Integer, primary_key=True)
+    path = mapped_column(Text)
+
+
 def init_db():
     database.begin()
 
