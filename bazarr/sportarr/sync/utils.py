@@ -31,6 +31,53 @@ def get_tags():
         return tagsDict.json()
 
 
+def get_events_from_sportarr_api(apikey_sportarr, league_id):
+    """Walk every page of a league's events.
+
+    A season can run to a few thousand events, so this pages rather than
+    asking for the lot. Returning None on any failure matters, because a
+    partial walk read as a complete one looks like the league lost most of
+    its events, and the caller would delete them.
+    """
+    events = []
+    page = 1
+
+    while True:
+        url_sportarr_api_events = (f"{url_api_sportarr()}leagues/{league_id}/events?"
+                                   f"page={page}&pageSize=1000&apikey={apikey_sportarr}")
+
+        try:
+            r = requests.get(url_sportarr_api_events, timeout=int(settings.sportarr.http_timeout), verify=False,
+                             headers=HEADERS)
+            r.raise_for_status()
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code:
+                logging.exception(f"BAZARR Error trying to get events from Sportarr. HTTP error "
+                                  f"{e.response.status_code}")
+            return
+        except requests.exceptions.ConnectionError:
+            logging.exception("BAZARR Error trying to get events from Sportarr. Connection Error.")
+            return
+        except requests.exceptions.Timeout:
+            logging.exception("BAZARR Error trying to get events from Sportarr. Timeout Error.")
+            return
+        except requests.exceptions.RequestException:
+            logging.exception("BAZARR Error trying to get events from Sportarr.")
+            return
+        except Exception as e:
+            logging.exception(f"Exception raised while getting events from Sportarr API: {e}")
+            return
+
+        result = r.json()
+        events += result.get('records', [])
+
+        if page >= result.get('totalPages', 1):
+            break
+        page += 1
+
+    return events
+
+
 def get_leagues_from_sportarr_api(apikey_sportarr, sportarr_league_id=None):
     url_sportarr_api_leagues = (f"{url_api_sportarr()}leagues/{sportarr_league_id if sportarr_league_id else ''}?"
                                 f"apikey={apikey_sportarr}")
