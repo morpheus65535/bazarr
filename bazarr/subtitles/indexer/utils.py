@@ -72,7 +72,8 @@ def guess_external_subtitles(dest_folder, subtitles, previously_indexed_subtitle
                 if encoding is None:
                     continue
 
-                text = text.decode(encoding)
+                with open(subtitle_path, 'r', encoding=encoding) as f:
+                    text = f.read()
 
                 detected_language = guess_language(text)
 
@@ -117,7 +118,8 @@ def guess_external_subtitles(dest_folder, subtitles, previously_indexed_subtitle
                 if encoding is None:
                     continue
 
-                text = text.decode(encoding)
+                with open(subtitle_path, 'r', encoding=encoding) as f:
+                    text = f.read()
 
                 if os.path.splitext(subtitle_path)[1] == 'srt':
                     if core.parse_for_hi_regex(subtitle_text=text,
