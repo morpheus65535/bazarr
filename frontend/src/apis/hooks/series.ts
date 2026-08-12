@@ -42,7 +42,10 @@ export const useSeriesById = (id: number) => {
   });
 };
 
-export const useSeries = (state: Parameter.ListState = {}) => {
+export const useSeries = (
+  state: Parameter.ListState = {},
+  options: { enabled?: boolean } = {},
+) => {
   const client = useQueryClient();
 
   const query = useQuery({
@@ -55,6 +58,7 @@ export const useSeries = (state: Parameter.ListState = {}) => {
       });
       return response.data;
     },
+    enabled: options.enabled ?? true,
   });
 
   useEffect(() => {

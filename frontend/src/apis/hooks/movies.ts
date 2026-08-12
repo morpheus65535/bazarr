@@ -26,7 +26,10 @@ export const useMovieById = (id: number) => {
   });
 };
 
-export const useMovies = (state: Parameter.ListState = {}) => {
+export const useMovies = (
+  state: Parameter.ListState = {},
+  options: { enabled?: boolean } = {},
+) => {
   const client = useQueryClient();
 
   const query = useQuery({
@@ -39,6 +42,7 @@ export const useMovies = (state: Parameter.ListState = {}) => {
       });
       return response.data;
     },
+    enabled: options.enabled ?? true,
   });
 
   useEffect(() => {

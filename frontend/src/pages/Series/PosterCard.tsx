@@ -9,14 +9,19 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Action } from "@/components";
-import { PosterCard } from "@/components/cards";
+import { PosterCard, PosterCardSelection } from "@/components/cards";
 
 interface Props {
   item: Item.Series;
   onEdit: () => void;
+  selection?: PosterCardSelection;
 }
 
-const SeriesPosterCard: FunctionComponent<Props> = ({ item, onEdit }) => {
+const SeriesPosterCard: FunctionComponent<Props> = ({
+  item,
+  onEdit,
+  selection,
+}) => {
   const {
     title,
     year,
@@ -55,14 +60,17 @@ const SeriesPosterCard: FunctionComponent<Props> = ({ item, onEdit }) => {
         </Group>
       }
       actions={
-        <Action
-          label="Edit Series"
-          icon={faWrench}
-          size="sm"
-          variant="filled"
-          onClick={onEdit}
-        ></Action>
+        selection ? undefined : (
+          <Action
+            label="Edit Series"
+            icon={faWrench}
+            size="sm"
+            variant="filled"
+            onClick={onEdit}
+          ></Action>
+        )
       }
+      selection={selection}
     >
       <Tooltip label={`Episodes with subtitles: ${label}`}>
         <Progress.Root size="sm" mt={4}>
