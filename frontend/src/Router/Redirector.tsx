@@ -10,11 +10,18 @@ const Redirector: FunctionComponent = () => {
 
   useEffect(() => {
     if (data) {
-      const { use_sonarr: useSonarr, use_radarr: useRadarr } = data.general;
+      const {
+        use_sonarr: useSonarr,
+        use_radarr: useRadarr,
+        use_sportarr: useSportarr,
+      } = data.general;
       if (useSonarr) {
         navigate("/series");
       } else if (useRadarr) {
         navigate("/movies");
+      } else if (useSportarr) {
+        // A Sportarr only install has no series or movies library to land on.
+        navigate("/wanted/sports");
       } else {
         navigate("/settings/general");
       }

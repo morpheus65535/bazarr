@@ -17,7 +17,7 @@ export const useBadges = () =>
   });
 
 export const useFileSystem = (
-  type: "bazarr" | "sonarr" | "radarr",
+  type: "bazarr" | "sonarr" | "radarr" | "sportarr",
   path: string,
   enabled: boolean,
 ) =>
@@ -31,6 +31,8 @@ export const useFileSystem = (
         return api.files.radarr(path);
       } else if (type === "sonarr") {
         return api.files.sonarr(path);
+      } else if (type === "sportarr") {
+        return api.files.sportarr(path);
       }
 
       return [];
