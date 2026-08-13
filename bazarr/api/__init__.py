@@ -10,6 +10,7 @@ from .history import api_ns_list_history
 from .movies import api_ns_list_movies
 from .providers import api_ns_list_providers
 from .series import api_ns_list_series
+from .sports import api_ns_list_sports
 from .subtitles import api_ns_list_subtitles
 from .system import api_ns_list_system
 from .webhooks import api_ns_list_webhooks
@@ -25,6 +26,7 @@ api_ns_list = [
     api_ns_list_movies,
     api_ns_list_providers,
     api_ns_list_series,
+    api_ns_list_sports,
     api_ns_list_subtitles,
     api_ns_list_system,
     api_ns_list_webhooks,
