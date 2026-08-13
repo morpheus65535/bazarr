@@ -16,6 +16,7 @@ import { Lazy } from "@/components/async";
 import Authentication from "@/pages/Authentication";
 import BlacklistMoviesView from "@/pages/Blacklist/Movies";
 import BlacklistSeriesView from "@/pages/Blacklist/Series";
+import BlacklistSportsView from "@/pages/Blacklist/Sports";
 import Episodes from "@/pages/Episodes";
 import NotFound from "@/pages/errors/NotFound";
 import MoviesHistoryView from "@/pages/History/Movies";
@@ -32,6 +33,7 @@ import SettingsProvidersView from "@/pages/Settings/Providers";
 import SettingsRadarrView from "@/pages/Settings/Radarr";
 import SettingsSchedulerView from "@/pages/Settings/Scheduler";
 import SettingsSonarrView from "@/pages/Settings/Sonarr";
+import SettingsSportarrView from "@/pages/Settings/Sportarr";
 import SettingsSubtitlesView from "@/pages/Settings/Subtitles";
 import SettingsUIView from "@/pages/Settings/UI";
 import SystemAnnouncementsView from "@/pages/System/Announcements";
@@ -42,6 +44,7 @@ import SystemReleasesView from "@/pages/System/Releases";
 import SystemTasksView from "@/pages/System/Tasks";
 import WantedMoviesView from "@/pages/Wanted/Movies";
 import WantedSeriesView from "@/pages/Wanted/Series";
+import WantedSportsView from "@/pages/Wanted/Sports";
 import { Environment } from "@/utilities";
 import Redirector from "./Redirector";
 import { RouterNames } from "./RouterNames";
@@ -55,7 +58,7 @@ const SystemStatusView = lazy(() => import("@/pages/System/Status"));
 
 const useRoutes = (): CustomRouteObject[] => {
   const { data } = useBadges();
-  const { sonarr, radarr } = useEnabledStatus();
+  const { sonarr, radarr, sportarr } = useEnabledStatus();
 
   return useMemo(
     () => [
@@ -134,7 +137,7 @@ const useRoutes = (): CustomRouteObject[] => {
             icon: faExclamationTriangle,
             name: "Wanted",
             path: "wanted",
-            hidden: !sonarr && !radarr,
+            hidden: !sonarr && !radarr && !sportarr,
             children: [
               {
                 name: "Episodes",
@@ -150,13 +153,20 @@ const useRoutes = (): CustomRouteObject[] => {
                 hidden: !radarr,
                 element: <WantedMoviesView></WantedMoviesView>,
               },
+              {
+                name: "Sports",
+                path: "sports",
+                badge: data?.sports,
+                hidden: !sportarr,
+                element: <WantedSportsView></WantedSportsView>,
+              },
             ],
           },
           {
             icon: faFileExcel,
             name: "Blacklist",
             path: "blacklist",
-            hidden: !sonarr && !radarr,
+            hidden: !sonarr && !radarr && !sportarr,
             children: [
               {
                 path: "series",
@@ -169,6 +179,12 @@ const useRoutes = (): CustomRouteObject[] => {
                 name: "Movies",
                 hidden: !radarr,
                 element: <BlacklistMoviesView></BlacklistMoviesView>,
+              },
+              {
+                path: "sports",
+                name: "Sports",
+                hidden: !sportarr,
+                element: <BlacklistSportsView></BlacklistSportsView>,
               },
             ],
           },
@@ -206,6 +222,11 @@ const useRoutes = (): CustomRouteObject[] => {
                 path: "radarr",
                 name: "Radarr",
                 element: <SettingsRadarrView></SettingsRadarrView>,
+              },
+              {
+                path: "sportarr",
+                name: "Sportarr",
+                element: <SettingsSportarrView></SettingsSportarrView>,
               },
               {
                 path: "plex",
@@ -301,6 +322,7 @@ const useRoutes = (): CustomRouteObject[] => {
     [
       data?.episodes,
       data?.movies,
+      data?.sports,
       data?.providers,
       data?.sonarr_signalr,
       data?.radarr_signalr,
@@ -308,6 +330,7 @@ const useRoutes = (): CustomRouteObject[] => {
       data?.status,
       radarr,
       sonarr,
+      sportarr,
     ],
   );
 };

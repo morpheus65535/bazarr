@@ -7,6 +7,7 @@ import movies from "./movies";
 import plex from "./plex";
 import providers from "./providers";
 import series from "./series";
+import sports from "./sports";
 import subtitles from "./subtitles";
 import system from "./system";
 import utils from "./utils";
@@ -18,6 +19,7 @@ const api = {
   jellyfin,
   movies,
   series,
+  sports,
   providers,
   history,
   subtitles,

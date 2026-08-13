@@ -6,6 +6,7 @@ interface Settings {
   subsync: Settings.Subsync;
   analytics: Settings.Analytic;
   sonarr: Settings.Sonarr;
+  sportarr: Settings.Sportarr;
   radarr: Settings.Radarr;
   backup: Settings.Backup;
   translator: Settings.Translator;
@@ -57,6 +58,7 @@ declare namespace Settings {
     serie_default_profile?: number;
     path_mappings: [string, string][];
     path_mappings_movie: [string, string][];
+    path_mappings_sports: [string, string][];
     page_size: number;
     theme: string;
     port: number;
@@ -80,6 +82,7 @@ declare namespace Settings {
     use_radarr: boolean;
     use_scenename: boolean;
     use_sonarr: boolean;
+    use_sportarr: boolean;
     utf8_encode: boolean;
     wanted_search_frequency: number;
     wanted_search_frequency_movie: number;
@@ -163,6 +166,25 @@ declare namespace Settings {
     series_sync: number;
     excluded_tags: string[];
     excluded_series_types: SonarrSeriesType[];
+  }
+
+  interface Sportarr {
+    ip: string;
+    port: number;
+    base_url?: string;
+    ssl: boolean;
+    apikey?: string;
+    full_update: FullUpdateOptions;
+    full_update_day: number;
+    full_update_hour: number;
+    only_monitored: boolean;
+    leagues_sync: number;
+    excluded_tags: string[];
+    excluded_sports: string[];
+    use_ffprobe_cache: boolean;
+    sync_only_monitored_leagues: boolean;
+    sync_only_monitored_events: boolean;
+    http_timeout: number;
   }
 
   interface Radarr {
