@@ -10,8 +10,8 @@ from sqlalchemy import or_, and_
 
 from app.config import settings, base_url
 from languages.get_languages import language_from_alpha2, alpha3_from_alpha2
-from app.database import (get_audio_profile_languages, get_desired_languages, get_subtitles, database, TableEpisodes,
-                          TableShows, select)
+from app.database import (get_audio_profile_languages, get_desired_languages, get_subtitles, get_sports_subtitles,
+                          database, TableEpisodes, TableShows, select)
 from utilities.helper import bool_map
 from utilities.path_mappings import path_mappings
 
@@ -115,6 +115,8 @@ def postprocess(item):
     # Remove ffprobe_cache
     if item.get('radarrId'):
         path_replace = path_mappings.path_replace_movie
+    elif item.get('sportarrLeagueId') or item.get('sportsEventId'):
+        path_replace = path_mappings.path_replace_sports
     else:
         path_replace = path_mappings.path_replace
     if item.get('ffprobe_cache'):
@@ -161,8 +163,12 @@ def postprocess(item):
         item['alternativeTitles'] = []
 
     # Add subtitles
-    item['subtitles'] = get_subtitles(sonarr_episode_id=item.get('sonarrEpisodeId'),
-                                      radarr_id=item.get('radarrId'))
+    if item.get('sportsEventId'):
+        # A sports event keeps its subtitles in its own table.
+        item['subtitles'] = get_sports_subtitles(sports_event_id=item['sportsEventId'])
+    else:
+        item['subtitles'] = get_subtitles(sonarr_episode_id=item.get('sonarrEpisodeId'),
+                                          radarr_id=item.get('radarrId'))
 
     if settings.general.embedded_subs_show_desired and item.get('profileId'):
         desired_lang_list = get_desired_languages(item['profileId'])

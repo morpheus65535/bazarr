@@ -1,5 +1,6 @@
 import { FunctionComponent, useMemo } from "react";
-import { Container, Group, Progress } from "@mantine/core";
+import { Link } from "react-router";
+import { Anchor, Container, Group, Progress } from "@mantine/core";
 import { useDocumentTitle } from "@mantine/hooks";
 import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
 import { faBookmark, faWrench } from "@fortawesome/free-solid-svg-icons";
@@ -59,6 +60,14 @@ const SportsView: FunctionComponent = () => {
       {
         header: "Name",
         accessorKey: "title",
+        cell: ({ row: { original } }) => {
+          const target = `/sports/${original.sportarrLeagueId}`;
+          return (
+            <Anchor className="table-primary" component={Link} to={target}>
+              {original.title}
+            </Anchor>
+          );
+        },
       },
       {
         // Sport is the closest a league has to a series type.

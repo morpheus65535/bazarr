@@ -43,6 +43,7 @@ class SportsLeagues(Resource):
         'profileId': fields.Integer(),
         'tags': fields.List(fields.String),
         'audio_language': fields.Nested(get_subtitles_language_model),
+        'alternativeTitles': fields.List(fields.String),
         'episodeFileCount': fields.Integer(),
         'episodeMissingCount': fields.Integer(),
     })
@@ -117,6 +118,9 @@ class SportsLeagues(Resource):
                 'profileId': x.profileId,
                 'tags': x.tags,
                 'audio_language': x.audio_language,
+                # Sportarr keeps no alternative titles for a league. The empty
+                # list keeps the shape the same as a series or a movie.
+                'alternativeTitles': [],
                 'episodeFileCount': file_count,
                 'episodeMissingCount': missing_count,
             }))
