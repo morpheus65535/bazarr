@@ -56,6 +56,9 @@ def update_series(job_id=None, wait_for_completion=False):
         logging.exception(f"BAZARR Error trying to get series from Sonarr: {e}")
         return
     else:
+        if not isinstance(series, list):
+            return
+
         # Get current shows in DB
         current_shows_db = [x.sonarrSeriesId for x in
                             database.execute(
