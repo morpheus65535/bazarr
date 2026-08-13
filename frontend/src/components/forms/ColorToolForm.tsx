@@ -11,7 +11,7 @@ const TaskName = "Changing Color";
 
 const convertToAction = (color: string) => `color(name=${color})`;
 
-export const colorOptions: SelectorOption<string>[] = [
+const colorOptions: SelectorOption<string>[] = [
   {
     label: "White",
     value: "white",

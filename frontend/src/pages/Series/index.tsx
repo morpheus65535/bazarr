@@ -14,9 +14,11 @@ import {
   seriesPaginationKey,
   seriesPaginationQuery,
   useSeriesModification,
+  useSeriesTags,
 } from "@/apis/hooks";
 import { useInstanceName } from "@/apis/hooks/site";
 import { Action } from "@/components";
+import { AudioList } from "@/components/bazarr";
 import LanguageProfileName from "@/components/bazarr/LanguageProfile";
 import { ItemEditModal } from "@/components/forms/ItemEditForm";
 import { AppColumnDef as ColumnDef } from "@/components/tables/features";
@@ -24,6 +26,23 @@ import { useModals } from "@/modules/modals";
 import ItemView from "@/pages/views/ItemView";
 import { seriesViewModeKey } from "@/utilities/viewMode";
 import SeriesPosterCard from "./PosterCard";
+
+const seriesFilterConfig = {
+  sortFields: [
+    { value: "title", label: "Name" },
+    { value: "episodeFileCount", label: "Episodes" },
+    { value: "episodeMissingCount", label: "Missing" },
+    { value: "profileId", label: "Profile" },
+    { value: "createdAtTimestamp", label: "Added" },
+  ],
+  filters: {
+    monitored: true,
+    missing: true,
+    profile: true,
+    audio: true,
+    tags: true,
+  },
+};
 
 const SeriesView: FunctionComponent = () => {
   const mutation = useSeriesModification();
@@ -58,6 +77,17 @@ const SeriesView: FunctionComponent = () => {
               {original.title}
             </Anchor>
           );
+        },
+      },
+      {
+        header: "Audio",
+        accessorKey: "audioLanguage",
+        cell: ({
+          row: {
+            original: { audioLanguage },
+          },
+        }) => {
+          return <AudioList audios={audioLanguage}></AudioList>;
         },
       },
       {
@@ -109,6 +139,17 @@ const SeriesView: FunctionComponent = () => {
             </Progress.Root>
           );
         },
+      },
+      {
+        header: "Added",
+        accessorKey: "createdAtTimestamp",
+        cell: ({ row: { original } }) => (
+          <>
+            {original.createdAtTimestamp
+              ? new Date(original.createdAtTimestamp).toLocaleDateString()
+              : ""}
+          </>
+        ),
       },
       {
         id: "sonarrSeriesId",
@@ -170,6 +211,9 @@ const SeriesView: FunctionComponent = () => {
         columns={columns}
         viewModeKey={seriesViewModeKey}
         renderPoster={renderPoster}
+        filterConfig={seriesFilterConfig}
+        useTags={useSeriesTags}
+        statePrefix="series"
       ></ItemView>
     </Container>
   );

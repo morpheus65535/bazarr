@@ -12,7 +12,10 @@ import {
 } from "@/pages/Settings/utilities/FormValues";
 import { BaseInput } from "@/pages/Settings/utilities/hooks";
 import { useSelectorOptions } from "@/utilities";
-import { useLatestEnabledLanguages, useLatestProfiles } from ".";
+import {
+  useLatestEnabledLanguages,
+  useLatestProfiles,
+} from "./useLatestLanguages";
 
 type LanguageSelectorProps = Omit<
   MultiSelectorProps<Language.Info>,

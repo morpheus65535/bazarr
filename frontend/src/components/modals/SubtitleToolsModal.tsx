@@ -110,11 +110,7 @@ const getEpisodeLabel = (item: SupportType) => {
     return "";
   }
 
-  const {
-    episode,
-    episodeNumber: episodeNumber,
-    season,
-  } = item as Item.Episode & {
+  const { episode, episodeNumber, season } = item as Item.Episode & {
     episodeNumber?: string;
   };
 
@@ -183,7 +179,7 @@ export const SubtitleToolView: FunctionComponent<SubtitleToolViewProps> = ({
         accessorKey: "language",
         cell: ({
           row: {
-            original: { rawLanguage: rawLanguage },
+            original: { rawLanguage },
           },
         }) => (
           <Badge color="secondary">

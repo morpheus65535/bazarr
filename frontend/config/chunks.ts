@@ -1,5 +1,5 @@
 // eslint-disable-next-line no-restricted-imports
-import { dependencies } from "../package.json";
+import { dependencies } from "../package.json" with { type: "json" };
 
 const groups: Record<string, string[]> = {
   vendors: ["react", "react-router", "react-dom"],

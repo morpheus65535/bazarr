@@ -3,8 +3,8 @@ import { Kbd, TextInput } from "@mantine/core";
 import { useOs } from "@mantine/hooks";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { spotlightApi } from "@/components/AppSpotlight";
 import Action from "@/components/inputs/Action";
+import { spotlightApi } from "@/components/spotlight";
 import styles from "./Search.module.scss";
 
 const Search: FunctionComponent = () => {

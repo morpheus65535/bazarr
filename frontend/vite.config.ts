@@ -7,8 +7,8 @@ import path from "path";
 import { defineConfig, loadEnv } from "vite";
 import checker from "vite-plugin-checker";
 import { VitePWA } from "vite-plugin-pwa";
-import chunks from "./config/chunks";
-import overrideEnv from "./config/configReader";
+import chunks from "./config/chunks.ts";
+import overrideEnv from "./config/configReader.ts";
 
 export default defineConfig(({ mode, command }) => {
   const env = loadEnv(mode, process.cwd());
@@ -112,7 +112,7 @@ export default defineConfig(({ mode, command }) => {
     base: "./",
     resolve: {
       alias: {
-        "@": path.resolve(__dirname, "./src"),
+        "@": path.resolve(import.meta.dirname, "./src"),
       },
     },
     build: {
@@ -144,7 +144,7 @@ export default defineConfig(({ mode, command }) => {
     },
     server: {
       proxy: {
-        "^/(api|images|test|bazarr.log)/.*": {
+        "^/(api|system|images|test|bazarr.log)/.*": {
           target,
           changeOrigin: true,
           secure,

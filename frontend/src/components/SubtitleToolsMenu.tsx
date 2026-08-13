@@ -1,131 +1,16 @@
 import { FunctionComponent, ReactElement, useCallback, useMemo } from "react";
 import { Divider, List, Menu, MenuProps, ScrollArea } from "@mantine/core";
 import {
-  faAlignJustify,
   faBoxOpen,
-  faClock,
-  faCode,
-  faDeaf,
-  faExchangeAlt,
-  faEye,
-  faFaceGrinStars,
-  faFilm,
-  faImage,
-  faLanguage,
-  faMagic,
-  faPaintBrush,
-  faPlay,
   faSearch,
-  faTextHeight,
   faTrash,
-  IconDefinition,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useSubtitleAction } from "@/apis/hooks";
-import { ColorToolModal } from "@/components/forms/ColorToolForm";
-import { FrameRateModal } from "@/components/forms/FrameRateForm";
-import { TimeOffsetModal } from "@/components/forms/TimeOffsetForm";
-import { TranslationModal } from "@/components/forms/TranslationForm";
 import { useModals } from "@/modules/modals";
-import { ModalComponent } from "@/modules/modals/WithModal";
 import { task } from "@/modules/task";
-import { SubtitlePreviewModal } from "./forms/SubtitlePreview";
-import { SyncSubtitleModal } from "./forms/SyncSubtitleForm";
-import { TwoPointFitModal } from "./forms/TwoPointFit";
+import { useTools } from "./useTools";
 import styles from "./SubtitleToolsMenu.module.scss";
-
-export interface ToolOptions {
-  key: string;
-  icon: IconDefinition;
-  name: string;
-  modal?: ModalComponent<{
-    selections: FormType.ModifySubtitle[];
-  }>;
-}
-
-export const useTools = () =>
-  useMemo<ToolOptions[]>(
-    () => [
-      {
-        key: "preview",
-        icon: faEye,
-        name: "Preview...",
-        modal: SubtitlePreviewModal,
-      },
-      {
-        key: "sync",
-        icon: faPlay,
-        name: "Sync...",
-        modal: SyncSubtitleModal,
-      },
-      {
-        key: "remove_HI",
-        icon: faDeaf,
-        name: "Remove HI Tags",
-      },
-      {
-        key: "remove_tags",
-        icon: faCode,
-        name: "Remove Style Tags",
-      },
-      {
-        key: "emoji",
-        icon: faFaceGrinStars,
-        name: "Remove Emoji",
-      },
-      {
-        key: "OCR_fixes",
-        icon: faImage,
-        name: "OCR Fixes",
-      },
-      {
-        key: "common",
-        icon: faMagic,
-        name: "Common Fixes",
-      },
-      {
-        key: "fix_uppercase",
-        icon: faTextHeight,
-        name: "Fix Uppercase",
-      },
-      {
-        key: "reverse_rtl",
-        icon: faExchangeAlt,
-        name: "Reverse RTL",
-      },
-      {
-        key: "add_color",
-        icon: faPaintBrush,
-        name: "Add Color...",
-        modal: ColorToolModal,
-      },
-      {
-        key: "change_frame_rate",
-        icon: faFilm,
-        name: "Change Frame Rate...",
-        modal: FrameRateModal,
-      },
-      {
-        key: "adjust_time",
-        icon: faClock,
-        name: "Adjust Times...",
-        modal: TimeOffsetModal,
-      },
-      {
-        key: "two_point_fit",
-        icon: faAlignJustify,
-        name: "Two-Point Fit...",
-        modal: TwoPointFitModal,
-      },
-      {
-        key: "translation",
-        icon: faLanguage,
-        name: "Translate...",
-        modal: TranslationModal,
-      },
-    ],
-    [],
-  );
 
 interface Props {
   selections: FormType.ModifySubtitle[];
