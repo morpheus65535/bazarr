@@ -749,7 +749,7 @@ def get_audio_profile_languages(audio_languages_list_str):
     return audio_languages
 
 
-def get_profile_id(series_id=None, episode_id=None, movie_id=None):
+def get_profile_id(series_id=None, episode_id=None, movie_id=None, league_id=None, sports_event_id=None):
     if series_id:
         data = database.execute(
             select(TableShows.profileId)
@@ -763,6 +763,24 @@ def get_profile_id(series_id=None, episode_id=None, movie_id=None):
             .select_from(TableShows)
             .join(TableEpisodes)
             .where(TableEpisodes.sonarrEpisodeId == episode_id)) \
+            .first()
+        if data:
+            return data.profileId
+
+    elif league_id:
+        data = database.execute(
+            select(TableSportsLeagues.profileId)
+            .where(TableSportsLeagues.sportarrLeagueId == league_id))\
+            .first()
+        if data:
+            return data.profileId
+
+    elif sports_event_id:
+        data = database.execute(
+            select(TableSportsLeagues.profileId)
+            .select_from(TableSportsLeagues)
+            .join(TableSportsEvents)
+            .where(TableSportsEvents.id == sports_event_id))\
             .first()
         if data:
             return data.profileId
