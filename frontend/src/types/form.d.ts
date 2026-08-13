@@ -6,6 +6,8 @@ declare namespace FormType {
 
   type SeriesAction = OneSeriesAction | SearchWantedAction;
 
+  type SportsLeagueAction = OneSportsLeagueAction | SearchWantedAction;
+
   type MoviesAction = OneMovieAction | SearchWantedAction;
 
   interface OneMovieAction {
@@ -16,6 +18,11 @@ declare namespace FormType {
   interface OneSeriesAction {
     action: "search-missing" | "scan-disk" | "sync";
     seriesId: number;
+  }
+
+  interface OneSportsLeagueAction {
+    action: "search-missing" | "scan-disk" | "sync";
+    leagueId: number;
   }
 
   interface SearchWantedAction {

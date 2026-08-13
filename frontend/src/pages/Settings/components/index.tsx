@@ -4,7 +4,7 @@ import api from "@/apis/raw";
 import { useSettingValue } from "@/pages/Settings/utilities/hooks";
 
 export const URLTestButton: FunctionComponent<{
-  category: "sonarr" | "radarr";
+  category: "sonarr" | "radarr" | "sportarr";
 }> = ({ category }) => {
   const [title, setTitle] = useState("Test");
   const [color, setVar] = useState("primary");
