@@ -502,6 +502,42 @@ class TableSportsEventsSubtitles(Base):
     )
 
 
+class TableBlacklistSports(Base):
+    __tablename__ = 'table_blacklist_sports'
+
+    id = mapped_column(Integer, primary_key=True)
+    language = mapped_column(Text)
+    provider = mapped_column(Text)
+    # Points at the event row, which is one part, not at the Sportarr event id.
+    sports_event_id = mapped_column(Integer, ForeignKey('table_sports_events.id', ondelete='CASCADE'))
+    sportarr_league_id = mapped_column(Integer, ForeignKey('table_sports_leagues.sportarrLeagueId',
+                                                           ondelete='CASCADE'))
+    subs_id = mapped_column(Text)
+    timestamp = mapped_column(DateTime, default=datetime.now)
+
+
+class TableHistorySports(Base):
+    __tablename__ = 'table_history_sports'
+
+    id = mapped_column(Integer, primary_key=True)
+    action = mapped_column(Integer, nullable=False)
+    description = mapped_column(Text, nullable=False)
+    language = mapped_column(Text)
+    provider = mapped_column(Text)
+    score = mapped_column(Integer)
+    score_out_of = mapped_column(Integer, nullable=True)
+    # Points at the event row, which is one part, not at the Sportarr event id.
+    sportsEventId = mapped_column(Integer, ForeignKey('table_sports_events.id', ondelete='CASCADE'))
+    sportarrLeagueId = mapped_column(Integer, ForeignKey('table_sports_leagues.sportarrLeagueId', ondelete='CASCADE'))
+    subs_id = mapped_column(Text)
+    subtitles_path = mapped_column(Text)
+    timestamp = mapped_column(DateTime, nullable=False, default=datetime.now)
+    video_path = mapped_column(Text)
+    matched = mapped_column(Text)
+    not_matched = mapped_column(Text)
+    upgradedFromId = mapped_column(Integer, ForeignKey('table_history_sports.id'))
+
+
 class TableSportsLeaguesRootfolder(Base):
     __tablename__ = 'table_sports_leagues_rootfolder'
 
@@ -574,6 +610,10 @@ def get_exclusion_clause(exclusion_type):
         tagsList = settings.sonarr.excluded_tags
         for tag in tagsList:
             where_clause.append(~(TableShows.tags.contains(f"\'{tag}\'")))
+    elif exclusion_type == 'sports':
+        tagsList = settings.sportarr.excluded_tags
+        for tag in tagsList:
+            where_clause.append(~(TableSportsLeagues.tags.contains(f"\'{tag}\'")))
     else:
         tagsList = settings.radarr.excluded_tags
         for tag in tagsList:
@@ -584,6 +624,11 @@ def get_exclusion_clause(exclusion_type):
         if monitoredOnly:
             where_clause.append((TableEpisodes.monitored == 'True'))  # noqa E712
             where_clause.append((TableShows.monitored == 'True'))  # noqa E712
+    elif exclusion_type == 'sports':
+        monitoredOnly = settings.sportarr.only_monitored
+        if monitoredOnly:
+            where_clause.append((TableSportsEvents.monitored == 'True'))  # noqa E712
+            where_clause.append((TableSportsLeagues.monitored == 'True'))  # noqa E712
     else:
         monitoredOnly = settings.radarr.only_monitored
         if monitoredOnly:
@@ -597,6 +642,10 @@ def get_exclusion_clause(exclusion_type):
         exclude_season_zero = settings.sonarr.exclude_season_zero
         if exclude_season_zero:
             where_clause.append((TableEpisodes.season != 0))
+    elif exclusion_type == 'sports':
+        # Sport is the closest a league has to a series type.
+        for item in settings.sportarr.excluded_sports:
+            where_clause.append((TableSportsLeagues.sport != item))
 
     return where_clause
 
