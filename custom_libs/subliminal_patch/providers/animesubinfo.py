@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 import io
 import logging
-import os
 import re
 import zipfile
 from requests import Session
@@ -14,6 +13,8 @@ from subliminal.utils import sanitize
 from subliminal.video import Episode, Movie
 from subzero.language import Language
 from guessit import guessit
+from .utils import FIRST_THOUSAND_OR_SO_USER_AGENTS as AGENT_LIST
+from random import randint
 
 logger = logging.getLogger(__name__)
 
@@ -141,18 +142,20 @@ class AnimesubinfoSubtitle(Subtitle):
                 elif series_sanitized in (sanitize(self.title_alt) or ''):
                     self.matches.add('series')
 
+            # Episode match
+            if video.episode and self.episode == video.episode:
+                self.matches.add('episode')
+            if video.absolute_episode and self.episode == video.absolute_episode:
+                self.matches.add('episode')
+
             # Season match
             if video.season and self.season == video.season:
                 self.matches.add('season')
-            elif video.season == 1 and self.season is None:
-                # If video is season 1 and subtitle doesn't specify season,
-                # assume it's season 1 (common for anime)
+            elif not self.season and 'episode' in self.matches:
+                # If episode matches and no season is found, assume that season matches
                 self.matches.add('season')
-
-            # Episode match
-            if (video.absolute_episode and self.episode == video.absolute_episode) or \
-                    (video.episode and self.episode == video.episode):
-                self.matches.add('episode')
+            else:
+                pass
 
             # Release group match
             if self.release_groups and hasattr(video, 'release_group') and video.release_group:
@@ -203,7 +206,7 @@ class AnimesubinfoProvider(Provider):
 
     def initialize(self):
         self.session = Session()
-        self.session.headers['User-Agent'] = os.environ.get("SZ_USER_AGENT", "Sub-Zero/2")
+        self.session.headers['User-Agent'] = AGENT_LIST[randint(0, len(AGENT_LIST) - 1)]
         # Set encoding to handle ISO-8859-2 (Polish) properly
         self.session.headers['Accept-Charset'] = 'ISO-8859-2,utf-8;q=0.7,*;q=0.3'
 
@@ -225,7 +228,7 @@ class AnimesubinfoProvider(Provider):
             'pSortuj': 'pobrn'  # Sort by download count (most popular first)
         }
 
-        logger.info(f'Searching AnimeSub.info for: {title} (type: {title_type})')
+        logger.debug(f'Searching AnimeSub.info for: {title} (type: {title_type})')
 
         try:
             response = self.session.get(self.search_url, params=params, timeout=10)
@@ -236,7 +239,7 @@ class AnimesubinfoProvider(Provider):
 
             return response.text
         except Exception as e:
-            logger.error(f'Error searching AnimeSub.info: {e}')
+            logger.exception(f'Error searching AnimeSub.info: {e}')
             return None
 
     def _parse_search_results(self, html_content, video):
@@ -345,10 +348,10 @@ class AnimesubinfoProvider(Provider):
                 subtitles.append(subtitle)
 
             except Exception as e:
-                logger.warning(f'Error parsing subtitle entry: {e}')
+                logger.exception(f'Error parsing subtitle entry: {e}')
                 continue
 
-        logger.info(f'Found {len(subtitles)} subtitles')
+        logger.debug(f'Found {len(subtitles)} subtitles')
         return subtitles
 
     def list_subtitles(self, video, languages):
@@ -378,32 +381,50 @@ class AnimesubinfoProvider(Provider):
 
 
         if isinstance(video, Episode):
-            for search_title in [video.series] + video.alternative_series[:2]:  # Limit to first 2 alternatives
-                # For episodes, use pattern like "Kimetsu no Yaiba ep01"
+            def _search_strategies_for_episode(video, search_title, search_strategies, eng=False):
+                # Strategy 1: search with episode number pattern ("epXX")
+                if video.episode:
+                    search_title_with_ep = f'{search_title} ep{video.episode:02d}'
+                    if eng:
+                        search_strategies.append(('en', search_title_with_ep))
+                    else:
+                        search_strategies.append(('org', search_title_with_ep))
+                        search_strategies.append(('pl', search_title_with_ep))
+
+                # Strategy 2: search with absolute episode number
                 if video.absolute_episode:
                     search_title_with_ep = f'{search_title} ep{video.absolute_episode}'
-                elif video.episode:
-                    search_title_with_ep = f'{search_title} ep{video.episode:02d}'
-                else:
-                    search_title_with_ep = None
+                    if eng:
+                        search_strategies.append(('en', search_title_with_ep))
+                    else:
+                        search_strategies.append(('org', search_title_with_ep))
+                        search_strategies.append(('pl', search_title_with_ep))
 
-                # Strategy 1: For episodes, prioritize search with "epXX" pattern
-                if search_title_with_ep:
-                    # Try original title first (Japanese), then English, then Polish
-                    search_strategies.append(('org', search_title_with_ep))
-                    search_strategies.append(('en', search_title_with_ep))
-                    search_strategies.append(('pl', search_title_with_ep))
+                # Strategy 3: Search without episode number (for series packs or general search)
+                if not any([video.episode, video.absolute_episode]):
+                    if eng:
+                        search_strategies.append(('en', search_title))
+                    else:
+                        search_strategies.append(('org', search_title))
+                        search_strategies.append(('pl', search_title))
 
-                # Strategy 2: Search without episode number (for series packs or general search)
-                if not search_title_with_ep:
-                    search_strategies.append(('org', search_title))
-                    search_strategies.append(('en', search_title))
-                    search_strategies.append(('pl', search_title))
+            _search_strategies_for_episode(video, video.series, search_strategies, eng=True)
+            for search_title in video.alternative_series[:2]:  # Limit to first 2 alternatives
+                _search_strategies_for_episode(video, search_title, search_strategies, eng=False)
+
 
         elif isinstance(video, Movie):
-            for search_title in [video.title] + video.alternative_titles[:2]:  # Limit to first 2 alternatives
-                search_strategies.append(('en', search_title))
-                search_strategies.append(('org', search_title))
+            def _search_strategies_for_movie(search_title, search_strategies, eng=False):
+                if eng:
+                    search_strategies.append(('en', search_title))
+                else:
+                    search_strategies.append(('org', search_title))
+                    search_strategies.append(('pl', search_title))
+
+            _search_strategies_for_movie(video.title, search_strategies, eng=True)
+            for search_title in video.alternative_titles[:2]:  # Limit to first 2 alternatives
+                _search_strategies_for_movie(search_title, search_strategies, eng=False)
+
 
         # Execute searches
         seen_ids = set()
@@ -416,12 +437,7 @@ class AnimesubinfoProvider(Provider):
                         all_subtitles.append(sub)
                         seen_ids.add(sub.subtitle_id)
 
-                # If we found results with episode number, we can stop searching
-                if results and search_title_with_ep and search_title_with_ep in title:
-                    logger.info(f'Found {len(results)} results with episode pattern, stopping search')
-                    break
-
-        logger.info(f'Returning {len(all_subtitles)} subtitles')
+        logger.debug(f'Returning {len(all_subtitles)} subtitles')
         return all_subtitles
 
     def download_subtitle(self, subtitle):
@@ -433,39 +449,39 @@ class AnimesubinfoProvider(Provider):
                 'single_file': 'Pobierz napisy'  # Submit button value
             }
 
-            logger.info(f'Downloading subtitle ID: {subtitle.subtitle_id}')
+            logger.debug(f'Downloading subtitle ID: {subtitle.subtitle_id}')
 
             response = self.session.post(self.download_url, data=data, timeout=10)
             response.raise_for_status()
 
             # Check if we got actual subtitle content
             if len(response.content) < 50:
-                logger.error('Downloaded file is too small, possibly an error')
+                logger.debug('Downloaded file is too small, possibly an error')
                 return
 
             # Check if it's a ZIP file
             if zipfile.is_zipfile(io.BytesIO(response.content)):
-                logger.info(f'Downloaded file is a ZIP archive, extracting...')
+                logger.debug(f'Downloaded file is a ZIP archive, extracting...')
                 with zipfile.ZipFile(io.BytesIO(response.content)) as zf:
                     # Find subtitle files in the archive
                     subtitle_files = [f for f in zf.namelist()
                                     if f.lower().endswith(('.srt', '.ass', '.ssa', '.sub'))]
 
                     if not subtitle_files:
-                        logger.error('No subtitle file found in ZIP archive')
+                        logger.debug('No subtitle file found in ZIP archive')
                         return
 
                     # Use the first subtitle file found
                     # TODO: Could be improved to select best matching file
                     subtitle_file = subtitle_files[0]
-                    logger.info(f'Extracting subtitle file: {subtitle_file}')
+                    logger.debug(f'Extracting subtitle file: {subtitle_file}')
 
                     subtitle.content = fix_line_ending(zf.read(subtitle_file))
-                    logger.info(f'Successfully extracted subtitle (size: {len(subtitle.content)} bytes)')
+                    logger.debug(f'Successfully extracted subtitle (size: {len(subtitle.content)} bytes)')
             else:
                 # Regular subtitle file
                 subtitle.content = fix_line_ending(response.content)
-                logger.info(f'Successfully downloaded subtitle (size: {len(response.content)} bytes)')
+                logger.debug(f'Successfully downloaded subtitle (size: {len(response.content)} bytes)')
 
         except Exception as e:
-            logger.error(f'Error downloading subtitle: {e}')
+            logger.exception(f'Error downloading subtitle: {e}')
