@@ -11,6 +11,7 @@ import {
   UseQueryResult,
 } from "@tanstack/react-query";
 import { GetItemId } from "@/utilities";
+import { useResetOnChange } from "@/utilities/resetOnChange";
 import { usePageSize } from "@/utilities/storage";
 import { QueryKeys } from "./keys";
 
@@ -47,14 +48,10 @@ export const usePaginationQuery = <
   );
 
   // Reset to the first page when the filter/sort query changes. Adjusting
-  // state during render skips the mount, so a ?page= URL param is still
-  // honored on first load.
+  // state during render (via useResetOnChange) skips the mount, so a
+  // ?page= URL param is still honored on first load.
   const queryKeySuffix = JSON.stringify(query);
-  const [prevQueryKeySuffix, setPrevQueryKeySuffix] = useState(queryKeySuffix);
-  if (prevQueryKeySuffix !== queryKeySuffix) {
-    setPrevQueryKeySuffix(queryKeySuffix);
-    setIndex(0);
-  }
+  useResetOnChange(queryKeySuffix, () => setIndex(0));
 
   const pageSize = usePageSize();
 

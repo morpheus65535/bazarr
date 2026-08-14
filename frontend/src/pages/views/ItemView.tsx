@@ -8,10 +8,10 @@ import {
   useRef,
   useState,
 } from "react";
-import { useLocation, useNavigate } from "react-router";
 import {
   Button,
   ButtonProps,
+  Checkbox,
   Group,
   Indicator,
   Menu,
@@ -20,6 +20,7 @@ import {
   SegmentedControl,
   Stack,
   Table,
+  Tooltip,
 } from "@mantine/core";
 import { useMergedRef, useResizeObserver } from "@mantine/hooks";
 import { IconDefinition } from "@fortawesome/fontawesome-common-types";
@@ -27,14 +28,20 @@ import {
   faCaretDown,
   faCaretUp,
   faCheck,
+  faClock,
   faFilter,
-  faList,
   faSort,
+  faSquareCheck,
   faTableCellsLarge,
   faTableList,
+  faXmark,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { QueryKey, UseQueryResult } from "@tanstack/react-query";
+import {
+  QueryKey,
+  UseMutationResult,
+  UseQueryResult,
+} from "@tanstack/react-query";
 import { flexRender } from "@tanstack/react-table";
 import { useLanguageProfiles, useLanguages } from "@/apis/hooks";
 import {
@@ -43,18 +50,26 @@ import {
 } from "@/apis/queries/hooks";
 import {
   MultiSelector,
+  PosterCardSelection,
   QueryPageTable,
   QueryPosterGrid,
   Selector,
   SelectorOption,
   Toolbox,
 } from "@/components";
+import LanguageProfileName from "@/components/bazarr/LanguageProfile";
 import {
   AppColumnDef as ColumnDef,
   AppHeader as Header,
 } from "@/components/tables/features";
-import { useListQueryState } from "@/utilities";
+import { GetItemId, GetItemIds, useListQueryState } from "@/utilities";
+import { BulkSelection, useBulkSelection } from "@/utilities/bulkSelection";
+import { useResetOnChange } from "@/utilities/resetOnChange";
 import { useViewMode, ViewMode } from "@/utilities/viewMode";
+import {
+  BulkActionBarControls,
+  BulkActionBarSaveButton,
+} from "./BulkActionBar";
 
 const EMPTY_TAGS: string[] = [];
 const MAX_VISIBLE_TAGS = 2;
@@ -109,7 +124,8 @@ interface Props<T extends Item.Base = Item.Base> {
   // Enables the table/poster toggle when both are provided. The key is used
   // to persist the selection in the browser.
   viewModeKey?: string;
-  renderPoster?: (item: T) => ReactNode;
+  // `selection` is only passed while select mode is active.
+  renderPoster?: (item: T, selection?: PosterCardSelection) => ReactNode;
   filterConfig: FilterConfig;
   // Required when filterConfig.filters.tags is set: fetches the full list of
   // tags in use, independent of the currently loaded/filtered items.
@@ -117,6 +133,16 @@ interface Props<T extends Item.Base = Item.Base> {
   // Scopes the filter/sort URL params (e.g. "series_sort_by") so state does
   // not bleed between pages sharing this view.
   statePrefix?: string;
+  // Fetches every item matching the current filters, on demand, to resolve
+  // "select all N matching filters".
+  useAllItems: (
+    query: Parameter.ListState,
+    options: { enabled: boolean },
+  ) => Pick<
+    UseQueryResult<T[]>,
+    "data" | "isSuccess" | "isFetching" | "isError"
+  >;
+  modifyMutation: UseMutationResult<void, unknown, FormType.ModifyItem>;
 }
 
 interface FilterControlsProps {
@@ -393,7 +419,25 @@ interface ToolboxProps {
   useTags?: () => Pick<UseQueryResult<string[]>, "data">;
   setSort: (by: string, order: "asc" | "desc") => void;
   setFilter: SetFilter;
+  bulkSelection: BulkSelection;
+  loadedIds: number[];
+  loadedLabel: string;
+  onSelectAllMatching: () => void;
+  isSelectingAllMatching: boolean;
+  modifyMutation: UseMutationResult<void, unknown, FormType.ModifyItem>;
 }
+
+// The fields ItemView shares as-is between table/poster (everything except
+// totalCount and the bulk-action-bar fields, which are computed per view).
+type SharedToolboxProps = Omit<
+  ToolboxProps,
+  | "totalCount"
+  | "loadedIds"
+  | "loadedLabel"
+  | "onSelectAllMatching"
+  | "isSelectingAllMatching"
+  | "modifyMutation"
+>;
 
 const ItemViewToolbox = ({
   totalCount,
@@ -405,13 +449,17 @@ const ItemViewToolbox = ({
   useTags = () => ({ data: undefined }),
   setSort,
   setFilter,
+  bulkSelection,
+  loadedIds,
+  loadedLabel,
+  onSelectAllMatching,
+  isSelectingAllMatching,
+  modifyMutation,
 }: ToolboxProps) => {
-  const navigate = useNavigate();
-  const location = useLocation();
   const [filtersOpened, setFiltersOpened] = useState(false);
 
   // Collapse the inline filter controls into a popover button when they no
-  // longer fit next to the Mass Edit button. Records the width at which the
+  // longer fit next to the Select button. Records the width at which the
   // controls overflowed so they only expand again when there is room.
   const [groupEl, setGroupEl] = useState<HTMLDivElement | null>(null);
   const [resizeRef, groupRect] = useResizeObserver();
@@ -456,6 +504,34 @@ const ItemViewToolbox = ({
     ></ItemViewFilterControls>
   );
 
+  if (bulkSelection.active) {
+    return (
+      <Toolbox>
+        <Group gap="sm" wrap="wrap" align="center" flex={1} miw={0}>
+          <ToolboxIconButton
+            icon={faXmark}
+            style={{ flexShrink: 0 }}
+            onClick={bulkSelection.toggleActive}
+          >
+            Cancel
+          </ToolboxIconButton>
+          <BulkActionBarControls
+            selection={bulkSelection}
+            totalCount={totalCount}
+            loadedIds={loadedIds}
+            loadedLabel={loadedLabel}
+            onSelectAllMatching={onSelectAllMatching}
+            isSelectingAllMatching={isSelectingAllMatching}
+          ></BulkActionBarControls>
+        </Group>
+        <BulkActionBarSaveButton
+          selection={bulkSelection}
+          mutation={modifyMutation}
+        ></BulkActionBarSaveButton>
+      </Toolbox>
+    );
+  }
+
   return (
     <Toolbox>
       <Group
@@ -469,13 +545,11 @@ const ItemViewToolbox = ({
       >
         <ToolboxIconButton
           disabled={totalCount === 0}
-          icon={faList}
+          icon={faSquareCheck}
           style={{ flexShrink: 0 }}
-          onClick={() =>
-            navigate({ pathname: "edit", search: location.search })
-          }
+          onClick={bulkSelection.toggleActive}
         >
-          Mass Edit
+          Select
         </ToolboxIconButton>
 
         {!collapsed && (
@@ -580,7 +654,10 @@ interface ViewProps<T extends Item.Base> {
   queryKey: QueryKey;
   queryFn: RangeQuery<T>;
   query: Parameter.ListState;
-  toolbox: Omit<ToolboxProps, "totalCount">;
+  toolbox: SharedToolboxProps;
+  onSelectAllMatching: () => void;
+  isSelectingAllMatching: boolean;
+  modifyMutation: UseMutationResult<void, unknown, FormType.ModifyItem>;
 }
 
 const ItemTableView = <T extends Item.Base>({
@@ -589,9 +666,85 @@ const ItemTableView = <T extends Item.Base>({
   query,
   columns,
   toolbox,
+  onSelectAllMatching,
+  isSelectingAllMatching,
+  modifyMutation,
 }: ViewProps<T> & { columns: ColumnDef<T>[] }) => {
   const tableQuery = usePaginationQuery(queryKey, queryFn, true, query);
-  const { filterConfig, setSort } = toolbox;
+  const { filterConfig, setSort, bulkSelection } = toolbox;
+
+  const loadedIds = useMemo(
+    () => GetItemIds(tableQuery.data?.data ?? []),
+    [tableQuery.data],
+  );
+
+  // Read through refs instead of useMemo deps so selectionColumn stays
+  // referentially stable across selection changes.
+  const bulkSelectionRef = useRef(bulkSelection);
+  bulkSelectionRef.current = bulkSelection;
+  const loadedIdsRef = useRef(loadedIds);
+  loadedIdsRef.current = loadedIds;
+
+  const selectionColumn = useMemo<ColumnDef<T>>(
+    () => ({
+      id: "__selection",
+      header: () => {
+        const bulkSelection = bulkSelectionRef.current;
+        const loadedIds = loadedIdsRef.current;
+        const selectedCount = loadedIds.filter(bulkSelection.isSelected).length;
+        const allSelected =
+          loadedIds.length > 0 && selectedCount === loadedIds.length;
+        const someSelected = selectedCount > 0;
+        return (
+          <Checkbox
+            indeterminate={someSelected && !allSelected}
+            checked={allSelected}
+            onChange={() => bulkSelection.setMany(loadedIds, !allSelected)}
+          ></Checkbox>
+        );
+      },
+      cell: ({ row }) => {
+        const bulkSelection = bulkSelectionRef.current;
+        const id = GetItemId(row.original);
+        if (id === undefined) {
+          return null;
+        }
+        const dirtyProfileId = bulkSelection.dirties.get(id);
+        return (
+          <Group gap="xs" wrap="nowrap">
+            <Checkbox
+              checked={bulkSelection.isSelected(id)}
+              onChange={() => bulkSelection.toggle(id)}
+            ></Checkbox>
+            {dirtyProfileId !== undefined && (
+              <Tooltip
+                label={
+                  <>
+                    Pending:{" "}
+                    <LanguageProfileName
+                      index={dirtyProfileId}
+                      empty="No profile"
+                    ></LanguageProfileName>
+                  </>
+                }
+              >
+                <FontAwesomeIcon
+                  icon={faClock}
+                  style={{ color: "var(--mantine-color-warning-filled)" }}
+                ></FontAwesomeIcon>
+              </Tooltip>
+            )}
+          </Group>
+        );
+      },
+    }),
+    [],
+  );
+
+  const tableColumns = useMemo(
+    () => (bulkSelection.active ? [selectionColumn, ...columns] : columns),
+    [bulkSelection.active, selectionColumn, columns],
+  );
 
   const sortableIds = useMemo(
     () => new Set(filterConfig.sortFields.map((field) => field.value)),
@@ -645,9 +798,14 @@ const ItemTableView = <T extends Item.Base>({
       <ItemViewToolbox
         {...toolbox}
         totalCount={tableQuery.paginationStatus.totalCount}
+        loadedIds={loadedIds}
+        loadedLabel="on this page"
+        onSelectAllMatching={onSelectAllMatching}
+        isSelectingAllMatching={isSelectingAllMatching}
+        modifyMutation={modifyMutation}
       ></ItemViewToolbox>
       <QueryPageTable
-        columns={columns}
+        columns={tableColumns}
         query={tableQuery}
         tableStyles={{ emptyText: "No items found", headersRenderer }}
       ></QueryPageTable>
@@ -661,12 +819,44 @@ const ItemPosterView = <T extends Item.Base>({
   query,
   renderPoster,
   toolbox,
-}: ViewProps<T> & { renderPoster: (item: T) => ReactNode }) => {
+  onSelectAllMatching,
+  isSelectingAllMatching,
+  modifyMutation,
+}: ViewProps<T> & {
+  renderPoster: (item: T, selection?: PosterCardSelection) => ReactNode;
+}) => {
   const posterQuery = useInfinitePaginationQuery(
     queryKey,
     queryFn,
     true,
     query,
+  );
+  const { bulkSelection } = toolbox;
+
+  const loadedIds = useMemo(
+    () => GetItemIds(posterQuery.items),
+    [posterQuery.items],
+  );
+
+  const renderPosterWithSelection = useCallback(
+    (item: T) => {
+      if (!bulkSelection.active) {
+        return renderPoster(item);
+      }
+
+      const id = GetItemId(item);
+      const selection =
+        id === undefined
+          ? undefined
+          : {
+              checked: bulkSelection.isSelected(id),
+              onChange: () => bulkSelection.toggle(id),
+              pending: bulkSelection.dirties.has(id),
+            };
+
+      return renderPoster(item, selection);
+    },
+    [renderPoster, bulkSelection],
   );
 
   return (
@@ -674,10 +864,15 @@ const ItemPosterView = <T extends Item.Base>({
       <ItemViewToolbox
         {...toolbox}
         totalCount={posterQuery.paginationStatus.totalCount}
+        loadedIds={loadedIds}
+        loadedLabel="loaded"
+        onSelectAllMatching={onSelectAllMatching}
+        isSelectingAllMatching={isSelectingAllMatching}
+        modifyMutation={modifyMutation}
       ></ItemViewToolbox>
       <QueryPosterGrid
         query={posterQuery}
-        renderPoster={renderPoster}
+        renderPoster={renderPosterWithSelection}
         emptyText="No items found"
       ></QueryPosterGrid>
     </>
@@ -693,14 +888,57 @@ const ItemView = <T extends Item.Base>({
   filterConfig,
   useTags,
   statePrefix,
+  useAllItems,
+  modifyMutation,
 }: Props<T>) => {
   const [viewMode, setViewMode] = useViewMode(viewModeKey ?? "item-view-mode");
   const { query, setSort, setFilter } = useListQueryState(statePrefix);
 
+  // Declared above the table/poster branch so both views share it.
+  const filtersKey = useMemo(
+    () => JSON.stringify(query.filters ?? {}),
+    [query.filters],
+  );
+  const bulkSelection = useBulkSelection(filtersKey);
+
+  const [selectAllRequested, setSelectAllRequested] = useState(false);
+
+  // Avoids a stale in-flight fetch landing after a filter change or Cancel.
+  useResetOnChange(filtersKey, () => setSelectAllRequested(false));
+  useResetOnChange(String(bulkSelection.active), () =>
+    setSelectAllRequested(false),
+  );
+
+  const allItemsQuery = useAllItems(query, { enabled: selectAllRequested });
+
+  useEffect(() => {
+    if (!selectAllRequested) {
+      return;
+    }
+    if (allItemsQuery.isSuccess && allItemsQuery.data) {
+      bulkSelection.setMany(GetItemIds(allItemsQuery.data), true);
+      setSelectAllRequested(false);
+    } else if (allItemsQuery.isError) {
+      setSelectAllRequested(false);
+    }
+  }, [
+    selectAllRequested,
+    allItemsQuery.isSuccess,
+    allItemsQuery.data,
+    allItemsQuery.isError,
+    bulkSelection,
+  ]);
+
+  const onSelectAllMatching = useCallback(
+    () => setSelectAllRequested(true),
+    [],
+  );
+  const isSelectingAllMatching = selectAllRequested && allItemsQuery.isFetching;
+
   const canShowPoster = viewModeKey !== undefined && renderPoster !== undefined;
   const showPoster = canShowPoster && viewMode === "poster";
 
-  const toolbox: Omit<ToolboxProps, "totalCount"> = {
+  const toolbox: SharedToolboxProps = {
     viewMode,
     canShowPoster,
     onViewModeChange: setViewMode,
@@ -709,6 +947,7 @@ const ItemView = <T extends Item.Base>({
     useTags,
     setSort,
     setFilter,
+    bulkSelection,
   };
 
   // Only one view is mounted at a time, keeping a single active query. Each
@@ -721,6 +960,9 @@ const ItemView = <T extends Item.Base>({
         query={query}
         renderPoster={renderPoster}
         toolbox={toolbox}
+        onSelectAllMatching={onSelectAllMatching}
+        isSelectingAllMatching={isSelectingAllMatching}
+        modifyMutation={modifyMutation}
       ></ItemPosterView>
     );
   }
@@ -732,6 +974,9 @@ const ItemView = <T extends Item.Base>({
       query={query}
       columns={columns}
       toolbox={toolbox}
+      onSelectAllMatching={onSelectAllMatching}
+      isSelectingAllMatching={isSelectingAllMatching}
+      modifyMutation={modifyMutation}
     ></ItemTableView>
   );
 };

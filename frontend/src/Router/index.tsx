@@ -22,9 +22,7 @@ import MoviesHistoryView from "@/pages/History/Movies";
 import SeriesHistoryView from "@/pages/History/Series";
 import MovieView from "@/pages/Movies";
 import MovieDetailView from "@/pages/Movies/Details";
-import MovieMassEditor from "@/pages/Movies/Editor";
 import SeriesView from "@/pages/Series";
-import SeriesMassEditor from "@/pages/Series/Editor";
 import SettingsGeneralView from "@/pages/Settings/General";
 import SettingsJellyfinView from "@/pages/Settings/Jellyfin";
 import SettingsLanguagesView from "@/pages/Settings/Languages";
@@ -81,11 +79,6 @@ const useRoutes = (): CustomRouteObject[] => {
                 element: <SeriesView></SeriesView>,
               },
               {
-                path: "edit",
-                hidden: true,
-                element: <SeriesMassEditor></SeriesMassEditor>,
-              },
-              {
                 path: ":id",
                 element: <Episodes></Episodes>,
               },
@@ -101,11 +94,6 @@ const useRoutes = (): CustomRouteObject[] => {
               {
                 index: true,
                 element: <MovieView></MovieView>,
-              },
-              {
-                path: "edit",
-                hidden: true,
-                element: <MovieMassEditor></MovieMassEditor>,
               },
               {
                 path: ":id",

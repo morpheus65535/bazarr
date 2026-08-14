@@ -23,6 +23,9 @@ export const GetItemId = <T extends object>(item: T): number | undefined => {
   }
 };
 
+export const GetItemIds = <T extends object>(items: T[]): number[] =>
+  items.map(GetItemId).filter((id): id is number => id !== undefined);
+
 export const BuildKey = (...args: unknown[]) => args.join("-");
 
 export const Reload = () => {
