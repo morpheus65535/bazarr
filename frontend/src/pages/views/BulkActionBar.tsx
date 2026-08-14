@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from "react";
-import { Anchor, Group, Text, useCombobox } from "@mantine/core";
+import { Button, Group, Text, useCombobox } from "@mantine/core";
 import { faCheck } from "@fortawesome/free-solid-svg-icons";
 import { UseMutationResult } from "@tanstack/react-query";
 import { chunk } from "lodash";
@@ -58,38 +58,32 @@ export const BulkActionBarControls = (props: ControlsProps) => {
       <Text size="sm">
         {selectedIds.size} selected
         {dirties.size > 0 && ` · ${dirties.size} pending`}
-        {loadedIds.length > 0 && (
-          <>
-            {" · "}
-            <Anchor
-              component="button"
-              type="button"
-              size="sm"
-              underline="hover"
-              onClick={() => selection.setMany(loadedIds, true)}
-            >
-              {`Select all ${loadedIds.length} ${loadedLabel}`}
-            </Anchor>
-          </>
-        )}
-        {selectedIds.size < totalCount &&
-          (isSelectingAllMatching ? (
-            " · Selecting all matching filters…"
-          ) : (
-            <>
-              {" · "}
-              <Anchor
-                component="button"
-                type="button"
-                size="sm"
-                underline="hover"
-                onClick={onSelectAllMatching}
-              >
-                {`Select all ${totalCount} matching filters`}
-              </Anchor>
-            </>
-          ))}
       </Text>
+      {loadedIds.length > 0 && (
+        <Button
+          variant="outline"
+          color="gray"
+          size="xs"
+          onClick={() => selection.setMany(loadedIds, true)}
+        >
+          {`Select all ${loadedIds.length} ${loadedLabel}`}
+        </Button>
+      )}
+      {selectedIds.size < totalCount &&
+        (isSelectingAllMatching ? (
+          <Text size="sm" c="dimmed">
+            Selecting all matching filters…
+          </Text>
+        ) : (
+          <Button
+            variant="outline"
+            color="gray"
+            size="xs"
+            onClick={onSelectAllMatching}
+          >
+            {`Select all ${totalCount} matching filters`}
+          </Button>
+        ))}
 
       <GroupedSelector
         onClick={() => combobox.openDropdown()}
