@@ -1,4 +1,4 @@
-import { FunctionComponent, useMemo } from "react";
+import { FunctionComponent, useCallback, useMemo } from "react";
 import { Link } from "react-router";
 import { Anchor, Container, Group, Progress } from "@mantine/core";
 import { useDocumentTitle } from "@mantine/hooks";
@@ -20,6 +20,8 @@ import { ItemEditModal } from "@/components/forms/ItemEditForm";
 import { AppColumnDef as ColumnDef } from "@/components/tables/features";
 import { useModals } from "@/modules/modals";
 import ItemView from "@/pages/views/ItemView";
+import { sportsViewModeKey } from "@/utilities/viewMode";
+import SportsLeaguePosterCard from "./PosterCard";
 
 const sportsFilterConfig = {
   sortFields: [
@@ -176,6 +178,28 @@ const SportsView: FunctionComponent = () => {
     [mutation, modals],
   );
 
+  const renderPoster = useCallback(
+    (item: Item.SportsLeague) => (
+      <SportsLeaguePosterCard
+        key={item.sportarrLeagueId}
+        item={item}
+        onEdit={() =>
+          modals.openContextModal(
+            ItemEditModal,
+            {
+              mutation,
+              item,
+            },
+            {
+              title: item.title,
+            },
+          )
+        }
+      ></SportsLeaguePosterCard>
+    ),
+    [modals, mutation],
+  );
+
   useDocumentTitle(`Sports - ${useInstanceName()}`);
 
   return (
@@ -184,6 +208,8 @@ const SportsView: FunctionComponent = () => {
         queryKey={sportsLeaguesPaginationKey}
         queryFn={sportsLeaguesPaginationQuery}
         columns={columns}
+        viewModeKey={sportsViewModeKey}
+        renderPoster={renderPoster}
         filterConfig={sportsFilterConfig}
         useTags={useSportsLeagueTags}
         statePrefix="sports"

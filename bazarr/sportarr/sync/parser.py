@@ -55,7 +55,9 @@ def eventParser(event, file):
 def leagueParser(league, action, tags_dict, language_profiles, league_default_profile):
     overview = league['overview'] if 'overview' in league else ''
     poster = league.get('posterUrl') or ''
-    fanart = league.get('fanartUrl') or ''
+    # A league has a badge, a banner and a poster. The banner is the wide image,
+    # so it takes the place a series fanart takes.
+    fanart = league.get('bannerUrl') or ''
 
     tags = [d['label'] for d in tags_dict if d['id'] in league.get('tags', [])]
 
