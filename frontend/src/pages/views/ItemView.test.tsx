@@ -1,3 +1,4 @@
+import { UseMutationResult } from "@tanstack/react-query";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi, vitest } from "vitest";
 import { AppColumnDef as ColumnDef } from "@/components/tables/features";
@@ -32,6 +33,17 @@ const filterConfig = {
 
 const queryKey = ["test-item-view"];
 
+const mockUseAllItems = () => ({
+  data: undefined,
+  isSuccess: false,
+  isFetching: false,
+  isError: false,
+});
+
+const mockMutation = {
+  mutateAsync: vitest.fn(),
+} as unknown as UseMutationResult<void, unknown, FormType.ModifyItem>;
+
 const buildQueryFn = (total = 1): RangeQuery<Item.Series> => {
   return vitest.fn(() => Promise.resolve({ data: [item], total }));
 };
@@ -56,6 +68,8 @@ describe("ItemView", () => {
         queryKey={queryKey}
         queryFn={buildQueryFn()}
         columns={columns}
+        useAllItems={mockUseAllItems}
+        modifyMutation={mockMutation}
         viewModeKey="test-view-mode"
         renderPoster={renderPoster}
         filterConfig={filterConfig}
@@ -74,6 +88,8 @@ describe("ItemView", () => {
         queryKey={queryKey}
         queryFn={buildQueryFn()}
         columns={columns}
+        useAllItems={mockUseAllItems}
+        modifyMutation={mockMutation}
         viewModeKey="test-view-mode"
         renderPoster={renderPoster}
         filterConfig={filterConfig}
@@ -100,6 +116,8 @@ describe("ItemView", () => {
         queryKey={queryKey}
         queryFn={buildQueryFn()}
         columns={columns}
+        useAllItems={mockUseAllItems}
+        modifyMutation={mockMutation}
         viewModeKey="test-view-mode"
         renderPoster={renderPoster}
         filterConfig={filterConfig}
@@ -117,6 +135,8 @@ describe("ItemView", () => {
         queryKey={queryKey}
         queryFn={buildQueryFn()}
         columns={columns}
+        useAllItems={mockUseAllItems}
+        modifyMutation={mockMutation}
         viewModeKey="test-view-mode"
         renderPoster={renderPoster}
         filterConfig={filterConfig}
@@ -140,6 +160,8 @@ describe("ItemView", () => {
         queryKey={queryKey}
         queryFn={buildQueryFn()}
         columns={columns}
+        useAllItems={mockUseAllItems}
+        modifyMutation={mockMutation}
         viewModeKey="test-view-mode"
         renderPoster={renderPoster}
         filterConfig={filterConfig}
@@ -164,6 +186,8 @@ describe("ItemView", () => {
         queryKey={queryKey}
         queryFn={buildQueryFn()}
         columns={columns}
+        useAllItems={mockUseAllItems}
+        modifyMutation={mockMutation}
         viewModeKey="test-view-mode"
         renderPoster={renderPoster}
         filterConfig={filterConfig}
@@ -190,6 +214,8 @@ describe("ItemView", () => {
         queryKey={queryKey}
         queryFn={buildQueryFn()}
         columns={columns}
+        useAllItems={mockUseAllItems}
+        modifyMutation={mockMutation}
         viewModeKey="test-view-mode"
         renderPoster={renderPoster}
         filterConfig={filterConfig}
@@ -213,6 +239,8 @@ describe("ItemView", () => {
         queryKey={queryKey}
         queryFn={buildQueryFn()}
         columns={columns}
+        useAllItems={mockUseAllItems}
+        modifyMutation={mockMutation}
         viewModeKey="test-view-mode"
         renderPoster={renderPoster}
         filterConfig={filterConfig}
@@ -234,6 +262,8 @@ describe("ItemView", () => {
         queryKey={queryKey}
         queryFn={buildQueryFn()}
         columns={columns}
+        useAllItems={mockUseAllItems}
+        modifyMutation={mockMutation}
         filterConfig={filterConfig}
       ></ItemView>,
     );
@@ -252,6 +282,8 @@ describe("ItemView", () => {
         queryKey={["test-item-view-tags"]}
         queryFn={buildQueryFn()}
         columns={columns}
+        useAllItems={mockUseAllItems}
+        modifyMutation={mockMutation}
         filterConfig={filterConfig}
         useTags={() => ({ data: ["anime"] })}
       ></ItemView>,
@@ -278,6 +310,8 @@ describe("ItemView", () => {
         queryKey={queryKey}
         queryFn={buildQueryFn()}
         columns={columns}
+        useAllItems={mockUseAllItems}
+        modifyMutation={mockMutation}
         filterConfig={filterConfig}
       ></ItemView>,
     );

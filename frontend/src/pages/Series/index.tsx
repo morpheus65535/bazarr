@@ -13,6 +13,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   seriesPaginationKey,
   seriesPaginationQuery,
+  useSeries,
   useSeriesModification,
   useSeriesTags,
 } from "@/apis/hooks";
@@ -20,6 +21,7 @@ import { useInstanceName } from "@/apis/hooks/site";
 import { Action } from "@/components";
 import { AudioList } from "@/components/bazarr";
 import LanguageProfileName from "@/components/bazarr/LanguageProfile";
+import { PosterCardSelection } from "@/components/cards";
 import { ItemEditModal } from "@/components/forms/ItemEditForm";
 import { AppColumnDef as ColumnDef } from "@/components/tables/features";
 import { useModals } from "@/modules/modals";
@@ -180,10 +182,11 @@ const SeriesView: FunctionComponent = () => {
   );
 
   const renderPoster = useCallback(
-    (item: Item.Series) => (
+    (item: Item.Series, selection?: PosterCardSelection) => (
       <SeriesPosterCard
         key={item.sonarrSeriesId}
         item={item}
+        selection={selection}
         onEdit={() =>
           modals.openContextModal(
             ItemEditModal,
@@ -214,6 +217,8 @@ const SeriesView: FunctionComponent = () => {
         filterConfig={seriesFilterConfig}
         useTags={useSeriesTags}
         statePrefix="series"
+        useAllItems={useSeries}
+        modifyMutation={mutation}
       ></ItemView>
     </Container>
   );

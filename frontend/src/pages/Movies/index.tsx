@@ -10,6 +10,7 @@ import {
   moviesPaginationKey,
   moviesPaginationQuery,
   useMovieModification,
+  useMovies,
   useMovieTags,
 } from "@/apis/hooks";
 import { useInstanceName } from "@/apis/hooks/site";
@@ -17,6 +18,7 @@ import { Action } from "@/components";
 import { AudioList } from "@/components/bazarr";
 import Language from "@/components/bazarr/Language";
 import LanguageProfileName from "@/components/bazarr/LanguageProfile";
+import { PosterCardSelection } from "@/components/cards";
 import { ItemEditModal } from "@/components/forms/ItemEditForm";
 import { AppColumnDef as ColumnDef } from "@/components/tables/features";
 import { useModals } from "@/modules/modals";
@@ -168,10 +170,11 @@ const MovieView: FunctionComponent = () => {
   );
 
   const renderPoster = useCallback(
-    (item: Item.Movie) => (
+    (item: Item.Movie, selection?: PosterCardSelection) => (
       <MoviePosterCard
         key={item.radarrId}
         item={item}
+        selection={selection}
         onEdit={() =>
           modals.openContextModal(
             ItemEditModal,
@@ -202,6 +205,8 @@ const MovieView: FunctionComponent = () => {
         filterConfig={moviesFilterConfig}
         useTags={useMovieTags}
         statePrefix="movies"
+        useAllItems={useMovies}
+        modifyMutation={modifyMovie}
       ></ItemView>
     </Container>
   );

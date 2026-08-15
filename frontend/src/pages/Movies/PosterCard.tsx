@@ -6,7 +6,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { uniqueId } from "lodash";
 import { Action } from "@/components";
 import Language from "@/components/bazarr/Language";
-import { PosterCard } from "@/components/cards";
+import { PosterCard, PosterCardSelection } from "@/components/cards";
 import { BuildKey } from "@/utilities";
 
 const MAX_VISIBLE_BADGES = 2;
@@ -14,9 +14,14 @@ const MAX_VISIBLE_BADGES = 2;
 interface Props {
   item: Item.Movie;
   onEdit: () => void;
+  selection?: PosterCardSelection;
 }
 
-const MoviePosterCard: FunctionComponent<Props> = ({ item, onEdit }) => {
+const MoviePosterCard: FunctionComponent<Props> = ({
+  item,
+  onEdit,
+  selection,
+}) => {
   const { title, year, poster, monitored, missingSubtitles, radarrId } = item;
 
   const visible = missingSubtitles.slice(0, MAX_VISIBLE_BADGES);
@@ -35,14 +40,17 @@ const MoviePosterCard: FunctionComponent<Props> = ({ item, onEdit }) => {
         ></FontAwesomeIcon>
       }
       actions={
-        <Action
-          label="Edit Movie"
-          icon={faWrench}
-          size="sm"
-          variant="filled"
-          onClick={onEdit}
-        ></Action>
+        selection ? undefined : (
+          <Action
+            label="Edit Movie"
+            icon={faWrench}
+            size="sm"
+            variant="filled"
+            onClick={onEdit}
+          ></Action>
+        )
       }
+      selection={selection}
     >
       {missingSubtitles.length > 0 && (
         <Group gap={4} mt={4} wrap="nowrap">

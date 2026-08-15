@@ -47,12 +47,19 @@ export const ToolboxMutateButton = <R, T extends () => Promise<R>>(
 
   const click = useCallback(() => {
     setLoading(true);
-    promise().then((val) => {
-      setLoading(false);
-      if (onSuccess) {
-        onSuccess(val);
-      }
-    });
+    promise().then(
+      (val) => {
+        setLoading(false);
+        if (onSuccess) {
+          onSuccess(val);
+        }
+      },
+      () => {
+        // Error already surfaced by the API client's response interceptor;
+        // just stop spinning so the user can retry.
+        setLoading(false);
+      },
+    );
   }, [onSuccess, promise]);
 
   return (
