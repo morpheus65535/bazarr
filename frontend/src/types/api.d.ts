@@ -29,7 +29,7 @@ declare namespace Language {
     audio_exclude: PythonBoolean;
     audio_only_include: PythonBoolean;
     forced: PythonBoolean;
-    hi: PythonBoolean;
+    hi: HiPreference;
     language: CodeType;
   }
 
