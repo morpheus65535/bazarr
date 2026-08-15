@@ -1,7 +1,6 @@
 import { FunctionComponent, useCallback, useRef } from "react";
 import { Navigate, useParams } from "react-router";
 import { Container, Group, Menu, Stack } from "@mantine/core";
-import { Dropzone } from "@mantine/dropzone";
 import { useDocumentTitle } from "@mantine/hooks";
 import { showNotification } from "@mantine/notifications";
 import {
@@ -28,7 +27,7 @@ import {
   useMovieModification,
 } from "@/apis/hooks/movies";
 import { useInstanceName } from "@/apis/hooks/site";
-import { Action, DropContent, Toolbox } from "@/components";
+import { Action, Toolbox, UploadDropzone } from "@/components";
 import { QueryOverlay } from "@/components/async";
 import { ItemEditModal } from "@/components/forms/ItemEditForm";
 import { MovieUploadModal } from "@/components/forms/MovieUploadForm";
@@ -118,21 +117,11 @@ const MovieDetailView: FunctionComponent = () => {
   return (
     <Container fluid px={0}>
       <QueryOverlay result={movieQuery}>
-        <Dropzone.FullScreen
+        <UploadDropzone
           openRef={openDropzone}
           active={profile !== undefined}
           onDrop={onDrop}
-          styles={{
-            inner: {
-              height: "100%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            },
-          }}
-        >
-          <DropContent></DropContent>
-        </Dropzone.FullScreen>
+        ></UploadDropzone>
         <Toolbox>
           <Group gap="xs">
             <Toolbox.Button
