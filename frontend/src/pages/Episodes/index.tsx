@@ -136,6 +136,14 @@ const SeriesEpisodesView: FunctionComponent = () => {
           openRef={openDropzone}
           active={profile !== undefined}
           onDrop={onDrop}
+          styles={{
+            inner: {
+              height: "100%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            },
+          }}
         >
           <DropContent></DropContent>
         </Dropzone.FullScreen>
