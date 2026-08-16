@@ -1,5 +1,10 @@
 import { FunctionComponent, useEffect, useState } from "react";
-import { Outlet, ScrollRestoration, useNavigate } from "react-router";
+import {
+  Outlet,
+  ScrollRestoration,
+  useLocation,
+  useNavigate,
+} from "react-router";
 import { AppShell } from "@mantine/core";
 import { useWindowEvent } from "@mantine/hooks";
 import { showNotification } from "@mantine/notifications";
@@ -18,6 +23,7 @@ import styleVars from "@/assets/_variables.module.scss";
 
 const App: FunctionComponent = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [criticalError, setCriticalError] = useState<string | null>(null);
   const [navbar, setNavbar] = useState(false);
@@ -29,7 +35,14 @@ const App: FunctionComponent = () => {
 
   useWindowEvent("app-auth-changed", (ev) => {
     if (!ev.detail.authenticated) {
-      navigate(RouterNames.Auth);
+      const returnTo =
+        location.pathname !== RouterNames.Auth
+          ? `${location.pathname}${location.search}`
+          : "";
+      navigate({
+        pathname: RouterNames.Auth,
+        search: returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : "",
+      });
     }
   });
 

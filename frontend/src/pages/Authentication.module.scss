@@ -1,0 +1,19 @@
+.root {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: var(--mantine-spacing-md);
+  background-color: light-dark(
+    var(--mantine-color-gray-1),
+    var(--mantine-color-dark-9)
+  );
+}
+
+@media (width <= 48em) {
+  .root {
+    align-items: flex-start;
+    padding-top: var(--mantine-spacing-xl);
+  }
+}
