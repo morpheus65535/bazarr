@@ -404,7 +404,7 @@ const ProfileEditForm: FunctionComponent<Props> = ({
             </Stack>
           </Accordion.Item>
         </Accordion>
-        <Button type="submit">Save</Button>
+        <Button type="submit">Confirm</Button>
       </Stack>
     </form>
   );
