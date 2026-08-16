@@ -5,84 +5,86 @@ import "@testing-library/jest-dom";
 import queryClient from "@/apis/queries";
 import server from "./mocks/node";
 
-vi.mock("recharts", async () => {
-  const OriginalRechartsModule = await vi.importActual("recharts");
+vi.mock("recharts", () => ({
+  ResponsiveContainer: ({ children }: { children: React.ReactNode }) => (
+    <div style={{ width: "100%", height: "100%" }}>{children}</div>
+  ),
+  BarChart: () => null,
+  Bar: () => null,
+  XAxis: () => null,
+  YAxis: () => null,
+  CartesianGrid: () => null,
+  Tooltip: () => null,
+  Legend: () => null,
+  Cell: vi.fn(),
+}));
 
-  return {
-    ...OriginalRechartsModule,
-    ResponsiveContainer: ({ children }: { children: React.ReactNode }) => (
-      <div style={{ width: "100%", height: "100%" }}>{children}</div>
-    ),
-  };
-});
+if (typeof window !== "undefined") {
+  Object.defineProperty(window, "matchMedia", {
+    writable: true,
+    value: vitest.fn().mockImplementation((query) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: vitest.fn(),
+      removeListener: vitest.fn(),
+      addEventListener: vitest.fn(),
+      removeEventListener: vitest.fn(),
+      dispatchEvent: vitest.fn(),
+    })),
+  });
 
-// From https://stackoverflow.com/questions/39830580/jest-test-fails-typeerror-window-matchmedia-is-not-a-function
-Object.defineProperty(window, "matchMedia", {
-  writable: true,
-  value: vitest.fn().mockImplementation((query) => ({
-    matches: false,
-    media: query,
-    onchange: null,
-    addListener: vitest.fn(), // Deprecated
-    removeListener: vitest.fn(), // Deprecated
-    addEventListener: vitest.fn(),
-    removeEventListener: vitest.fn(),
-    dispatchEvent: vitest.fn(),
-  })),
-});
+  class ResizeObserver {
+    observe() {
+      return undefined;
+    }
+    unobserve() {
+      return undefined;
+    }
+    disconnect() {
+      return undefined;
+    }
+  }
 
-// From https://github.com/mantinedev/mantine/blob/master/configuration/jest/jsdom.mocks.js
-class ResizeObserver {
-  observe() {
-    return undefined;
+  window.ResizeObserver = ResizeObserver;
+
+  class IntersectionObserver {
+    observe() {
+      return undefined;
+    }
+    unobserve() {
+      return undefined;
+    }
+    disconnect() {
+      return undefined;
+    }
   }
-  unobserve() {
-    return undefined;
-  }
-  disconnect() {
-    return undefined;
-  }
+
+  window.IntersectionObserver =
+    IntersectionObserver as unknown as typeof window.IntersectionObserver;
+
+  window.scrollTo = () => undefined;
+
+  const localStorageMock = (() => {
+    const store: Record<string, string> = {};
+    return {
+      getItem: vi.fn((key: string) => store[key] ?? null),
+      setItem: vi.fn((key: string, value: string) => {
+        store[key] = value;
+      }),
+      removeItem: vi.fn((key: string) => {
+        delete store[key];
+      }),
+      clear: vi.fn(() => {
+        Object.keys(store).forEach((key) => delete store[key]);
+      }),
+    };
+  })();
+
+  Object.defineProperty(window, "localStorage", {
+    value: localStorageMock,
+  });
 }
-
-window.ResizeObserver = ResizeObserver;
-
-// jsdom does not implement IntersectionObserver (used by infinite scroll)
-class IntersectionObserver {
-  observe() {
-    return undefined;
-  }
-  unobserve() {
-    return undefined;
-  }
-  disconnect() {
-    return undefined;
-  }
-}
-
-window.IntersectionObserver =
-  IntersectionObserver as unknown as typeof window.IntersectionObserver;
-
-window.scrollTo = () => undefined;
-
-const localStorageMock = (() => {
-  const store: Record<string, string> = {};
-  return {
-    getItem: vi.fn((key: string) => store[key] ?? null),
-    setItem: vi.fn((key: string, value: string) => {
-      store[key] = value;
-    }),
-    removeItem: vi.fn((key: string) => {
-      delete store[key];
-    }),
-    clear: vi.fn(() => {
-      Object.keys(store).forEach((key) => delete store[key]);
-    }),
-  };
-})();
-
-Object.defineProperty(window, "localStorage", {
-  value: localStorageMock,
-});
 
 beforeAll(() => {
   server.listen({ onUnhandledRequest: "error" });
@@ -109,7 +111,6 @@ beforeEach(() => {
 
 afterEach(() => {
   server.resetHandlers();
-
   queryClient.clear();
 });
 

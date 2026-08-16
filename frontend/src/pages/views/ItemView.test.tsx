@@ -198,9 +198,8 @@ describe("ItemView", () => {
 
     // "Name" is the default sort field, so the first click flips its direction
     await userEvent.click(screen.getByRole("button", { name: /Sort/ }));
-    await userEvent.click(
-      await screen.findByRole("menuitem", { name: "Name" }),
-    );
+    await screen.findByText("Name");
+    await userEvent.click(screen.getByText("Name"));
     expect(window.location.search).toContain("sort_by=title");
     expect(window.location.search).toContain("sort_order=desc");
   });
@@ -225,9 +224,8 @@ describe("ItemView", () => {
     await screen.findByTestId("poster-card");
 
     await userEvent.click(screen.getByRole("button", { name: /Sort/ }));
-    await userEvent.click(
-      await screen.findByRole("menuitem", { name: "Name" }),
-    );
+    await screen.findByText("Name");
+    await userEvent.click(screen.getByText("Name"));
     expect(window.location.search).toContain("sort_order=asc");
   });
 

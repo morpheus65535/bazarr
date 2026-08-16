@@ -66,6 +66,7 @@
     "eslint-plugin-react-refresh": "^0.5.3",
     "eslint-plugin-simple-import-sort": "^14.0.0",
     "eslint-plugin-testing-library": "^7.16.2",
+    "happy-dom": "^20.11.2",
     "husky": "^9.1.7",
     "jsdom": "^30.0.1",
     "lodash": "^4.18.1",
