@@ -45,16 +45,12 @@ const HistoryIcon: FunctionComponent<{
   if (icon) {
     return (
       <Tooltip
-        label={label}
+        label={title ?? label}
         openDelay={500}
         position="right"
         events={{ hover: true, focus: false, touch: true }}
       >
-        <FontAwesomeIcon
-          aria-label={label}
-          title={title}
-          icon={icon}
-        ></FontAwesomeIcon>
+        <FontAwesomeIcon aria-label={label} icon={icon}></FontAwesomeIcon>
       </Tooltip>
     );
   } else {

@@ -422,17 +422,21 @@ const JobsManager: FunctionComponent<JobsManagerProps> = ({
                                         style={{ width: 42, height: 42 }}
                                       >
                                         {status === "completed" ? (
-                                          <FontAwesomeIcon
-                                            icon={faCheck}
-                                            color="var(--mantine-color-success-6)"
-                                            size="lg"
-                                          />
+                                          <Tooltip label="Completed">
+                                            <FontAwesomeIcon
+                                              icon={faCheck}
+                                              color="var(--mantine-color-success-6)"
+                                              size="lg"
+                                            />
+                                          </Tooltip>
                                         ) : status === "failed" ? (
-                                          <FontAwesomeIcon
-                                            icon={faXmark}
-                                            color="var(--mantine-color-danger-6)"
-                                            size="lg"
-                                          />
+                                          <Tooltip label="Failed">
+                                            <FontAwesomeIcon
+                                              icon={faXmark}
+                                              color="var(--mantine-color-danger-6)"
+                                              size="lg"
+                                            />
+                                          </Tooltip>
                                         ) : (
                                           <Loader size="sm" />
                                         )}
