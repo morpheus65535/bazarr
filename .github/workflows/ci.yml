@@ -22,31 +22,24 @@ env:
   UI_ARTIFACT_NAME: ui
 
 jobs:
-  Frontend:
+  Lint:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
 
-      - name: Cache node_modules
-        uses: actions/cache@v6
-        with:
-          path: "${{ env.UI_DIRECTORY }}/node_modules"
-          key: ${{ runner.os }}-modules-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: ${{ runner.os }}-modules-
-
       - name: Setup NodeJS
         uses: actions/setup-node@v7
         with:
           node-version-file: "${{ env.UI_DIRECTORY }}/.nvmrc"
+          cache: npm
+          cache-dependency-path: "${{ env.UI_DIRECTORY }}/package-lock.json"
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci --no-audit --no-fund
         working-directory: ${{ env.UI_DIRECTORY }}
-
-      - name: Check Types
-        run: npm run check:ts
-        working-directory: ${{ env.UI_DIRECTORY }}
+        env:
+          HUSKY: 0
 
       - name: Check Styles
         run: npm run check
@@ -60,9 +53,70 @@ jobs:
         run: npm run check:fmt
         working-directory: ${{ env.UI_DIRECTORY }}
 
+  Types:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Setup NodeJS
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: "${{ env.UI_DIRECTORY }}/.nvmrc"
+          cache: npm
+          cache-dependency-path: "${{ env.UI_DIRECTORY }}/package-lock.json"
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+        working-directory: ${{ env.UI_DIRECTORY }}
+        env:
+          HUSKY: 0
+
+      - name: Check Types
+        run: npm run check:ts
+        working-directory: ${{ env.UI_DIRECTORY }}
+
+  Test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Setup NodeJS
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: "${{ env.UI_DIRECTORY }}/.nvmrc"
+          cache: npm
+          cache-dependency-path: "${{ env.UI_DIRECTORY }}/package-lock.json"
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+        working-directory: ${{ env.UI_DIRECTORY }}
+        env:
+          HUSKY: 0
+
       - name: Unit Test
         run: npm test
         working-directory: ${{ env.UI_DIRECTORY }}
+
+  Build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Setup NodeJS
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: "${{ env.UI_DIRECTORY }}/.nvmrc"
+          cache: npm
+          cache-dependency-path: "${{ env.UI_DIRECTORY }}/package-lock.json"
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+        working-directory: ${{ env.UI_DIRECTORY }}
+        env:
+          HUSKY: 0
 
       - name: Build
         run: npm run build:ci
@@ -75,7 +129,7 @@ jobs:
 
   Backend:
     runs-on: ubuntu-latest
-    needs: Frontend
+    needs: Build
 
     strategy:
       fail-fast: false
