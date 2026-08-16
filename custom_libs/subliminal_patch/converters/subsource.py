@@ -27,7 +27,7 @@ class SubsourceConverter(LanguageReverseConverter):
                                'Bengali': ('ben',),
                                # 'Big 5 code': (''),
                                'Bosnian': ('bos',),
-                               'Brazillian Portuguese': ('por', 'BR'),
+                               'Brazilian_portuguese': ('por', 'BR'),
                                'Breton': ('bre',),
                                'Bulgarian': ('bul',),
                                'Burmese': ('mya',),
@@ -36,7 +36,7 @@ class SubsourceConverter(LanguageReverseConverter):
                                # 'Chinese (Cantonese)': ('',),
                                # 'Chinese (Simplified)': ('zho', 'CN'),  # we'll have to parse subtitles commentary to get this
                                # 'Chinese (Traditional)': ('zho', 'TW'),  # we'll have to parse subtitles commentary to get this
-                               'Chinese BG code': ('zho',),  # all Chinese subtitles seem to be uploaded using this language name
+                               'Chinese_bg_code': ('zho',),  # all Chinese subtitles seem to be uploaded using this language name
                                # 'Chinese Bilingual': ('',),
                                'Croatian': ('hrv',),
                                'Czech': ('ces',),
