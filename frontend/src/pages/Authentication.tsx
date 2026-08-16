@@ -40,7 +40,13 @@ const Authentication: FunctionComponent = () => {
   return (
     <Box className={styles.root}>
       <Box maw={400} w="100%">
-        <Card shadow="xl" padding="lg" radius="md" pos="relative">
+        <Card
+          className={styles.card}
+          shadow="xl"
+          padding="lg"
+          radius="md"
+          pos="relative"
+        >
           <LoadingOverlay
             visible={isLoggingIn}
             overlayProps={{ radius: "md", blur: 2 }}

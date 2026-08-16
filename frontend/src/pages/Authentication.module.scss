@@ -1,14 +1,65 @@
 .root {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   min-height: 100vh;
   min-height: 100dvh;
   padding: var(--mantine-spacing-md);
+  isolation: isolate;
   background-color: light-dark(
     var(--mantine-color-gray-1),
     var(--mantine-color-dark-9)
   );
+  background-image:
+    radial-gradient(
+      ellipse 80% 50% at 50% -20%,
+      color-mix(in srgb, var(--mantine-color-brand-4), transparent 80%) 0%,
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 80% 50% at 50% 120%,
+      color-mix(in srgb, var(--mantine-color-brand-6), transparent 85%) 0%,
+      transparent 70%
+    );
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+.root::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.12;
+  background-image: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--mantine-color-brand-5), transparent 90%) 1px,
+    transparent 1px
+  );
+  background-size: 40px 40px;
+  mask-image: radial-gradient(ellipse at center, black 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.root > * {
+  position: relative;
+  z-index: 1;
+}
+
+.card {
+  background-color: color-mix(
+    in srgb,
+    var(--mantine-color-body),
+    transparent 10%
+  );
+  backdrop-filter: blur(12px);
+  border: 1px solid
+    color-mix(in srgb, var(--mantine-color-default-border), transparent 50%);
+  box-shadow:
+    0 20px 40px -12px
+      color-mix(in srgb, var(--mantine-color-brand-9), transparent 90%),
+    var(--mantine-shadow-xl);
 }
 
 @media (width <= 48em) {
