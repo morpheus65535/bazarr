@@ -11,8 +11,9 @@ from subliminal_patch.core import save_subtitles
 from subliminal_patch.core_persistent import list_all_subtitles, download_subtitles
 from subliminal_patch.score import compute_score, DEFAULT_SCORES
 
-from languages.get_languages import alpha3_from_alpha2
+from languages.get_languages import alpha3_from_alpha2, alpha2_from_alpha3
 from app.config import settings, get_array_from
+from constants import HI_EXCLUDED
 from utilities.helper import get_target_folder, force_unicode
 from utilities.path_mappings import path_mappings
 from app.database import (database, get_profiles_list, select, TableEpisodes, TableShows, get_audio_profile_languages,
@@ -53,7 +54,7 @@ def manual_search(path, profile_id, providers, sceneName, title, media_type):
 
     pool = _get_pool(media_type, profile_id)
 
-    language_set, original_format = _get_language_obj(profile_id=profile_id)
+    language_set, original_format, hi_excluded_keys = _get_language_obj(profile_id=profile_id)
     also_forced = any([x.forced for x in language_set])
     forced_required = all([x.forced for x in language_set])
     normal = not also_forced and not forced_required and all([not x.hi for x in language_set])
@@ -82,6 +83,11 @@ def manual_search(path, profile_id, providers, sceneName, title, media_type):
             for s in subtitles[video]:
                 if not normal and s.language not in language_set:
                     logging.debug(f"Skipping subtitle {s.language} because it's not requested")
+                    continue
+
+                # skip HI subtitles for excluded languages
+                if (s.language.alpha3, s.language.forced) in hi_excluded_keys and s.hearing_impaired:
+                    logging.debug(f"Skipping subtitle {s.language} because HI is excluded for this language")
                     continue
 
                 try:
@@ -169,6 +175,18 @@ def manual_download_subtitle(path, audio_language, hi, forced, subtitle, provide
     if subtitle is None:
         logging.error("BAZARR Subtitle not found in cache (expired or invalid ID)")
         return 'Subtitle not found in cache. Please search again.'
+
+    # check if trying to download HI for an excluded language
+    if hi == 'True' and subtitle.hearing_impaired:
+        profile = get_profiles_list(profile_id=profile_id)
+        lang_alpha2 = alpha2_from_alpha3(subtitle.language.alpha3)
+        for item in profile['items']:
+            if item['language'] == lang_alpha2 and item['forced'] == ('True' if subtitle.language.forced else 'False'):
+                if item['hi'] == HI_EXCLUDED:
+                    logging.error(f"BAZARR Cannot download hearing-impaired subtitle for {lang_alpha2}: this language is set to exclude HI subtitles")
+                    return 'Cannot download a hearing-impaired subtitle: this language is set to exclude HI subtitles.'
+                break
+
     if hi == 'True':
         subtitle.language.hi = True
     else:
@@ -342,6 +360,7 @@ def movie_manually_download_specific_subtitle(radarr_id, hi, forced, use_origina
 
 def _get_language_obj(profile_id):
     language_set = set()
+    hi_excluded_keys = set()
 
     profile = get_profiles_list(profile_id=int(profile_id))
     language_items = profile['items']
@@ -361,7 +380,9 @@ def _get_language_obj(profile_id):
 
         if hi == "True":
             lang_obj = Language.rebuild(lang_obj, hi=True)
+        elif hi == HI_EXCLUDED:
+            hi_excluded_keys.add((lang, forced == "True"))
 
         language_set.add(lang_obj)
 
-    return language_set, original_format
+    return language_set, original_format, hi_excluded_keys

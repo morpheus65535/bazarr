@@ -3,6 +3,8 @@ type SonarrSeriesType = "Standard" | "Daily" | "Anime";
 
 type PythonBoolean = "True" | "False";
 
+type HiPreference = PythonBoolean | "Excluded";
+
 type FileTree = {
   children: boolean;
   path: string;

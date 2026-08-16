@@ -13,9 +13,10 @@ from subliminal_patch.core_persistent import download_best_subtitles
 
 from app.config import settings, get_array_from
 from app.database import TableEpisodes, TableMovies, database, select, get_profiles_list
+from constants import HI_EXCLUDED
 from utilities.path_mappings import path_mappings
 from utilities.helper import get_target_folder, force_unicode
-from languages.get_languages import alpha3_from_alpha2
+from languages.get_languages import alpha3_from_alpha2, alpha2_from_alpha3
 
 from .pool import update_pools, _get_pool
 from .utils import get_video, _get_lang_obj, _get_scores, _set_forced_providers
@@ -42,7 +43,6 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
     language_set = _get_language_obj(languages=languages)
     profile = get_profiles_list(profile_id=profile_id)
     original_format = profile['originalFormat']
-    hi_required = "force HI" if all([x.hi for x in language_set]) else "don't prefer"
     also_forced = any([x.forced for x in language_set])
     forced_required = all([x.forced for x in language_set])
     _set_forced_providers(pool=pool, also_forced=also_forced, forced_required=forced_required)
@@ -72,12 +72,23 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
                                   f"has been reached during this search.")
                     continue
                 else:
+                    # resolve per-language hearing_impaired mode from profile
+                    lang_alpha2 = alpha2_from_alpha3(language.alpha3)
+                    hi_mode = "don't prefer"
+                    for item in profile['items']:
+                        if item['language'] == lang_alpha2 and item['forced'] == ("True" if language.forced else "False"):
+                            if item['hi'] == "True":
+                                hi_mode = "force HI"
+                            elif item['hi'] == HI_EXCLUDED:
+                                hi_mode = "force non-HI"
+                            break
+
                     try:
                         downloaded_subtitles = download_best_subtitles(videos={video},
                                                                        languages={language},
                                                                        pool_instance=pool,
                                                                        min_score=int(min_score),
-                                                                       hearing_impaired=hi_required,
+                                                                       hearing_impaired=hi_mode,
                                                                        use_original_format=original_format in (1, "1", "True", True),
                                                                        fallback_allowed=fallback_allowed)
                     except Exception as e:
