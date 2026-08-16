@@ -13,6 +13,9 @@ describe("Series page", () => {
           data: [],
         });
       }),
+      http.get("/api/series/tags", () => {
+        return HttpResponse.json([]);
+      }),
     );
   });
 

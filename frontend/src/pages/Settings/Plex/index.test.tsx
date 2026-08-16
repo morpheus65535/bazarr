@@ -1126,8 +1126,10 @@ describe("SettingsPlexView", async () => {
 
   it("should copy the Autopulse configuration in a secure context", async () => {
     const writeText = vitest.fn().mockResolvedValue(undefined);
-    Object.assign(navigator, {
-      clipboard: { writeText },
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText },
+      configurable: true,
+      writable: true,
     });
     Object.defineProperty(window, "isSecureContext", {
       value: true,
@@ -1254,10 +1256,12 @@ describe("SettingsPlexView", async () => {
   });
 
   it("should show an error when copying the Autopulse configuration fails", async () => {
-    Object.assign(navigator, {
-      clipboard: {
+    Object.defineProperty(navigator, "clipboard", {
+      value: {
         writeText: vitest.fn().mockRejectedValue(new Error("copy failed")),
       },
+      configurable: true,
+      writable: true,
     });
     Object.defineProperty(window, "isSecureContext", {
       value: true,

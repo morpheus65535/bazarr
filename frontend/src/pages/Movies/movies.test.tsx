@@ -13,6 +13,9 @@ describe("Movies page", () => {
           data: [],
         });
       }),
+      http.get("/api/movies/tags", () => {
+        return HttpResponse.json([]);
+      }),
     );
   });
 

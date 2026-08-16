@@ -276,7 +276,7 @@ describe("SettingsLanguagesView", () => {
       modalScope.getByRole("button", { name: "Add Language" }),
     );
 
-    await userEvent.click(modalScope.getByRole("button", { name: "Save" }));
+    await userEvent.click(modalScope.getByRole("button", { name: "Confirm" }));
 
     await waitFor(() =>
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
@@ -302,7 +302,7 @@ describe("SettingsLanguagesView", () => {
 
     fireEvent.change(nameInput, { target: { value: "Updated Profile" } });
 
-    await userEvent.click(modalScope.getByRole("button", { name: "Save" }));
+    await userEvent.click(modalScope.getByRole("button", { name: "Confirm" }));
 
     await waitFor(() =>
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
