@@ -9,14 +9,10 @@ from retry.api import retry
 from deep_translator.exceptions import TooManyRequests, RequestError
 
 from app.config import settings
-from app.database import TableShows, TableEpisodes, TableMovies, database, select
 from app.jobs_queue import jobs_queue
-from languages.custom_lang import CustomLanguage
-from languages.get_languages import alpha3_from_alpha2, language_from_alpha2, language_from_alpha3
+from languages.get_languages import language_from_alpha2, language_from_alpha3
 from radarr.history import history_log_movie
 from sonarr.history import history_log
-from subtitles.processing import ProcessSubtitlesResult
-from utilities.path_mappings import path_mappings
 
 from ..core.translator_utils import add_translator_info, create_process_result, get_title
 
@@ -55,7 +51,7 @@ class LingarrTranslatorService:
             lines_list_len = len(lines_list)
 
             if lines_list_len == 0:
-                logger.debug('No lines to translate in subtitle file')
+                logger.debug(f'No lines to translate in subtitle file {self.source_srt_file}')
                 return self.dest_srt_file
 
             logger.debug(f'Starting translation for {self.source_srt_file}')
@@ -107,7 +103,7 @@ class LingarrTranslatorService:
             return self.dest_srt_file
 
         except Exception as e:
-            logger.error(f'BAZARR encountered an error during Lingarr translation: {str(e)}')
+            logger.error(f'BAZARR encountered an error during Lingarr translation for {self.source_srt_file}: {str(e)}')
             jobs_queue.update_job_progress(job_id=job_id, progress_message=f'Lingarr translation failed: {str(e)}')
             raise
 
@@ -155,7 +151,8 @@ class LingarrTranslatorService:
                 "translatedSubtitlePath": self.dest_srt_file,
             }
 
-            logger.debug(f'BAZARR is sending {len(lines_payload)} lines to Lingarr with full media context')
+            logger.debug(f'BAZARR is sending {len(lines_payload)} lines to Lingarr for {self.source_srt_file} with full '
+                         f'media context')
 
             headers = {"Content-Type": "application/json"}
             if settings.translator.lingarr_token:
@@ -165,7 +162,8 @@ class LingarrTranslatorService:
                 f"{settings.translator.lingarr_url}/api/translate/content",
                 json=payload,
                 headers=headers,
-                timeout=1800
+                timeout=1920  # increase timeout to 32 minutes to give time to Lingarr timeout (30 minutes) to occur
+                # and get reported to Bazarr instead of silently failing.
             )
 
             if response.status_code == 200:
@@ -174,7 +172,7 @@ class LingarrTranslatorService:
                 if isinstance(translated_batch, list):
                     for item in translated_batch:
                         if not isinstance(item, dict) or 'position' not in item or 'line' not in item:
-                            logger.error(f'Invalid response format from Lingarr API: {item}')
+                            logger.error(f'Invalid response format from Lingarr API for {self.source_srt_file}: {item}')
                             return None
                     return translated_batch
                 else:
@@ -187,23 +185,23 @@ class LingarrTranslatorService:
             elif response.status_code >= 500:
                 raise RequestError(f"Server error: {response.status_code}")
             else:
-                logger.debug(f'Lingarr API error: {response.status_code} - {response.text}')
+                logger.debug(f'Lingarr API error for {self.source_srt_file}: {response.status_code} - {response.text}')
                 return None
 
         except requests.exceptions.Timeout:
-            logger.debug('Lingarr API request timed out')
+            logger.error(f'Lingarr API request timed out for {self.source_srt_file}')
             raise RequestError("Request timed out")
         except requests.exceptions.ConnectionError:
-            logger.debug('Lingarr API connection error')
+            logger.error(f'Lingarr API connection error for {self.source_srt_file}')
             raise RequestError("Connection error")
         except requests.exceptions.RequestException as e:
-            logger.debug(f'Lingarr API request failed: {str(e)}')
+            logger.error(f'Lingarr API request failed for {self.source_srt_file}: {str(e)}')
             raise
         except (TooManyRequests, RequestError) as e:
-            logger.error(f'Lingarr API error after retries: {str(e)}')
+            logger.error(f'Lingarr API error after retries for {self.source_srt_file}: {str(e)}')
             jobs_queue.update_job_progress(job_id=job_id, progress_message=f'Lingarr API error: {str(e)}')
             raise
         except Exception as e:
-            logger.error(f'Unexpected error in Lingarr translation: {str(e)}')
+            logger.error(f'Unexpected error in Lingarr translation for {self.source_srt_file}: {str(e)}')
             jobs_queue.update_job_progress(job_id=job_id, progress_message=f'Translation error: {str(e)}')
             raise
