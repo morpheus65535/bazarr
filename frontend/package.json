@@ -78,7 +78,7 @@
     "prettier": "^3.9.5",
     "prettier-plugin-organize-imports": "^4.3.0",
     "pretty-quick": "^4.2.2",
-    "sass-embedded": "^1.100.0",
+    "sass-embedded": "^1.102.0",
     "stylelint": "^17.14.1",
     "stylelint-config-css-modules": "^4.6.0",
     "stylelint-config-standard-scss": "^17.0.0",
