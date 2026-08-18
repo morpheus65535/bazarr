@@ -135,7 +135,6 @@ def postprocess(item):
                 try:
                     audio_languages_ast_list_of_lists.append(ast.literal_eval(audio_languages))
                 except ValueError:
-                    print(toto)
                     continue
 
             # then flatten the list of lists as a set of unique audio languages
