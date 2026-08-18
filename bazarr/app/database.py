@@ -11,8 +11,8 @@ from dogpile.cache import make_region
 from datetime import datetime
 from typing import List
 
-from sqlalchemy import create_engine, inspect, DateTime, ForeignKey, Integer, LargeBinary, Text, func, text, BigInteger, \
-    Boolean
+from sqlalchemy import create_engine, inspect, DateTime, ForeignKey, Index, Integer, LargeBinary, Text, func, text, \
+    BigInteger, Boolean
 # importing here to be indirectly imported in other modules later
 from sqlalchemy import update, delete, select, func, UniqueConstraint  # noqa W0611
 from sqlalchemy.orm import scoped_session, sessionmaker, mapped_column, close_all_sessions, declarative_base
@@ -457,6 +457,12 @@ class TableSportsEvents(Base):
     # deleted and rebuilt on every upgrade, losing its subtitle history.
     __table_args__ = (
         UniqueConstraint('sportarrEventId', 'partNumber', name='uc_sports_event_part'),
+        # Indexes live on the model, not only in the migration. init_db()
+        # runs create_all() before migrate_db(), so a missing table is
+        # always built from this definition and the migration's guarded
+        # create is skipped.
+        Index('ix_sports_events_sportarr_league_id', 'sportarrLeagueId'),
+        Index('ix_sports_events_path', 'path'),
     )
 
     def to_dict(self):
@@ -484,6 +490,15 @@ class TableSportsEventsSubtitles(Base):
                          name='uc_external_sports_events_subtitles'),
         UniqueConstraint('embedded_track_id', 'sportarrLeagueId', 'sportsEventId', 'language', 'forced', 'hi',
                          name='uc_embedded_sports_events_subtitles'),
+        # Same index set as table_episodes_subtitles and
+        # table_movies_subtitles got in revision 537e9b4d10e3, defined on
+        # the model as well so create_all() builds them on fresh installs.
+        Index('ix_sports_events_subtitles_sports_event_id', 'sportsEventId'),
+        Index('ix_sports_events_subtitles_sportarr_league_id', 'sportarrLeagueId'),
+        Index('ix_sports_events_subtitles_path', 'path'),
+        Index('ix_sports_events_subtitles_embedded_track_id', 'embedded_track_id'),
+        Index('ix_sports_events_subtitles_language_hi_forced', 'language', 'hi', 'forced'),
+        Index('ix_sports_events_subtitles_event_path_track', 'sportsEventId', 'path', 'embedded_track_id'),
     )
 
 
