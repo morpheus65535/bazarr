@@ -33,6 +33,12 @@ class SportsApi extends BaseApi {
     });
   }
 
+  async leagueTags() {
+    const response =
+      await this.get<DataWrapper<{ tag: string }[]>>("/leagues/tags");
+    return response.data.map(({ tag }) => tag);
+  }
+
   async leagueAction(form: FormType.SportsLeagueAction) {
     const payload: Record<string, unknown> = { action: form.action };
 
