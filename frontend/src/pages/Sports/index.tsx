@@ -8,6 +8,8 @@ import {
   sportsLeaguesPaginationKey,
   sportsLeaguesPaginationQuery,
   useSportsLeagueModification,
+  useSportsLeagues,
+  useSportsLeagueTags,
 } from "@/apis/hooks";
 import { useInstanceName } from "@/apis/hooks/site";
 import { Action } from "@/components";
@@ -174,7 +176,10 @@ const SportsView: FunctionComponent = () => {
         queryFn={sportsLeaguesPaginationQuery}
         columns={columns}
         filterConfig={sportsFilterConfig}
+        useTags={useSportsLeagueTags}
         statePrefix="sports"
+        useAllItems={useSportsLeagues}
+        modifyMutation={mutation}
       ></ItemView>
     </Container>
   );
