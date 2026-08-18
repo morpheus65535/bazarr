@@ -26,7 +26,10 @@ export const useSportsLeagueById = (id: number) => {
   });
 };
 
-export const useSportsLeagues = (state: Parameter.ListState = {}) => {
+export const useSportsLeagues = (
+  state: Parameter.ListState = {},
+  options: { enabled?: boolean } = {},
+) => {
   const client = useQueryClient();
 
   const query = useQuery({
@@ -39,6 +42,7 @@ export const useSportsLeagues = (state: Parameter.ListState = {}) => {
       });
       return response.data;
     },
+    enabled: options.enabled ?? true,
   });
 
   useEffect(() => {
@@ -49,6 +53,13 @@ export const useSportsLeagues = (state: Parameter.ListState = {}) => {
 
   return query;
 };
+
+export const useSportsLeagueTags = () =>
+  useQuery({
+    queryKey: [QueryKeys.SportsLeagues, QueryKeys.Tags],
+    queryFn: () => api.sports.leagueTags(),
+    staleTime: Infinity,
+  });
 
 export const sportsLeaguesPaginationKey = [QueryKeys.SportsLeagues];
 
