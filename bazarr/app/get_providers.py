@@ -366,7 +366,8 @@ def get_providers_auth():
             },
         'subsro': {
             'api_key': settings.subsro.api_key,
-        }
+        },
+        'subtitlecat': {},
     }
 
 

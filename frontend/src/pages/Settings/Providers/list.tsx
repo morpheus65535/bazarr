@@ -612,6 +612,13 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
       },
     ],
   },
+  {
+    key: "subtitlecat",
+    name: "Subtitle Cat",
+    description: "Multi-language Subtitles Provider",
+    message:
+      "No configuration required. Subtitles are translated from original language.",
+  },
   { key: "supersubtitles" },
   {
     key: "titlovi",
