@@ -3,13 +3,12 @@ import { Badge, Text, TextProps } from "@mantine/core";
 import { faEllipsis, faSearch } from "@fortawesome/free-solid-svg-icons";
 import { isString } from "lodash";
 import { useMovieSubtitleModification } from "@/apis/hooks";
-import { useShowOnlyDesired } from "@/apis/hooks/site";
 import { Action } from "@/components";
 import Language from "@/components/bazarr/Language";
 import SubtitleToolsMenu from "@/components/SubtitleToolsMenu";
 import { AppColumnDef as ColumnDef } from "@/components/tables/features";
 import SimpleTable from "@/components/tables/SimpleTable";
-import { filterSubtitleBy, toPython } from "@/utilities";
+import { toPython } from "@/utilities";
 import { useProfileItemsToLanguages } from "@/utilities/languages";
 
 const missingText = "Missing Subtitles";
@@ -27,8 +26,6 @@ const isSubtitleMissing = (path: string | undefined | null) =>
   path === missingText;
 
 const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
-  const onlyDesired = useShowOnlyDesired();
-
   const profileItems = useProfileItemsToLanguages(profile);
 
   const { download, remove } = useMovieSubtitleModification();
@@ -171,12 +168,8 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
         path: missingText,
       })) ?? [];
 
-    const rawSubtitles = onlyDesired
-      ? filterSubtitleBy(movie?.subtitles ?? [], profileItems)
-      : (movie?.subtitles ?? []);
-
-    return [...rawSubtitles, ...missing];
-  }, [movie, onlyDesired, profileItems]);
+    return [...(movie?.subtitles ?? []), ...missing];
+  }, [movie, profileItems]);
 
   return (
     <SimpleTable

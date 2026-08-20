@@ -17,6 +17,7 @@ from utilities.path_mappings import path_mappings
 from utilities.video_analyzer import embedded_subs_reader
 from app.event_handler import event_stream
 from subtitles.indexer.utils import guess_external_subtitles, get_external_subtitles_path
+from subtitles.pool import get_language_equals
 from app.jobs_queue import jobs_queue
 
 gc.enable()
@@ -247,6 +248,9 @@ def list_missing_subtitles(no=None, epno=None):
 
     use_embedded_subs = settings.general.use_embedded_subs
 
+    # Get language equals configuration
+    lang_equals = core._LanguageEquals(get_language_equals())
+
     matches_audio = lambda language: any(x['code2'] == language['language'] for x in get_audio_profile_languages(
                                 episode_subtitles.audio_language))
 
@@ -279,6 +283,33 @@ def list_missing_subtitles(no=None, epno=None):
                                               'forced': str(subtitles['forced']),
                                               'hi': str(subtitles['hi'])})
 
+            # Expand actual subtitles with language equals
+            # Convert code2 languages to Language objects for expansion
+            actual_subtitles_lang_set = set()
+            for sub in actual_subtitles_list:
+                try:
+                    lang_obj = core.Language.fromietf(sub['language'])
+                    lang_obj.forced = sub['forced'] == 'True'
+                    lang_obj.hi = sub['hi'] == 'True'
+                    actual_subtitles_lang_set.add(lang_obj)
+                except Exception:
+                    # If language parsing fails, add as-is
+                    actual_subtitles_lang_set.add(sub['language'])
+
+            # Use lang_equals to expand the actual subtitles set
+            expanded_actual_lang_set = lang_equals.check_set(actual_subtitles_lang_set)
+
+            # Convert expanded languages back to code2 format for comparison
+            expanded_actual_subtitles_list = []
+            for lang_obj in expanded_actual_lang_set:
+                if isinstance(lang_obj, core.Language):
+                    # check if lang_obj is a custom language
+                    custom = CustomLanguage.from_value(lang_obj, "language")
+                    # append the language to the list with the proper alpha2 code depending on whether it's custom or not
+                    expanded_actual_subtitles_list.append({'language': custom.alpha2 if custom else lang_obj.alpha2,
+                                                           'forced': 'True' if lang_obj.forced else 'False',
+                                                           'hi': 'True' if lang_obj.hi else 'False'})
+
             # check if cutoff is reached and skip any further check
             cutoff_met = False
             cutoff_temp_list = get_profile_cutoff(profile_id=episode_subtitles.profileId)
@@ -297,11 +328,14 @@ def list_missing_subtitles(no=None, epno=None):
                         cutoff_met = True
                     elif cutoff_language in actual_subtitles_list:
                         cutoff_met = True
-                    # HI is considered as good as normal only if the language isn't set to exclude HI
+                    elif cutoff_language in expanded_actual_subtitles_list:
+                        # Check against expanded actual subtitles (includes language equals)
+                        cutoff_met = True
                     elif (cutoff_temp['hi'] == 'False' and cutoff_language and
                           {'language': cutoff_language['language'],
                            'forced': 'False',
                            'hi': 'True'} in actual_subtitles_list):
+                        # HI is considered as good as normal only if the language isn't set to exclude HI
                         cutoff_met = True
 
             if cutoff_met:
@@ -312,7 +346,8 @@ def list_missing_subtitles(no=None, epno=None):
                 # get difference between desired and existing subtitles
                 missing_subtitles_list = []
                 for item in desired_subtitles_list:
-                    if item not in actual_subtitles_list:
+                    # Check against both actual and expanded actual subtitles
+                    if item not in actual_subtitles_list and item not in expanded_actual_subtitles_list:
                         missing_subtitles_list.append(item)
 
                 # get a dictionary of hi setting by language

@@ -6,12 +6,16 @@ from functools import wraps
 from flask import request, abort
 from operator import itemgetter
 
+from languages.custom_lang import CustomLanguage
 from sqlalchemy import or_, and_
+
+from subliminal_patch import core
 
 from app.config import settings, base_url
 from languages.get_languages import language_from_alpha2, alpha3_from_alpha2
 from app.database import (get_audio_profile_languages, get_desired_languages, get_subtitles, database, TableEpisodes,
                           TableShows, select)
+from subtitles.pool import get_language_equals
 from utilities.helper import bool_map
 from utilities.path_mappings import path_mappings
 
@@ -149,8 +153,8 @@ def postprocess(item):
             # in other cases, we can directly pass the audio_language string to get_audio_profile_languages
             item['audio_language'] = get_audio_profile_languages(item['audio_language'])
 
-    # Make sure profileId is a valid None value
-    if item.get('profileId') in None_Keys:
+    # Make sure profileId is a valid None value but only if it exists in item
+    if item.get('profileId', False) in None_Keys:
         item['profileId'] = None
 
     # Parse alternate titles
@@ -163,10 +167,42 @@ def postprocess(item):
     item['subtitles'] = get_subtitles(sonarr_episode_id=item.get('sonarrEpisodeId'),
                                       radarr_id=item.get('radarrId'))
 
-    if settings.general.embedded_subs_show_desired and item.get('profileId'):
-        desired_lang_list = get_desired_languages(item['profileId'])
-        item['subtitles'] = [x for x in item['subtitles'] if x['code2'] in desired_lang_list or x['path']]
-        item['subtitles'] = sorted(item['subtitles'], key=itemgetter('name', 'forced'))
+    if settings.general.embedded_subs_show_desired:
+        if item.get('profileId'):
+            desired_lang_list = get_desired_languages(item['profileId'])
+
+            # Get language equals configuration
+            lang_equals = core._LanguageEquals(get_language_equals())
+
+            # Convert desired languages to Language objects for expansion
+            desired_lang_objects = set()
+            for lang_code in desired_lang_list:
+                custom = CustomLanguage.from_value(lang_code, "alpha2")
+                if custom:
+                    desired_lang_objects.add(custom.subzero_language())
+                else:
+                    desired_lang_objects.add(core.Language.fromietf(lang_code))
+
+            # Expand desired languages with language equals
+            expanded_desired_langs = lang_equals.translate(desired_lang_objects)
+            expanded_desired_lang_codes = set()
+            for lang_obj in expanded_desired_langs:
+                if isinstance(lang_obj, core.Language):
+                    custom = CustomLanguage.from_value(lang_obj, "language")
+                    if custom:
+                        expanded_desired_lang_codes.add(custom.alpha2)
+                    else:
+                        expanded_desired_lang_codes.add(lang_obj.alpha2)
+                else:
+                    expanded_desired_lang_codes.add(str(lang_obj))
+
+            # Filter subtitles: keep if code2 is in expanded desired languages or if it has a path (external)
+            item['subtitles'] = [x for x in item['subtitles']
+                                 if x['code2'] in expanded_desired_lang_codes or x['path']]
+        else:
+            item['subtitles'] = [x for x in item['subtitles'] if x['path']]
+
+    item['subtitles'] = sorted(item['subtitles'], key=itemgetter('name', 'forced'))
 
     # Parse missing subtitles
     if item.get('missing_subtitles'):

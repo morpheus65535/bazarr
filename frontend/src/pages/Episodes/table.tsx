@@ -19,8 +19,7 @@ import {
 } from "@/components/tables/features";
 import TextPopover from "@/components/TextPopover";
 import { useModals } from "@/modules/modals";
-import { BuildKey, filterSubtitleBy } from "@/utilities";
-import { useProfileItemsToLanguages } from "@/utilities/languages";
+import { BuildKey } from "@/utilities";
 import { Subtitle } from "./components";
 
 interface Props {
@@ -36,8 +35,6 @@ const Table = forwardRef<TableInstance<Item.Episode> | null, Props>(
 
     const tableRef =
       ref as React.MutableRefObject<TableInstance<Item.Episode> | null>;
-
-    const profileItems = useProfileItemsToLanguages(profile);
 
     const { mutateAsync } = useDownloadEpisodeSubtitles();
 
@@ -89,11 +86,7 @@ const Table = forwardRef<TableInstance<Item.Episode> | null, Props>(
             ></Subtitle>
           ));
 
-          const rawSubtitles = onlyDesired
-            ? filterSubtitleBy(episode.subtitles, profileItems)
-            : episode.subtitles;
-
-          const subtitles = rawSubtitles.map((val, idx) => (
+          const subtitles = episode.subtitles.map((val, idx) => (
             <Subtitle
               key={BuildKey(idx, val.code2, "valid")}
               seriesId={seriesId}

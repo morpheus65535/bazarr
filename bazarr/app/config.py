@@ -690,6 +690,7 @@ def save_settings(settings_items):
     undefined_subtitles_track_default_changed = False
     audio_tracks_parsing_changed = False
     reset_providers = False
+    language_equals_changed = False
 
     # Subzero Mods
     update_subzero = False
@@ -737,6 +738,9 @@ def save_settings(settings_items):
 
         if key == 'settings-general-parse_embedded_audio_track':
             audio_tracks_parsing_changed = True
+
+        if key == 'settings-general-language_equals':
+            language_equals_changed = True
 
         if key == 'settings-general-default_und_embedded_subtitles_lang':
             undefined_subtitles_track_default_changed = True
@@ -873,7 +877,7 @@ def save_settings(settings_items):
 
             update_subzero = True
 
-    if use_embedded_subs_changed or undefined_audio_track_default_changed:
+    if use_embedded_subs_changed or undefined_audio_track_default_changed or language_equals_changed:
         from .scheduler import scheduler
         from subtitles.indexer.series import list_missing_subtitles
         from subtitles.indexer.movies import list_missing_subtitles_movies
