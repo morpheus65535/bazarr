@@ -26,8 +26,6 @@ const isSubtitleMissing = (path: string | undefined | null) =>
   path === missingText;
 
 const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
-  const profileItems = useProfileItemsToLanguages(profile);
-
   const { download, remove } = useMovieSubtitleModification();
 
   const CodeCell = React.memo(({ item }: { item: Subtitle }) => {
@@ -169,7 +167,7 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
       })) ?? [];
 
     return [...(movie?.subtitles ?? []), ...missing];
-  }, [movie, profileItems]);
+  }, [movie]);
 
   return (
     <SimpleTable

@@ -30,9 +30,7 @@ interface Props {
 }
 
 const Table = forwardRef<TableInstance<Item.Episode> | null, Props>(
-  ({ episodes, profile, disabled, onAllRowsExpandedChanged }, ref) => {
-    const onlyDesired = useShowOnlyDesired();
-
+  ({ episodes, disabled, onAllRowsExpandedChanged }, ref) => {
     const tableRef =
       ref as React.MutableRefObject<TableInstance<Item.Episode> | null>;
 
