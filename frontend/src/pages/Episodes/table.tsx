@@ -8,7 +8,6 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useDownloadEpisodeSubtitles, useEpisodesProvider } from "@/apis/hooks";
-import { useShowOnlyDesired } from "@/apis/hooks/site";
 import { Action, GroupTable } from "@/components";
 import { AudioList } from "@/components/bazarr";
 import { EpisodeHistoryModal } from "@/components/modals";
@@ -25,7 +24,6 @@ import { Subtitle } from "./components";
 interface Props {
   episodes: Item.Episode[] | null;
   disabled?: boolean;
-  profile?: Language.Profile;
   onAllRowsExpandedChanged: (isAllRowsExpanded: boolean) => void;
 }
 

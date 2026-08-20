@@ -246,11 +246,7 @@ const MovieDetailView: FunctionComponent = () => {
         </Toolbox>
         <Stack>
           <ItemOverview item={movie ?? null} details={[]}></ItemOverview>
-          <Table
-            movie={movie ?? null}
-            profile={profile}
-            disabled={hasTask}
-          ></Table>
+          <Table movie={movie ?? null} disabled={hasTask}></Table>
         </Stack>
       </QueryOverlay>
     </Container>
