@@ -1,5 +1,6 @@
 # coding=utf-8
 
+import logging
 import os
 from unittest import mock
 
@@ -291,3 +292,65 @@ def test_release_info_windows_metacharacters_stay_single_token(payload):
     args, kwargs = mock_popen.call_args
     assert kwargs['shell'] is False
     assert args[0] == ['cmd', f'"{payload}"']
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Exception logging – the whole subtitle file shouldn't be logged
+# ──────────────────────────────────────────────────────────────────────────────
+#
+# repr() of a UnicodeDecodeError includes its `object` attribute, which for a
+# failed subtitle decode is the entire file. 
+# str(e) keeps the diagnosis (codec, byte, position) and
+# drops the payload; exc_info=True puts the exception type back, since this call
+# site uses logging.error and so has no traceback of its own.
+
+_PAYLOAD_MARKER = 'SUBTITLE-FILE-CONTENTS'
+_FAKE_SUBTITLE = (_PAYLOAD_MARKER + ' ').encode() * 2000
+
+
+def _run_postprocessing_raising(exc, caplog):
+    with mock.patch('os.name', 'posix'), \
+         mock.patch('subprocess.Popen', side_effect=exc), \
+         caplog.at_level(logging.ERROR):
+        postprocessing('python3 /usr/local/bin/process.py', '/srv/media/show.mkv')
+    assert caplog.records, 'expected postprocessing to log the failure'
+    return caplog.records[-1]
+
+
+def test_postprocessing_failure_does_not_log_subtitle_contents(caplog):
+    decode_error = UnicodeDecodeError(
+        'utf-8', _FAKE_SUBTITLE, 15348, 15349, 'invalid start byte')
+    record = _run_postprocessing_raising(decode_error, caplog)
+
+    message = record.getMessage()
+    assert _PAYLOAD_MARKER not in message
+    assert len(message) < 500
+
+
+def test_postprocessing_failure_still_logs_the_diagnosis(caplog):
+    decode_error = UnicodeDecodeError(
+        'utf-8', _FAKE_SUBTITLE, 15348, 15349, 'invalid start byte')
+    record = _run_postprocessing_raising(decode_error, caplog)
+
+    message = record.getMessage()
+    # Everything needed to identify the offending file and byte survives.
+    assert '/srv/media/show.mkv' in message
+    assert 'invalid start byte' in message
+    assert 'position 15348' in message
+
+
+def test_postprocessing_failure_records_the_exception_type(caplog):
+    record = _run_postprocessing_raising(ValueError(), caplog)
+
+    assert record.exc_info is not None
+    assert record.exc_info[0] is ValueError
+
+
+def test_postprocessing_failure_does_not_log_contents_via_traceback(caplog):
+    decode_error = UnicodeDecodeError(
+        'utf-8', _FAKE_SUBTITLE, 15348, 15349, 'invalid start byte')
+    record = _run_postprocessing_raising(decode_error, caplog)
+
+    formatted = logging.Formatter('%(message)s').format(record)
+    assert _PAYLOAD_MARKER not in formatted
+    assert 'UnicodeDecodeError' in formatted
