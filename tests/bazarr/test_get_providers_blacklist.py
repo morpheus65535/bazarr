@@ -1,5 +1,6 @@
 # coding=utf-8
 
+import logging
 from unittest import mock
 
 import pytest
@@ -35,6 +36,15 @@ def _call(media_type, ids, language=None):
          mock.patch('app.get_providers.blacklist_log_movie') as log_movie:
         _handle_mgb(_PROVIDER, exception, ids, language)
     return log, log_movie
+
+
+def _call_capturing_log(media_type, ids, caplog):
+    exception = MustGetBlacklisted(_SUBS_ID, media_type)
+    with mock.patch('app.get_providers.blacklist_log'), \
+         mock.patch('app.get_providers.blacklist_log_movie'), \
+         caplog.at_level(logging.DEBUG, logger='root'):
+        _handle_mgb(_PROVIDER, exception, ids, Language('eng'))
+    return caplog.text
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -81,6 +91,13 @@ def test_series_without_known_ids_is_not_blacklisted(series_id, episode_id):
     assert not log.called
 
 
+def test_movie_without_known_id_is_not_blacklisted():
+    # radarr_id is a ForeignKey too, and the movie branch used to index
+    # ids['radarrId'] with no guard at all.
+    _, log_movie = _call('movie', _ids(radarr_id=None))
+    assert not log_movie.called
+
+
 def test_no_ids_at_all_is_not_blacklisted():
     log, log_movie = _call('series', None)
     assert not log.called
@@ -106,3 +123,29 @@ def test_hi_language_is_suffixed():
     hi = Language.rebuild(Language('eng'), hi=True)
     log, _ = _call('series', _ids(), hi)
     assert log.call_args[0][4] == 'en:hi'
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# A skipped blacklisting must not be silent
+# ──────────────────────────────────────────────────────────────────────────────
+#
+# Not blacklisting is itself a decision - it means the subtitle stays eligible
+# and will be offered again. Say so, rather than returning quietly.
+
+def test_skipped_series_blacklisting_is_logged(caplog):
+    text = _call_capturing_log('series', _ids(episode_id=None), caplog)
+    assert _SUBS_ID in text
+    assert _PROVIDER in text
+    assert 'unknown series or episode id' in text
+
+
+def test_skipped_movie_blacklisting_is_logged(caplog):
+    text = _call_capturing_log('movie', _ids(radarr_id=None), caplog)
+    assert _SUBS_ID in text
+    assert _PROVIDER in text
+    assert 'unknown movie id' in text
+
+
+def test_successful_blacklisting_logs_no_skip(caplog):
+    assert 'cannot blacklist' not in _call_capturing_log('series', _ids(), caplog)
+    assert 'cannot blacklist' not in _call_capturing_log('movie', _ids(), caplog)
