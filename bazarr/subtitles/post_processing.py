@@ -29,7 +29,7 @@ def postprocessing(command, path):
         out = out.replace('\n', ' ').replace('\r', ' ')
 
     except Exception as e:
-        logging.error(f'BAZARR Post-processing failed for file {path}: {repr(e)}')
+        logging.error(f'BAZARR Post-processing failed for file {path}: {str(e)}')
     else:
         if err:
             parsed_err = err.replace('\n', ' ').replace('\r', ' ')
