@@ -23,7 +23,10 @@ class FileHandlerFormatter(logging.Formatter):
     # and value chars [a-zA-Z0-9], so a provider using `api_key=` — or a key
     # like `subdl_Cq…-5IU…` — was written to the log verbatim. These logs are
     # routinely pasted into public issue reports.
-    APIKEY_RE = re.compile(r'api[-_]?key(?:=|%3D)([\w.\-]+)', re.IGNORECASE)
+    SECRET_NAME_RE = (r'(?:x[-_])?(?:api[-_]?key|access[-_]?token|auth[-_]?token|'
+                      r'plex[-_]?token|token)')
+    APIKEY_RE = re.compile(rf'\b{SECRET_NAME_RE}["\']?\s*(?:=|%3D|:)\s*(["\']?)'
+                           r'(?!\(removed\))([^&\s,;"\'}\])]*)', re.IGNORECASE)
     IPv4_RE = re.compile(r'\b(?<!Failed\sauthentication\sfrom\s)(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.)'
                          r'{3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\b')
     PLEX_URL_RE = re.compile(r'(?:https?://)?[0-9\-]+\.[a-f0-9]+\.plex\.direct(?::\d+)?')
@@ -38,7 +41,7 @@ class FileHandlerFormatter(logging.Formatter):
     def formatApikey(self, s):
         # Keep the parameter name the caller used so the log still reads
         # naturally; only the value is removed.
-        return re.sub(self.APIKEY_RE, lambda m: f'{m.group(0)[:m.start(1) - m.start(0)]}(removed)', s)
+        return re.sub(self.APIKEY_RE, lambda m: f'{m.group(0)[:m.start(2) - m.start(0)]}(removed)', s)
 
     def formatIPv4(self, s):
         return re.sub(self.IPv4_RE, '***.***.***.***', s)
