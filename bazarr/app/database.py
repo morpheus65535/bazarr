@@ -11,8 +11,8 @@ from dogpile.cache import make_region
 from datetime import datetime
 from typing import List
 
-from sqlalchemy import create_engine, inspect, DateTime, ForeignKey, Integer, LargeBinary, Text, func, text, BigInteger, \
-    Boolean
+from sqlalchemy import create_engine, inspect, DateTime, ForeignKey, Index, Integer, LargeBinary, Text, func, text, \
+    BigInteger, Boolean
 # importing here to be indirectly imported in other modules later
 from sqlalchemy import update, delete, select, func, UniqueConstraint  # noqa W0611
 from sqlalchemy.orm import scoped_session, sessionmaker, mapped_column, close_all_sessions, declarative_base
@@ -375,6 +375,135 @@ class TableShows(Base):
 
 class TableShowsRootfolder(Base):
     __tablename__ = 'table_shows_rootfolder'
+
+    accessible = mapped_column(Integer)
+    error = mapped_column(Text)
+    id = mapped_column(Integer, primary_key=True)
+    path = mapped_column(Text)
+
+
+class TableSportsLeagues(Base):
+    # A league is the sports equivalent of a show. It groups events the way a
+    # show groups episodes.
+    __tablename__ = 'table_sports_leagues'
+
+    audio_language = mapped_column(Text)
+    created_at_timestamp = mapped_column(DateTime)
+    # Sportarr id that survives a remove and re-add, unlike sportarrLeagueId.
+    # Match on this to keep subtitle history across that.
+    externalId = mapped_column(Text)
+    fanart = mapped_column(Text)
+    monitored = mapped_column(Text)
+    overview = mapped_column(Text)
+    path = mapped_column(Text, nullable=False, unique=True)
+    poster = mapped_column(Text)
+    profileId = mapped_column(Integer, ForeignKey('table_languages_profiles.profileId', ondelete='SET NULL'))
+    sortTitle = mapped_column(Text)
+    # Soccer, Fighting, Motorsport. The closest thing sports has to seriesType.
+    sport = mapped_column(Text)
+    sportarrLeagueId = mapped_column(Integer, primary_key=True)
+    tags = mapped_column(Text)
+    title = mapped_column(Text, nullable=False)
+    updated_at_timestamp = mapped_column(DateTime)
+
+    def to_dict(self):
+        return {column.name: getattr(self, column.name) for column in self.__table__.columns}
+
+
+class TableSportsEvents(Base):
+    # One row per playable file, not per event. A fight card ships prelims and
+    # a main card separately, and each needs its own subtitles. An event with
+    # one file is simply an event with one part.
+    __tablename__ = 'table_sports_events'
+
+    audio_codec = mapped_column(Text)
+    audio_language = mapped_column(Text)
+    broadcastDate = mapped_column(Text)
+    created_at_timestamp = mapped_column(DateTime)
+    episode = mapped_column(Integer, nullable=False)
+    externalId = mapped_column(Text)
+    failedAttempts = mapped_column(Text)
+    ffprobe_cache = mapped_column(LargeBinary)
+    # Sportarr's id for the file itself. It changes when a file is replaced, so
+    # a change here means the media changed even when the path did not.
+    file_id = mapped_column(Integer)
+    file_size = mapped_column(BigInteger)
+    format = mapped_column(Text)
+    missing_subtitles = mapped_column(Text)
+    monitored = mapped_column(Text)
+    id = mapped_column(Integer, primary_key=True)
+    # Prelims, Main Card, Qualifying. Null when the event has a single file.
+    partName = mapped_column(Text)
+    # Orders the parts, and identifies the row with the event. 0 when the event
+    # has a single file.
+    partNumber = mapped_column(Integer, nullable=False, default=0)
+    path = mapped_column(Text, nullable=False)
+    resolution = mapped_column(Text)
+    # Release name, and only when a real grab produced the file. Sportarr
+    # renames files, so the name on disk never matches a release.
+    sceneName = mapped_column(Text)
+    season = mapped_column(Integer, nullable=False)
+    sportarrEventId = mapped_column(Integer, nullable=False)
+    sportarrLeagueId = mapped_column(Integer, ForeignKey('table_sports_leagues.sportarrLeagueId',
+                                                        ondelete='CASCADE'))
+    title = mapped_column(Text, nullable=False)
+    updated_at_timestamp = mapped_column(DateTime)
+    video_codec = mapped_column(Text)
+
+    # The event and its part identify a row, not the Sportarr event id alone.
+    # A card ships prelims and a main card under ONE event id, so that id
+    # cannot be the key. The file id cannot either, because Sportarr issues a
+    # new one when a quality upgrade replaces the file, and the row would be
+    # deleted and rebuilt on every upgrade, losing its subtitle history.
+    __table_args__ = (
+        UniqueConstraint('sportarrEventId', 'partNumber', name='uc_sports_event_part'),
+        # Indexes live on the model, not only in the migration. init_db()
+        # runs create_all() before migrate_db(), so a missing table is
+        # always built from this definition and the migration's guarded
+        # create is skipped.
+        Index('ix_sports_events_sportarr_league_id', 'sportarrLeagueId'),
+        Index('ix_sports_events_path', 'path'),
+    )
+
+    def to_dict(self):
+        return {column.name: getattr(self, column.name) for column in self.__table__.columns}
+
+
+class TableSportsEventsSubtitles(Base):
+    __tablename__ = 'table_sports_events_subtitles'
+
+    id = mapped_column(Integer, primary_key=True)
+    language = mapped_column(Text, nullable=False)
+    hi = mapped_column(Boolean, nullable=False)
+    forced = mapped_column(Boolean, nullable=False)
+    path = mapped_column(Text, nullable=True)
+    size = mapped_column(BigInteger, nullable=True)
+    embedded_track_id = mapped_column(Integer, nullable=True)
+    # Points at the event row, which is one part, not at the Sportarr event id.
+    sportsEventId = mapped_column(Integer, ForeignKey('table_sports_events.id', ondelete='CASCADE'),
+                                  nullable=False)
+    sportarrLeagueId = mapped_column(Integer, ForeignKey('table_sports_leagues.sportarrLeagueId', ondelete='CASCADE'),
+                                     nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint('path', 'sportarrLeagueId', 'sportsEventId', 'language', 'forced', 'hi',
+                         name='uc_external_sports_events_subtitles'),
+        UniqueConstraint('embedded_track_id', 'sportarrLeagueId', 'sportsEventId', 'language', 'forced', 'hi',
+                         name='uc_embedded_sports_events_subtitles'),
+        # Same index set as table_episodes_subtitles and
+        # table_movies_subtitles got in revision 537e9b4d10e3, defined on
+        # the model as well so create_all() builds them on fresh installs.
+        Index('ix_sports_events_subtitles_sports_event_id', 'sportsEventId'),
+        Index('ix_sports_events_subtitles_sportarr_league_id', 'sportarrLeagueId'),
+        Index('ix_sports_events_subtitles_path', 'path'),
+        Index('ix_sports_events_subtitles_embedded_track_id', 'embedded_track_id'),
+        Index('ix_sports_events_subtitles_language_hi_forced', 'language', 'hi', 'forced'),
+        Index('ix_sports_events_subtitles_event_path_track', 'sportsEventId', 'path', 'embedded_track_id'),
+    )
+
+
+class TableSportsLeaguesRootfolder(Base):
+    __tablename__ = 'table_sports_leagues_rootfolder'
 
     accessible = mapped_column(Integer)
     error = mapped_column(Text)
