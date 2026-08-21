@@ -99,10 +99,10 @@ def test_language_equals_check_set(langs):
     assert equals.check_set(lang_set) == set(langs)
 
 
-def test_language_equals_check_set_do_nothing():
+def test_language_equals_check_set_reversed():
     equals = core._LanguageEquals([(core.Language("eng"), core.Language("spa"))])
     lang_set = {core.Language("spa")}
-    assert equals.check_set(lang_set) == {core.Language("spa")}
+    assert equals.check_set(lang_set) == {core.Language("eng"), core.Language("spa")}
 
 
 def test_language_equals_check_set_do_nothing_w_forced():

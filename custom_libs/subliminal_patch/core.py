@@ -199,6 +199,9 @@ class _LanguageEquals(list):
             if from_ in items:
                 logger.debug("Adding %r to %s item(s) set", to_, len(items))
                 to_add.append(to_)
+            if to_ in items:
+                logger.debug("Adding %r to %s item(s) set", from_, len(items))
+                to_add.append(from_)
 
         new_items = items.copy()
         new_items.update(to_add)
