@@ -380,7 +380,7 @@ def _handle_mgb(name, exception, ids, language):
 
     if ids:
         if exception.media_type == "series":
-            if 'sonarrSeriesId' in ids and 'sonarrEpsiodeId' in ids:
+            if ids.get('sonarrSeriesId') and ids.get('sonarrEpisodeId'):
                 blacklist_log(ids['sonarrSeriesId'], ids['sonarrEpisodeId'], name, exception.id, language_str)
         else:
             blacklist_log_movie(ids['radarrId'], name, exception.id, language_str)
