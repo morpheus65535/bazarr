@@ -11,8 +11,8 @@ from dogpile.cache import make_region
 from datetime import datetime
 from typing import List
 
-from sqlalchemy import create_engine, inspect, DateTime, ForeignKey, Integer, LargeBinary, Text, func, text, BigInteger, \
-    Boolean
+from sqlalchemy import (create_engine, inspect, DateTime, ForeignKey, Index, Integer, LargeBinary, Text, text, 
+                        BigInteger, Boolean)
 # importing here to be indirectly imported in other modules later
 from sqlalchemy import update, delete, select, func, UniqueConstraint  # noqa W0611
 from sqlalchemy.orm import scoped_session, sessionmaker, mapped_column, close_all_sessions, declarative_base
@@ -143,6 +143,13 @@ class TableBlacklist(Base):
     subs_id = mapped_column(Text)
     timestamp = mapped_column(DateTime, default=datetime.now)
 
+    __table_args__ = (
+        Index('ix_blacklist_episode_id', 'sonarr_episode_id'),
+        Index('ix_blacklist_series_id', 'sonarr_series_id'),
+        Index('ix_blacklist_provider_subs_id', 'provider', 'subs_id'),
+        Index('ix_blacklist_timestamp', 'timestamp'),
+    )
+
 
 class TableBlacklistMovie(Base):
     __tablename__ = 'table_blacklist_movie'
@@ -153,6 +160,12 @@ class TableBlacklistMovie(Base):
     radarr_id = mapped_column(Integer, ForeignKey('table_movies.radarrId', ondelete='CASCADE'))
     subs_id = mapped_column(Text)
     timestamp = mapped_column(DateTime, default=datetime.now)
+
+    __table_args__ = (
+        Index('ix_blacklist_movie_radarr_id', 'radarr_id'),
+        Index('ix_blacklist_movie_provider_subs_id', 'provider', 'subs_id'),
+        Index('ix_blacklist_movie_timestamp', 'timestamp'),
+    )
 
 
 class TableEpisodes(Base):
@@ -181,6 +194,15 @@ class TableEpisodes(Base):
     updated_at_timestamp = mapped_column(DateTime)
     video_codec = mapped_column(Text)
 
+    __table_args__ = (
+        Index('ix_episodes_missing_subtitles', 'missing_subtitles'),
+        Index('ix_episodes_series_id', 'sonarrSeriesId'),
+        Index('ix_episodes_monitored_series', 'monitored', 'sonarrSeriesId'),
+        Index('ix_episodes_season_episode', 'season', 'episode'),
+        Index('ix_episodes_episode_file_id', 'episode_file_id'),
+        Index('ix_episodes_path', 'path'),
+    )
+
     def to_dict(self):
         return {column.name: getattr(self, column.name) for column in self.__table__.columns}
 
@@ -205,6 +227,12 @@ class TableEpisodesSubtitles(Base):
                          name='uc_external_episodes_subtitles'),
         UniqueConstraint('embedded_track_id', 'sonarrSeriesId', 'sonarrEpisodeId', 'language', 'forced', 'hi',
                          name='uc_embedded_episodes_subtitles'),
+        Index('idx_episodes_subtitles_sonarr_episode_id', 'sonarrEpisodeId'),
+        Index('idx_episodes_subtitles_sonarr_series_id', 'sonarrSeriesId'),
+        Index('idx_episodes_subtitles_path', 'path'),
+        Index('idx_episodes_subtitles_embedded_track_id', 'embedded_track_id'),
+        Index('ix_episodes_subtitles_language_hi_forced', 'language', 'hi', 'forced'),
+        Index('ix_episodes_subtitles_episode_path_track', 'sonarrEpisodeId', 'path', 'embedded_track_id'),
     )
 
 
@@ -228,6 +256,16 @@ class TableHistory(Base):
     not_matched = mapped_column(Text)
     upgradedFromId = mapped_column(Integer, ForeignKey('table_history.id'))
 
+    __table_args__ = (
+        Index('ix_history_timestamp', 'timestamp'),
+        Index('ix_history_episode_id', 'sonarrEpisodeId'),
+        Index('ix_history_series_id', 'sonarrSeriesId'),
+        Index('ix_history_video_path_language', 'video_path', 'language'),
+        Index('ix_history_action_timestamp', 'action', 'timestamp'),
+        Index('ix_history_upgraded_from_id', 'upgradedFromId'),
+        Index('ix_history_subs_id', 'subs_id'),
+    )
+
 
 class TableHistoryMovie(Base):
     __tablename__ = 'table_history_movie'
@@ -247,6 +285,15 @@ class TableHistoryMovie(Base):
     matched = mapped_column(Text)
     not_matched = mapped_column(Text)
     upgradedFromId = mapped_column(Integer, ForeignKey('table_history_movie.id'))
+
+    __table_args__ = (
+        Index('ix_history_movie_timestamp', 'timestamp'),
+        Index('ix_history_movie_radarr_id', 'radarrId'),
+        Index('ix_history_movie_video_path_language', 'video_path', 'language'),
+        Index('ix_history_movie_action_timestamp', 'action', 'timestamp'),
+        Index('ix_history_movie_upgraded_from_id', 'upgradedFromId'),
+        Index('ix_history_movie_subs_id', 'subs_id'),
+    )
 
 
 class TableLanguagesProfiles(Base):
@@ -294,6 +341,14 @@ class TableMovies(Base):
     video_codec = mapped_column(Text)
     year = mapped_column(Text)
 
+    __table_args__ = (
+        Index('ix_movies_missing_subtitles', 'missing_subtitles'),
+        Index('ix_movies_sort_title', 'sortTitle'),
+        Index('ix_movies_monitored', 'monitored'),
+        Index('ix_movies_tags', 'tags'),
+        Index('ix_movies_profile_id', 'profileId'),
+    )
+
     def to_dict(self):
         return {column.name: getattr(self, column.name) for column in self.__table__.columns}
 
@@ -314,6 +369,11 @@ class TableMoviesSubtitles(Base):
         UniqueConstraint('path', 'radarrId', 'language', 'forced', 'hi', name='uc_external_movies_subtitles'),
         UniqueConstraint('embedded_track_id', 'radarrId', 'language', 'forced', 'hi',
                          name='uc_embedded_movies_subtitles'),
+        Index('idx_movies_subtitles_radarr_id', 'radarrId'),
+        Index('idx_movies_subtitles_path', 'path'),
+        Index('idx_movies_subtitles_embedded_track_id', 'embedded_track_id'),
+        Index('ix_movies_subtitles_language_hi_forced', 'language', 'hi', 'forced'),
+        Index('ix_movies_subtitles_movie_path_track', 'radarrId', 'path', 'embedded_track_id'),
     )
 
 
@@ -368,6 +428,14 @@ class TableShows(Base):
     title = mapped_column(Text, nullable=False)
     updated_at_timestamp = mapped_column(DateTime)
     year = mapped_column(Text)
+
+    __table_args__ = (
+        Index('ix_shows_sort_title', 'sortTitle'),
+        Index('ix_shows_monitored', 'monitored'),
+        Index('ix_shows_tags', 'tags'),
+        Index('ix_shows_profile_id', 'profileId'),
+        Index('ix_shows_series_type', 'seriesType'),
+    )
 
     def to_dict(self):
         return {column.name: getattr(self, column.name) for column in self.__table__.columns}
