@@ -1,6 +1,6 @@
 import { FunctionComponent } from "react";
 import { Link } from "react-router";
-import { Button, Code, Text } from "@mantine/core";
+import { Button, Code, List, Text } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { useSystemWebhookTestMutation } from "@/apis/hooks/system";
 import {
@@ -45,22 +45,30 @@ const ExternalWebhookSelector: FunctionComponent = () => {
         label="Enable external webhook after subtitle download"
         settingKey="settings-general-use_external_webhook"
       />
-      <CollapseBox indent settingKey="settings-general-use_external_webhook">
+      <CollapseBox settingKey="settings-general-use_external_webhook">
         <SettingsText
           label="Webhook URL"
           settingKey="settings-general-external_webhook_url"
           placeholder="http://localhost:2875/triggers/bazarr"
         />
-        <Message>
-          Examples:
-          <br />• Autopulse (local):{" "}
-          <Code>http://localhost:2875/triggers/bazarr</Code>
-          <br />• Autopulse (network):{" "}
-          <Code>http://192.168.1.100:2875/triggers/bazarr</Code>
-          <br />• Autopulse (Docker):{" "}
-          <Code>http://autopulse:2875/triggers/bazarr</Code>
-          <br />• Custom webhook: <Code>http://your-server:8080/webhook</Code>
-        </Message>
+        <Message>Examples:</Message>
+        <List size="sm" c="dimmed">
+          <List.Item>
+            Autopulse (local):{" "}
+            <Code>http://localhost:2875/triggers/bazarr</Code>
+          </List.Item>
+          <List.Item>
+            Autopulse (network):{" "}
+            <Code>http://192.168.1.100:2875/triggers/bazarr</Code>
+          </List.Item>
+          <List.Item>
+            Autopulse (Docker):{" "}
+            <Code>http://autopulse:2875/triggers/bazarr</Code>
+          </List.Item>
+          <List.Item>
+            Custom webhook: <Code>http://your-server:8080/webhook</Code>
+          </List.Item>
+        </List>
         <SettingsText
           label="Username (optional)"
           settingKey="settings-general-external_webhook_username"
