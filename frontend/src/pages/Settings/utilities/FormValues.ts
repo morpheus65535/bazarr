@@ -1,4 +1,10 @@
-import { createContext, useCallback, useContext, useRef } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+} from "react";
 import type { UseFormReturnType } from "@mantine/form";
 import { LOG } from "@/utilities/console";
 
@@ -25,7 +31,10 @@ export const useFormActions = () => {
   const form = useFormValues();
 
   const formRef = useRef(form);
-  formRef.current = form;
+
+  useEffect(() => {
+    formRef.current = form;
+  });
 
   const update = useCallback((object: Record<string, unknown>) => {
     LOG("info", `Updating values`, object);

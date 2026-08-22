@@ -40,18 +40,23 @@ const SimpleTable = <T extends RowData>(props: SimpleTableProps<T>) => {
     manualPagination: true,
   });
 
-  if (instanceRef) {
-    instanceRef.current = instance;
-  }
+  useEffect(() => {
+    if (instanceRef) {
+      instanceRef.current = instance;
+    }
+  });
 
   const selectedRows = instance.getSelectedRowModel().rows;
 
   const memoizedRows = useMemo(() => selectedRows, [selectedRows]);
 
   const onRowSelectionChangedRef = useRef(onRowSelectionChanged);
-  onRowSelectionChangedRef.current = onRowSelectionChanged;
 
   const isAllRowsExpanded = instance.getIsAllRowsExpanded();
+
+  useEffect(() => {
+    onRowSelectionChangedRef.current = onRowSelectionChanged;
+  });
 
   useEffect(() => {
     onRowSelectionChangedRef.current?.(memoizedRows);

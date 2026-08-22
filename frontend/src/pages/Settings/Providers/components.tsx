@@ -3,6 +3,7 @@ import {
   FunctionComponent,
   JSX,
   useCallback,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -253,7 +254,10 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
   const modals = useModals();
 
   const onChangeRef = useRef(onChange);
-  onChangeRef.current = onChange;
+
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  });
 
   const [info, setInfo] = useState<Nullable<ProviderInfo>>(payload);
 
