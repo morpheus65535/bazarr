@@ -156,7 +156,7 @@ def store_subtitles(sonarr_episode_id, use_cache=True):
             subtitles = guess_external_subtitles(full_dest_folder_path, subtitles,
                                                  previously_indexed_subtitles_to_exclude)
         except Exception as e:
-            logging.exception(f"BAZARR unable to index external subtitles for this file {mapped_path}: {repr(e)}")
+            logging.exception(f"BAZARR unable to index external subtitles for this file {mapped_path}: {str(e)}")
         else:
             # For each external subtitle, store it in the database
             for subtitle, language in subtitles.items():

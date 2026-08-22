@@ -381,10 +381,15 @@ def _handle_mgb(name, exception, ids, language):
 
     if ids:
         if exception.media_type == "series":
-            if 'sonarrSeriesId' in ids and 'sonarrEpsiodeId' in ids:
+            if ids.get('sonarrSeriesId') and ids.get('sonarrEpisodeId'):
                 blacklist_log(ids['sonarrSeriesId'], ids['sonarrEpisodeId'], name, exception.id, language_str)
-        else:
+            else:
+                logging.debug(f'BAZARR cannot blacklist subtitle {exception.id} from {name}: unknown series or '
+                              f'episode id')
+        elif ids.get('radarrId'):
             blacklist_log_movie(ids['radarrId'], name, exception.id, language_str)
+        else:
+            logging.debug(f'BAZARR cannot blacklist subtitle {exception.id} from {name}: unknown id')
 
 
 def provider_throttle(name, exception, ids=None, language=None):

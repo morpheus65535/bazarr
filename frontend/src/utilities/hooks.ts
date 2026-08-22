@@ -20,27 +20,21 @@ export const useSelectorOptions = <T>(
   label: (value: T) => string,
   key?: (value: T) => string,
 ): Pick<SelectorProps<T>, "options" | "getkey"> => {
-  const labelRef = useRef(label);
-  labelRef.current = label;
-
-  const keyRef = useRef(key);
-  keyRef.current = key;
-
   const wrappedOptions = useMemo(
     () =>
       options.map<SelectorOption<T>>((value) => ({
         value,
-        label: labelRef.current(value),
+        label: label(value),
       })),
-    [options],
+    [options, label],
   );
 
   return useMemo(
     () => ({
       options: wrappedOptions,
-      getkey: keyRef.current ?? labelRef.current,
+      getkey: key ?? label,
     }),
-    [wrappedOptions],
+    [wrappedOptions, key, label],
   );
 };
 
@@ -57,7 +51,10 @@ export const useSliderMarks = (values: number[]): SliderProps["marks"] =>
 // High performance action wrapper for array, typically used for table updates
 export const useArrayAction = <T>(setData: Dispatch<(prev: T[]) => T[]>) => {
   const setDataRef = useRef(setData);
-  setDataRef.current = setData;
+
+  useEffect(() => {
+    setDataRef.current = setData;
+  });
 
   const add = useCallback((row: T) => {
     setDataRef.current((data) => {
@@ -108,7 +105,10 @@ export const useArrayAction = <T>(setData: Dispatch<(prev: T[]) => T[]>) => {
 
 export const useThrottle = <F extends GenericFunction>(fn: F, ms: number) => {
   const fnRef = useRef(fn);
-  fnRef.current = fn;
+
+  useEffect(() => {
+    fnRef.current = fn;
+  });
 
   const timer = useRef<number>(undefined);
 
@@ -140,7 +140,10 @@ export const useOnValueChange = <T>(value: T, onChange: (value: T) => void) => {
   const valueRef = useRef<T | null>(null);
 
   const onChangeRef = useRef(onChange);
-  onChangeRef.current = onChange;
+
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  });
 
   useEffect(() => {
     if (valueRef.current !== value) {

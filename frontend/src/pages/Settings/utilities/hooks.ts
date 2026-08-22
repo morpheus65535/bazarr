@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useMemo } from "react";
 import { get, isNull, isUndefined, uniqBy } from "lodash";
 import {
   HookType,
@@ -48,12 +48,9 @@ export const useSettingValue = <T>(
 ): Readonly<Nullable<T>> => {
   const settings = useSettings();
 
-  const optionsRef = useRef(options);
-  optionsRef.current = options;
-
   const originalValue = useMemo(() => {
-    const onLoaded = optionsRef.current?.onLoaded;
-    const defaultValue = optionsRef.current?.defaultValue;
+    const onLoaded = options?.onLoaded;
+    const defaultValue = options?.defaultValue;
     if (onLoaded && settings) {
       LOG("info", `${key} is using custom loader`);
 
@@ -71,11 +68,11 @@ export const useSettingValue = <T>(
     }
 
     return value;
-  }, [key, settings]);
+  }, [key, settings, options]);
 
   const stagedValue = useStagedValues();
 
-  if (key in stagedValue && optionsRef.current?.original !== true) {
+  if (key in stagedValue && options?.original !== true) {
     return stagedValue[key] as T;
   } else {
     return originalValue;
@@ -90,9 +87,6 @@ export const useUpdateArray = <T>(
   const { setValue } = useFormActions();
   const stagedValue = useStagedValues();
 
-  const compareRef = useRef(compare);
-  compareRef.current = compare;
-
   const staged: Readonly<T[]> = useMemo(() => {
     if (key in stagedValue) {
       return stagedValue[key] as T[];
@@ -103,9 +97,9 @@ export const useUpdateArray = <T>(
 
   return useCallback(
     (v: T, hook?: HookType) => {
-      const newArray = uniqBy([v, ...staged], compareRef.current);
+      const newArray = uniqBy([v, ...staged], compare);
       setValue(newArray, key, hook);
     },
-    [staged, setValue, key],
+    [staged, setValue, key, compare],
   );
 };

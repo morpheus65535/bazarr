@@ -825,6 +825,65 @@ describe("SettingsPlexView", async () => {
     });
   });
 
+  it("should complete OAuth again on a subsequent authentication attempt", async () => {
+    const closeMock = vitest.fn();
+    const windowOpen = vitest.fn(
+      () => ({ close: closeMock }) as unknown as Window,
+    );
+    Object.defineProperty(window, "open", {
+      value: windowOpen,
+      configurable: true,
+    });
+
+    mockedUsePlexPinMutation.mockReturnValue({
+      mutateAsync: vitest.fn().mockResolvedValue({
+        data: { pinId: "123", code: "ABC", authUrl: "http://plex.test/auth" },
+      }),
+    });
+
+    const { rerender } = await renderPage();
+
+    // The pin check only reports authenticated once the "server" flips it,
+    // mirroring the real polling flow. Set after renderPage, whose
+    // setupMocks would otherwise clobber the implementation.
+    const pinState = { authenticated: false };
+    mockedUsePlexPinCheckQuery.mockImplementation(() => ({
+      data: pinState.authenticated ? { authenticated: true } : null,
+    }));
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Connect to Plex" }),
+    );
+    expect(windowOpen).toHaveBeenCalledTimes(1);
+
+    pinState.authenticated = true;
+    rerender(<SettingsPlexView />);
+    await waitFor(() => expect(closeMock).toHaveBeenCalledTimes(1));
+
+    // Second attempt (e.g. after logging out and reconnecting): the
+    // one-shot success handling must rearm and close the new window too.
+    pinState.authenticated = false;
+    mockedUsePlexPinMutation.mockReturnValue({
+      mutateAsync: vitest.fn().mockResolvedValue({
+        data: { pinId: "456", code: "DEF", authUrl: "http://plex.test/auth2" },
+      }),
+    });
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Connect to Plex" }),
+    );
+    expect(windowOpen).toHaveBeenCalledTimes(2);
+
+    pinState.authenticated = true;
+    rerender(<SettingsPlexView />);
+    await waitFor(() => expect(closeMock).toHaveBeenCalledTimes(2));
+
+    Object.defineProperty(window, "open", {
+      value: window.open,
+      configurable: true,
+    });
+  });
+
   it("should cancel OAuth authentication", async () => {
     const closeMock = vitest.fn();
     const windowOpen = vitest.fn(

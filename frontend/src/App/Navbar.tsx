@@ -2,7 +2,6 @@ import React, {
   createContext,
   FunctionComponent,
   useContext,
-  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -37,6 +36,7 @@ import { CustomRouteObject, Route } from "@/Router/type";
 import { useRouteItems } from "@/Router/useRouteItems";
 import { BuildKey, pathJoin } from "@/utilities";
 import { LOG } from "@/utilities/console";
+import { useResetOnChange } from "@/utilities/resetOnChange";
 import styles from "./Navbar.module.scss";
 
 const Selection = createContext<{
@@ -169,9 +169,7 @@ const AppNavbar: FunctionComponent = () => {
   const routes = useRouteItems();
 
   const { pathname } = useLocation();
-  useEffect(() => {
-    select(null);
-  }, [pathname]);
+  useResetOnChange(pathname, () => select(null));
 
   return (
     <AppShell.Navbar p="xs" className={styles.nav}>

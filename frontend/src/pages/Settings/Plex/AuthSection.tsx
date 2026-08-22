@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Alert, Button, Paper, Stack, Text, Title } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { useQueryClient } from "@tanstack/react-query";
@@ -25,7 +25,9 @@ const AuthSection = () => {
   const authWindowRef = useRef<Window | null>(null);
   const queryClient = useQueryClient();
 
-  const isPolling = !!pin?.pinId;
+  const [authSucceeded, setAuthSucceeded] = useState(false);
+
+  const isPolling = !!pin?.pinId && !authSucceeded;
 
   const { data: pinData } = usePlexPinCheckQuery(
     pin?.pinId ?? null,
@@ -33,22 +35,33 @@ const AuthSection = () => {
     pin?.pinId ? PLEX_AUTH_CONFIG.POLLING_INTERVAL_MS : false,
   );
 
-  // Handle successful authentication - stop polling and close window
-  if (pinData?.authenticated && isPolling) {
-    setPin(null);
-    if (authWindowRef.current) {
-      authWindowRef.current.close();
-      authWindowRef.current = null;
-    }
-    // Trigger refetch and invalidate server queries
-    void refetchAuth();
-    void queryClient.invalidateQueries({
-      queryKey: [QueryKeys.Plex, "servers"],
-    });
-    void queryClient.invalidateQueries({
-      queryKey: [QueryKeys.Plex, "selectedServer"],
-    });
+  // Handle successful authentication - stop polling (adjusting state during
+  // render avoids an effect-driven render cascade).
+  if (pinData?.authenticated && pin?.pinId && !authSucceeded) {
+    setAuthSucceeded(true);
   }
+
+  // Close the auth window and refresh auth/server data once, when the pin
+  // check first reports the user as authenticated.
+  const wasHandledRef = useRef(false);
+
+  useEffect(() => {
+    if (authSucceeded && !wasHandledRef.current) {
+      wasHandledRef.current = true;
+      if (authWindowRef.current) {
+        authWindowRef.current.close();
+        authWindowRef.current = null;
+      }
+      // Trigger refetch and invalidate server queries
+      void refetchAuth();
+      void queryClient.invalidateQueries({
+        queryKey: [QueryKeys.Plex, "servers"],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: [QueryKeys.Plex, "selectedServer"],
+      });
+    }
+  }, [authSucceeded, refetchAuth, queryClient]);
 
   const isAuthenticated = Boolean(
     authData?.valid && authData?.authMethod === "oauth",
@@ -58,6 +71,9 @@ const AuthSection = () => {
     const { data: pin } = await createPin();
 
     setPin(pin);
+    setAuthSucceeded(false);
+    // Rearm the one-shot success handling for this new attempt
+    wasHandledRef.current = false;
 
     const { width, height, features } = PLEX_AUTH_CONFIG.AUTH_WINDOW_CONFIG;
     const left = Math.round(window.screen.width / 2 - width / 2);
