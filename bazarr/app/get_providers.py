@@ -388,7 +388,7 @@ def _handle_mgb(name, exception, ids, language):
         elif ids.get('radarrId'):
             blacklist_log_movie(ids['radarrId'], name, exception.id, language_str)
         else:
-            logging.debug(f'BAZARR cannot blacklist subtitle {exception.id} from {name}: unknown movie id')
+            logging.debug(f'BAZARR cannot blacklist subtitle {exception.id} from {name}: unknown id')
 
 
 def provider_throttle(name, exception, ids=None, language=None):

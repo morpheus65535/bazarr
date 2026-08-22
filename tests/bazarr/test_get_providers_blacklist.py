@@ -143,7 +143,7 @@ def test_skipped_movie_blacklisting_is_logged(caplog):
     text = _call_capturing_log('movie', _ids(radarr_id=None), caplog)
     assert _SUBS_ID in text
     assert _PROVIDER in text
-    assert 'unknown movie id' in text
+    assert 'unknown id' in text
 
 
 def test_successful_blacklisting_logs_no_skip(caplog):
