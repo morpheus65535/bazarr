@@ -18,7 +18,6 @@ import {
   usePlexAuthValidationQuery,
   usePlexAutopulseConfigQuery,
 } from "@/apis/hooks/plex";
-import styles from "@/pages/Settings/Plex/AutopulseSelector.module.scss";
 
 export type AutopulseSelectorProps = {
   label: string;
@@ -77,11 +76,11 @@ const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = (
 
   if (!isAuthenticated) {
     return (
-      <Stack gap="xs" className={styles.autopulseSelector}>
-        <Text fw={500} size="sm" className={styles.labelText}>
+      <Stack gap="xs">
+        <Text fw={500} size="sm">
           {label}
         </Text>
-        <Alert color="brand" variant="light" className={styles.alertMessage}>
+        <Alert color="brand" variant="light">
           Enable Plex OAuth above to generate an Autopulse configuration.
         </Alert>
       </Stack>
@@ -89,15 +88,15 @@ const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = (
   }
 
   return (
-    <Stack gap="xs" className={styles.autopulseSelector}>
-      <div>
-        <Text fw={500} size="sm" mb={2} className={styles.labelText}>
+    <Stack gap="xs">
+      <Stack gap={2}>
+        <Text fw={500} size="sm">
           {label}
         </Text>
         <Text size="xs" c="dimmed">
           {description}
         </Text>
-      </div>
+      </Stack>
 
       <Group gap="xs">
         <Button
@@ -105,7 +104,6 @@ const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = (
           loading={isFetchingConfig}
           size="sm"
           variant="light"
-          className={styles.generateButton}
         >
           Generate Configuration
         </Button>
@@ -118,23 +116,15 @@ const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = (
       </Group>
 
       {configData && (
-        <Card
-          withBorder
-          p="md"
-          radius="md"
-          mt="md"
-          className={styles.configCard}
-        >
+        <Card withBorder p="md" radius="sm">
           <Group justify="space-between" align="center" mb="xs">
-            <Group gap="xs">
-              <Text size="sm" fw={600}>
-                Autopulse Configuration
-              </Text>
-            </Group>
+            <Text size="sm" fw={600}>
+              Autopulse Configuration
+            </Text>
             <Tooltip label="Copy configuration">
               <ActionIcon
                 aria-label="Copy configuration"
-                variant="subtle"
+                variant="light"
                 size="sm"
                 onClick={async () => {
                   const yamlContent = configData?.configYaml;
@@ -180,7 +170,7 @@ const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = (
             </Tooltip>
           </Group>
 
-          <Code block className={styles.configCodeBlock}>
+          <Code block style={{ maxHeight: 300, overflow: "auto" }}>
             {configData.configYaml}
           </Code>
 
@@ -196,7 +186,6 @@ const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = (
               <Alert
                 color={configData.rewriteDetected ? "warning" : "brand"}
                 variant="light"
-                className={styles.alertMessage}
               >
                 <Text size="xs">
                   <Text component="span" fw={600}>

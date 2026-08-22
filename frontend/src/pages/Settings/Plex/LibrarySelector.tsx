@@ -6,7 +6,6 @@ import {
   usePlexServersQuery,
 } from "@/apis/hooks/plex";
 import { BaseInput, useBaseInput } from "@/pages/Settings/utilities/hooks";
-import styles from "@/pages/Settings/Plex/LibrarySelector.module.scss";
 
 export type LibrarySelectorProps = BaseInput<string[]> & {
   label: string;
@@ -81,7 +80,7 @@ const LibrarySelector: FunctionComponent<LibrarySelectorProps> = (props) => {
 
   if (!isAuthenticated) {
     return (
-      <Alert color="brand" variant="light" className={styles.alertMessage}>
+      <Alert color="brand" variant="light">
         Enable Plex OAuth above to automatically discover your libraries.
       </Alert>
     );
@@ -89,47 +88,40 @@ const LibrarySelector: FunctionComponent<LibrarySelectorProps> = (props) => {
 
   if (!hasServers) {
     return (
-      <Alert color="brand" variant="light" className={styles.alertMessage}>
+      <Alert color="brand" variant="light">
         Waiting for server connections to be tested...
       </Alert>
     );
   }
 
   return (
-    <div className={styles.librarySelector}>
-      <Stack gap="xs">
-        <MultiSelect
-          {...rest}
-          label={label}
-          description={description}
-          data={selectData}
-          value={normalizedValue}
-          onChange={handleChange}
-          searchable
-          clearable
-          className={styles.selectField}
-        />
-        {isLoading && (
-          <Alert color="brand" variant="light" className={styles.alertMessage}>
-            Fetching libraries... This might take a moment.
-          </Alert>
-        )}
-        {error && !isLoading && (
-          <Alert color="danger" variant="light" className={styles.alertMessage}>
-            Failed to load libraries from Plex. Saved selections shown above.
-          </Alert>
-        )}
-        {!error && !isLoading && selectData.length === 0 && (
-          <Alert
-            color="secondary"
-            variant="light"
-            className={styles.alertMessage}
-          >
-            No {libraryType} libraries found on your Plex server.
-          </Alert>
-        )}
-      </Stack>
-    </div>
+    <Stack gap="xs">
+      <MultiSelect
+        {...rest}
+        label={label}
+        description={description}
+        data={selectData}
+        value={normalizedValue}
+        onChange={handleChange}
+        searchable
+        clearable
+      />
+      {isLoading && (
+        <Alert color="brand" variant="light">
+          Fetching libraries... This might take a moment.
+        </Alert>
+      )}
+      {error && !isLoading && (
+        <Alert color="danger" variant="light">
+          Failed to load libraries from Plex. Saved selections shown above.
+        </Alert>
+      )}
+      {!error && !isLoading && selectData.length === 0 && (
+        <Alert color="secondary" variant="light">
+          No {libraryType} libraries found on your Plex server.
+        </Alert>
+      )}
+    </Stack>
   );
 };
 

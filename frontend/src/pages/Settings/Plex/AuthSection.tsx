@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Alert, Button, Paper, Stack, Text, Title } from "@mantine/core";
+import { Alert, Button, Group, Loader, Stack, Text } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -10,7 +10,7 @@ import {
 } from "@/apis/hooks/plex";
 import { QueryKeys } from "@/apis/queries/keys";
 import { PLEX_AUTH_CONFIG } from "@/constants/plex";
-import styles from "@/pages/Settings/Plex/AuthSection.module.scss";
+import { Message } from "@/pages/Settings/components";
 
 const AuthSection = () => {
   const {
@@ -109,97 +109,78 @@ const AuthSection = () => {
   };
 
   if (authIsLoading && !isPolling) {
-    return <Text>Loading authentication status...</Text>;
+    return (
+      <Group gap="xs">
+        <Loader size="xs" />
+        <Text size="sm" c="dimmed">
+          Loading authentication status...
+        </Text>
+      </Group>
+    );
   }
 
   if (isPolling && !pinData?.authenticated) {
     return (
-      <Paper withBorder radius="md" p="lg" className={styles.authSection}>
-        <Stack gap="md">
-          <Title order={4}>Plex OAuth</Title>
-          <Stack gap="sm">
-            <Text size="lg" fw={600}>
-              Complete Authentication
-            </Text>
-            <Text>
-              PIN Code:{" "}
-              <Text component="span" fw={700}>
-                {pin?.code}
-              </Text>
-            </Text>
-            <Text size="sm">
-              Complete the authentication in the opened window.
-            </Text>
-            <Button
-              onClick={handleCancelAuth}
-              variant="light"
-              color="secondary"
-              size="sm"
-              className={styles.actionButton}
-            >
-              Cancel
-            </Button>
-          </Stack>
-        </Stack>
-      </Paper>
+      <Stack gap="xs">
+        <Message>Complete the authentication in the opened window.</Message>
+        <Text>
+          PIN Code:{" "}
+          <Text component="span" fw={700}>
+            {pin?.code}
+          </Text>
+        </Text>
+        {authError && (
+          <Alert color="danger" variant="light">
+            {authError.message || "Authentication failed"}
+          </Alert>
+        )}
+        <Group>
+          <Button onClick={handleCancelAuth} variant="light" color="secondary">
+            Cancel
+          </Button>
+        </Group>
+      </Stack>
     );
   }
 
   if (!isAuthenticated) {
     return (
-      <Paper withBorder radius="md" p="lg" className={styles.authSection}>
-        <Stack gap="md">
-          <Title order={4}>Plex OAuth</Title>
-          <Stack gap="sm">
-            <Text size="sm">
-              Connect your Plex account to enable secure, automated integration
-              with Bazarr.
-            </Text>
-            <Text size="xs" c="dimmed">
-              Advanced users: Manual configuration is available via config.yaml
-              if OAuth is not suitable.
-            </Text>
-            {authError && (
-              <Alert color="danger" variant="light">
-                {authError.message || "Authentication failed"}
-              </Alert>
-            )}
-            <Button
-              onClick={handleAuth}
-              variant="filled"
-              color="brand"
-              size="md"
-              className={styles.actionButton}
-            >
-              Connect to Plex
-            </Button>
-          </Stack>
-        </Stack>
-      </Paper>
+      <Stack gap="xs">
+        <Message>
+          Connect your Plex account to enable secure, automated integration with
+          Bazarr. Manual configuration is available via config.yaml if OAuth is
+          not suitable.
+        </Message>
+        {authError && (
+          <Alert color="danger" variant="light">
+            {authError.message || "Authentication failed"}
+          </Alert>
+        )}
+        <Group>
+          <Button onClick={handleAuth}>Connect to Plex</Button>
+        </Group>
+      </Stack>
     );
   }
 
   // Authenticated state
   return (
-    <Paper withBorder radius="md" p="lg" className={styles.authSection}>
-      <Stack gap="md">
-        <Title order={4}>Plex OAuth</Title>
-        <Alert color="brand" variant="light" className={styles.authAlert}>
-          Connected as {authData?.username} ({authData?.email})
-        </Alert>
+    <Stack gap="xs">
+      <Alert color="success" variant="light">
+        Connected as {authData?.username} ({authData?.email})
+      </Alert>
+      <Group>
         <Button
           onClick={handleLogout}
           variant="light"
           color="secondary"
-          size="sm"
-          className={styles.actionButton}
           loading={isLoggingOut}
           disabled={isLoggingOut}
         >
           Disconnect from Plex
         </Button>
-      </Stack>
-    </Paper>
+      </Group>
+    </Stack>
   );
 };
 

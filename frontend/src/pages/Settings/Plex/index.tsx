@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import { Box, Code, Paper, Text } from "@mantine/core";
+import { Code, Text } from "@mantine/core";
 import {
   Check,
   CollapseBox,
@@ -7,9 +7,10 @@ import {
   Section,
 } from "@/pages/Settings/components";
 import { plexEnabledKey } from "@/pages/Settings/keys";
+import AuthSection from "./AuthSection";
 import AutopulseSelector from "./AutopulseSelector";
 import LibrarySelector from "./LibrarySelector";
-import PlexSettings from "./PlexSettings";
+import ServerSection from "./ServerSection";
 import WebhookSelector from "./WebhookSelector";
 
 const SettingsPlexView = () => {
@@ -20,13 +21,11 @@ const SettingsPlexView = () => {
       </Section>
 
       <CollapseBox settingKey={plexEnabledKey}>
-        <Paper p="xl" radius="md">
-          <Box>
-            <PlexSettings />
-          </Box>
-        </Paper>
+        <Section header="Connection">
+          <AuthSection />
+          <ServerSection />
+        </Section>
 
-        {/* Plex Library Configuration */}
         <Section header="Movie Library">
           <LibrarySelector
             label="Library Name"
