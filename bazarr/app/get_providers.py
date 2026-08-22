@@ -370,7 +370,9 @@ def get_providers_auth():
     }
 
 
-def _handle_mgb(name, exception, ids, language):
+# download.py doesn't have an exception with the id and media type on it, so can't take an exception 
+# as _handle_mgb() does. 
+def blacklist_subtitle(name, subs_id, media_type, ids, language):
     if language.forced:
         language_str = f'{language.basename}:forced'
     elif language.hi:
@@ -379,16 +381,20 @@ def _handle_mgb(name, exception, ids, language):
         language_str = language.basename
 
     if ids:
-        if exception.media_type == "series":
+        if media_type == "series":
             if ids.get('sonarrSeriesId') and ids.get('sonarrEpisodeId'):
-                blacklist_log(ids['sonarrSeriesId'], ids['sonarrEpisodeId'], name, exception.id, language_str)
+                blacklist_log(ids['sonarrSeriesId'], ids['sonarrEpisodeId'], name, subs_id, language_str)
             else:
-                logging.debug(f'BAZARR cannot blacklist subtitle {exception.id} from {name}: unknown series or '
+                logging.debug(f'BAZARR cannot blacklist subtitle {subs_id} from {name}: unknown series or '
                               f'episode id')
         elif ids.get('radarrId'):
-            blacklist_log_movie(ids['radarrId'], name, exception.id, language_str)
+            blacklist_log_movie(ids['radarrId'], name, subs_id, language_str)
         else:
-            logging.debug(f'BAZARR cannot blacklist subtitle {exception.id} from {name}: unknown id')
+            logging.debug(f'BAZARR cannot blacklist subtitle {subs_id} from {name}: unknown id')
+
+
+def _handle_mgb(name, exception, ids, language):
+    blacklist_subtitle(name, exception.id, exception.media_type, ids, language)
 
 
 def provider_throttle(name, exception, ids=None, language=None):
