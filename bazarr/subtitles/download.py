@@ -92,7 +92,7 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
                                                                        use_original_format=original_format in (1, "1", "True", True),
                                                                        fallback_allowed=fallback_allowed)
                     except Exception as e:
-                        logging.exception(f'BAZARR Error downloading Subtitles for this file {path}: {repr(e)}')
+                        logging.exception(f'BAZARR Error downloading Subtitles for this file {path}: {str(e)}')
                         return None
 
                 if downloaded_subtitles:
@@ -126,7 +126,7 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
                                                              )
                         except Exception as e:
                             logging.exception(
-                                f'BAZARR Error saving Subtitles file to disk for this file {path}: {repr(e)}')
+                                f'BAZARR Error saving Subtitles file to disk for this file {path}: {str(e)}')
                             pass
                         else:
                             saved_any = True
