@@ -118,9 +118,7 @@ const SeriesEpisodesView: FunctionComponent = () => {
 
   const tableRef = useRef<TableInstance<Item.Episode> | null>(null);
 
-  const [isAllRowExpanded, setIsAllRowExpanded] = useState(
-    tableRef?.current?.getIsAllRowsExpanded(),
-  );
+  const [isAllRowExpanded, setIsAllRowExpanded] = useState(false);
 
   const openDropzone = useRef<VoidFunction>(null);
 

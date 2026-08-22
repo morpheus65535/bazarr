@@ -1,4 +1,4 @@
-import { FunctionComponent, useEffect, useMemo, useState } from "react";
+import { FunctionComponent, useMemo, useState } from "react";
 import TimeAgo from "react-timeago";
 import {
   ActionIcon,
@@ -51,11 +51,15 @@ const JobsManager: FunctionComponent<JobsManagerProps> = ({
   const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({});
   const modals = useModals();
 
-  useEffect(() => {
+  // Reset open menus when the drawer closes (adjusting state during render
+  // avoids an effect-driven render cascade).
+  const [prevOpened, setPrevOpened] = useState(opened);
+  if (prevOpened !== opened) {
+    setPrevOpened(opened);
     if (!opened) {
       setOpenMenus({});
     }
-  }, [opened]);
+  }
 
   const handleMenuAction = (
     jobId: number,

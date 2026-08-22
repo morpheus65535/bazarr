@@ -1,4 +1,4 @@
-import { FunctionComponent, PropsWithChildren, useMemo, useRef } from "react";
+import { FunctionComponent, PropsWithChildren } from "react";
 import { Collapse, Stack } from "@mantine/core";
 import { useSettingValue } from "@/pages/Settings/utilities/hooks";
 
@@ -18,16 +18,7 @@ const CollapseBox: FunctionComponent<Props> = ({
 }) => {
   const value = useSettingValue(settingKey);
 
-  const onRef = useRef(on);
-  onRef.current = on;
-
-  const open = useMemo<boolean>(() => {
-    if (onRef.current) {
-      return onRef.current(value);
-    } else {
-      return Boolean(value);
-    }
-  }, [value]);
+  const open = on ? on(value) : Boolean(value);
 
   return (
     <Collapse

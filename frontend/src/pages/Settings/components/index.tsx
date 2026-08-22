@@ -1,7 +1,8 @@
-import { FunctionComponent, useCallback, useEffect, useState } from "react";
+import { FunctionComponent, useCallback, useState } from "react";
 import { Button } from "@mantine/core";
 import api from "@/apis/raw";
 import { useSettingValue } from "@/pages/Settings/utilities/hooks";
+import { useResetOnChange } from "@/utilities/resetOnChange";
 
 export const URLTestButton: FunctionComponent<{
   category: "sonarr" | "radarr";
@@ -94,9 +95,7 @@ export const ProviderTestButton: FunctionComponent<{
     }
   }, [testUrl]);
 
-  useEffect(() => {
-    setTitle(testConnection);
-  }, [testUrl]);
+  useResetOnChange(testUrl ?? "", () => setTitle(testConnection));
 
   return (
     <Button onClick={click} variant={color} title={title}>

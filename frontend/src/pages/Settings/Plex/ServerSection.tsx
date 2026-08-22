@@ -51,17 +51,17 @@ const ServerSection = () => {
     authData?.valid && authData?.authMethod === "oauth",
   );
 
-  // Reset state when authentication changes from false to true (re-authentication)
-  useEffect(() => {
-    if (isAuthenticated && !wasAuthenticated) {
-      setSelectedServer(null);
-      setIsSelecting(false);
-      setIsSaved(false);
-      setWasAuthenticated(true);
-    } else if (!isAuthenticated && wasAuthenticated) {
-      setWasAuthenticated(false);
-    }
-  }, [isAuthenticated, wasAuthenticated]);
+  // Reset state when authentication changes from false to true
+  // (re-authentication). Adjusting state during render avoids an
+  // effect-driven render cascade.
+  if (isAuthenticated && !wasAuthenticated) {
+    setWasAuthenticated(true);
+    setSelectedServer(null);
+    setIsSelecting(false);
+    setIsSaved(false);
+  } else if (!isAuthenticated && wasAuthenticated) {
+    setWasAuthenticated(false);
+  }
 
   // Consolidated server selection and saving logic
   const selectAndSaveServer = useCallback(
@@ -104,38 +104,53 @@ const ServerSection = () => {
     setIsSaved(false);
   };
 
-  // Run initialization when data is available
+  // First priority: initialize selection from the saved server once data is
+  // available (adjusting state during render avoids an effect-driven cascade).
+  if (isAuthenticated && savedSelectedServer && !selectedServer && !isSaved) {
+    setSelectedServer(savedSelectedServer);
+    setIsSaved(true);
+  }
+
+  // Second priority: auto-select and save the single available server.
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!isAuthenticated || savedSelectedServer || selectedServer || isSaved) {
       return;
     }
 
-    // First priority: initialize from saved server
-    if (savedSelectedServer && !selectedServer && !isSaved) {
-      setSelectedServer(savedSelectedServer);
-      setIsSaved(true);
+    const server = servers[0];
+    const bestConnection = server?.bestConnection;
+    if (servers.length !== 1 || !bestConnection) {
       return;
     }
 
-    // Second priority: auto-select single server
-    if (
-      servers.length === 1 &&
-      servers[0].bestConnection &&
-      !selectedServer &&
-      !isSaved &&
-      !savedSelectedServer
-    ) {
-      const server = servers[0];
-      setSelectedServer(server);
-      void selectAndSaveServer(server);
-    }
+    void selectServerMutation(
+      {
+        machineIdentifier: server.machineIdentifier,
+        name: server.name,
+        uri: bestConnection.uri,
+        local: bestConnection.local,
+        connections: server.connections?.map((conn) => conn.uri) || [
+          bestConnection.uri,
+        ],
+      },
+      {
+        onSuccess: () => {
+          setSelectedServer(server);
+          setIsSaved(true);
+          // Save to Bazarr settings
+          setValue(bestConnection.uri, "plex_server");
+          setValue(server.name, "plex_server_name");
+        },
+      },
+    );
   }, [
     isAuthenticated,
     savedSelectedServer,
     servers,
     selectedServer,
     isSaved,
-    selectAndSaveServer,
+    selectServerMutation,
+    setValue,
   ]);
   if (!isAuthenticated) {
     return null;

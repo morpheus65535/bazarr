@@ -8,6 +8,10 @@ import { GroupedSelector, GroupedSelectorOptions, Toolbox } from "@/components";
 import { useSelectorOptions } from "@/utilities";
 import { BulkSelection } from "@/utilities/bulkSelection";
 
+// Module-scoped so useSelectorOptions stays referentially stable across
+// renders (this component re-renders on every selection change).
+const profileName = (v: Language.Profile) => v.name;
+
 interface ControlsProps {
   selection: BulkSelection;
   totalCount: number;
@@ -31,7 +35,7 @@ export const BulkActionBarControls = (props: ControlsProps) => {
   const { selectedIds, dirties } = selection;
 
   const { data: profiles } = useLanguageProfiles();
-  const profileOptions = useSelectorOptions(profiles ?? [], (v) => v.name);
+  const profileOptions = useSelectorOptions(profiles ?? [], profileName);
 
   const profileOptionsWithAction = useMemo<GroupedSelectorOptions<string>[]>(
     () => [
