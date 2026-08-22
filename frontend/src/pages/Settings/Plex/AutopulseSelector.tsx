@@ -18,6 +18,7 @@ import {
   usePlexAuthValidationQuery,
   usePlexAutopulseConfigQuery,
 } from "@/apis/hooks/plex";
+import { Message } from "@/pages/Settings/components";
 
 export type AutopulseSelectorProps = {
   label: string;
@@ -80,9 +81,9 @@ const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = (
         <Text fw={500} size="sm">
           {label}
         </Text>
-        <Alert color="brand" variant="light">
-          Enable Plex OAuth above to generate an Autopulse configuration.
-        </Alert>
+        <Message>
+          Connect to Plex above to generate an Autopulse configuration.
+        </Message>
       </Stack>
     );
   }
@@ -102,8 +103,6 @@ const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = (
         <Button
           onClick={handleGenerateAutopulseConfig}
           loading={isFetchingConfig}
-          size="sm"
-          variant="light"
         >
           Generate Configuration
         </Button>
@@ -124,7 +123,6 @@ const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = (
             <Tooltip label="Copy configuration">
               <ActionIcon
                 aria-label="Copy configuration"
-                variant="light"
                 size="sm"
                 onClick={async () => {
                   const yamlContent = configData?.configYaml;

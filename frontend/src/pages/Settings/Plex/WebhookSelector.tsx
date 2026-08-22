@@ -8,6 +8,7 @@ import {
   usePlexWebhookListQuery,
 } from "@/apis/hooks/plex";
 import { useInstanceName } from "@/apis/hooks/site";
+import { Message } from "@/pages/Settings/components";
 
 export type WebhookSelectorProps = {
   label: string;
@@ -113,9 +114,9 @@ const WebhookSelector: FunctionComponent<WebhookSelectorProps> = (props) => {
     return (
       <Stack gap="xs">
         <Text fw={500}>{label}</Text>
-        <Alert color="brand" variant="light">
-          Enable Plex OAuth above to automatically discover your webhooks.
-        </Alert>
+        <Message>
+          Connect to Plex above to automatically discover your webhooks.
+        </Message>
       </Stack>
     );
   }
@@ -230,8 +231,7 @@ const WebhookSelector: FunctionComponent<WebhookSelectorProps> = (props) => {
             onClick={() => handleDeleteWebhook(currentValue)}
             loading={deleteMutation.isPending}
             size="sm"
-            variant="light"
-            color="secondary"
+            color="danger"
           >
             Remove
           </Button>

@@ -248,7 +248,13 @@ describe("SettingsPlexView", async () => {
   });
 
   it("should render Plex settings when Plex is enabled", async () => {
-    await renderPage();
+    await renderPage(undefined, {
+      auth: {
+        data: { valid: true, authMethod: "oauth" },
+        isLoading: false,
+        error: null,
+      },
+    });
 
     expect(
       screen.getByRole("heading", { name: "Movie Library" }),
@@ -259,6 +265,21 @@ describe("SettingsPlexView", async () => {
     expect(
       screen.getByRole("heading", { name: "Automation" }),
     ).toBeInTheDocument();
+  });
+
+  it("should hide library and automation settings until connected to Plex", async () => {
+    // Enabled but not authenticated (default mocks)
+    await renderPage();
+
+    expect(
+      screen.queryByRole("heading", { name: "Movie Library" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Series Library" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Automation" }),
+    ).not.toBeInTheDocument();
   });
 
   it("should show Plex OAuth connect state when not authenticated", async () => {
@@ -305,18 +326,50 @@ describe("SettingsPlexView", async () => {
     ).toBeInTheDocument();
   });
 
-  it("should show server connection status when authenticated", async () => {
+  it("should show a testing indicator only while fetching servers", async () => {
     await renderPage(undefined, {
       auth: {
         data: { valid: true, authMethod: "oauth" },
         isLoading: false,
         error: null,
       },
+      servers: {
+        isFetching: true,
+      },
     });
 
     expect(
       screen.getByText("Testing server connections..."),
     ).toBeInTheDocument();
+  });
+
+  it("should offer a refresh action when no servers were found", async () => {
+    const refetchServers = vitest.fn();
+
+    await renderPage(undefined, {
+      auth: {
+        data: { valid: true, authMethod: "oauth" },
+        isLoading: false,
+        error: null,
+      },
+      servers: {
+        data: [],
+        error: null,
+        refetch: refetchServers,
+        isFetching: false,
+      },
+    });
+
+    expect(screen.getByText("No servers found.")).toBeInTheDocument();
+    expect(
+      screen.getAllByText(/No servers available/).length,
+    ).toBeGreaterThanOrEqual(1);
+
+    const refreshButton = screen.getByRole("button", { name: "Refresh" });
+
+    await userEvent.click(refreshButton);
+
+    expect(refetchServers).toHaveBeenCalledTimes(1);
   });
 
   it("should show a single server without manual selection", async () => {

@@ -37,6 +37,7 @@ const ServerSection = () => {
     data: servers = [],
     error: serversError,
     refetch: refetchServers,
+    isFetching: serversFetching,
   } = usePlexServersQuery();
   const { mutateAsync: selectServerMutation } =
     usePlexServerSelectionMutation();
@@ -158,7 +159,6 @@ const ServerSection = () => {
 
   const refreshButton = (
     <ActionIcon
-      variant="light"
       onClick={() => refetchServers()}
       title="Refresh server list"
       aria-label="Refresh server list"
@@ -175,7 +175,7 @@ const ServerSection = () => {
         </Alert>
       )}
 
-      {servers.length === 0 && !serversError ? (
+      {servers.length === 0 && serversFetching ? (
         <Group gap="xs">
           <Loader size="xs" />
           <Text size="sm" c="dimmed">

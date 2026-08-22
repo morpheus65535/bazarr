@@ -1,10 +1,11 @@
 import { FunctionComponent } from "react";
-import { Alert, MultiSelect, Stack } from "@mantine/core";
+import { Alert, Group, Loader, MultiSelect, Stack, Text } from "@mantine/core";
 import {
   usePlexAuthValidationQuery,
   usePlexLibrariesQuery,
   usePlexServersQuery,
 } from "@/apis/hooks/plex";
+import { Message } from "@/pages/Settings/components";
 import { BaseInput, useBaseInput } from "@/pages/Settings/utilities/hooks";
 
 export type LibrarySelectorProps = BaseInput<string[]> & {
@@ -30,7 +31,8 @@ const LibrarySelector: FunctionComponent<LibrarySelectorProps> = (props) => {
     authData?.valid && authData?.authMethod === "oauth",
   );
 
-  const { data: servers = [] } = usePlexServersQuery();
+  const { data: servers = [], isFetching: serversFetching } =
+    usePlexServersQuery();
   const hasServers = servers.length > 0;
 
   // Check if a server has been selected (required for library fetching)
@@ -80,17 +82,25 @@ const LibrarySelector: FunctionComponent<LibrarySelectorProps> = (props) => {
 
   if (!isAuthenticated) {
     return (
-      <Alert color="brand" variant="light">
-        Enable Plex OAuth above to automatically discover your libraries.
-      </Alert>
+      <Message>
+        Connect to Plex above to automatically discover your libraries.
+      </Message>
     );
   }
 
   if (!hasServers) {
-    return (
-      <Alert color="brand" variant="light">
-        Waiting for server connections to be tested...
-      </Alert>
+    return serversFetching ? (
+      <Group gap="xs">
+        <Loader size="xs" />
+        <Text size="sm" c="dimmed">
+          Waiting for server connections to be tested...
+        </Text>
+      </Group>
+    ) : (
+      <Message>
+        No servers available. Refresh the server list in the Connection section
+        and try again.
+      </Message>
     );
   }
 
@@ -107,9 +117,12 @@ const LibrarySelector: FunctionComponent<LibrarySelectorProps> = (props) => {
         clearable
       />
       {isLoading && (
-        <Alert color="brand" variant="light">
-          Fetching libraries... This might take a moment.
-        </Alert>
+        <Group gap="xs">
+          <Loader size="xs" />
+          <Text size="sm" c="dimmed">
+            Fetching libraries... This might take a moment.
+          </Text>
+        </Group>
       )}
       {error && !isLoading && (
         <Alert color="danger" variant="light">
