@@ -66,9 +66,17 @@ def test_masks_keys_containing_punctuation():
   assert _redact("apikey=subdl_Cq7-5IU_x.9") == "apikey=subdl_Cq7xxxxxxxx"
 
 
-def test_short_key_is_masked_entirely():
-  # Nothing of a key shorter than the mask should survive.
-  assert _redact("apikey=abc") == "apikey=xxxxxxxx"
+def test_key_no_longer_than_the_mask_is_masked_entirely():
+  # A key at or under the mask length has nothing to spare, so none of it may
+  # survive - and every one masks to the same width, so its length is hidden too.
+  for length in range(1, 9):
+    key = "s3cr3tk3y"[:length]
+    assert _redact(f"apikey={key}") == "apikey=xxxxxxxx", key
+
+
+def test_key_one_longer_than_the_mask_keeps_one_character():
+  # The boundary the other way: the first length at which anything survives.
+  assert _redact("apikey=s3cr3tk3y") == "apikey=sxxxxxxxx"
 
 
 def test_empty_value_is_left_alone():
