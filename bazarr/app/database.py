@@ -253,6 +253,7 @@ class TableLanguagesProfiles(Base):
     __tablename__ = 'table_languages_profiles'
 
     profileId = mapped_column(Integer, primary_key=True)
+    autoTranslate = mapped_column(Integer)
     cutoff = mapped_column(Integer)
     originalFormat = mapped_column(Integer)
     items = mapped_column(Text, nullable=False)
@@ -482,6 +483,7 @@ def update_profile_id_list():
         'mustContain': ast.literal_eval(x.mustContain) if x.mustContain else [],
         'mustNotContain': ast.literal_eval(x.mustNotContain) if x.mustNotContain else [],
         'originalFormat': x.originalFormat,
+        'autoTranslate': x.autoTranslate,
         'tag': x.tag,
     } for x in database.execute(
         select(TableLanguagesProfiles.profileId,
@@ -491,6 +493,7 @@ def update_profile_id_list():
                TableLanguagesProfiles.mustContain,
                TableLanguagesProfiles.mustNotContain,
                TableLanguagesProfiles.originalFormat,
+               TableLanguagesProfiles.autoTranslate,
                TableLanguagesProfiles.tag))
         .all()
     ]
@@ -526,7 +529,7 @@ def get_profile_cutoff(profile_id):
     if profile_id and profile_id != 'null':
         cutoff_language = []
         for profile in profile_id_list:
-            profileId, name, cutoff, items, mustContain, mustNotContain, originalFormat, tag = profile.values()
+            profileId, name, cutoff, items, mustContain, mustNotContain, originalFormat, autoTranslate, tag = profile.values()
             if cutoff:
                 if profileId == int(profile_id):
                     for item in items:
