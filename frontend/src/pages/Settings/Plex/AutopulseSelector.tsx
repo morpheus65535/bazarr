@@ -94,9 +94,7 @@ const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = (
         <Text fw={500} size="sm">
           {label}
         </Text>
-        <Text size="xs" c="dimmed">
-          {description}
-        </Text>
+        <Message>{description}</Message>
       </Stack>
 
       <Group gap="xs">

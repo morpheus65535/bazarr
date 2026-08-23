@@ -1,14 +1,14 @@
 import { camelCaseKeys } from "@/utilities/case";
 import BaseApi from "./base";
 
-interface RawJellyfinTestResult {
+export interface RawJellyfinTestResult {
   success: boolean;
   server_name?: string;
   version?: string;
   error?: string;
 }
 
-type JellyfinTestResult = CamelCaseKeys<RawJellyfinTestResult>;
+export type JellyfinTestResult = CamelCaseKeys<RawJellyfinTestResult>;
 
 interface JellyfinLibrary {
   id: string;

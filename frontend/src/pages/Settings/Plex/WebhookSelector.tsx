@@ -113,7 +113,9 @@ const WebhookSelector: FunctionComponent<WebhookSelectorProps> = (props) => {
   if (!isAuthenticated) {
     return (
       <Stack gap="xs">
-        <Text fw={500}>{label}</Text>
+        <Text fw={500} size="sm">
+          {label}
+        </Text>
         <Message>
           Connect to Plex above to automatically discover your webhooks.
         </Message>
@@ -135,7 +137,9 @@ const WebhookSelector: FunctionComponent<WebhookSelectorProps> = (props) => {
   if (error) {
     return (
       <Stack gap="xs">
-        <Text fw={500}>{label}</Text>
+        <Text fw={500} size="sm">
+          {label}
+        </Text>
         <Alert color="danger" variant="light">
           Failed to load webhooks:{" "}
           {(error as Error)?.message || "Unknown error"}
@@ -149,12 +153,10 @@ const WebhookSelector: FunctionComponent<WebhookSelectorProps> = (props) => {
       <Stack gap="xs">
         <Group justify="space-between" align="flex-end">
           <Stack gap={2}>
-            <Text fw={500}>{label}</Text>
-            {description && (
-              <Text size="sm" c="dimmed">
-                {description}
-              </Text>
-            )}
+            <Text fw={500} size="sm">
+              {label}
+            </Text>
+            {description && <Message>{description}</Message>}
           </Stack>
           <Button
             onClick={handleCreateWebhook}
@@ -203,16 +205,16 @@ const WebhookSelector: FunctionComponent<WebhookSelectorProps> = (props) => {
       <Select
         data-testid="webhook-select"
         label={label}
-        description={
-          description ||
-          "Create or remove webhooks in Plex to trigger subtitle searches. In this list you can find your current webhooks."
-        }
         placeholder="Select webhook..."
         data={selectData}
         value={currentValue}
         onChange={(value) => setSelectedWebhookUrl(value || "")}
         allowDeselect={false}
       />
+      <Message>
+        {description ||
+          "Create or remove webhooks in Plex to trigger subtitle searches. In this list you can find your current webhooks."}
+      </Message>
 
       <Group gap="xs">
         {!bazarrWebhook && (

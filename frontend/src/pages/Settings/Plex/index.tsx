@@ -1,6 +1,9 @@
 import { Link } from "react-router";
 import { Code, Text } from "@mantine/core";
-import { usePlexAuthValidationQuery } from "@/apis/hooks/plex";
+import {
+  usePlexAuthValidationQuery,
+  usePlexServersQuery,
+} from "@/apis/hooks/plex";
 import {
   Check,
   CollapseBox,
@@ -16,12 +19,17 @@ import ServerSection from "./ServerSection";
 import WebhookSelector from "./WebhookSelector";
 
 const SettingsPlexView = () => {
-  // Library and automation settings only apply once Plex is connected, so
-  // they stay hidden until authentication succeeds (progressive disclosure,
-  // the same pattern ServerSection uses).
+  // Progressive disclosure (the same pattern ServerSection uses): library
+  // settings only apply once Plex is connected, and they need a reachable
+  // server on top of that. Webhooks live on the plex.tv account, so they
+  // only need authentication.
   const { data: authData } = usePlexAuthValidationQuery();
   const isAuthenticated = Boolean(
     authData?.valid && authData?.authMethod === "oauth",
+  );
+  const { data: servers = [] } = usePlexServersQuery();
+  const hasServer = servers.some(
+    (server: Plex.Server) => server.bestConnection,
   );
 
   return (
@@ -33,10 +41,15 @@ const SettingsPlexView = () => {
       <CollapseBox settingKey={plexEnabledKey}>
         <Section header="Connection">
           <AuthSection />
-          <ServerSection />
         </Section>
 
         {isAuthenticated && (
+          <Section header="Server">
+            <ServerSection />
+          </Section>
+        )}
+
+        {isAuthenticated && hasServer && (
           <>
             <Section header="Movie Library">
               <LibrarySelector
@@ -89,12 +102,16 @@ const SettingsPlexView = () => {
                 file is detected.
               </Message>
             </Section>
+          </>
+        )}
 
-            <Section header="Automation">
-              <WebhookSelector
-                label="Webhooks"
-                description="Create a Bazarr webhook in Plex to automatically search for subtitles when content starts playing. Manage and remove existing webhooks for convenience."
-              />
+        {isAuthenticated && (
+          <Section header="Automation">
+            <WebhookSelector
+              label="Webhooks"
+              description="Create a Bazarr webhook in Plex to automatically search for subtitles when content starts playing. Manage and remove existing webhooks for convenience."
+            />
+            {hasServer && (
               <AutopulseSelector
                 label="Autopulse Configuration"
                 description={
@@ -121,8 +138,8 @@ const SettingsPlexView = () => {
                   </>
                 }
               />
-            </Section>
-          </>
+            )}
+          </Section>
         )}
       </CollapseBox>
     </Layout>

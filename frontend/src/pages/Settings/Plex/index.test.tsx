@@ -92,6 +92,15 @@ const mockedNotificationsShow = notifications.show as Mock;
 const mockLogoutMutate = vitest.fn((_, options) => {
   options?.onSuccess?.();
 });
+
+const availableServer = {
+  machineIdentifier: "server-1",
+  name: "My Server",
+  platform: "Plex",
+  version: "1.0",
+  bestConnection: { uri: "http://localhost:32400", local: true },
+  connections: [{ uri: "http://localhost:32400", local: true }],
+};
 const mockCreateWebhook = vitest.fn();
 const mockDeleteWebhook = vitest.fn();
 const mockServerSelectionMutate = vitest.fn();
@@ -254,6 +263,10 @@ describe("SettingsPlexView", async () => {
         isLoading: false,
         error: null,
       },
+      servers: {
+        data: [availableServer],
+        error: null,
+      },
     });
 
     expect(
@@ -304,9 +317,8 @@ describe("SettingsPlexView", async () => {
       },
     });
 
-    expect(
-      screen.getByText("Connected as testuser (test@example.com)"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("testuser")).toBeInTheDocument();
+    expect(screen.getByText("(test@example.com)")).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Disconnect from Plex" }),
     ).toBeInTheDocument();
@@ -361,9 +373,17 @@ describe("SettingsPlexView", async () => {
     });
 
     expect(screen.getByText("No servers found.")).toBeInTheDocument();
+
+    // Server-dependent settings stay hidden until a server is available
     expect(
-      screen.getAllByText(/No servers available/).length,
-    ).toBeGreaterThanOrEqual(1);
+      screen.queryByRole("heading", { name: "Movie Library" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Series Library" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Generate Configuration" }),
+    ).not.toBeInTheDocument();
 
     const refreshButton = screen.getByRole("button", { name: "Refresh" });
 
@@ -604,6 +624,10 @@ describe("SettingsPlexView", async () => {
         isLoading: false,
         error: null,
       },
+      servers: {
+        data: [availableServer],
+        error: null,
+      },
       autopulse: {
         data: null,
         refetch: mockRefetchAutopulse,
@@ -816,6 +840,10 @@ describe("SettingsPlexView", async () => {
       auth: {
         data: { valid: true, authMethod: "oauth" },
         isLoading: false,
+        error: null,
+      },
+      servers: {
+        data: [availableServer],
         error: null,
       },
       autopulse: {
@@ -1254,6 +1282,10 @@ describe("SettingsPlexView", async () => {
         isLoading: false,
         error: null,
       },
+      servers: {
+        data: [availableServer],
+        error: null,
+      },
       autopulse: {
         data: {
           configYaml: "[test]\nkey=value",
@@ -1290,6 +1322,10 @@ describe("SettingsPlexView", async () => {
       auth: {
         data: { valid: true, authMethod: "oauth" },
         isLoading: false,
+        error: null,
+      },
+      servers: {
+        data: [availableServer],
         error: null,
       },
       autopulse: {
@@ -1333,6 +1369,10 @@ describe("SettingsPlexView", async () => {
       auth: {
         data: { valid: true, authMethod: "oauth" },
         isLoading: false,
+        error: null,
+      },
+      servers: {
+        data: [availableServer],
         error: null,
       },
       autopulse: {
@@ -1384,6 +1424,10 @@ describe("SettingsPlexView", async () => {
       auth: {
         data: { valid: true, authMethod: "oauth" },
         isLoading: false,
+        error: null,
+      },
+      servers: {
+        data: [availableServer],
         error: null,
       },
       autopulse: {

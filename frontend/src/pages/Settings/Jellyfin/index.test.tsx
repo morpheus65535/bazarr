@@ -6,6 +6,7 @@ import {
   useJellyfinTestConnectionMutation,
 } from "@/apis/hooks/jellyfin";
 import { useSettingsMutation, useSystemSettings } from "@/apis/hooks/system";
+import { JellyfinTestResult } from "@/apis/raw/jellyfin";
 import { customRender, screen } from "@/tests";
 import SettingsJellyfinView from "./index";
 
@@ -54,7 +55,29 @@ const baseSettings = {
   },
 };
 
-const setupMocks = (overrides?: Partial<typeof baseSettings>) => {
+const defaultTestResult: JellyfinTestResult = {
+  success: true,
+  serverName: "Jellyfin",
+  version: "10.8",
+};
+
+type TestMutationOptions = {
+  onSuccess?: (data: JellyfinTestResult) => void;
+  onError?: (error: unknown) => void;
+};
+
+type TestMutationImpl = (
+  _: { url: string; apikey: string },
+  options: TestMutationOptions,
+) => void;
+
+const defaultMutationImpl: TestMutationImpl = (_, options) =>
+  options.onSuccess?.(defaultTestResult);
+
+const setupMocks = (
+  overrides?: Partial<typeof baseSettings>,
+  mutationImpl: TestMutationImpl = defaultMutationImpl,
+) => {
   mockedUseSystemSettings.mockReturnValue({
     data: {
       ...baseSettings,
@@ -76,13 +99,15 @@ const setupMocks = (overrides?: Partial<typeof baseSettings>) => {
     mutate: mockMutate,
     isPending: false,
   });
+  mockMutate.mockImplementation(mutationImpl);
 };
 
 const renderPage = (
   overrides?: Partial<typeof baseSettings>,
   libraryQuery?: ReturnType<typeof mockedUseJellyfinLibrariesQuery>,
+  mutationImpl?: TestMutationImpl,
 ) => {
-  setupMocks(overrides);
+  setupMocks(overrides, mutationImpl);
   if (libraryQuery) {
     mockedUseJellyfinLibrariesQuery.mockReturnValue(libraryQuery);
   }
@@ -98,7 +123,7 @@ describe("SettingsJellyfinView", () => {
     Element.prototype.scrollIntoView = vitest.fn();
   });
 
-  it("should render jellyfin sections when enabled", () => {
+  it("should render jellyfin sections when enabled and connected", () => {
     renderPage();
 
     expect(
@@ -110,7 +135,9 @@ describe("SettingsJellyfinView", () => {
     expect(
       screen.getByRole("heading", { name: "Series Library" }),
     ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Test" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Test Connection" }),
+    ).toBeInTheDocument();
     expect(
       screen.getByRole("combobox", {
         name: "How to notify Jellyfin after subtitle changes",
@@ -127,70 +154,88 @@ describe("SettingsJellyfinView", () => {
       screen.queryByRole("heading", { name: "Connection" }),
     ).not.toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: "Test" }),
+      screen.queryByRole("button", { name: "Test Connection" }),
     ).not.toBeInTheDocument();
   });
 
-  it("should prompt to configure URL and API key before discovering libraries", () => {
-    renderPage({
-      jellyfin: { ...baseSettings.jellyfin, url: "", apikey: "" },
-    });
-
-    const alerts = screen.getAllByText(
-      /Configure Jellyfin URL and API Key above to discover libraries/i,
+  it("should keep library settings hidden when the connection is not verified", () => {
+    // Saved credentials exist, but the connection test fails on load.
+    renderPage(undefined, undefined, (_, options) =>
+      options.onSuccess?.({
+        success: false,
+        error: "Bad credentials",
+      }),
     );
 
-    expect(alerts).toHaveLength(2);
+    expect(
+      screen.queryByRole("heading", { name: "Movie Library" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Series Library" }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText("Bad credentials")).toBeInTheDocument();
   });
 
-  it("should warn when testing connection without URL or API key", async () => {
+  it("should prompt for URL and API key and disable testing when unconfigured", async () => {
     renderPage({
       jellyfin: { ...baseSettings.jellyfin, url: "", apikey: "" },
     });
 
-    const testButton = screen.getByRole("button", { name: "Test" });
+    expect(
+      screen.getByText(
+        "Enter your Jellyfin server URL and API key to test the connection.",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Movie Library" }),
+    ).not.toBeInTheDocument();
+
+    const testButton = screen.getByRole("button", { name: "Test Connection" });
+    expect(testButton).toBeDisabled();
 
     await userEvent.click(testButton);
-
-    expect(
-      screen.getByRole("button", { name: "URL and API Key required" }),
-    ).toBeInTheDocument();
     expect(mockMutate).not.toHaveBeenCalled();
   });
 
-  it("should update the test button on a successful connection", async () => {
-    mockMutate.mockImplementation((_, options) => {
-      options.onSuccess({
-        success: true,
-        serverName: "Jellyfin",
-        version: "10.8",
-      });
-    });
-
+  it("should show connection status after a successful test", async () => {
     renderPage();
 
-    await userEvent.click(screen.getByRole("button", { name: "Test" }));
+    await userEvent.click(
+      screen.getByRole("button", { name: "Test Connection" }),
+    );
 
-    expect(
-      screen.getByRole("button", { name: "Jellyfin (v10.8)" }),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Connected")).toBeInTheDocument();
+    expect(screen.getByText("Jellyfin (v10.8)")).toBeInTheDocument();
   });
 
-  it("should update the test button on a failed connection", async () => {
-    mockMutate.mockImplementation((_, options) => {
-      options.onSuccess({
+  it("should show a failure status after a failed test", async () => {
+    renderPage(undefined, undefined, (_, options) =>
+      options.onSuccess?.({
         success: false,
         error: "Connection failed",
-      });
-    });
+      }),
+    );
 
-    renderPage();
+    await userEvent.click(
+      screen.getByRole("button", { name: "Test Connection" }),
+    );
 
-    await userEvent.click(screen.getByRole("button", { name: "Test" }));
-
+    expect(screen.getByText("Connection failed")).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Connection failed" }),
-    ).toBeInTheDocument();
+      screen.queryByRole("heading", { name: "Movie Library" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("should show a failure status when the connection test throws", async () => {
+    renderPage(undefined, undefined, (_, options) =>
+      options.onError?.(new Error("Network error")),
+    );
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Test Connection" }),
+    );
+
+    expect(screen.getByText("Connection failed")).toBeInTheDocument();
   });
 
   it("should change the refresh method", async () => {
@@ -209,7 +254,7 @@ describe("SettingsJellyfinView", () => {
     expect(refreshMethodSelect).toHaveValue("Async");
   });
 
-  it("should show a loading alert while fetching libraries", () => {
+  it("should show a loading message while fetching libraries", () => {
     renderPage(undefined, {
       data: undefined,
       isLoading: true,
@@ -221,7 +266,7 @@ describe("SettingsJellyfinView", () => {
     ).toBeGreaterThanOrEqual(1);
   });
 
-  it("should show an error alert when library discovery fails", () => {
+  it("should show an error message when library discovery fails", () => {
     renderPage(undefined, {
       data: undefined,
       isLoading: false,
@@ -233,7 +278,7 @@ describe("SettingsJellyfinView", () => {
     ).toBeGreaterThanOrEqual(1);
   });
 
-  it("should show a no libraries alert when none are found", () => {
+  it("should show a no libraries message when none are found", () => {
     renderPage(undefined, {
       data: [],
       isLoading: false,
@@ -281,20 +326,6 @@ describe("SettingsJellyfinView", () => {
     fireEvent.click(option);
 
     expect(screen.getAllByText("Movies").length).toBeGreaterThanOrEqual(1);
-  });
-
-  it("should show an error when the connection test fails", async () => {
-    mockMutate.mockImplementation((_, options) => {
-      options.onError(new Error("Network error"));
-    });
-
-    renderPage();
-
-    await userEvent.click(screen.getByRole("button", { name: "Test" }));
-
-    expect(
-      screen.getByRole("button", { name: "Connection failed" }),
-    ).toBeInTheDocument();
   });
 
   it("should normalize a single string movie library value", () => {

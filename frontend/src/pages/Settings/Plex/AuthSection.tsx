@@ -1,5 +1,13 @@
 import { useEffect, useRef, useState } from "react";
-import { Alert, Button, Group, Loader, Stack, Text } from "@mantine/core";
+import {
+  Alert,
+  Avatar,
+  Button,
+  Group,
+  Loader,
+  Stack,
+  Text,
+} from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -164,23 +172,32 @@ const AuthSection = () => {
   }
 
   // Authenticated state
+  const username = authData?.username;
+  const email = authData?.email;
+
   return (
-    <Stack gap="xs">
-      <Alert color="success" variant="light">
-        Connected as {authData?.username} ({authData?.email})
-      </Alert>
-      <Group>
-        <Button
-          onClick={handleLogout}
-          variant="light"
-          color="secondary"
-          loading={isLoggingOut}
-          disabled={isLoggingOut}
-        >
-          Disconnect from Plex
-        </Button>
+    <Group gap="xs" justify="space-between" align="center" wrap="wrap">
+      <Group gap="xs" wrap="nowrap">
+        <Avatar size="sm" radius="xl" color="brand">
+          {(username ?? email ?? "P")[0].toUpperCase()}
+        </Avatar>
+        <Text size="sm">
+          {username}{" "}
+          <Text component="span" c="dimmed">
+            ({email})
+          </Text>
+        </Text>
       </Group>
-    </Stack>
+      <Button
+        onClick={handleLogout}
+        variant="light"
+        color="secondary"
+        loading={isLoggingOut}
+        disabled={isLoggingOut}
+      >
+        Disconnect from Plex
+      </Button>
+    </Group>
   );
 };
 
