@@ -349,10 +349,12 @@ describe("SettingsLanguagesView", () => {
       screen.getByText("Accept another language label"),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/Mappings do not translate subtitle content/i),
+      screen.getByText(
+        /Use a mapping when a provider or embedded track reports an acceptable subtitle differently/i,
+      ),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Create guided mapping" }),
+      screen.getByRole("button", { name: "Create Mapping" }),
     ).toBeEnabled();
 
     await userEvent.click(
@@ -390,7 +392,7 @@ describe("SettingsLanguagesView", () => {
     renderPage({ languages: baseLanguages }, mutate);
 
     await userEvent.click(
-      screen.getByRole("button", { name: "Create guided mapping" }),
+      screen.getByRole("button", { name: "Create Mapping" }),
     );
 
     const modal = await screen.findByRole("dialog");
@@ -445,7 +447,7 @@ describe("SettingsLanguagesView", () => {
     });
 
     await userEvent.click(
-      screen.getByRole("button", { name: "Create guided mapping" }),
+      screen.getByRole("button", { name: "Create Mapping" }),
     );
     const modalScope = within(await screen.findByRole("dialog"));
 
@@ -476,7 +478,7 @@ describe("SettingsLanguagesView", () => {
     renderPage({ languages: baseLanguages });
 
     await userEvent.click(
-      screen.getByRole("button", { name: "Create guided mapping" }),
+      screen.getByRole("button", { name: "Create Mapping" }),
     );
     const modalScope = within(await screen.findByRole("dialog"));
 
@@ -589,7 +591,7 @@ describe("SettingsLanguagesView", () => {
       }),
     ).toBeInTheDocument();
     expect(
-      screen.getByText("Preserves Standard, HI, and Forced types"),
+      screen.getByText("Preserves Standard, HI, and Forced subtitle types."),
     ).toBeInTheDocument();
     expect(
       screen.queryByRole("button", {
@@ -646,7 +648,7 @@ describe("SettingsLanguagesView", () => {
     renderPage({ languages: baseLanguages }, mutate);
 
     await userEvent.click(
-      screen.getByRole("button", { name: "Create guided mapping" }),
+      screen.getByRole("button", { name: "Create Mapping" }),
     );
     const modalScope = within(await screen.findByRole("dialog"));
 

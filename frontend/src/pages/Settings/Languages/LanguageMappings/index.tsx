@@ -7,10 +7,12 @@ import {
   Card,
   Code,
   Group,
+  Kbd,
   List,
   SimpleGrid,
   Skeleton,
   Stack,
+  Stepper,
   Text,
   Title,
 } from "@mantine/core";
@@ -192,105 +194,51 @@ const LanguageMappings: FunctionComponent = () => {
 
   return (
     <Stack gap="md">
-      <Alert color="blue" variant="light" title="Mappings are directional">
-        A subtitle reported as the source is accepted and treated as the
-        canonical target. Mappings do not translate subtitle content and apply
-        across providers, existing subtitles, and profile calculations.
-      </Alert>
-
-      <Accordion variant="contained">
-        <Accordion.Item value="mapping-help">
-          <Accordion.Control>How language mappings work</Accordion.Control>
-          <Accordion.Panel>
-            <Stack gap="sm">
-              <div>
-                <Text size="sm" fw={600}>
-                  Are mappings bidirectional?
-                </Text>
-                <Text size="sm" c="dimmed">
-                  No. Source → target does not also make the target behave as
-                  the source.
-                </Text>
-              </div>
-              <div>
-                <Text size="sm" fw={600}>
-                  Does this translate subtitles?
-                </Text>
-                <Text size="sm" c="dimmed">
-                  No. It only changes how Bazarr searches for and classifies the
-                  language.
-                </Text>
-              </div>
-              <div>
-                <Text size="sm" fw={600}>
-                  Does it affect subtitles I already have?
-                </Text>
-                <Text size="sm" c="dimmed">
-                  Yes. Source subtitles may satisfy target profile requirements
-                  and cutoffs, including embedded tracks.
-                </Text>
-              </div>
-              <div>
-                <Text size="sm" fw={600}>
-                  Can I limit a mapping to one provider?
-                </Text>
-                <Text size="sm" c="dimmed">
-                  No. Mappings apply globally. Do not create one if both
-                  languages need to remain distinct.
-                </Text>
-              </div>
-            </Stack>
-          </Accordion.Panel>
-        </Accordion.Item>
-      </Accordion>
-
       {availablePresets.length > 0 ? (
-        <Card withBorder padding="md">
-          <Stack gap="sm">
-            <div>
-              <Text fw={600}>Common language aliases</Text>
-              <Text size="sm" c="dimmed">
-                Start from a reviewed preset, then confirm its impact before
-                adding it.
-              </Text>
-            </div>
-            <Group gap="xs">
-              {availablePresets.map((preset) => (
-                <Button
-                  key={`${preset.source}-${preset.target}`}
-                  variant="light"
-                  disabled={
-                    !preset.enabled || preset.applied || preset.needsReview
-                  }
-                  onClick={() =>
-                    openEditor({
-                      purpose: "language-alias",
-                      initialRule: {
-                        source: {
-                          code: preset.sourceLanguage.code3,
-                          variant: "standard",
-                        },
-                        target: {
-                          code: preset.targetLanguage.code3,
-                          variant: "standard",
-                        },
+        <Stack gap="xs">
+          <div>
+            <Text fw={600}>Common language aliases</Text>
+            <Text size="sm" c="dimmed">
+              Start from a reviewed preset, then confirm its impact before
+              adding it.
+            </Text>
+          </div>
+          <Group gap="xs">
+            {availablePresets.map((preset) => (
+              <Button
+                key={`${preset.source}-${preset.target}`}
+                variant="light"
+                disabled={
+                  !preset.enabled || preset.applied || preset.needsReview
+                }
+                onClick={() =>
+                  openEditor({
+                    purpose: "language-alias",
+                    initialRule: {
+                      source: {
+                        code: preset.sourceLanguage.code3,
+                        variant: "standard",
                       },
-                    })
-                  }
-                >
-                  {preset.label}
-                  {preset.applied
-                    ? " · Applied"
-                    : preset.needsReview
-                      ? " · Needs review"
-                      : !preset.enabled
-                        ? " · Enable target first"
-                        : ""}
-                </Button>
-              ))}
-            </Group>
-          </Stack>
-        </Card>
+                      target: {
+                        code: preset.targetLanguage.code3,
+                        variant: "standard",
+                      },
+                    },
+                  })
+                }
+              >
+                {preset.label}
+                {preset.applied
+                  ? " · Applied"
+                  : preset.needsReview
+                    ? " · Needs review"
+                    : !preset.enabled
+                      ? " · Enable target first"
+                      : ""}
+              </Button>
+            ))}
+          </Group>
+        </Stack>
       ) : null}
 
       {rawRules.length === 0 ? (
@@ -304,46 +252,23 @@ const LanguageMappings: FunctionComponent = () => {
               </Text>
             </div>
 
-            <Card
-              withBorder
-              padding="md"
-              bg="var(--mantine-color-default-hover)"
-            >
-              <Group justify="center" gap="md" wrap="wrap">
-                <Stack gap={0} align="center">
-                  <Text size="xs" c="dimmed">
-                    Provider offers
-                  </Text>
-                  <Text fw={600}>Spanish (Latino)</Text>
-                </Stack>
-                <FontAwesomeIcon icon={faArrowRight} aria-hidden />
-                <Stack gap={0} align="center">
-                  <Text size="xs" c="dimmed">
-                    Profile accepts as
-                  </Text>
-                  <Text fw={600}>Spanish</Text>
-                </Stack>
-              </Group>
-            </Card>
+            <Text size="sm" c="dimmed">
+              Provider offers <Kbd>Spanish (Latino)</Kbd> → Profile accepts as{" "}
+              <Kbd>Spanish</Kbd>
+            </Text>
 
-            <List size="sm" spacing="xs">
-              <List.Item>
-                Choose the enabled language your profile requests.
-              </List.Item>
-              <List.Item>Choose what a provider or track may report.</List.Item>
-              <List.Item>
-                Review the effect before adding the mapping.
-              </List.Item>
-            </List>
+            <Stepper active={-1} allowNextStepsSelect={false} size="sm">
+              <Stepper.Step label="Choose the target language" />
+              <Stepper.Step label="Choose the provider language" />
+              <Stepper.Step label="Review and confirm" />
+            </Stepper>
 
             <Button
               leftSection={<FontAwesomeIcon icon={faPlus} />}
               disabled={!canAdd}
               onClick={() => openEditor()}
             >
-              {canAdd
-                ? "Create guided mapping"
-                : "Enable a subtitle language first"}
+              {canAdd ? "Create Mapping" : "Enable a subtitle language first"}
             </Button>
             {!canAdd && !isLoading ? (
               <Text size="xs" c="dimmed" ta="center">
@@ -403,9 +328,9 @@ const LanguageMappings: FunctionComponent = () => {
                           />
                         </Group>
                       </Group>
-                      <Badge variant="light" color="brand">
-                        Preserves Standard, HI, and Forced types
-                      </Badge>
+                      <Text size="xs" c="dimmed">
+                        Preserves Standard, HI, and Forced subtitle types.
+                      </Text>
                       <Text size="sm">
                         When <strong>{entry.targetLanguage.name}</strong> is
                         requested, Bazarr can accept{" "}
@@ -511,11 +436,11 @@ const LanguageMappings: FunctionComponent = () => {
                             Provider or track
                           </Text>
                           <Text fw={600}>{entry.sourceLanguage.name}</Text>
-                          <Badge size="sm" variant="light" color="secondary">
+                          <Text size="xs" c="dimmed">
                             {languageMappingVariantLabel(
                               entry.rule.source.variant,
                             )}
-                          </Badge>
+                          </Text>
                         </Stack>
                         <FontAwesomeIcon icon={faArrowRight} aria-hidden />
                         <Stack gap={2}>
@@ -523,11 +448,11 @@ const LanguageMappings: FunctionComponent = () => {
                             Canonical target
                           </Text>
                           <Text fw={600}>{entry.targetLanguage.name}</Text>
-                          <Badge size="sm" variant="light" color="brand">
+                          <Text size="xs" c="dimmed">
                             {languageMappingVariantLabel(
                               entry.rule.target.variant,
                             )}
-                          </Badge>
+                          </Text>
                         </Stack>
                       </Group>
                       <Group gap="xs" wrap="nowrap">
@@ -595,6 +520,46 @@ const LanguageMappings: FunctionComponent = () => {
           </Button>
         </>
       )}
+
+      <Accordion variant="unstyled">
+        <Accordion.Item value="mapping-help">
+          <Accordion.Control fw={600} px={0}>
+            How language mappings work
+          </Accordion.Control>
+          <Accordion.Panel pl={0}>
+            <List size="sm" spacing="md">
+              <List.Item>
+                <Text fw={600}>Are mappings bidirectional?</Text>
+                <Text c="dimmed">
+                  No. Source → target does not also make the target behave as
+                  the source.
+                </Text>
+              </List.Item>
+              <List.Item>
+                <Text fw={600}>Does this translate subtitles?</Text>
+                <Text c="dimmed">
+                  No. It only changes how Bazarr searches for and classifies the
+                  language.
+                </Text>
+              </List.Item>
+              <List.Item>
+                <Text fw={600}>Does it affect subtitles I already have?</Text>
+                <Text c="dimmed">
+                  Yes. Source subtitles may satisfy target profile requirements
+                  and cutoffs, including embedded tracks.
+                </Text>
+              </List.Item>
+              <List.Item>
+                <Text fw={600}>Can I limit a mapping to one provider?</Text>
+                <Text c="dimmed">
+                  No. Mappings apply globally. Do not create one if both
+                  languages need to remain distinct.
+                </Text>
+              </List.Item>
+            </List>
+          </Accordion.Panel>
+        </Accordion.Item>
+      </Accordion>
     </Stack>
   );
 };

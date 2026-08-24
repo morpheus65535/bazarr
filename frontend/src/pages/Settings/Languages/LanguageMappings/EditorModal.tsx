@@ -184,18 +184,13 @@ const Editor: FunctionComponent<Props> = ({
       })}
     >
       <Stack gap="md">
-        <Alert
-          color="blue"
-          variant="light"
-          title="Choose what you want to accomplish"
-        >
-          Common language aliases preserve Standard, HI, and Forced subtitle
-          types automatically. Use Advanced only for an exact conversion.
-        </Alert>
-
         <div>
           <Text fw={600} mb={4}>
             What do you want to accomplish?
+          </Text>
+          <Text size="sm" c="dimmed" mb="md">
+            Language aliases preserve Standard, HI, and Forced subtitle types
+            automatically. Use Advanced only for an exact conversion.
           </Text>
           <Radio.Group
             name="mapping-purpose"
