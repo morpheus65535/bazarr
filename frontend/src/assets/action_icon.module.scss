@@ -15,9 +15,12 @@
       --ai-hover: var(--mantine-color-gray-8);
 
       // `secondary` resolves to the near-black dark palette in dark mode, so
-      // subtle/filled action icons (e.g. the Jobs Manager ellipsis) hover to
-      // black. Mantine wires `--ai-hover` to these vars inline, so pinning
-      // them here to mid-dark greys makes the hover visible again.
+      // subtle/filled action icons (e.g. the Jobs Manager ellipsis or the
+      // Language Mappings edit icons) render their icon colour and hover as
+      // black. Mantine wires `--ai-color`/`--ai-hover` to these vars inline,
+      // so pinning them here to light/mid-dark greys keeps them visible.
+      --mantine-color-secondary-text: var(--mantine-color-dark-0);
+      --mantine-color-secondary-light-color: var(--mantine-color-dark-0);
       --mantine-color-secondary-light: var(--mantine-color-dark-6);
       --mantine-color-secondary-light-hover: var(--mantine-color-dark-4);
       --mantine-color-secondary-filled: var(--mantine-color-dark-6);

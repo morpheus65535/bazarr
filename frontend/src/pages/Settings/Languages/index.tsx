@@ -17,7 +17,7 @@ import {
 } from "@/pages/Settings/keys";
 import { useEnabledLanguages } from "@/utilities/languages";
 import { LanguageSelector, ProfileSelector } from "./components";
-import EqualsTable from "./equals";
+import LanguageMappings from "./LanguageMappings";
 import Table from "./table";
 
 const SettingsLanguagesView: FunctionComponent = () => {
@@ -48,11 +48,12 @@ const SettingsLanguagesView: FunctionComponent = () => {
         ></LanguageSelector>
       </Section>
 
-      <Section header="Language Equals">
+      <Section header="Language Mappings">
         <Message>
-          Treat the following languages as equal across all providers.
+          Accept subtitles reported as one language as another canonical
+          language. Mappings are one-way and apply globally.
         </Message>
-        <EqualsTable></EqualsTable>
+        <LanguageMappings></LanguageMappings>
       </Section>
 
       <Section header="Embedded Tracks Language">
