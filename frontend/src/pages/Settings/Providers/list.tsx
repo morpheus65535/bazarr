@@ -616,8 +616,6 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     key: "subtitlecat",
     name: "Subtitle Cat",
     description: "Multi-language Subtitles Provider",
-    message:
-      "Every release is uploaded in a single language and machine translated into all the others. Only the original language is returned unless machine translations are enabled below.",
     inputs: [
       {
         type: "switch",
