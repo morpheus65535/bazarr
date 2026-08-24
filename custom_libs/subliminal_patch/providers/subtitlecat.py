@@ -12,6 +12,8 @@ from subliminal.subtitle import fix_line_ending
 from subliminal_patch.providers import Provider
 from subliminal_patch.subtitle import Subtitle, guess_matches
 from subzero.language import Language
+from random import randint
+from .utils import FIRST_THOUSAND_OR_SO_USER_AGENTS as AGENT_LIST
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +22,14 @@ server_url = 'https://www.subtitlecat.com/'
 # Detail pages are fetched sequentially, one HTTP request per candidate
 # release, so keep this small to bound worst-case search time.
 MAX_DETAIL_PAGES = 5
+
+# Alternative titles are only searched when the primary title returns nothing
+# usable, and one search is one HTTP request, so keep the total bounded.
+MAX_SEARCH_TITLES = 3
+
+# The search results page annotates every release with the language its
+# subtitles were sourced from, e.g. "Some.Release.x264 (translated from English)".
+SOURCE_LANGUAGE_RE = re.compile(r'\(translated from ([^)]+)\)', re.IGNORECASE)
 
 
 def _normalize_title(title):
@@ -34,7 +44,7 @@ def _title_overlap_ratio(candidate_title, target_title):
     return len(candidate_words & target_words) / len(target_words)
 
 
-def _is_candidate_match(release_name, video):
+def _is_candidate_match(release_name, video, target_title=None):
     video_type = 'episode' if isinstance(video, Episode) else 'movie'
     guess = guessit(release_name, {'type': video_type})
 
@@ -45,12 +55,12 @@ def _is_candidate_match(release_name, video):
             return False
         if video.episode and episode is not None and episode != video.episode:
             return False
-        target_title = video.series
+        target_title = target_title or video.series
     else:
         year = guess.get('year')
         if video.year and year is not None and year != video.year:
             return False
-        target_title = video.title
+        target_title = target_title or video.title
 
     title = guess.get('title')
     if title and target_title and _title_overlap_ratio(title, target_title) <= 0.5:
@@ -68,6 +78,23 @@ def _language_from_code(code):
     except Exception:
         logger.debug('Could not parse language code: %s', code)
         return None
+
+
+def _language_from_name(name):
+    try:
+        return Language.fromname(name.strip())
+    except Exception:
+        logger.debug(f'Could not parse language name: {name}')
+        return None
+
+
+def _parse_source_language(text):
+    """Return the language a release was translated from, or None when unknown."""
+    match = SOURCE_LANGUAGE_RE.search(text)
+    if not match:
+        return None
+
+    return _language_from_name(match.group(1))
 
 
 def _build_languages():
@@ -94,12 +121,14 @@ def _build_languages():
 class SubtitleCatSubtitle(Subtitle):
     provider_name = 'subtitlecat'
 
-    def __init__(self, language, subtitle_id, page_link, download_link, release_name, matches):
+    def __init__(self, language, subtitle_id, page_link, download_link, release_name, matches,
+                 machine_translated=False):
         super(SubtitleCatSubtitle, self).__init__(language, page_link=page_link)
         self.subtitle_id = subtitle_id
         self.download_link = download_link
-        self.release_info = release_name
         self.release_name = release_name
+        self.machine_translated = machine_translated
+        self.release_info = f'{release_name} [machine translated]' if machine_translated else release_name
         self.matches = matches or set()
 
     @property
@@ -117,10 +146,13 @@ class SubtitleCatProvider(Provider):
     languages = _build_languages()
     video_types = (Episode, Movie)
 
+    def __init__(self, include_machine_translated=False):
+        self.include_machine_translated = include_machine_translated
+
     def initialize(self):
         self.session = Session()
         self.session.headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+            'User-Agent': AGENT_LIST[randint(0, len(AGENT_LIST) - 1)],
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
             'Accept-Language': 'en-US,en;q=0.5',
         }
@@ -128,17 +160,37 @@ class SubtitleCatProvider(Provider):
     def terminate(self):
         self.session.close()
 
-    def query(self, languages, video):
+    @staticmethod
+    def _titles(video):
+        """Return the titles to search for, primary one first."""
         if isinstance(video, Episode):
-            query = video.series
-            if video.season and video.episode:
-                query += f' S{video.season:02d}E{video.episode:02d}'
+            titles = [video.series] + (video.alternative_series or [])
         else:
-            query = video.title
-            if video.year:
-                query += f' {video.year}'
+            titles = [video.title] + (video.alternative_titles or [])
 
-        logger.info('Searching subtitles for %r', query)
+        # de-duplicate while preserving order, the alternative titles often repeat the primary one
+        seen = set()
+        unique_titles = []
+        for title in titles:
+            if not title or title.lower() in seen:
+                continue
+            seen.add(title.lower())
+            unique_titles.append(title)
+
+        return unique_titles[:MAX_SEARCH_TITLES]
+
+    @staticmethod
+    def _search_query(video, title):
+        if isinstance(video, Episode):
+            if video.season and video.episode:
+                return f'{title} S{video.season:02d}E{video.episode:02d}'
+        elif video.year:
+            return f'{title} {video.year}'
+
+        return title
+
+    def _search(self, query):
+        logger.info(f'Searching subtitles for {query!r}')
 
         params = {'search': query}
         res = self.session.get(server_url + 'index.php', params=params, timeout=15)
@@ -154,23 +206,50 @@ class SubtitleCatProvider(Provider):
             href = link['href']
             if not href.startswith('subs/'):
                 continue
-            results.append((release_name, href))
+            # the "translated from" marker sits in the cell next to the link, not inside it
+            cell = link.find_parent('td')
+            source_language = _parse_source_language(cell.get_text(' ', strip=True) if cell else '')
+            results.append((release_name, href, source_language))
 
-        candidates = [r for r in results if _is_candidate_match(r[0], video)]
+        return results
+
+    def query(self, languages, video):
+        candidates = []
+        fallback = []
+        for title in self._titles(video):
+            results = self._search(self._search_query(video, title))
+            if not fallback:
+                fallback = results
+
+            # match against the title we actually searched for, an alternative title won't
+            # look anything like the primary one
+            candidates = [r for r in results if _is_candidate_match(r[0], video, title)]
+            if candidates:
+                break
+
+            logger.debug(f'No matching result for {title!r}, trying the next title')
+
+        # nothing matched for any title, fall back to whatever the primary search returned
         if not candidates:
-            candidates = results
+            candidates = fallback
+
+        # every language a release offers besides the one it was translated from is machine
+        # translated, so a release we'd discard entirely isn't worth a detail page request
+        if not self.include_machine_translated:
+            candidates = [c for c in candidates if c[2] is None or c[2] in languages]
+
         candidates = candidates[:MAX_DETAIL_PAGES]
 
         subtitles = []
-        for release_name, href in candidates:
+        for release_name, href, source_language in candidates:
             try:
-                subtitles.extend(self._fetch_detail_subtitles(release_name, href, languages))
+                subtitles.extend(self._fetch_detail_subtitles(release_name, href, languages, source_language))
             except Exception as e:
                 logger.debug('Error fetching detail page %r: %s', server_url + href, e)
 
         return subtitles
 
-    def _fetch_detail_subtitles(self, release_name, href, languages):
+    def _fetch_detail_subtitles(self, release_name, href, languages, source_language):
         detail_url = server_url + href
         detail_res = self.session.get(detail_url, timeout=15)
         detail_res.raise_for_status()
@@ -185,6 +264,14 @@ class SubtitleCatProvider(Provider):
             lang_code = download_a.get('id', '').replace('download_', '')
             language = _language_from_code(lang_code)
             if language is None or language not in languages:
+                continue
+
+            # a release is uploaded in a single language and SubtitleCat machine translates it into
+            # all the others, caching the result behind a download link indistinguishable from the
+            # original one, so the source language from the search page is the only way to tell them apart
+            machine_translated = source_language is not None and language != source_language
+            if machine_translated and not self.include_machine_translated:
+                logger.debug(f'Excluding machine translated {language} subtitle from {detail_url}')
                 continue
 
             download_link = download_a.get('href')
@@ -202,6 +289,7 @@ class SubtitleCatProvider(Provider):
                 download_link=download_link,
                 release_name=release_name,
                 matches=set(),
+                machine_translated=machine_translated,
             ))
 
         return subtitles

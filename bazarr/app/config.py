@@ -478,6 +478,9 @@ validators = [
     
     # subsro section
     Validator('subsro.api_key', must_exist=True, default='', is_type_of=str, cast=str),
+
+    # subtitlecat section
+    Validator('subtitlecat.include_machine_translated', must_exist=True, default=False, is_type_of=bool),
 ]
 
 

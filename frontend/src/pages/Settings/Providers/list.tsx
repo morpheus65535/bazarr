@@ -617,7 +617,14 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     name: "Subtitle Cat",
     description: "Multi-language Subtitles Provider",
     message:
-      "No configuration required. Subtitles are translated from original language.",
+      "Every release is uploaded in a single language and machine translated into all the others. Only the original language is returned unless machine translations are enabled below.",
+    inputs: [
+      {
+        type: "switch",
+        key: "include_machine_translated",
+        name: "Include subtitles machine translated by SubtitleCat in search results",
+      },
+    ],
   },
   { key: "supersubtitles" },
   {
