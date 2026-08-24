@@ -18,6 +18,8 @@ import {
 } from "@mantine/core";
 import {
   faArrowRight,
+  faChevronDown,
+  faInfoCircle,
   faPen,
   faPlus,
   faTrash,
@@ -46,6 +48,7 @@ import {
   removeRuleSet,
   validateLanguageMapping,
 } from "./model";
+import styles from "./index.module.scss";
 
 const unresolvedReason = (
   entry: Extract<LanguageMappingEntry, { kind: "unresolved" }>,
@@ -521,12 +524,20 @@ const LanguageMappings: FunctionComponent = () => {
         </>
       )}
 
-      <Accordion variant="unstyled">
-        <Accordion.Item value="mapping-help">
-          <Accordion.Control fw={600} px={0}>
+      <Accordion
+        variant="unstyled"
+        chevronSize={16}
+        chevron={<FontAwesomeIcon icon={faChevronDown} />}
+      >
+        <Accordion.Item value="mapping-help" className={styles.helpItem}>
+          <Accordion.Control
+            fw={600}
+            icon={<FontAwesomeIcon icon={faInfoCircle} />}
+            className={styles.helpControl}
+          >
             How language mappings work
           </Accordion.Control>
-          <Accordion.Panel pl={0}>
+          <Accordion.Panel pl={0} className={styles.helpPanel}>
             <List size="sm" spacing="md">
               <List.Item>
                 <Text fw={600}>Are mappings bidirectional?</Text>
