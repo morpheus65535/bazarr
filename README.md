@@ -97,6 +97,7 @@ At the request of some users, here is a way to show appreciation for the efforts
 - Subsunacs.net
 - SubSynchro
 - Subtis
+- SubtitleCat
 - Subtitrari-noi.ro
 - subtitri.id.lv
 - Subtitulamos.tv

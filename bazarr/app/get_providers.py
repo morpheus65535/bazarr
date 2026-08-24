@@ -366,7 +366,10 @@ def get_providers_auth():
             },
         'subsro': {
             'api_key': settings.subsro.api_key,
-        }
+        },
+        'subtitlecat': {
+            'include_machine_translated': settings.subtitlecat.include_machine_translated,
+        },
     }
 
 

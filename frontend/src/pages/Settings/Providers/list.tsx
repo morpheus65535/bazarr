@@ -612,6 +612,18 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
       },
     ],
   },
+  {
+    key: "subtitlecat",
+    name: "Subtitle Cat",
+    description: "Multi-language Subtitles Provider",
+    inputs: [
+      {
+        type: "switch",
+        key: "include_machine_translated",
+        name: "Include subtitles machine translated by SubtitleCat in search results",
+      },
+    ],
+  },
   { key: "supersubtitles" },
   {
     key: "titlovi",
