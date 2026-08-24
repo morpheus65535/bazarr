@@ -5,11 +5,10 @@ import {
   Badge,
   Button,
   Group,
-  Paper,
+  Loader,
   Select,
   Stack,
   Text,
-  Title,
 } from "@mantine/core";
 import { faRefresh } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -19,9 +18,9 @@ import {
   usePlexServerSelectionMutation,
   usePlexServersQuery,
 } from "@/apis/hooks/plex";
+import { Message } from "@/pages/Settings/components";
 import { useFormActions } from "@/pages/Settings/utilities/FormValues";
 import ConnectionsCard from "./ConnectionsCard";
-import styles from "@/pages/Settings/Plex/ServerSection.module.scss";
 
 const ServerSection = () => {
   // Internal state management
@@ -38,6 +37,7 @@ const ServerSection = () => {
     data: servers = [],
     error: serversError,
     refetch: refetchServers,
+    isFetching: serversFetching,
   } = usePlexServersQuery();
   const { mutateAsync: selectServerMutation } =
     usePlexServerSelectionMutation();
@@ -152,140 +152,131 @@ const ServerSection = () => {
     selectServerMutation,
     setValue,
   ]);
+
   if (!isAuthenticated) {
     return null;
   }
 
+  const refreshButton = (
+    <ActionIcon
+      onClick={() => refetchServers()}
+      title="Refresh server list"
+      aria-label="Refresh server list"
+    >
+      <FontAwesomeIcon icon={faRefresh} size="sm" />
+    </ActionIcon>
+  );
+
   return (
-    <Paper withBorder radius="md" p="lg" className={styles.serverSection}>
-      <Stack gap="lg">
-        <Title order={4}>Plex Servers</Title>
+    <Stack gap="xs">
+      {serversError && (
+        <Alert color="danger" variant="light">
+          Failed to load servers: {serversError.message}
+        </Alert>
+      )}
 
-        {serversError && (
-          <Alert color="danger" variant="light">
-            Failed to load servers: {serversError.message}
-          </Alert>
-        )}
-
-        {isAuthenticated && servers.length === 0 && !serversError ? (
-          <Badge size="md">Testing server connections...</Badge>
-        ) : servers.length === 0 ? (
-          <Stack gap="sm">
-            <Text>No servers found.</Text>
-            <Button
-              onClick={() => refetchServers()}
-              variant="light"
-              color="secondary"
-            >
-              Refresh
-            </Button>
-          </Stack>
-        ) : servers.length === 1 ? (
-          // Single server - show simplified interface
-          <Stack gap="md">
-            <Group justify="space-between" align="center">
-              <Stack gap="xs" className={styles.flexContainer}>
-                <Group gap="xs">
-                  <Text>
-                    {servers[0].name} ({servers[0].platform} - v
-                    {servers[0].version})
-                  </Text>
-                  {isSaved ? (
-                    <Badge color="success" size="sm">
-                      Connected
-                    </Badge>
-                  ) : !servers[0].bestConnection ? (
-                    <Badge color="danger" size="sm">
-                      Unavailable
-                    </Badge>
-                  ) : null}
-                </Group>
-              </Stack>
-              <ActionIcon
-                variant="light"
-                color="secondary"
-                size="lg"
-                onClick={() => refetchServers()}
-                title="Refresh server list"
-              >
-                <FontAwesomeIcon icon={faRefresh} size="sm" />
-              </ActionIcon>
-            </Group>
-            {selectedServer && (
-              <ConnectionsCard
-                servers={servers}
-                selectedServerId={selectedServer.machineIdentifier}
-              />
-            )}
-          </Stack>
-        ) : (
-          // Multiple servers - show selection interface
-          <Stack gap="md">
-            <Group className={styles.serverSelectGroup}>
-              <Select
-                label="Select server"
-                placeholder="Choose a server..."
-                data={servers.map((server: Plex.Server) => ({
-                  value: server.machineIdentifier,
-                  label: `${server.name} (${server.platform} - v${server.version})${!server.bestConnection ? " (Unavailable)" : ""}`,
-                  disabled: !server.bestConnection,
-                }))}
-                value={selectedServer?.machineIdentifier || null}
-                onChange={(value: string | null) => {
-                  const server = value
-                    ? servers.find(
-                        (s: Plex.Server) => s.machineIdentifier === value,
-                      ) || null
-                    : null;
-                  handleSelectedServerChange(server);
-                }}
-                className={styles.serverSelectField}
-                searchable
-              />
-              <Button
-                variant="filled"
-                color="brand"
-                disabled={!selectedServer || isSelecting}
-                loading={isSelecting}
-                onClick={handleServerSelect}
-              >
-                Select Server
-              </Button>
-              <ActionIcon
-                variant="light"
-                color="secondary"
-                size="lg"
-                onClick={() => refetchServers()}
-                className={styles.refreshButton}
-                title="Refresh server list"
-              >
-                <FontAwesomeIcon icon={faRefresh} size="sm" />
-              </ActionIcon>
-            </Group>
-
-            {isSaved && selectedServer && (
-              <Alert color="brand" variant="light">
-                Server saved: "{selectedServer.name}" (v
-                {servers.find(
-                  (s: Plex.Server) =>
-                    s.machineIdentifier === selectedServer.machineIdentifier,
-                )?.version ||
-                  selectedServer.version ||
-                  "Unknown"}
+      {servers.length === 0 && serversFetching ? (
+        <Group gap="xs">
+          <Loader size="xs" />
+          <Text size="sm" c="dimmed">
+            Testing server connections...
+          </Text>
+        </Group>
+      ) : servers.length === 0 ? (
+        <Group gap="xs" justify="space-between">
+          <Message>No servers found.</Message>
+          <Button
+            onClick={() => refetchServers()}
+            variant="light"
+            color="secondary"
+          >
+            Refresh
+          </Button>
+        </Group>
+      ) : servers.length === 1 ? (
+        // Single server - show simplified interface
+        <>
+          <Group justify="space-between" align="center">
+            <Group gap="xs">
+              <Text>
+                {servers[0].name} ({servers[0].platform} - v{servers[0].version}
                 )
-              </Alert>
-            )}
+              </Text>
+              {isSaved ? (
+                <Badge color="success" size="sm">
+                  Connected
+                </Badge>
+              ) : !servers[0].bestConnection ? (
+                <Badge color="danger" size="sm">
+                  Unavailable
+                </Badge>
+              ) : null}
+            </Group>
+            {refreshButton}
+          </Group>
+          {selectedServer && (
+            <ConnectionsCard
+              servers={servers}
+              selectedServerId={selectedServer.machineIdentifier}
+            />
+          )}
+        </>
+      ) : (
+        // Multiple servers - show selection interface
+        <>
+          <Group align="flex-end" wrap="nowrap">
+            <Select
+              label="Select server"
+              placeholder="Choose a server..."
+              data={servers.map((server: Plex.Server) => ({
+                value: server.machineIdentifier,
+                label: `${server.name} (${server.platform} - v${server.version})${!server.bestConnection ? " (Unavailable)" : ""}`,
+                disabled: !server.bestConnection,
+              }))}
+              value={selectedServer?.machineIdentifier || null}
+              onChange={(value: string | null) => {
+                const server = value
+                  ? servers.find(
+                      (s: Plex.Server) => s.machineIdentifier === value,
+                    ) || null
+                  : null;
+                handleSelectedServerChange(server);
+              }}
+              searchable
+              style={{ flex: 1 }}
+            />
+            <Button
+              disabled={!selectedServer || isSelecting}
+              loading={isSelecting}
+              onClick={handleServerSelect}
+            >
+              Select Server
+            </Button>
+            {refreshButton}
+          </Group>
 
-            {selectedServer && (
-              <ConnectionsCard
-                servers={servers}
-                selectedServerId={selectedServer.machineIdentifier}
-              />
-            )}
-          </Stack>
-        )}
-      </Stack>
-    </Paper>
+          {isSaved && selectedServer && (
+            <Alert color="success" variant="light">
+              Server saved: "{selectedServer.name}" (v
+              {servers.find(
+                (s: Plex.Server) =>
+                  s.machineIdentifier === selectedServer.machineIdentifier,
+              )?.version ||
+                selectedServer.version ||
+                "Unknown"}
+              )
+            </Alert>
+          )}
+
+          {selectedServer && (
+            <ConnectionsCard
+              servers={servers}
+              selectedServerId={selectedServer.machineIdentifier}
+            />
+          )}
+        </>
+      )}
+    </Stack>
   );
 };
 

@@ -92,6 +92,15 @@ const mockedNotificationsShow = notifications.show as Mock;
 const mockLogoutMutate = vitest.fn((_, options) => {
   options?.onSuccess?.();
 });
+
+const availableServer = {
+  machineIdentifier: "server-1",
+  name: "My Server",
+  platform: "Plex",
+  version: "1.0",
+  bestConnection: { uri: "http://localhost:32400", local: true },
+  connections: [{ uri: "http://localhost:32400", local: true }],
+};
 const mockCreateWebhook = vitest.fn();
 const mockDeleteWebhook = vitest.fn();
 const mockServerSelectionMutate = vitest.fn();
@@ -248,7 +257,17 @@ describe("SettingsPlexView", async () => {
   });
 
   it("should render Plex settings when Plex is enabled", async () => {
-    await renderPage();
+    await renderPage(undefined, {
+      auth: {
+        data: { valid: true, authMethod: "oauth" },
+        isLoading: false,
+        error: null,
+      },
+      servers: {
+        data: [availableServer],
+        error: null,
+      },
+    });
 
     expect(
       screen.getByRole("heading", { name: "Movie Library" }),
@@ -259,6 +278,21 @@ describe("SettingsPlexView", async () => {
     expect(
       screen.getByRole("heading", { name: "Automation" }),
     ).toBeInTheDocument();
+  });
+
+  it("should hide library and automation settings until connected to Plex", async () => {
+    // Enabled but not authenticated (default mocks)
+    await renderPage();
+
+    expect(
+      screen.queryByRole("heading", { name: "Movie Library" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Series Library" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Automation" }),
+    ).not.toBeInTheDocument();
   });
 
   it("should show Plex OAuth connect state when not authenticated", async () => {
@@ -283,9 +317,8 @@ describe("SettingsPlexView", async () => {
       },
     });
 
-    expect(
-      screen.getByText("Connected as testuser (test@example.com)"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("testuser")).toBeInTheDocument();
+    expect(screen.getByText("(test@example.com)")).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Disconnect from Plex" }),
     ).toBeInTheDocument();
@@ -305,18 +338,58 @@ describe("SettingsPlexView", async () => {
     ).toBeInTheDocument();
   });
 
-  it("should show server connection status when authenticated", async () => {
+  it("should show a testing indicator only while fetching servers", async () => {
     await renderPage(undefined, {
       auth: {
         data: { valid: true, authMethod: "oauth" },
         isLoading: false,
         error: null,
       },
+      servers: {
+        isFetching: true,
+      },
     });
 
     expect(
       screen.getByText("Testing server connections..."),
     ).toBeInTheDocument();
+  });
+
+  it("should offer a refresh action when no servers were found", async () => {
+    const refetchServers = vitest.fn();
+
+    await renderPage(undefined, {
+      auth: {
+        data: { valid: true, authMethod: "oauth" },
+        isLoading: false,
+        error: null,
+      },
+      servers: {
+        data: [],
+        error: null,
+        refetch: refetchServers,
+        isFetching: false,
+      },
+    });
+
+    expect(screen.getByText("No servers found.")).toBeInTheDocument();
+
+    // Server-dependent settings stay hidden until a server is available
+    expect(
+      screen.queryByRole("heading", { name: "Movie Library" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Series Library" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Generate Configuration" }),
+    ).not.toBeInTheDocument();
+
+    const refreshButton = screen.getByRole("button", { name: "Refresh" });
+
+    await userEvent.click(refreshButton);
+
+    expect(refetchServers).toHaveBeenCalledTimes(1);
   });
 
   it("should show a single server without manual selection", async () => {
@@ -551,6 +624,10 @@ describe("SettingsPlexView", async () => {
         isLoading: false,
         error: null,
       },
+      servers: {
+        data: [availableServer],
+        error: null,
+      },
       autopulse: {
         data: null,
         refetch: mockRefetchAutopulse,
@@ -763,6 +840,10 @@ describe("SettingsPlexView", async () => {
       auth: {
         data: { valid: true, authMethod: "oauth" },
         isLoading: false,
+        error: null,
+      },
+      servers: {
+        data: [availableServer],
         error: null,
       },
       autopulse: {
@@ -1201,6 +1282,10 @@ describe("SettingsPlexView", async () => {
         isLoading: false,
         error: null,
       },
+      servers: {
+        data: [availableServer],
+        error: null,
+      },
       autopulse: {
         data: {
           configYaml: "[test]\nkey=value",
@@ -1237,6 +1322,10 @@ describe("SettingsPlexView", async () => {
       auth: {
         data: { valid: true, authMethod: "oauth" },
         isLoading: false,
+        error: null,
+      },
+      servers: {
+        data: [availableServer],
         error: null,
       },
       autopulse: {
@@ -1280,6 +1369,10 @@ describe("SettingsPlexView", async () => {
       auth: {
         data: { valid: true, authMethod: "oauth" },
         isLoading: false,
+        error: null,
+      },
+      servers: {
+        data: [availableServer],
         error: null,
       },
       autopulse: {
@@ -1331,6 +1424,10 @@ describe("SettingsPlexView", async () => {
       auth: {
         data: { valid: true, authMethod: "oauth" },
         isLoading: false,
+        error: null,
+      },
+      servers: {
+        data: [availableServer],
         error: null,
       },
       autopulse: {
