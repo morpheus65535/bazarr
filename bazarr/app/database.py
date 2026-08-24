@@ -11,7 +11,7 @@ from dogpile.cache import make_region
 from datetime import datetime
 from typing import List
 
-from sqlalchemy import create_engine, inspect, DateTime, ForeignKey, Integer, LargeBinary, Text, func, text, BigInteger, \
+from sqlalchemy import create_engine, inspect, DateTime, ForeignKey, Integer, LargeBinary, Text, text, BigInteger, \
     Boolean
 # importing here to be indirectly imported in other modules later
 from sqlalchemy import update, delete, select, func, UniqueConstraint  # noqa W0611
@@ -666,6 +666,62 @@ def fix_languages_profiles_with_duplicate_ids():
                 .values({"items": json.dumps(languages_profile_items)})
                 .where(TableLanguagesProfiles.profileId == languages_profile.profileId)
             )
+
+
+def fix_code3_languages_in_languages_profiles():
+    """
+    Fix inconsistencies in language codes within language profiles by converting ISO 639-3 codes
+    to ISO 639-1 codes and updates the database accordingly.
+
+    Summary:
+    This function processes all language profiles in the database to check if any language codes
+    use the 3-letter ISO 639-3 format. If such codes are found, they are converted to the 2-letter
+    ISO 639-1 format. An update to the database is made whenever a modification occurs. Additionally,
+    missing subtitle indices for movies or series are updated if required based on global settings.
+
+    Raises:
+        No exceptions are explicitly raised by this function, but underlying dependencies
+        may raise their own exceptions (e.g., database operations, missing modules).
+
+    Args:
+        No arguments required.
+
+    Returns:
+        None
+    """
+    from languages.get_languages import alpha2_from_alpha3
+    from subtitles.indexer.movies import list_missing_subtitles_movies
+    from subtitles.indexer.series import list_missing_subtitles
+
+    update_missing_subtitles_required = False
+    languages_profiles = database.execute(
+        select(TableLanguagesProfiles.profileId, TableLanguagesProfiles.items, TableLanguagesProfiles.name)).all()
+    for languages_profile in languages_profiles:
+        update_database_required = False
+        languages_profile_items = json.loads(languages_profile.items)
+        for item in languages_profile_items:
+            if len(item['language']) == 3:
+                code2 = alpha2_from_alpha3(item['language'])
+                if code2 is not None:
+                    item['language'] = code2
+                    update_database_required = True
+                else:
+                    logger.warning(f"Invalid language code: {item['language']} in languages profile "
+                                   f"{languages_profile.name}.  You should recreate this profile.")
+
+        if update_database_required:
+            database.execute(
+                update(TableLanguagesProfiles)
+                .values({"items": json.dumps(languages_profile_items)})
+                .where(TableLanguagesProfiles.profileId == languages_profile.profileId)
+            )
+            update_missing_subtitles_required = True
+
+    if update_missing_subtitles_required:
+        if settings.general.use_sonarr:
+            list_missing_subtitles()
+        if settings.general.use_radarr:
+            list_missing_subtitles_movies()
 
 
 def get_subtitles(sonarr_episode_id: int = None, radarr_id: int = None) -> List[dict]:
