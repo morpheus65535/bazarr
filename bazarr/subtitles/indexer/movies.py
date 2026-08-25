@@ -227,7 +227,7 @@ def store_subtitles_movie(radarr_id, use_cache=True):
     logging.debug(f'BAZARR ended subtitles indexing for this file: {mapped_path}')
 
 
-def list_missing_subtitles_movies(no=None):
+def list_missing_subtitles_movies(no=None, *args, **kwargs):  # job_id might be provided but isn't used for now
     stmt = select(TableMovies.radarrId,
                   TableMovies.profileId,
                   TableMovies.audio_language)
