@@ -51,7 +51,7 @@ jobs:
         working-directory: ${{ env.UI_DIRECTORY }}
 
       - name: Download outcome artifact from Workflow CI
-        uses: dawidd6/action-download-artifact@v21
+        uses: dawidd6/action-download-artifact@v24
         with:
           workflow: ci.yml
           workflow_conclusion: completed

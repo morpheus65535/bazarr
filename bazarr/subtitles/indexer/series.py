@@ -231,7 +231,7 @@ def store_subtitles(sonarr_episode_id, use_cache=True):
     logging.debug(f'BAZARR ended subtitles indexing for this file: {mapped_path}')
 
 
-def list_missing_subtitles(no=None, epno=None):
+def list_missing_subtitles(no=None, epno=None, *args, **kwargs):  # job_id might be provided but isn't used for now
     stmt = select(TableShows.sonarrSeriesId,
                   TableEpisodes.sonarrEpisodeId,
                   TableShows.profileId,
