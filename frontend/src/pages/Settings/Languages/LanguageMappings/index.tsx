@@ -18,6 +18,7 @@ import {
 } from "@mantine/core";
 import {
   faArrowRight,
+  faArrowRightArrowLeft,
   faChevronDown,
   faInfoCircle,
   faPen,
@@ -37,6 +38,7 @@ import { LanguageMappingEditorModal } from "./EditorModal";
 import {
   applyRuleSet,
   buildLanguageMappingView,
+  flipRuleSet,
   getParsedLanguageMappings,
   LanguageMappingEntry,
   languageMappingPresets,
@@ -138,6 +140,14 @@ const LanguageMappings: FunctionComponent = () => {
       });
     },
     [modals, rawRules, setRawRules],
+  );
+
+  const flip = useCallback(
+    (refs: RawRuleRef[]) => {
+      const next = flipRuleSet(rawRules, refs);
+      if (next) setRawRules(next);
+    },
+    [rawRules, setRawRules],
   );
 
   const availablePresets = useMemo(
@@ -340,6 +350,15 @@ const LanguageMappings: FunctionComponent = () => {
                         <strong>{entry.sourceLanguage.name}</strong> while
                         preserving the subtitle type.
                       </Text>
+                      <Button
+                        fullWidth
+                        leftSection={
+                          <FontAwesomeIcon icon={faArrowRightArrowLeft} />
+                        }
+                        onClick={() => flip(refs)}
+                      >
+                        Swap Direction
+                      </Button>
                     </Stack>
                   </Card>
                 );
@@ -505,6 +524,17 @@ const LanguageMappings: FunctionComponent = () => {
                           : legacyWarning?.message}
                       </Alert>
                     ) : null}
+                    <Button
+                      fullWidth
+                      leftSection={
+                        <FontAwesomeIcon icon={faArrowRightArrowLeft} />
+                      }
+                      onClick={() =>
+                        flip([{ index: entry.index, raw: entry.raw }])
+                      }
+                    >
+                      Swap Direction
+                    </Button>
                   </Stack>
                 </Card>
               );

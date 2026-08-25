@@ -5,6 +5,8 @@ import {
   createLanguageAliasRules,
   createSubtitleFallbackRule,
   encodeLanguageMapping,
+  flipLanguageMappingRule,
+  flipRuleSet,
   getParsedLanguageMappings,
   LanguageMappingRule,
   normalizeLanguageMappingRule,
@@ -246,5 +248,48 @@ describe("conceptual language aliases", () => {
         languages,
       )?.code,
     ).toBe("duplicate");
+  });
+});
+
+describe("flipping language mappings", () => {
+  it("reverses endpoints including variants", () => {
+    expect(
+      encodeLanguageMapping(
+        flipLanguageMappingRule(rule("spl", "spa", "forced", "standard")),
+      ),
+    ).toBe("spa:spl@forced");
+  });
+
+  it("flips a single mapping in place", () => {
+    expect(flipRuleSet(["eng:fre"], [{ index: 0, raw: "eng:fre" }])).toEqual([
+      "fre:eng",
+    ]);
+  });
+
+  it("flips every member of an alias trio", () => {
+    const aliasRaw = ["spl:spa", "spl@hi:spa@hi", "spl@forced:spa@forced"];
+    const refs = aliasRaw.map((raw, index) => ({ index, raw }));
+
+    expect(flipRuleSet(aliasRaw, refs)).toEqual([
+      "spa:spl",
+      "spa@hi:spl@hi",
+      "spa@forced:spl@forced",
+    ]);
+  });
+
+  it("leaves unrelated entries untouched", () => {
+    expect(
+      flipRuleSet(
+        ["eng:fre", "unresolved", "deu:eng"],
+        [{ index: 0, raw: "eng:fre" }],
+      ),
+    ).toEqual(["fre:eng", "unresolved", "deu:eng"]);
+  });
+
+  it("rejects stale references and empty refs", () => {
+    expect(
+      flipRuleSet(["eng:fre"], [{ index: 0, raw: "changed" }]),
+    ).toBeUndefined();
+    expect(flipRuleSet(["eng:fre"], [])).toBeUndefined();
   });
 });

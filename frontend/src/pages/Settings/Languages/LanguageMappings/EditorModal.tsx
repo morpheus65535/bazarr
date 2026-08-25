@@ -13,6 +13,7 @@ import {
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import {
+  faArrowRightArrowLeft,
   faClosedCaptioning,
   faLanguage,
   faWrench,
@@ -267,6 +268,29 @@ const Editor: FunctionComponent<Props> = ({
             />
           ) : null}
         </Stack>
+
+        {form.values.purpose !== "subtitle-type-fallback" ? (
+          <Button
+            fullWidth
+            variant="light"
+            leftSection={
+              <FontAwesomeIcon icon={faArrowRightArrowLeft} size="sm" />
+            }
+            disabled={!form.values.sourceCode}
+            onClick={() => {
+              const { targetCode, targetVariant, sourceCode, sourceVariant } =
+                form.values;
+              form.setValues({
+                targetCode: sourceCode,
+                sourceCode: targetCode,
+                targetVariant: sourceVariant,
+                sourceVariant: targetVariant,
+              });
+            }}
+          >
+            Swap target and source
+          </Button>
+        ) : null}
 
         {form.values.purpose === "subtitle-type-fallback" ? (
           <Stack gap="xs">

@@ -370,6 +370,30 @@ export const removeRuleSet = (
   return rawRules.filter((_, index) => !removed.has(index));
 };
 
+export const flipLanguageMappingRule = (
+  rule: LanguageMappingRule,
+): LanguageMappingRule => ({
+  source: rule.target,
+  target: rule.source,
+});
+
+export const flipRuleSet = (
+  rawRules: readonly string[],
+  refs: readonly RawRuleRef[],
+): string[] | undefined => {
+  if (!refsAreCurrent(rawRules, refs)) return undefined;
+  if (refs.length === 0) return undefined;
+
+  const next = [...rawRules];
+  refs.forEach((ref) => {
+    const rule = parseLanguageMapping(rawRules[ref.index]);
+    if (rule) {
+      next[ref.index] = encodeLanguageMapping(flipLanguageMappingRule(rule));
+    }
+  });
+  return next;
+};
+
 export const languageMappingVariantLabel = (
   variant: LanguageMappingVariant,
 ): string => {

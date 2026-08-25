@@ -681,6 +681,130 @@ describe("SettingsLanguagesView", () => {
     });
   });
 
+  it("should flip an alias mapping in place", async () => {
+    const mutate = vitest.fn();
+    renderPage(
+      {
+        languages: presetLanguages,
+        settings: {
+          general: {
+            ...baseSettings.general,
+            language_equals: [
+              "spl:spa",
+              "spl@hi:spa@hi",
+              "spl@forced:spa@forced",
+            ],
+          },
+        },
+      },
+      mutate,
+    );
+
+    expect(
+      screen.getByRole("button", {
+        name: "Edit alias Spanish (Latino) to Spanish",
+      }),
+    ).toBeInTheDocument();
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Swap Direction" }),
+    );
+
+    expect(
+      await screen.findByRole("button", {
+        name: "Edit alias Spanish to Spanish (Latino)",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Swap Direction" }),
+    ).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: /^Save/ }));
+
+    expect(mutate).toHaveBeenCalledWith({
+      "settings-general-language_equals": [
+        "spa:spl",
+        "spa@hi:spl@hi",
+        "spa@forced:spl@forced",
+      ],
+    });
+  });
+
+  it("should flip an advanced mapping in place", async () => {
+    const mutate = vitest.fn();
+    renderPage(
+      {
+        languages: baseLanguages,
+        settings: {
+          general: {
+            ...baseSettings.general,
+            language_equals: ["eng@hi:fre"],
+          },
+        },
+      },
+      mutate,
+    );
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Swap Direction" }),
+    );
+
+    expect(
+      await screen.findByRole("button", {
+        name: "Edit mapping French to English",
+      }),
+    ).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: /^Save/ }));
+
+    expect(mutate).toHaveBeenCalledWith({
+      "settings-general-language_equals": ["fre:eng@hi"],
+    });
+  });
+
+  it("should swap target and source in the editor", async () => {
+    renderPage({
+      languages: baseLanguages,
+      settings: {
+        general: {
+          ...baseSettings.general,
+          language_equals: [],
+        },
+      },
+    });
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Create Mapping" }),
+    );
+    const modalScope = within(await screen.findByRole("dialog"));
+
+    await chooseMappingOption(
+      modalScope.getByRole("combobox", { name: "Canonical language" }),
+      "French",
+      "fre",
+    );
+    await chooseMappingOption(
+      modalScope.getByRole("combobox", {
+        name: "Provider or track language",
+      }),
+      "English",
+      "eng",
+    );
+
+    await userEvent.click(
+      modalScope.getByRole("button", { name: "Swap target and source" }),
+    );
+
+    expect(
+      modalScope.getByRole("combobox", { name: "Canonical language" }),
+    ).toHaveValue("English");
+    expect(
+      modalScope.getByRole("combobox", {
+        name: "Provider or track language",
+      }),
+    ).toHaveValue("French");
+  });
+
   it("should confirm before removing a language mapping", async () => {
     renderPage({
       languages: baseLanguages,
