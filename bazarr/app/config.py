@@ -708,6 +708,7 @@ def save_settings(settings_items):
     update_schedule = False
     sonarr_changed = False
     radarr_changed = False
+    sportarr_changed = False
     update_path_map = False
     configure_proxy = False
     configure_ssl_verify = False
@@ -807,6 +808,10 @@ def save_settings(settings_items):
         if key in ['settings-general-use_sonarr', 'settings-sonarr-ip', 'settings-sonarr-port',
                    'settings-sonarr-base_url', 'settings-sonarr-ssl', 'settings-sonarr-apikey']:
             sonarr_changed = True
+
+        if key in ['settings-general-use_sportarr', 'settings-sportarr-ip', 'settings-sportarr-port',
+                   'settings-sportarr-base_url', 'settings-sportarr-ssl', 'settings-sportarr-apikey']:
+            sportarr_changed = True
 
         if key in ['settings-general-use_radarr', 'settings-radarr-ip', 'settings-radarr-port',
                    'settings-radarr-base_url', 'settings-radarr-ssl', 'settings-radarr-apikey']:
@@ -976,6 +981,13 @@ def save_settings(settings_items):
             from .signalr_client import radarr_signalr_client
             try:
                 radarr_signalr_client.restart()
+            except Exception:
+                pass
+
+        if sportarr_changed:
+            from sportarr.sse_client import sportarr_sse_client
+            try:
+                sportarr_sse_client.restart()
             except Exception:
                 pass
 

@@ -8,6 +8,7 @@ import {
   faFilm,
   faLaptop,
   faPlay,
+  faTrophy,
 } from "@fortawesome/free-solid-svg-icons";
 import { useBadges } from "@/apis/hooks";
 import { useEnabledStatus } from "@/apis/hooks/site";
@@ -16,10 +17,12 @@ import { Lazy } from "@/components/async";
 import Authentication from "@/pages/Authentication";
 import BlacklistMoviesView from "@/pages/Blacklist/Movies";
 import BlacklistSeriesView from "@/pages/Blacklist/Series";
+import BlacklistSportsView from "@/pages/Blacklist/Sports";
 import Episodes from "@/pages/Episodes";
 import NotFound from "@/pages/errors/NotFound";
 import MoviesHistoryView from "@/pages/History/Movies";
 import SeriesHistoryView from "@/pages/History/Series";
+import SportsHistoryView from "@/pages/History/Sports";
 import MovieView from "@/pages/Movies";
 import MovieDetailView from "@/pages/Movies/Details";
 import SeriesView from "@/pages/Series";
@@ -32,8 +35,10 @@ import SettingsProvidersView from "@/pages/Settings/Providers";
 import SettingsRadarrView from "@/pages/Settings/Radarr";
 import SettingsSchedulerView from "@/pages/Settings/Scheduler";
 import SettingsSonarrView from "@/pages/Settings/Sonarr";
+import SettingsSportarrView from "@/pages/Settings/Sportarr";
 import SettingsSubtitlesView from "@/pages/Settings/Subtitles";
 import SettingsUIView from "@/pages/Settings/UI";
+import SportsView from "@/pages/Sports";
 import SystemAnnouncementsView from "@/pages/System/Announcements";
 import SystemBackupsView from "@/pages/System/Backups";
 import SystemLogsView from "@/pages/System/Logs";
@@ -42,6 +47,7 @@ import SystemReleasesView from "@/pages/System/Releases";
 import SystemTasksView from "@/pages/System/Tasks";
 import WantedMoviesView from "@/pages/Wanted/Movies";
 import WantedSeriesView from "@/pages/Wanted/Series";
+import WantedSportsView from "@/pages/Wanted/Sports";
 import { Environment } from "@/utilities";
 import Redirector from "./Redirector";
 import { RouterNames } from "./RouterNames";
@@ -55,7 +61,7 @@ const SystemStatusView = lazy(() => import("@/pages/System/Status"));
 
 const useRoutes = (): CustomRouteObject[] => {
   const { data } = useBadges();
-  const { sonarr, radarr } = useEnabledStatus();
+  const { sonarr, radarr, sportarr } = useEnabledStatus();
 
   return useMemo(
     () => [
@@ -102,10 +108,23 @@ const useRoutes = (): CustomRouteObject[] => {
             ],
           },
           {
+            icon: faTrophy,
+            name: "Sports",
+            path: "sports",
+            badge: data?.sportarr_sse,
+            hidden: !sportarr,
+            children: [
+              {
+                index: true,
+                element: <SportsView></SportsView>,
+              },
+            ],
+          },
+          {
             icon: faClock,
             name: "History",
             path: "history",
-            hidden: !sonarr && !radarr,
+            hidden: !sonarr && !radarr && !sportarr,
             children: [
               {
                 path: "series",
@@ -118,6 +137,12 @@ const useRoutes = (): CustomRouteObject[] => {
                 name: "Movies",
                 hidden: !radarr,
                 element: <MoviesHistoryView></MoviesHistoryView>,
+              },
+              {
+                path: "sports",
+                name: "Sports",
+                hidden: !sportarr,
+                element: <SportsHistoryView></SportsHistoryView>,
               },
               {
                 path: "stats",
@@ -134,7 +159,7 @@ const useRoutes = (): CustomRouteObject[] => {
             icon: faExclamationTriangle,
             name: "Wanted",
             path: "wanted",
-            hidden: !sonarr && !radarr,
+            hidden: !sonarr && !radarr && !sportarr,
             children: [
               {
                 name: "Episodes",
@@ -150,13 +175,20 @@ const useRoutes = (): CustomRouteObject[] => {
                 hidden: !radarr,
                 element: <WantedMoviesView></WantedMoviesView>,
               },
+              {
+                name: "Sports",
+                path: "sports",
+                badge: data?.sports,
+                hidden: !sportarr,
+                element: <WantedSportsView></WantedSportsView>,
+              },
             ],
           },
           {
             icon: faFileExcel,
             name: "Blacklist",
             path: "blacklist",
-            hidden: !sonarr && !radarr,
+            hidden: !sonarr && !radarr && !sportarr,
             children: [
               {
                 path: "series",
@@ -169,6 +201,12 @@ const useRoutes = (): CustomRouteObject[] => {
                 name: "Movies",
                 hidden: !radarr,
                 element: <BlacklistMoviesView></BlacklistMoviesView>,
+              },
+              {
+                path: "sports",
+                name: "Sports",
+                hidden: !sportarr,
+                element: <BlacklistSportsView></BlacklistSportsView>,
               },
             ],
           },
@@ -206,6 +244,11 @@ const useRoutes = (): CustomRouteObject[] => {
                 path: "radarr",
                 name: "Radarr",
                 element: <SettingsRadarrView></SettingsRadarrView>,
+              },
+              {
+                path: "sportarr",
+                name: "Sportarr",
+                element: <SettingsSportarrView></SettingsSportarrView>,
               },
               {
                 path: "plex",
@@ -301,6 +344,8 @@ const useRoutes = (): CustomRouteObject[] => {
     [
       data?.episodes,
       data?.movies,
+      data?.sports,
+      data?.sportarr_sse,
       data?.providers,
       data?.sonarr_signalr,
       data?.radarr_signalr,
@@ -308,6 +353,7 @@ const useRoutes = (): CustomRouteObject[] => {
       data?.status,
       radarr,
       sonarr,
+      sportarr,
     ],
   );
 };
