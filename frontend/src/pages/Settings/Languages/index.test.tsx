@@ -59,6 +59,12 @@ const baseLanguages: Language.Server[] = [
   { code2: "de", code3: "deu", name: "German", enabled: false },
 ];
 
+const presetLanguages: Language.Server[] = [
+  ...baseLanguages,
+  { code2: "ea", code3: "spl", name: "Spanish (Latino)", enabled: false },
+  { code2: "es", code3: "spa", name: "Spanish", enabled: true },
+];
+
 const baseProfiles: Language.Profile[] = [
   {
     profileId: 1,
@@ -152,6 +158,30 @@ const renderPage = (
   return customRender(<SettingsLanguagesView />);
 };
 
+const chooseMappingOption = async (
+  combobox: HTMLElement,
+  name: string,
+  code3: string,
+) => {
+  await userEvent.click(combobox);
+
+  const listboxId = combobox.getAttribute("aria-controls");
+  const listbox = screen
+    .getAllByRole("listbox", { hidden: true })
+    .find((element) => element.getAttribute("id") === listboxId);
+  const option = listbox
+    ? within(listbox)
+        .getAllByRole("option", { hidden: true, name })
+        .find((element) => element.getAttribute("value") === code3)
+    : undefined;
+
+  if (!option) {
+    throw new Error(`Cannot find mapping option ${name} (${code3})`);
+  }
+
+  await userEvent.click(option);
+};
+
 describe("SettingsLanguagesView", () => {
   beforeEach(() => {
     vitest.clearAllMocks();
@@ -164,7 +194,7 @@ describe("SettingsLanguagesView", () => {
       screen.getByRole("heading", { name: "Subtitles Language" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("heading", { name: "Language Equals" }),
+      screen.getByRole("heading", { name: "Language Mappings" }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("heading", { name: "Embedded Tracks Language" }),
@@ -312,7 +342,31 @@ describe("SettingsLanguagesView", () => {
     expect(screen.queryByText("My Profile")).not.toBeInTheDocument();
   });
 
-  it("should render existing language equals", () => {
+  it("should onboard users when no language mappings exist", async () => {
+    renderPage({ languages: baseLanguages });
+
+    expect(
+      screen.getByText("Accept another language label"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /Use a mapping when a provider or embedded track reports an acceptable subtitle differently/i,
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Create Mapping" }),
+    ).toBeEnabled();
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "How language mappings work" }),
+    );
+    expect(screen.getByText("Are mappings bidirectional?")).toBeInTheDocument();
+    expect(
+      screen.getByText("Does this translate subtitles?"),
+    ).toBeInTheDocument();
+  });
+
+  it("should render an existing mapping as a directional card", () => {
     renderPage({
       languages: baseLanguages,
       settings: {
@@ -323,34 +377,435 @@ describe("SettingsLanguagesView", () => {
       },
     });
 
-    const hiCheckboxes = screen.getAllByRole("checkbox", { name: "HI" });
-    const forcedCheckboxes = screen.getAllByRole("checkbox", {
-      name: "Forced",
-    });
-
-    expect(hiCheckboxes[0]).toBeChecked();
-    expect(hiCheckboxes[1]).not.toBeChecked();
-    expect(forcedCheckboxes[0]).not.toBeChecked();
-    expect(forcedCheckboxes[1]).not.toBeChecked();
+    expect(screen.getByText("Provider or track")).toBeInTheDocument();
+    expect(screen.getByText("Canonical target")).toBeInTheDocument();
+    expect(screen.getByText("Hearing impaired")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", {
+        name: "Edit mapping English to French",
+      }),
+    ).toBeInTheDocument();
   });
 
-  it("should add a language equal when clicking Add Equal", async () => {
+  it("should create a guided mapping and save the existing backend format", async () => {
+    const mutate = vitest.fn();
+    renderPage({ languages: baseLanguages }, mutate);
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Create Mapping" }),
+    );
+
+    const modal = await screen.findByRole("dialog");
+    const modalScope = within(modal);
+    const sourceSelector = modalScope.getByRole("combobox", {
+      name: "Provider or track language",
+    });
+
+    expect(sourceSelector).toBeDisabled();
+
+    await chooseMappingOption(
+      modalScope.getByRole("combobox", { name: "Canonical language" }),
+      "French",
+      "fre",
+    );
+    await chooseMappingOption(sourceSelector, "English", "eng");
+
+    expect(
+      modalScope.getByText(/Standard, Hearing impaired, and Forced types/i),
+    ).toBeInTheDocument();
+    await userEvent.click(
+      modalScope.getByRole("button", { name: "Add mapping" }),
+    );
+
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+    );
+    expect(
+      screen.getByRole("button", { name: "Edit alias English to French" }),
+    ).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: /^Save/ }));
+
+    expect(mutate).toHaveBeenCalledWith({
+      "settings-general-language_equals": [
+        "eng:fre",
+        "eng@hi:fre@hi",
+        "eng@forced:fre@forced",
+      ],
+    });
+  });
+
+  it("should offer disabled languages as mapping sources", async () => {
     renderPage({
       languages: baseLanguages,
+      settings: {
+        languages: {
+          enabled: [{ code2: "en", name: "English" }],
+          profiles: [],
+        },
+      },
     });
 
-    await userEvent.click(screen.getByRole("button", { name: "Add Equal" }));
+    await userEvent.click(
+      screen.getByRole("button", { name: "Create Mapping" }),
+    );
+    const modalScope = within(await screen.findByRole("dialog"));
 
-    const hiCheckboxes = screen.getAllByRole("checkbox", { name: "HI" });
-    const forcedCheckboxes = screen.getAllByRole("checkbox", {
-      name: "Forced",
-    });
+    await chooseMappingOption(
+      modalScope.getByRole("combobox", { name: "Canonical language" }),
+      "English",
+      "eng",
+    );
+    await chooseMappingOption(
+      modalScope.getByRole("combobox", {
+        name: "Provider or track language",
+      }),
+      "German",
+      "deu",
+    );
+    await userEvent.click(
+      modalScope.getByRole("button", { name: "Add mapping" }),
+    );
 
-    expect(hiCheckboxes).toHaveLength(2);
-    expect(forcedCheckboxes).toHaveLength(2);
+    expect(
+      await screen.findByRole("button", {
+        name: "Edit alias German to English",
+      }),
+    ).toBeInTheDocument();
   });
 
-  it("should toggle HI and Forced checkboxes in language equals", async () => {
+  it("should prevent a self-mapping", async () => {
+    renderPage({ languages: baseLanguages });
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Create Mapping" }),
+    );
+    const modalScope = within(await screen.findByRole("dialog"));
+
+    await chooseMappingOption(
+      modalScope.getByRole("combobox", { name: "Canonical language" }),
+      "English",
+      "eng",
+    );
+    await chooseMappingOption(
+      modalScope.getByRole("combobox", {
+        name: "Provider or track language",
+      }),
+      "English",
+      "eng",
+    );
+
+    expect(
+      modalScope.getByText(/source and target are identical/i),
+    ).toBeInTheDocument();
+    expect(
+      modalScope.getByRole("button", { name: "Add mapping" }),
+    ).toBeDisabled();
+  });
+
+  it("should preserve and display unresolved mappings", () => {
+    renderPage({
+      languages: baseLanguages,
+      settings: {
+        general: {
+          ...baseSettings.general,
+          language_equals: ["legacy-invalid", "eng:fre"],
+        },
+      },
+    });
+
+    expect(screen.getByText("Unresolved mapping")).toBeInTheDocument();
+    expect(screen.getByText("legacy-invalid")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Repair mapping legacy-invalid" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Edit mapping English to French" }),
+    ).toBeInTheDocument();
+  });
+
+  it("should preserve unresolved values when adding another mapping", async () => {
+    const mutate = vitest.fn();
+    renderPage(
+      {
+        languages: baseLanguages,
+        settings: {
+          general: {
+            ...baseSettings.general,
+            language_equals: ["legacy-invalid"],
+          },
+        },
+      },
+      mutate,
+    );
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Add language mapping" }),
+    );
+    const modalScope = within(await screen.findByRole("dialog"));
+    await chooseMappingOption(
+      modalScope.getByRole("combobox", { name: "Canonical language" }),
+      "French",
+      "fre",
+    );
+    await chooseMappingOption(
+      modalScope.getByRole("combobox", {
+        name: "Provider or track language",
+      }),
+      "English",
+      "eng",
+    );
+    await userEvent.click(
+      modalScope.getByRole("button", { name: "Add mapping" }),
+    );
+    await userEvent.click(screen.getByRole("button", { name: /^Save/ }));
+
+    expect(mutate).toHaveBeenCalledWith({
+      "settings-general-language_equals": [
+        "legacy-invalid",
+        "eng:fre",
+        "eng@hi:fre@hi",
+        "eng@forced:fre@forced",
+      ],
+    });
+  });
+
+  it("should group a complete type-preserving alias into one card", () => {
+    renderPage({
+      languages: presetLanguages,
+      settings: {
+        general: {
+          ...baseSettings.general,
+          language_equals: [
+            "spl:spa",
+            "spl@hi:spa@hi",
+            "spl@forced:spa@forced",
+          ],
+        },
+      },
+    });
+
+    expect(
+      screen.getByRole("button", {
+        name: "Edit alias Spanish (Latino) to Spanish",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Preserves Standard, HI, and Forced subtitle types."),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", {
+        name: "Edit mapping Spanish (Latino) to Spanish",
+      }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("should review a preset without staging it when cancelled", async () => {
+    renderPage({ languages: presetLanguages });
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Spanish (Latino) → Spanish" }),
+    );
+    const modalScope = within(await screen.findByRole("dialog"));
+
+    expect(
+      modalScope.getByRole("combobox", { name: "Canonical language" }),
+    ).toHaveValue("Spanish");
+    expect(
+      modalScope.getByRole("combobox", {
+        name: "Provider or track language",
+      }),
+    ).toHaveValue("Spanish (Latino)");
+    expect(modalScope.getByText("spl:spa")).toBeInTheDocument();
+
+    await userEvent.click(modalScope.getByRole("button", { name: "Cancel" }));
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+    );
+    expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
+  });
+
+  it("should flag a partial preset for review", () => {
+    renderPage({
+      languages: presetLanguages,
+      settings: {
+        general: {
+          ...baseSettings.general,
+          language_equals: ["spl:spa"],
+        },
+      },
+    });
+
+    expect(
+      screen.getByRole("button", {
+        name: "Spanish (Latino) → Spanish · Needs review",
+      }),
+    ).toBeDisabled();
+  });
+
+  it("should create a subtitle-type fallback", async () => {
+    const mutate = vitest.fn();
+    renderPage({ languages: baseLanguages }, mutate);
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Create Mapping" }),
+    );
+    const modalScope = within(await screen.findByRole("dialog"));
+
+    expect(
+      modalScope.getByText("What do you want to accomplish?"),
+    ).toBeInTheDocument();
+    expect(
+      modalScope.getByText(
+        "Allow a specialized subtitle type to satisfy a standard request for the same language.",
+      ),
+    ).toBeInTheDocument();
+
+    await userEvent.click(
+      modalScope.getByRole("radio", { name: /Subtitle-type fallback/ }),
+    );
+    await chooseMappingOption(
+      modalScope.getByRole("combobox", { name: "Canonical language" }),
+      "English",
+      "eng",
+    );
+
+    expect(modalScope.getByText("eng@hi:eng")).toBeInTheDocument();
+    await userEvent.click(
+      modalScope.getByRole("button", { name: "Add mapping" }),
+    );
+    await userEvent.click(screen.getByRole("button", { name: /^Save/ }));
+
+    expect(mutate).toHaveBeenCalledWith({
+      "settings-general-language_equals": ["eng@hi:eng"],
+    });
+  });
+
+  it("should flip an alias mapping in place", async () => {
+    const mutate = vitest.fn();
+    renderPage(
+      {
+        languages: presetLanguages,
+        settings: {
+          general: {
+            ...baseSettings.general,
+            language_equals: [
+              "spl:spa",
+              "spl@hi:spa@hi",
+              "spl@forced:spa@forced",
+            ],
+          },
+        },
+      },
+      mutate,
+    );
+
+    expect(
+      screen.getByRole("button", {
+        name: "Edit alias Spanish (Latino) to Spanish",
+      }),
+    ).toBeInTheDocument();
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Swap Direction" }),
+    );
+
+    expect(
+      await screen.findByRole("button", {
+        name: "Edit alias Spanish to Spanish (Latino)",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Swap Direction" }),
+    ).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: /^Save/ }));
+
+    expect(mutate).toHaveBeenCalledWith({
+      "settings-general-language_equals": [
+        "spa:spl",
+        "spa@hi:spl@hi",
+        "spa@forced:spl@forced",
+      ],
+    });
+  });
+
+  it("should flip an advanced mapping in place", async () => {
+    const mutate = vitest.fn();
+    renderPage(
+      {
+        languages: baseLanguages,
+        settings: {
+          general: {
+            ...baseSettings.general,
+            language_equals: ["eng@hi:fre"],
+          },
+        },
+      },
+      mutate,
+    );
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Swap Direction" }),
+    );
+
+    expect(
+      await screen.findByRole("button", {
+        name: "Edit mapping French to English",
+      }),
+    ).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: /^Save/ }));
+
+    expect(mutate).toHaveBeenCalledWith({
+      "settings-general-language_equals": ["fre:eng@hi"],
+    });
+  });
+
+  it("should swap target and source in the editor", async () => {
+    renderPage({
+      languages: baseLanguages,
+      settings: {
+        general: {
+          ...baseSettings.general,
+          language_equals: [],
+        },
+      },
+    });
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Create Mapping" }),
+    );
+    const modalScope = within(await screen.findByRole("dialog"));
+
+    await chooseMappingOption(
+      modalScope.getByRole("combobox", { name: "Canonical language" }),
+      "French",
+      "fre",
+    );
+    await chooseMappingOption(
+      modalScope.getByRole("combobox", {
+        name: "Provider or track language",
+      }),
+      "English",
+      "eng",
+    );
+
+    await userEvent.click(
+      modalScope.getByRole("button", { name: "Swap target and source" }),
+    );
+
+    expect(
+      modalScope.getByRole("combobox", { name: "Canonical language" }),
+    ).toHaveValue("English");
+    expect(
+      modalScope.getByRole("combobox", {
+        name: "Provider or track language",
+      }),
+    ).toHaveValue("French");
+  });
+
+  it("should confirm before removing a language mapping", async () => {
     renderPage({
       languages: baseLanguages,
       settings: {
@@ -361,53 +816,29 @@ describe("SettingsLanguagesView", () => {
       },
     });
 
-    const hiCheckboxes = screen.getAllByRole("checkbox", { name: "HI" });
+    await userEvent.click(
+      screen.getByRole("button", {
+        name: "Remove mapping English to French",
+      }),
+    );
 
-    expect(hiCheckboxes[0]).not.toBeChecked();
+    const confirmation = within(await screen.findByRole("dialog"));
+    expect(
+      screen.getByRole("button", { name: "Edit mapping English to French" }),
+    ).toBeInTheDocument();
 
-    await userEvent.click(hiCheckboxes[0]);
-
-    const hiCheckboxesAfterFirst = screen.getAllByRole("checkbox", {
-      name: "HI",
-    });
-    const forcedCheckboxesAfterFirst = screen.getAllByRole("checkbox", {
-      name: "Forced",
-    });
-
-    expect(hiCheckboxesAfterFirst[0]).toBeChecked();
-    expect(forcedCheckboxesAfterFirst[0]).not.toBeChecked();
-
-    await userEvent.click(forcedCheckboxesAfterFirst[0]);
-
-    const hiCheckboxesAfterSecond = screen.getAllByRole("checkbox", {
-      name: "HI",
-    });
-    const forcedCheckboxesAfterSecond = screen.getAllByRole("checkbox", {
-      name: "Forced",
-    });
-
-    expect(forcedCheckboxesAfterSecond[0]).toBeChecked();
-    expect(hiCheckboxesAfterSecond[0]).not.toBeChecked();
-  });
-
-  it("should remove a language equal", async () => {
-    renderPage({
-      languages: baseLanguages,
-      settings: {
-        general: {
-          ...baseSettings.general,
-          language_equals: ["eng:fre"],
-        },
-      },
-    });
-
-    const removeButton = screen.getByRole("button", { name: "Remove" });
-
-    await userEvent.click(removeButton);
+    await userEvent.click(confirmation.getByRole("button", { name: "Remove" }));
 
     await waitFor(() => {
-      expect(screen.queryAllByRole("checkbox", { name: "HI" })).toHaveLength(0);
+      expect(
+        screen.queryByRole("button", {
+          name: "Edit mapping English to French",
+        }),
+      ).not.toBeInTheDocument();
     });
+    expect(
+      screen.getByText("Accept another language label"),
+    ).toBeInTheDocument();
   });
 
   it("should add a language in the language filter", async () => {

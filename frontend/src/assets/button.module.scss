@@ -34,9 +34,19 @@
     }
   }
 
+  // Disabled buttons use Mantine's semantic disabled tokens (grey surface +
+  // muted text) in both schemes. The dark palette's high shades are near-black
+  // and `dark-9` text would render almost invisible on the dark-6 disabled
+  // surface, so let the theme tokens win instead of overriding them. Mantine
+  // forces a transparent border on disabled controls, which makes them blend
+  // into the surrounding card — restore the disabled border token so the
+  // control stays visible.
+  .root[data-disabled],
   .root:disabled {
+    border-color: var(--mantine-color-disabled-border);
+
     @include mantine.dark {
-      color: var(--mantine-color-dark-9);
+      color: var(--mantine-color-disabled-color);
     }
   }
 }
