@@ -455,6 +455,18 @@ class TableSportsEvents(Base):
     # cannot be the key. The file id cannot either, because Sportarr issues a
     # new one when a quality upgrade replaces the file, and the row would be
     # deleted and rebuilt on every upgrade, losing its subtitle history.
+    #
+    # The season and the episode stay out of the key on purpose. Sportarr
+    # renumbers events often. A renumbered event keeps its key, so the sync
+    # updates the row in place and the subtitles and the history survive.
+    #
+    # One weakness is known. The part number is positional inside a segment
+    # set, and the set follows the event type. Prelims is part 1 on a fight
+    # night and part 2 on a full card. An event that changes type moves its
+    # files to new keys, and each file is rebuilt as a new row. Keying on the
+    # external id and the part name avoids this, because the name holds where
+    # the number moves. That costs a migration, and only a multi-part combat
+    # sports event can hit it, so it waits until an install reports it.
     __table_args__ = (
         UniqueConstraint('sportarrEventId', 'partNumber', name='uc_sports_event_part'),
         # Indexes live on the model, not only in the migration. init_db()
@@ -500,6 +512,42 @@ class TableSportsEventsSubtitles(Base):
         Index('ix_sports_events_subtitles_language_hi_forced', 'language', 'hi', 'forced'),
         Index('ix_sports_events_subtitles_event_path_track', 'sportsEventId', 'path', 'embedded_track_id'),
     )
+
+
+class TableBlacklistSports(Base):
+    __tablename__ = 'table_blacklist_sports'
+
+    id = mapped_column(Integer, primary_key=True)
+    language = mapped_column(Text)
+    provider = mapped_column(Text)
+    # Points at the event row, which is one part, not at the Sportarr event id.
+    sports_event_id = mapped_column(Integer, ForeignKey('table_sports_events.id', ondelete='CASCADE'))
+    sportarr_league_id = mapped_column(Integer, ForeignKey('table_sports_leagues.sportarrLeagueId',
+                                                           ondelete='CASCADE'))
+    subs_id = mapped_column(Text)
+    timestamp = mapped_column(DateTime, default=datetime.now)
+
+
+class TableHistorySports(Base):
+    __tablename__ = 'table_history_sports'
+
+    id = mapped_column(Integer, primary_key=True)
+    action = mapped_column(Integer, nullable=False)
+    description = mapped_column(Text, nullable=False)
+    language = mapped_column(Text)
+    provider = mapped_column(Text)
+    score = mapped_column(Integer)
+    score_out_of = mapped_column(Integer, nullable=True)
+    # Points at the event row, which is one part, not at the Sportarr event id.
+    sportsEventId = mapped_column(Integer, ForeignKey('table_sports_events.id', ondelete='CASCADE'))
+    sportarrLeagueId = mapped_column(Integer, ForeignKey('table_sports_leagues.sportarrLeagueId', ondelete='CASCADE'))
+    subs_id = mapped_column(Text)
+    subtitles_path = mapped_column(Text)
+    timestamp = mapped_column(DateTime, nullable=False, default=datetime.now)
+    video_path = mapped_column(Text)
+    matched = mapped_column(Text)
+    not_matched = mapped_column(Text)
+    upgradedFromId = mapped_column(Integer, ForeignKey('table_history_sports.id'))
 
 
 class TableSportsLeaguesRootfolder(Base):
@@ -574,6 +622,10 @@ def get_exclusion_clause(exclusion_type):
         tagsList = settings.sonarr.excluded_tags
         for tag in tagsList:
             where_clause.append(~(TableShows.tags.contains(f"\'{tag}\'")))
+    elif exclusion_type == 'sports':
+        tagsList = settings.sportarr.excluded_tags
+        for tag in tagsList:
+            where_clause.append(~(TableSportsLeagues.tags.contains(f"\'{tag}\'")))
     else:
         tagsList = settings.radarr.excluded_tags
         for tag in tagsList:
@@ -584,6 +636,11 @@ def get_exclusion_clause(exclusion_type):
         if monitoredOnly:
             where_clause.append((TableEpisodes.monitored == 'True'))  # noqa E712
             where_clause.append((TableShows.monitored == 'True'))  # noqa E712
+    elif exclusion_type == 'sports':
+        monitoredOnly = settings.sportarr.only_monitored
+        if monitoredOnly:
+            where_clause.append((TableSportsEvents.monitored == 'True'))  # noqa E712
+            where_clause.append((TableSportsLeagues.monitored == 'True'))  # noqa E712
     else:
         monitoredOnly = settings.radarr.only_monitored
         if monitoredOnly:
@@ -597,6 +654,10 @@ def get_exclusion_clause(exclusion_type):
         exclude_season_zero = settings.sonarr.exclude_season_zero
         if exclude_season_zero:
             where_clause.append((TableEpisodes.season != 0))
+    elif exclusion_type == 'sports':
+        # Sport is the closest a league has to a series type.
+        for item in settings.sportarr.excluded_sports:
+            where_clause.append((TableSportsLeagues.sport != item))
 
     return where_clause
 
@@ -700,7 +761,7 @@ def get_audio_profile_languages(audio_languages_list_str):
     return audio_languages
 
 
-def get_profile_id(series_id=None, episode_id=None, movie_id=None):
+def get_profile_id(series_id=None, episode_id=None, movie_id=None, league_id=None, sports_event_id=None):
     if series_id:
         data = database.execute(
             select(TableShows.profileId)
@@ -714,6 +775,24 @@ def get_profile_id(series_id=None, episode_id=None, movie_id=None):
             .select_from(TableShows)
             .join(TableEpisodes)
             .where(TableEpisodes.sonarrEpisodeId == episode_id)) \
+            .first()
+        if data:
+            return data.profileId
+
+    elif league_id:
+        data = database.execute(
+            select(TableSportsLeagues.profileId)
+            .where(TableSportsLeagues.sportarrLeagueId == league_id))\
+            .first()
+        if data:
+            return data.profileId
+
+    elif sports_event_id:
+        data = database.execute(
+            select(TableSportsLeagues.profileId)
+            .select_from(TableSportsLeagues)
+            .join(TableSportsEvents)
+            .where(TableSportsEvents.id == sports_event_id))\
             .first()
         if data:
             return data.profileId
@@ -795,6 +874,48 @@ def fix_languages_profiles_with_duplicate_ids():
                 .values({"items": json.dumps(languages_profile_items)})
                 .where(TableLanguagesProfiles.profileId == languages_profile.profileId)
             )
+
+
+def get_sports_subtitles(sports_event_id: int) -> List[dict]:
+    """
+    Retrieves the subtitles indexed for one sports event row.
+
+    A row is one playable file, so a card's prelims and main card each have
+    their own subtitles rather than sharing a set.
+
+    :param sports_event_id: The table_sports_events row id.
+    :type sports_event_id: int
+    :return: A list of dictionaries with the same shape get_subtitles returns.
+    :rtype: List[dict]
+    """
+    from languages.get_languages import alpha3_from_alpha2, language_from_alpha2
+
+    subtitles = []
+    events_subtitles = database.execute(
+        select(TableSportsEventsSubtitles.path,
+               TableSportsEventsSubtitles.language,
+               TableSportsEventsSubtitles.forced,
+               TableSportsEventsSubtitles.hi,
+               TableSportsEventsSubtitles.size,
+               TableSportsEventsSubtitles.embedded_track_id,
+               TableSportsEventsSubtitles.id)
+        .where(TableSportsEventsSubtitles.sportsEventId == sports_event_id)
+    ).all()
+
+    for event_subtitles in events_subtitles:
+        subtitles.append(
+            {"path": path_mappings.path_replace_sports(event_subtitles.path),
+             "name": language_from_alpha2(event_subtitles.language),
+             "code2": event_subtitles.language,
+             "code3": alpha3_from_alpha2(event_subtitles.language),
+             "forced": event_subtitles.forced,
+             "hi": event_subtitles.hi,
+             "file_size": event_subtitles.size,
+             "embedded_track_id": event_subtitles.embedded_track_id,
+             "id": event_subtitles.id}
+        )
+
+    return subtitles
 
 
 def get_subtitles(sonarr_episode_id: int = None, radarr_id: int = None) -> List[dict]:

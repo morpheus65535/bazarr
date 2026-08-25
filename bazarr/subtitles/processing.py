@@ -8,10 +8,11 @@ from utilities.path_mappings import path_mappings
 from utilities.post_processing import pp_replace, set_chmod
 from utilities.autopulse_webhook import call_external_webhook
 from languages.get_languages import alpha2_from_alpha3, alpha2_from_language, alpha3_from_language, language_from_alpha3
-from app.database import TableShows, TableEpisodes, TableMovies, database, select
+from app.database import TableShows, TableEpisodes, TableMovies, TableSportsEvents, database, select
 from utilities.analytics import event_tracker
 from radarr.notify import notify_radarr
 from sonarr.notify import notify_sonarr
+from sportarr.notify import notify_sportarr
 from plex.operations import plex_set_movie_added_date_now, plex_set_episode_added_date_now, plex_refresh_item
 from jellyfin.operations import jellyfin_refresh_item
 from app.event_handler import event_stream
@@ -100,6 +101,25 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
                            sonarr_series_id=episode_metadata.sonarrSeriesId,
                            sonarr_episode_id=episode_metadata.sonarrEpisodeId,
                            job_id=job_id)
+    elif media_type == 'sports':
+        sports_metadata = database.execute(
+            select(TableSportsEvents.id, TableSportsEvents.sportarrLeagueId, TableSportsEvents.season,
+                   TableSportsEvents.episode)
+                .where(TableSportsEvents.path == path_mappings.path_replace_reverse_sports(path)))\
+            .first()
+        if not sports_metadata:
+            return
+        series_id = sports_metadata.sportarrLeagueId
+        episode_id = sports_metadata.id
+
+        if sync_checker(subtitle) is True:
+            from .sync import sync_subtitles
+            sync_subtitles(video_path=path, srt_path=downloaded_path,
+                           forced=subtitle.language.forced,
+                           hi=subtitle.language.hi,
+                           srt_lang=downloaded_language_code2,
+                           percent_score=percent_score,
+                           job_id=job_id)
     else:
         movie_metadata = database.execute(
             select(TableMovies.radarrId, TableMovies.imdbId, TableMovies.tmdbId)
@@ -126,7 +146,9 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
                              percent_score, subtitle_id, downloaded_provider, uploader, release_info, series_id,
                              episode_id)
 
-        if media_type == 'series':
+        if media_type in ('series', 'sports'):
+            # A sports event is scored as an episode, so it uses the episode
+            # threshold. The movie one is on a different scale.
             use_pp_threshold = settings.general.use_postprocessing_threshold
             pp_threshold = int(settings.general.postprocessing_threshold)
         else:
@@ -162,6 +184,14 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
                                       season=episode_metadata.season, episode=episode_metadata.episode,
                                       tvdb_id=episode_metadata.tvdbId)
 
+    elif media_type == 'sports':
+        reversed_path = path_mappings.path_replace_reverse_sports(path)
+        reversed_subtitles_path = path_mappings.path_replace_reverse_sports(downloaded_path)
+        # Sportarr rescans the league folder, which is how it learns the file is
+        # there. It has no per-event notify endpoint.
+        notify_sportarr(sports_metadata.sportarrLeagueId)
+        event_stream(type='sports-event-history')
+        event_stream(type='sports-event-wanted', action='delete', payload=sports_metadata.id)
     else:
         reversed_path = path_mappings.path_replace_reverse_movie(path)
         reversed_subtitles_path = path_mappings.path_replace_reverse_movie(downloaded_path)

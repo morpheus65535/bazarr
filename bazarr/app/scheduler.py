@@ -24,7 +24,9 @@ from sportarr.sync.leagues import update_leagues
 from radarr.sync.movies import update_movies
 from subtitles.indexer.movies import movies_full_scan_subtitles
 from subtitles.indexer.series import series_full_scan_subtitles
-from subtitles.wanted import wanted_search_missing_subtitles_series, wanted_search_missing_subtitles_movies
+from subtitles.indexer.sports import sports_full_scan_subtitles
+from subtitles.wanted import wanted_search_missing_subtitles_series, wanted_search_missing_subtitles_movies, \
+    wanted_search_missing_subtitles_sports
 from subtitles.upgrade import upgrade_subtitles
 from utilities.cache import cache_maintenance
 from utilities.health import check_health
@@ -107,6 +109,7 @@ class Scheduler:
         self.__sportarr_update_task()
         self.__sonarr_full_update_task()
         self.__radarr_full_update_task()
+        self.__sportarr_full_update_task()
         self.__update_bazarr_task()
         self.__search_wanted_subtitles_task()
         self.__upgrade_subtitles_task()
@@ -285,6 +288,27 @@ class Scheduler:
                     misfire_grace_time=15, id='movies_full_scan_subtitles', name='Index All Existing Movies Subtitles',
                     replace_existing=True, kwargs=dict(wait_for_completion=True))
 
+    def __sportarr_full_update_task(self):
+        if settings.general.use_sportarr:
+            full_update = settings.sportarr.full_update
+            if full_update == "Daily":
+                self.aps_scheduler.add_job(
+                    sports_full_scan_subtitles, 'cron', hour=settings.sportarr.full_update_hour, max_instances=1,
+                    coalesce=True, misfire_grace_time=15, id='sports_full_scan_subtitles',
+                    name='Index All Existing Sports Events Subtitles', replace_existing=True,
+                    kwargs=dict(wait_for_completion=True))
+            elif full_update == "Weekly":
+                self.aps_scheduler.add_job(
+                    sports_full_scan_subtitles, 'cron', day_of_week=settings.sportarr.full_update_day,
+                    hour=settings.sportarr.full_update_hour, max_instances=1, coalesce=True, misfire_grace_time=15,
+                    id='sports_full_scan_subtitles', name='Index All Existing Sports Events Subtitles',
+                    replace_existing=True, kwargs=dict(wait_for_completion=True))
+            elif full_update == "Manually":
+                self.aps_scheduler.add_job(
+                    sports_full_scan_subtitles, 'cron', year=in_a_century(), max_instances=1, coalesce=True,
+                    misfire_grace_time=15, id='sports_full_scan_subtitles', kwargs=dict(wait_for_completion=True),
+                    name='Index All Existing Sports Events Subtitles', replace_existing=True)
+
     def __update_bazarr_task(self):
         if not args.no_update and os.environ["BAZARR_VERSION"] not in ['', 'unknown']:
             task_name = 'Update Bazarr'
@@ -326,6 +350,15 @@ class Scheduler:
                 hours=int(settings.general.wanted_search_frequency_movie), max_instances=1, coalesce=True,
                 misfire_grace_time=15, id='wanted_search_missing_subtitles_movies',
                 name='Search for Missing Movies Subtitles', replace_existing=True,
+                kwargs=dict(wait_for_completion=True))
+        if settings.general.use_sportarr:
+            # A sports event is scored as an episode, so it follows the series
+            # search frequency rather than the movies one.
+            self.aps_scheduler.add_job(
+                wanted_search_missing_subtitles_sports, 'interval',
+                hours=int(settings.general.wanted_search_frequency), max_instances=1, coalesce=True,
+                misfire_grace_time=15, id='wanted_search_missing_subtitles_sports',
+                name='Search for Missing Sports Events Subtitles', replace_existing=True,
                 kwargs=dict(wait_for_completion=True))
 
     def __upgrade_subtitles_task(self):
