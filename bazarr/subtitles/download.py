@@ -18,6 +18,8 @@ from utilities.path_mappings import path_mappings
 from utilities.helper import get_target_folder, force_unicode
 from languages.get_languages import alpha3_from_alpha2, alpha2_from_alpha3
 
+from app.get_providers import blacklist_subtitle
+
 from .pool import update_pools, _get_pool
 from .utils import get_video, _get_lang_obj, _get_scores, _set_forced_providers
 from .processing import process_subtitle
@@ -124,10 +126,16 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
                                                              formats=subtitle_formats,
                                                              path_decoder=force_unicode
                                                              )
+                        # for decode/reencode errors ONLY, add the subtitles file to the blacklist so they're not re-tried endlessly.
+                        # Purposely only catches UnicodeError as an IO error etc should not blacklist a file. UnicodeError handles
+                        # UnicodeEncodeError, UnicodeDecodeError and UnicodeTranslateError cases.
+                        except UnicodeError as e:
+                            logging.exception(
+                                f'BAZARR Cannot decode Subtitles file for this file {path}: {str(e)}')
+                            _blacklist_unusable_subtitles(video, subtitles, media_type, language)
                         except Exception as e:
                             logging.exception(
                                 f'BAZARR Error saving Subtitles file to disk for this file {path}: {str(e)}')
-                            pass
                         else:
                             saved_any = True
                             for subtitle in saved_subtitles:
@@ -154,6 +162,20 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
     subliminal.region.backend.sync()
 
     logging.debug(f'BAZARR Ended searching Subtitles for file: {path}')
+
+
+def _blacklist_unusable_subtitles(video, subtitles, media_type, language):
+    # A subtitle we cannot decode will be downloaded and fail to save again, 
+    # so record it as bad rather than retrying it forever.
+    ids = {
+        'radarrId': getattr(video, 'radarrId', None),
+        'sonarrSeriesId': getattr(video, 'sonarrSeriesId', None),
+        'sonarrEpisodeId': getattr(video, 'sonarrEpisodeId', None),
+    }
+
+    for subtitle in subtitles:
+        logging.info(f'BAZARR blacklisting undecodable subtitle {subtitle.id} from {subtitle.provider_name}')
+        blacklist_subtitle(subtitle.provider_name, subtitle.id, media_type, ids, language)
 
 
 def _get_language_obj(languages):
