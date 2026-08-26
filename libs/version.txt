@@ -6,7 +6,8 @@ apscheduler==4.0.0a6
 attrs==26.1.0
 blinker==1.9.0
 charset-normalizer==3.4.7
-deep-translator==1.11.4
+# deep-translator that include the custom user-agent fix for Google Translate
+git+https://github.com/morpheus65535/deep-translator.git
 dogpile.cache==1.5.0
 dynaconf==3.2.13
 # fese fork that include latest PR not yet merged in upstream
