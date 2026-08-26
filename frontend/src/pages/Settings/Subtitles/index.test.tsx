@@ -22,25 +22,8 @@ const baseSettings = {
     theme: "auto",
     instance_name: "Bazarr",
     use_embedded_subs: true,
-    use_whisper_fallback: true,
-    use_whisper_fallback_series: true,
-    upgrade_subs: true,
     adaptive_searching: true,
-    use_subsync: true,
-    use_postprocessing: true,
-    use_postprocessing_threshold: true,
-    use_postprocessing_threshold_movie: true,
-  },
-  subsync: {
-    use_subsync: true,
-    use_subsync_threshold: true,
-    use_subsync_movie_threshold: true,
-    force_audio: "true",
-    use_original_language: true,
-  },
-  translator: {
-    translator_type: "gemini",
-    gemini_keys: ["key1"],
+    upgrade_subs: true,
   },
 } as unknown as Settings;
 
@@ -73,9 +56,6 @@ describe("SettingsSubtitlesView", () => {
       screen.getByText(/Embedded Subtitles video parser/i),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/Use Whisper as Fallback for Single Series Searches/i),
-    ).toBeInTheDocument();
-    expect(
       screen.getByText(
         /Number of days to go back in history to upgrade subtitles/i,
       ),
@@ -85,15 +65,13 @@ describe("SettingsSubtitlesView", () => {
         /The delay from the first search to adaptive searching taking effect/i,
       ),
     ).toBeInTheDocument();
-    expect(
-      screen.getByRole("textbox", { name: "Command" }),
-    ).toBeInTheDocument();
   });
 
   it("should trigger onSaved when changing embedded subtitles parser", async () => {
     renderPage();
 
-    // The embedded subtitles parser is the third unlabeled Select on the page.
+    // The embedded subtitles parser is the only labeled Select on the page after
+    // the Subtitle Folder + Hearing-impaired selectors.
     const selects = screen.getAllByTestId("input-selector");
     const select = selects[2];
 
@@ -109,32 +87,6 @@ describe("SettingsSubtitlesView", () => {
     expect(select).toHaveValue(
       "mediainfo (slower but may give better results. User must install the mediainfo executable first)",
     );
-  });
-
-  it("should sanitize Gemini API keys when removing a chip", async () => {
-    renderPage();
-
-    const chipInput = screen.getByRole("combobox", {
-      name: "Gemini API keys",
-    });
-
-    await userEvent.click(chipInput);
-    await userEvent.keyboard("{Backspace}");
-
-    expect(screen.queryByText("key1")).not.toBeInTheDocument();
-  });
-
-  it("should trim whitespace when adding a Gemini API key", async () => {
-    renderPage();
-
-    const chipInput = screen.getByRole("combobox", {
-      name: "Gemini API keys",
-    });
-
-    await userEvent.type(chipInput, "  key2  ");
-    await userEvent.keyboard("{Enter}");
-
-    expect(screen.getByText("key2")).toBeInTheDocument();
   });
 
   it("should trigger onSaved when selecting adaptive searching delay", async () => {

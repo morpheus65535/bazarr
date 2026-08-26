@@ -264,7 +264,7 @@ const SettingsJellyfinContent: FunctionComponent = () => {
 
 const SettingsJellyfinView: FunctionComponent = () => {
   return (
-    <Layout name="Interface">
+    <Layout name="Jellyfin">
       <SettingsJellyfinContent />
     </Layout>
   );

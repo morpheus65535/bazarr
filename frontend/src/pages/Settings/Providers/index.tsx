@@ -80,7 +80,7 @@ const SettingsProvidersView: FunctionComponent = () => {
           settingsKey="settings-general-enabled_integrations"
         ></ProviderView>
       </Section>
-      <Section header="Security">
+      <Section header="Advanced">
         <Check
           label="Disable All Providers HTTPS Certificate Validation"
           settingKey="settings-general-disable_all_providers_ssl_verify"

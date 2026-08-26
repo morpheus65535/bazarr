@@ -1,5 +1,5 @@
 import { FunctionComponent, useCallback, useMemo } from "react";
-import { Button } from "@mantine/core";
+import { Button, Code, List, Stack, Text } from "@mantine/core";
 import { faArrowCircleRight, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { capitalize } from "lodash";
@@ -43,6 +43,50 @@ interface PathMappingItem {
 interface TableProps {
   type: SupportType;
 }
+
+const PathMappingHelp: FunctionComponent<TableProps> = ({ type }) => {
+  const support = capitalize(type);
+  const noun = type === "sonarr" ? "series" : "movies";
+  const windowsPath = type === "sonarr" ? "D:\\TV" : "D:\\Movies";
+  const bazarrPath = type === "sonarr" ? "/data/tv" : "/data/movies";
+
+  return (
+    <Stack gap="xs" data-testid="path-mapping-help">
+      <Message>
+        Path mappings translate the file paths reported by {support} into paths
+        that Bazarr can access on this machine. Each row is a simple
+        substitution: when a path received from {support} contains the value in
+        the {support} column, that part is replaced by the value in the Bazarr
+        column.
+      </Message>
+      <Text size="sm" fw={600}>
+        Use path mappings when
+      </Text>
+      <List size="sm" c="dimmed" withPadding>
+        <List.Item>
+          Bazarr and {support} run on different hosts, or in containers with
+          different volume mounts, so the same library is visible at different
+          paths.
+        </List.Item>
+        <List.Item>
+          A path reported by {support} points somewhere Bazarr cannot open — for
+          example {support} runs on Windows and reports{" "}
+          <Code>{windowsPath}</Code>, while Bazarr runs on Linux and the same
+          files live under <Code>{bazarrPath}</Code>.
+        </List.Item>
+      </List>
+      <Text size="sm" fw={600}>
+        Don&rsquo;t use path mappings when
+      </Text>
+      <Message>
+        Bazarr and {support} already share the same filesystem and identical
+        paths. If Bazarr can open your {noun} using the paths reported by{" "}
+        {support}, leave this list empty — unnecessary mappings can prevent
+        Bazarr from finding your files.
+      </Message>
+    </Stack>
+  );
+};
 
 export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
   const key = getSupportKey(type);
@@ -134,24 +178,25 @@ export const PathMappingTable: FunctionComponent<TableProps> = ({ type }) => {
     [action, type],
   );
 
-  if (enabled) {
-    return (
-      <>
-        <SimpleTable
-          tableStyles={{ emptyText: "No mapping" }}
-          columns={columns}
-          data={data}
-        ></SimpleTable>
-        <Button fullWidth onClick={addRow}>
-          Add
-        </Button>
-      </>
-    );
-  } else {
-    return (
-      <Message>
-        Path Mappings will be available after staged changes are saved
-      </Message>
-    );
-  }
+  return (
+    <Stack gap="sm">
+      <PathMappingHelp type={type}></PathMappingHelp>
+      {enabled ? (
+        <>
+          <SimpleTable
+            tableStyles={{ emptyText: "No mapping" }}
+            columns={columns}
+            data={data}
+          ></SimpleTable>
+          <Button fullWidth onClick={addRow}>
+            Add
+          </Button>
+        </>
+      ) : (
+        <Message>
+          Path Mappings will be available after staged changes are saved
+        </Message>
+      )}
+    </Stack>
+  );
 };

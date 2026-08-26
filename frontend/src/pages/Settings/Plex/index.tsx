@@ -33,7 +33,7 @@ const SettingsPlexView = () => {
   );
 
   return (
-    <Layout name="Interface">
+    <Layout name="Plex">
       <Section header="Use Plex Media Server">
         <Check label="Enabled" settingKey={plexEnabledKey} />
       </Section>
@@ -127,12 +127,12 @@ const SettingsPlexView = () => {
                     To enable the webhook trigger, see the{" "}
                     <Text
                       component={Link}
-                      to="/settings/general"
+                      to="/settings/application/general"
                       fw={500}
                       c="info"
                       td="none"
                     >
-                      External Integrations section
+                      Incoming Webhooks section
                     </Text>
                     .
                   </>

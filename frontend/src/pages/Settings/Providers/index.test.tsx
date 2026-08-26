@@ -67,7 +67,7 @@ describe("SettingsProvidersView", () => {
       screen.getByRole("heading", { name: "Integrations" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("heading", { name: "Security" }),
+      screen.getByRole("heading", { name: "Advanced" }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("switch", {

@@ -8,93 +8,48 @@ import {
   Layout,
   Message,
   Section,
-  Selector,
 } from "@/pages/Settings/components";
-import {
-  defaultUndAudioLang,
-  defaultUndEmbeddedSubtitlesLang,
-  enabledLanguageKey,
-} from "@/pages/Settings/keys";
-import { useEnabledLanguages } from "@/utilities/languages";
+import { enabledLanguageKey } from "@/pages/Settings/keys";
 import { LanguageSelector, ProfileSelector } from "./components";
-import LanguageMappings from "./LanguageMappings";
 import Table from "./table";
+import { useLatestEnabledLanguages } from "./useLatestLanguages";
 
-const SettingsLanguagesView: FunctionComponent = () => {
-  const { data: languages } = useLanguages();
-  const { data: undAudioLanguages } = useEnabledLanguages();
-  const { data: undEmbeddedSubtitlesLanguages } = useEnabledLanguages();
+const SettingsLanguageProfilesView: FunctionComponent = () => {
   return (
     <Layout name="Languages">
-      <Section header="Subtitles Language">
-        <Check
-          label="Single Language"
-          settingKey="settings-general-single_language"
-        ></Check>
-        <Message>
-          Download a single Subtitles file without adding the language code to
-          the filename.
-        </Message>
-        <Message type="warning">
-          We don't recommend enabling this option unless absolutely required
-          (ie: media player not supporting language code in subtitles filename).
-          Results may vary.
-        </Message>
-        <LanguageSelector
-          label="Languages Filter"
-          placeholder="Select languages"
-          settingKey={enabledLanguageKey}
-          options={languages ?? []}
-        ></LanguageSelector>
-      </Section>
+      <ProfilesSections></ProfilesSections>
+    </Layout>
+  );
+};
 
-      <Section header="Language Mappings">
-        <Message>
-          Accept subtitles reported as one language as another canonical
-          language. Mappings are one-way and apply globally.
-        </Message>
-        <LanguageMappings></LanguageMappings>
-      </Section>
+const ProfilesSections: FunctionComponent = () => {
+  const { data: languages } = useLanguages();
+  const enabledLanguages = useLatestEnabledLanguages() ?? [];
 
-      <Section header="Embedded Tracks Language">
-        <Check
-          label="Deep analyze media file to get audio tracks language."
-          settingKey="settings-general-parse_embedded_audio_track"
-        ></Check>
-        <CollapseBox
-          indent
-          settingKey="settings-general-parse_embedded_audio_track"
-        >
-          <Selector
-            clearable
-            settingKey={defaultUndAudioLang}
-            label="Treat unknown language audio track as (changing this will trigger missing subtitles calculation)"
-            placeholder="Select languages"
-            options={undAudioLanguages.map((v) => {
-              return { label: v.name, value: v.code2 };
-            })}
-            settingOptions={{
-              onSubmit: (v) => (v === null ? "" : v),
-            }}
-          ></Selector>
-        </CollapseBox>
-        <Selector
-          clearable
-          settingKey={defaultUndEmbeddedSubtitlesLang}
-          label="Treat unknown language embedded subtitles track as (changing this will trigger full subtitles indexing using cache)"
-          placeholder="Select languages"
-          options={undEmbeddedSubtitlesLanguages.map((v) => {
-            return { label: v.name, value: v.code2 };
-          })}
-          settingOptions={{
-            onSubmit: (v) => (v === null ? "" : v),
-          }}
-        ></Selector>
-      </Section>
+  return (
+    <>
       <Section header="Languages Profile">
-        <Table></Table>
+        {enabledLanguages.length === 0 ? (
+          <>
+            <Message>
+              Profiles are built from your enabled languages. Pick the languages
+              you want subtitles for to get started:
+            </Message>
+            <LanguageSelector
+              label="Languages Filter"
+              placeholder="Select languages"
+              settingKey={enabledLanguageKey}
+              options={languages ?? []}
+            ></LanguageSelector>
+          </>
+        ) : (
+          <Table></Table>
+        )}
       </Section>
-      <Section header="Tag-Based Automatic Language Profile Selection Settings">
+      <Section
+        header="Tag-Based Automatic Language Profile Selection"
+        summary="Assign profiles via Sonarr/Radarr tags"
+      >
         <Message>
           If enabled, Bazarr will look at the names of all tags of a Series from
           Sonarr (or a Movie from Radarr) to find a matching Bazarr language
@@ -138,7 +93,10 @@ const SettingsLanguagesView: FunctionComponent = () => {
           empty if you don't want Bazarr to remove language profiles.
         </Message>
       </Section>
-      <Section header="Default Language Profiles For Newly Added Shows">
+      <Section
+        header="Default Language Profiles For Newly Added Shows"
+        summary="Apply a profile automatically to new content"
+      >
         <Check
           label="Series"
           settingKey="settings-general-serie_default_enabled"
@@ -147,7 +105,7 @@ const SettingsLanguagesView: FunctionComponent = () => {
           Will apply only to Series added to Bazarr after enabling this option.
         </Message>
 
-        <CollapseBox indent settingKey="settings-general-serie_default_enabled">
+        <CollapseBox settingKey="settings-general-serie_default_enabled">
           <ProfileSelector
             label="Profile"
             placeholder="Select a profile"
@@ -163,7 +121,7 @@ const SettingsLanguagesView: FunctionComponent = () => {
           Will apply only to Movies added to Bazarr after enabling this option.
         </Message>
 
-        <CollapseBox indent settingKey="settings-general-movie_default_enabled">
+        <CollapseBox settingKey="settings-general-movie_default_enabled">
           <ProfileSelector
             label="Profile"
             placeholder="Select a profile"
@@ -171,8 +129,8 @@ const SettingsLanguagesView: FunctionComponent = () => {
           ></ProfileSelector>
         </CollapseBox>
       </Section>
-    </Layout>
+    </>
   );
 };
 
-export default SettingsLanguagesView;
+export default SettingsLanguageProfilesView;

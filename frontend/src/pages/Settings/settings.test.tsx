@@ -2,16 +2,41 @@ import { http } from "msw";
 import { HttpResponse } from "msw";
 import server from "@/tests/mocks/node";
 import { renderTest, RenderTestCase } from "@/tests/render";
+import SettingsLanguagesGeneralView from "./Languages/General";
+import SettingsLanguageMappingsView from "./Languages/Mappings";
+import SettingsLanguageProfilesView from "./Languages/Profiles";
 import SettingsGeneralView from "./General";
 import SettingsJellyfinView from "./Jellyfin";
-import SettingsLanguagesView from "./Languages";
+import SettingsMaintenanceView from "./Maintenance";
 import SettingsNotificationsView from "./Notifications";
 import SettingsProvidersView from "./Providers";
 import SettingsRadarrView from "./Radarr";
 import SettingsSchedulerView from "./Scheduler";
 import SettingsSonarrView from "./Sonarr";
+import SettingsSubtitleProcessingView from "./SubtitleProcessing";
 import SettingsSubtitlesView from "./Subtitles";
+import SettingsTranslationView from "./Translation";
 import SettingsUIView from "./UI";
+
+const languagesSetup = () => {
+  server.use(
+    http.get("/api/system/languages", () => {
+      return HttpResponse.json({});
+    }),
+  );
+  server.use(
+    http.get("/api/system/languages/profiles", () => {
+      return HttpResponse.json({
+        data: [],
+      });
+    }),
+  );
+  server.use(
+    http.get("/api/system/status", () => {
+      return HttpResponse.json({});
+    }),
+  );
+};
 
 const cases: RenderTestCase[] = [
   {
@@ -26,27 +51,19 @@ const cases: RenderTestCase[] = [
     },
   },
   {
-    name: "languages page",
-    ui: SettingsLanguagesView,
-    setupEach: () => {
-      server.use(
-        http.get("/api/system/languages", () => {
-          return HttpResponse.json({});
-        }),
-      );
-      server.use(
-        http.get("/api/system/languages/profiles", () => {
-          return HttpResponse.json({
-            data: [],
-          });
-        }),
-      );
-      server.use(
-        http.get("/api/system/status", () => {
-          return HttpResponse.json({});
-        }),
-      );
-    },
+    name: "languages general page",
+    ui: SettingsLanguagesGeneralView,
+    setupEach: languagesSetup,
+  },
+  {
+    name: "languages mappings page",
+    ui: SettingsLanguageMappingsView,
+    setupEach: languagesSetup,
+  },
+  {
+    name: "languages profiles page",
+    ui: SettingsLanguageProfilesView,
+    setupEach: languagesSetup,
   },
   {
     name: "notifications page",
@@ -93,6 +110,10 @@ const cases: RenderTestCase[] = [
     ui: SettingsJellyfinView,
   },
   {
+    name: "maintenance page",
+    ui: SettingsMaintenanceView,
+  },
+  {
     name: "scheduler page",
     ui: SettingsSchedulerView,
   },
@@ -117,6 +138,14 @@ const cases: RenderTestCase[] = [
   {
     name: "subtitles page",
     ui: SettingsSubtitlesView,
+  },
+  {
+    name: "subtitle processing page",
+    ui: SettingsSubtitleProcessingView,
+  },
+  {
+    name: "translation page",
+    ui: SettingsTranslationView,
   },
   {
     name: "ui page",

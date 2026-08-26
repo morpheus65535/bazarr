@@ -7,69 +7,11 @@ import {
   SpotlightActionGroupData,
   useSpotlight,
 } from "@mantine/spotlight";
-import { IconDefinition } from "@fortawesome/fontawesome-common-types";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useServerSearch } from "@/apis/hooks";
-import { CustomRouteObject } from "@/Router/type";
 import { useRouteItems } from "@/Router/useRouteItems";
 import { useDebouncedValue } from "@/utilities";
+import { buildNavActions } from "./buildNavActions";
 import { spotlightStore } from "./spotlight";
-
-const buildNavActions = (
-  routes: CustomRouteObject[],
-  navigate: ReturnType<typeof useNavigate>,
-): SpotlightActionData[] => {
-  const actions: SpotlightActionData[] = [];
-
-  const walk = (
-    routeList: CustomRouteObject[],
-    parentPath: string,
-    parentName?: string,
-    parentIcon?: IconDefinition,
-  ): void => {
-    for (const route of routeList) {
-      if (route.hidden) continue;
-
-      const fullPath = (
-        route.path?.startsWith("/")
-          ? route.path
-          : route.path
-            ? parentPath
-              ? `${parentPath}/${route.path}`
-              : `/${route.path}`
-            : parentPath
-      ).replace(/\/+/g, "/");
-
-      if (fullPath.includes(":")) continue;
-
-      if (
-        route.name &&
-        (route.element || route.children?.some((c) => c.index))
-      ) {
-        const icon = route.icon || parentIcon;
-        actions.push({
-          id: fullPath,
-          label: route.name,
-          description: parentName,
-          leftSection: icon ? <FontAwesomeIcon icon={icon} /> : undefined,
-          onClick: () => navigate(fullPath),
-        });
-      }
-
-      if (route.children) {
-        walk(
-          route.children,
-          fullPath,
-          route.name || parentName,
-          route.icon || parentIcon,
-        );
-      }
-    }
-  };
-
-  walk(routes, "");
-  return actions;
-};
 
 const AppSpotlight: FunctionComponent = () => {
   const navigate = useNavigate();

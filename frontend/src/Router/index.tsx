@@ -1,5 +1,5 @@
 import { FunctionComponent, lazy, useMemo } from "react";
-import { createBrowserRouter, RouterProvider } from "react-router";
+import { createBrowserRouter, Navigate, RouterProvider } from "react-router";
 import {
   faClock,
   faCogs,
@@ -23,16 +23,25 @@ import SeriesHistoryView from "@/pages/History/Series";
 import MovieView from "@/pages/Movies";
 import MovieDetailView from "@/pages/Movies/Details";
 import SeriesView from "@/pages/Series";
+import SettingsApplicationView from "@/pages/Settings/Application";
 import SettingsGeneralView from "@/pages/Settings/General";
+import SettingsIntegrationsView from "@/pages/Settings/Integrations";
 import SettingsJellyfinView from "@/pages/Settings/Jellyfin";
-import SettingsLanguagesView from "@/pages/Settings/Languages";
+import SettingsLanguagesGeneralView from "@/pages/Settings/Languages/General";
+import SettingsLanguagesLayout from "@/pages/Settings/Languages/Layout";
+import SettingsLanguageMappingsView from "@/pages/Settings/Languages/Mappings";
+import SettingsLanguageProfilesView from "@/pages/Settings/Languages/Profiles";
+import SettingsMaintenanceView from "@/pages/Settings/Maintenance";
 import SettingsNotificationsView from "@/pages/Settings/Notifications";
 import SettingsPlexView from "@/pages/Settings/Plex";
 import SettingsProvidersView from "@/pages/Settings/Providers";
 import SettingsRadarrView from "@/pages/Settings/Radarr";
 import SettingsSchedulerView from "@/pages/Settings/Scheduler";
 import SettingsSonarrView from "@/pages/Settings/Sonarr";
+import SettingsSubtitleProcessingView from "@/pages/Settings/SubtitleProcessing";
 import SettingsSubtitlesView from "@/pages/Settings/Subtitles";
+import SettingsSubtitlesLayout from "@/pages/Settings/Subtitles/Layout";
+import SettingsTranslationView from "@/pages/Settings/Translation";
 import SettingsUIView from "@/pages/Settings/UI";
 import SystemAnnouncementsView from "@/pages/System/Announcements";
 import SystemBackupsView from "@/pages/System/Backups";
@@ -178,14 +187,74 @@ const useRoutes = (): CustomRouteObject[] => {
             path: "settings",
             children: [
               {
-                path: "general",
-                name: "General",
-                element: <SettingsGeneralView></SettingsGeneralView>,
+                path: "integrations",
+                name: "Integrations",
+                element: <SettingsIntegrationsView></SettingsIntegrationsView>,
+                children: [
+                  {
+                    index: true,
+                    element: <Navigate to="sonarr" replace></Navigate>,
+                  },
+                  {
+                    path: "sonarr",
+                    name: "Sonarr",
+                    hidden: true,
+                    element: <SettingsSonarrView></SettingsSonarrView>,
+                  },
+                  {
+                    path: "radarr",
+                    name: "Radarr",
+                    hidden: true,
+                    element: <SettingsRadarrView></SettingsRadarrView>,
+                  },
+                  {
+                    path: "plex",
+                    name: "Plex",
+                    hidden: true,
+                    element: <SettingsPlexView></SettingsPlexView>,
+                  },
+                  {
+                    path: "jellyfin",
+                    name: "Jellyfin",
+                    hidden: true,
+                    element: <SettingsJellyfinView></SettingsJellyfinView>,
+                  },
+                ],
               },
               {
                 path: "languages",
                 name: "Languages",
-                element: <SettingsLanguagesView></SettingsLanguagesView>,
+                element: <SettingsLanguagesLayout></SettingsLanguagesLayout>,
+                children: [
+                  {
+                    index: true,
+                    element: <Navigate to="general" replace></Navigate>,
+                  },
+                  {
+                    path: "general",
+                    name: "Selection",
+                    hidden: true,
+                    element: (
+                      <SettingsLanguagesGeneralView></SettingsLanguagesGeneralView>
+                    ),
+                  },
+                  {
+                    path: "mappings",
+                    name: "Mappings",
+                    hidden: true,
+                    element: (
+                      <SettingsLanguageMappingsView></SettingsLanguageMappingsView>
+                    ),
+                  },
+                  {
+                    path: "profiles",
+                    name: "Profiles",
+                    hidden: true,
+                    element: (
+                      <SettingsLanguageProfilesView></SettingsLanguageProfilesView>
+                    ),
+                  },
+                ],
               },
               {
                 path: "providers",
@@ -195,27 +264,35 @@ const useRoutes = (): CustomRouteObject[] => {
               {
                 path: "subtitles",
                 name: "Subtitles",
-                element: <SettingsSubtitlesView></SettingsSubtitlesView>,
-              },
-              {
-                path: "sonarr",
-                name: "Sonarr",
-                element: <SettingsSonarrView></SettingsSonarrView>,
-              },
-              {
-                path: "radarr",
-                name: "Radarr",
-                element: <SettingsRadarrView></SettingsRadarrView>,
-              },
-              {
-                path: "plex",
-                name: "Plex",
-                element: <SettingsPlexView></SettingsPlexView>,
-              },
-              {
-                path: "jellyfin",
-                name: "Jellyfin",
-                element: <SettingsJellyfinView></SettingsJellyfinView>,
+                element: <SettingsSubtitlesLayout></SettingsSubtitlesLayout>,
+                children: [
+                  {
+                    index: true,
+                    element: <Navigate to="general" replace></Navigate>,
+                  },
+                  {
+                    path: "general",
+                    name: "Files & Search",
+                    hidden: true,
+                    element: <SettingsSubtitlesView></SettingsSubtitlesView>,
+                  },
+                  {
+                    path: "processing",
+                    name: "Processing",
+                    hidden: true,
+                    element: (
+                      <SettingsSubtitleProcessingView></SettingsSubtitleProcessingView>
+                    ),
+                  },
+                  {
+                    path: "translation",
+                    name: "Translation",
+                    hidden: true,
+                    element: (
+                      <SettingsTranslationView></SettingsTranslationView>
+                    ),
+                  },
+                ],
               },
               {
                 path: "notifications",
@@ -225,14 +302,115 @@ const useRoutes = (): CustomRouteObject[] => {
                 ),
               },
               {
-                path: "scheduler",
-                name: "Scheduler",
-                element: <SettingsSchedulerView></SettingsSchedulerView>,
+                path: "application",
+                name: "Application",
+                element: <SettingsApplicationView></SettingsApplicationView>,
+                children: [
+                  {
+                    index: true,
+                    element: <Navigate to="general" replace></Navigate>,
+                  },
+                  {
+                    path: "general",
+                    name: "General",
+                    hidden: true,
+                    element: <SettingsGeneralView></SettingsGeneralView>,
+                  },
+                  {
+                    path: "ui",
+                    name: "UI",
+                    hidden: true,
+                    element: <SettingsUIView></SettingsUIView>,
+                  },
+                  {
+                    path: "scheduler",
+                    name: "Scheduler",
+                    hidden: true,
+                    element: <SettingsSchedulerView></SettingsSchedulerView>,
+                  },
+                  {
+                    path: "maintenance",
+                    name: "Maintenance",
+                    hidden: true,
+                    element: (
+                      <SettingsMaintenanceView></SettingsMaintenanceView>
+                    ),
+                  },
+                ],
+              },
+              {
+                path: "sonarr",
+                hidden: true,
+                element: (
+                  <Navigate
+                    to="/settings/integrations/sonarr"
+                    replace
+                  ></Navigate>
+                ),
+              },
+              {
+                path: "radarr",
+                hidden: true,
+                element: (
+                  <Navigate
+                    to="/settings/integrations/radarr"
+                    replace
+                  ></Navigate>
+                ),
+              },
+              {
+                path: "plex",
+                hidden: true,
+                element: (
+                  <Navigate to="/settings/integrations/plex" replace></Navigate>
+                ),
+              },
+              {
+                path: "jellyfin",
+                hidden: true,
+                element: (
+                  <Navigate
+                    to="/settings/integrations/jellyfin"
+                    replace
+                  ></Navigate>
+                ),
+              },
+              {
+                path: "general",
+                hidden: true,
+                element: (
+                  <Navigate
+                    to="/settings/application/general"
+                    replace
+                  ></Navigate>
+                ),
               },
               {
                 path: "ui",
-                name: "UI",
-                element: <SettingsUIView></SettingsUIView>,
+                hidden: true,
+                element: (
+                  <Navigate to="/settings/application/ui" replace></Navigate>
+                ),
+              },
+              {
+                path: "scheduler",
+                hidden: true,
+                element: (
+                  <Navigate
+                    to="/settings/application/scheduler"
+                    replace
+                  ></Navigate>
+                ),
+              },
+              {
+                path: "maintenance",
+                hidden: true,
+                element: (
+                  <Navigate
+                    to="/settings/application/maintenance"
+                    replace
+                  ></Navigate>
+                ),
               },
             ],
           },

@@ -110,6 +110,8 @@ export { default as Layout } from "./Layout";
 export { default as LayoutModal } from "./LayoutModal";
 export * from "./Message";
 export * from "./Section";
+export { default as SegmentedTabs } from "./SegmentedTabs";
+export type { SegmentedTab } from "./SegmentedTabs";
 export * from "./collapse";
 export { default as CollapseBox } from "./collapse";
 export * from "./forms";

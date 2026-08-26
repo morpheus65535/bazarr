@@ -1,5 +1,4 @@
 import { ReactNode } from "react";
-import { waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Mock, vi, vitest } from "vitest";
 import { useSettingsMutation, useSystemSettings } from "@/apis/hooks";
@@ -27,13 +26,22 @@ const defaultSettings = {
 const Stager = () => {
   const { setValue } = useFormActions();
   return (
-    <button
-      type="button"
-      data-testid="stage-button"
-      onClick={() => setValue("staged-value", "settings-general-theme")}
-    >
-      Stage
-    </button>
+    <>
+      <button
+        type="button"
+        data-testid="stage-button"
+        onClick={() => setValue("staged-value", "settings-general-theme")}
+      >
+        Stage
+      </button>
+      <button
+        type="button"
+        data-testid="stage-newer-button"
+        onClick={() => setValue("newer-value", "settings-general-theme")}
+      >
+        Stage newer
+      </button>
+    </>
   );
 };
 
@@ -53,8 +61,12 @@ const setupMocks = (
   return mutate;
 };
 
-const renderLayout = (children: ReactNode, settings?: Settings) => {
-  const mutate = setupMocks(vitest.fn(), settings);
+const renderLayout = (
+  children: ReactNode,
+  settings?: Settings,
+  mutation = vitest.fn(),
+) => {
+  const mutate = setupMocks(mutation, settings);
   return {
     mutate,
     ...customRender(<Layout name="Test">{children}</Layout>),
@@ -65,8 +77,9 @@ const renderLayoutModal = (
   children: ReactNode,
   callbackModal = vitest.fn(),
   settings?: Settings,
+  mutation = vitest.fn(),
 ) => {
-  const mutate = setupMocks(vitest.fn(), settings);
+  const mutate = setupMocks(mutation, settings);
   return {
     mutate,
     callbackModal,
@@ -74,6 +87,11 @@ const renderLayoutModal = (
       <LayoutModal callbackModal={callbackModal}>{children}</LayoutModal>,
     ),
   };
+};
+
+const succeedMutation = (mutate: Mock) => {
+  const options = mutate.mock.calls[0][1] as { onSuccess?: () => void };
+  options.onSuccess?.();
 };
 
 describe("Settings Layout", () => {
@@ -96,22 +114,74 @@ describe("Settings Layout", () => {
     expect(screen.getByRole("button", { name: /Save/ })).toBeEnabled();
   });
 
+  it("disables Discard when there are no staged changes", () => {
+    renderLayout(<Stager />);
+
+    expect(screen.getByRole("button", { name: /Discard/ })).toBeDisabled();
+  });
+
+  it("clears staged changes when Discard is clicked", async () => {
+    renderLayout(<Stager />);
+
+    await userEvent.click(screen.getByTestId("stage-button"));
+    expect(screen.getByRole("button", { name: /Save/ })).toBeEnabled();
+
+    await userEvent.click(screen.getByRole("button", { name: /Discard/ }));
+
+    expect(screen.getByRole("button", { name: /Save/ })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /Discard/ })).toBeDisabled();
+  });
+
   it("submits staged settings when Save is clicked", async () => {
     const { mutate } = renderLayout(<Stager />);
 
     await userEvent.click(screen.getByTestId("stage-button"));
     await userEvent.click(screen.getByRole("button", { name: /Save/ }));
 
-    expect(mutate).toHaveBeenCalledWith({
-      "settings-general-theme": "staged-value",
-    });
+    expect(mutate).toHaveBeenCalledWith(
+      {
+        "settings-general-theme": "staged-value",
+      },
+      expect.objectContaining({ onSuccess: expect.any(Function) }),
+    );
   });
 
-  it("resets staged changes when refetching finishes", async () => {
+  it("preserves staged changes across unrelated settings refetches", async () => {
     const { rerender } = renderLayout(<Stager />);
 
     await userEvent.click(screen.getByTestId("stage-button"));
+
+    mockedUseSystemSettings.mockReturnValue({
+      data: defaultSettings,
+      isLoading: false,
+      isRefetching: true,
+    });
+    rerender(
+      <Layout name="Test">
+        <Stager />
+      </Layout>,
+    );
+
+    mockedUseSystemSettings.mockReturnValue({
+      data: defaultSettings,
+      isLoading: false,
+      isRefetching: false,
+    });
+    rerender(
+      <Layout name="Test">
+        <Stager />
+      </Layout>,
+    );
+
     expect(screen.getByRole("button", { name: /Save/ })).toBeEnabled();
+  });
+
+  it("clears unchanged values after their save refetch completes", async () => {
+    const { mutate, rerender } = renderLayout(<Stager />);
+
+    await userEvent.click(screen.getByTestId("stage-button"));
+    await userEvent.click(screen.getByRole("button", { name: /Save/ }));
+    succeedMutation(mutate);
 
     mockedUseSystemSettings.mockReturnValue({
       data: defaultSettings,
@@ -137,6 +207,46 @@ describe("Settings Layout", () => {
 
     expect(screen.getByRole("button", { name: /Save/ })).toBeDisabled();
   });
+
+  it("preserves edits made after a save started", async () => {
+    const { mutate, rerender } = renderLayout(<Stager />);
+
+    await userEvent.click(screen.getByTestId("stage-button"));
+    await userEvent.click(screen.getByRole("button", { name: /Save/ }));
+    await userEvent.click(screen.getByTestId("stage-newer-button"));
+    succeedMutation(mutate);
+
+    mockedUseSystemSettings.mockReturnValue({
+      data: defaultSettings,
+      isLoading: false,
+      isRefetching: true,
+    });
+    rerender(
+      <Layout name="Test">
+        <Stager />
+      </Layout>,
+    );
+
+    mockedUseSystemSettings.mockReturnValue({
+      data: defaultSettings,
+      isLoading: false,
+      isRefetching: false,
+    });
+    rerender(
+      <Layout name="Test">
+        <Stager />
+      </Layout>,
+    );
+
+    expect(screen.getByRole("button", { name: /Save/ })).toBeEnabled();
+    await userEvent.click(screen.getByRole("button", { name: /Save/ }));
+    expect(mutate).toHaveBeenLastCalledWith(
+      {
+        "settings-general-theme": "newer-value",
+      },
+      expect.objectContaining({ onSuccess: expect.any(Function) }),
+    );
+  });
 });
 
 describe("Settings LayoutModal", () => {
@@ -159,18 +269,39 @@ describe("Settings LayoutModal", () => {
     expect(callbackModal).toHaveBeenCalledWith(true);
   });
 
-  it("submits staged settings and closes the modal", async () => {
+  it("keeps the modal open until the save succeeds", async () => {
     const { mutate, callbackModal } = renderLayoutModal(<Stager />);
 
     await userEvent.click(screen.getByTestId("stage-button"));
     await userEvent.click(screen.getByRole("button", { name: /Save/ }));
 
-    expect(mutate).toHaveBeenCalledWith({
-      "settings-general-theme": "staged-value",
-    });
+    expect(mutate).toHaveBeenCalled();
+    expect(callbackModal).not.toHaveBeenCalled();
+  });
 
-    await waitFor(() => expect(callbackModal).toHaveBeenCalledWith(true), {
-      timeout: 1000,
-    });
+  it("submits staged settings and closes the modal on success", async () => {
+    const mutation = vitest.fn(
+      (
+        _settings: Record<string, unknown>,
+        options?: { onSuccess?: () => void },
+      ) => options?.onSuccess?.(),
+    );
+    const { mutate, callbackModal } = renderLayoutModal(
+      <Stager />,
+      vitest.fn(),
+      undefined,
+      mutation,
+    );
+
+    await userEvent.click(screen.getByTestId("stage-button"));
+    await userEvent.click(screen.getByRole("button", { name: /Save/ }));
+
+    expect(mutate).toHaveBeenCalledWith(
+      {
+        "settings-general-theme": "staged-value",
+      },
+      expect.objectContaining({ onSuccess: expect.any(Function) }),
+    );
+    expect(callbackModal).toHaveBeenCalledWith(true);
   });
 });

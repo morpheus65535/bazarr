@@ -224,7 +224,18 @@ const RouteItem: FunctionComponent<{
     return null;
   }
 
-  if (children !== undefined) {
+  const visibleChildren = (children as CustomRouteObject[] | undefined)?.filter(
+    (child) =>
+      child.hidden !== true &&
+      child.path !== undefined &&
+      !child.path.includes(":"),
+  );
+
+  if (
+    children !== undefined &&
+    visibleChildren !== undefined &&
+    visibleChildren.length > 0
+  ) {
     const elements = (
       <Stack gap={0}>
         {children.map((child, idx) => (
