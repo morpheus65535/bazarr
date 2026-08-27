@@ -240,6 +240,7 @@ const Table: FunctionComponent = () => {
             mustContain: [],
             mustNotContain: [],
             originalFormat: false,
+            autoTranslate: false,
           };
           modals.openContextModal(ProfileEditModal, {
             languages,
