@@ -331,6 +331,10 @@ def get_providers_auth():
             'verify_ssl': settings.subf2m.verify_ssl,
             'user_agent': settings.subf2m.user_agent,
         },
+        'opensubtitlesorg': {
+            'verify_ssl': settings.opensubtitlesorg.verify_ssl,
+            'user_agent': settings.opensubtitlesorg.user_agent,
+        },
         'whisperai': {
             'endpoint': settings.whisperai.endpoint,
             'response': settings.whisperai.response,

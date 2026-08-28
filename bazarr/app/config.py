@@ -342,6 +342,10 @@ validators = [
     Validator('subf2m.verify_ssl', must_exist=True, default=True, is_type_of=bool),
     Validator('subf2m.user_agent', must_exist=True, default='', is_type_of=str),
 
+    # opensubtitlesorg section
+    Validator('opensubtitlesorg.verify_ssl', must_exist=True, default=True, is_type_of=bool),
+    Validator('opensubtitlesorg.user_agent', must_exist=True, default='', is_type_of=str),
+
     # hdbits section
     Validator('hdbits.username', must_exist=True, default='', is_type_of=str, cast=str),
     Validator('hdbits.passkey', must_exist=True, default='', is_type_of=str, cast=str),

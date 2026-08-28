@@ -437,6 +437,25 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     ],
   },
   {
+    key: "opensubtitlesorg",
+    name: "OpenSubtitles.org",
+    description:
+      "Public, unauthenticated OpenSubtitles.org provider. Does not require an account.",
+    inputs: [
+      {
+        type: "switch",
+        key: "verify_ssl",
+        name: "Verify SSL",
+        defaultValue: true,
+      },
+      {
+        type: "text",
+        key: "user_agent",
+        name: "User-agent header",
+      },
+    ],
+  },
+  {
     key: "prijevodionline",
     name: "Prijevodi Online",
     description: "Prijevodi Online website. No need for login or cookies.",
