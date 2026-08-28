@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
 import { useSystemSettings } from "@/apis/hooks";
 import { customRender, screen } from "@/tests";
-import SettingsIntegrationsView from "./index";
+import SettingsLibraryView from "./index";
 
 vi.mock("react-router", async (importOriginal) => {
   const actual = await importOriginal<typeof import("react-router")>();
@@ -43,51 +43,51 @@ const mountAt = (pathname: string, settings?: Partial<Settings>) => {
     isLoading: false,
     isRefetching: false,
   });
-  customRender(<SettingsIntegrationsView />);
+  customRender(<SettingsLibraryView />);
   return navigate;
 };
 
-describe("SettingsIntegrationsView", () => {
+describe("SettingsLibraryView", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it("renders both media server tab labels", () => {
-    mountAt("/settings/integrations/plex");
+  it("renders both library tab labels", () => {
+    mountAt("/settings/library/sonarr");
 
-    expect(screen.getByText("Plex")).toBeInTheDocument();
-    expect(screen.getByText("Jellyfin")).toBeInTheDocument();
+    expect(screen.getByText("Sonarr")).toBeInTheDocument();
+    expect(screen.getByText("Radarr")).toBeInTheDocument();
   });
 
   it("navigates to the clicked tab's nested route", async () => {
     const user = userEvent.setup();
-    const navigate = mountAt("/settings/integrations/plex");
+    const navigate = mountAt("/settings/library/sonarr");
 
-    const jellyfinTab = screen.getByText("Jellyfin");
-    await user.click(jellyfinTab);
+    const radarrTab = screen.getByText("Radarr");
+    await user.click(radarrTab);
 
-    expect(navigate).toHaveBeenCalledWith("/settings/integrations/jellyfin");
+    expect(navigate).toHaveBeenCalledWith("/settings/library/radarr");
   });
 
-  it("shows a status dot only on enabled integrations", () => {
-    mountAt("/settings/integrations/plex", {
-      general: { use_plex: true } as Settings["general"],
+  it("shows a status dot only on enabled library sources", () => {
+    mountAt("/settings/library/sonarr", {
+      general: { use_sonarr: true } as Settings["general"],
     } as Partial<Settings>);
 
-    expect(screen.getByTestId("tab-status-plex")).toBeInTheDocument();
+    expect(screen.getByTestId("tab-status-sonarr")).toBeInTheDocument();
     expect(
-      screen.getByRole("tab", { name: "Plex, enabled" }),
+      screen.getByRole("tab", { name: "Sonarr, enabled" }),
     ).toBeInTheDocument();
-    expect(screen.queryByTestId("tab-status-jellyfin")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("tab-status-radarr")).not.toBeInTheDocument();
   });
 
   it("renders the tab active state for the current URL", async () => {
-    mountAt("/settings/integrations/jellyfin");
+    mountAt("/settings/library/radarr");
 
-    const jellyfinTab = screen.getByRole("tab", { name: "Jellyfin" });
-    const plexTab = screen.getByRole("tab", { name: "Plex" });
+    const radarrTab = screen.getByRole("tab", { name: "Radarr" });
+    const sonarrTab = screen.getByRole("tab", { name: "Sonarr" });
 
-    expect(jellyfinTab).toHaveAttribute("data-active", "true");
-    expect(plexTab).not.toHaveAttribute("data-active", "true");
+    expect(radarrTab).toHaveAttribute("data-active", "true");
+    expect(sonarrTab).not.toHaveAttribute("data-active", "true");
   });
 });

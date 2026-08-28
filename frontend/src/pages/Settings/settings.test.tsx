@@ -5,17 +5,21 @@ import { renderTest, RenderTestCase } from "@/tests/render";
 import SettingsLanguagesGeneralView from "./Languages/General";
 import SettingsLanguageMappingsView from "./Languages/Mappings";
 import SettingsLanguageProfilesView from "./Languages/Profiles";
+import SettingsProvidersAdvancedView from "./Providers/Advanced";
+import SettingsProvidersMetadataView from "./Providers/Metadata";
+import SettingsProvidersProtectionView from "./Providers/Protection";
+import SettingsProvidersSubtitlesView from "./Providers/Subtitles";
+import SettingsProvidersTranslationView from "./Providers/Translation";
+import SettingsSubtitlesFilesView from "./Subtitles/Files";
+import SettingsSubtitlesSearchView from "./Subtitles/Search";
 import SettingsGeneralView from "./General";
 import SettingsJellyfinView from "./Jellyfin";
 import SettingsMaintenanceView from "./Maintenance";
 import SettingsNotificationsView from "./Notifications";
-import SettingsProvidersView from "./Providers";
 import SettingsRadarrView from "./Radarr";
 import SettingsSchedulerView from "./Scheduler";
 import SettingsSonarrView from "./Sonarr";
 import SettingsSubtitleProcessingView from "./SubtitleProcessing";
-import SettingsSubtitlesView from "./Subtitles";
-import SettingsTranslationView from "./Translation";
 import SettingsUIView from "./UI";
 
 const languagesSetup = () => {
@@ -84,8 +88,24 @@ const cases: RenderTestCase[] = [
     },
   },
   {
-    name: "providers page",
-    ui: SettingsProvidersView,
+    name: "providers subtitles page",
+    ui: SettingsProvidersSubtitlesView,
+  },
+  {
+    name: "providers translation page",
+    ui: SettingsProvidersTranslationView,
+  },
+  {
+    name: "providers protection page",
+    ui: SettingsProvidersProtectionView,
+  },
+  {
+    name: "providers metadata page",
+    ui: SettingsProvidersMetadataView,
+  },
+  {
+    name: "providers advanced page",
+    ui: SettingsProvidersAdvancedView,
   },
   {
     name: "radarr page",
@@ -136,16 +156,16 @@ const cases: RenderTestCase[] = [
     },
   },
   {
-    name: "subtitles page",
-    ui: SettingsSubtitlesView,
+    name: "subtitles files page",
+    ui: SettingsSubtitlesFilesView,
+  },
+  {
+    name: "subtitles search page",
+    ui: SettingsSubtitlesSearchView,
   },
   {
     name: "subtitle processing page",
     ui: SettingsSubtitleProcessingView,
-  },
-  {
-    name: "translation page",
-    ui: SettingsTranslationView,
   },
   {
     name: "ui page",

@@ -13,9 +13,9 @@ import {
 } from "@/pages/Settings/components";
 import { translatorOption } from "./options";
 
-const SettingsTranslationView: FunctionComponent = () => {
+const SettingsProvidersTranslationView: FunctionComponent = () => {
   return (
-    <Layout name="Translation">
+    <Layout name="Providers">
       <Section header="Translating">
         <Slider
           label="Score for Translated Episode and Movie Subtitles"
@@ -90,4 +90,4 @@ const SettingsTranslationView: FunctionComponent = () => {
   );
 };
 
-export default SettingsTranslationView;
+export default SettingsProvidersTranslationView;

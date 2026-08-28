@@ -67,15 +67,15 @@ describe("SettingsMaintenanceView", () => {
     vi.clearAllMocks();
   });
 
-  it("renders Logging and Analytics sections", () => {
+  it("renders the Logging section", () => {
     renderPage();
 
     expect(
       screen.getByRole("heading", { name: "Logging" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("heading", { name: "Analytics" }),
-    ).toBeInTheDocument();
+      screen.queryByRole("heading", { name: "Analytics" }),
+    ).not.toBeInTheDocument();
   });
 
   it("hides the Updates section when updates are disabled", () => {

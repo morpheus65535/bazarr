@@ -2,7 +2,7 @@ import userEvent from "@testing-library/user-event";
 import { Mock, vi, vitest } from "vitest";
 import { useSettingsMutation, useSystemSettings } from "@/apis/hooks";
 import { customRender, screen } from "@/tests";
-import SettingsTranslationView from "./index";
+import SettingsProvidersTranslationView from "./Translation";
 
 vi.mock("@/apis/hooks", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/apis/hooks")>();
@@ -41,10 +41,10 @@ const setupMocks = () => {
 
 const renderPage = () => {
   setupMocks();
-  return customRender(<SettingsTranslationView />);
+  return customRender(<SettingsProvidersTranslationView />);
 };
 
-describe("SettingsTranslationView", () => {
+describe("SettingsProvidersTranslationView", () => {
   beforeEach(() => {
     vitest.clearAllMocks();
   });

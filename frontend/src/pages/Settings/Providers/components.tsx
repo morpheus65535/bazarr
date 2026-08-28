@@ -236,8 +236,7 @@ const RequiredIntegrationAlert: FunctionComponent<{
             integration?.inputs?.[0]?.name ?? "API credentials"
           }. `
         : `This provider requires the ${integrationName} integration, which is not enabled yet. `}
-      Enable and configure it in the Integrations section below for this
-      provider to work.
+      Enable and configure it in the Metadata tab for this provider to work.
     </Alert>
   );
 };

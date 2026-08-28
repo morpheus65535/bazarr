@@ -167,6 +167,9 @@ describe("SettingsGeneralView", () => {
       screen.getByRole("heading", { name: "Incoming Webhooks" }),
     ).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Proxy" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Analytics" }),
+    ).toBeInTheDocument();
   });
 
   it("should expand authentication fields when selecting a security type", async () => {

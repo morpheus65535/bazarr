@@ -59,8 +59,8 @@ describe("Settings routes", () => {
   });
 
   it.each([
-    ["sonarr", "/settings/integrations/sonarr"],
-    ["radarr", "/settings/integrations/radarr"],
+    ["sonarr", "/settings/library/sonarr"],
+    ["radarr", "/settings/library/radarr"],
     ["plex", "/settings/integrations/plex"],
     ["jellyfin", "/settings/integrations/jellyfin"],
   ])("redirects the legacy %s URL", (path, target) => {
@@ -74,14 +74,48 @@ describe("Settings routes", () => {
     const routes = getSettingsRoutes();
 
     for (const [path, target] of [
-      ["integrations", "sonarr"],
+      ["library", "sonarr"],
+      ["integrations", "plex"],
       ["languages", "general"],
-      ["subtitles", "general"],
+      ["providers", "subtitles"],
+      ["subtitles", "files"],
       ["application", "general"],
     ]) {
       const group = routes.find((route) => route.path === path);
       const index = group?.children?.find((route) => route.index);
       expect(index && getRedirectTarget(index)).toBe(target);
     }
+  });
+
+  it.each([
+    ["sonarr", "/settings/library/sonarr"],
+    ["radarr", "/settings/library/radarr"],
+  ])("redirects the legacy integrations/%s URL", (path, target) => {
+    const integrations = getSettingsRoutes().find(
+      (item) => item.path === "integrations",
+    );
+    const route = (
+      integrations?.children as CustomRouteObject[] | undefined
+    )?.find((item) => item.path === path);
+
+    expect(route?.hidden).toBe(true);
+    expect(route?.name).toBeUndefined();
+    expect(route && getRedirectTarget(route)).toBe(target);
+  });
+
+  it.each([
+    ["general", "/settings/subtitles/files"],
+    ["translation", "/settings/providers/translation"],
+  ])("redirects the legacy subtitles/%s URL", (path, target) => {
+    const subtitles = getSettingsRoutes().find(
+      (item) => item.path === "subtitles",
+    );
+    const route = (
+      subtitles?.children as CustomRouteObject[] | undefined
+    )?.find((item) => item.path === path);
+
+    expect(route?.hidden).toBe(true);
+    expect(route?.name).toBeUndefined();
+    expect(route && getRedirectTarget(route)).toBe(target);
   });
 });

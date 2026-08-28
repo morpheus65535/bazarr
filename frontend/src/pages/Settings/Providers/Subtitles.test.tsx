@@ -4,7 +4,7 @@ import { Mock, vi, vitest } from "vitest";
 import { useSettingsMutation, useSystemSettings } from "@/apis/hooks/system";
 import api from "@/apis/raw";
 import { customRender, screen } from "@/tests";
-import SettingsProvidersView from "./index";
+import SettingsProvidersSubtitlesView from "./Subtitles";
 
 vi.mock("@/apis/hooks/system", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/apis/hooks/system")>();
@@ -24,8 +24,6 @@ const baseSettings = {
     instance_name: "Bazarr",
     enabled_providers: [] as string[],
     enabled_integrations: [] as string[],
-    anti_captcha_provider: null,
-    disable_all_providers_ssl_verify: false,
   },
 };
 
@@ -46,86 +44,31 @@ const setupMocks = (overrides?: Partial<typeof baseSettings>) => {
 
 const renderPage = (overrides?: Partial<typeof baseSettings>) => {
   setupMocks(overrides);
-  return customRender(<SettingsProvidersView />);
+  return customRender(<SettingsProvidersSubtitlesView />);
 };
 
-describe("SettingsProvidersView", () => {
+describe("SettingsProvidersSubtitlesView", () => {
   beforeEach(() => {
     vitest.clearAllMocks();
   });
 
-  it("should render provider sections and security option", () => {
+  it("should render the enabled providers section", () => {
     renderPage();
 
     expect(
       screen.getByRole("heading", { name: "Enabled Providers" }),
     ).toBeInTheDocument();
-    expect(
-      screen.getByRole("heading", { name: "Anti-Captcha Options" }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("heading", { name: "Integrations" }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("heading", { name: "Advanced" }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("switch", {
-        name: "Disable All Providers HTTPS Certificate Validation",
-      }),
-    ).toBeInTheDocument();
   });
 
-  it("should render enabled provider and integration cards", () => {
+  it("should render enabled provider cards", () => {
     renderPage({
       general: {
         ...baseSettings.general,
         enabled_providers: ["addic7ed"],
-        enabled_integrations: ["anidb"],
       },
     });
 
     expect(screen.getByText("Addic7ed")).toBeInTheDocument();
-    expect(screen.getByText("AniDB")).toBeInTheDocument();
-  });
-
-  it("should render an inline link within the integration message", async () => {
-    renderPage({
-      general: {
-        ...baseSettings.general,
-        enabled_integrations: ["anidb"],
-      },
-    });
-
-    await userEvent.click(screen.getByRole("button", { name: /AniDB/i }));
-
-    const modal = await screen.findByRole("dialog");
-    const modalScope = within(modal);
-
-    const link = modalScope.getByRole("link", { name: "AniDB" });
-    expect(link).toBeInTheDocument();
-    expect(link).toHaveAttribute("href", "https://anidb.net/software/add");
-  });
-
-  it("should expand anti-captcha fields when selecting a provider", async () => {
-    renderPage();
-
-    const antiCaptchaSelect = screen.getByRole("combobox", {
-      name: "Choose the anti-captcha provider you want to use",
-    });
-
-    await userEvent.click(antiCaptchaSelect);
-
-    const option = screen.getByRole("option", {
-      hidden: true,
-      name: "Anti-Captcha",
-    });
-
-    fireEvent.click(option);
-
-    expect(
-      screen.getByRole("textbox", { name: "Account Key" }),
-    ).toBeInTheDocument();
   });
 
   const getEnabledProviderAddButton = () =>

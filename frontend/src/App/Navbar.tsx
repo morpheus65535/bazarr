@@ -86,7 +86,7 @@ const useIsActive = (parent: string, route: RouteObject) => {
 
   // Collect paths at every depth: the sidebar must stay open (and the item
   // stay active) when a nested tab page is open, e.g. keeping the Settings
-  // group expanded while on /settings/integrations/sonarr.
+  // group expanded while on /settings/library/sonarr.
   const paths = useMemo(() => {
     const collect = (base: string, items: RouteObject[] = []): string[] =>
       items.flatMap((item) => {

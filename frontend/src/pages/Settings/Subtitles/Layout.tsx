@@ -3,9 +3,9 @@ import { Outlet } from "react-router";
 import { SegmentedTab, SegmentedTabs } from "@/pages/Settings/components";
 
 const tabs: readonly SegmentedTab[] = [
-  { value: "general", label: "Files & Search" },
+  { value: "files", label: "Files" },
+  { value: "search", label: "Search" },
   { value: "processing", label: "Processing" },
-  { value: "translation", label: "Translation" },
 ];
 
 const SettingsSubtitlesLayout: FunctionComponent = () => {

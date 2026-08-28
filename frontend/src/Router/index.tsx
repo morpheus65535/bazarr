@@ -31,17 +31,23 @@ import SettingsLanguagesGeneralView from "@/pages/Settings/Languages/General";
 import SettingsLanguagesLayout from "@/pages/Settings/Languages/Layout";
 import SettingsLanguageMappingsView from "@/pages/Settings/Languages/Mappings";
 import SettingsLanguageProfilesView from "@/pages/Settings/Languages/Profiles";
+import SettingsLibraryView from "@/pages/Settings/Library";
 import SettingsMaintenanceView from "@/pages/Settings/Maintenance";
 import SettingsNotificationsView from "@/pages/Settings/Notifications";
 import SettingsPlexView from "@/pages/Settings/Plex";
-import SettingsProvidersView from "@/pages/Settings/Providers";
+import SettingsProvidersAdvancedView from "@/pages/Settings/Providers/Advanced";
+import SettingsProvidersLayout from "@/pages/Settings/Providers/Layout";
+import SettingsProvidersMetadataView from "@/pages/Settings/Providers/Metadata";
+import SettingsProvidersProtectionView from "@/pages/Settings/Providers/Protection";
+import SettingsProvidersSubtitlesView from "@/pages/Settings/Providers/Subtitles";
+import SettingsProvidersTranslationView from "@/pages/Settings/Providers/Translation";
 import SettingsRadarrView from "@/pages/Settings/Radarr";
 import SettingsSchedulerView from "@/pages/Settings/Scheduler";
 import SettingsSonarrView from "@/pages/Settings/Sonarr";
 import SettingsSubtitleProcessingView from "@/pages/Settings/SubtitleProcessing";
-import SettingsSubtitlesView from "@/pages/Settings/Subtitles";
+import SettingsSubtitlesFilesView from "@/pages/Settings/Subtitles/Files";
 import SettingsSubtitlesLayout from "@/pages/Settings/Subtitles/Layout";
-import SettingsTranslationView from "@/pages/Settings/Translation";
+import SettingsSubtitlesSearchView from "@/pages/Settings/Subtitles/Search";
 import SettingsUIView from "@/pages/Settings/UI";
 import SystemAnnouncementsView from "@/pages/System/Announcements";
 import SystemBackupsView from "@/pages/System/Backups";
@@ -187,9 +193,9 @@ const useRoutes = (): CustomRouteObject[] => {
             path: "settings",
             children: [
               {
-                path: "integrations",
-                name: "Integrations",
-                element: <SettingsIntegrationsView></SettingsIntegrationsView>,
+                path: "library",
+                name: "Library",
+                element: <SettingsLibraryView></SettingsLibraryView>,
                 children: [
                   {
                     index: true,
@@ -207,6 +213,17 @@ const useRoutes = (): CustomRouteObject[] => {
                     hidden: true,
                     element: <SettingsRadarrView></SettingsRadarrView>,
                   },
+                ],
+              },
+              {
+                path: "integrations",
+                name: "Integrations",
+                element: <SettingsIntegrationsView></SettingsIntegrationsView>,
+                children: [
+                  {
+                    index: true,
+                    element: <Navigate to="plex" replace></Navigate>,
+                  },
                   {
                     path: "plex",
                     name: "Plex",
@@ -218,6 +235,26 @@ const useRoutes = (): CustomRouteObject[] => {
                     name: "Jellyfin",
                     hidden: true,
                     element: <SettingsJellyfinView></SettingsJellyfinView>,
+                  },
+                  {
+                    path: "sonarr",
+                    hidden: true,
+                    element: (
+                      <Navigate
+                        to="/settings/library/sonarr"
+                        replace
+                      ></Navigate>
+                    ),
+                  },
+                  {
+                    path: "radarr",
+                    hidden: true,
+                    element: (
+                      <Navigate
+                        to="/settings/library/radarr"
+                        replace
+                      ></Navigate>
+                    ),
                   },
                 ],
               },
@@ -259,7 +296,53 @@ const useRoutes = (): CustomRouteObject[] => {
               {
                 path: "providers",
                 name: "Providers",
-                element: <SettingsProvidersView></SettingsProvidersView>,
+                element: <SettingsProvidersLayout></SettingsProvidersLayout>,
+                children: [
+                  {
+                    index: true,
+                    element: <Navigate to="subtitles" replace></Navigate>,
+                  },
+                  {
+                    path: "subtitles",
+                    name: "Subtitles",
+                    hidden: true,
+                    element: (
+                      <SettingsProvidersSubtitlesView></SettingsProvidersSubtitlesView>
+                    ),
+                  },
+                  {
+                    path: "translation",
+                    name: "Translation",
+                    hidden: true,
+                    element: (
+                      <SettingsProvidersTranslationView></SettingsProvidersTranslationView>
+                    ),
+                  },
+                  {
+                    path: "protection",
+                    name: "Protection",
+                    hidden: true,
+                    element: (
+                      <SettingsProvidersProtectionView></SettingsProvidersProtectionView>
+                    ),
+                  },
+                  {
+                    path: "metadata",
+                    name: "Metadata",
+                    hidden: true,
+                    element: (
+                      <SettingsProvidersMetadataView></SettingsProvidersMetadataView>
+                    ),
+                  },
+                  {
+                    path: "advanced",
+                    name: "Advanced",
+                    hidden: true,
+                    element: (
+                      <SettingsProvidersAdvancedView></SettingsProvidersAdvancedView>
+                    ),
+                  },
+                ],
               },
               {
                 path: "subtitles",
@@ -268,13 +351,23 @@ const useRoutes = (): CustomRouteObject[] => {
                 children: [
                   {
                     index: true,
-                    element: <Navigate to="general" replace></Navigate>,
+                    element: <Navigate to="files" replace></Navigate>,
                   },
                   {
-                    path: "general",
-                    name: "Files & Search",
+                    path: "files",
+                    name: "Files",
                     hidden: true,
-                    element: <SettingsSubtitlesView></SettingsSubtitlesView>,
+                    element: (
+                      <SettingsSubtitlesFilesView></SettingsSubtitlesFilesView>
+                    ),
+                  },
+                  {
+                    path: "search",
+                    name: "Search",
+                    hidden: true,
+                    element: (
+                      <SettingsSubtitlesSearchView></SettingsSubtitlesSearchView>
+                    ),
                   },
                   {
                     path: "processing",
@@ -285,11 +378,23 @@ const useRoutes = (): CustomRouteObject[] => {
                     ),
                   },
                   {
-                    path: "translation",
-                    name: "Translation",
+                    path: "general",
                     hidden: true,
                     element: (
-                      <SettingsTranslationView></SettingsTranslationView>
+                      <Navigate
+                        to="/settings/subtitles/files"
+                        replace
+                      ></Navigate>
+                    ),
+                  },
+                  {
+                    path: "translation",
+                    hidden: true,
+                    element: (
+                      <Navigate
+                        to="/settings/providers/translation"
+                        replace
+                      ></Navigate>
                     ),
                   },
                 ],
@@ -342,20 +447,14 @@ const useRoutes = (): CustomRouteObject[] => {
                 path: "sonarr",
                 hidden: true,
                 element: (
-                  <Navigate
-                    to="/settings/integrations/sonarr"
-                    replace
-                  ></Navigate>
+                  <Navigate to="/settings/library/sonarr" replace></Navigate>
                 ),
               },
               {
                 path: "radarr",
                 hidden: true,
                 element: (
-                  <Navigate
-                    to="/settings/integrations/radarr"
-                    replace
-                  ></Navigate>
+                  <Navigate to="/settings/library/radarr" replace></Navigate>
                 ),
               },
               {
