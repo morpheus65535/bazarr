@@ -4,18 +4,19 @@ import logging
 import re
 import pysubs2
 
+from random import randint
+
+from subliminal_patch.providers.utils import FIRST_THOUSAND_OR_SO_USER_AGENTS as AGENT_LIST
+
 from retry.api import retry
-from app.config import settings
 from ..core.translator_utils import add_translator_info, create_process_result
 from sonarr.history import history_log
 from radarr.history import history_log_movie
 from deep_translator import GoogleTranslator
 from concurrent.futures import ThreadPoolExecutor
-from utilities.path_mappings import path_mappings
-from subtitles.processing import ProcessSubtitlesResult
 from app.jobs_queue import jobs_queue
 from deep_translator.exceptions import TooManyRequests, RequestError, TranslationNotFound
-from languages.get_languages import alpha3_from_alpha2, language_from_alpha2, language_from_alpha3
+from languages.get_languages import language_from_alpha2, language_from_alpha3
 
 logger = logging.getLogger(__name__)
 
@@ -145,7 +146,8 @@ class GoogleTranslatorService:
         try:
             translated_text = GoogleTranslator(
                 source='auto',
-                target=self.language_code_convert_dict.get(self.lang_obj.alpha2, self.lang_obj.alpha2)
+                target=self.language_code_convert_dict.get(self.lang_obj.alpha2, self.lang_obj.alpha2),
+                user_agent=AGENT_LIST[randint(0, len(AGENT_LIST) - 1)]
             ).translate(text=text)
 
             # The free Google endpoint occasionally answers 200 OK with an error/captcha HTML page
