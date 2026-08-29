@@ -83,7 +83,7 @@ def upgrade_episodes_subtitles(job_id=None, wait_for_completion=False):
         .select_from(TableHistory)
         .join(TableShows, onclause=TableHistory.sonarrSeriesId == TableShows.sonarrSeriesId)
         .join(TableEpisodes, onclause=TableHistory.sonarrEpisodeId == TableEpisodes.sonarrEpisodeId)
-        .join(TableEpisodesSubtitles, onclause=TableHistory.sonarrEpisodeId == TableEpisodesSubtitles.sonarrEpisodeId)
+        .join(TableEpisodesSubtitles, onclause=TableHistory.sonarrEpisodeId == TableEpisodesSubtitles.sonarrEpisodeId, isouter=True)
         .where(TableEpisodesSubtitles.path.is_not(None)))
     .all() if _language_still_desired(x.language, x.profileId) and x.video_path == x.path]
 
@@ -189,7 +189,7 @@ def upgrade_movies_subtitles(job_id=None, wait_for_completion=False):
                TableMoviesSubtitles.path.label('external_subtitles'))
         .select_from(TableHistoryMovie)
         .join(TableMovies, onclause=TableHistoryMovie.radarrId == TableMovies.radarrId)
-        .join(TableMoviesSubtitles, onclause=TableHistoryMovie.radarrId == TableMoviesSubtitles.radarrId)
+        .join(TableMoviesSubtitles, onclause=TableHistoryMovie.radarrId == TableMoviesSubtitles.radarrId, isouter=True)
         .where(TableMoviesSubtitles.path.is_not(None)))
     .all() if _language_still_desired(x.language, x.profileId) and x.video_path == x.path]
 
