@@ -84,10 +84,18 @@ const useIsActive = (parent: string, route: RouteObject) => {
   const { pathname } = useLocation();
   const root = useMemo(() => pathJoin(parent, path ?? ""), [parent, path]);
 
-  const paths = useMemo(
-    () => [root, ...(children?.map((v) => pathJoin(root, v.path ?? "")) ?? [])],
-    [root, children],
-  );
+  // Collect paths at every depth: the sidebar must stay open (and the item
+  // stay active) when a nested tab page is open, e.g. keeping the Settings
+  // group expanded while on /settings/library/sonarr.
+  const paths = useMemo(() => {
+    const collect = (base: string, items: RouteObject[] = []): string[] =>
+      items.flatMap((item) => {
+        const itemPath = pathJoin(base, item.path ?? "");
+        return [itemPath, ...collect(itemPath, item.children)];
+      });
+
+    return [root, ...collect(root, children)];
+  }, [root, children]);
 
   const selection = useSelection().selection;
   return useMemo(
@@ -224,7 +232,18 @@ const RouteItem: FunctionComponent<{
     return null;
   }
 
-  if (children !== undefined) {
+  const visibleChildren = (children as CustomRouteObject[] | undefined)?.filter(
+    (child) =>
+      child.hidden !== true &&
+      child.path !== undefined &&
+      !child.path.includes(":"),
+  );
+
+  if (
+    children !== undefined &&
+    visibleChildren !== undefined &&
+    visibleChildren.length > 0
+  ) {
     const elements = (
       <Stack gap={0}>
         {children.map((child, idx) => (

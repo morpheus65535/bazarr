@@ -1,7 +1,6 @@
 import { FunctionComponent } from "react";
 import { Anchor } from "@mantine/core";
 import {
-  Check,
   CollapseBox,
   Layout,
   Message,
@@ -10,19 +9,11 @@ import {
   Selector,
   Text,
 } from "@/pages/Settings/components";
-import { antiCaptchaOption } from "@/pages/Settings/Providers/options";
-import { ProviderView } from "./components";
-import { IntegrationList, ProviderList } from "./list";
+import { antiCaptchaOption } from "./options";
 
-const SettingsProvidersView: FunctionComponent = () => {
+const SettingsProvidersProtectionView: FunctionComponent = () => {
   return (
     <Layout name="Providers">
-      <Section header="Enabled Providers">
-        <ProviderView
-          availableOptions={ProviderList}
-          settingsKey="settings-general-enabled_providers"
-        ></ProviderView>
-      </Section>
       <Section header="Anti-Captcha Options">
         <Selector
           clearable
@@ -74,24 +65,8 @@ const SettingsProvidersView: FunctionComponent = () => {
           <Message>Link to subscribe</Message>
         </CollapseBox>
       </Section>
-      <Section header="Integrations">
-        <ProviderView
-          availableOptions={IntegrationList}
-          settingsKey="settings-general-enabled_integrations"
-        ></ProviderView>
-      </Section>
-      <Section header="Security">
-        <Check
-          label="Disable All Providers HTTPS Certificate Validation"
-          settingKey="settings-general-disable_all_providers_ssl_verify"
-        ></Check>
-        <Message>
-          Disable all providers HTTPS certificate validation. Do not change
-          unless you get SSL issues with providers and you understand the risks.
-        </Message>
-      </Section>
     </Layout>
   );
 };
 
-export default SettingsProvidersView;
+export default SettingsProvidersProtectionView;

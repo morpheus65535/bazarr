@@ -2,12 +2,10 @@ import React, { FunctionComponent } from "react";
 import { Code, Space, Table, Text as MantineText } from "@mantine/core";
 import {
   Check,
-  Chips,
   CollapseBox,
   Layout,
   Message,
   MultiSelector,
-  Number,
   Section,
   Selector,
   Slider,
@@ -18,16 +16,10 @@ import {
   SubzeroModification,
 } from "@/pages/Settings/utilities/modifications";
 import {
-  adaptiveSearchingDelayOption,
-  adaptiveSearchingDeltaOption,
   colorOptions,
-  embeddedSubtitlesParserOption,
-  folderOptions,
   forceAudioOption,
-  hiExtensionOptions,
   providerOptions,
   syncMaxOffsetSecondsOptions,
-  translatorOption,
 } from "./options";
 
 interface CommandOption {
@@ -130,106 +122,15 @@ const commandOptionElements: React.JSX.Element[] = commandOptions.map(
   ),
 );
 
-const SettingsSubtitlesView: FunctionComponent = () => {
+const SettingsSubtitleProcessingView: FunctionComponent = () => {
   return (
-    <Layout name="Subtitles">
-      <Section header="Subtitle File Options">
-        <Selector
-          label="Subtitle Folder"
-          options={folderOptions}
-          settingKey="settings-general-subfolder"
-        ></Selector>
-        <Message>
-          Choose the folder you wish to store/read the subtitles.
-        </Message>
-        <CollapseBox
-          settingKey="settings-general-subfolder"
-          on={(k) => k !== "" && k !== "current"}
-        >
-          <Text
-            label="Custom Subtitles Folder"
-            settingKey="settings-general-subfolder_custom"
-          ></Text>
-        </CollapseBox>
-        <Selector
-          label="Hearing-impaired subtitles extension"
-          options={hiExtensionOptions}
-          settingKey="settings-general-hi_extension"
-          allowDeselect={false}
-        ></Selector>
-        <Message>
-          What file extension to use when saving hearing-impaired subtitles to
-          disk (e.g., video.en.sdh.srt).
-        </Message>
-        <Check
-          label="Encode Subtitles To UTF-8"
-          settingKey="settings-general-utf8_encode"
-        ></Check>
-        <Message>
-          Re-encode downloaded subtitles to UTF-8. Should be left enabled in
-          most cases.
-        </Message>
-        <Check
-          label="Change Subtitle File Permission After Download (chmod)"
-          settingKey="settings-general-chmod_enabled"
-        ></Check>
-        <CollapseBox indent settingKey="settings-general-chmod_enabled">
-          <Text placeholder="0777" settingKey="settings-general-chmod"></Text>
-          <Message>
-            Must be a 4 digit octal number. Only for non-Windows systems.
-          </Message>
-        </CollapseBox>
-      </Section>
-      <Section header="Embedded Subtitles Handling">
-        <Check
-          label="Treat Embedded Subtitles as Downloaded"
-          settingKey="settings-general-use_embedded_subs"
-        ></Check>
-        <Message>
-          Treat embedded subtitles in media files as already downloaded when
-          determining missing ones.
-        </Message>
-        <CollapseBox indent settingKey="settings-general-use_embedded_subs">
-          <Selector
-            settingKey="settings-general-embedded_subtitles_parser"
-            settingOptions={{
-              onSaved: (v) => (v === undefined ? "ffprobe" : v),
-            }}
-            options={embeddedSubtitlesParserOption}
-          ></Selector>
-          <Message>Embedded Subtitles video parser.</Message>
-          <Check
-            label="Ignore Embedded PGS Subtitles"
-            settingKey="settings-general-ignore_pgs_subs"
-          ></Check>
-          <Message>
-            Ignore PGS Subtitles when detecting embedded subtitles.
-          </Message>
-          <Check
-            label="Ignore Embedded VobSub Subtitles"
-            settingKey="settings-general-ignore_vobsub_subs"
-          ></Check>
-          <Message>
-            Ignore VobSub Subtitles when detecting embedded subtitles.
-          </Message>
-          <Check
-            label="Ignore Embedded ASS Subtitles"
-            settingKey="settings-general-ignore_ass_subs"
-          ></Check>
-          <Message>
-            Ignore ASS Subtitles when detecting embedded subtitles.
-          </Message>
-          <Check
-            label="Show Only Desired Languages"
-            settingKey="settings-general-embedded_subs_show_desired"
-          ></Check>
-          <Message>
-            Hide Embedded Subtitles for languages that are not currently
-            desired.
-          </Message>
-        </CollapseBox>
-      </Section>
-      <Section header="Whisper As Fallback">
+    <Layout name="Subtitle Processing">
+      <Section
+        header="Whisper As Fallback"
+        collapsible
+        defaultCollapsed
+        summary="AI transcription fallback for low-scoring results"
+      >
         <Check
           label="Use Whisper as Fallback for Automated Searches"
           settingKey="settings-general-use_whisper_fallback"
@@ -262,83 +163,13 @@ const SettingsSubtitlesView: FunctionComponent = () => {
           </CollapseBox>
         </CollapseBox>
       </Section>
-      <Section header="Upgrading Subtitles">
-        <Check
-          label="Upgrade Previously Downloaded Subtitles"
-          settingKey="settings-general-upgrade_subs"
-        ></Check>
-        <Message>
-          Schedule a task to upgrade subtitles previously downloaded by Bazarr.
-        </Message>
-        <CollapseBox settingKey="settings-general-upgrade_subs">
-          <Slider
-            settingKey="settings-general-days_to_upgrade_subs"
-            max={30}
-            mb="lg"
-          ></Slider>
-          <Message>
-            Number of days to go back in history to upgrade subtitles.
-          </Message>
-          <Check
-            label="Upgrade Manually Downloaded or Translated Subtitles"
-            settingKey="settings-general-upgrade_manual"
-          ></Check>
-          <Message>
-            Enable or disable upgrade of manually downloaded or translated
-            subtitles.
-          </Message>
-        </CollapseBox>
-      </Section>
-      <Section header="Performance / Optimization">
-        <Check
-          label="Adaptive Searching"
-          settingKey="settings-general-adaptive_searching"
-        ></Check>
-        <Message>
-          When enabled, Bazarr will skip searching providers for subtitles which
-          have been searched recently.
-        </Message>
-        <CollapseBox settingKey="settings-general-adaptive_searching">
-          <Selector
-            settingKey="settings-general-adaptive_searching_delay"
-            settingOptions={{ onSaved: (v) => (v === undefined ? "3w" : v) }}
-            options={adaptiveSearchingDelayOption}
-          ></Selector>
-          <Message>
-            The delay from the first search to adaptive searching taking effect.
-            During this time window Bazarr will continue to search for
-            subtitles, even if they have been searched for recently.
-          </Message>
-          <Selector
-            settingKey="settings-general-adaptive_searching_delta"
-            settingOptions={{ onSaved: (v) => (v === undefined ? "1w" : v) }}
-            options={adaptiveSearchingDeltaOption}
-          ></Selector>
-          <Message>
-            The delay between Bazarr searching for subtitles in adaptive search
-            mode. If the media has been searched for more recently than this
-            value, Bazarr will skip searching for subtitles.
-          </Message>
-        </CollapseBox>
-        <Check
-          label="Search Enabled Providers Simultaneously"
-          settingKey="settings-general-multithreading"
-        ></Check>
-        <Message>
-          Search multiple providers at once. (Don't choose this on low powered
-          devices).
-        </Message>
-        <Check
-          label="Skip video file hash calculation"
-          settingKey="settings-general-skip_hashing"
-        ></Check>
-        <Message>
-          Skip video file hashing during search process to prevent a sleeping
-          hard disk drive from waking up. However, this may decrease your search
-          results scores.
-        </Message>
-      </Section>
-      <Section header="Sub-Zero Subtitle Content Modifications">
+
+      <Section
+        header="Sub-Zero Subtitle Content Modifications"
+        collapsible
+        defaultCollapsed
+        summary="Optional subtitle content fixes"
+      >
         <Message>
           After downloaded, content of the subtitles will be modified based on
           options selected below.
@@ -417,7 +248,13 @@ const SettingsSubtitlesView: FunctionComponent = () => {
           playback devices.
         </Message>
       </Section>
-      <Section header="Audio Synchronization">
+
+      <Section
+        header="Audio Synchronization"
+        collapsible
+        defaultCollapsed
+        summary="Automatic subtitle timing alignment"
+      >
         <Check
           label="Enable Automatic Subtitles Audio Synchronization"
           settingKey="settings-subsync-use_subsync"
@@ -569,7 +406,13 @@ const SettingsSubtitlesView: FunctionComponent = () => {
           </Section>
         </CollapseBox>
       </Section>
-      <Section header="Custom Post-Processing">
+
+      <Section
+        header="Custom Post-Processing"
+        collapsible
+        defaultCollapsed
+        summary="Run a command after downloading"
+      >
         <Check
           settingKey="settings-general-use_postprocessing"
           label="Custom Post-Processing"
@@ -624,78 +467,8 @@ const SettingsSubtitlesView: FunctionComponent = () => {
           </Table>
         </CollapseBox>
       </Section>
-      <Section header="Translating">
-        <Slider
-          label="Score for Translated Episode and Movie Subtitles"
-          settingKey="settings-translator-default_score"
-        ></Slider>
-        <Selector
-          label="Translator"
-          clearable
-          options={translatorOption}
-          placeholder="Default translator"
-          settingKey="settings-translator-translator_type"
-        ></Selector>
-        <CollapseBox
-          settingKey="settings-translator-translator_type"
-          on={(val) => val === "gemini"}
-        >
-          <Text
-            label="Gemini model"
-            settingKey="settings-translator-gemini_model"
-          />
-          <Number
-            label="Gemini batch size"
-            settingKey="settings-translator-gemini_batch_size"
-            min={1}
-          />
-          <Message>
-            Number of subtitle lines sent in each Gemini request. Higher values
-            reduce the number of API calls and can speed up translation, but may
-            increase timeout or response-size errors. Start with 300 (default),
-            then lower it if requests fail or raise it gradually if your model
-            handles larger batches reliably.
-          </Message>
-          <Chips
-            label="Gemini API keys"
-            settingKey="settings-translator-gemini_keys"
-            sanitizeFn={(values) => {
-              const uniqueKeys = new Set(
-                (values ?? []).map((value) => value.trim()).filter(Boolean),
-              );
-              return Array.from(uniqueKeys);
-            }}
-          ></Chips>
-          <Message>
-            You can generate keys here: https://aistudio.google.com/apikey. Add
-            as many keys as needed; Bazarr rotates across available keys.
-          </Message>
-        </CollapseBox>
-        <CollapseBox
-          settingKey="settings-translator-translator_type"
-          on={(val) => val === "lingarr"}
-        >
-          <Text
-            label="Lingarr endpoint"
-            settingKey="settings-translator-lingarr_url"
-          />
-          <Message>Base URL of Lingarr (e.g., http://localhost:9876)</Message>
-          <Text
-            label="Lingarr API Key (optional)"
-            settingKey="settings-translator-lingarr_token"
-          />
-          <Message>
-            Optional API key for authentication. Leave empty if your Lingarr
-            instance doesn't require authentication.
-          </Message>
-        </CollapseBox>
-        <Check
-          label="Add translation info at the beginning"
-          settingKey="settings-translator-translator_info"
-        ></Check>
-      </Section>
     </Layout>
   );
 };
 
-export default SettingsSubtitlesView;
+export default SettingsSubtitleProcessingView;

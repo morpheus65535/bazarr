@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from "react";
-import { get, isNull, isUndefined, uniqBy } from "lodash";
+import { get, isEqual, isNull, isUndefined, uniqBy } from "lodash";
 import {
   HookType,
   useFormActions,
@@ -26,17 +26,29 @@ export const useBaseInput = <T, V>(props: T & BaseInput<V>) => {
   const { settingKey, settingOptions, ...rest } = props;
   // TODO: Opti options
   const value = useSettingValue<V>(settingKey, settingOptions);
+  // The original (server/default) value, ignoring any staged changes. Used to
+  // detect when a field has been reverted back to its original state.
+  const originalValue = useSettingValue<V>(settingKey, {
+    ...settingOptions,
+    original: true,
+  });
 
-  const { setValue } = useFormActions();
+  const { setValue, removeValue } = useFormActions();
 
   const update = useCallback(
     (newValue: V | null) => {
       const moddedValue =
         (newValue && settingOptions?.onSaved?.(newValue)) ?? newValue;
 
-      setValue(moddedValue, settingKey, settingOptions?.onSubmit as HookType);
+      // Reverting back to the original value should clear the staged change
+      // so it no longer counts as an unsaved change.
+      if (isEqual(moddedValue, originalValue)) {
+        removeValue(settingKey);
+      } else {
+        setValue(moddedValue, settingKey, settingOptions?.onSubmit as HookType);
+      }
     },
-    [settingOptions, setValue, settingKey],
+    [settingOptions, setValue, removeValue, settingKey, originalValue],
   );
 
   return { value, update, rest };

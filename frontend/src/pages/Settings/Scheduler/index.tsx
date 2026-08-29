@@ -1,10 +1,13 @@
 import { FunctionComponent, useMemo } from "react";
+import { Box, Text as MantineText } from "@mantine/core";
 import { SelectorOption } from "@/components";
 import {
   Check,
   CollapseBox,
+  File,
   Layout,
   Message,
+  Number,
   Section,
   Selector,
 } from "@/pages/Settings/components";
@@ -35,55 +38,11 @@ const SettingsSchedulerView: FunctionComponent = () => {
           options={seriesSyncOptions}
           settingKey="settings-sonarr-series_sync"
         ></Selector>
-        <Check
-          label="Sync Only Monitored Series"
-          settingKey={"settings-sonarr-sync_only_monitored_series"}
-        ></Check>
-        <CollapseBox settingKey={"settings-sonarr-sync_only_monitored_series"}>
-          <Message>
-            If enabled, only series with a monitored status in Sonarr will be
-            synced. If you make changes to a specific unmonitored Sonarr series
-            and you want Bazarr to know about those changes, simply toggle the
-            monitored status back on in Sonarr and Bazarr will sync any changes.
-          </Message>
-        </CollapseBox>
-        <CollapseBox settingKey={"settings-sonarr-sync_only_monitored_series"}>
-          <Check
-            label="Sync Only Monitored Episodes"
-            settingKey={"settings-sonarr-sync_only_monitored_episodes"}
-          ></Check>
-          <CollapseBox
-            settingKey={"settings-sonarr-sync_only_monitored_episodes"}
-          >
-            <Message>
-              If enabled, only episodes with a monitored status in Sonarr will
-              be synced. If you make changes to a specific unmonitored Sonarr
-              episode (or season) and you want Bazarr to know about those
-              changes, simply toggle the monitored status back on in Sonarr and
-              Bazarr will sync any changes. This setting is especially helpful
-              for long running TV series with many seasons and many episodes,
-              but that are still actively producing new episodes (e.g. Saturday
-              Night Live).
-            </Message>
-          </CollapseBox>
-        </CollapseBox>
         <Selector
           label="Sync with Radarr"
           options={moviesSyncOptions}
           settingKey="settings-radarr-movies_sync"
         ></Selector>
-        <Check
-          label="Sync Only Monitored Movies"
-          settingKey={"settings-radarr-sync_only_monitored_movies"}
-        ></Check>
-        <CollapseBox settingKey={"settings-radarr-sync_only_monitored_movies"}>
-          <Message>
-            If enabled, only movies with a monitored status in Radarr will be
-            synced. If you make changes to a specific unmonitored Radarr movie
-            and you want Bazarr to know about those changes, simply toggle the
-            monitored status back on in Radarr and Bazarr will sync any changes.
-          </Message>
-        </CollapseBox>
       </Section>
       <Section header="Disk Indexing">
         <Selector
@@ -178,7 +137,24 @@ const SettingsSchedulerView: FunctionComponent = () => {
           settingKey="settings-general-upgrade_frequency"
         ></Selector>
       </Section>
-      <Section header="Backup">
+      <Section header="Backups">
+        <File
+          label="Folder"
+          settingKey="settings-backup-folder"
+          type="bazarr"
+        ></File>
+        <Message>Absolute path to the backup directory</Message>
+        <Number
+          label="Retention"
+          settingKey="settings-backup-retention"
+          rightSection={
+            <Box w="4rem" style={{ justifyContent: "flex-end" }}>
+              <MantineText size="xs" px="sm" c="dimmed">
+                Days
+              </MantineText>
+            </Box>
+          }
+        ></Number>
         <Selector
           label="Backup Database and Configuration File"
           settingKey="settings-backup-frequency"

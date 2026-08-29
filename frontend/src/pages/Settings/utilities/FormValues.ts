@@ -62,7 +62,20 @@ export const useFormActions = () => {
     });
   }, []);
 
-  return { update, setValue };
+  // Removes a previously staged value, e.g. when a field is reverted back to
+  // its original value so it no longer counts as an unsaved change.
+  const removeValue = useCallback((key: string) => {
+    LOG("info", `Removing staged value of ${key}`);
+    formRef.current.setValues((values) => {
+      const changes = { ...values.settings };
+      const hooks = { ...values.hooks };
+      delete changes[key];
+      delete hooks[key];
+      return { ...values, settings: changes, hooks };
+    });
+  }, []);
+
+  return { update, setValue, removeValue };
 };
 
 export type HookType = (value: unknown) => unknown;

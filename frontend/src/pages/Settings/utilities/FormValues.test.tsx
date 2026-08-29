@@ -115,6 +115,26 @@ describe("FormValues utilities", () => {
       });
     });
 
+    it("removeValue removes a staged setting and its hook", () => {
+      const setValues = vitest.fn();
+      const form = createForm({ settings: {}, hooks: {} }, setValues);
+      const { result } = renderHook(() => useFormActions(), {
+        wrapper: createWrapper(form),
+      });
+
+      result.current.removeValue("key");
+
+      const updater = setValues.mock.calls[0][0] as (
+        values: FormValues,
+      ) => FormValues;
+      expect(
+        updater({
+          settings: { key: "value", other: 1 },
+          hooks: { key: (v) => v },
+        }),
+      ).toEqual({ settings: { other: 1 }, hooks: {} });
+    });
+
     it("setValue updates a setting without a hook", () => {
       const setValues = vitest.fn();
       const form = createForm({ settings: {}, hooks: {} }, setValues);

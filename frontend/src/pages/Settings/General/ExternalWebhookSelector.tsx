@@ -36,7 +36,13 @@ const ExternalWebhookSelector: FunctionComponent = () => {
       <Message>
         Send webhook notifications to external services when subtitles are
         downloaded. For Autopulse auto-configuration with Plex OAuth, see the{" "}
-        <Text component={Link} to="/settings/plex" fw={500} c="info" td="none">
+        <Text
+          component={Link}
+          to="/settings/integrations/plex"
+          fw={500}
+          c="info"
+          td="none"
+        >
           Plex settings section
         </Text>
         .

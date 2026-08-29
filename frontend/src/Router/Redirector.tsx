@@ -16,7 +16,7 @@ const Redirector: FunctionComponent = () => {
       } else if (useRadarr) {
         navigate("/movies");
       } else {
-        navigate("/settings/general");
+        navigate("/settings/application/general");
       }
     }
   }, [data, navigate]);

@@ -24,7 +24,7 @@ import {
 } from "@/components/inputs";
 import { useModals, withModal } from "@/modules/modals";
 import { notification } from "@/modules/task";
-import { syncMaxOffsetSecondsOptions } from "@/pages/Settings/Subtitles/options";
+import { syncMaxOffsetSecondsOptions } from "@/pages/Settings/SubtitleProcessing/options";
 import { fromPython, toPython } from "@/utilities";
 
 const useReferencedSubtitles = (

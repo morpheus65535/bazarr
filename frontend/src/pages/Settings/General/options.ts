@@ -25,14 +25,3 @@ export const proxyOptions: SelectorOption<string>[] = [
     value: "http",
   },
 ];
-
-export const branchOptions: SelectorOption<string>[] = [
-  {
-    label: "master",
-    value: "master",
-  },
-  {
-    label: "development",
-    value: "development",
-  },
-];
