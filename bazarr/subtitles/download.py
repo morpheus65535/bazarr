@@ -132,7 +132,8 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
                         except UnicodeError as e:
                             logging.exception(
                                 f'BAZARR Cannot decode Subtitles file for this file {path}: {str(e)}')
-                            _blacklist_unusable_subtitles(video, subtitles, media_type, language)
+                            _blacklist_unusable_subtitles(video, subtitles, media_type, language,
+                                                          getattr(e, 'bazarr_failed_subtitle', None))
                         except Exception as e:
                             logging.exception(
                                 f'BAZARR Error saving Subtitles file to disk for this file {path}: {str(e)}')
@@ -164,8 +165,8 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
     logging.debug(f'BAZARR Ended searching Subtitles for file: {path}')
 
 
-def _blacklist_unusable_subtitles(video, subtitles, media_type, language):
-    # A subtitle we cannot decode will be downloaded and fail to save again, 
+def _blacklist_unusable_subtitles(video, subtitles, media_type, language, failed_subtitle=None):
+    # A subtitle we cannot decode will be downloaded and fail to save again,
     # so record it as bad rather than retrying it forever.
     ids = {
         'radarrId': getattr(video, 'radarrId', None),
@@ -173,7 +174,9 @@ def _blacklist_unusable_subtitles(video, subtitles, media_type, language):
         'sonarrEpisodeId': getattr(video, 'sonarrEpisodeId', None),
     }
 
-    for subtitle in subtitles:
+    # save_subtitles tags the exception with the subtitle it choked on. Without
+    # that tag we cannot tell which one failed, so fall back to the whole batch.
+    for subtitle in [failed_subtitle] if failed_subtitle is not None else subtitles:
         logging.info(f'BAZARR blacklisting undecodable subtitle {subtitle.id} from {subtitle.provider_name}')
         blacklist_subtitle(subtitle.provider_name, subtitle.id, media_type, ids, language)
 
