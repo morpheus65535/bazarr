@@ -9,7 +9,7 @@ from flask_restx import Resource, Namespace, reqparse, fields, marshal
 from app.database import TableShows, TableEpisodes, TableMovies, database, select, get_subtitles
 from utilities.path_mappings import path_mappings
 from utilities.video_analyzer import subtitles_sync_references
-from subtitles.tools.translate.main import translate_subtitles_file
+from subtitles.tools.translate.main import translate_subtitles_file, extract_and_translate_embedded
 from subtitles.tools.translate.core.translator_utils import resolve_translation_source
 from subtitles.tools.mods import subtitles_apply_mods
 from subtitles.indexer.series import store_subtitles
@@ -197,29 +197,37 @@ class Subtitles(Resource):
             except ValueError as e:
                 return str(e), 400
 
-            # Translating an embedded track requires extracting it to an external file first.
-            # extract_embedded_subtitle returns the path of the newly created external file.
+            # Translating an embedded track requires extracting it to an external file first. Both steps must run
+            # inside the same job: called outside a job context, extract_embedded_subtitle self-enqueues and
+            # returns False, so handling them separately would enqueue the translation with an invalid source
+            # path before the extraction job has even started.
             if embedded_subtitle_id is not None:
                 try:
-                    subtitles_path = extract_embedded_subtitle(
-                        subtitles_id=embedded_subtitle_id, media_type=media_type)
+                    extract_and_translate_embedded(
+                        subtitles_id=embedded_subtitle_id, media_type=media_type, video_path=video_path,
+                        from_lang=from_language, to_lang=dest_language, forced=forced, hi=hi,
+                        sonarr_series_id=metadata.sonarrSeriesId if media_type == "episode" else None,
+                        sonarr_episode_id=id if media_type == "episode" else None,
+                        radarr_id=id if media_type == "movie" else None,
+                        metadata=metadata,
+                        original_format=args.get('original_format') == 'True')
                 except BitmapSubtitlesNotSupportedError:
                     return 'Image based embedded subtitles cannot be extracted', 415
                 except (EmbeddedSubtitlesExtractionError, OSError):
                     return 'Unable to take action on subtitles file. Check logs.', 409
+            else:
+                try:
+                    translate_subtitles_file(video_path=video_path, source_srt_file=subtitles_path,
+                                             from_lang=from_language, to_lang=dest_language, forced=forced, hi=hi,
+                                             media_type=media_type,
+                                             original_format=args.get('original_format') == 'True',
+                                             sonarr_series_id=metadata.sonarrSeriesId if media_type == "episode" else None,
+                                             sonarr_episode_id=id,
+                                             radarr_id=id,
+                                             metadata=metadata)
 
-            try:
-                translate_subtitles_file(video_path=video_path, source_srt_file=subtitles_path,
-                                         from_lang=from_language, to_lang=dest_language, forced=forced, hi=hi,
-                                         media_type=media_type,
-                                         original_format=args.get('original_format') == 'True',
-                                         sonarr_series_id=metadata.sonarrSeriesId if media_type == "episode" else None,
-                                         sonarr_episode_id=id,
-                                         radarr_id=id,
-                                         metadata=metadata)
-
-            except OSError:
-                return 'Unable to edit subtitles file. Check logs.', 409
+                except OSError:
+                    return 'Unable to edit subtitles file. Check logs.', 409
         elif action == 'extract':
             if not subtitles_id:
                 return 'Subtitles ID is required for extraction', 400

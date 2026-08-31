@@ -65,3 +65,52 @@ def test_resolve_invalid_language_raises():
 def test_resolve_neither_path_nor_id_raises():
     with pytest.raises(ValueError, match="Invalid source language code"):
         _resolve([_external()], None, None)
+
+
+def _run_combined(mocker, job_id=None, extracted_path="/tmp/extracted.en.srt"):
+    from bazarr.subtitles.tools.translate.main import extract_and_translate_embedded
+
+    # extract_embedded_subtitle is imported inside the job body from its top-level module path,
+    # so patch it there rather than under the bazarr.* package path used by these tests.
+    extract = mocker.patch("subtitles.embedded.extract_embedded_subtitle",
+                           return_value=extracted_path)
+    translate = mocker.patch("bazarr.subtitles.tools.translate.main.translate_subtitles_file")
+
+    extract_and_translate_embedded(
+        subtitles_id=4, media_type="movie", video_path="/movies/Foo (2020)/Foo.mkv",
+        from_lang="eng", to_lang="fra", forced=False, hi=True,
+        sonarr_series_id=None, sonarr_episode_id=None, radarr_id=12,
+        metadata={"imdbId": "tt0000001"}, original_format=True, job_id=job_id)
+
+    return extract, translate
+
+
+def test_combined_job_self_enqueues_without_job_id(mocker):
+    enqueue = mocker.patch("bazarr.subtitles.tools.translate.main.jobs_queue.add_job_from_function",
+                           return_value=1)
+
+    extract, translate = _run_combined(mocker, job_id=None)
+
+    # A single job is enqueued and neither step runs synchronously.
+    enqueue.assert_called_once()
+    assert "ENG" in enqueue.call_args[0][0] and "FRA" in enqueue.call_args[0][0]
+    extract.assert_not_called()
+    translate.assert_not_called()
+
+
+def test_combined_job_extracts_then_translates_with_same_job_id(mocker):
+    extract, translate = _run_combined(mocker, job_id=99)
+
+    extract.assert_called_once_with(subtitles_id=4, media_type="movie", job_id=99)
+    translate.assert_called_once_with(
+        video_path="/movies/Foo (2020)/Foo.mkv", source_srt_file="/tmp/extracted.en.srt",
+        from_lang="eng", to_lang="fra", forced=False, hi=True, media_type="movie",
+        sonarr_series_id=None, sonarr_episode_id=None, radarr_id=12,
+        metadata={"imdbId": "tt0000001"}, original_format=True, job_id=99)
+
+
+def test_combined_job_skips_translation_when_extraction_fails(mocker):
+    extract, translate = _run_combined(mocker, job_id=99, extracted_path=None)
+
+    extract.assert_called_once()
+    translate.assert_not_called()

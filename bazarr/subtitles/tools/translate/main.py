@@ -15,6 +15,31 @@ from app.jobs_queue import jobs_queue
 from utilities.helper import get_target_folder
 
 
+def extract_and_translate_embedded(subtitles_id, media_type, video_path, from_lang, to_lang, forced, hi,
+                                   sonarr_series_id, sonarr_episode_id, radarr_id, metadata,
+                                   original_format=False, job_id=None):
+    # Extract an embedded subtitles track then translate the resulting external file, both inside a single job.
+    # add_job_from_function must remain the first statement: it binds the caller's locals to this signature, so
+    # no other local variable can exist yet.
+    if not job_id:
+        jobs_queue.add_job_from_function(f'Extracting and translating from {from_lang.upper()} to '
+                                         f'{to_lang.upper()}', is_progress=True)
+        return
+
+    from subtitles.embedded import extract_embedded_subtitle
+    subtitles_path = extract_embedded_subtitle(subtitles_id=subtitles_id, media_type=media_type, job_id=job_id)
+    if not subtitles_path:
+        logging.error(f'BAZARR was unable to extract embedded subtitles track id {subtitles_id}, '
+                      f'aborting translation')
+        return
+
+    translate_subtitles_file(video_path=video_path, source_srt_file=subtitles_path, from_lang=from_lang,
+                             to_lang=to_lang, forced=forced, hi=hi, media_type=media_type,
+                             sonarr_series_id=sonarr_series_id, sonarr_episode_id=sonarr_episode_id,
+                             radarr_id=radarr_id, metadata=metadata, original_format=original_format,
+                             job_id=job_id)
+
+
 def translate_subtitles_file(video_path, source_srt_file, from_lang, to_lang, forced, hi,
                              media_type, sonarr_series_id, sonarr_episode_id, radarr_id, metadata,
                              original_format=False, job_id=None):
