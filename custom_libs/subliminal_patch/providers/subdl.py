@@ -182,6 +182,13 @@ class SubdlProvider(Provider):
         # Bazarr shares one provider instance across threads, so guard the set.
         self._ai_notices_logged = set()
         self._ai_notices_lock = Lock()
+        # Set when the server says the monthly translation quota is exhausted.
+        # Until it passes, no AI candidates are offered: the server-side status
+        # is cached per worker over there, so without this a wanted-list scan
+        # kept submitting doomed jobs for a few more minutes.
+        self._ai_quota_block_until = 0.0
+        self._bazarr_policy = dict(self.DEFAULT_BAZARR_POLICY)
+        self._bazarr_policy_revision_logged = None
 
     def initialize(self):
         self._started = time.time()
@@ -200,6 +207,16 @@ class SubdlProvider(Provider):
     # count instead of 2.5x.
     SUBS_PER_PAGE = 30
     MAX_PAGES = 2
+    DEFAULT_BAZARR_POLICY = {
+        'revision': 1,
+        'enabled': True,
+        'ai_translation_enabled': True,
+        'max_pages': MAX_PAGES,
+        'season_fallback_enabled': True,
+        'title_fallback_enabled': True,
+        'unpack_enabled': True,
+        'message': None,
+    }
 
     # The API rejects these outright ("Film name contains potentially unsafe
     # characters"), which would otherwise 400 every apostrophe title such as
@@ -230,6 +247,36 @@ class SubdlProvider(Provider):
             return True
         return False
 
+    def _apply_bazarr_policy(self, payload):
+        """Accept the small, bounded policy returned by api.subdl.com."""
+        if not isinstance(payload, dict):
+            return
+        policy = payload.get('bazarr_policy')
+        if not isinstance(policy, dict):
+            return
+
+        for key in ('enabled', 'ai_translation_enabled',
+                    'season_fallback_enabled', 'title_fallback_enabled',
+                    'unpack_enabled'):
+            if isinstance(policy.get(key), bool):
+                self._bazarr_policy[key] = policy[key]
+
+        max_pages = policy.get('max_pages')
+        if isinstance(max_pages, int) and not isinstance(max_pages, bool):
+            self._bazarr_policy['max_pages'] = max(1, min(max_pages, 2))
+
+        revision = policy.get('revision')
+        if isinstance(revision, int) and revision > 0:
+            self._bazarr_policy['revision'] = revision
+
+        message = policy.get('message')
+        self._bazarr_policy['message'] = (
+            message[:160] if isinstance(message, str) and message.strip() else None)
+        if (self._bazarr_policy['message']
+                and self._bazarr_policy_revision_logged != self._bazarr_policy['revision']):
+            logger.info(f"subdl: {self._bazarr_policy['message']}")
+            self._bazarr_policy_revision_logged = self._bazarr_policy['revision']
+
     def _search(self, params, description, paginate=False):
         """Run one search and return (items, first_payload).
 
@@ -246,8 +293,14 @@ class SubdlProvider(Provider):
         items = []
         first_payload = {}
         page = 1
-        while page <= (self.MAX_PAGES if paginate else 1):
+        while page <= (self._bazarr_policy['max_pages'] if paginate else 1):
             call_params = dict(params)
+            # Add the secret here, not to query()'s base_params. Pytest includes
+            # function arguments in failure tracebacks; keeping the key out of
+            # the `params` argument prevents credential disclosure in CI logs.
+            call_params['api_key'] = self.api_key
+            if not self._bazarr_policy['unpack_enabled']:
+                call_params.pop('unpack', None)
             call_params['subs_per_page'] = self.SUBS_PER_PAGE
             if page > 1:
                 call_params['page'] = page
@@ -256,7 +309,18 @@ class SubdlProvider(Provider):
                     lambda: self.session.get(self.server_url() + 'subtitles',
                                              params=call_params, timeout=30)
                 )
-            except (SubdlRequestRejected, RequestException) as error:
+            except SubdlRequestRejected as error:
+                # A normal no-results search is a successful JSON response.
+                # A bare route-level 404 means the public search surface is not
+                # mounted on this deployment; treat it as an outage, not as an
+                # invalid key (which the API contract reports as JSON 403).
+                if str(error) == 'Resource not found':
+                    raise ServiceUnavailable(
+                        'SubDL search endpoint unavailable') from error
+                logger.debug(f'subdl: {description} search failed, continuing '
+                             f'without it: {self._redact(repr(error))}')
+                break
+            except RequestException as error:
                 # The api_key rides in the request URL, and requests puts that
                 # URL in the exception text.
                 logger.debug(f'subdl: {description} search failed, continuing '
@@ -266,6 +330,7 @@ class SubdlProvider(Provider):
             payload = self._safe_json(response)
             if page == 1:
                 first_payload = payload
+                self._apply_bazarr_policy(payload)
             if self._is_error_payload(payload):
                 error = payload.get('error') if isinstance(payload, dict) else None
                 if error and "can't find" in str(error).lower():
@@ -309,7 +374,6 @@ class SubdlProvider(Provider):
 
         # 'bazarr' filters incompatible image-based or txt subtitles.
         base_params = {
-            'api_key': self.api_key,
             'bazarr': 1,
             'comment': 1,
             'languages': langs,
@@ -347,6 +411,8 @@ class SubdlProvider(Provider):
                 dict(base_params, type='tv', episode_number=video.episode, season_number=video.season),
                 'episode', paginate=True)
             merge(episode_items, 'episode')
+            if not self._bazarr_policy['enabled']:
+                return []
 
             # For anime with absolute episode numbering, also search by absolute episode number
             # so we can find subtitles that are only indexed by absolute number on subdl
@@ -360,21 +426,24 @@ class SubdlProvider(Provider):
             # split-season / cour-based internal numbering (e.g. Fire Force S3 split into two cours
             # where episode 25 is stored internally as cour-2 episode 13).
             # The release name matching in get_matches() will identify the correct episode.
-            logger.debug(f'Also searching by season only (no episode filter) for season {video.season}')
-            # Not paginated: this is a supplementary fallback, and paging it
-            # would double the per-episode request cost of a full library scan.
-            merge(self._search(dict(base_params, type='tv', season_number=video.season),
-                               'season-only')[0], 'season-only')
+            if self._bazarr_policy['season_fallback_enabled']:
+                logger.debug(f'Also searching by season only (no episode filter) for season {video.season}')
+                # Not paginated: this is a supplementary fallback, and paging it
+                # would double the per-episode request cost of a full library scan.
+                merge(self._search(dict(base_params, type='tv', season_number=video.season),
+                                   'season-only')[0], 'season-only')
 
             # Last resort: if all season-filtered searches returned nothing, search by title only
             # (no season/episode filter). This catches anime stored as season 0 on subdl (full series
             # blocks) where season_number filtering silently excludes all results.
-            if not all_items:
+            if not all_items and self._bazarr_policy['title_fallback_enabled']:
                 logger.debug('All season-filtered searches returned 0 results, falling back to title-only search')
                 merge(self._search(dict(base_params, type='tv'), 'title-only')[0], 'title-only')
         else:
             movie_items, first_payload = self._search(dict(base_params, type='movie'), 'movie', paginate=True)
             merge(movie_items, 'movie')
+            if not self._bazarr_policy['enabled']:
+                return []
 
             # subdl also allows searching by TMDB ID, and some movies don't always
             # have the correct IMDB ID, or may not have it at all. We also search by TMDB ID
@@ -404,7 +473,16 @@ class SubdlProvider(Provider):
         absolute_episode = getattr(video, 'absolute_episode', None)
 
         for item in all_items:
-            if item.get('ai_translated') and not self.include_ai_translated:
+            # A user who enabled ai_translate has asked SubDL to produce
+            # machine translations for them, so they obviously accept seeing
+            # machine translations — including their own from an earlier run.
+            # Without this, the default include_ai_translated=False hid a
+            # freshly published translation from the very account that
+            # requested it, and the server (correctly) no longer offered a
+            # candidate for a language that now exists: the language became
+            # permanently unobtainable the moment it was first translated.
+            if (item.get('ai_translated')
+                    and not (self.include_ai_translated or self.ai_translate)):
                 continue
 
             # A language the converter does not know must cost us this one item,
@@ -426,6 +504,7 @@ class SubdlProvider(Provider):
             file_id = item['name']
             item_season = item.get('season', None)
             item_episode = item.get('episode', None)
+            item_is_hi = self._is_hearing_impaired(item)
 
             if isinstance(video, Episode):
                 ep_from = self._episode_number(item.get('episode_from'))
@@ -469,11 +548,11 @@ class SubdlProvider(Provider):
                     # Prefer the per-episode file the server already extracted
                     # (unpack=1). Downloading a whole season archive client-side
                     # is the fallback, not the plan.
-                    unpack_entry = next(
-                        (f for f in item.get('unpack_files') or []
-                         if f.get('episode') == video.episode
-                         or (absolute_episode and f.get('episode') == absolute_episode)),
-                        None
+                    unpack_entry = self._select_unpack_entry(
+                        item.get('unpack_files') or [],
+                        target_episode=video.episode,
+                        absolute_episode=absolute_episode,
+                        prefer_hi=item_is_hi,
                     )
                     if unpack_entry:
                         download_link = unpack_entry['url']
@@ -482,7 +561,22 @@ class SubdlProvider(Provider):
                         # as 0 rather than omitting them, so a dict default never
                         # applies and a correct season would be overwritten by 0.
                         item_season = unpack_entry.get('season') or item_season
-                        item_episode = unpack_entry.get('episode') or item_episode
+                        # _select_unpack_entry may trust a filename when the
+                        # server supplied episode=0 or a contradictory parse.
+                        # Preserve the number that actually justified the
+                        # selection so Bazarr gives the direct file an episode
+                        # match after is_pack is cleared.
+                        wanted_episodes = {video.episode}
+                        if absolute_episode:
+                            wanted_episodes.add(absolute_episode)
+                        name_episode = self._guessit_single_episode(
+                            unpack_entry.get('name'))
+                        server_episode = self._episode_number(
+                            unpack_entry.get('episode'))
+                        if name_episode in wanted_episodes:
+                            item_episode = name_episode
+                        elif server_episode in wanted_episodes:
+                            item_episode = server_episode
                         is_pack = False
                         is_full_season = False
                         is_direct_file = True
@@ -498,7 +592,7 @@ class SubdlProvider(Provider):
             subtitle = SubdlSubtitle(
                 language=language,
                 forced=self._is_forced(item),
-                hearing_impaired=self._is_hearing_impaired(item),
+                hearing_impaired=item_is_hi,
                 page_link=urljoin("https://subdl.com", item.get('subtitlePage', '')),
                 download_link=download_link,
                 file_id=file_id,
@@ -542,7 +636,15 @@ class SubdlProvider(Provider):
                                        matched_id=False, matched_title=False):
         """Append virtual 'AI translation' candidates for wanted languages the
         API reported as missing but translatable (SubDL Plus/Pro feature)."""
-        if not self.ai_translate or not isinstance(translation, dict):
+        if (not self.ai_translate
+                or not self._bazarr_policy['ai_translation_enabled']
+                or not isinstance(translation, dict)):
+            return
+
+        # The server said the quota was exhausted moments ago; its own view can
+        # lag a little behind (per-worker cache), so stop offering candidates
+        # locally instead of submitting jobs that will all be refused.
+        if time.time() < self._ai_quota_block_until:
             return
 
         missing = set(translation.get('missing_languages') or [])
@@ -575,26 +677,41 @@ class SubdlProvider(Provider):
             utils.update_matches(matches, video, source.get('releases') or [])
             return (-len(matches), index)
 
-        best_source = min(enumerate(sources), key=source_rank)[1]
-        source_releases = best_source.get('releases') or []
-        source_n_id = best_source.get('n_id')
-        if not source_n_id:
-            return
-        # A translation of an SDH source is still SDH; declaring it non-HI on a
-        # hearing_impaired_verifiable provider would mislabel the saved file.
-        source_is_hi = bool(best_source.get('hi'))
+        # One best source PER HI CLASS, not one overall: when an SDH source
+        # happened to match the video's release best, every non-HI profile
+        # (most users) silently lost its candidate even though a non-HI source
+        # was sitting right there in the list.
+        def best_source_for(hi_flag):
+            indexed = [(index, source) for index, source in enumerate(sources)
+                       if bool(source.get('hi')) == hi_flag and source.get('n_id')]
+            if not indexed:
+                return None
+            return min(indexed, key=source_rank)[1]
 
+        # Only rows that are usable for THIS episode count as existing. The
+        # season-only search returns other episodes' rows in the wanted
+        # language; bazarr will reject those on the episode guard — but
+        # counting them here suppressed the candidate for every remaining
+        # episode of a season as soon as one episode had the language (e.g.
+        # right after the first successful AI translation).
         existing_languages = {(sub.language.alpha3, sub.language.country, sub.language.script,
                                bool(getattr(sub.language, 'hi', False)), bool(sub.language.forced))
-                              for sub in subtitles}
+                              for sub in subtitles
+                              if not isinstance(video, Episode) or 'episode' in sub.matches}
 
         for language in languages:
             # A forced subtitle can't be produced by translating a regular source.
             if language.forced:
                 continue
-            # An HI target can only come from an HI source, and vice versa.
-            if bool(getattr(language, 'hi', False)) != source_is_hi:
+            # A translation of an SDH source is still SDH, so the source must
+            # share the target's HI class or the saved file is mislabeled on a
+            # hearing_impaired_verifiable provider.
+            best_source = best_source_for(bool(getattr(language, 'hi', False)))
+            if not best_source:
                 continue
+            source_releases = best_source.get('releases') or []
+            source_n_id = best_source.get('n_id')
+            source_is_hi = bool(best_source.get('hi'))
             if (language.alpha3, language.country, language.script,
                     bool(getattr(language, 'hi', False)), False) in existing_languages:
                 continue
@@ -632,6 +749,72 @@ class SubdlProvider(Provider):
                 f'Offering AI translation candidate for {target_code} '
                 f'from source {source_n_id} ({best_source.get("language")})')
             subtitles.append(candidate)
+
+    @staticmethod
+    def _guessit_single_episode(name):
+        """The single episode number a file name spells, or None.
+
+        None for names guessit cannot read AND for ranges — a range is not a
+        statement about one episode, so it can neither confirm nor contradict.
+        """
+        if not name:
+            return None
+        try:
+            guess = guessit(name, {'type': 'episode'})
+        except Exception:
+            return None
+        episode = guess.get('episode')
+        return episode if isinstance(episode, int) else None
+
+    @classmethod
+    def _select_unpack_entry(cls, files, target_episode, absolute_episode=None,
+                             prefer_hi=False):
+        """Pick the pack member to download for the target episode.
+
+        The server's per-file episode numbers are parsed from filenames and
+        have been measured wrong on ~3.6% of uploaded packs (an AI parse that
+        read "Part 1"/"(2)"/"One" as the episode — production served
+        "03 ...And the Bag's in the River" as episode 1 of Breaking Bad). So
+        the number is cross-checked against the file NAME via guessit:
+
+        - name and server agree on the target        -> best
+        - name says the target, server says nothing  -> next (covers the many
+          packs whose ordinal-only members are stored as e=0)
+        - server says the target, name is silent     -> acceptable
+        - server says the target, name contradicts   -> NEVER; a wrong pick is
+          served as the wrong episode with a high score, while skipping just
+          falls back to extracting the archive client-side.
+
+        Within a rank, an entry whose HI flag matches the pack's is preferred,
+        so a non-HI profile is not handed the SDH member of a mixed pack.
+        """
+        wanted = {target_episode}
+        if absolute_episode:
+            wanted.add(absolute_episode)
+
+        ranked = []
+        for index, entry in enumerate(files):
+            server_episode = entry.get('episode')
+            claimed = server_episode in wanted
+            name_episode = cls._guessit_single_episode(entry.get('name'))
+            named = name_episode in wanted if name_episode is not None else False
+
+            if named:
+                rank = 0 if claimed else 1
+            elif claimed and name_episode is None:
+                rank = 2
+            else:
+                # Neither source says this is the target episode — or the name
+                # actively contradicts the server's claim.
+                continue
+
+            hi_mismatch = 0 if bool(entry.get('hi')) == prefer_hi else 1
+            ranked.append((rank, hi_mismatch, index, entry))
+
+        if not ranked:
+            return None
+        ranked.sort(key=lambda item: item[:3])
+        return ranked[0][3]
 
     # 'HI'/'SDH' as whole words only. Bare substrings used to match inside
     # ordinary release groups — ' hi' fires on "Hive-CM8", "Hi10P" and "Hindi" —
@@ -909,6 +1092,8 @@ class SubdlProvider(Provider):
             error = payload.get('error')
             message = payload.get('message') or error or f'HTTP {response.status_code}'
             if error == 'translation_quota_exhausted':
+                # Stop offering candidates for a while; see _ai_quota_block_until.
+                self._ai_quota_block_until = time.time() + 900
                 self._log_ai_notice_once(
                     subtitle,
                     'subdl: AI translation quota exhausted; more translations available next month')
