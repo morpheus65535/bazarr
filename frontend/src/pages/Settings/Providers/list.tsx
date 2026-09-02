@@ -103,6 +103,12 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     requiredIntegration: "anidb",
   },
   {
+    key: "tsukihime",
+    name: "TsukiHime",
+    description:
+      "Anime subtitle tracks extracted from releases indexed by TsukiHime.",
+  },
+  {
     key: "animesubinfo",
     name: "AnimeSub.info",
     description: "Polish Anime Subtitles Provider",
