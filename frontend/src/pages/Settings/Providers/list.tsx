@@ -468,7 +468,7 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
       {
         type: "switch",
         key: "ai_translate",
-        name: "AI-translate missing languages (requires SubDL Plus or Pro)",
+        name: "AI-translate missing languages (requires SubDL Plus or Pro; also includes AI-translated subtitles in results)",
         defaultValue: false,
       },
       {
