@@ -285,10 +285,10 @@ def _filter_subtitles(subtitles: List[FFprobeSubtitleStream]):
             continue
 
         if subtitle.tags.language_fallback is True and any(
-            (subtitle.language == sub.language) and (subtitle.index != sub.index)
+            (subtitle.language == sub.language and subtitle.disposition == sub.disposition) and (subtitle.index != sub.index)
             for sub in subtitles
         ):
-            logger.debug("Not using language fallback. Language already found")
+            logger.info(f"Not using language fallback. Language already found: {subtitle.language} (disposition: {subtitle.disposition})")
             continue
 
         yield subtitle
