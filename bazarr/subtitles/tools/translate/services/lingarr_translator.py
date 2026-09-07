@@ -116,6 +116,8 @@ class LingarrTranslatorService:
 
             lines_payload = []
             for i, line in enumerate(lines_list):
+                if not line.strip():
+                    continue
                 lines_payload.append({
                     "position": i,
                     "line": line
