@@ -473,6 +473,10 @@ validators = [
     # subsarr section
     Validator('subsarr.base_url', must_exist=True, default='', is_type_of=str),
 
+    # subsdump section
+    Validator('subsdump.base_url', must_exist=True, default='', is_type_of=str),
+    Validator('subsdump.api_key', must_exist=True, default='', is_type_of=str, cast=str),
+
     # subx section
     Validator('subx.api_key', must_exist=True, default='', is_type_of=str),
     

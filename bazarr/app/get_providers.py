@@ -359,6 +359,10 @@ def get_providers_auth():
         'subsarr': {
             'base_url': settings.subsarr.base_url,
         },
+        'subsdump': {
+            'base_url': settings.subsdump.base_url,
+            'api_key': settings.subsdump.api_key,
+        },
         'animesubinfo': {},
         'subx':
             {
