@@ -25,7 +25,98 @@ def anime_episodes():
             resolution="1080p",
             video_codec="H.264",
         ),
+        # The VARYG release reported in #3579. AnimeTosho.xyz nests its attachments under the file
+        # for this one instead of exposing them at the top level of the release.
+        "frieren_s02e01": Episode(
+            "Frieren.Beyond.Journeys.End.S02E01.Shall.We.Go.Then.1080p.CR.WEB-DL.MULTi.AAC2.0.H.264-VARYG.mkv",
+            "Frieren: Beyond Journey's End",
+            2,
+            1,
+            source="Web",
+            series_anidb_id=18886,
+            series_anidb_episode_id=306529,
+            series_tvdb_id=424536,
+            series_imdb_id="tt22248376",
+            release_group="VARYG",
+            resolution="1080p",
+            video_codec="H.264",
+        ),
     }
+
+
+_RELEASE_NAME = "[Erai-raws] Crowned in a Hundred Days - 08 (CA) [1080p CR WEB-DL AVC AAC][MultiSub][81FBD56D]"
+
+
+def _top_level_response(*sub_infos):
+    """Release payload exposing its subtitle attachments at the top level."""
+    return {
+        "id": 622245,
+        "torrent_name": _RELEASE_NAME,
+        "attachments": [
+            {
+                "id": idx,
+                "type": "subtitle",
+                "url": f"https://storage.animetosho.xyz/releases/622245/subtitles/track{idx}.ass.xz",
+                "info": info,
+            }
+            for idx, info in enumerate(sub_infos, start=1)
+        ],
+        "files": [{"id": 1, "filename": f"{_RELEASE_NAME}.mkv"}],
+    }
+
+
+def _nested_response(*sub_infos):
+    """Release payload nesting its subtitle attachments under its file, which is what
+    AnimeTosho.xyz does for most releases."""
+    return {
+        "id": 592301,
+        "torrent_name": "Frieren Beyond Journeys End S02E01 Shall We Go Then 1080p CR WEB-DL MULTi "
+                        "AAC2.0 H 264-VARYG (Sousou no Frieren, Multi-Audio, Multi-Subs)",
+        "attachments": None,
+        "files": [
+            {
+                "id": 1,
+                "filename": "Frieren.Beyond.Journeys.End.S02E01.Shall.We.Go.Then.1080p.CR.WEB-DL."
+                            "MULTi.AAC2.0.H.264-VARYG.mkv",
+                "attachments": [
+                    {
+                        "id": idx,
+                        "type": "subtitle",
+                        "url": f"https://storage.animetosho.xyz/attachments/0029a/{idx}.xz",
+                        "info": info,
+                    }
+                    for idx, info in enumerate(sub_infos, start=1)
+                ],
+            }
+        ],
+    }
+
+
+def _mock_feed(requests_mock, torrent_response, eid=313249, entry_id=622245, title=_RELEASE_NAME):
+    """Mock the feed endpoint and, when a payload is given, the release detail endpoint. Leave
+    torrent_response as None to register the detail endpoint from a recorded file instead."""
+    requests_mock.get(
+        f'https://feed.animetosho.xyz/feed/json?eid={eid}',
+        json=[{"id": entry_id, "timestamp": 1784290258, "status": "complete", "title": title}],
+    )
+
+    if torrent_response is not None:
+        requests_mock.get(
+            f'https://feed.animetosho.xyz/json?show=torrent&id={entry_id}',
+            json=torrent_response,
+        )
+
+
+# Every variant has to be requested when the test asserts on the resolved language, otherwise
+# list_subtitles filters the subtitle out before it can be inspected.
+_ALL_VARIANTS = {
+    Language("eng"), Language("eng", forced=True),
+    Language("por"), Language("por", forced=True),
+    Language("por", "BR"), Language("por", "BR", forced=True),
+}
+
+_VARYG_TITLE = ("Frieren Beyond Journeys End S02E01 Shall We Go Then 1080p CR WEB-DL MULTi AAC2.0 "
+                "H 264-VARYG (Sousou no Frieren, Multi-Audio, Multi-Subs)")
 
 
 def test_list_subtitles(anime_episodes, requests_mock, data):
@@ -132,3 +223,111 @@ def test_list_subtitles_with_episode_id_tuple(anime_episodes, requests_mock, dat
     with AnimeToshoXYZProvider() as provider:
         subtitles = provider.list_subtitles(item, languages={language})
         assert len(subtitles) == 2
+
+
+@pytest.mark.parametrize(
+    "info,expected",
+    [
+        # AnimeTosho reports the forced disposition flag of the track as a boolean. It has to
+        # reach the language, otherwise a signs only track is offered as a normal subtitle. #3579
+        ({"language": "English", "language_code": "eng", "forced": True}, Language("eng", forced=True)),
+        ({"language": "English", "language_code": "eng", "forced": False}, Language("eng")),
+        ({"language": "Portuguese[BR]", "language_code": "por", "forced": True},
+         Language("por", "BR", forced=True)),
+        ({"language": "Portuguese[BR]", "language_code": "por", "forced": False}, Language("por", "BR")),
+        # Payloads that predate the flag, or tracks that simply do not carry it.
+        ({"language": "English", "language_code": "eng"}, Language("eng")),
+        ({"language": "Portuguese[BR]", "language_code": "por"}, Language("por", "BR")),
+    ],
+)
+def test_forced_flag_is_propagated(anime_episodes, requests_mock, info, expected):
+    item = anime_episodes["crowned_s01e08"]
+
+    _mock_feed(requests_mock, _top_level_response(info))
+
+    with AnimeToshoXYZProvider() as provider:
+        subtitles = provider.list_subtitles(item, languages=_ALL_VARIANTS)
+
+        assert len(subtitles) == 1
+        assert subtitles[0].language == expected
+        assert subtitles[0].forced is bool(expected.forced)
+
+
+def test_nested_attachments_are_found(anime_episodes, requests_mock, data):
+    """Most releases nest their attachments under "files[].attachments" and carry no top level
+    "attachments" at all. Those used to be missed entirely, so nothing was ever listed for them."""
+    item = anime_episodes["frieren_s02e01"]
+
+    _mock_feed(requests_mock, None, eid=306529, entry_id=592301, title=_VARYG_TITLE)
+    with open(os.path.join(data, 'animetosho_xyz_series_nested_attachments_response.json'), "rb") as f:
+        requests_mock.get('https://feed.animetosho.xyz/json?show=torrent&id=592301', content=f.read())
+
+    with AnimeToshoXYZProvider() as provider:
+        subtitles = provider.list_subtitles(item, languages=_ALL_VARIANTS)
+
+    assert {(s.language, s.forced) for s in subtitles} == {
+        (Language("eng"), False),
+        (Language("eng", forced=True), True),
+        # Nested attachments only carry "language_code" and no "language" name, so there is nothing
+        # telling Brazilian Portuguese apart from Portuguese and it stays plain Portuguese.
+        (Language("por"), False),
+        (Language("por", forced=True), True),
+    }
+
+    by_language = {(s.language, s.forced): s for s in subtitles}
+    assert by_language[(Language("por"), False)].download_link \
+        == "https://storage.animetosho.xyz/attachments/0029a/81a.xz"
+    assert by_language[(Language("por", forced=True), True)].download_link \
+        == "https://storage.animetosho.xyz/attachments/002a1/975.xz"
+
+
+def test_forced_track_is_not_offered_as_a_normal_subtitle(anime_episodes, requests_mock, data):
+    """#3579 on animetosho.xyz: the forced Portuguese attachment of the VARYG release must not be
+    served to a profile asking for normal Portuguese, and vice versa."""
+    item = anime_episodes["frieren_s02e01"]
+
+    _mock_feed(requests_mock, None, eid=306529, entry_id=592301, title=_VARYG_TITLE)
+    with open(os.path.join(data, 'animetosho_xyz_series_nested_attachments_response.json'), "rb") as f:
+        requests_mock.get('https://feed.animetosho.xyz/json?show=torrent&id=592301', content=f.read())
+
+    with AnimeToshoXYZProvider() as provider:
+        normal = provider.list_subtitles(item, languages={Language("por")})
+        forced = provider.list_subtitles(item, languages={Language("por", forced=True)})
+
+    assert [(s.language, s.forced) for s in normal] == [(Language("por"), False)]
+    assert [(s.language, s.forced) for s in forced] == [(Language("por", forced=True), True)]
+
+
+def test_attachments_are_not_listed_twice(anime_episodes, requests_mock):
+    # A release only ever uses one of the two shapes, but a release carrying both must still not
+    # produce a duplicate subtitle for the same attachment.
+    item = anime_episodes["crowned_s01e08"]
+
+    info = {"language": "English", "language_code": "eng", "forced": False}
+    url = "https://storage.animetosho.xyz/releases/622245/subtitles/track1.eng.ass.xz"
+    attachment = {"id": 127399, "type": "subtitle", "url": url, "info": info}
+
+    response = {
+        "id": 622245,
+        "torrent_name": _RELEASE_NAME,
+        "attachments": [dict(attachment)],
+        "files": [
+            {"id": 1, "filename": f"{_RELEASE_NAME}.mkv", "attachments": [dict(attachment)]},
+        ],
+    }
+
+    _mock_feed(requests_mock, response)
+
+    with AnimeToshoXYZProvider() as provider:
+        subtitles = provider.list_subtitles(item, languages={Language("eng")})
+
+        assert len(subtitles) == 1
+        assert subtitles[0].download_link == url
+
+
+def test_forced_languages_are_declared():
+    # The provider pool intersects the requested languages with the ones declared by the provider
+    # before calling list_subtitles, so without the forced variants a profile asking for forced
+    # subtitles would never reach AnimeTosho at all.
+    assert Language("eng", forced=True) in AnimeToshoXYZProvider.languages
+    assert Language("por", "BR", forced=True) in AnimeToshoXYZProvider.languages
