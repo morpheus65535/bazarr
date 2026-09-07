@@ -50,11 +50,16 @@ class AnimeToshoSubtitle(Subtitle):
     """AnimeTosho.org Subtitle."""
     provider_name = 'animetosho'
 
-    def __init__(self, language, download_link, meta, release_info):
+    def __init__(self, language, download_link, meta, release_info, forced=False):
+        # AnimeTosho reports the forced disposition flag of the subtitle track. Keep it on the
+        # language so a forced (signs only) track is never offered as a normal subtitle.
+        language = Language.rebuild(language, forced=forced)
+
         super(AnimeToshoSubtitle, self).__init__(language, page_link=download_link)
         self.meta = meta
         self.download_link = download_link
         self.release_info = release_info
+        self.forced = forced
         self.matches = set()
 
     @property
@@ -75,6 +80,10 @@ class AnimeToshoProvider(Provider, ProviderSubtitleArchiveMixin):
     """AnimeTosho.org Provider."""
     subtitle_class = AnimeToshoSubtitle
     languages = {Language('por', 'BR')} | {Language(sl) for sl in supported_languages}
+    # The provider pool intersects the requested languages with the languages declared here before
+    # calling list_subtitles, so the forced variants have to be declared as well or a profile
+    # asking for forced subtitles would never reach this provider.
+    languages.update(set(Language.rebuild(lang, forced=True) for lang in languages))
     video_types = Episode
 
     def __init__(self, search_threshold=None):
@@ -145,13 +154,15 @@ class AnimeToshoProvider(Provider, ProviderSubtitleArchiveMixin):
                 for subtitle_file in subtitle_files:
                     hex_id = format(subtitle_file['id'], '08x')
 
+                    info = subtitle_file['info']
+
                     # Animetosho assumes missing languages as english as fallback when not specified.
-                    lang = Language.fromalpha3b(subtitle_file['info'].get('lang', 'eng'))
+                    lang = Language.fromalpha3b(info.get('lang', 'eng'))
 
                     # For Portuguese and Portuguese Brazilian they both share the same code, the name is the only
                     # identifier AnimeTosho provides. Also, some subtitles does not have name, in this case it could
                     # be a false negative but there is nothing we can use to guarantee it is PT-BR, we rather skip it.
-                    if lang.alpha3 == 'por' and 'brazil' in subtitle_file['info'].get('name', '').lower():
+                    if lang.alpha3 == 'por' and 'brazil' in info.get('name', '').lower():
                         lang = Language('por', 'BR')
 
                     subtitle = self.subtitle_class(
@@ -159,6 +170,8 @@ class AnimeToshoProvider(Provider, ProviderSubtitleArchiveMixin):
                         storage_download_url + '{}/{}.xz'.format(hex_id, subtitle_file['id']),
                         meta=file,
                         release_info=entry.get('title'),
+                        # AnimeTosho exposes the forced disposition flag of the track as 0/1.
+                        forced=bool(info.get('forced', False)),
                     )
 
                     logger.debug('Found subtitle %r', subtitle)

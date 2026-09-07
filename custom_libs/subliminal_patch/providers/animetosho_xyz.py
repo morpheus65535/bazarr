@@ -43,7 +43,11 @@ _BRAZILIAN_PORTUGUESE_RE = re.compile(r'brazil|\bbr\b', re.IGNORECASE)
 class AnimeToshoXYZSubtitle(Subtitle):
     provider_name = 'animetosho_xyz'
 
-    def __init__(self, language, download_link, meta, release_info):
+    def __init__(self, language, download_link, meta, release_info, forced=False):
+        # AnimeTosho reports the forced disposition flag of the subtitle track. Keep it on the
+        # language so a forced (signs only) track is never offered as a normal subtitle.
+        language = Language.rebuild(language, forced=forced)
+
         super(AnimeToshoXYZSubtitle, self).__init__(
             language,
             page_link=download_link,
@@ -51,6 +55,7 @@ class AnimeToshoXYZSubtitle(Subtitle):
         self.meta = meta
         self.download_link = download_link
         self.release_info = release_info
+        self.forced = forced
         self.matches = set()
 
     @property
@@ -71,6 +76,10 @@ class AnimeToshoXYZProvider(Provider, ProviderSubtitleArchiveMixin):
     provider_name = 'animetosho_xyz'
     subtitle_class = AnimeToshoXYZSubtitle
     languages = {Language('por', 'BR')} | {Language(sl) for sl in supported_languages}
+    # The provider pool intersects the requested languages with the languages declared here before
+    # calling list_subtitles, so the forced variants have to be declared as well or a profile
+    # asking for forced subtitles would never reach this provider.
+    languages.update(set(Language.rebuild(lang, forced=True) for lang in languages))
     video_types = Episode
 
     def __init__(self):
@@ -158,11 +167,8 @@ class AnimeToshoXYZProvider(Provider, ProviderSubtitleArchiveMixin):
             )
 
             torrent_data = r.json()
-            attachments = torrent_data.get('attachments', [])
 
-            subtitle_files = list(filter(lambda a: a.get('type') == 'subtitle', attachments))
-
-            for subtitle_file in subtitle_files:
+            for subtitle_file in self._iter_subtitle_attachments(torrent_data):
                 info = subtitle_file.get('info', {})
                 lang_code = info.get('language_code', 'eng')
                 lang = Language.fromalpha3b(lang_code)
@@ -178,12 +184,42 @@ class AnimeToshoXYZProvider(Provider, ProviderSubtitleArchiveMixin):
                     subtitle_file['url'],
                     meta=torrent_data,
                     release_info=entry.get('title'),
+                    # AnimeTosho exposes the forced disposition flag of the track as a boolean.
+                    forced=bool(info.get('forced', False)),
                 )
 
                 logger.debug('Found subtitle %r', subtitle)
                 subtitles.append(subtitle)
 
         return subtitles
+
+    @staticmethod
+    def _iter_subtitle_attachments(torrent_data):
+        """Yield the subtitle attachments of a release.
+
+        AnimeTosho.xyz lists them either at the top level of the release ("attachments") or nested
+        under each of its files ("files[].attachments"), depending on the release, so both shapes
+        have to be collected. A release only ever uses one of them but the same attachment is
+        still guarded against being yielded twice.
+        """
+        seen = set()
+
+        def collect(attachments):
+            for attachment in attachments or []:
+                if attachment.get('type') != 'subtitle':
+                    continue
+
+                key = (attachment.get('id'), attachment.get('url'))
+                if key in seen:
+                    continue
+
+                seen.add(key)
+                yield attachment
+
+        yield from collect(torrent_data.get('attachments'))
+
+        for file in torrent_data.get('files') or []:
+            yield from collect(file.get('attachments'))
 
     def _get_series_entries(self, episode_id):
         api_url = 'https://feed.animetosho.xyz/feed/json'
