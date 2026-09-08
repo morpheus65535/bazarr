@@ -433,6 +433,16 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
                 except TypeError:
                     year = item['attributes']['feature_details']['year']
 
+                try:
+                    # compare imdb ids to be able to use this matching status to override subtitle match guess
+                    imdb_match = (item['attributes']['feature_details']['parent_imdb_id'] == self.sanitize_external_ids(
+                        self.video.series_imdb_id)) \
+                                 or (item['attributes']['feature_details']['imdb_id'] == self.sanitize_external_ids(
+                        self.video.imdb_id))
+                except Exception as e:
+                    logger.debug(f"Error while comparing imdb ids: {e}")
+                    imdb_match = False
+
                 if len(item['attributes']['files']):
                     subtitle = OpenSubtitlesComSubtitle(
                         language=Language.fromietf(from_opensubtitlescom(item['attributes']['language'])),
@@ -447,7 +457,7 @@ class OpenSubtitlesComProvider(ProviderRetryMixin, Provider):
                         season=season_number,
                         episode=episode_number,
                         hash_matched=moviehash_match,
-                        imdb_match=True if imdb_id else False
+                        imdb_match=imdb_match
                     )
                     subtitle.get_matches(self.video)
                     subtitles.append(subtitle)
