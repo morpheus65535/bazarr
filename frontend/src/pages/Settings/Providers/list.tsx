@@ -540,6 +540,33 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     ],
   },
   {
+    key: "subsdump",
+    name: "SubsDump",
+    description:
+      "Connect Bazarr to a self-hosted SubsDump instance for fast subtitle search and downloads from your local Subscene archive.",
+    message: (
+      <Anchor
+        href="https://github.com/D3lphi3r/SubsDump"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        SubsDump project
+      </Anchor>
+    ),
+    inputs: [
+      {
+        type: "text",
+        key: "base_url",
+        name: "Base URL",
+      },
+      {
+        type: "password",
+        key: "api_key",
+        name: "API Key (optional)",
+      },
+    ],
+  },
+  {
     key: "subssabbz",
     name: "Subs.sab.bz",
     description: "Bulgarian Subtitles Provider",
