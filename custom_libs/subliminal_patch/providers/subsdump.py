@@ -112,8 +112,7 @@ class SubsDumpSubtitle(Subtitle):
         self.season = record["media"].get("season")
         self.episode = record["media"].get("episode")
         self.releases = record.get("releases") or []
-        release_info = ", ".join(self.releases)
-        self.release_info = f"SubsDump: {release_info}" if release_info else "SubsDump"
+        self.release_info = ", ".join(self.releases)
         self.uploader = record.get("uploader")
         self.matches = set()
 

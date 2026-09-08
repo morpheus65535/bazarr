@@ -127,7 +127,7 @@ def test_movie_lookup_returns_matches_and_page_link(movies, requests_mock):
     assert subtitle.provider_name == "subsdump"
     assert subtitle.page_link == f"{BASE_URL}/subtitles/42"
     assert subtitle.content_path == "/api/v1/subtitles/42/content"
-    assert subtitle.release_info == "SubsDump: Dune.2021.1080p.WEBRip.DD5.1.x264-SHITBOX"
+    assert subtitle.release_info == "Dune.2021.1080p.WEBRip.DD5.1.x264-SHITBOX"
     assert subtitle.uploader == "contributor"
     assert {"title", "year", "release_group"}.issubset(
         subtitle.get_matches(movies["dune"])
