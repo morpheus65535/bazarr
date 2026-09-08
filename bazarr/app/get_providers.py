@@ -236,6 +236,15 @@ _FFPROBE_BINARY = get_binary("ffprobe")
 _FFMPEG_BINARY = get_binary("ffmpeg")
 
 
+def _get_mediainfo_binary():
+    try:
+        return get_binary("mediainfo")
+    except Exception:
+        logging.warning("BAZARR could not find the mediainfo binary; embedded subtitles "
+                        "language detection will fall back to ffprobe.")
+        return None
+
+
 def get_providers_auth():
     return {
         'addic7ed': {
@@ -316,6 +325,7 @@ def get_providers_auth():
             'timeout': settings.embeddedsubtitles.timeout,
             'unknown_as_fallback': settings.embeddedsubtitles.unknown_as_fallback,
             'fallback_lang': settings.embeddedsubtitles.fallback_lang,
+            'mediainfo_path': _get_mediainfo_binary() if settings.embeddedsubtitles.use_mediainfo else None,
         },
         'karagarga': {
             'username': settings.karagarga.username,
