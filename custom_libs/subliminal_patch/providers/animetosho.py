@@ -50,7 +50,7 @@ class AnimeToshoSubtitle(Subtitle):
     """AnimeTosho.org Subtitle."""
     provider_name = 'animetosho'
 
-    def __init__(self, language, download_link, meta, release_info, forced=False):
+    def __init__(self, language, download_link, meta, release_info, release_id, forced=False):
         # AnimeTosho reports the forced disposition flag of the subtitle track. Keep it on the
         # language so a forced (signs only) track is never offered as a normal subtitle.
         language = Language.rebuild(language, forced=forced)
@@ -59,12 +59,15 @@ class AnimeToshoSubtitle(Subtitle):
         self.meta = meta
         self.download_link = download_link
         self.release_info = release_info
+        self.release_id = release_id
         self.forced = forced
         self.matches = set()
 
     @property
     def id(self):
-        return self.download_link
+        # AnimeTosho may reuse the same attachment URL across releases; keep each
+        # release association distinct so scoring can use release-specific metadata.
+        return f'{self.release_id}:{self.download_link}'
 
     def get_matches(self, video):
         self.matches |= guess_matches(video, guessit(self.meta['filename']))
@@ -170,6 +173,7 @@ class AnimeToshoProvider(Provider, ProviderSubtitleArchiveMixin):
                         storage_download_url + '{}/{}.xz'.format(hex_id, subtitle_file['id']),
                         meta=file,
                         release_info=entry.get('title'),
+                        release_id=entry['id'],
                         # AnimeTosho exposes the forced disposition flag of the track as 0/1.
                         forced=bool(info.get('forced', False)),
                     )

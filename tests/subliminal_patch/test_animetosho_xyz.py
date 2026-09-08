@@ -41,6 +41,20 @@ def anime_episodes():
             resolution="1080p",
             video_codec="H.264",
         ),
+        # Exact Erai-raws release whose PT-BR attachment URL is reused across other releases on
+        # AnimeTosho.xyz; used to assert release associations stay distinct until scoring.
+        "black_torch_s01e10": Episode(
+            "[Erai-raws] Black Torch - 10 [1080p CR WEB-DL AVC AAC][MultiSub][1595FA67].mkv",
+            "BLACK TORCH",
+            1,
+            10,
+            source="Web",
+            series_anidb_id=19001,
+            series_anidb_episode_id=315278,
+            release_group="Erai-raws",
+            resolution="1080p",
+            video_codec="H.264",
+        ),
     }
 
 
@@ -92,7 +106,7 @@ def _nested_response(*sub_infos):
     }
 
 
-def _mock_feed(requests_mock, torrent_response, eid=313249, entry_id=622245, title=_RELEASE_NAME):
+def _mock_feed(requests_mock, torrent_response, eid, entry_id, title):
     """Mock the feed endpoint and, when a payload is given, the release detail endpoint. Leave
     torrent_response as None to register the detail endpoint from a recorded file instead."""
     requests_mock.get(
@@ -243,7 +257,13 @@ def test_list_subtitles_with_episode_id_tuple(anime_episodes, requests_mock, dat
 def test_forced_flag_is_propagated(anime_episodes, requests_mock, info, expected):
     item = anime_episodes["crowned_s01e08"]
 
-    _mock_feed(requests_mock, _top_level_response(info))
+    _mock_feed(
+        requests_mock,
+        _top_level_response(info),
+        eid=313249,
+        entry_id=622245,
+        title=_RELEASE_NAME,
+    )
 
     with AnimeToshoXYZProvider() as provider:
         subtitles = provider.list_subtitles(item, languages=_ALL_VARIANTS)
@@ -316,13 +336,73 @@ def test_attachments_are_not_listed_twice(anime_episodes, requests_mock):
         ],
     }
 
-    _mock_feed(requests_mock, response)
+    _mock_feed(
+        requests_mock,
+        response,
+        eid=313249,
+        entry_id=622245,
+        title=_RELEASE_NAME,
+    )
 
     with AnimeToshoXYZProvider() as provider:
         subtitles = provider.list_subtitles(item, languages={Language("eng")})
 
         assert len(subtitles) == 1
         assert subtitles[0].download_link == url
+
+
+def test_reused_attachment_across_releases_keeps_distinct_candidates(anime_episodes, requests_mock):
+    # AnimeTosho.xyz may point multiple releases at the same attachment URL. Each release
+    # association must stay distinct until scoring, otherwise the pool drops later ones by id
+    # and the exact local release can be lost (BLACK TORCH S01E10 / Erai-raws 1080p).
+    item = anime_episodes["black_torch_s01e10"]
+
+    shared_url = "https://storage.animetosho.xyz/attachments/10002/3f70.xz"
+    pt_br_info = {"language": "Portuguese[BR]", "language_code": "por", "forced": False}
+
+    onalrie_title = "[Onalrie] Black Torch - S01E10 [1080p WEBRip AV1]"
+    erai_title = "[Erai-raws] Black Torch - 10 [1080p CR WEB-DL AVC AAC][MultiSub][1595FA67]"
+
+    requests_mock.get(
+        'https://feed.animetosho.xyz/feed/json?eid=315278',
+        json=[
+            {"id": 685592, "timestamp": 200, "status": "complete", "title": onalrie_title},
+            {"id": 685550, "timestamp": 100, "status": "complete", "title": erai_title},
+        ],
+    )
+    requests_mock.get(
+        'https://feed.animetosho.xyz/json?show=torrent&id=685592',
+        json={
+            "id": 685592,
+            "torrent_name": onalrie_title,
+            "attachments": [
+                {"id": 3, "type": "subtitle", "url": shared_url, "info": pt_br_info},
+            ],
+            "files": [],
+        },
+    )
+    requests_mock.get(
+        'https://feed.animetosho.xyz/json?show=torrent&id=685550',
+        json={
+            "id": 685550,
+            "torrent_name": erai_title,
+            "attachments": [
+                {"id": 3, "type": "subtitle", "url": shared_url, "info": pt_br_info},
+            ],
+            "files": [],
+        },
+    )
+
+    with AnimeToshoXYZProvider() as provider:
+        subtitles = provider.list_subtitles(item, languages={Language("por", "BR")})
+
+    assert len(subtitles) == 2
+    assert {s.download_link for s in subtitles} == {shared_url}
+    assert {s.release_id for s in subtitles} == {685592, 685550}
+    assert {s.id for s in subtitles} == {
+        f"685592:{shared_url}",
+        f"685550:{shared_url}",
+    }
 
 
 def test_forced_languages_are_declared():
