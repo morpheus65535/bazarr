@@ -93,6 +93,7 @@ At the request of some users, here is a way to show appreciation for the efforts
 - Subsarr (self-hosted, requires [slimcdk/subsarr](https://github.com/slimcdk/subsarr))
 - Subscene
 - Subscenter
+- SubsDump (self-hosted, requires [D3lphi3r/SubsDump](https://github.com/D3lphi3r/SubsDump))
 - SubsRo
 - Subsunacs.net
 - SubSynchro
