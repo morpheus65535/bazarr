@@ -24,6 +24,22 @@ def anime_episodes():
             resolution="1080p",
             video_codec="H.264",
         ),
+        # VARYG / Earendur releases of S02E01 share PT-BR attachment 2730010 on AnimeTosho.org;
+        # used to assert release associations stay distinct until scoring.
+        "frieren_s02e01": Episode(
+            "Frieren.Beyond.Journeys.End.S02E01.Shall.We.Go.Then.1080p.CR.WEB-DL.MULTi.AAC2.0.H.264-VARYG.mkv",
+            "Frieren: Beyond Journey's End",
+            2,
+            1,
+            source="Web",
+            series_anidb_id=18886,
+            series_anidb_episode_id=306529,
+            series_tvdb_id=424536,
+            series_imdb_id="tt22248376",
+            release_group="VARYG",
+            resolution="1080p",
+            video_codec="H.264",
+        ),
         "solo_leveling_s01e10": Episode(
             "[New-raws] Ore Dake Level Up na Ken - 12 END [1080p] [AMZN].mkv",
             "Solo Leveling",
@@ -107,11 +123,10 @@ def _varyg_torrent_response():
     }
 
 
-def _mock_feed(requests_mock, torrent_response, entry_id=608526):
+def _mock_feed(requests_mock, torrent_response, entry_id, eid, title):
     requests_mock.get(
-        'https://feed.animetosho.org/json?eid=277518',
-        json=[{"id": entry_id, "timestamp": 1711853493, "status": "complete",
-               "title": "Solo Leveling - 12"}],
+        f'https://feed.animetosho.org/json?eid={eid}',
+        json=[{"id": entry_id, "timestamp": 1711853493, "status": "complete", "title": title}],
     )
     requests_mock.get(
         f'https://feed.animetosho.org/json?show=torrent&id={entry_id}',
@@ -145,7 +160,13 @@ _ALL_VARIANTS = {
 def test_portuguese_brazilian_detection(anime_episodes, requests_mock, info, expected):
     item = anime_episodes["solo_leveling_s01e10"]
 
-    _mock_feed(requests_mock, _torrent_response(info))
+    _mock_feed(
+        requests_mock,
+        _torrent_response(info),
+        entry_id=608526,
+        eid=277518,
+        title="Solo Leveling - 12",
+    )
 
     with AnimeToshoProvider(1) as provider:
         # Ask for both variants so nothing is filtered out and the resolved language is asserted.
@@ -172,7 +193,13 @@ def test_portuguese_brazilian_detection(anime_episodes, requests_mock, info, exp
 def test_forced_flag_is_propagated(anime_episodes, requests_mock, info, expected):
     item = anime_episodes["solo_leveling_s01e10"]
 
-    _mock_feed(requests_mock, _torrent_response(info))
+    _mock_feed(
+        requests_mock,
+        _torrent_response(info),
+        entry_id=608526,
+        eid=277518,
+        title="Solo Leveling - 12",
+    )
 
     with AnimeToshoProvider(1) as provider:
         subtitles = provider.list_subtitles(item, languages=_ALL_VARIANTS)
@@ -186,7 +213,13 @@ def test_forced_track_is_not_offered_as_a_normal_subtitle(anime_episodes, reques
     """#3579: a profile asking for normal Brazilian Portuguese was served the forced track."""
     item = anime_episodes["solo_leveling_s01e10"]
 
-    _mock_feed(requests_mock, _varyg_torrent_response())
+    _mock_feed(
+        requests_mock,
+        _varyg_torrent_response(),
+        entry_id=608526,
+        eid=277518,
+        title="Solo Leveling - 12",
+    )
 
     with AnimeToshoProvider(1) as provider:
         normal = provider.list_subtitles(item, languages={Language("por", "BR")})
@@ -198,6 +231,46 @@ def test_forced_track_is_not_offered_as_a_normal_subtitle(anime_episodes, reques
 
     assert [(s.language, s.forced) for s in forced] == [(Language("por", "BR", forced=True), True)]
     assert forced[0].download_link == "https://animetosho.org/storage/attach/002a1975/2759029.xz"
+
+
+def test_reused_attachment_across_releases_keeps_distinct_candidates(anime_episodes, requests_mock):
+    # AnimeTosho.org may associate the same attachment with multiple releases. Each release
+    # association must stay distinct until scoring, otherwise the pool drops later ones by id
+    # (Frieren S02E01 / attachment 2730010 on both VARYG and Earendur).
+    item = anime_episodes["frieren_s02e01"]
+    shared_url = "https://animetosho.org/storage/attach/0029a81a/2730010.xz"
+
+    # Reuse the VARYG payload, keeping only the complete (non-forced) PT-BR attachment that is
+    # shared across releases.
+    torrent = _varyg_torrent_response()
+    torrent["files"][0]["attachments"] = [
+        a for a in torrent["files"][0]["attachments"] if not a["info"].get("forced")
+    ]
+
+    varyg_title = ("Frieren Beyond Journeys End S02E01 Shall We Go Then 1080p CR WEB-DL MULTi "
+                   "AAC2.0 H 264-VARYG")
+    earendur_title = "Earendur Frieren S02E01"
+
+    requests_mock.get(
+        'https://feed.animetosho.org/json?eid=306529',
+        json=[
+            {"id": 592301, "timestamp": 200, "status": "complete", "title": varyg_title},
+            {"id": 592300, "timestamp": 100, "status": "complete", "title": earendur_title},
+        ],
+    )
+    requests_mock.get('https://feed.animetosho.org/json?show=torrent&id=592301', json=torrent)
+    requests_mock.get('https://feed.animetosho.org/json?show=torrent&id=592300', json=torrent)
+
+    with AnimeToshoProvider(2) as provider:
+        subtitles = provider.list_subtitles(item, languages={Language("por", "BR")})
+
+    assert len(subtitles) == 2
+    assert {s.download_link for s in subtitles} == {shared_url}
+    assert {s.release_id for s in subtitles} == {592301, 592300}
+    assert {s.id for s in subtitles} == {
+        f"592301:{shared_url}",
+        f"592300:{shared_url}",
+    }
 
 
 def test_forced_languages_are_declared():
