@@ -344,6 +344,7 @@ def get_providers_auth():
             'search_threshold': settings.animetosho.search_threshold,
         },
         "animetosho_xyz": {},
+        "tsukihime": {},
         "subdl": {
             'api_key': settings.subdl.api_key,
             'ai_translate': settings.subdl.ai_translate,

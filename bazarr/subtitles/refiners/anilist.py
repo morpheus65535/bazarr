@@ -11,7 +11,7 @@ from app.config import settings
 from subliminal import Episode, region, __short_version__
 
 logger = logging.getLogger(__name__)
-refined_providers = {'jimaku'}
+refined_providers = {'jimaku', 'tsukihime'}
 
 
 class AniListClient(object):    
