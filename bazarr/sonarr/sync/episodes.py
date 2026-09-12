@@ -179,8 +179,8 @@ def sync_episodes(series_id, defer_search=False, is_signalr=False):
                 ).first()
 
                 previous_episode_id = updated_episode['sonarrEpisodeId']
-                previous_episode_file_id = previous_episode_data.episode_file_id
-                previous_episode_path = previous_episode_data.path
+                previous_episode_file_id = previous_episode_data.episode_file_id if previous_episode_data else None
+                previous_episode_path = previous_episode_data.path if previous_episode_data else None
 
                 updated_episode['updated_at_timestamp'] = datetime.now()
                 database.execute(update(TableEpisodes)

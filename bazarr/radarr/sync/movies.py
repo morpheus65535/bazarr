@@ -54,8 +54,8 @@ def update_movie(updated_movie):
         ).first()
 
         previous_movie_id = updated_movie['radarrId']
-        previous_movie_file_id = previous_movie_data.movie_file_id
-        previous_movie_path = previous_movie_data.path
+        previous_movie_file_id = previous_movie_data.movie_file_id if previous_movie_data else None
+        previous_movie_path = previous_movie_data.path if previous_movie_data else None
 
         updated_movie['updated_at_timestamp'] = datetime.now()
         database.execute(
