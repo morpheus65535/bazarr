@@ -210,6 +210,11 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
         name: "Fallback language",
         defaultValue: "en",
       },
+      {
+        type: "switch",
+        key: "prefer_embedded",
+        name: "Prefer embedded subtitles (search embedded tracks first and skip other providers for any language they satisfy)",
+      },
     ],
     message:
       "Warning for cloud users: this provider needs to read the entire file in order to extract subtitles.",
