@@ -5,6 +5,7 @@ import os
 import logging
 
 from subliminal_patch import core, search_external_subtitles
+from sqlalchemy import not_, tuple_
 
 from languages.custom_lang import CustomLanguage
 from constants import HI_EXCLUDED
@@ -86,7 +87,7 @@ def store_subtitles_movie(radarr_id, use_cache=True):
                     .where(TableMoviesSubtitles.embedded_track_id.is_(None))
                 )
 
-                embedded_subtitles_id_list = []
+                embedded_subtitles_list = []
 
                 if len(embedded_subtitles):
                     # Insert new embedded subtitles or update existing ones
@@ -103,14 +104,19 @@ def store_subtitles_movie(radarr_id, use_cache=True):
                         index_where=TableMoviesSubtitles.path.is_(None)
                     )
                     database.execute(embedded_stmt)
-                    embedded_subtitles_id_list = [x['embedded_track_id'] for x in embedded_subtitles]
+                    embedded_subtitles_list = [(x['embedded_track_id'], x['language'], x['forced'], x['hi']) for x in embedded_subtitles]
 
                 # Delete prior indexed embedded subtitles that don't exist anymore
                 database.execute(
                     delete(TableMoviesSubtitles)
                     .where(TableMoviesSubtitles.radarrId == radarr_id)
                     .where(TableMoviesSubtitles.path.is_(None))
-                    .where(TableMoviesSubtitles.embedded_track_id.not_in(embedded_subtitles_id_list))
+                    .where(not_(tuple_(
+                        TableMoviesSubtitles.embedded_track_id,
+                        TableMoviesSubtitles.language,
+                        TableMoviesSubtitles.forced,
+                        TableMoviesSubtitles.hi,
+                    ).in_(embedded_subtitles_list)))
                 )
             except Exception:
                 logging.exception(
