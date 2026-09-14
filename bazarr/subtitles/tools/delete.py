@@ -93,7 +93,8 @@ def delete_subtitles(media_type, language, forced, hi, media_path, subtitles_pat
                 subtitle_path=subtitles_path,
                 media_path=media_path,
                 language=language_log,
-                media_type=media_type
+                media_type=media_type,
+                action_type='delete'
             )
 
             return True
