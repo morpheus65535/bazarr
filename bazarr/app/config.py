@@ -420,6 +420,7 @@ validators = [
     Validator('embeddedsubtitles.timeout', must_exist=True, default=600, is_type_of=int, gte=1),
     Validator('embeddedsubtitles.unknown_as_fallback', must_exist=True, default=False, is_type_of=bool),
     Validator('embeddedsubtitles.fallback_lang', must_exist=True, default='en', is_type_of=str, cast=str),
+    Validator('embeddedsubtitles.prefer_embedded', must_exist=True, default=False, is_type_of=bool),
 
     # karagarga section
     Validator('karagarga.username', must_exist=True, default='', is_type_of=str, cast=str),
