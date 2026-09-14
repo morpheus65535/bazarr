@@ -36,6 +36,10 @@ Bazarr does not scan your disk to detect series and movies. It only manages the 
 | Bug reports | [GitHub Issues](https://github.com/morpheus65535/bazarr/issues) |
 | Feature requests | [Feature Upvote](http://features.bazarr.media) |
 
+## Easypanel
+
+Bazarr can also be deployed with one click using the official [Easypanel](https://easypanel.io/) template: https://easypanel.io/templates/bazarr
+
 ## Support the project
 
 At the request of some users, here is a way to show appreciation for the efforts made in the development of Bazarr:
