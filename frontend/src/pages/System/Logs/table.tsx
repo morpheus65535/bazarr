@@ -9,8 +9,8 @@ import {
   faQuestion,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { ColumnDef } from "@tanstack/react-table";
 import { Action } from "@/components";
+import { AppColumnDef as ColumnDef } from "@/components/tables/features";
 import PageTable from "@/components/tables/PageTable";
 import { useModals } from "@/modules/modals";
 import SystemLogModal from "./modal";
@@ -19,7 +19,7 @@ interface Props {
   logs: System.Log[];
 }
 
-function mapTypeToIcon(type: System.LogType): IconDefinition {
+const mapTypeToIcon = (type: System.LogType): IconDefinition => {
   switch (type) {
     case "DEBUG":
       return faCode;
@@ -32,7 +32,7 @@ function mapTypeToIcon(type: System.LogType): IconDefinition {
     default:
       return faQuestion;
   }
-}
+};
 
 const Table: FunctionComponent<Props> = ({ logs }) => {
   const modals = useModals();

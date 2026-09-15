@@ -1,9 +1,9 @@
 import { FunctionComponent, JSX, useMemo } from "react";
 import { Anchor, Text } from "@mantine/core";
 import { faWindowClose } from "@fortawesome/free-solid-svg-icons";
-import { ColumnDef } from "@tanstack/react-table";
 import { useSystemAnnouncementsAddDismiss } from "@/apis/hooks";
 import { MutateAction } from "@/components/async";
+import { AppColumnDef as ColumnDef } from "@/components/tables/features";
 import SimpleTable from "@/components/tables/SimpleTable";
 
 interface Props {
@@ -95,11 +95,11 @@ interface LabelProps {
   children: string;
 }
 
-function Label(props: LabelProps): JSX.Element {
+const Label = (props: LabelProps): JSX.Element => {
   const { link, children } = props;
   return (
     <Anchor href={link} target="_blank" rel="noopener noreferrer">
       {children}
     </Anchor>
   );
-}
+};

@@ -5,7 +5,7 @@ const OnlineContext = createContext<{
   setOnline: (online: boolean) => void;
 } | null>(null);
 
-export function useIsOnline() {
+export const useIsOnline = () => {
   const context = useContext(OnlineContext);
 
   if (context === null) {
@@ -13,9 +13,9 @@ export function useIsOnline() {
   }
 
   return context.online;
-}
+};
 
-export function useSetOnline() {
+export const useSetOnline = () => {
   const context = useContext(OnlineContext);
 
   if (context === null) {
@@ -23,6 +23,6 @@ export function useSetOnline() {
   }
 
   return context.setOnline;
-}
+};
 
 export default OnlineContext.Provider;

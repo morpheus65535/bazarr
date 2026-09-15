@@ -10,7 +10,7 @@ from deep_translator.exceptions import ApiKeyException
 
 class ChatGptTranslator(BaseTranslator):
     """
-    class that wraps functions, which use the DeeplTranslator translator
+    class that wraps functions, which use the ChatGPT
     under the hood to translate word(s)
     """
 

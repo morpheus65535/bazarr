@@ -1,35 +1,977 @@
-import { useNavigate } from "react-router";
-import { faList } from "@fortawesome/free-solid-svg-icons";
-import { ColumnDef } from "@tanstack/react-table";
-import { UsePaginationQueryResult } from "@/apis/queries/hooks";
-import { QueryPageTable, Toolbox } from "@/components";
+import {
+  ComponentProps,
+  ReactNode,
+  useCallback,
+  useEffect,
+  useEffectEvent,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import {
+  Button,
+  ButtonProps,
+  Checkbox,
+  Group,
+  Indicator,
+  Menu,
+  Pill,
+  Popover,
+  SegmentedControl,
+  Stack,
+  Table,
+  Tooltip,
+} from "@mantine/core";
+import { IconDefinition } from "@fortawesome/fontawesome-common-types";
+import {
+  faCaretDown,
+  faCaretUp,
+  faCheck,
+  faClock,
+  faFilter,
+  faSort,
+  faSquareCheck,
+  faTableCellsLarge,
+  faTableList,
+  faXmark,
+} from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  QueryKey,
+  UseMutationResult,
+  UseQueryResult,
+} from "@tanstack/react-query";
+import { flexRender } from "@tanstack/react-table";
+import { useLanguageProfiles, useLanguages } from "@/apis/hooks";
+import {
+  useInfinitePaginationQuery,
+  usePaginationQuery,
+} from "@/apis/queries/hooks";
+import {
+  MultiSelector,
+  PosterCardSelection,
+  QueryPageTable,
+  QueryPosterGrid,
+  Selector,
+  SelectorOption,
+  Toolbox,
+} from "@/components";
+import LanguageProfileName from "@/components/bazarr/LanguageProfile";
+import {
+  AppColumnDef as ColumnDef,
+  AppHeader as Header,
+} from "@/components/tables/features";
+import { GetItemId, GetItemIds, useListQueryState } from "@/utilities";
+import { BulkSelection, useBulkSelection } from "@/utilities/bulkSelection";
+import { useResetOnChange } from "@/utilities/resetOnChange";
+import { useViewMode, ViewMode } from "@/utilities/viewMode";
+import {
+  BulkActionBarControls,
+  BulkActionBarSaveButton,
+} from "./BulkActionBar";
 
-interface Props<T extends Item.Base = Item.Base> {
-  query: UsePaginationQueryResult<T>;
-  columns: ColumnDef<T>[];
+const EMPTY_TAGS: string[] = [];
+const MAX_VISIBLE_TAGS = 2;
+
+const ToolboxIconButton = ({
+  icon,
+  children,
+  ...props
+}: { icon: IconDefinition } & ButtonProps &
+  Omit<ComponentProps<"button">, "ref">) => (
+  <Button
+    variant="subtle"
+    color="gray"
+    size="xs"
+    leftSection={<FontAwesomeIcon icon={icon} size="lg" />}
+    styles={{
+      root: { height: "auto", padding: "6px 12px" },
+      inner: { flexDirection: "column", gap: 6 },
+      section: { marginInlineEnd: 0 },
+    }}
+    {...props}
+  >
+    {children}
+  </Button>
+);
+
+interface SortField {
+  value: string;
+  label: string;
 }
 
-function ItemView<T extends Item.Base>({ query, columns }: Props<T>) {
-  const navigate = useNavigate();
+interface FilterConfig {
+  sortFields: SortField[];
+  filters?: {
+    monitored?: boolean;
+    missing?: boolean;
+    profile?: boolean;
+    audio?: boolean;
+    tags?: boolean;
+  };
+}
+
+type SetFilter = <K extends keyof Parameter.ListFilters>(
+  key: K,
+  value: Parameter.ListFilters[K] | undefined,
+) => void;
+
+interface Props<T extends Item.Base = Item.Base> {
+  queryKey: QueryKey;
+  queryFn: RangeQuery<T>;
+  columns: ColumnDef<T>[];
+  // Enables the table/poster toggle when both are provided. The key is used
+  // to persist the selection in the browser.
+  viewModeKey?: string;
+  // `selection` is only passed while select mode is active.
+  renderPoster?: (item: T, selection?: PosterCardSelection) => ReactNode;
+  filterConfig: FilterConfig;
+  // Required when filterConfig.filters.tags is set: fetches the full list of
+  // tags in use, independent of the currently loaded/filtered items.
+  useTags?: () => Pick<UseQueryResult<string[]>, "data">;
+  // Scopes the filter/sort URL params (e.g. "series_sort_by") so state does
+  // not bleed between pages sharing this view.
+  statePrefix?: string;
+  // Fetches every item matching the current filters, on demand, to resolve
+  // "select all N matching filters".
+  useAllItems: (
+    query: Parameter.ListState,
+    options: { enabled: boolean },
+  ) => Pick<
+    UseQueryResult<T[]>,
+    "data" | "isSuccess" | "isFetching" | "isError"
+  >;
+  modifyMutation: UseMutationResult<void, unknown, FormType.ModifyItem>;
+}
+
+interface FilterControlsProps {
+  query: Parameter.ListState;
+  filterConfig: FilterConfig;
+  tagOptions: SelectorOption<string>[];
+  setFilter: SetFilter;
+}
+
+interface TagsFilterProps {
+  value: string[];
+  options: SelectorOption<string>[];
+  onChange: (value: string[] | undefined) => void;
+}
+
+// Keeps the selected tags in local state so picking an option does not push a
+// URL change (which closes the dropdown). The URL is updated once the dropdown
+// closes or the control unmounts (e.g. the mobile popover closes).
+const sameTags = (a: string[], b: string[]) =>
+  a.length === b.length && a.every((tag, i) => tag === b[i]);
+
+const TagsFilterSelector = ({ value, options, onChange }: TagsFilterProps) => {
+  const [localValue, setLocalValue] = useState<string[]>(value);
+  const dirty = useRef(false);
+  const syncedValue = useRef(value);
+
+  useEffect(() => {
+    // A caller may pass a fresh-but-equal array on every render (e.g. a new
+    // `[]` literal, or a derived array from URL params); only resync when the
+    // committed value actually changed, so that doesn't clobber a pending
+    // (not-yet-committed) local selection.
+    if (sameTags(value, syncedValue.current)) {
+      return;
+    }
+    syncedValue.current = value;
+    setLocalValue(value);
+    dirty.current = false;
+  }, [value]);
+
+  const commit = (tags: string[]) => {
+    if (dirty.current) {
+      dirty.current = false;
+      onChange(tags.length === 0 ? undefined : tags);
+    }
+  };
+
+  const commitOnUnmount = useEffectEvent(() => commit(localValue));
+  useEffect(() => commitOnUnmount, []);
+
+  return (
+    <MultiSelector<string>
+      size="sm"
+      w={220}
+      searchable
+      hidePickedOptions={false}
+      styles={{
+        pillsList: { flexWrap: "nowrap" },
+        inputField: { minWidth: 0 },
+      }}
+      placeholder={localValue.length === 0 ? "Tags" : undefined}
+      value={localValue}
+      options={options}
+      buildOption={(tag) => tag}
+      onChange={(tags) => {
+        dirty.current = true;
+        setLocalValue(tags);
+      }}
+      onDropdownClose={() => commit(localValue)}
+      renderPill={({ option, value: tag, onRemove }) => {
+        const label = option?.label ?? tag ?? "";
+        const index = localValue.indexOf(tag ?? "");
+        if (index === MAX_VISIBLE_TAGS) {
+          return <Pill>+{localValue.length - MAX_VISIBLE_TAGS}</Pill>;
+        }
+        if (index > MAX_VISIBLE_TAGS) {
+          return null;
+        }
+        return (
+          <Pill withRemoveButton onRemove={onRemove}>
+            {label}
+          </Pill>
+        );
+      }}
+    />
+  );
+};
+
+interface TriStateFilterProps {
+  ariaLabel: string;
+  trueLabel: string;
+  falseLabel: string;
+  value: boolean | undefined;
+  onChange: (value: boolean | undefined) => void;
+}
+
+const TriStateFilter = ({
+  ariaLabel,
+  trueLabel,
+  falseLabel,
+  value,
+  onChange,
+}: TriStateFilterProps) => (
+  <SegmentedControl
+    size="sm"
+    aria-label={ariaLabel}
+    value={value === undefined ? "all" : value ? "true" : "false"}
+    onChange={(v) => onChange(v === "all" ? undefined : v === "true")}
+    data={[
+      { value: "all", label: "All" },
+      { value: "true", label: trueLabel },
+      { value: "false", label: falseLabel },
+    ]}
+  ></SegmentedControl>
+);
+
+interface SortControlProps {
+  query: Parameter.ListState;
+  filterConfig: FilterConfig;
+  setSort: (by: string, order: "asc" | "desc") => void;
+}
+
+const ItemViewSortControl = ({
+  query,
+  filterConfig,
+  setSort,
+}: SortControlProps) => {
+  const sortBy = query.sortBy ?? filterConfig.sortFields[0]?.value ?? "title";
+  const sortOrder = query.sortOrder ?? "asc";
+
+  const sortLabel =
+    filterConfig.sortFields.find((field) => field.value === sortBy)?.label ??
+    sortBy;
+
+  const handleSort = (field: string) => {
+    if (field === sortBy) {
+      setSort(sortBy, sortOrder === "asc" ? "desc" : "asc");
+      return;
+    }
+    setSort(field, "asc");
+  };
+
+  return (
+    <Menu position="bottom-end" shadow="md" withinPortal>
+      <Menu.Target>
+        <ToolboxIconButton
+          icon={faSort}
+          aria-label={`Sort: ${sortLabel}, ${sortOrder === "asc" ? "ascending" : "descending"}`}
+        >
+          Sort
+        </ToolboxIconButton>
+      </Menu.Target>
+      <Menu.Dropdown>
+        {filterConfig.sortFields.map((field) => (
+          <Menu.Item
+            key={field.value}
+            onClick={() => handleSort(field.value)}
+            rightSection={
+              field.value === sortBy ? (
+                <FontAwesomeIcon
+                  icon={sortOrder === "asc" ? faCaretUp : faCaretDown}
+                ></FontAwesomeIcon>
+              ) : undefined
+            }
+          >
+            {field.label}
+          </Menu.Item>
+        ))}
+      </Menu.Dropdown>
+    </Menu>
+  );
+};
+
+// Filter and sort controls. Rendered as a fragment so the parent can lay them
+// out inline (desktop) or stacked inside a popover (mobile).
+const ItemViewFilterControls = ({
+  query,
+  filterConfig,
+  tagOptions,
+  setFilter,
+}: FilterControlsProps) => {
+  const { data: profiles } = useLanguageProfiles();
+  const { data: languages } = useLanguages();
+
+  const profileOptions = useMemo(
+    () => [
+      // 0 means "items without a languages profile" (sent as "none")
+      { value: 0, label: "No profile" },
+      ...(profiles ?? []).map((profile) => ({
+        value: profile.profileId,
+        label: profile.name,
+      })),
+    ],
+    [profiles],
+  );
+
+  const audioOptions = useMemo(
+    () =>
+      (languages ?? []).map((language) => ({
+        value: language.name,
+        label: language.name,
+      })),
+    [languages],
+  );
 
   return (
     <>
+      {filterConfig.filters?.monitored && (
+        <TriStateFilter
+          ariaLabel="Monitored"
+          trueLabel="Monitored"
+          falseLabel="Unmonitored"
+          value={query.filters?.monitored}
+          onChange={(value) => setFilter("monitored", value)}
+        />
+      )}
+
+      {filterConfig.filters?.missing && (
+        <TriStateFilter
+          ariaLabel="Missing subtitles"
+          trueLabel="Missing"
+          falseLabel="Complete"
+          value={query.filters?.missing}
+          onChange={(value) => setFilter("missing", value)}
+        />
+      )}
+
+      {filterConfig.filters?.profile && (
+        <Selector<number | null>
+          size="sm"
+          w={150}
+          placeholder="Profile"
+          clearable
+          value={query.filters?.profileId ?? null}
+          options={profileOptions}
+          onChange={(value) =>
+            setFilter("profileId", value === null ? undefined : value)
+          }
+        />
+      )}
+
+      {filterConfig.filters?.audio && (
+        <Selector<string | null>
+          size="sm"
+          w={150}
+          placeholder="Audio"
+          clearable
+          searchable
+          value={query.filters?.audioLanguage ?? null}
+          options={audioOptions}
+          onChange={(value) =>
+            setFilter("audioLanguage", value === null ? undefined : value)
+          }
+        />
+      )}
+
+      {filterConfig.filters?.tags && (
+        <TagsFilterSelector
+          value={query.filters?.tags ?? EMPTY_TAGS}
+          options={tagOptions}
+          onChange={(value) => setFilter("tags", value)}
+        />
+      )}
+    </>
+  );
+};
+
+interface ToolboxProps {
+  totalCount: number;
+  viewMode: ViewMode;
+  canShowPoster: boolean;
+  onViewModeChange: (mode: ViewMode) => void;
+  query: Parameter.ListState;
+  filterConfig: FilterConfig;
+  useTags?: () => Pick<UseQueryResult<string[]>, "data">;
+  setSort: (by: string, order: "asc" | "desc") => void;
+  setFilter: SetFilter;
+  bulkSelection: BulkSelection;
+  loadedIds: number[];
+  loadedLabel: string;
+  onSelectAllMatching: () => void;
+  isSelectingAllMatching: boolean;
+  modifyMutation: UseMutationResult<void, unknown, FormType.ModifyItem>;
+}
+
+// The fields ItemView shares as-is between table/poster (everything except
+// totalCount and the bulk-action-bar fields, which are computed per view).
+type SharedToolboxProps = Omit<
+  ToolboxProps,
+  | "totalCount"
+  | "loadedIds"
+  | "loadedLabel"
+  | "onSelectAllMatching"
+  | "isSelectingAllMatching"
+  | "modifyMutation"
+>;
+
+const ItemViewToolbox = ({
+  totalCount,
+  viewMode,
+  canShowPoster,
+  onViewModeChange,
+  query,
+  filterConfig,
+  useTags = () => ({ data: undefined }),
+  setSort,
+  setFilter,
+  bulkSelection,
+  loadedIds,
+  loadedLabel,
+  onSelectAllMatching,
+  isSelectingAllMatching,
+  modifyMutation,
+}: ToolboxProps) => {
+  const [filtersOpened, setFiltersOpened] = useState(false);
+
+  // Collapse the inline filter controls into a popover button when they no
+  // longer fit next to the Select button. Records the width at which the
+  // controls overflowed so they only expand again when there is room.
+  const [groupEl, setGroupEl] = useState<HTMLDivElement | null>(null);
+  const controlsWidth = useRef(0);
+  const [collapsed, setCollapsed] = useState(false);
+  const collapsedRef = useRef(collapsed);
+
+  useEffect(() => {
+    collapsedRef.current = collapsed;
+  }, [collapsed]);
+
+  useEffect(() => {
+    if (!groupEl) {
+      return;
+    }
+
+    const epsilon = 8;
+    const observer = new ResizeObserver(() => {
+      if (
+        !collapsedRef.current &&
+        groupEl.scrollWidth > groupEl.clientWidth + epsilon
+      ) {
+        controlsWidth.current = groupEl.scrollWidth;
+        setCollapsed(true);
+      } else if (
+        collapsedRef.current &&
+        groupEl.clientWidth >= controlsWidth.current + epsilon
+      ) {
+        setCollapsed(false);
+      }
+    });
+    observer.observe(groupEl);
+    return () => observer.disconnect();
+  }, [groupEl]);
+
+  const activeFilterCount = Object.keys(query.filters ?? {}).length;
+
+  const { data: allTags } = useTags();
+
+  const tagOptions = useMemo(() => {
+    // allTags may lag behind a just-picked tag; keep active filters visible.
+    const tags = new Set([...(allTags ?? []), ...(query.filters?.tags ?? [])]);
+    return Array.from(tags)
+      .sort()
+      .map((tag) => ({ value: tag, label: tag }));
+  }, [allTags, query.filters?.tags]);
+
+  const controls = (
+    <ItemViewFilterControls
+      query={query}
+      filterConfig={filterConfig}
+      tagOptions={tagOptions}
+      setFilter={setFilter}
+    ></ItemViewFilterControls>
+  );
+
+  if (bulkSelection.active) {
+    return (
       <Toolbox>
-        <Toolbox.Button
-          disabled={query.paginationStatus.totalCount === 0}
-          icon={faList}
-          onClick={() => navigate("edit")}
-        >
-          Mass Edit
-        </Toolbox.Button>
+        <Group gap="sm" wrap="wrap" align="center" flex={1} miw={0}>
+          <ToolboxIconButton
+            icon={faXmark}
+            style={{ flexShrink: 0 }}
+            onClick={bulkSelection.toggleActive}
+          >
+            Cancel
+          </ToolboxIconButton>
+          <BulkActionBarControls
+            selection={bulkSelection}
+            totalCount={totalCount}
+            loadedIds={loadedIds}
+            loadedLabel={loadedLabel}
+            onSelectAllMatching={onSelectAllMatching}
+            isSelectingAllMatching={isSelectingAllMatching}
+          ></BulkActionBarControls>
+        </Group>
+        <BulkActionBarSaveButton
+          selection={bulkSelection}
+          mutation={modifyMutation}
+        ></BulkActionBarSaveButton>
       </Toolbox>
+    );
+  }
+
+  return (
+    <Toolbox>
+      <Group
+        ref={setGroupEl}
+        gap="sm"
+        wrap="nowrap"
+        align="center"
+        flex={1}
+        miw={0}
+        preventGrowOverflow={false}
+      >
+        <ToolboxIconButton
+          disabled={totalCount === 0}
+          icon={faSquareCheck}
+          style={{ flexShrink: 0 }}
+          onClick={bulkSelection.toggleActive}
+        >
+          Select
+        </ToolboxIconButton>
+
+        {!collapsed && (
+          <Group
+            gap="sm"
+            wrap="nowrap"
+            align="center"
+            style={{ flexShrink: 0 }}
+          >
+            {controls}
+          </Group>
+        )}
+      </Group>
+
+      <Group gap="sm" wrap="nowrap" align="center">
+        {viewMode === "poster" && (
+          <ItemViewSortControl
+            query={query}
+            filterConfig={filterConfig}
+            setSort={setSort}
+          ></ItemViewSortControl>
+        )}
+
+        {canShowPoster && (
+          <Menu position="bottom-end" shadow="md" withinPortal>
+            <Menu.Target>
+              <ToolboxIconButton
+                icon={viewMode === "table" ? faTableList : faTableCellsLarge}
+                aria-label={`View: ${viewMode}`}
+              >
+                View
+              </ToolboxIconButton>
+            </Menu.Target>
+            <Menu.Dropdown>
+              <Menu.Item
+                leftSection={
+                  <FontAwesomeIcon icon={faTableList}></FontAwesomeIcon>
+                }
+                rightSection={
+                  viewMode === "table" ? (
+                    <FontAwesomeIcon icon={faCheck}></FontAwesomeIcon>
+                  ) : undefined
+                }
+                onClick={() => onViewModeChange("table")}
+              >
+                Table view
+              </Menu.Item>
+              <Menu.Item
+                leftSection={
+                  <FontAwesomeIcon icon={faTableCellsLarge}></FontAwesomeIcon>
+                }
+                rightSection={
+                  viewMode === "poster" ? (
+                    <FontAwesomeIcon icon={faCheck}></FontAwesomeIcon>
+                  ) : undefined
+                }
+                onClick={() => onViewModeChange("poster")}
+              >
+                Poster view
+              </Menu.Item>
+            </Menu.Dropdown>
+          </Menu>
+        )}
+
+        {collapsed && (
+          <Popover
+            opened={filtersOpened}
+            onChange={setFiltersOpened}
+            position="bottom-end"
+            withArrow
+            shadow="md"
+            withinPortal
+          >
+            <Popover.Target>
+              <Indicator
+                disabled={activeFilterCount === 0}
+                label={activeFilterCount}
+                size={16}
+              >
+                <ToolboxIconButton
+                  icon={faFilter}
+                  aria-label="Filters"
+                  onClick={() => setFiltersOpened((opened) => !opened)}
+                >
+                  Filters
+                </ToolboxIconButton>
+              </Indicator>
+            </Popover.Target>
+            <Popover.Dropdown>
+              <Stack gap="xs" w={260}>
+                {controls}
+              </Stack>
+            </Popover.Dropdown>
+          </Popover>
+        )}
+      </Group>
+    </Toolbox>
+  );
+};
+
+interface ViewProps<T extends Item.Base> {
+  queryKey: QueryKey;
+  queryFn: RangeQuery<T>;
+  query: Parameter.ListState;
+  toolbox: SharedToolboxProps;
+  onSelectAllMatching: () => void;
+  isSelectingAllMatching: boolean;
+  modifyMutation: UseMutationResult<void, unknown, FormType.ModifyItem>;
+}
+
+const ItemTableView = <T extends Item.Base>({
+  queryKey,
+  queryFn,
+  query,
+  columns,
+  toolbox,
+  onSelectAllMatching,
+  isSelectingAllMatching,
+  modifyMutation,
+}: ViewProps<T> & { columns: ColumnDef<T>[] }) => {
+  const tableQuery = usePaginationQuery(queryKey, queryFn, true, query);
+  const { filterConfig, setSort, bulkSelection } = toolbox;
+
+  const loadedIds = useMemo(
+    () => GetItemIds(tableQuery.data?.data ?? []),
+    [tableQuery.data],
+  );
+
+  const selectionColumn = useMemo<ColumnDef<T>>(
+    () => ({
+      id: "__selection",
+      header: () => {
+        const selectedCount = loadedIds.filter(bulkSelection.isSelected).length;
+        const allSelected =
+          loadedIds.length > 0 && selectedCount === loadedIds.length;
+        const someSelected = selectedCount > 0;
+        return (
+          <Checkbox
+            indeterminate={someSelected && !allSelected}
+            checked={allSelected}
+            onChange={() => bulkSelection.setMany(loadedIds, !allSelected)}
+          ></Checkbox>
+        );
+      },
+      cell: ({ row }) => {
+        const id = GetItemId(row.original);
+        if (id === undefined) {
+          return null;
+        }
+        const dirtyProfileId = bulkSelection.dirties.get(id);
+        return (
+          <Group gap="xs" wrap="nowrap">
+            <Checkbox
+              checked={bulkSelection.isSelected(id)}
+              onChange={() => bulkSelection.toggle(id)}
+            ></Checkbox>
+            {dirtyProfileId !== undefined && (
+              <Tooltip
+                label={
+                  <>
+                    Pending:{" "}
+                    <LanguageProfileName
+                      index={dirtyProfileId}
+                      empty="No profile"
+                    ></LanguageProfileName>
+                  </>
+                }
+              >
+                <FontAwesomeIcon
+                  icon={faClock}
+                  style={{ color: "var(--mantine-color-warning-filled)" }}
+                ></FontAwesomeIcon>
+              </Tooltip>
+            )}
+          </Group>
+        );
+      },
+    }),
+    [bulkSelection, loadedIds],
+  );
+
+  const tableColumns = useMemo(
+    () => (bulkSelection.active ? [selectionColumn, ...columns] : columns),
+    [bulkSelection.active, selectionColumn, columns],
+  );
+
+  const sortableIds = useMemo(
+    () => new Set(filterConfig.sortFields.map((field) => field.value)),
+    [filterConfig],
+  );
+
+  const headersRenderer = useCallback(
+    (headers: Header<T, unknown>[]) =>
+      headers.map((header) => {
+        const id = header.column.id;
+        const isSortable = sortableIds.has(id);
+        const isSorted = query.sortBy === id;
+        const order = query.sortOrder ?? "asc";
+
+        return (
+          <Table.Th
+            key={header.id}
+            style={{
+              whiteSpace: "nowrap",
+              cursor: isSortable ? "pointer" : undefined,
+            }}
+            onClick={() => {
+              if (!isSortable) {
+                return;
+              }
+              setSort(id, isSorted && order === "asc" ? "desc" : "asc");
+            }}
+          >
+            <Group gap="xs" wrap="nowrap" align="center">
+              {flexRender(header.column.columnDef.header, header.getContext())}
+              {isSortable && (
+                <FontAwesomeIcon
+                  icon={
+                    isSorted
+                      ? order === "asc"
+                        ? faCaretUp
+                        : faCaretDown
+                      : faSort
+                  }
+                ></FontAwesomeIcon>
+              )}
+            </Group>
+          </Table.Th>
+        );
+      }),
+    [sortableIds, query, setSort],
+  );
+
+  return (
+    <>
+      <ItemViewToolbox
+        {...toolbox}
+        totalCount={tableQuery.paginationStatus.totalCount}
+        loadedIds={loadedIds}
+        loadedLabel="on this page"
+        onSelectAllMatching={onSelectAllMatching}
+        isSelectingAllMatching={isSelectingAllMatching}
+        modifyMutation={modifyMutation}
+      ></ItemViewToolbox>
       <QueryPageTable
-        columns={columns}
-        query={query}
-        tableStyles={{ emptyText: "No items found" }}
+        columns={tableColumns}
+        query={tableQuery}
+        tableStyles={{ emptyText: "No items found", headersRenderer }}
       ></QueryPageTable>
     </>
   );
-}
+};
+
+const ItemPosterView = <T extends Item.Base>({
+  queryKey,
+  queryFn,
+  query,
+  renderPoster,
+  toolbox,
+  onSelectAllMatching,
+  isSelectingAllMatching,
+  modifyMutation,
+}: ViewProps<T> & {
+  renderPoster: (item: T, selection?: PosterCardSelection) => ReactNode;
+}) => {
+  const posterQuery = useInfinitePaginationQuery(
+    queryKey,
+    queryFn,
+    true,
+    query,
+  );
+  const { bulkSelection } = toolbox;
+
+  const loadedIds = useMemo(
+    () => GetItemIds(posterQuery.items),
+    [posterQuery.items],
+  );
+
+  const renderPosterWithSelection = useCallback(
+    (item: T) => {
+      if (!bulkSelection.active) {
+        return renderPoster(item);
+      }
+
+      const id = GetItemId(item);
+      const selection =
+        id === undefined
+          ? undefined
+          : {
+              checked: bulkSelection.isSelected(id),
+              onChange: () => bulkSelection.toggle(id),
+              pending: bulkSelection.dirties.has(id),
+            };
+
+      return renderPoster(item, selection);
+    },
+    [renderPoster, bulkSelection],
+  );
+
+  return (
+    <>
+      <ItemViewToolbox
+        {...toolbox}
+        totalCount={posterQuery.paginationStatus.totalCount}
+        loadedIds={loadedIds}
+        loadedLabel="loaded"
+        onSelectAllMatching={onSelectAllMatching}
+        isSelectingAllMatching={isSelectingAllMatching}
+        modifyMutation={modifyMutation}
+      ></ItemViewToolbox>
+      <QueryPosterGrid
+        query={posterQuery}
+        renderPoster={renderPosterWithSelection}
+        emptyText="No items found"
+      ></QueryPosterGrid>
+    </>
+  );
+};
+
+const ItemView = <T extends Item.Base>({
+  queryKey,
+  queryFn,
+  columns,
+  viewModeKey,
+  renderPoster,
+  filterConfig,
+  useTags,
+  statePrefix,
+  useAllItems,
+  modifyMutation,
+}: Props<T>) => {
+  const [viewMode, setViewMode] = useViewMode(viewModeKey ?? "item-view-mode");
+  const { query, setSort, setFilter } = useListQueryState(statePrefix);
+
+  // Declared above the table/poster branch so both views share it.
+  const filtersKey = useMemo(
+    () => JSON.stringify(query.filters ?? {}),
+    [query.filters],
+  );
+  const bulkSelection = useBulkSelection(filtersKey);
+
+  const [selectAllRequested, setSelectAllRequested] = useState(false);
+
+  // Avoids a stale in-flight fetch landing after a filter change or Cancel.
+  useResetOnChange(filtersKey, () => setSelectAllRequested(false));
+  useResetOnChange(String(bulkSelection.active), () =>
+    setSelectAllRequested(false),
+  );
+
+  const allItemsQuery = useAllItems(query, { enabled: selectAllRequested });
+
+  // Apply the "select all matching" result as soon as it arrives. Adjusting
+  // state during render avoids an effect-driven render cascade.
+  if (selectAllRequested) {
+    if (allItemsQuery.isSuccess && allItemsQuery.data) {
+      bulkSelection.setMany(GetItemIds(allItemsQuery.data), true);
+      setSelectAllRequested(false);
+    } else if (allItemsQuery.isError) {
+      setSelectAllRequested(false);
+    }
+  }
+
+  const onSelectAllMatching = useCallback(
+    () => setSelectAllRequested(true),
+    [],
+  );
+  const isSelectingAllMatching = selectAllRequested && allItemsQuery.isFetching;
+
+  const canShowPoster = viewModeKey !== undefined && renderPoster !== undefined;
+  const showPoster = canShowPoster && viewMode === "poster";
+
+  const toolbox: SharedToolboxProps = {
+    viewMode,
+    canShowPoster,
+    onViewModeChange: setViewMode,
+    query,
+    filterConfig,
+    useTags,
+    setSort,
+    setFilter,
+    bulkSelection,
+  };
+
+  // Only one view is mounted at a time, keeping a single active query. Each
+  // view owns its query hook and renders the toolbox with its total count.
+  if (showPoster && renderPoster) {
+    return (
+      <ItemPosterView
+        queryKey={queryKey}
+        queryFn={queryFn}
+        query={query}
+        renderPoster={renderPoster}
+        toolbox={toolbox}
+        onSelectAllMatching={onSelectAllMatching}
+        isSelectingAllMatching={isSelectingAllMatching}
+        modifyMutation={modifyMutation}
+      ></ItemPosterView>
+    );
+  }
+
+  return (
+    <ItemTableView
+      queryKey={queryKey}
+      queryFn={queryFn}
+      query={query}
+      columns={columns}
+      toolbox={toolbox}
+      onSelectAllMatching={onSelectAllMatching}
+      isSelectingAllMatching={isSelectingAllMatching}
+      modifyMutation={modifyMutation}
+    ></ItemTableView>
+  );
+};
 
 export default ItemView;

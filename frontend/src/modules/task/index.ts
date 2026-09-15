@@ -41,9 +41,7 @@ class TaskDispatcher {
         for await (const group of groups) {
           const tasks = this.tasks[group];
 
-          for (let index = 0; index < tasks.length; index++) {
-            const task = tasks[index];
-
+          for (const task of tasks) {
             try {
               await task(...task.parameters);
             } catch {

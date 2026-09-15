@@ -16,15 +16,13 @@ from constants import MINIMUM_VIDEO_SIZE
 from radarr.rootfolder import check_radarr_rootfolder
 from subtitles.indexer.movies import store_subtitles_movie
 from subtitles.mass_download import movies_download_subtitles
+from utilities.helper import bool_map
 from utilities.path_mappings import path_mappings
 from subtitles.adaptive_searching import is_search_active
 
 from sqlalchemy.exc import IntegrityError
 from .parser import movieParser
 from .utils import get_profile_list, get_tags, get_movies_from_radarr_api
-
-# map between booleans and strings in DB
-bool_map = {"True": True, "False": False}
 
 FEATURE_PREFIX = "SYNC_MOVIES "
 
@@ -56,8 +54,8 @@ def update_movie(updated_movie):
         ).first()
 
         previous_movie_id = updated_movie['radarrId']
-        previous_movie_file_id = previous_movie_data.movie_file_id
-        previous_movie_path = previous_movie_data.path
+        previous_movie_file_id = previous_movie_data.movie_file_id if previous_movie_data else None
+        previous_movie_path = previous_movie_data.path if previous_movie_data else None
 
         updated_movie['updated_at_timestamp'] = datetime.now()
         database.execute(
@@ -239,7 +237,7 @@ def update_one_movie(movie_id, action, defer_search=False, is_signalr=False):
 
     # Check if there's a row in the database for this movie ID
     existing_movie = database.execute(
-        select(TableMovies.path)
+        select(TableMovies.path, TableMovies.movie_file_id)
         .where(TableMovies.radarrId == movie_id))\
         .first()
 
@@ -321,7 +319,16 @@ def update_one_movie(movie_id, action, defer_search=False, is_signalr=False):
             logging.error(f"BAZARR cannot update movie {path_mappings.path_replace_movie(movie['path'])} because "
                           f"of {e}")
         else:
-            store_subtitles_movie(movie_id)
+            if (existing_movie.movie_file_id != movie['movie_file_id'] or
+                    existing_movie.path != movie['path']):
+                # Store subtitles for updated movie where path or movie_file_id changed
+                logging.debug(f'BAZARR updating subtitles for movie {path_mappings.path_replace_movie(movie["path"])}')
+                store_subtitles_movie(movie_id)
+            else:
+                logging.debug(f'BAZARR skipping subtitle update for movie '
+                              f'{path_mappings.path_replace_movie(movie["path"])} as path and movie_file_id unchanged')
+                defer_search = True
+
             event_stream(type='movie', action='update', payload=int(movie_id))
             logging.debug(
                 f'BAZARR updated this movie into the database:{path_mappings.path_replace_movie(movie["path"])}')

@@ -1,0 +1,68 @@
+{
+    "id": 622245,
+    "title": "[Erai-raws] Crowned in a Hundred Days - 08 (CA) [1080p CR WEB-DL AVC AAC][MultiSub][81FBD56D]",
+    "link": "https://animetosho.xyz/view/622245",
+    "timestamp": 1784290258,
+    "status": "complete",
+    "info_hash": "a4c15054401b20791299b0ca1321796967905a96",
+    "magnet_uri": "magnet:?xt=urn:btih:a4c15054401b20791299b0ca1321796967905a96",
+    "seeders": 1,
+    "leechers": 0,
+    "total_size": 659900000,
+    "num_files": 1,
+    "anidb_aid": 20151,
+    "anidb_eid": 313249,
+    "primary_file_id": 29120,
+    "files": [
+        {
+            "id": 29120,
+            "is_archive": false,
+            "filename": "[Erai-raws] Crowned in a Hundred Days - 08 (CA) [1080p CR WEB-DL AVC AAC][MultiSub][81FBD56D].mkv",
+            "size": 659900000,
+            "processed": true,
+            "crc32": "81fbd56d",
+            "md5": null,
+            "sha1": null,
+            "sha256": null,
+            "ed2k": null,
+            "attachments": []
+        }
+    ],
+    "attachments": [
+        {
+            "id": 127398,
+            "type": "other",
+            "size": 1024,
+            "url": "https://storage.animetosho.xyz/releases/622245/subtitles/archive.zip",
+            "info": {
+                "format": "ARCHIVE"
+            }
+        },
+        {
+            "id": 127399,
+            "type": "subtitle",
+            "size": 25988,
+            "url": "https://storage.animetosho.xyz/releases/622245/subtitles/eng.ass",
+            "info": {
+                "format": "ASS",
+                "language": "English",
+                "language_code": "eng",
+                "default": true,
+                "forced": false
+            }
+        },
+        {
+            "id": 127400,
+            "type": "subtitle",
+            "size": 27100,
+            "url": "https://storage.animetosho.xyz/releases/622245/subtitles/por.ass",
+            "info": {
+                "format": "ASS",
+                "language": "Portuguese[BR]",
+                "language_code": "por",
+                "default": false,
+                "forced": false
+            }
+        }
+    ]
+}

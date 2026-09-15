@@ -429,6 +429,8 @@ validators = [
 
     # subdl section
     Validator('subdl.api_key', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('subdl.ai_translate', must_exist=True, default=False, is_type_of=bool),
+    Validator('subdl.include_ai_translated', must_exist=True, default=False, is_type_of=bool),
 
     # turkcealtyaziorg section
     Validator('turkcealtyaziorg.cookies', must_exist=True, default='', is_type_of=str),
@@ -471,11 +473,18 @@ validators = [
     # subsarr section
     Validator('subsarr.base_url', must_exist=True, default='', is_type_of=str),
 
+    # subsdump section
+    Validator('subsdump.base_url', must_exist=True, default='', is_type_of=str),
+    Validator('subsdump.api_key', must_exist=True, default='', is_type_of=str, cast=str),
+
     # subx section
     Validator('subx.api_key', must_exist=True, default='', is_type_of=str),
     
     # subsro section
     Validator('subsro.api_key', must_exist=True, default='', is_type_of=str, cast=str),
+
+    # subtitlecat section
+    Validator('subtitlecat.include_machine_translated', must_exist=True, default=False, is_type_of=bool),
 ]
 
 
@@ -688,6 +697,7 @@ def save_settings(settings_items):
     undefined_subtitles_track_default_changed = False
     audio_tracks_parsing_changed = False
     reset_providers = False
+    language_equals_changed = False
 
     # Subzero Mods
     update_subzero = False
@@ -735,6 +745,9 @@ def save_settings(settings_items):
 
         if key == 'settings-general-parse_embedded_audio_track':
             audio_tracks_parsing_changed = True
+
+        if key == 'settings-general-language_equals':
+            language_equals_changed = True
 
         if key == 'settings-general-default_und_embedded_subtitles_lang':
             undefined_subtitles_track_default_changed = True
@@ -871,32 +884,53 @@ def save_settings(settings_items):
 
             update_subzero = True
 
-    if use_embedded_subs_changed or undefined_audio_track_default_changed:
-        from .scheduler import scheduler
-        from subtitles.indexer.series import list_missing_subtitles
-        from subtitles.indexer.movies import list_missing_subtitles_movies
+    from app.jobs_queue import jobs_queue
+
+    if use_embedded_subs_changed or undefined_audio_track_default_changed or language_equals_changed:
         if settings.general.use_sonarr:
-            list_missing_subtitles()
+            jobs_queue.feed_jobs_pending_queue(job_name=f'Computing missing episodes subtitles',
+                                               module='subtitles.indexer.series',
+                                               func='list_missing_subtitles',
+                                               args=[],
+                                               kwargs={})
         if settings.general.use_radarr:
-            list_missing_subtitles_movies()
+            jobs_queue.feed_jobs_pending_queue(job_name=f'Computing missing movies subtitles',
+                                               module='subtitles.indexer.movies',
+                                               func='list_missing_subtitles_movies',
+                                               args=[],
+                                               kwargs={})
 
     if undefined_subtitles_track_default_changed:
-        from .scheduler import scheduler
-        from subtitles.indexer.series import series_full_scan_subtitles
-        from subtitles.indexer.movies import movies_full_scan_subtitles
         if settings.general.use_sonarr:
-            series_full_scan_subtitles(use_cache=True)
+            jobs_queue.feed_jobs_pending_queue(job_name=f'Indexing all existing episodes subtitles',
+                                               module='subtitles.indexer.series',
+                                               func='series_full_scan_subtitles',
+                                               args=[],
+                                               kwargs={'use_cache': True},
+                                               is_progress=True)
         if settings.general.use_radarr:
-            movies_full_scan_subtitles(use_cache=True)
+            jobs_queue.feed_jobs_pending_queue(job_name=f'Indexing all existing movies subtitles',
+                                               module='subtitles.indexer.movies',
+                                               func='movies_full_scan_subtitles',
+                                               args=[],
+                                               kwargs={'use_cache': True},
+                                               is_progress=True)
 
     if audio_tracks_parsing_changed:
-        from .scheduler import scheduler
         if settings.general.use_sonarr:
-            from sonarr.sync.series import update_series
-            update_series()
+            jobs_queue.feed_jobs_pending_queue(job_name=f'Syncing series with Sonarr',
+                                               module='sonarr.sync.series',
+                                               func='update_series',
+                                               args=[],
+                                               kwargs={},
+                                               is_progress=True)
         if settings.general.use_radarr:
-            from radarr.sync.movies import update_movies
-            update_movies()
+            jobs_queue.feed_jobs_pending_queue(job_name=f'Syncing movies with Radarr',
+                                               module='radarr.sync.movies',
+                                               func='update_movies',
+                                               args=[],
+                                               kwargs={},
+                                               is_progress=True)
 
     if update_subzero:
         settings.general.subzero_mods = ','.join(subzero_mods)

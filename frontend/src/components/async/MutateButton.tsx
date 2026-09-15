@@ -12,13 +12,13 @@ type MutateButtonProps<DATA, VAR> = Omit<
   onError?: () => void;
 };
 
-function MutateButton<DATA, VAR>({
+const MutateButton = <DATA, VAR>({
   mutation,
   onSuccess,
   onError,
   args,
   ...props
-}: MutateButtonProps<DATA, VAR>) {
+}: MutateButtonProps<DATA, VAR>) => {
   const { mutateAsync } = mutation;
 
   const [isLoading, setLoading] = useState(false);
@@ -40,6 +40,6 @@ function MutateButton<DATA, VAR>({
   }, [args, mutateAsync, onError, onSuccess]);
 
   return <Button {...props} loading={isLoading} onClick={onClick}></Button>;
-}
+};
 
 export default MutateButton;

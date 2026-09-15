@@ -1,5 +1,5 @@
 import { FunctionComponent, useMemo, useState } from "react";
-import { Badge, MantineColor, Tooltip } from "@mantine/core";
+import { Badge, MantineColor } from "@mantine/core";
 import { useEpisodeSubtitleModification } from "@/apis/hooks";
 import Language from "@/components/bazarr/Language";
 import SubtitleToolsMenu from "@/components/SubtitleToolsMenu";
@@ -8,6 +8,7 @@ import { toPython } from "@/utilities";
 interface Props {
   seriesId: number;
   episodeId: number;
+  mediaTitle?: string;
   missing?: boolean;
   subtitle: Subtitle;
 }
@@ -15,6 +16,7 @@ interface Props {
 export const Subtitle: FunctionComponent<Props> = ({
   seriesId,
   episodeId,
+  mediaTitle,
   missing = false,
   subtitle,
 }) => {
@@ -22,44 +24,45 @@ export const Subtitle: FunctionComponent<Props> = ({
 
   const [opened, setOpen] = useState(false);
 
-  const disabled = subtitle.path === null;
+  const isEmbedded = subtitle.path === null;
 
   const variant: MantineColor | undefined = useMemo(() => {
-    if (opened && !disabled) {
+    if (opened && !isEmbedded) {
       return "highlight";
     } else if (missing) {
       return "warning";
-    } else if (disabled) {
+    } else if (isEmbedded) {
       return "disabled";
     }
-  }, [disabled, missing, opened]);
+  }, [isEmbedded, missing, opened]);
 
   const selections = useMemo<FormType.ModifySubtitle[]>(() => {
     const list: FormType.ModifySubtitle[] = [];
 
-    if (subtitle.path) {
+    if (!missing) {
       list.push({
         id: episodeId,
+        subtitlesId: subtitle.id,
         type: "episode",
         language: subtitle.code2,
-        path: subtitle.path,
+        path: subtitle.path ?? null,
+        mediaTitle,
         forced: toPython(subtitle.forced),
         hi: toPython(subtitle.hi),
       });
     }
 
     return list;
-  }, [episodeId, subtitle.code2, subtitle.path, subtitle.forced, subtitle.hi]);
-
-  const ctx = (
-    <Badge variant={variant}>
-      <Language.Text value={subtitle} long={false}></Language.Text>
-    </Badge>
-  );
-
-  if (disabled) {
-    return <Tooltip.Floating label="Embedded Subtitle">{ctx}</Tooltip.Floating>;
-  }
+  }, [
+    episodeId,
+    missing,
+    subtitle.id,
+    subtitle.code2,
+    subtitle.path,
+    subtitle.forced,
+    subtitle.hi,
+    mediaTitle,
+  ]);
 
   return (
     <SubtitleToolsMenu
@@ -94,7 +97,9 @@ export const Subtitle: FunctionComponent<Props> = ({
         }
       }}
     >
-      {ctx}
+      <Badge variant={variant}>
+        <Language.Text value={subtitle} long={false}></Language.Text>
+      </Badge>
     </SubtitleToolsMenu>
   );
 };

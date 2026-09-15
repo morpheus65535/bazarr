@@ -10,42 +10,36 @@ import { useNavigate } from "react-router";
 import { SliderProps } from "@mantine/core";
 import { SelectorOption, SelectorProps } from "@/components";
 
-export function useGotoHomepage() {
+export const useGotoHomepage = () => {
   const navigate = useNavigate();
   return useCallback(() => navigate("/"), [navigate]);
-}
+};
 
-export function useSelectorOptions<T>(
+export const useSelectorOptions = <T>(
   options: readonly T[],
   label: (value: T) => string,
   key?: (value: T) => string,
-): Pick<SelectorProps<T>, "options" | "getkey"> {
-  const labelRef = useRef(label);
-  labelRef.current = label;
-
-  const keyRef = useRef(key);
-  keyRef.current = key;
-
+): Pick<SelectorProps<T>, "options" | "getkey"> => {
   const wrappedOptions = useMemo(
     () =>
       options.map<SelectorOption<T>>((value) => ({
         value,
-        label: labelRef.current(value),
+        label: label(value),
       })),
-    [options],
+    [options, label],
   );
 
   return useMemo(
     () => ({
       options: wrappedOptions,
-      getkey: keyRef.current ?? labelRef.current,
+      getkey: key ?? label,
     }),
-    [wrappedOptions],
+    [wrappedOptions, key, label],
   );
-}
+};
 
-export function useSliderMarks(values: number[]): SliderProps["marks"] {
-  return useMemo<SliderProps["marks"]>(
+export const useSliderMarks = (values: number[]): SliderProps["marks"] =>
+  useMemo<SliderProps["marks"]>(
     () =>
       values.map((value) => ({
         value: value,
@@ -53,12 +47,14 @@ export function useSliderMarks(values: number[]): SliderProps["marks"] {
       })),
     [values],
   );
-}
 
 // High performance action wrapper for array, typically used for table updates
-export function useArrayAction<T>(setData: Dispatch<(prev: T[]) => T[]>) {
+export const useArrayAction = <T>(setData: Dispatch<(prev: T[]) => T[]>) => {
   const setDataRef = useRef(setData);
-  setDataRef.current = setData;
+
+  useEffect(() => {
+    setDataRef.current = setData;
+  });
 
   const add = useCallback((row: T) => {
     setDataRef.current((data) => {
@@ -105,11 +101,14 @@ export function useArrayAction<T>(setData: Dispatch<(prev: T[]) => T[]>) {
     }),
     [add, mutate, remove, update],
   );
-}
+};
 
-export function useThrottle<F extends GenericFunction>(fn: F, ms: number) {
+export const useThrottle = <F extends GenericFunction>(fn: F, ms: number) => {
   const fnRef = useRef(fn);
-  fnRef.current = fn;
+
+  useEffect(() => {
+    fnRef.current = fn;
+  });
 
   const timer = useRef<number>(undefined);
 
@@ -123,9 +122,9 @@ export function useThrottle<F extends GenericFunction>(fn: F, ms: number) {
     },
     [ms],
   );
-}
+};
 
-export function useDebouncedValue<T>(item: T, ms: number) {
+export const useDebouncedValue = <T>(item: T, ms: number) => {
   const [value, setValue] = useState(item);
 
   const debouncedSetValue = useThrottle(setValue, ms);
@@ -135,13 +134,16 @@ export function useDebouncedValue<T>(item: T, ms: number) {
   }, [debouncedSetValue, item]);
 
   return value;
-}
+};
 
-export function useOnValueChange<T>(value: T, onChange: (value: T) => void) {
+export const useOnValueChange = <T>(value: T, onChange: (value: T) => void) => {
   const valueRef = useRef<T | null>(null);
 
   const onChangeRef = useRef(onChange);
-  onChangeRef.current = onChange;
+
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  });
 
   useEffect(() => {
     if (valueRef.current !== value) {
@@ -149,10 +151,10 @@ export function useOnValueChange<T>(value: T, onChange: (value: T) => void) {
       onChangeRef.current(value);
     }
   }, [value]);
-}
+};
 
 // Mantine's useInterval has some weird issues. This is a workaround.
-export function useInterval(fn: VoidFunction, ms: number) {
+export const useInterval = (fn: VoidFunction, ms: number) => {
   const timer = useRef<number>(undefined);
 
   useEffect(() => {
@@ -161,4 +163,4 @@ export function useInterval(fn: VoidFunction, ms: number) {
       clearInterval(timer.current);
     };
   }, [fn, ms]);
-}
+};

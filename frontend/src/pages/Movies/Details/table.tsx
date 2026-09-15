@@ -1,65 +1,58 @@
 import React, { FunctionComponent, useMemo } from "react";
 import { Badge, Text, TextProps } from "@mantine/core";
 import { faEllipsis, faSearch } from "@fortawesome/free-solid-svg-icons";
-import { ColumnDef } from "@tanstack/react-table";
 import { isString } from "lodash";
 import { useMovieSubtitleModification } from "@/apis/hooks";
-import { useShowOnlyDesired } from "@/apis/hooks/site";
 import { Action } from "@/components";
 import Language from "@/components/bazarr/Language";
 import SubtitleToolsMenu from "@/components/SubtitleToolsMenu";
+import { AppColumnDef as ColumnDef } from "@/components/tables/features";
 import SimpleTable from "@/components/tables/SimpleTable";
-import { filterSubtitleBy, toPython } from "@/utilities";
-import { useProfileItemsToLanguages } from "@/utilities/languages";
+import { toPython } from "@/utilities";
 
 const missingText = "Missing Subtitles";
 
 interface Props {
   movie: Item.Movie | null;
   disabled?: boolean;
-  profile?: Language.Profile;
 }
 
-function isSubtitleTrack(path: string | undefined | null) {
-  return !isString(path) || path.length === 0;
-}
+const isSubtitleTrack = (path: string | undefined | null) =>
+  !isString(path) || path.length === 0;
 
-function isSubtitleMissing(path: string | undefined | null) {
-  return path === missingText;
-}
+const isSubtitleMissing = (path: string | undefined | null) =>
+  path === missingText;
 
-const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
-  const onlyDesired = useShowOnlyDesired();
-
-  const profileItems = useProfileItemsToLanguages(profile);
-
+const Table: FunctionComponent<Props> = ({ movie, disabled }) => {
   const { download, remove } = useMovieSubtitleModification();
 
   const CodeCell = React.memo(({ item }: { item: Subtitle }) => {
-    const { code2, path, hi, forced } = item;
+    const { code2, path, hi, forced, id } = item;
+
+    const { radarrId, title } = movie ?? {};
 
     const selections = useMemo(() => {
       const list: FormType.ModifySubtitle[] = [];
 
-      if (path && !isSubtitleMissing(path) && movie !== null) {
+      if (radarrId !== undefined && !isSubtitleMissing(path)) {
         list.push({
           type: "movie",
-          path,
-          id: movie.radarrId,
+          path: isSubtitleTrack(path) ? null : (path as string),
+          id: radarrId,
+          subtitlesId: id,
           language: code2,
+          mediaTitle: title,
           forced: toPython(forced),
           hi: toPython(hi),
         });
       }
 
       return list;
-    }, [code2, path, forced, hi]);
+    }, [code2, path, forced, hi, id, radarrId, title]);
 
     if (movie === null) {
       return null;
     }
-
-    const { radarrId } = movie;
 
     if (isSubtitleMissing(path)) {
       return (
@@ -70,7 +63,7 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
           loading={download.isPending}
           onClick={async () => {
             await download.mutateAsync({
-              radarrId,
+              radarrId: movie.radarrId,
               form: {
                 language: code2,
                 forced,
@@ -88,7 +81,7 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
         onAction={async (action) => {
           if (action === "delete" && path) {
             await remove.mutateAsync({
-              radarrId,
+              radarrId: movie.radarrId,
               form: {
                 language: code2,
                 forced,
@@ -101,11 +94,7 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
           }
         }}
       >
-        <Action
-          label="Subtitle Actions"
-          disabled={isSubtitleTrack(path)}
-          icon={faEllipsis}
-        ></Action>
+        <Action label="Subtitle Actions" icon={faEllipsis}></Action>
       </SubtitleToolsMenu>
     );
   });
@@ -145,7 +134,7 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
         cell: ({ row }) => {
           if (row.original.path === missingText) {
             return (
-              <Badge color="primary">
+              <Badge color="brand">
                 <Language.Text value={row.original} long></Language.Text>
               </Badge>
             );
@@ -170,18 +159,13 @@ const Table: FunctionComponent<Props> = ({ movie, profile, disabled }) => {
 
   const data: Subtitle[] = useMemo(() => {
     const missing =
-      movie?.missing_subtitles.map((item) => ({
+      movie?.missingSubtitles.map((item) => ({
         ...item,
         path: missingText,
       })) ?? [];
 
-    let rawSubtitles = movie?.subtitles ?? [];
-    if (onlyDesired) {
-      rawSubtitles = filterSubtitleBy(rawSubtitles, profileItems);
-    }
-
-    return [...rawSubtitles, ...missing];
-  }, [movie, onlyDesired, profileItems]);
+    return [...(movie?.subtitles ?? []), ...missing];
+  }, [movie]);
 
   return (
     <SimpleTable

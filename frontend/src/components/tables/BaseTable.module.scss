@@ -2,8 +2,24 @@
   display: block;
   max-width: 100%;
   overflow-x: auto;
+
+  // Sit the table on a surface so it lifts off the canvas and its striped
+  // rows (which are grey) stay visible against non-white backgrounds.
+  background-color: var(--mantine-color-body);
+  border: 1px solid
+    light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-4));
+  border-radius: var(--mantine-radius-sm);
+  box-shadow: var(--mantine-shadow-xs);
 }
 
 .table {
   border-collapse: collapse;
+
+  // Mantine's default light stripe (gray-0) is imperceptible on a white
+  // surface. Use a clearly visible grey, with a slightly darker hover so it
+  // still reads on striped rows.
+  @include mantine.light {
+    --table-striped-color: var(--mantine-color-gray-2);
+    --table-hover-color: var(--mantine-color-gray-3);
+  }
 }

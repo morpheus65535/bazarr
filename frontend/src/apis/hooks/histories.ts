@@ -2,13 +2,13 @@ import { useQuery } from "@tanstack/react-query";
 import { QueryKeys } from "@/apis/queries/keys";
 import api from "@/apis/raw";
 
-export function useHistoryStats(
+export const useHistoryStats = (
   time: History.TimeFrameOptions,
   action: History.ActionOptions | null,
   provider: System.Provider | null,
   language: Language.Info | null,
-) {
-  return useQuery({
+) =>
+  useQuery({
     queryKey: [
       QueryKeys.System,
       QueryKeys.History,
@@ -23,4 +23,3 @@ export function useHistoryStats(
         language?.code2,
       ),
   });
-}

@@ -68,14 +68,14 @@ _SEASONS = (
     "Tenth",
     "Eleventh",
     "Twelfth",
-    "Thirdteenth",
-    "Fourthteenth",
+    "Thirteenth",
+    "Fourteenth",
     "Fifteenth",
     "Sixteenth",
     "Seventeenth",
-    "Eightheenth",
+    "Eighteenth",
     "Nineteenth",
-    "Tweentieth",
+    "Twentieth",
 )
 
 _LANGUAGE_MAP = {

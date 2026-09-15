@@ -34,11 +34,8 @@ export const Environment = {
     if (isDevEnv || isTestEnv) {
       return "";
     } else {
-      let url = window.Bazarr.baseUrl;
-      if (url.endsWith("/")) {
-        url = url.slice(0, -1);
-      }
-      return url;
+      const url = window.Bazarr.baseUrl;
+      return url.endsWith("/") ? url.slice(0, -1) : url;
     }
   },
   get queryDev(): boolean {

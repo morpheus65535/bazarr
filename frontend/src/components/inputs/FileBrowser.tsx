@@ -12,22 +12,20 @@ import { useFileSystem } from "@/apis/hooks";
 // TODO: use fortawesome icons
 const backKey = "⏎ Back";
 
-function getLastSeparator(path: string): number {
-  let idx = path.lastIndexOf("/");
-  if (idx === -1) {
-    idx = path.lastIndexOf("\\");
-  }
-  return idx;
-}
+const getLastSeparator = (path: string): number => {
+  const forward = path.lastIndexOf("/");
+  const backslash = path.lastIndexOf("\\");
+  return forward !== -1 ? forward : backslash;
+};
 
-function extractPath(raw: string) {
+const extractPath = (raw: string) => {
   if (raw.endsWith("/") || raw.endsWith("\\")) {
     return raw;
   } else {
     const idx = getLastSeparator(raw);
     return raw.slice(0, idx + 1);
   }
-}
+};
 
 export type FileBrowserProps = Omit<AutocompleteProps, "data"> & {
   type: "sonarr" | "radarr" | "bazarr";
@@ -46,7 +44,7 @@ export const FileBrowser: FunctionComponent<FileBrowserProps> = ({
 }) => {
   const [isShow, setIsShow] = useState(false);
   const [value, setValue] = useState(defaultValue ?? "");
-  const [path, setPath] = useState(() => extractPath(value));
+  const path = useMemo(() => extractPath(value), [value]);
 
   const { data: tree } = useFileSystem(type, path, isShow);
 
@@ -66,17 +64,16 @@ export const FileBrowser: FunctionComponent<FileBrowserProps> = ({
     return path.slice(0, idx + 1);
   }, [path]);
 
-  useEffect(() => {
-    if (value === path) {
-      return;
-    }
+  const prevPathRef = useRef(path);
 
-    const newPath = extractPath(value);
-    if (newPath !== path) {
-      setPath(newPath);
-      onChange && onChange(newPath);
+  useEffect(() => {
+    if (prevPathRef.current !== path) {
+      prevPathRef.current = path;
+      if (onChange) {
+        onChange(path);
+      }
     }
-  }, [path, value, onChange]);
+  }, [path, onChange]);
 
   const ref = useRef<HTMLInputElement>(null);
 

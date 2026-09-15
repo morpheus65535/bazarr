@@ -41,7 +41,7 @@ else:
     check_if_new_update()
 
 from app.database import (System, database, update, migrate_db, create_db_revision, upgrade_languages_profile_values,
-                          fix_languages_profiles_with_duplicate_ids)  # noqa E402
+                          fix_languages_profiles_with_duplicate_ids, fix_code3_languages_in_languages_profiles)  # noqa E402
 from app.notifier import update_notifier  # noqa E402
 from languages.get_languages import load_language_in_db  # noqa E402
 from app.jobs_queue import jobs_queue  # noqa E402
@@ -77,6 +77,9 @@ database.execute(
 
 # Load languages in database
 load_language_in_db()
+
+# Fix languages profiles if required
+fix_code3_languages_in_languages_profiles()
 
 update_notifier()
 

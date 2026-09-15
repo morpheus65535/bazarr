@@ -39,7 +39,7 @@ class SystemAccount(Resource):
                 session['logged_in'] = True
                 return '', 204
             else:
-                session['logged_in'] = False
+                session.pop('logged_in', None)
                 return 'Authentication failed', 403
         elif action == 'logout':
             if settings.auth.type == 'basic':

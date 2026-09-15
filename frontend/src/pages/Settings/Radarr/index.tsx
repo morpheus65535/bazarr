@@ -10,7 +10,6 @@ import {
   PathMappingTable,
   Section,
   Selector,
-  Slider,
   Text,
   URLTestButton,
 } from "@/pages/Settings/components";
@@ -55,10 +54,6 @@ const SettingsRadarrView: FunctionComponent = () => {
             When Bazarr connects or reconnects to Radarr, run a movies
             synchronization to make sure that we're up-to-date.
           </Message>
-          <Slider
-            label="Minimum Score For Movies"
-            settingKey="settings-general-minimum_score_movie"
-          ></Slider>
           <Chips
             label="Excluded Tags"
             settingKey="settings-radarr-excluded_tags"
@@ -80,6 +75,21 @@ const SettingsRadarrView: FunctionComponent = () => {
             Automatic download of subtitles will only happen for monitored
             movies in Radarr.
           </Message>
+          <Check
+            label="Sync Only Monitored Movies"
+            settingKey={"settings-radarr-sync_only_monitored_movies"}
+          ></Check>
+          <CollapseBox
+            settingKey={"settings-radarr-sync_only_monitored_movies"}
+          >
+            <Message>
+              If enabled, only movies with a monitored status in Radarr will be
+              synced. If you make changes to a specific unmonitored Radarr movie
+              and you want Bazarr to know about those changes, simply toggle the
+              monitored status back on in Radarr and Bazarr will sync any
+              changes.
+            </Message>
+          </CollapseBox>
 
           <Check
             label="Defer searching of subtitles until scheduled task execution"

@@ -64,6 +64,8 @@ def create_languages_dict():
 def audio_language_from_name(lang):
     lang_map = {
         'Chinese': 'zh',
+        'Portuguese (Brazil)': 'pb',
+        'Spanish (Latino)': 'ea',
     }
 
     alpha2_code = lang_map.get(lang, None)

@@ -3,7 +3,7 @@ import { useModals as useMantineModals } from "@mantine/modals";
 import { ModalSettings } from "@mantine/modals";
 import { ModalComponent, ModalIdContext } from "./WithModal";
 
-export function useModals() {
+export const useModals = () => {
   const { openContextModal: openMantineContextModal, ...rest } =
     useMantineModals();
 
@@ -42,4 +42,4 @@ export function useModals() {
     () => ({ openContextModal, closeContext, closeSelf, ...rest }),
     [closeContext, closeSelf, openContextModal, rest],
   );
-}
+};

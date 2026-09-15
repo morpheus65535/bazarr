@@ -20,20 +20,17 @@ import {
   faXmark,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  ColumnDef,
-  flexRender,
-  getFilteredRowModel,
-  getSortedRowModel,
-  Header,
-  SortingState,
-} from "@tanstack/react-table";
+import { flexRender, SortingState } from "@tanstack/react-table";
 import {
   useEpisodeSubtitleModification,
   useMovieSubtitleModification,
 } from "@/apis/hooks";
 import Language from "@/components/bazarr/Language";
 import SubtitleToolsMenu from "@/components/SubtitleToolsMenu";
+import {
+  AppColumnDef as ColumnDef,
+  AppHeader as Header,
+} from "@/components/tables/features";
 import SimpleTable from "@/components/tables/SimpleTable";
 import { useModals, withModal } from "@/modules/modals";
 import { fromPython, isMovie, toPython } from "@/utilities";
@@ -41,7 +38,8 @@ import { fromPython, isMovie, toPython } from "@/utilities";
 type SupportType = Item.Episode | Item.Movie;
 
 type TableColumnType = FormType.ModifySubtitle & {
-  raw_language: Language.Info;
+  path: string;
+  rawLanguage: Language.Info;
   episode?: number;
   episodeLabel: string;
   seriesId: number;
@@ -74,7 +72,7 @@ type LocalisedType = {
   isMovie: boolean;
 };
 
-function getLocalisedValues(item: SupportType): LocalisedType {
+const getLocalisedValues = (item: SupportType): LocalisedType => {
   if (isMovie(item)) {
     return {
       seriesId: 0,
@@ -92,33 +90,28 @@ function getLocalisedValues(item: SupportType): LocalisedType {
       isMovie: false,
     };
   }
-}
+};
 
 const CanSelectSubtitle = (item: TableColumnType) => {
   return item.path.endsWith(".srt");
 };
 
-function getFilterKey(filter: SubtitleFilter) {
-  return `${filter.category}:${filter.value}`;
-}
+const getFilterKey = (filter: SubtitleFilter) =>
+  `${filter.category}:${filter.value}`;
 
-function getLanguageValue(language: Language.Info) {
+const getLanguageValue = (language: Language.Info) => {
   const { code2, hi, forced } = language;
 
   return `${code2}${hi ? ":hi" : ""}${forced ? ":forced" : ""}`;
-}
+};
 
-function getEpisodeLabel(item: SupportType) {
+const getEpisodeLabel = (item: SupportType) => {
   if (isMovie(item)) {
     return "";
   }
 
-  const {
-    episode,
-    episode_number: episodeNumber,
-    season,
-  } = item as Item.Episode & {
-    episode_number?: string;
+  const { episode, episodeNumber, season } = item as Item.Episode & {
+    episodeNumber?: string;
   };
 
   if (season === undefined || episode === undefined) {
@@ -128,13 +121,13 @@ function getEpisodeLabel(item: SupportType) {
   return `S${season.toString().padStart(2, "0")}E${episode
     .toString()
     .padStart(2, "0")}`;
-}
+};
 
 interface SubtitleToolViewProps {
   payload: SupportType[];
 }
 
-const SubtitleToolView: FunctionComponent<SubtitleToolViewProps> = ({
+export const SubtitleToolView: FunctionComponent<SubtitleToolViewProps> = ({
   payload,
 }) => {
   const [selections, setSelections] = useState<TableColumnType[]>([]);
@@ -162,19 +155,21 @@ const SubtitleToolView: FunctionComponent<SubtitleToolViewProps> = ({
           return (
             <Checkbox
               id="table-header-selection"
-              indeterminate={table.getIsSomeRowsSelected()}
+              indeterminate={
+                table.getIsSomeRowsSelected() && !table.getIsAllRowsSelected()
+              }
               checked={table.getIsAllRowsSelected()}
               onChange={table.getToggleAllRowsSelectedHandler()}
             ></Checkbox>
           );
         },
-        cell: ({ row: { index, getIsSelected, getToggleSelectedHandler } }) => {
+        cell: ({ row }) => {
           return (
             <Checkbox
-              id={`table-cell-${index}`}
-              checked={getIsSelected()}
-              onChange={getToggleSelectedHandler()}
-              onClick={getToggleSelectedHandler()}
+              id={`table-cell-${row.index}`}
+              checked={row.getIsSelected()}
+              onChange={row.getToggleSelectedHandler()}
+              onClick={row.getToggleSelectedHandler()}
             ></Checkbox>
           );
         },
@@ -184,7 +179,7 @@ const SubtitleToolView: FunctionComponent<SubtitleToolViewProps> = ({
         accessorKey: "language",
         cell: ({
           row: {
-            original: { raw_language: rawLanguage },
+            original: { rawLanguage },
           },
         }) => (
           <Badge color="secondary">
@@ -209,11 +204,9 @@ const SubtitleToolView: FunctionComponent<SubtitleToolViewProps> = ({
             original: { path },
           },
         }) => {
-          let idx = path.lastIndexOf("/");
-
-          if (idx === -1) {
-            idx = path.lastIndexOf("\\");
-          }
+          const forward = path.lastIndexOf("/");
+          const backslash = path.lastIndexOf("\\");
+          const idx = forward !== -1 ? forward : backslash;
 
           if (idx !== -1) {
             return <Text>{path.slice(idx + 1)}</Text>;
@@ -242,14 +235,14 @@ const SubtitleToolView: FunctionComponent<SubtitleToolViewProps> = ({
             return [
               {
                 id,
+                subtitlesId: v.id,
                 seriesId,
                 type,
                 episode: isMovie(item) ? undefined : item.episode,
                 episodeLabel,
                 language: v.code2,
                 path: v.path,
-                // eslint-disable-next-line camelcase
-                raw_language: v,
+                rawLanguage: v,
                 season: isMovie(item) ? undefined : item.season,
                 name,
                 hi: toPython(v.hi),
@@ -272,7 +265,7 @@ const SubtitleToolView: FunctionComponent<SubtitleToolViewProps> = ({
     const item = new Map<string, string>();
 
     data.forEach((row) => {
-      const languageValue = getLanguageValue(row.raw_language);
+      const languageValue = getLanguageValue(row.rawLanguage);
       language.set(languageValue, languageValue);
       item.set(row.name.toLowerCase(), row.name);
 
@@ -390,14 +383,12 @@ const SubtitleToolView: FunctionComponent<SubtitleToolViewProps> = ({
               case "item":
                 return original.name.toLowerCase().includes(filter.value);
               case "language":
-                return getLanguageValue(original.raw_language) === filter.value;
+                return getLanguageValue(original.rawLanguage) === filter.value;
               case "season":
                 return original.season?.toString() === filter.value;
             }
           });
         }}
-        getFilteredRowModel={getFilteredRowModel()}
-        getSortedRowModel={getSortedRowModel()}
         onRowSelectionChanged={(rows) =>
           setSelections(rows.map((r) => r.original))
         }

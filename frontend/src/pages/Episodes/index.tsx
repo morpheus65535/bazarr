@@ -7,7 +7,6 @@ import {
 } from "react";
 import { Navigate, useParams } from "react-router";
 import { Container, Group, Stack } from "@mantine/core";
-import { Dropzone } from "@mantine/dropzone";
 import { useDocumentTitle } from "@mantine/hooks";
 import { showNotification } from "@mantine/notifications";
 import {
@@ -26,7 +25,6 @@ import {
   faTriangleExclamation,
   faWrench,
 } from "@fortawesome/free-solid-svg-icons";
-import { Table as TableInstance } from "@tanstack/table-core/build/lib/types";
 import {
   useEpisodesBySeriesId,
   useIsAnyActionRunning,
@@ -35,11 +33,12 @@ import {
   useSeriesModification,
 } from "@/apis/hooks";
 import { useInstanceName } from "@/apis/hooks/site";
-import { DropContent, Toolbox } from "@/components";
+import { Toolbox, UploadDropzone } from "@/components";
 import { QueryOverlay } from "@/components/async";
 import { ItemEditModal } from "@/components/forms/ItemEditForm";
 import { SeriesUploadModal } from "@/components/forms/SeriesUploadForm";
 import { SubtitleToolsModal } from "@/components/modals";
+import { type AppTable as TableInstance } from "@/components/tables/features";
 import { useModals } from "@/modules/modals";
 import { notification, task, TaskGroup } from "@/modules/task";
 import ItemOverview from "@/pages/views/ItemOverview";
@@ -119,9 +118,7 @@ const SeriesEpisodesView: FunctionComponent = () => {
 
   const tableRef = useRef<TableInstance<Item.Episode> | null>(null);
 
-  const [isAllRowExpanded, setIsAllRowExpanded] = useState(
-    tableRef?.current?.getIsAllRowsExpanded(),
-  );
+  const [isAllRowExpanded, setIsAllRowExpanded] = useState(false);
 
   const openDropzone = useRef<VoidFunction>(null);
 
@@ -132,13 +129,11 @@ const SeriesEpisodesView: FunctionComponent = () => {
   return (
     <Container px={0} fluid>
       <QueryOverlay result={seriesQuery}>
-        <Dropzone.FullScreen
+        <UploadDropzone
           openRef={openDropzone}
           active={profile !== undefined}
           onDrop={onDrop}
-        >
-          <DropContent></DropContent>
-        </Dropzone.FullScreen>
+        ></UploadDropzone>
         <Toolbox>
           <Group gap="xs">
             <Toolbox.Button
@@ -148,7 +143,7 @@ const SeriesEpisodesView: FunctionComponent = () => {
                 if (series) {
                   await action({
                     action: "sync",
-                    seriesid: id,
+                    seriesId: id,
                   });
                 }
               }}
@@ -162,7 +157,7 @@ const SeriesEpisodesView: FunctionComponent = () => {
                 if (series) {
                   task.create(series.title, TaskGroup.ScanDisk, action, {
                     action: "scan-disk",
-                    seriesid: id,
+                    seriesId: id,
                   });
                 }
               }}
@@ -175,7 +170,7 @@ const SeriesEpisodesView: FunctionComponent = () => {
                 if (series) {
                   await action({
                     action: "search-missing",
-                    seriesid: id,
+                    seriesId: id,
                   });
                 }
               }}
@@ -258,7 +253,6 @@ const SeriesEpisodesView: FunctionComponent = () => {
             <Table
               ref={tableRef}
               episodes={episodes ?? null}
-              profile={profile}
               disabled={hasTask || !series || series.profileId === null}
               onAllRowsExpandedChanged={setIsAllRowExpanded}
             ></Table>

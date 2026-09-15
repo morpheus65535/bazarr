@@ -3,16 +3,9 @@
 All test data is validated against Jellyfin's OpenAPI spec via the fake client.
 """
 
-import sys
 from unittest.mock import patch, MagicMock
 
 import pytest
-
-# Mock app.config before importing operations
-mock_config = MagicMock()
-sys.modules.setdefault("app", MagicMock())
-sys.modules.setdefault("app.config", mock_config)
-mock_config.settings = MagicMock()
 
 from bazarr.jellyfin.operations import (
     jellyfin_test_connection,
@@ -22,6 +15,19 @@ from bazarr.jellyfin.operations import (
 )
 from fake_jellyfin import FakeJellyfinClient, make_movie, make_series, make_episode
 
+
+mock_settings = MagicMock()
+
+
+@pytest.fixture(autouse=True)
+def _mock_operations_settings(monkeypatch):
+    """Give the operations module a fake settings object, scoped to each test.
+
+    operations.py does `from app.config import settings`, which binds a `settings` name inside
+    that module; patching that name (instead of app.config itself) keeps the real configuration
+    intact for every other test in the session. monkeypatch undoes it automatically.
+    """
+    monkeypatch.setattr("bazarr.jellyfin.operations.settings", mock_settings)
 
 
 @pytest.fixture
@@ -34,7 +40,7 @@ def fake():
 
 @pytest.fixture
 def settings():
-    return mock_config.settings
+    return mock_settings
 
 
 

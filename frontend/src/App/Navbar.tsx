@@ -2,7 +2,6 @@ import React, {
   createContext,
   FunctionComponent,
   useContext,
-  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -14,26 +13,30 @@ import {
   Collapse,
   Divider,
   Group,
+  MantineColorScheme,
   Stack,
   Text,
-  useComputedColorScheme,
   useMantineColorScheme,
 } from "@mantine/core";
-import { useHover } from "@mantine/hooks";
 import {
+  faCircleHalfStroke,
   faHeart,
   faMoon,
   faSun,
   IconDefinition,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useQueryClient } from "@tanstack/react-query";
 import clsx from "clsx";
+import { useSettingsMutation, useSystemSettings } from "@/apis/hooks";
+import { QueryKeys } from "@/apis/queries/keys";
 import { Action } from "@/components";
 import { useNavbar } from "@/contexts/Navbar";
-import { useRouteItems } from "@/Router";
 import { CustomRouteObject, Route } from "@/Router/type";
+import { useRouteItems } from "@/Router/useRouteItems";
 import { BuildKey, pathJoin } from "@/utilities";
 import { LOG } from "@/utilities/console";
+import { useResetOnChange } from "@/utilities/resetOnChange";
 import styles from "./Navbar.module.scss";
 
 const Selection = createContext<{
@@ -46,46 +49,53 @@ const Selection = createContext<{
   },
 });
 
-function useSelection() {
-  return useContext(Selection);
-}
+const useSelection = () => useContext(Selection);
 
-function useBadgeValue(route: Route.Item) {
+const useBadgeValue = (route: Route.Item) => {
   const { badge, children } = route;
   return useMemo(() => {
     if (typeof badge === "string") {
       return badge;
     }
 
-    let value = badge ?? 0;
+    const base = badge ?? 0;
 
     if (children === undefined) {
-      return value;
+      return base;
     }
 
-    value +=
-      children.reduce((acc, child: Route.Item) => {
+    const value =
+      base +
+      (children.reduce((acc, child: Route.Item) => {
         const childBadgeValue = child.badge;
         if (typeof childBadgeValue === "number" && child.hidden !== true) {
           return acc + childBadgeValue;
         }
         return acc;
-      }, 0) ?? 0;
+      }, 0) ?? 0);
 
     return value === 0 ? undefined : value;
   }, [badge, children]);
-}
+};
 
-function useIsActive(parent: string, route: RouteObject) {
+const useIsActive = (parent: string, route: RouteObject) => {
   const { path, children } = route;
 
   const { pathname } = useLocation();
   const root = useMemo(() => pathJoin(parent, path ?? ""), [parent, path]);
 
-  const paths = useMemo(
-    () => [root, ...(children?.map((v) => pathJoin(root, v.path ?? "")) ?? [])],
-    [root, children],
-  );
+  // Collect paths at every depth: the sidebar must stay open (and the item
+  // stay active) when a nested tab page is open, e.g. keeping the Settings
+  // group expanded while on /settings/library/sonarr.
+  const paths = useMemo(() => {
+    const collect = (base: string, items: RouteObject[] = []): string[] =>
+      items.flatMap((item) => {
+        const itemPath = pathJoin(base, item.path ?? "");
+        return [itemPath, ...collect(itemPath, item.children)];
+      });
+
+    return [root, ...collect(root, children)];
+  }, [root, children]);
 
   const selection = useSelection().selection;
   return useMemo(
@@ -94,22 +104,80 @@ function useIsActive(parent: string, route: RouteObject) {
       paths.some((path) => matchPath(path, pathname)),
     [pathname, paths, root, selection],
   );
-}
+};
+
+const themeCycle: {
+  scheme: MantineColorScheme;
+  icon: IconDefinition;
+  label: string;
+  color: string;
+}[] = [
+  { scheme: "auto", icon: faCircleHalfStroke, label: "Auto", color: "brand" },
+  { scheme: "light", icon: faSun, label: "Light", color: "warning" },
+  { scheme: "dark", icon: faMoon, label: "Dark", color: "info" },
+];
+
+const ThemeSwitcher: FunctionComponent = () => {
+  const { setColorScheme } = useMantineColorScheme();
+
+  const client = useQueryClient();
+  const settings = useSystemSettings();
+  const { mutate } = useSettingsMutation({ silent: true });
+
+  const current = (settings.data?.general.theme ??
+    "auto") as MantineColorScheme;
+
+  const index = Math.max(
+    0,
+    themeCycle.findIndex((t) => t.scheme === current),
+  );
+  const active = themeCycle[index];
+
+  const cycle = () => {
+    const next = themeCycle[(index + 1) % themeCycle.length];
+
+    // Apply immediately for instant feedback.
+    setColorScheme(next.scheme);
+
+    // Optimistically update the cached settings so everything reading them
+    // (this button, ThemeLoader, Settings/UI) reflects the change instantly.
+    const queryKey = [QueryKeys.System, QueryKeys.Settings];
+    const previous = client.getQueryData<Settings>(queryKey);
+
+    client.setQueryData<Settings>(queryKey, (old) =>
+      old ? { ...old, general: { ...old.general, theme: next.scheme } } : old,
+    );
+
+    // Persist through the same settings system as Settings/UI, in the
+    // background; roll back if the save fails.
+    mutate(
+      { "settings-general-theme": next.scheme },
+      {
+        onError: () => {
+          client.setQueryData(queryKey, previous);
+          setColorScheme(current);
+        },
+      },
+    );
+  };
+
+  return (
+    <Action
+      label={`Theme: ${active.label}`}
+      icon={active.icon}
+      c={active.color}
+      onClick={cycle}
+    ></Action>
+  );
+};
 
 const AppNavbar: FunctionComponent = () => {
   const [selection, select] = useState<string | null>(null);
 
-  const { toggleColorScheme } = useMantineColorScheme();
-  const computedColorScheme = useComputedColorScheme("light");
-
-  const dark = computedColorScheme === "dark";
-
   const routes = useRouteItems();
 
   const { pathname } = useLocation();
-  useEffect(() => {
-    select(null);
-  }, [pathname]);
+  useResetOnChange(pathname, () => select(null));
 
   return (
     <AppShell.Navbar p="xs" className={styles.nav}>
@@ -131,17 +199,12 @@ const AppNavbar: FunctionComponent = () => {
         <Divider></Divider>
         <AppShell.Section mt="xs">
           <Group gap="xs">
-            <Action
-              label="Change Theme"
-              c={dark ? "yellow" : "indigo"}
-              onClick={() => toggleColorScheme()}
-              icon={dark ? faSun : faMoon}
-            ></Action>
+            <ThemeSwitcher></ThemeSwitcher>
             <Anchor
               href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=XHHRWXT9YB7WE&source=url"
               target="_blank"
             >
-              <Action label="Donate" icon={faHeart} c="red"></Action>
+              <Action label="Donate" icon={faHeart} c="danger"></Action>
             </Anchor>
           </Group>
         </AppShell.Section>
@@ -169,7 +232,18 @@ const RouteItem: FunctionComponent<{
     return null;
   }
 
-  if (children !== undefined) {
+  const visibleChildren = (children as CustomRouteObject[] | undefined)?.filter(
+    (child) =>
+      child.hidden !== true &&
+      child.path !== undefined &&
+      !child.path.includes(":"),
+  );
+
+  if (
+    children !== undefined &&
+    visibleChildren !== undefined &&
+    visibleChildren.length > 0
+  ) {
     const elements = (
       <Stack gap={0}>
         {children.map((child, idx) => (
@@ -248,8 +322,6 @@ const NavbarItem: FunctionComponent<NavbarItemProps> = ({
 }) => {
   const { show } = useNavbar();
 
-  const { ref, hovered } = useHover();
-
   const shouldHideBadge = useMemo(() => {
     if (typeof badge === "number") {
       return badge === 0;
@@ -286,7 +358,7 @@ const NavbarItem: FunctionComponent<NavbarItemProps> = ({
       return {
         // more noticeable background colors for "DOWN" status, still adapting to theme
         backgroundColor:
-          "light-dark(var(--mantine-color-red-6), var(--mantine-color-red-8))",
+          "light-dark(var(--mantine-color-danger-6), var(--mantine-color-danger-8))",
         color: "var(--mantine-color-white)",
       };
     }
@@ -304,16 +376,12 @@ const NavbarItem: FunctionComponent<NavbarItemProps> = ({
         }
       }}
       className={({ isActive }) =>
-        clsx(
-          clsx(styles.anchor, {
-            [styles.active]: isActive,
-            [styles.hover]: hovered,
-          }),
-        )
+        clsx(styles.anchor, {
+          [styles.active]: isActive,
+        })
       }
     >
       <Text
-        ref={ref}
         inline
         p="xs"
         size="sm"

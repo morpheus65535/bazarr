@@ -1,10 +1,9 @@
-// eslint-disable-next-line simple-import-sort/imports
 import { FunctionComponent } from "react";
 import { Anchor, Blockquote, Text } from "@mantine/core";
-import { Check, Layout, Message, Section } from "@/pages/Settings/components";
-import { NotificationView } from "./components";
 import { faQuoteLeftAlt } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { Check, Layout, Message, Section } from "@/pages/Settings/components";
+import { NotificationView } from "./components";
 
 const SettingsNotificationsView: FunctionComponent = () => {
   return (

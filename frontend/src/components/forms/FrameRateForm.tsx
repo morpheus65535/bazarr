@@ -8,9 +8,8 @@ import FormUtils from "@/utilities/form";
 
 const TaskName = "Changing Frame Rate";
 
-function convertToAction(from: number, to: number) {
-  return `change_FPS(from=${from},to=${to})`;
-}
+const convertToAction = (from: number, to: number) =>
+  `change_FPS(from=${from},to=${to})`;
 
 interface Props {
   selections: FormType.ModifySubtitle[];
@@ -44,10 +43,15 @@ const FrameRateForm: FunctionComponent<Props> = ({ selections, onSubmit }) => {
         const action = convertToAction(from, to);
 
         selections.forEach((s) =>
-          task.create(s.path, TaskName, mutateAsync, {
-            action,
-            form: s,
-          }),
+          task.create(
+            s.path ?? s.mediaTitle ?? "Unknown subtitle",
+            TaskName,
+            mutateAsync,
+            {
+              action,
+              form: s,
+            },
+          ),
         );
 
         onSubmit?.();

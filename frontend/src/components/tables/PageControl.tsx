@@ -30,7 +30,7 @@ const PageControl: FunctionComponent<Props> = ({
       </Text>
       <Pagination
         size="sm"
-        color={isLoading ? "gray" : "primary"}
+        color={isLoading ? "secondary" : "brand"}
         value={index + 1}
         onChange={(page) => {
           return goto(page - 1);

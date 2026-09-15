@@ -1,5 +1,5 @@
 import { FunctionComponent, useMemo } from "react";
-import { ColumnDef } from "@tanstack/react-table";
+import { AppColumnDef as ColumnDef } from "@/components/tables/features";
 import SimpleTable from "@/components/tables/SimpleTable";
 
 interface Props {

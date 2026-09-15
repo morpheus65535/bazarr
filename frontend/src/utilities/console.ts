@@ -1,42 +1,44 @@
 /* eslint-disable no-console */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { isProdEnv } from ".";
 
 type LoggerType = "info" | "warning" | "error";
 
-export function LOG(type: LoggerType, msg: string, ...payload: any[]) {
+export const LOG = (type: LoggerType, msg: string, ...payload: unknown[]) => {
   if (import.meta.env.MODE === "test") {
     return;
   }
 
   if (!isProdEnv) {
-    let logger = console.log;
-    if (type === "warning") {
-      logger = console.warn;
-    } else if (type === "error") {
-      logger = console.error;
-    }
+    const logger =
+      type === "warning"
+        ? console.warn
+        : type === "error"
+          ? console.error
+          : console.log;
     logger(`[${type}] ${msg}`, ...payload);
   }
-}
+};
 
-export function ENSURE(condition: boolean, msg: string, ...payload: any[]) {
+export const ENSURE = (
+  condition: boolean,
+  msg: string,
+  ...payload: unknown[]
+) => {
   if (condition) {
-    LOG("error", msg, payload);
+    LOG("error", msg, ...payload);
   }
-}
+};
 
-export function GROUP(
+export const GROUP = (
   header: string,
   content: (logger: typeof console.log) => void,
-) {
+) => {
   if (!isProdEnv) {
     console.group(header);
     content(console.log);
     console.groupEnd();
   }
-}
+};
 
-// eslint-disable-next-line @typescript-eslint/no-empty-function
-export const ASSERT = isProdEnv ? () => {} : console.assert;
+export const ASSERT = isProdEnv ? () => undefined : console.assert;

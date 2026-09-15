@@ -1,11 +1,8 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { MantineColorScheme, useMantineColorScheme } from "@mantine/core";
 import { useSystemSettings } from "@/apis/hooks";
 
 const ThemeProvider = () => {
-  const [localScheme, setLocalScheme] = useState<MantineColorScheme | null>(
-    null,
-  );
   const { setColorScheme } = useMantineColorScheme();
 
   const settings = useSystemSettings();
@@ -20,18 +17,22 @@ const ThemeProvider = () => {
     [setColorScheme],
   );
 
+  // Tracks the last scheme applied to Mantine so the settings value is only
+  // re-applied when it actually changes.
+  const appliedScheme = useRef<MantineColorScheme | null>(null);
+
   useEffect(() => {
     if (!settingsColorScheme) {
       return;
     }
 
-    if (localScheme === settingsColorScheme) {
+    if (appliedScheme.current === settingsColorScheme) {
       return;
     }
 
+    appliedScheme.current = settingsColorScheme;
     setScheme(settingsColorScheme);
-    setLocalScheme(settingsColorScheme);
-  }, [settingsColorScheme, setScheme, localScheme]);
+  }, [settingsColorScheme, setScheme]);
 
   return <></>;
 };

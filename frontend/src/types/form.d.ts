@@ -1,7 +1,7 @@
 declare namespace FormType {
   interface ModifyItem {
     id: number[];
-    profileid: (number | null)[];
+    profileId: (number | null)[];
   }
 
   type SeriesAction = OneSeriesAction | SearchWantedAction;
@@ -10,12 +10,12 @@ declare namespace FormType {
 
   interface OneMovieAction {
     action: "search-missing" | "scan-disk" | "sync";
-    radarrid: number;
+    radarrId: number;
   }
 
   interface OneSeriesAction {
     action: "search-missing" | "scan-disk" | "sync";
-    seriesid: number;
+    seriesId: number;
   }
 
   interface SearchWantedAction {
@@ -38,15 +38,17 @@ declare namespace FormType {
 
   interface ModifySubtitle {
     id: number;
+    subtitlesId: number;
     type: "episode" | "movie";
     language: string;
-    path: string;
+    path: string | null;
+    mediaTitle?: string;
     forced?: PythonBoolean;
     hi?: PythonBoolean;
-    original_format?: PythonBoolean;
+    originalFormat?: PythonBoolean;
     reference?: string;
-    max_offset_seconds?: string;
-    no_fix_framerate?: PythonBoolean;
+    maxOffsetSeconds?: string;
+    noFixFramerate?: PythonBoolean;
     gss?: PythonBoolean;
   }
 
@@ -63,14 +65,14 @@ declare namespace FormType {
 
   interface AddBlacklist {
     provider: string;
-    subs_id: string;
+    subsId: string;
     language: Language.CodeType;
-    subtitles_path: string;
+    subtitlesPath: string;
   }
 
   interface DeleteBlacklist {
     provider: string;
-    subs_id: string;
+    subsId: string;
   }
 
   interface ManualDownload {
@@ -79,7 +81,7 @@ declare namespace FormType {
     forced: PythonBoolean;
     provider: string;
     subtitle: unknown;
-    original_format: PythonBoolean;
+    originalFormat: PythonBoolean;
   }
 
   interface AddAnnouncementsDismiss {

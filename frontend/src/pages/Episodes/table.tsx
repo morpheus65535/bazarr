@@ -7,34 +7,30 @@ import {
   faUser,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { ColumnDef, Table as TableInstance } from "@tanstack/react-table";
 import { useDownloadEpisodeSubtitles, useEpisodesProvider } from "@/apis/hooks";
-import { useShowOnlyDesired } from "@/apis/hooks/site";
 import { Action, GroupTable } from "@/components";
 import { AudioList } from "@/components/bazarr";
 import { EpisodeHistoryModal } from "@/components/modals";
 import { EpisodeSearchModal } from "@/components/modals/ManualSearchModal";
+import {
+  AppColumnDef as ColumnDef,
+  AppTable as TableInstance,
+} from "@/components/tables/features";
 import TextPopover from "@/components/TextPopover";
 import { useModals } from "@/modules/modals";
-import { BuildKey, filterSubtitleBy } from "@/utilities";
-import { useProfileItemsToLanguages } from "@/utilities/languages";
+import { BuildKey } from "@/utilities";
 import { Subtitle } from "./components";
 
 interface Props {
   episodes: Item.Episode[] | null;
   disabled?: boolean;
-  profile?: Language.Profile;
   onAllRowsExpandedChanged: (isAllRowsExpanded: boolean) => void;
 }
 
 const Table = forwardRef<TableInstance<Item.Episode> | null, Props>(
-  ({ episodes, profile, disabled, onAllRowsExpandedChanged }, ref) => {
-    const onlyDesired = useShowOnlyDesired();
-
+  ({ episodes, disabled, onAllRowsExpandedChanged }, ref) => {
     const tableRef =
       ref as React.MutableRefObject<TableInstance<Item.Episode> | null>;
-
-    const profileItems = useProfileItemsToLanguages(profile);
 
     const { mutateAsync } = useDownloadEpisodeSubtitles();
 
@@ -44,11 +40,11 @@ const Table = forwardRef<TableInstance<Item.Episode> | null, Props>(
       (item: Item.Episode, result: SearchResultType) => {
         const {
           language,
-          hearing_impaired: hi,
+          hearingImpaired: hi,
           forced,
           provider,
           subtitle,
-          original_format: originalFormat,
+          originalFormat,
         } = result;
         const { sonarrSeriesId: seriesId, sonarrEpisodeId: episodeId } = item;
 
@@ -61,8 +57,7 @@ const Table = forwardRef<TableInstance<Item.Episode> | null, Props>(
             forced,
             provider,
             subtitle,
-            // eslint-disable-next-line camelcase
-            original_format: originalFormat,
+            originalFormat,
           },
         });
       },
@@ -76,26 +71,23 @@ const Table = forwardRef<TableInstance<Item.Episode> | null, Props>(
         const elements = useMemo(() => {
           const episodeId = episode.sonarrEpisodeId;
 
-          const missing = episode.missing_subtitles.map((val, idx) => (
+          const missing = episode.missingSubtitles.map((val, idx) => (
             <Subtitle
               missing
               key={BuildKey(idx, val.code2, "missing")}
               seriesId={seriesId}
               episodeId={episodeId}
+              mediaTitle={episode.title}
               subtitle={val}
             ></Subtitle>
           ));
 
-          let rawSubtitles = episode.subtitles;
-          if (onlyDesired) {
-            rawSubtitles = filterSubtitleBy(rawSubtitles, profileItems);
-          }
-
-          const subtitles = rawSubtitles.map((val, idx) => (
+          const subtitles = episode.subtitles.map((val, idx) => (
             <Subtitle
               key={BuildKey(idx, val.code2, "valid")}
               seriesId={seriesId}
               episodeId={episodeId}
+              mediaTitle={episode.title}
               subtitle={val}
             ></Subtitle>
           ));
@@ -163,16 +155,16 @@ const Table = forwardRef<TableInstance<Item.Episode> | null, Props>(
         },
         {
           header: "Audio",
-          accessorKey: "audio_language",
+          accessorKey: "audioLanguage",
           cell: ({
             row: {
-              original: { audio_language: audioLanguage },
+              original: { audioLanguage },
             },
           }) => <AudioList audios={audioLanguage}></AudioList>,
         },
         {
           header: "Subtitles",
-          accessorKey: "missing_subtitles",
+          accessorKey: "missingSubtitles",
           cell: ({ row: { original } }) => {
             return <SubtitlesCell episode={original} />;
           },

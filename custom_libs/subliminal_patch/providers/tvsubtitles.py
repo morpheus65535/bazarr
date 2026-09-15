@@ -3,6 +3,8 @@
 from __future__ import absolute_import
 import logging
 
+from random import randint
+from requests import Session
 
 from subzero.language import Language
 from subliminal.providers import ParserBeautifulSoup
@@ -11,6 +13,8 @@ from subliminal.providers.tvsubtitles import TVsubtitlesProvider as _TVsubtitles
     TVsubtitlesSubtitle as _TVsubtitlesSubtitle, link_re, episode_id_re
 from subliminal.utils import sanitize
 from subliminal.video import Episode
+
+from .utils import FIRST_THOUSAND_OR_SO_USER_AGENTS as AGENT_LIST
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +34,10 @@ class TVsubtitlesProvider(_TVsubtitlesProvider):
     ]}
     video_types = (Episode,)
     subtitle_class = TVsubtitlesSubtitle
+
+    def initialize(self):
+        self.session = Session()
+        self.session.headers['User-Agent'] = AGENT_LIST[randint(0, len(AGENT_LIST) - 1)]
 
     @region.cache_on_arguments(expiration_time=SHOW_EXPIRATION_TIME)
     def search_show_id(self, series, year=None):

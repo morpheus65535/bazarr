@@ -1,0 +1,13 @@
+.line {
+  border-radius: var(--mantine-radius-sm);
+  padding: 4px var(--mantine-spacing-xs);
+
+  &:hover {
+    background-color: var(--mantine-color-default-hover);
+  }
+}
+
+.timestamp {
+  flex-shrink: 0;
+  padding-top: 3px;
+}

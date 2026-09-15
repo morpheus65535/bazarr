@@ -1,7 +1,12 @@
 import userEvent from "@testing-library/user-event";
 import { describe, it, vitest } from "vitest";
 import { customRender, screen } from "@/tests";
-import { Selector, SelectorOption } from "./Selector";
+import {
+  GroupedSelector,
+  MultiSelector,
+  Selector,
+  SelectorOption,
+} from "./Selector";
 
 const selectorName = "Test Selections";
 const testOptions: SelectorOption<string>[] = [
@@ -149,6 +154,139 @@ describe("Selector", () => {
       );
 
       expect(screen.getByPlaceholderText(placeholder)).toBeDefined();
+    });
+  });
+
+  describe("GroupedSelector", () => {
+    it("renders grouped options", () => {
+      const groupedOptions = [
+        {
+          group: "Group A",
+          items: testOptions,
+        },
+      ];
+
+      customRender(
+        <GroupedSelector name={selectorName} options={groupedOptions} />,
+      );
+
+      expect(screen.getByText("Group A")).toBeInTheDocument();
+      testOptions.forEach((o) => {
+        expect(screen.getByText(o.label)).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe("MultiSelector", () => {
+    it("selects an option and fires on-change with the payload", async () => {
+      const mockedFn = vitest.fn((value: string[]) => {
+        expect(value).toEqual(["option_1"]);
+      });
+
+      customRender(
+        <MultiSelector
+          name={selectorName}
+          options={testOptions}
+          onChange={mockedFn}
+          data-testid="input-multi-selector"
+        />,
+      );
+
+      const element = screen.getByTestId("input-multi-selector");
+      await userEvent.click(element);
+
+      await userEvent.click(screen.getByText(testOptions[0].label));
+
+      expect(mockedFn).toHaveBeenCalled();
+    });
+  });
+
+  describe("DefaultKeyBuilder", () => {
+    it("renders an error when an object option is provided without a getkey builder", () => {
+      const spy = vitest
+        .spyOn(console, "error")
+        .mockImplementation(vitest.fn());
+      const objectOptions: SelectorOption<{ name: string }>[] = [
+        {
+          label: "Option 1",
+          value: { name: "option_1" },
+        },
+      ];
+
+      customRender(<Selector name={selectorName} options={objectOptions} />);
+
+      expect(
+        screen.getAllByText(
+          /Invalid type \(object\) in the SelectorOption, please provide a label builder/,
+        ).length,
+      ).toBeGreaterThan(0);
+
+      spy.mockRestore();
+    });
+
+    it("works with number option values", async () => {
+      const numberOptions: SelectorOption<number>[] = [
+        { label: "One", value: 1 },
+      ];
+      const mockedFn = vitest.fn();
+
+      customRender(
+        <Selector
+          name={selectorName}
+          options={numberOptions}
+          onChange={mockedFn}
+        />,
+      );
+
+      await userEvent.click(screen.getByTestId("input-selector"));
+      await userEvent.click(screen.getByText("One"));
+
+      expect(mockedFn).toHaveBeenCalledWith(1);
+    });
+
+    it("works with boolean option values", async () => {
+      const booleanOptions: SelectorOption<boolean>[] = [
+        { label: "Yes", value: true },
+      ];
+      const mockedFn = vitest.fn();
+
+      customRender(
+        <Selector
+          name={selectorName}
+          options={booleanOptions}
+          onChange={mockedFn}
+        />,
+      );
+
+      await userEvent.click(screen.getByTestId("input-selector"));
+      await userEvent.click(screen.getByText("Yes"));
+
+      expect(mockedFn).toHaveBeenCalledWith(true);
+    });
+  });
+
+  describe("MultiSelector buildOption", () => {
+    it("uses buildOption when a value is not present in options", async () => {
+      const buildOption = vitest.fn((value) => value);
+      const onChange = vitest.fn();
+
+      customRender(
+        <MultiSelector
+          name={selectorName}
+          options={testOptions}
+          value={["unknown"]}
+          onChange={onChange}
+          buildOption={buildOption}
+          data-testid="input-multi-selector"
+        />,
+      );
+
+      const element = screen.getByTestId("input-multi-selector");
+      await userEvent.click(element);
+      await userEvent.click(screen.getByText(testOptions[0].label));
+
+      expect(buildOption).toHaveBeenCalledWith("unknown");
+      expect(onChange).toHaveBeenCalledWith(["unknown", "option_1"]);
     });
   });
 });

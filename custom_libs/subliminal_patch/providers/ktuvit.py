@@ -281,16 +281,20 @@ class KtuvitProvider(Provider):
         # get the list of subtitles
         logger.debug("Getting the list of subtitles")
 
-        url = self.server_url + self.search_url
-        logger.debug("Calling URL: {} with request: {}".format(url, str({"request": query})))
+        results = self._search_films(query)
 
-        r = self.session.post(url, json={"request": query}, timeout=10)
-        r.raise_for_status()
-
-        if r.content:
-            results = self.parse_d_response(r, "Films", [], "Films/Series Information")
-        else:
-            return {}
+        # Ktuvit's own catalog entry for a title may have no ReleaseYear set,
+        # in which case the year-filtered search above returns zero films even
+        # though Ktuvit does carry the title. Since results are matched by exact
+        # IMDB ID below, the Year filter is only an optional pre-filter; fall
+        # back to a yearless search when it yields nothing so a missing
+        # ReleaseYear on Ktuvit's side doesn't become a false negative. (#3420)
+        if not results and query.get("Year"):
+            logger.debug(
+                "No films returned with Year filter; retrying search without Year"
+            )
+            query["Year"] = ""
+            results = self._search_films(query)
 
         # loop over results
         subtitles = {}
@@ -337,6 +341,27 @@ class KtuvitProvider(Provider):
                 subtitles[sub["sub_id"]] = subtitle
 
         return subtitles.values()
+
+    def _search_films(self, query):
+        """Send a SearchPage_search request and return its ``Films`` list.
+
+        :param dict query: the ``request`` payload to send.
+        :return: the list of films returned by Ktuvit (empty if none).
+        :rtype: list
+
+        """
+        url = self.server_url + self.search_url
+        logger.debug(
+            "Calling URL: {} with request: {}".format(url, str({"request": query}))
+        )
+
+        r = self.session.post(url, json={"request": query}, timeout=10)
+        r.raise_for_status()
+
+        if not r.content:
+            return []
+
+        return self.parse_d_response(r, "Films", [], "Films/Series Information")
 
     def _search_tvshow(self, id, season, episode):
         subs = []

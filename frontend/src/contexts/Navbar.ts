@@ -5,7 +5,7 @@ const NavbarContext = createContext<{
   show: (showed: boolean) => void;
 } | null>(null);
 
-export function useNavbar() {
+export const useNavbar = () => {
   const context = useContext(NavbarContext);
 
   if (context === null) {
@@ -13,6 +13,6 @@ export function useNavbar() {
   }
 
   return context;
-}
+};
 
 export default NavbarContext.Provider;

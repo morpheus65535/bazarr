@@ -1,6 +1,6 @@
-import { FunctionComponent, useMemo } from "react";
+import { FunctionComponent, useCallback, useMemo } from "react";
 import { Link } from "react-router";
-import { Anchor, Container, Group, Progress } from "@mantine/core";
+import { Anchor, Container, Group, Progress, Tooltip } from "@mantine/core";
 import { useDocumentTitle } from "@mantine/hooks";
 import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
 import {
@@ -10,19 +10,44 @@ import {
   faWrench,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { ColumnDef } from "@tanstack/react-table";
-import { useSeriesModification, useSeriesPagination } from "@/apis/hooks";
+import {
+  seriesPaginationKey,
+  seriesPaginationQuery,
+  useSeries,
+  useSeriesModification,
+  useSeriesTags,
+} from "@/apis/hooks";
 import { useInstanceName } from "@/apis/hooks/site";
 import { Action } from "@/components";
+import { AudioList } from "@/components/bazarr";
 import LanguageProfileName from "@/components/bazarr/LanguageProfile";
+import { PosterCardSelection } from "@/components/cards";
 import { ItemEditModal } from "@/components/forms/ItemEditForm";
+import { AppColumnDef as ColumnDef } from "@/components/tables/features";
 import { useModals } from "@/modules/modals";
 import ItemView from "@/pages/views/ItemView";
+import { seriesViewModeKey } from "@/utilities/viewMode";
+import SeriesPosterCard from "./PosterCard";
+
+const seriesFilterConfig = {
+  sortFields: [
+    { value: "title", label: "Name" },
+    { value: "episodeFileCount", label: "Episodes" },
+    { value: "episodeMissingCount", label: "Missing" },
+    { value: "profileId", label: "Profile" },
+    { value: "createdAtTimestamp", label: "Added" },
+  ],
+  filters: {
+    monitored: true,
+    missing: true,
+    profile: true,
+    audio: true,
+    tags: true,
+  },
+};
 
 const SeriesView: FunctionComponent = () => {
   const mutation = useSeriesModification();
-
-  const query = useSeriesPagination();
 
   const modals = useModals();
 
@@ -32,15 +57,17 @@ const SeriesView: FunctionComponent = () => {
         id: "status",
         cell: ({ row: { original } }) => (
           <Group gap="xs" wrap="nowrap">
-            <FontAwesomeIcon
-              title={original.monitored ? "monitored" : "unmonitored"}
-              icon={original.monitored ? faBookmark : farBookmark}
-            ></FontAwesomeIcon>
+            <Tooltip label={original.monitored ? "Monitored" : "Unmonitored"}>
+              <FontAwesomeIcon
+                icon={original.monitored ? faBookmark : farBookmark}
+              ></FontAwesomeIcon>
+            </Tooltip>
 
-            <FontAwesomeIcon
-              title={original.ended ? "Ended" : "Continuing"}
-              icon={original.ended ? faStop : faPlay}
-            ></FontAwesomeIcon>
+            <Tooltip label={original.ended ? "Ended" : "Continuing"}>
+              <FontAwesomeIcon
+                icon={original.ended ? faStop : faPlay}
+              ></FontAwesomeIcon>
+            </Tooltip>
           </Group>
         ),
       },
@@ -54,6 +81,17 @@ const SeriesView: FunctionComponent = () => {
               {original.title}
             </Anchor>
           );
+        },
+      },
+      {
+        header: "Audio",
+        accessorKey: "audioLanguage",
+        cell: ({
+          row: {
+            original: { audioLanguage },
+          },
+        }) => {
+          return <AudioList audios={audioLanguage}></AudioList>;
         },
       },
       {
@@ -84,7 +122,7 @@ const SeriesView: FunctionComponent = () => {
                     ? 0
                     : (1.0 - episodeMissingCount / episodeFileCount) * 100.0
                 }
-                color={episodeMissingCount === 0 ? "brand" : "yellow"}
+                color={episodeMissingCount === 0 ? "brand" : "warning"}
               >
                 <Progress.Label>{label}</Progress.Label>
               </Progress.Section>
@@ -105,6 +143,17 @@ const SeriesView: FunctionComponent = () => {
             </Progress.Root>
           );
         },
+      },
+      {
+        header: "Added",
+        accessorKey: "createdAtTimestamp",
+        cell: ({ row: { original } }) => (
+          <>
+            {original.createdAtTimestamp
+              ? new Date(original.createdAtTimestamp).toLocaleDateString()
+              : ""}
+          </>
+        ),
       },
       {
         id: "sonarrSeriesId",
@@ -134,11 +183,45 @@ const SeriesView: FunctionComponent = () => {
     [mutation, modals],
   );
 
+  const renderPoster = useCallback(
+    (item: Item.Series, selection?: PosterCardSelection) => (
+      <SeriesPosterCard
+        key={item.sonarrSeriesId}
+        item={item}
+        selection={selection}
+        onEdit={() =>
+          modals.openContextModal(
+            ItemEditModal,
+            {
+              mutation,
+              item,
+            },
+            {
+              title: item.title,
+            },
+          )
+        }
+      ></SeriesPosterCard>
+    ),
+    [modals, mutation],
+  );
+
   useDocumentTitle(`Series - ${useInstanceName()}`);
 
   return (
     <Container px={0} fluid>
-      <ItemView query={query} columns={columns}></ItemView>
+      <ItemView
+        queryKey={seriesPaginationKey}
+        queryFn={seriesPaginationQuery}
+        columns={columns}
+        viewModeKey={seriesViewModeKey}
+        renderPoster={renderPoster}
+        filterConfig={seriesFilterConfig}
+        useTags={useSeriesTags}
+        statePrefix="series"
+        useAllItems={useSeries}
+        modifyMutation={mutation}
+      ></ItemView>
     </Container>
   );
 };

@@ -18,7 +18,7 @@ import {
   usePlexAuthValidationQuery,
   usePlexAutopulseConfigQuery,
 } from "@/apis/hooks/plex";
-import styles from "@/pages/Settings/Plex/AutopulseSelector.module.scss";
+import { Message } from "@/pages/Settings/components";
 
 export type AutopulseSelectorProps = {
   label: string;
@@ -33,7 +33,7 @@ const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = (
   // Check if user is authenticated with OAuth
   const { data: authData } = usePlexAuthValidationQuery();
   const isAuthenticated = Boolean(
-    authData?.valid && authData?.auth_method === "oauth",
+    authData?.valid && authData?.authMethod === "oauth",
   );
 
   const {
@@ -53,7 +53,7 @@ const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = (
         id: "autopulse-config",
         title: "Success",
         message: "Autopulse configuration generated successfully",
-        color: "green",
+        color: "success",
       });
     } else if (result.isError) {
       const status = (result.error as { response?: { status?: number } })
@@ -70,79 +70,66 @@ const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = (
         id: "autopulse-config",
         title: "Error",
         message: errorMessage,
-        color: "red",
+        color: "danger",
       });
     }
   };
 
   if (!isAuthenticated) {
     return (
-      <Stack gap="xs" className={styles.autopulseSelector}>
-        <Text fw={500} size="sm" className={styles.labelText}>
+      <Stack gap="xs">
+        <Text fw={500} size="sm">
           {label}
         </Text>
-        <Alert color="brand" variant="light" className={styles.alertMessage}>
-          Enable Plex OAuth above to generate an Autopulse configuration.
-        </Alert>
+        <Message>
+          Connect to Plex above to generate an Autopulse configuration.
+        </Message>
       </Stack>
     );
   }
 
   return (
-    <Stack gap="xs" className={styles.autopulseSelector}>
-      <div>
-        <Text fw={500} size="sm" mb={2} className={styles.labelText}>
+    <Stack gap="xs">
+      <Stack gap={2}>
+        <Text fw={500} size="sm">
           {label}
         </Text>
-        <Text size="xs" c="dimmed">
-          {description}
-        </Text>
-      </div>
+        <Message>{description}</Message>
+      </Stack>
 
       <Group gap="xs">
         <Button
           onClick={handleGenerateAutopulseConfig}
           loading={isFetchingConfig}
-          size="sm"
-          variant="light"
-          className={styles.generateButton}
         >
           Generate Configuration
         </Button>
 
         {configData && (
-          <Badge color="green" variant="light" size="sm">
+          <Badge color="success" variant="light" size="sm">
             Dynamic
           </Badge>
         )}
       </Group>
 
       {configData && (
-        <Card
-          withBorder
-          p="md"
-          radius="md"
-          mt="md"
-          className={styles.configCard}
-        >
+        <Card withBorder p="md" radius="sm">
           <Group justify="space-between" align="center" mb="xs">
-            <Group gap="xs">
-              <Text size="sm" fw={600}>
-                Autopulse Configuration
-              </Text>
-            </Group>
+            <Text size="sm" fw={600}>
+              Autopulse Configuration
+            </Text>
             <Tooltip label="Copy configuration">
               <ActionIcon
-                variant="subtle"
+                aria-label="Copy configuration"
                 size="sm"
                 onClick={async () => {
-                  const yamlContent = configData?.config_yaml;
+                  const yamlContent = configData?.configYaml;
 
                   if (!yamlContent) {
                     notifications.show({
                       title: "Error",
                       message: "No configuration to copy",
-                      color: "red",
+                      color: "danger",
                     });
                     return;
                   }
@@ -152,7 +139,7 @@ const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = (
                       title: "Cannot Copy",
                       message:
                         "Clipboard access requires a secure context (HTTPS or http://localhost). Please copy manually from the code block below.",
-                      color: "yellow",
+                      color: "warning",
                     });
                     return;
                   }
@@ -162,14 +149,14 @@ const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = (
                     notifications.show({
                       title: "Copied!",
                       message: "Autopulse configuration copied to clipboard",
-                      color: "green",
+                      color: "success",
                     });
                   } catch {
                     notifications.show({
                       title: "Copy Failed",
                       message:
                         "Failed to copy to clipboard. Please copy manually from the code block below.",
-                      color: "red",
+                      color: "danger",
                     });
                   }
                 }}
@@ -179,8 +166,8 @@ const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = (
             </Tooltip>
           </Group>
 
-          <Code block className={styles.configCodeBlock}>
-            {configData.config_yaml}
+          <Code block style={{ maxHeight: 300, overflow: "auto" }}>
+            {configData.configYaml}
           </Code>
 
           <Stack gap="xs" mt="sm">
@@ -188,27 +175,26 @@ const AutopulseSelector: FunctionComponent<AutopulseSelectorProps> = (
               <Text component="span" fw={600}>
                 Server:
               </Text>{" "}
-              {configData.server_name}
+              {configData.serverName}
             </Text>
 
-            {configData.rewrite_suggestion && (
+            {configData.rewriteSuggestion && (
               <Alert
-                color={configData.rewrite_detected ? "yellow" : "brand"}
+                color={configData.rewriteDetected ? "warning" : "brand"}
                 variant="light"
-                className={styles.alertMessage}
               >
                 <Text size="xs">
                   <Text component="span" fw={600}>
                     Configuration Notes:
                   </Text>{" "}
-                  {configData.rewrite_suggestion}
+                  {configData.rewriteSuggestion}
                 </Text>
               </Alert>
             )}
 
-            {configData.template_info && (
+            {configData.templateInfo && (
               <Text size="xs" c="dimmed">
-                {configData.template_info}
+                {configData.templateInfo}
               </Text>
             )}
           </Stack>

@@ -6,7 +6,7 @@ from functools import reduce
 
 from api.swaggerui import subtitles_language_model
 from app.database import (TableEpisodes, TableShows, TableHistory, TableBlacklist, database, select, func,
-                          TableEpisodesSubtitles)
+                          TableEpisodesSubtitles, func)
 from subtitles.upgrade import get_upgradable_episode_subtitles,  _language_still_desired
 
 import pretty
@@ -100,7 +100,7 @@ class EpisodesHistory(Resource):
             .join(TableShows, onclause=TableHistory.sonarrSeriesId == TableShows.sonarrSeriesId) \
             .join(TableEpisodes, onclause=TableHistory.sonarrEpisodeId == TableEpisodes.sonarrEpisodeId) \
             .join(TableEpisodesSubtitles,
-                  onclause=TableHistory.sonarrEpisodeId == TableEpisodesSubtitles.sonarrEpisodeId) \
+                  onclause=TableHistory.sonarrEpisodeId == TableEpisodesSubtitles.sonarrEpisodeId, isouter=True) \
             .join(blacklisted_subtitles, onclause=TableHistory.subs_id == blacklisted_subtitles.c.subs_id,
                   isouter=True) \
             .where(reduce(operator.and_, query_conditions)) \

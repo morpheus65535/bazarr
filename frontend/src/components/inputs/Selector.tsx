@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useMemo } from "react";
 import {
   ComboboxItem,
   ComboboxItemGroup,
@@ -22,7 +22,7 @@ type SelectItemWithPayload<T> = ComboboxItem & {
   payload: T;
 };
 
-function DefaultKeyBuilder<T>(value: T) {
+const DefaultKeyBuilder = <T,>(value: T) => {
   if (typeof value === "string") {
     return value;
   } else if (typeof value === "number" || typeof value === "boolean") {
@@ -33,7 +33,7 @@ function DefaultKeyBuilder<T>(value: T) {
       `Invalid type (${typeof value}) in the SelectorOption, please provide a label builder`,
     );
   }
-}
+};
 
 export interface GroupedSelectorOptions<T> {
   group: string;
@@ -48,19 +48,17 @@ export type GroupedSelectorProps<T> = Override<
   Omit<SelectProps, "data">
 >;
 
-export function GroupedSelector<T>({
+export const GroupedSelector = <T,>({
   options,
   ...select
-}: GroupedSelectorProps<T>) {
-  return (
-    <Select
-      data-testid="input-selector"
-      comboboxProps={{ withinPortal: true }}
-      data={options as unknown as ComboboxItemGroup<string>[]}
-      {...select}
-    ></Select>
-  );
-}
+}: GroupedSelectorProps<T>) => (
+  <Select
+    data-testid="input-selector"
+    comboboxProps={{ withinPortal: true }}
+    data={options as unknown as ComboboxItemGroup<string>[]}
+    {...select}
+  ></Select>
+);
 
 export type SelectorProps<T> = Override<
   {
@@ -73,43 +71,40 @@ export type SelectorProps<T> = Override<
   Omit<SelectProps, "data">
 >;
 
-export function Selector<T>({
+export const Selector = <T,>({
   value,
   defaultValue,
   options,
   onChange,
   getkey = DefaultKeyBuilder,
   ...select
-}: SelectorProps<T>) {
-  const keyRef = useRef(getkey);
-  keyRef.current = getkey;
-
+}: SelectorProps<T>) => {
   const data = useMemo(
     () =>
       options.map<SelectItemWithPayload<T>>(({ value, label, ...option }) => ({
         label,
-        value: keyRef.current(value),
+        value: getkey(value),
         payload: value,
         ...option,
       })),
-    [keyRef, options],
+    [getkey, options],
   );
 
   const wrappedValue = useMemo(() => {
     if (isNull(value) || isUndefined(value)) {
       return value;
     } else {
-      return keyRef.current(value);
+      return getkey(value);
     }
-  }, [keyRef, value]);
+  }, [getkey, value]);
 
   const wrappedDefaultValue = useMemo(() => {
     if (isNull(defaultValue) || isUndefined(defaultValue)) {
       return defaultValue;
     } else {
-      return keyRef.current(defaultValue);
+      return getkey(defaultValue);
     }
-  }, [defaultValue, keyRef]);
+  }, [defaultValue, getkey]);
 
   const wrappedOnChange = useCallback(
     (value: string | null) => {
@@ -130,7 +125,7 @@ export function Selector<T>({
       {...select}
     ></Select>
   );
-}
+};
 
 export type MultiSelectorProps<T> = Override<
   {
@@ -144,39 +139,34 @@ export type MultiSelectorProps<T> = Override<
   Omit<MultiSelectProps, "data">
 >;
 
-export function MultiSelector<T>({
+export const MultiSelector = <T,>({
   value,
   defaultValue,
   options,
   onChange,
   getkey = DefaultKeyBuilder,
   buildOption,
+  hidePickedOptions = true,
   ...select
-}: MultiSelectorProps<T>) {
-  const labelRef = useRef(getkey);
-  labelRef.current = getkey;
-
-  const buildRef = useRef(buildOption);
-  buildRef.current = buildOption;
-
+}: MultiSelectorProps<T>) => {
   const data = useMemo(
     () =>
       options.map<SelectItemWithPayload<T>>(({ value, ...option }) => ({
-        value: labelRef.current(value),
+        value: getkey(value),
         payload: value,
         ...option,
       })),
-    [options],
+    [options, getkey],
   );
 
   const wrappedValue = useMemo(
-    () => value && value.map(labelRef.current),
-    [value],
+    () => value && value.map(getkey),
+    [value, getkey],
   );
 
   const wrappedDefaultValue = useMemo(
-    () => defaultValue && defaultValue.map(labelRef.current),
-    [defaultValue],
+    () => defaultValue && defaultValue.map(getkey),
+    [defaultValue, getkey],
   );
 
   const wrappedOnChange = useCallback(
@@ -186,23 +176,23 @@ export function MultiSelector<T>({
         const payload = data.find((v) => v.value === value)?.payload;
         if (payload) {
           payloads.push(payload);
-        } else if (buildRef.current) {
-          payloads.push(buildRef.current(value));
+        } else if (buildOption) {
+          payloads.push(buildOption(value));
         }
       }
       onChange?.(payloads);
     },
-    [data, onChange],
+    [data, onChange, buildOption],
   );
 
   return (
     <MultiSelect
       {...select}
-      hidePickedOptions
+      hidePickedOptions={hidePickedOptions}
       value={wrappedValue}
       defaultValue={wrappedDefaultValue}
       onChange={wrappedOnChange}
       data={data}
     ></MultiSelect>
   );
-}
+};

@@ -10,6 +10,7 @@ from functools import reduce
 from sqlalchemy import and_, or_
 
 from app.config import settings
+from constants import HI_EXCLUDED
 from app.database import (get_exclusion_clause, get_audio_profile_languages, TableShows, TableEpisodes, TableMovies,
      TableHistory, TableHistoryMovie, database, select, func, get_profiles_list, TableEpisodesSubtitles,
      TableMoviesSubtitles)
@@ -82,7 +83,7 @@ def upgrade_episodes_subtitles(job_id=None, wait_for_completion=False):
         .select_from(TableHistory)
         .join(TableShows, onclause=TableHistory.sonarrSeriesId == TableShows.sonarrSeriesId)
         .join(TableEpisodes, onclause=TableHistory.sonarrEpisodeId == TableEpisodes.sonarrEpisodeId)
-        .join(TableEpisodesSubtitles, onclause=TableHistory.sonarrEpisodeId == TableEpisodesSubtitles.sonarrEpisodeId)
+        .join(TableEpisodesSubtitles, onclause=TableHistory.sonarrEpisodeId == TableEpisodesSubtitles.sonarrEpisodeId, isouter=True)
         .where(TableEpisodesSubtitles.path.is_not(None)))
     .all() if _language_still_desired(x.language, x.profileId) and x.video_path == x.path]
 
@@ -145,8 +146,6 @@ def upgrade_episodes_subtitles(job_id=None, wait_for_completion=False):
         if result:
             if isinstance(result, list) and len(result):
                 result = result[0]
-            if isinstance(result, tuple) and len(result):
-                result = result[0]
             store_subtitles(episode['sonarrEpisodeId'])
             history_log(3, episode['sonarrSeriesId'], episode['sonarrEpisodeId'], result,
                         upgraded_from_id=episode['original_id'] or episode['id'])  # we use or to handle None values on initial upgrade
@@ -190,7 +189,7 @@ def upgrade_movies_subtitles(job_id=None, wait_for_completion=False):
                TableMoviesSubtitles.path.label('external_subtitles'))
         .select_from(TableHistoryMovie)
         .join(TableMovies, onclause=TableHistoryMovie.radarrId == TableMovies.radarrId)
-        .join(TableMoviesSubtitles, onclause=TableHistoryMovie.radarrId == TableMoviesSubtitles.radarrId)
+        .join(TableMoviesSubtitles, onclause=TableHistoryMovie.radarrId == TableMoviesSubtitles.radarrId, isouter=True)
         .where(TableMoviesSubtitles.path.is_not(None)))
     .all() if _language_still_desired(x.language, x.profileId) and x.video_path == x.path]
 
@@ -249,8 +248,6 @@ def upgrade_movies_subtitles(job_id=None, wait_for_completion=False):
                                          job_id=job_id))
         if result:
             if isinstance(result, list) and len(result):
-                result = result[0]
-            if isinstance(result, tuple) and len(result):
                 result = result[0]
             store_subtitles_movie(movie['radarrId'])
             history_log_movie(3, movie['radarrId'], result, upgraded_from_id=movie['original_id'] or movie['id'])  # we use or to handle None values on initial upgrade
@@ -470,6 +467,8 @@ def _language_from_items(items):
             results.append(f'{item["language"]}:forced')
         elif item['hi'] == 'True':
             results.append(f'{item["language"]}:hi')
+        elif item['hi'] == HI_EXCLUDED:
+            results.append(item['language'])
         else:
             results.append(item['language'])
             results.append(f'{item["language"]}:hi')

@@ -105,8 +105,6 @@ def movies_download_subtitles(no, job_id=None, job_sub_function=False):
                                              check_if_still_required=True,
                                              job_id=job_id):
                 if result:
-                    if isinstance(result, tuple) and len(result):
-                        result = result[0]
                     store_subtitles_movie(no)
                     history_log_movie(1, no, result)
                     send_notifications_movie(no, result.message)
@@ -168,8 +166,6 @@ def movie_download_specific_subtitles(radarr_id, language, hi, forced, job_id=No
                                          job_id=job_id))
         if isinstance(result, list) and len(result):
             result = result[0]
-            if isinstance(result, tuple) and len(result):
-                result = result[0]
             store_subtitles_movie(radarr_id)
             history_log_movie(1, radarr_id, result)
             send_notifications_movie(radarr_id, result.message)

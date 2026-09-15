@@ -18,11 +18,11 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { UseQueryResult } from "@tanstack/react-query";
-import { ColumnDef } from "@tanstack/react-table";
 import { isString } from "lodash";
 import { Action } from "@/components";
 import Language from "@/components/bazarr/Language";
 import StateIcon from "@/components/StateIcon";
+import { AppColumnDef as ColumnDef } from "@/components/tables/features";
 import PageTable from "@/components/tables/PageTable";
 import { withModal } from "@/modules/modals";
 import { GetItemId } from "@/utilities";
@@ -35,7 +35,7 @@ interface Props<T extends SupportType> {
   item: T;
 }
 
-function ManualSearchView<T extends SupportType>(props: Props<T>) {
+const ManualSearchView = <T extends SupportType>(props: Props<T>) => {
   const { download, query: useSearch, item } = props;
 
   const [searchStarted, setSearchStarted] = useState(false);
@@ -104,7 +104,7 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
         accessorKey: "language",
         cell: ({
           row: {
-            original: { language, hearing_impaired: hi, forced },
+            original: { language, hearingImpaired: hi, forced },
           },
         }) => {
           const lang: Language.Info = {
@@ -148,10 +148,10 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
       },
       {
         header: "Release",
-        accessorKey: "release_info",
+        accessorKey: "releaseInfo",
         cell: ({
           row: {
-            original: { release_info: releaseInfo },
+            original: { releaseInfo },
           },
         }) => {
           return <ReleaseInfoCell releaseInfo={releaseInfo} />;
@@ -172,7 +172,7 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
         header: "Match",
         accessorKey: "matches",
         cell: (row) => {
-          const { matches, dont_matches: dont } = row.row.original;
+          const { matches, dontMatches: dont } = row.row.original;
           return (
             <StateIcon
               matches={matches}
@@ -192,7 +192,7 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
             <Action
               label="Download"
               icon={isDownloaded ? faCloudDownloadAlt : faDownload}
-              color={isDownloaded ? "brand" : "gray"}
+              color={isDownloaded ? "brand" : "secondary"}
               disabled={item === null}
               onClick={async () => {
                 if (!item) return;
@@ -223,7 +223,7 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
     <Stack>
       <Alert
         title="Resource"
-        color="gray"
+        color="secondary"
         icon={<FontAwesomeIcon icon={faInfoCircle}></FontAwesomeIcon>}
       >
         <Text size="sm">{item?.path}</Text>
@@ -244,7 +244,7 @@ function ManualSearchView<T extends SupportType>(props: Props<T>) {
       </Button>
     </Stack>
   );
-}
+};
 
 export const MovieSearchModal = withModal<Props<Item.Movie>>(
   ManualSearchView,

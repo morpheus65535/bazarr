@@ -4,6 +4,7 @@ import pytest
 from subliminal_patch.providers.supersubtitles import SuperSubtitlesProvider
 from subliminal_patch.providers.supersubtitles import SuperSubtitlesSubtitle
 from subliminal_patch.core import Episode
+from subliminal_patch.core import Movie
 from subzero.language import Language
 
 
@@ -154,6 +155,62 @@ def test_subtitle_reprs(movies):
     )
     assert isinstance(subtitle.__repr__(), str)
     assert isinstance(subtitle.__str__(), str)
+
+
+@pytest.mark.parametrize(
+    ("provider_title", "expected_year"),
+    [
+        ("Obey (2018) (WEBRip.720p-YIFY)", 2018),
+        ("Obey (WEBRip.720p-YIFY)", None),
+    ],
+)
+def test_movie_result_uses_provider_year(
+    requests_mock, mocker, provider_title, expected_year
+):
+    movie = Movie(
+        "Obey (2013) - [720p][AAC 2.0][AVC].mp4",
+        "Obey",
+        year=2013,
+    )
+    language = Language.fromalpha2("en")
+    url = (
+        "https://www.feliratok.eu/"
+        "index.php?search=Obey&soriSorszam=&nyelv=&tab=film"
+    )
+    requests_mock.get(
+        url,
+        text=f"""
+            <table>
+                <tr><td>header</td></tr>
+                <tr><td>header</td></tr>
+                <tr id="vilagit">
+                    <td></td>
+                    <td><small>Angol</small></td>
+                    <td>
+                        <div class="eredeti">
+                            {provider_title}
+                        </div>
+                    </td>
+                    <td>Anonymus</td>
+                    <td>2019-03-02</td>
+                    <td>
+                        <a href="/index.php?action=letolt&amp;fnev=Obey.2018.srt&amp;felirat=1551531078">
+                            Download
+                        </a>
+                    </td>
+                </tr>
+            </table>
+        """,
+    )
+
+    with SuperSubtitlesProvider() as provider:
+        mocker.patch.object(provider, "find_imdb_id", return_value="tt6145764")
+        subtitles = provider.process_subs({language}, movie, url)
+
+    assert len(subtitles) == 1
+    assert subtitles[0].year == expected_year
+    assert "(None)" not in subtitles[0].release_info
+    assert "year" not in subtitles[0].get_matches(movie)
 
 
 @pytest.fixture

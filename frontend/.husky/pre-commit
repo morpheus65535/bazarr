@@ -2,3 +2,4 @@
 
 cd frontend || exit
 npx pretty-quick --staged --pattern "frontend/**/*.*"
+npx stylelint "src/**/*.{css,scss}" --max-warnings 0

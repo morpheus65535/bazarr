@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 import { FunctionComponent, useMemo } from "react";
 import { Link } from "react-router";
 import { Anchor, Badge, Text } from "@mantine/core";
@@ -8,12 +7,12 @@ import {
   faRecycle,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { ColumnDef } from "@tanstack/react-table";
 import { useMovieAddBlacklist, useMovieHistoryPagination } from "@/apis/hooks";
 import { MutateAction } from "@/components/async";
 import { HistoryIcon } from "@/components/bazarr";
 import Language from "@/components/bazarr/Language";
 import StateIcon from "@/components/StateIcon";
+import { AppColumnDef as ColumnDef } from "@/components/tables/features";
 import TextPopover from "@/components/TextPopover";
 import HistoryView from "@/pages/views/HistoryView";
 
@@ -67,7 +66,7 @@ const MoviesHistoryView: FunctionComponent = () => {
         header: "Match",
         accessorKey: "matches",
         cell: (row) => {
-          const { matches, dont_matches: dont } = row.row.original;
+          const { matches, dontMatches: dont } = row.row.original;
           if (matches.length || dont.length) {
             return (
               <StateIcon
@@ -86,12 +85,12 @@ const MoviesHistoryView: FunctionComponent = () => {
         accessorKey: "timestamp",
         cell: ({
           row: {
-            original: { timestamp, parsed_timestamp },
+            original: { timestamp, parsedTimestamp },
           },
         }) => {
           if (timestamp) {
             return (
-              <TextPopover text={parsed_timestamp}>
+              <TextPopover text={parsedTimestamp}>
                 <Text>{timestamp}</Text>
               </TextPopover>
             );
@@ -142,12 +141,12 @@ const MoviesHistoryView: FunctionComponent = () => {
             blacklisted,
             radarrId,
             provider,
-            subs_id,
+            subsId,
             language,
-            subtitles_path,
+            subtitlesPath,
           } = row.original;
 
-          if (subs_id && provider && language) {
+          if (subsId && provider && language) {
             return (
               <MutateAction
                 label="Add to Blacklist"
@@ -158,8 +157,8 @@ const MoviesHistoryView: FunctionComponent = () => {
                   id: radarrId,
                   form: {
                     provider,
-                    subs_id,
-                    subtitles_path,
+                    subsId,
+                    subtitlesPath,
                     language: language.code2,
                   },
                 })}

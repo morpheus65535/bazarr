@@ -9,6 +9,8 @@ bazarr.pid
 # IDE
 .idea
 .vscode
+.claude
+.junie
 
 # LSP
 pyrightconfig.json

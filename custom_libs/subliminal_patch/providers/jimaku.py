@@ -145,7 +145,11 @@ class JimakuProvider(Provider):
                 break
 
         # We only go for the first entry
-        entry = data[0]
+        entry = next((item for item in data if item.get("anilist_id") == video.anilist_id), None)
+
+        if entry is None:
+            logger.warning(f"Jimaku returned {len(data)} entries for AniList ID {video.anilist_id}, but none matched exactly")
+            return None
         
         entry_id = entry.get('id')
         anilist_id = entry.get('anilist_id', None)
@@ -153,7 +157,7 @@ class JimakuProvider(Provider):
         is_movie = entry.get('flags', {}).get('movie', False)
         
         if isinstance(video, Episode) and is_movie:
-            logger.warn("Bazarr thinks this is a series, but Jimaku says this is a movie! May not be able to match subtitles...")
+            logger.warning("Bazarr thinks this is a series, but Jimaku says this is a movie! May not be able to match subtitles...")
         
         logger.info(f"Matched entry: ID: '{entry_id}', anilist_id: '{anilist_id}', name: '{entry_name}', english_name: '{entry.get('english_name')}', movie: {is_movie}")
         if entry.get("flags").get("unverified"):

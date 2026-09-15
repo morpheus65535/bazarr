@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 import { FunctionComponent } from "react";
 import {
   Alert,
@@ -25,23 +24,23 @@ import {
 } from "@/components/inputs";
 import { useModals, withModal } from "@/modules/modals";
 import { notification } from "@/modules/task";
-import { syncMaxOffsetSecondsOptions } from "@/pages/Settings/Subtitles/options";
+import { syncMaxOffsetSecondsOptions } from "@/pages/Settings/SubtitleProcessing/options";
 import { fromPython, toPython } from "@/utilities";
 
-function useReferencedSubtitles(
+const useReferencedSubtitles = (
   mediaType: "episode" | "movie",
-  mediaId: number,
+  id: number,
   subtitlesPath: string,
-) {
+) => {
   // We cannot call hooks conditionally, we rely on useQuery "enabled" option to do only the required API call
   const episodeData = useRefTracksByEpisodeId(
     subtitlesPath,
-    mediaId,
+    id,
     mediaType === "episode",
   );
   const movieData = useRefTracksByMovieId(
     subtitlesPath,
-    mediaId,
+    id,
     mediaType === "movie",
   );
 
@@ -52,7 +51,7 @@ function useReferencedSubtitles(
   if (!mediaData.data) {
     return [];
   } else {
-    if (mediaData.data.audio_tracks.length > 0) {
+    if (mediaData.data.audioTracks.length > 0) {
       const embeddedAudioGroup: GroupedSelectorOptions<string> = {
         group: "Embedded audio tracks",
         items: [],
@@ -60,7 +59,7 @@ function useReferencedSubtitles(
 
       subtitles.push(embeddedAudioGroup);
 
-      mediaData.data.audio_tracks.forEach((item) => {
+      mediaData.data.audioTracks.forEach((item) => {
         embeddedAudioGroup.items.push({
           value: item.stream,
           label: `${item.name || item.language} (${item.stream})`,
@@ -68,7 +67,7 @@ function useReferencedSubtitles(
       });
     }
 
-    if (mediaData.data.embedded_subtitles_tracks.length > 0) {
+    if (mediaData.data.embeddedSubtitlesTracks.length > 0) {
       const embeddedSubtitlesTrackGroup: GroupedSelectorOptions<string> = {
         group: "Embedded subtitles tracks",
         items: [],
@@ -76,7 +75,7 @@ function useReferencedSubtitles(
 
       subtitles.push(embeddedSubtitlesTrackGroup);
 
-      mediaData.data.embedded_subtitles_tracks.forEach((item) => {
+      mediaData.data.embeddedSubtitlesTracks.forEach((item) => {
         embeddedSubtitlesTrackGroup.items.push({
           value: item.stream,
           label: `${item.name || item.language} (${item.stream})`,
@@ -84,7 +83,7 @@ function useReferencedSubtitles(
       });
     }
 
-    if (mediaData.data.external_subtitles_tracks.length > 0) {
+    if (mediaData.data.externalSubtitlesTracks.length > 0) {
       const externalSubtitlesFilesGroup: GroupedSelectorOptions<string> = {
         group: "External Subtitles files",
         items: [],
@@ -92,7 +91,7 @@ function useReferencedSubtitles(
 
       subtitles.push(externalSubtitlesFilesGroup);
 
-      mediaData.data.external_subtitles_tracks.forEach((item) => {
+      mediaData.data.externalSubtitlesTracks.forEach((item) => {
         if (item) {
           externalSubtitlesFilesGroup.items.push({
             value: item.path,
@@ -104,7 +103,7 @@ function useReferencedSubtitles(
 
     return subtitles;
   }
-}
+};
 
 interface Props {
   selections: FormType.ModifySubtitle[];
@@ -134,10 +133,10 @@ const SyncSubtitleForm: FunctionComponent<Props> = ({
   const subtitle = selections[0];
 
   const mediaType = subtitle.type;
-  const mediaId = subtitle.id;
+  const id = subtitle.id;
   const subtitlesPath = subtitle.path;
 
-  const subtitles = useReferencedSubtitles(mediaType, mediaId, subtitlesPath);
+  const subtitles = useReferencedSubtitles(mediaType, id, subtitlesPath!);
 
   const form = useForm<FormValues>({
     initialValues: {
@@ -157,8 +156,8 @@ const SyncSubtitleForm: FunctionComponent<Props> = ({
               const form: FormType.ModifySubtitle = {
                 ...s,
                 reference: parameters.reference,
-                max_offset_seconds: parameters.maxOffsetSeconds,
-                no_fix_framerate: toPython(parameters.noFixFramerate),
+                maxOffsetSeconds: parameters.maxOffsetSeconds,
+                noFixFramerate: toPython(parameters.noFixFramerate),
                 gss: toPython(parameters.gss),
               };
               return mutateAsync({ action: "sync", form });
@@ -186,7 +185,7 @@ const SyncSubtitleForm: FunctionComponent<Props> = ({
         <LoadingOverlay visible={isPending} />
         <Alert
           title="Subtitles"
-          color="gray"
+          color="secondary"
           icon={<FontAwesomeIcon icon={faInfoCircle}></FontAwesomeIcon>}
         >
           <Text size="sm">{selections.length} subtitles selected</Text>

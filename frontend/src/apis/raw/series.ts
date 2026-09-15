@@ -1,4 +1,6 @@
+import { camelCaseKeys } from "@/utilities/case";
 import BaseApi from "./base";
+import { buildListParams } from "./utils";
 
 class SeriesApi extends BaseApi {
   constructor() {
@@ -6,26 +8,40 @@ class SeriesApi extends BaseApi {
   }
 
   async series(seriesid?: number[]) {
-    const response = await this.get<DataWrapperWithTotal<Item.Series>>("", {
+    const response = await this.get<DataWrapperWithTotal<Item.RawSeries>>("", {
       seriesid,
     });
-    return response.data;
+    return response.data.map(camelCaseKeys);
   }
 
-  async seriesBy(params: Parameter.Range) {
-    const response = await this.get<DataWrapperWithTotal<Item.Series>>(
+  async seriesBy(params: Parameter.ListQuery) {
+    const response = await this.get<DataWrapperWithTotal<Item.RawSeries>>(
       "",
-      params,
+      buildListParams(params),
     );
-    return response;
+    return {
+      ...response,
+      data: response.data.map(camelCaseKeys),
+    };
   }
 
   async modify(form: FormType.ModifyItem) {
-    await this.post("", { seriesid: form.id, profileid: form.profileid });
+    await this.post("", { seriesid: form.id, profileid: form.profileId });
+  }
+
+  async tags() {
+    const response = await this.get<DataWrapper<{ tag: string }[]>>("/tags");
+    return response.data.map(({ tag }) => tag);
   }
 
   async action(form: FormType.SeriesAction) {
-    await this.patch("", form);
+    const payload: Record<string, unknown> = { action: form.action };
+
+    if (form.action !== "search-wanted") {
+      payload.seriesid = form.seriesId;
+    }
+
+    await this.patch("", payload);
   }
 }
 

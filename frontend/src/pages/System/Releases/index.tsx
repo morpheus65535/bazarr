@@ -49,11 +49,11 @@ const ReleaseCard: FunctionComponent<ReleaseInfo> = ({
     <Card shadow="md" p="lg">
       <Group>
         <Text fw="bold">{name}</Text>
-        <Badge color="blue">{date}</Badge>
-        <Badge color={prerelease ? "yellow" : "green"}>
+        <Badge color="info">{date}</Badge>
+        <Badge color={prerelease ? "warning" : "success"}>
           {prerelease ? "Development" : "Master"}
         </Badge>
-        {current && <Badge color="indigo">Installed</Badge>}
+        {current && <Badge color="info">Installed</Badge>}
       </Group>
       <Divider my="sm"></Divider>
       <Text>From newest to oldest:</Text>

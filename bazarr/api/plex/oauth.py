@@ -1061,7 +1061,15 @@ class PlexWebhookList(Resource):
             
             from plexapi.myplex import MyPlexAccount
             account = MyPlexAccount(token=decrypted_token)
-            
+
+            # Webhooks are a Plex Pass feature. Without it plex.tv answers the webhooks endpoint
+            # with 403 (error 1043, "This action is not available for this user"), which would
+            # otherwise surface as a generic 502 and read to the user as a lost connection.
+            # webhook/create already reports this properly; do the same here.
+            has_webhooks, error_msg = check_plex_pass_feature(account, 'webhooks')
+            if not has_webhooks:
+                return {'error': error_msg}, 403
+
             webhooks = account.webhooks()
             webhook_list = []
             

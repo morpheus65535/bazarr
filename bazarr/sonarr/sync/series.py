@@ -10,6 +10,7 @@ from app.config import settings
 from subtitles.indexer.series import list_missing_subtitles
 from sonarr.rootfolder import check_sonarr_rootfolder
 from app.database import TableShows, TableLanguagesProfiles, database, insert, update, delete, select
+from utilities.helper import bool_map
 from utilities.path_mappings import path_mappings
 from app.event_handler import event_stream
 from app.jobs_queue import jobs_queue
@@ -17,9 +18,6 @@ from app.jobs_queue import jobs_queue
 from .episodes import sync_episodes
 from .parser import seriesParser
 from .utils import get_profile_list, get_tags, get_series_from_sonarr_api
-
-# map between booleans and strings in DB
-bool_map = {"True": True, "False": False}
 
 FEATURE_PREFIX = "SYNC_SERIES "
 
@@ -58,6 +56,9 @@ def update_series(job_id=None, wait_for_completion=False):
         logging.exception(f"BAZARR Error trying to get series from Sonarr: {e}")
         return
     else:
+        if not isinstance(series, list):
+            return
+
         # Get current shows in DB
         current_shows_db = [x.sonarrSeriesId for x in
                             database.execute(

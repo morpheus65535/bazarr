@@ -10,7 +10,7 @@ from subliminal_patch.subtitle import guess_matches
 from .utils import FIRST_THOUSAND_OR_SO_USER_AGENTS as AGENT_LIST
 
 from subliminal.providers import ParserBeautifulSoup, Provider
-from subliminal.subtitle import SUBTITLE_EXTENSIONS, Subtitle, fix_line_ending
+from subliminal.subtitle import Subtitle, fix_line_ending
 from subliminal.video import Episode, Movie
 
 logger = logging.getLogger(__name__)
@@ -68,6 +68,23 @@ class GreekSubsProvider(Provider):
     def terminate(self):
         self.session.close()
 
+    def _parse_subtitle_row(self, subtitles_item, sec_code, referer):
+        try:
+            download_button = subtitles_item.find('button', {'onclick': re.compile(r'^downloadMe')})
+            subtitle_id = re.search(r"downloadMe\('([^']+)'\)", download_button.get('onclick')).group(1)
+            language_image = subtitles_item.find('img', {'src': re.compile(r'/resources/lang/')})
+            language = Language.fromalpha2(language_image.get('alt'))
+            download_cell = download_button.find_parent('td')
+            version_cell = download_cell.find_next_sibling('td').find_next_sibling('td')
+            version = version_cell.get_text(strip=True)
+            uploader = subtitles_item.find(class_='userNameBox').get_text(strip=True)
+        except Exception as e:
+            logging.debug(e)
+            return None
+
+        download_link = self.server_url + 'dll/' + subtitle_id + '/0/' + sec_code
+        return self.subtitle_class(language, download_link, version, uploader, referer, subtitle_id)
+
     def query(self, video, languages, imdb_id, season=None, episode=None):
         logger.debug('Searching subtitles for %r', imdb_id)
         subtitles = []
@@ -102,24 +119,10 @@ class GreekSubsProvider(Provider):
                             logging.debug(e)
                         else:
                             for subtitles_item in soup_subs.select('#elSub > tbody > tr'):
-                                try:
-                                    subtitle_id = re.search(r'downloadMe\(\'(.*)\'\)',
-                                                            subtitles_item.contents[2].contents[2].contents[0].attrs[
-                                                                'onclick']).group(1)
-                                    download_link = self.server_url + 'dll/' + subtitle_id + '/0/' + secCode
-                                    language = Language.fromalpha2(subtitles_item.parent.find('img')['alt'])
-                                    version = subtitles_item.contents[2].contents[4].text.strip()
-                                    uploader = (subtitles_item.contents[2].contents[5].contents[0].contents[1].text
-                                                .strip())
-                                except Exception as e:
-                                    logging.debug(e)
-                                else:
-                                    if language in languages:
-                                        subtitle = self.subtitle_class(language, download_link, version, uploader,
-                                                                       search_link, subtitle_id)
-
-                                        logger.debug('Found subtitle %r', subtitle)
-                                        subtitles.append(subtitle)
+                                subtitle = self._parse_subtitle_row(subtitles_item, secCode, episode_page)
+                                if subtitle is not None and subtitle.language in languages:
+                                    logger.debug('Found subtitle %r', subtitle)
+                                    subtitles.append(subtitle)
                     else:
                         pass
             except Exception as e:
@@ -133,23 +136,10 @@ class GreekSubsProvider(Provider):
                     logging.debug(e)
                 else:
                     for subtitles_item in soup_subs.select('#elSub > tbody > tr'):
-                        try:
-                            subtitle_id = re.search(r'downloadMe\(\'(.*)\'\)',
-                                                    subtitles_item.contents[2].contents[2].contents[0].attrs[
-                                                        'onclick']).group(1)
-                            download_link = self.server_url + 'dll/' + subtitle_id + '/0/' + secCode
-                            language = Language.fromalpha2(subtitles_item.parent.find('img')['alt'])
-                            version = subtitles_item.contents[2].contents[4].text.strip()
-                            uploader = subtitles_item.contents[2].contents[5].contents[0].contents[1].text.strip()
-                        except Exception as e:
-                            logging.debug(e)
-                        else:
-                            if language in languages:
-                                subtitle = self.subtitle_class(language, download_link, version, uploader, search_link,
-                                                               subtitle_id)
-
-                                logger.debug('Found subtitle %r', subtitle)
-                                subtitles.append(subtitle)
+                        subtitle = self._parse_subtitle_row(subtitles_item, secCode, search_link)
+                        if subtitle is not None and subtitle.language in languages:
+                            logger.debug('Found subtitle %r', subtitle)
+                            subtitles.append(subtitle)
             except Exception as e:
                 logging.debug(e)
 
@@ -184,11 +174,26 @@ class GreekSubsProvider(Provider):
                              timeout=30, allow_redirects=False)
 
         if r.status_code == 302:
-            logger.critical("Greeksubs allow only one download per search. Search again to generate a new single use "
-                            "download token.")
-            return None
+            if not self._refresh_download_link(subtitle):
+                logger.error("Unable to refresh Greeksubs single use download token")
+                return False
+
+            r = self.session.get(subtitle.page_link,
+                                 headers={'Referer': subtitle.referer},
+                                 timeout=30, allow_redirects=False)
+
+            if r.status_code == 302:
+                logger.error("Greeksubs single use download token is still invalid after refresh")
+                return False
 
         r.raise_for_status()
+
+        content_type = r.headers.get('Content-Type', '').lower()
+        content_disposition = r.headers.get('Content-Disposition', '').lower()
+        if r.content and ('attachment' in content_disposition or
+                          content_type and not content_type.startswith('text/html')):
+            subtitle.content = fix_line_ending(r.content)
+            return
 
         download_req = None
         soup_dll = ParserBeautifulSoup(r.content.decode('utf-8', 'ignore'), ['html.parser'])
@@ -206,8 +211,22 @@ class GreekSubsProvider(Provider):
                                                                            'dll': dll},
                                              headers={'Referer': subtitle.page_link}, timeout=10)
 
-        if download_req and not download_req.content:
+        if download_req is None or not download_req.content:
             logger.error('Unable to download subtitle. No data returned from provider')
             return False
 
         subtitle.content = fix_line_ending(download_req.content)
+
+    def _refresh_download_link(self, subtitle):
+        r = self.session.get(subtitle.referer, timeout=30)
+        r.raise_for_status()
+
+        soup_page = ParserBeautifulSoup(r.content.decode('utf-8', 'ignore'), ['html.parser'])
+        sec_code_input = soup_page.find('input', {'id': 'secCode'})
+        if sec_code_input is None or not sec_code_input.get('value'):
+            return False
+
+        download_link = self.server_url + 'dll/' + subtitle.subtitle_id + '/0/' + sec_code_input.get('value')
+        subtitle.page_link = download_link
+        subtitle.download_link = download_link
+        return True

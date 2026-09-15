@@ -1,4 +1,10 @@
-import { createContext, useCallback, useContext, useRef } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+} from "react";
 import type { UseFormReturnType } from "@mantine/form";
 import { LOG } from "@/utilities/console";
 
@@ -6,7 +12,7 @@ export const FormContext = createContext<UseFormReturnType<FormValues> | null>(
   null,
 );
 
-export function useFormValues() {
+export const useFormValues = () => {
   const context = useContext(FormContext);
 
   if (context === null) {
@@ -14,20 +20,23 @@ export function useFormValues() {
   }
 
   return context;
-}
+};
 
-export function useStagedValues() {
+export const useStagedValues = () => {
   const form = useFormValues();
   return { ...form.values.settings };
-}
+};
 
-export function useFormActions() {
+export const useFormActions = () => {
   const form = useFormValues();
 
   const formRef = useRef(form);
-  formRef.current = form;
 
-  const update = useCallback((object: LooseObject) => {
+  useEffect(() => {
+    formRef.current = form;
+  });
+
+  const update = useCallback((object: Record<string, unknown>) => {
     LOG("info", `Updating values`, object);
     formRef.current.setValues((values) => {
       const changes = { ...values.settings, ...object };
@@ -53,27 +62,37 @@ export function useFormActions() {
     });
   }, []);
 
-  return { update, setValue };
-}
+  // Removes a previously staged value, e.g. when a field is reverted back to
+  // its original value so it no longer counts as an unsaved change.
+  const removeValue = useCallback((key: string) => {
+    LOG("info", `Removing staged value of ${key}`);
+    formRef.current.setValues((values) => {
+      const changes = { ...values.settings };
+      const hooks = { ...values.hooks };
+      delete changes[key];
+      delete hooks[key];
+      return { ...values, settings: changes, hooks };
+    });
+  }, []);
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type HookType = (value: any) => unknown;
+  return { update, setValue, removeValue };
+};
+
+export type HookType = (value: unknown) => unknown;
 
 export type FormKey = keyof FormValues;
 export type FormValues = {
   // Settings that saved to the backend
-  settings: LooseObject;
-  // Settings that saved to the frontend
-  // storages: LooseObject;
+  settings: Record<string, unknown>;
 
   // submit hooks
   hooks: StrictObject<HookType>;
 };
 
-export function runHooks(
+export const runHooks = (
   hooks: FormValues["hooks"],
   settings: FormValues["settings"],
-) {
+) => {
   for (const key in settings) {
     if (key in hooks) {
       LOG("info", "Running submit hook for", key, settings[key]);
@@ -83,4 +102,4 @@ export function runHooks(
       LOG("info", "Finish submit hook", key, settings[key]);
     }
   }
-}
+};

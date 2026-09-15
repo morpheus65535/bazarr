@@ -1,21 +1,22 @@
 import React, { ReactNode, useMemo } from "react";
 import { Box, Skeleton, Table, Text } from "@mantine/core";
+import { flexRender } from "@tanstack/react-table";
 import {
-  flexRender,
-  Header,
-  Row,
-  Table as TableInstance,
-} from "@tanstack/react-table";
+  AppHeader as Header,
+  AppRow as Row,
+  AppTable as TableInstance,
+  RowData,
+} from "@/components/tables/features";
 import { useIsLoading } from "@/contexts";
 import { usePageSize } from "@/utilities/storage";
 import styles from "@/components/tables/BaseTable.module.scss";
 
-export type BaseTableProps<T extends object> = {
+export type BaseTableProps<T extends RowData> = {
   instance: TableInstance<T>;
   tableStyles?: TableStyleProps<T>;
 };
 
-export interface TableStyleProps<T extends object> {
+export interface TableStyleProps<T extends RowData> {
   emptyText?: string;
   striped?: boolean;
   placeholder?: number;
@@ -25,31 +26,28 @@ export interface TableStyleProps<T extends object> {
   rowRenderer?: (row: Row<T>) => Nullable<React.JSX.Element>;
 }
 
-function DefaultHeaderRenderer<T extends object>(
+const DefaultHeaderRenderer = <T extends RowData>(
   headers: Header<T, unknown>[],
-): React.JSX.Element[] {
-  return headers.map((header) => (
+): React.JSX.Element[] =>
+  headers.map((header) => (
     <Table.Th style={{ whiteSpace: "nowrap" }} key={header.id}>
       {flexRender(header.column.columnDef.header, header.getContext())}
     </Table.Th>
   ));
-}
 
-function DefaultRowRenderer<T extends object>(
+const DefaultRowRenderer = <T extends RowData>(
   row: Row<T>,
-): React.JSX.Element | null {
-  return (
-    <Table.Tr key={row.id}>
-      {row.getVisibleCells().map((cell) => (
-        <Table.Td key={cell.id}>
-          {flexRender(cell.column.columnDef.cell, cell.getContext())}
-        </Table.Td>
-      ))}
-    </Table.Tr>
-  );
-}
+): React.JSX.Element | null => (
+  <Table.Tr key={row.id}>
+    {row.getVisibleCells().map((cell) => (
+      <Table.Td key={cell.id}>
+        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+      </Table.Td>
+    ))}
+  </Table.Tr>
+);
 
-export default function BaseTable<T extends object>(props: BaseTableProps<T>) {
+const BaseTable = <T extends RowData>(props: BaseTableProps<T>) => {
   const { instance, tableStyles } = props;
 
   const headersRenderer = tableStyles?.headersRenderer ?? DefaultHeaderRenderer;
@@ -70,10 +68,8 @@ export default function BaseTable<T extends object>(props: BaseTableProps<T>) {
   const pageSize = usePageSize();
   const isLoading = useIsLoading();
 
-  let body: ReactNode;
-
-  if (isLoading) {
-    body = Array(tableStyles?.placeholder ?? pageSize)
+  const body: ReactNode = isLoading ? (
+    Array(tableStyles?.placeholder ?? pageSize)
       .fill(0)
       .map((_, i) => (
         <Table.Tr key={i}>
@@ -81,20 +77,18 @@ export default function BaseTable<T extends object>(props: BaseTableProps<T>) {
             <Skeleton height={24}></Skeleton>
           </Table.Td>
         </Table.Tr>
-      ));
-  } else if (empty && tableStyles?.emptyText) {
-    body = (
-      <Table.Tr>
-        <Table.Td colSpan={colCount}>
-          <Text ta="center">{tableStyles.emptyText}</Text>
-        </Table.Td>
-      </Table.Tr>
-    );
-  } else {
-    body = instance.getRowModel().rows.map((row) => {
+      ))
+  ) : empty && tableStyles?.emptyText ? (
+    <Table.Tr>
+      <Table.Td colSpan={colCount}>
+        <Text ta="center">{tableStyles.emptyText}</Text>
+      </Table.Td>
+    </Table.Tr>
+  ) : (
+    instance.getRowModel().rows.map((row) => {
       return rowRenderer(row);
-    });
-  }
+    })
+  );
 
   return (
     <Box className={styles.container}>
@@ -114,4 +108,6 @@ export default function BaseTable<T extends object>(props: BaseTableProps<T>) {
       </Table>
     </Box>
   );
-}
+};
+
+export default BaseTable;

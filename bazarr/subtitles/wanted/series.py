@@ -58,8 +58,6 @@ def _wanted_episode(episode, providers_list, job_id=None):
                                      fallback_allowed=settings.general.use_whisper_fallback):
         if result:
             found_any = True
-            if isinstance(result, tuple) and len(result):
-                result = result[0]
             store_subtitles(episode.sonarrEpisodeId)
             history_log(1, episode.sonarrSeriesId, episode.sonarrEpisodeId, result)
             send_notifications(episode.sonarrSeriesId, episode.sonarrEpisodeId, result.message)

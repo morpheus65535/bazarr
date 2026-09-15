@@ -134,7 +134,7 @@ def manual_upload_subtitle(path, language, forced, hi, media_type, subtitle, fil
                                          formats=sub_format if use_original_format else ("srt",),
                                          path_decoder=force_unicode)
     except Exception as e:
-        logging.exception(f'BAZARR Error saving Subtitles file to disk for this file {path}: {repr(e)}')
+        logging.exception(f'BAZARR Error saving Subtitles file to disk for this file {path}: {str(e)}')
         return
 
     if len(saved_subtitles) < 1:
@@ -201,8 +201,6 @@ def manual_upload_subtitle(path, language, forced, hi, media_type, subtitle, fil
         logging.debug(f"BAZARR unable to process subtitles for this {'episode' if media_type == 'series' else 'movie'}:"
                       f" {path}")
     else:
-        if isinstance(result, tuple) and len(result):
-            result = result[0]
         provider = "manual"
         if media_type == 'series':
             store_subtitles(sonarrEpisodeId)

@@ -94,7 +94,7 @@ class MoviesHistory(Resource):
             .select_from(TableHistoryMovie) \
             .join(TableMovies) \
             .join(TableMoviesSubtitles,
-                  onclause=TableHistoryMovie.radarrId == TableMoviesSubtitles.radarrId) \
+                  onclause=TableHistoryMovie.radarrId == TableMoviesSubtitles.radarrId, isouter=True) \
             .join(blacklisted_subtitles, onclause=TableHistoryMovie.subs_id == blacklisted_subtitles.c.subs_id,
                   isouter=True) \
             .where(reduce(operator.and_, query_conditions)) \

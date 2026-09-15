@@ -16,7 +16,6 @@ import {
   faTrash,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { ColumnDef } from "@tanstack/react-table";
 import { isString, uniqBy } from "lodash";
 import {
   useEpisodesBySeriesId,
@@ -25,6 +24,7 @@ import {
 } from "@/apis/hooks";
 import { subtitlesTypeOptions } from "@/components/forms/uploadFormSelectorTypes";
 import { Action, Selector } from "@/components/inputs";
+import { AppColumnDef as ColumnDef } from "@/components/tables/features";
 import SimpleTable from "@/components/tables/SimpleTable";
 import TextPopover from "@/components/TextPopover";
 import { useModals, withModal } from "@/modules/modals";
@@ -190,11 +190,11 @@ const SeriesUploadForm: FunctionComponent<Props> = ({
     const color = useMemo<MantineColor | undefined>(() => {
       switch (validateResult?.state) {
         case "valid":
-          return "green";
+          return "success";
         case "warning":
-          return "yellow";
+          return "warning";
         case "error":
-          return "red";
+          return "danger";
         default:
           return undefined;
       }
@@ -344,7 +344,7 @@ const SeriesUploadForm: FunctionComponent<Props> = ({
             <Action
               label="Remove"
               icon={faTrash}
-              c="red"
+              c="danger"
               onClick={() => action.remove(index)}
             ></Action>
           );

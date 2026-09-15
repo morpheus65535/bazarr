@@ -20,8 +20,8 @@ except ImportError:
     except ImportError:
         import xml.etree.ElementTree as etree
 
-refined_providers = {'animetosho', 'jimaku'}
-providers_requiring_anidb_api = {'animetosho'}
+refined_providers = {'animetosho', 'animetosho_xyz', 'jimaku'}
+providers_requiring_anidb_api = {'animetosho', 'animetosho_xyz'}
 
 logger = logging.getLogger(__name__)
 

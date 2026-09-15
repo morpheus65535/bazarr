@@ -446,7 +446,7 @@ class GeminiTranslatorService:
         for line in translated_lines:
             if "content" not in line or "index" not in line:
                 break
-            if line["index"] not in [x["index"] for x in batch]:
+            if str(line["index"]) not in [str(x["index"]) for x in batch]:
                 raise Exception("Gemini has returned different indices.")
             if _dominant_strong_direction(line["content"]) == "rtl":
                 translated_subtitle[int(line["index"])].content = f"\u202b{line['content']}\u202c"

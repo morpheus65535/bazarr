@@ -3,11 +3,12 @@
 import gc
 import os
 import logging
-import ast
 
 from subliminal_patch import core, search_external_subtitles
+from sqlalchemy import not_, tuple_
 
 from languages.custom_lang import CustomLanguage
+from constants import HI_EXCLUDED
 from app.database import get_profiles_list, get_profile_cutoff, TableMovies, get_audio_profile_languages, database, \
     update, select, TableMoviesSubtitles, get_subtitles, delete, insert
 from languages.get_languages import alpha2_from_alpha3, get_language_set
@@ -17,6 +18,7 @@ from utilities.path_mappings import path_mappings
 from utilities.video_analyzer import embedded_subs_reader
 from app.event_handler import event_stream
 from subtitles.indexer.utils import guess_external_subtitles, get_external_subtitles_path
+from subtitles.pool import get_language_equals
 from app.jobs_queue import jobs_queue
 
 gc.enable()
@@ -84,6 +86,9 @@ def store_subtitles_movie(radarr_id, use_cache=True):
                     .where(TableMoviesSubtitles.path.is_(None))
                     .where(TableMoviesSubtitles.embedded_track_id.is_(None))
                 )
+
+                embedded_subtitles_list = []
+
                 if len(embedded_subtitles):
                     # Insert new embedded subtitles or update existing ones
                     embedded_stmt = insert(TableMoviesSubtitles).values(embedded_subtitles)
@@ -99,16 +104,20 @@ def store_subtitles_movie(radarr_id, use_cache=True):
                         index_where=TableMoviesSubtitles.path.is_(None)
                     )
                     database.execute(embedded_stmt)
+                    embedded_subtitles_list = [(x['embedded_track_id'], x['language'], x['forced'], x['hi']) for x in embedded_subtitles]
 
-                    # Delete prior indexed embedded subtitles that don't exist anymore
-                    embedded_subtitles_id_list = [x['embedded_track_id'] for x in embedded_subtitles]
-                    if len(embedded_subtitles_id_list):
-                        database.execute(
-                            delete(TableMoviesSubtitles)
-                            .where(TableMoviesSubtitles.radarrId == radarr_id)
-                            .where(TableMoviesSubtitles.path.is_(None))
-                            .where(TableMoviesSubtitles.embedded_track_id.not_in(embedded_subtitles_id_list))
-                        )
+                # Delete prior indexed embedded subtitles that don't exist anymore
+                database.execute(
+                    delete(TableMoviesSubtitles)
+                    .where(TableMoviesSubtitles.radarrId == radarr_id)
+                    .where(TableMoviesSubtitles.path.is_(None))
+                    .where(not_(tuple_(
+                        TableMoviesSubtitles.embedded_track_id,
+                        TableMoviesSubtitles.language,
+                        TableMoviesSubtitles.forced,
+                        TableMoviesSubtitles.hi,
+                    ).in_(embedded_subtitles_list)))
+                )
             except Exception:
                 logging.exception(
                     f"BAZARR error when trying to analyze this {os.path.splitext(mapped_path)[1]} file: "
@@ -151,7 +160,7 @@ def store_subtitles_movie(radarr_id, use_cache=True):
             subtitles = guess_external_subtitles(full_dest_folder_path, subtitles,
                                                  previously_indexed_subtitles_to_exclude)
         except Exception as e:
-            logging.exception(f"BAZARR unable to index external subtitles for this file {mapped_path}: {repr(e)}")
+            logging.exception(f"BAZARR unable to index external subtitles for this file {mapped_path}: {str(e)}")
         else:
             # For each external subtitle, store it in the database
             for subtitle, language in subtitles.items():
@@ -224,7 +233,7 @@ def store_subtitles_movie(radarr_id, use_cache=True):
     logging.debug(f'BAZARR ended subtitles indexing for this file: {mapped_path}')
 
 
-def list_missing_subtitles_movies(no=None):
+def list_missing_subtitles_movies(no=None, *args, **kwargs):  # job_id might be provided but isn't used for now
     stmt = select(TableMovies.radarrId,
                   TableMovies.profileId,
                   TableMovies.audio_language)
@@ -235,6 +244,9 @@ def list_missing_subtitles_movies(no=None):
         movies_subtitles = database.execute(stmt).all()
 
     use_embedded_subs = settings.general.use_embedded_subs
+
+    # Get language equals configuration
+    lang_equals = core._LanguageEquals(get_language_equals())
 
     matches_audio = lambda language: any(x['code2'] == language['language'] for x in get_audio_profile_languages(
                                 movie_subtitles.audio_language))
@@ -268,6 +280,33 @@ def list_missing_subtitles_movies(no=None):
                                               'forced': str(subtitles['forced']),
                                               'hi': str(subtitles['hi'])})
 
+            # Expand actual subtitles with language equals
+            # Convert code2 languages to Language objects for expansion
+            actual_subtitles_lang_set = set()
+            for sub in actual_subtitles_list:
+                try:
+                    lang_obj = core.Language.fromietf(sub['language'])
+                    lang_obj.forced = sub['forced'] == 'True'
+                    lang_obj.hi = sub['hi'] == 'True'
+                    actual_subtitles_lang_set.add(lang_obj)
+                except Exception:
+                    # If language parsing fails, add as-is
+                    actual_subtitles_lang_set.add(sub['language'])
+
+            # Use lang_equals to expand the actual subtitles set
+            expanded_actual_lang_set = lang_equals.check_set(actual_subtitles_lang_set)
+
+            # Convert expanded languages back to code2 format for comparison
+            expanded_actual_subtitles_list = []
+            for lang_obj in expanded_actual_lang_set:
+                if isinstance(lang_obj, core.Language):
+                    # check if lang_obj is a custom language
+                    custom = CustomLanguage.from_value(lang_obj, "language")
+                    # append the language to the list with the proper alpha2 code depending on whether it's custom or not
+                    expanded_actual_subtitles_list.append({'language': custom.alpha2 if custom else lang_obj.alpha2,
+                                                           'forced': 'True' if lang_obj.forced else 'False',
+                                                           'hi': 'True' if lang_obj.hi else 'False'})
+
             # check if cutoff is reached and skip any further check
             cutoff_met = False
             cutoff_temp_list = get_profile_cutoff(profile_id=movie_subtitles.profileId)
@@ -286,11 +325,14 @@ def list_missing_subtitles_movies(no=None):
                         cutoff_met = True
                     elif cutoff_language in actual_subtitles_list:
                         cutoff_met = True
-                    # HI is considered as good as normal
-                    elif (cutoff_language and
+                    elif cutoff_language in expanded_actual_subtitles_list:
+                        # Check against expanded actual subtitles (includes language equals)
+                        cutoff_met = True
+                    elif (cutoff_temp['hi'] == 'False' and cutoff_language and
                           {'language': cutoff_language['language'],
                            'forced': 'False',
                            'hi': 'True'} in actual_subtitles_list):
+                        # HI is considered as good as normal only if the language isn't set to exclude HI
                         cutoff_met = True
 
             if cutoff_met:
@@ -299,16 +341,27 @@ def list_missing_subtitles_movies(no=None):
                 # get difference between desired and existing subtitles
                 missing_subtitles_list = []
                 for item in desired_subtitles_list:
-                    if item not in actual_subtitles_list:
+                    # Check against both actual and expanded actual subtitles
+                    if item not in actual_subtitles_list and item not in expanded_actual_subtitles_list:
                         missing_subtitles_list.append(item)
 
-                # remove missing that have forced or hi subtitles for this language in existing
+                # get a dictionary of hi setting by language
+                hi_setting_by_language = {x['language']: x['hi'] for x in desired_subtitles_temp['items'] if x['forced'] == 'False'} if desired_subtitles_temp else {}
                 for item in actual_subtitles_list:
-                    if item['hi'] == 'True':
+                    if item['hi'] == 'True' and hi_setting_by_language.get(item['language']) != HI_EXCLUDED:
+                        # remove missing that have forced or hi subtitles for this language in existing (unless the language is set to exclude HI)
                         try:
                             missing_subtitles_list.remove({'language': item['language'],
                                                            'forced': 'False',
                                                            'hi': 'False'})
+                        except ValueError:
+                            pass
+                    elif item['hi'] == 'False' and hi_setting_by_language.get(item['language']) == HI_EXCLUDED:
+                        # remove explicitely excluded requested hi subtitles and existing hi subtitles
+                        try:
+                            missing_subtitles_list.remove({'language': item['language'],
+                                                           'forced': 'False',
+                                                           'hi': HI_EXCLUDED})
                         except ValueError:
                             pass
 

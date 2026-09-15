@@ -9,11 +9,9 @@ import FormUtils from "@/utilities/form";
 
 const TaskName = "Changing Color";
 
-function convertToAction(color: string) {
-  return `color(name=${color})`;
-}
+const convertToAction = (color: string) => `color(name=${color})`;
 
-export const colorOptions: SelectorOption<string>[] = [
+const colorOptions: SelectorOption<string>[] = [
   {
     label: "White",
     value: "white",
@@ -107,10 +105,15 @@ const ColorToolForm: FunctionComponent<Props> = ({ selections, onSubmit }) => {
         const action = convertToAction(color);
 
         selections.forEach((s) =>
-          task.create(s.path, TaskName, mutateAsync, {
-            action,
-            form: s,
-          }),
+          task.create(
+            s.path ?? s.mediaTitle ?? "Unknown subtitle",
+            TaskName,
+            mutateAsync,
+            {
+              action,
+              form: s,
+            },
+          ),
         );
 
         onSubmit?.();

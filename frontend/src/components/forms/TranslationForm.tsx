@@ -1,5 +1,12 @@
 import { FunctionComponent, useMemo } from "react";
-import { Alert, Button, Divider, LoadingOverlay, Stack } from "@mantine/core";
+import {
+  Alert,
+  Button,
+  Divider,
+  LoadingOverlay,
+  Stack,
+  Switch,
+} from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { showNotification } from "@mantine/notifications";
 import { isObject } from "lodash";
@@ -7,7 +14,7 @@ import { useSubtitleAction, useSystemSettings } from "@/apis/hooks";
 import { Selector } from "@/components/inputs";
 import { useModals, withModal } from "@/modules/modals";
 import { notification } from "@/modules/task";
-import { useSelectorOptions } from "@/utilities";
+import { toPython, useSelectorOptions } from "@/utilities";
 import FormUtils from "@/utilities/form";
 import { useEnabledLanguages } from "@/utilities/languages";
 
@@ -143,6 +150,7 @@ const TranslationForm: FunctionComponent<Props> = ({
   const form = useForm({
     initialValues: {
       language: null as Language.Info | null,
+      originalFormat: true,
     },
     validate: {
       language: FormUtils.validation(isObject, "Please select a language"),
@@ -200,14 +208,18 @@ const TranslationForm: FunctionComponent<Props> = ({
 
   return (
     <form
-      onSubmit={form.onSubmit(async ({ language }) => {
+      onSubmit={form.onSubmit(async ({ language, originalFormat }) => {
         if (language) {
           try {
             await Promise.all(
               selections.map((s) =>
                 mutateAsync({
                   action: "translate",
-                  form: { ...s, language: language.code2 },
+                  form: {
+                    ...s,
+                    language: language.code2,
+                    originalFormat: toPython(originalFormat),
+                  },
                 }),
               ),
             );
@@ -248,6 +260,11 @@ const TranslationForm: FunctionComponent<Props> = ({
           </Alert>
         )}
         <Selector {...options} {...form.getInputProps("language")}></Selector>
+        <Switch
+          label="Preserve original format"
+          description="Keep the source subtitle format (e.g. .ass, .vtt) instead of converting to .srt."
+          {...form.getInputProps("originalFormat", { type: "checkbox" })}
+        ></Switch>
         <Divider></Divider>
         <Button type="submit" loading={isPending}>
           Start

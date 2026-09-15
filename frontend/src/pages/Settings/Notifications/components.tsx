@@ -18,6 +18,7 @@ import MutateButton from "@/components/async/MutateButton";
 import { useModals, withModal } from "@/modules/modals";
 import { Card } from "@/pages/Settings/components";
 import { notificationsKey } from "@/pages/Settings/keys";
+import { HookType } from "@/pages/Settings/utilities/FormValues";
 import {
   useSettingValue,
   useUpdateArray,
@@ -122,7 +123,7 @@ const NotificationForm: FunctionComponent<Props> = ({
           </MutateButton>
           <Button
             hidden={payload === null}
-            color="red"
+            color="danger"
             onClick={() => {
               if (payload) {
                 onComplete({ ...payload, enabled: false });
@@ -130,9 +131,9 @@ const NotificationForm: FunctionComponent<Props> = ({
               modals.closeAll();
             }}
           >
-            Remove
+            Disable
           </Button>
-          <Button type="submit">Save</Button>
+          <Button type="submit">Confirm</Button>
         </Group>
       </Stack>
     </form>
@@ -160,7 +161,7 @@ export const NotificationView: FunctionComponent = () => {
 
   const updateWrapper = useCallback(
     (info: Settings.NotificationInfo) => {
-      update(info, notificationHook);
+      update(info, notificationHook as HookType);
     },
     [update],
   );

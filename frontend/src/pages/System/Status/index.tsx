@@ -43,7 +43,7 @@ interface InfoProps {
   children: ReactNode;
 }
 
-function Row(props: InfoProps): JSX.Element {
+const Row = (props: InfoProps): JSX.Element => {
   const { title, children } = props;
   return (
     <Grid columns={10}>
@@ -57,7 +57,7 @@ function Row(props: InfoProps): JSX.Element {
       </Grid.Col>
     </Grid>
   );
-}
+};
 
 interface IconProps {
   icon: IconDefinition;
@@ -65,7 +65,7 @@ interface IconProps {
   children: string;
 }
 
-function Label(props: IconProps): JSX.Element {
+const Label = (props: IconProps): JSX.Element => {
   const { icon, link, children } = props;
   return (
     <>
@@ -75,7 +75,7 @@ function Label(props: IconProps): JSX.Element {
       </Anchor>
     </>
   );
-}
+};
 
 interface InfoContainerProps {
   title: string;

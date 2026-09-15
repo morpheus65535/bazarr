@@ -1,0 +1,15 @@
+@use "sass:color";
+
+.deleteItem {
+  // Keep the red icon/label affordance (via `color="danger"`) but replace
+  // Mantine's strong `danger-light-hover` tint with a much subtler one:
+  // a faint red in light mode and a low-opacity red in dark mode.
+  &:hover,
+  &:focus,
+  &[data-menu-active] {
+    background-color: light-dark(
+      var(--mantine-color-danger-0),
+      #{color.adjust(bazarr.$color-danger-9, $alpha: -0.8)}
+    );
+  }
+}
