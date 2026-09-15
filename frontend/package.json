@@ -28,7 +28,7 @@
     "braces": "^3.0.3",
     "defu": "^6.1.6",
     "dompurify": "^3.4.12",
-    "fast-uri": "^4.1.0",
+    "fast-uri": "^4.1.4",
     "flatted": "^3.4.2",
     "follow-redirects": "^1.16.0",
     "picomatch": "^4.0.5",
