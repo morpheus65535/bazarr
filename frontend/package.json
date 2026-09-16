@@ -35,7 +35,7 @@
     "postcss": "^8.5.19",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
-    "react-router": "^8.2.0",
+    "react-router": "^8.4.0",
     "react-timeago": "^8.3.0",
     "rollup": "^4.63.3",
     "socket.io-client": "^4.8.3",
