@@ -37,7 +37,7 @@
     "react-dom": "^19.3.0",
     "react-router": "^8.2.0",
     "react-timeago": "^8.3.0",
-    "rollup": "^4.62.2",
+    "rollup": "^4.63.3",
     "socket.io-client": "^4.8.3",
     "socket.io-parser": "^4.2.6",
     "workbox-build": "^7.4.1"
