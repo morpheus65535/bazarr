@@ -107,6 +107,7 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     name: "TsukiHime",
     description:
       "Anime subtitle tracks extracted from the releases indexed by TsukiHime.",
+    requiredIntegration: "anidb",
   },
   {
     key: "animesubinfo",
