@@ -100,7 +100,8 @@ class TsukiHimeSubtitle(Subtitle):
     provider_name = "tsukihime"
     hash_verifiable = False
 
-    def __init__(self, language, download_url, release_info, release_id, codec, verified_matches):
+    def __init__(self, language, download_url, release_info, release_id, codec, verified_matches,
+                 uploader=None):
         super(TsukiHimeSubtitle, self).__init__(
             language,
             page_link=download_url,
@@ -111,6 +112,9 @@ class TsukiHimeSubtitle(Subtitle):
         self.release_id = release_id
         self.format = codec.lower()
         self.verified_matches = verified_matches
+        # TsukiHime has no uploader concept, so Bazarr's free-text Uploader column carries the
+        # streaming source of the release (e.g. "Crunchy Roll", "Netflix") to tell apart variants.
+        self.uploader = uploader
         self.matches = set()
 
     @property
@@ -253,13 +257,15 @@ class TsukiHimeProvider(Provider):
         if video.year and anime.get("release_year") == video.year:
             verified_matches.add("year")
 
+        release_info = entry.get("name") or file_data.get("filename", "")
         return self.subtitle_class(
             language,
             download_url,
-            release_info=entry.get("name") or file_data.get("filename", ""),
+            release_info=release_info,
             release_id=entry.get("id"),
             codec=codec,
             verified_matches=verified_matches,
+            uploader=self._streaming_service(video, release_info) or self._track_label(info.get("name")),
         )
 
     def _get_json(self, path):
@@ -294,6 +300,29 @@ class TsukiHimeProvider(Provider):
         if isinstance(value, (list, tuple)):
             return value[-1] if value else None
         return value
+
+    @staticmethod
+    def _streaming_service(video, release_info):
+        video_type = "episode" if isinstance(video, Episode) else "movie"
+        service = guessit(release_info, {"type": video_type}).get("streaming_service")
+        if isinstance(service, (list, tuple)):
+            return service[0] if service else None
+        return service
+
+    @staticmethod
+    def _track_label(name):
+        # A release can carry several full tracks for the same language (its own translation plus a
+        # streaming one, for instance). The track name is the only thing telling them apart, so it
+        # goes on the Uploader column too, unless it is just the language name.
+        label = (name or "").strip()
+        if not label:
+            return None
+        try:
+            if Language.fromname(label) is not None:
+                return None
+        except Exception:
+            pass
+        return label
 
     @classmethod
     def _entry_has_requested_language(cls, sublangs, requested_languages):
