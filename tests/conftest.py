@@ -2,8 +2,7 @@
 import os
 import pkgutil
 import sys
-
-import pkg_resources
+from importlib.metadata import distributions
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../libs/"))
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../bazarr/"))
@@ -36,8 +35,8 @@ def _get_conflicting(path):
     for _, package_name, _ in pkgutil.iter_modules([path]):
         libs_packages.append(package_name)
 
-    installed_packages = pkg_resources.working_set
-    package_names = [package.key for package in installed_packages]
+    installed_packages = distributions()
+    package_names = [package.name.lower() for package in installed_packages if package.name is not None]
     unique_package_names = set(package_names)
 
     conflicting = []
