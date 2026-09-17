@@ -142,7 +142,9 @@ def test_list_movie_subtitles_uses_animetosho_storage_and_best_file(movie, reque
     assert {"title", "year"} <= subtitle.get_matches(movie)
 
 
-def test_shared_attachment_across_releases_is_deduplicated(movie, requests_mock):
+def test_reused_attachment_across_releases_keeps_distinct_candidates(movie, requests_mock):
+    # TsukiHime reuses the same attachment across release associations, so the same download URL
+    # must stay as distinct candidates, otherwise the pool drops later ones by id (#3582).
     _mock_anime(requests_mock, movie)
     shared_url = f"{STORE}/attach/0000000A/10.xz"
     requests_mock.get(
@@ -172,9 +174,10 @@ def test_shared_attachment_across_releases_is_deduplicated(movie, requests_mock)
     with TsukiHimeProvider() as provider:
         subtitles = provider.list_subtitles(movie, {Language("eng")})
 
-    assert len(subtitles) == 1
-    assert subtitles[0].download_url == shared_url
-    assert subtitles[0].id == shared_url
+    assert len(subtitles) == 2
+    assert {s.download_url for s in subtitles} == {shared_url}
+    assert {s.release_id for s in subtitles} == {1, 2}
+    assert {s.id for s in subtitles} == {f"1:{shared_url}", f"2:{shared_url}"}
 
 
 @pytest.mark.parametrize(
@@ -275,6 +278,7 @@ def test_download_subtitle_decompresses_xz(requests_mock):
         Language("eng"),
         f"{STORE}/attach/00000001/1.xz",
         release_info="Example",
+        release_id=1,
         codec="srt",
         verified_matches={"title"},
     )
@@ -293,6 +297,7 @@ def test_download_subtitle_rejects_non_xz_response(requests_mock):
         Language("eng"),
         f"{STORE}/attach/00000001/1.xz",
         release_info="Example",
+        release_id=1,
         codec="srt",
         verified_matches={"title"},
     )

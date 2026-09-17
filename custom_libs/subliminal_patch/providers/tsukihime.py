@@ -95,7 +95,7 @@ class TsukiHimeSubtitle(Subtitle):
     provider_name = "tsukihime"
     hash_verifiable = False
 
-    def __init__(self, language, download_url, release_info, codec, verified_matches):
+    def __init__(self, language, download_url, release_info, release_id, codec, verified_matches):
         super(TsukiHimeSubtitle, self).__init__(
             language,
             page_link=download_url,
@@ -103,13 +103,17 @@ class TsukiHimeSubtitle(Subtitle):
         )
         self.download_url = download_url
         self.release_info = release_info
+        self.release_id = release_id
         self.format = codec.lower()
         self.verified_matches = verified_matches
         self.matches = set()
 
     @property
     def id(self):
-        return self.download_url
+        # TsukiHime reuses the same attachment (and therefore the same storage URL) across release
+        # associations, so the release has to stay part of the id. Otherwise the pool drops every
+        # association but the first and scoring cannot use their release-specific metadata.
+        return f"{self.release_id}:{self.download_url}"
 
     def get_matches(self, video):
         video_type = "episode" if isinstance(video, Episode) else "movie"
@@ -149,12 +153,12 @@ class TsukiHimeProvider(Provider):
             and self._entry_has_requested_language(entry.get("sublangs", []), requested_languages)
         ]
 
-        # Prefer the releases that best resemble the original media name so the subtitle kept when
-        # a track is shared across releases comes from the most relevant torrent.
+        # Prefer the releases that best resemble the original media name so, when the candidate cap
+        # is reached, the associations we keep come from the most relevant torrents first.
         entries.sort(key=lambda entry: self._entry_score(video, entry), reverse=True)
 
         subtitles = []
-        seen_urls = set()
+        seen_ids = set()
         for entry in entries[:MAX_TORRENTS]:
             entry_id = entry.get("id")
             if not entry_id:
@@ -169,8 +173,8 @@ class TsukiHimeProvider(Provider):
                     subtitle = self._subtitle_from_attachment(
                         video, anime, entry, file_data, attachment, requested_languages,
                     )
-                    if subtitle and subtitle.download_url not in seen_urls:
-                        seen_urls.add(subtitle.download_url)
+                    if subtitle and subtitle.id not in seen_ids:
+                        seen_ids.add(subtitle.id)
                         subtitles.append(subtitle)
 
         return subtitles
@@ -248,6 +252,7 @@ class TsukiHimeProvider(Provider):
             language,
             download_url,
             release_info=entry.get("name") or file_data.get("filename", ""),
+            release_id=entry.get("id"),
             codec=codec,
             verified_matches=verified_matches,
         )
