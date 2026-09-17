@@ -138,6 +138,48 @@ def test_postprocessing_windows_local_path_not_mangled():
     assert r'C:\Scripts\process.py' in args[0]
 
 
+def test_postprocessing_windows_end_to_end_paths_with_spaces_stay_single_tokens():
+    # Full pipeline: pp_replace renders the placeholders, postprocessing splits the
+    # result. Paths containing spaces (and parentheses) must survive both steps as
+    # single argv tokens, and no argument may be split on the embedded spaces.
+    command = r'C:\script\test.bat "{{episode}}" "{{subtitles}}" "{{subtitles_language_code3}}" "{{subtitles_language}}"'
+    episode = r'G:\asd\filmes2026\Tony (2026)\Tony (2026).mkv'
+    subtitles = r'G:\asd\filmes2026\Tony (2026)\Tony (2026).en.srt'
+
+    rendered = pp_replace(
+        command,
+        episode, subtitles,
+        'English', 'en', 'eng',
+        'English', 'en', 'eng',
+        100, '1', 'manual', 'user', 'unknown', 1, 1,
+    )
+
+    # pp_replace must have quoted every substituted value and left the executable alone
+    assert rendered == (
+        r'C:\script\test.bat '
+        f'"{episode}" "{subtitles}" "eng" "English"'
+    )
+
+    with mock.patch('os.name', 'nt'), \
+         mock.patch('ctypes.windll', create=True) as mock_windll, \
+         mock.patch('subprocess.Popen', return_value=_make_mock_process()) as mock_popen:
+        mock_windll.kernel32.GetConsoleOutputCP.return_value = 1252
+        postprocessing(rendered, episode)
+
+    args, kwargs = mock_popen.call_args
+    assert kwargs['shell'] is False
+    assert isinstance(args[0], list)
+    # Exactly five tokens: executable + four placeholders. shlex.split(posix=False)
+    # keeps the surrounding quotes, so the paths with spaces are not broken apart.
+    assert args[0] == [
+        r'C:\script\test.bat',
+        f'"{episode}"',
+        f'"{subtitles}"',
+        '"eng"',
+        '"English"',
+    ]
+
+
 def test_postprocessing_unix_uses_shell_false():
     command = 'python3 /usr/local/bin/process.py "/srv/media/subtitle.srt"'
     with mock.patch('os.name', 'posix'), \
