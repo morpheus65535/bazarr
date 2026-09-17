@@ -184,7 +184,8 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
         subtitle_path=downloaded_path,
         media_path=path,
         language=downloaded_language,
-        media_type=media_type
+        media_type=media_type,
+        action_type='add'
     )
 
     event_tracker.track_subtitles(provider=downloaded_provider, action=action, language=downloaded_language)
