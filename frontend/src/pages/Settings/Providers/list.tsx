@@ -210,6 +210,11 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
         name: "Fallback language",
         defaultValue: "en",
       },
+      {
+        type: "switch",
+        key: "use_mediainfo",
+        name: "Use mediainfo for language detection (detects region variants such as pt-BR that ffprobe may miss; requires the mediainfo binary)",
+      },
     ],
     message:
       "Warning for cloud users: this provider needs to read the entire file in order to extract subtitles.",
