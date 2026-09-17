@@ -68,6 +68,11 @@ _HI_MARKER_RE = re.compile(
     re.IGNORECASE,
 )
 
+# Tracks holding only signs and songs are frequently muxed without the forced disposition flag, so
+# the track name is the only hint. Treat them like forced ones instead of offering them as full
+# subtitles, e.g. "English [Signs]" or "Signs & Songs".
+_SIGNS_MARKER_RE = re.compile(r"\bsigns?\b", re.IGNORECASE)
+
 
 def _language_from_code(code):
     if not code:
@@ -227,7 +232,7 @@ class TsukiHimeProvider(Provider):
             return None
 
         name = info.get("name", "")
-        if bool(info.get("forced")):
+        if bool(info.get("forced")) or _SIGNS_MARKER_RE.search(name):
             language = Language.rebuild(language, forced=True)
         elif _HI_MARKER_RE.search(name):
             language = Language.rebuild(language, hi=True)

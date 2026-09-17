@@ -241,6 +241,49 @@ def test_forced_track_is_propagated_to_the_language(episode, requests_mock):
     assert hi[0].download_url == f"{STORE}/attach/00000002/2.xz"
 
 
+def test_track_name_drives_forced_and_hi_classification(episode, requests_mock):
+    # Signs tracks are often muxed without the forced disposition flag; the name is the only hint,
+    # so an unflagged "Signs" track must not be offered as a full subtitle (nor should a CC one).
+    _mock_anime(requests_mock, episode)
+    requests_mock.get(
+        f"{API}/animes/2086/episodes/1171",
+        json={
+            "results": [
+                {"id": 301, "name": "One.Piece.S01E1171", "state": "completed",
+                 "sublangs": ["en"], "source_date": 1},
+            ],
+        },
+    )
+    requests_mock.get(
+        f"{API}/torrents/301",
+        json={
+            "files": [
+                {
+                    "filename": "One.Piece.S01E1171.mkv",
+                    "attachments": [
+                        _attachment(1, "en", "ass", name="English [Signs]"),
+                        _attachment(2, "en", "ass", name="English (Signs & Songs)"),
+                        _attachment(3, "en", "ass", name="English"),
+                        _attachment(4, "en", "ass", name="English [CC]"),
+                    ],
+                },
+            ],
+        },
+    )
+
+    with TsukiHimeProvider() as provider:
+        normal = provider.list_subtitles(episode, {Language("eng")})
+        forced = provider.list_subtitles(episode, {Language("eng", forced=True)})
+        hi = provider.list_subtitles(episode, {Language("eng", hi=True)})
+
+    assert [s.download_url for s in normal] == [f"{STORE}/attach/00000003/3.xz"]
+    assert {s.download_url for s in forced} == {
+        f"{STORE}/attach/00000001/1.xz",
+        f"{STORE}/attach/00000002/2.xz",
+    }
+    assert [s.download_url for s in hi] == [f"{STORE}/attach/00000004/4.xz"]
+
+
 def test_uncached_native_subtitle_is_skipped(episode, requests_mock):
     _mock_anime(requests_mock, episode)
     requests_mock.get(
