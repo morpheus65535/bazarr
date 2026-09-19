@@ -284,6 +284,91 @@ def test_track_name_drives_forced_and_hi_classification(episode, requests_mock):
     assert [s.download_url for s in hi] == [f"{STORE}/attach/00000004/4.xz"]
 
 
+@pytest.mark.parametrize(
+    "release_name,expected_suffix",
+    [
+        # The streaming source belongs in the release info so alike releases stay distinguishable
+        # without repurposing the Uploader column.
+        ("[ToonsHub] Mushoku Tensei Jobless Reincarnation S03E03 1080p CR WEB-DL AAC2.0 H.264", "Crunchy Roll"),
+        ("[ToonsHub] Mushoku Tensei Jobless Reincarnation S03E03 1080p NF WEB-DL AAC2.0 H.264", "Netflix"),
+        ("[SubsPlease] Mushoku Tensei S3 - 03 (1080p) [8488B15C].mkv", None),
+    ],
+)
+def test_streaming_service_is_exposed_in_release_info(episode, requests_mock, release_name, expected_suffix):
+    _mock_anime(requests_mock, episode)
+    requests_mock.get(
+        f"{API}/animes/2086/episodes/1171",
+        json={
+            "results": [
+                {"id": 301, "name": release_name, "state": "completed",
+                 "sublangs": ["en"], "source_date": 1},
+            ],
+        },
+    )
+    requests_mock.get(
+        f"{API}/torrents/301",
+        json={
+            "files": [
+                {
+                    "filename": "One.Piece.S01E1171.mkv",
+                    "attachments": [_attachment(1, "en", "srt")],
+                },
+            ],
+        },
+    )
+
+    with TsukiHimeProvider() as provider:
+        subtitles = provider.list_subtitles(episode, {Language("eng")})
+
+    assert len(subtitles) == 1
+    subtitle = subtitles[0]
+    assert subtitle.uploader is None
+    if expected_suffix:
+        assert subtitle.release_info == f"[{expected_suffix}] {release_name}"
+    else:
+        assert subtitle.release_info == release_name
+
+
+def test_same_release_tracks_are_distinguished_in_release_info(episode, requests_mock):
+    # [Sonomama]-style releases bundle several full tracks for the same language under one release
+    # name; the track name is appended to the release info so the rows are not identical.
+    _mock_anime(requests_mock, episode)
+    requests_mock.get(
+        f"{API}/animes/2086/episodes/1171",
+        json={
+            "results": [
+                {"id": 301, "name": "[Sonomama] One Piece - S01E1171", "state": "completed",
+                 "sublangs": ["en"], "source_date": 1},
+            ],
+        },
+    )
+    requests_mock.get(
+        f"{API}/torrents/301",
+        json={
+            "files": [
+                {
+                    "filename": "One.Piece.S01E1171.mkv",
+                    "attachments": [
+                        _attachment(1, "en", "ass", name="[Sonomama]"),
+                        _attachment(2, "en", "ass", name="Crunchyroll"),
+                        _attachment(3, "en", "ass", name="English"),
+                    ],
+                },
+            ],
+        },
+    )
+
+    with TsukiHimeProvider() as provider:
+        subtitles = provider.list_subtitles(episode, {Language("eng")})
+
+    assert {s.release_info for s in subtitles} == {
+        "[[Sonomama]] [Sonomama] One Piece - S01E1171",
+        "[Crunchyroll] [Sonomama] One Piece - S01E1171",
+        "[Sonomama] One Piece - S01E1171",
+    }
+    assert all(s.uploader is None for s in subtitles)
+
+
 def test_uncached_native_subtitle_is_skipped(episode, requests_mock):
     _mock_anime(requests_mock, episode)
     requests_mock.get(

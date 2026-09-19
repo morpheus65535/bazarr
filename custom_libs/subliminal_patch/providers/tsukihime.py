@@ -253,10 +253,17 @@ class TsukiHimeProvider(Provider):
         if video.year and anime.get("release_year") == video.year:
             verified_matches.add("year")
 
+        release_info = entry.get("name") or file_data.get("filename", "")
+        difference = self._streaming_service(video, release_info) or self._track_label(info.get("name"))
+        if difference:
+            # Releases that differ only by streaming source or by the track they carry would show
+            # as identical rows in the manual search list, so surface that difference in the info.
+            release_info = f"[{difference}] {release_info}"
+
         return self.subtitle_class(
             language,
             download_url,
-            release_info=entry.get("name") or file_data.get("filename", ""),
+            release_info=release_info,
             release_id=entry.get("id"),
             codec=codec,
             verified_matches=verified_matches,
@@ -294,6 +301,29 @@ class TsukiHimeProvider(Provider):
         if isinstance(value, (list, tuple)):
             return value[-1] if value else None
         return value
+
+    @staticmethod
+    def _streaming_service(video, release_info):
+        video_type = "episode" if isinstance(video, Episode) else "movie"
+        service = guessit(release_info, {"type": video_type}).get("streaming_service")
+        if isinstance(service, (list, tuple)):
+            return service[0] if service else None
+        return service
+
+    @staticmethod
+    def _track_label(name):
+        # A release can carry several full tracks for the same language (its own translation plus a
+        # streaming one, for instance) under an identical release name. The track name is the only
+        # thing telling them apart, so append it unless it is just the language name.
+        label = (name or "").strip()
+        if not label:
+            return None
+        try:
+            if Language.fromname(label) is not None:
+                return None
+        except Exception:
+            pass
+        return label
 
     @classmethod
     def _entry_has_requested_language(cls, sublangs, requested_languages):
