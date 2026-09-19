@@ -2,6 +2,8 @@
 
 import logging
 import os
+import shlex
+import subprocess
 from unittest import mock
 
 import pytest
@@ -40,44 +42,44 @@ def _make_mock_process():
 @pytest.mark.parametrize("episode,subtitles,expected_fragment", [
     # Linux path – no backslashes
     ('/home/user/Videos/show.mkv', '/home/user/Videos/show.en.srt',
-     '"/home/user/Videos/show.mkv"'),
+     '/home/user/Videos/show.mkv'),
     # Windows local path – backslash separators must not cause re.PatternError
     (r'C:\Videos\show.mkv', r'C:\Videos\show.en.srt',
-     r'"C:\Videos\show.mkv"'),
+     r'C:\Videos\show.mkv'),
     # Windows UNC path – \\ prefix and backslash-letter sequences like \y
     (r'\\Server\y\show.mkv', r'\\Server\y\show.en.srt',
-     r'"\\Server\y\show.mkv"'),
+     r'\\Server\y\show.mkv'),
     # UNC path with different share letters
     (r'\\NAS\media\show.mkv', r'\\NAS\media\show.en.srt',
-     r'"\\NAS\media\show.mkv"'),
+     r'\\NAS\media\show.mkv'),
 ])
 def test_pp_replace_does_not_raise_and_substitutes(episode, subtitles, expected_fragment):
     # Must not raise re.PatternError: bad escape
     result = _replace(episode, subtitles)
-    assert expected_fragment in result
+    assert expected_fragment in ' '.join(result)
 
 
 def test_pp_replace_unc_subtitle_path_preserved():
     # The leading \\ of a UNC subtitle path must survive substitution intact
     result = _replace(r'\\Server\drive\show.mkv', r'\\Server\drive\show.en.srt')
-    assert r'"\\Server\drive\show.en.srt"' in result
+    assert r'\\Server\drive\show.en.srt' in ' '.join(result)
 
 
 def test_pp_replace_unc_directory_placeholder():
     result = _replace(r'\\Server\y\show.mkv')
     expected_dir = os.path.dirname(r'\\Server\y\show.mkv')
-    assert f'"{expected_dir}"' in result
+    assert expected_dir in ' '.join(result)
 
 
 def test_pp_replace_linux_directory_placeholder():
     result = _replace('/srv/media/show.mkv')
-    assert '"/srv/media"' in result
+    assert '/srv/media' in ' '.join(result)
 
 
 def test_pp_replace_windows_local_directory_placeholder():
     result = _replace(r'C:\Videos\show.mkv')
     expected_dir = os.path.dirname(r'C:\Videos\show.mkv')
-    assert f'"{expected_dir}"' in result
+    assert expected_dir in ' '.join(result)
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -97,15 +99,16 @@ def test_postprocessing_windows_uses_shell_false():
 
 
 def test_postprocessing_windows_passes_args_as_list():
-    # shlex.split(posix=False) tokenises without treating backslashes as escapes:
-    # drive letters and UNC paths survive intact and quotes are preserved, so the
-    # full command reaches Popen as an unmangled argv list.
+    # pp_replace returns a list of command arguments which is passed directly to Popen.
+    # shlex.split(posix=False) is used to parse the command template into tokens,
+    # then placeholders are replaced with their values, and the result is a list.
     command = r'python3 C:\Scripts\process.py "\\Server\y\subtitle.srt"'
+    command_list = subprocess.list2cmdline([command])
     with mock.patch('os.name', 'nt'), \
          mock.patch('ctypes.windll', create=True) as mock_windll, \
          mock.patch('subprocess.Popen', return_value=_make_mock_process()) as mock_popen:
         mock_windll.kernel32.GetConsoleOutputCP.return_value = 1252
-        postprocessing(command, r'\\Server\y\show.mkv')
+        postprocessing(shlex.split(command, posix=False), r'\\Server\y\show.mkv')
 
     args, _ = mock_popen.call_args
     assert isinstance(args[0], list)
@@ -146,19 +149,23 @@ def test_postprocessing_windows_end_to_end_paths_with_spaces_stay_single_tokens(
     episode = r'G:\asd\filmes2026\Tony (2026)\Tony (2026).mkv'
     subtitles = r'G:\asd\filmes2026\Tony (2026)\Tony (2026).en.srt'
 
-    rendered = pp_replace(
-        command,
-        episode, subtitles,
-        'English', 'en', 'eng',
-        'English', 'en', 'eng',
-        100, '1', 'manual', 'user', 'unknown', 1, 1,
-    )
+    with mock.patch('os.name', 'nt'):
+        rendered = pp_replace(
+            command,
+            episode, subtitles,
+            'English', 'en', 'eng',
+            'English', 'en', 'eng',
+            100, '1', 'manual', 'user', 'unknown', 1, 1,
+        )
 
-    # pp_replace must have quoted every substituted value and left the executable alone
-    assert rendered == (
-        r'C:\script\test.bat '
-        f'"{episode}" "{subtitles}" "eng" "English"'
-    )
+    # pp_replace must have substituted every placeholder with the executable alone unquoted
+    assert rendered == [
+        r'C:\script\test.bat',
+        episode,
+        subtitles,
+        'eng',
+        'English',
+    ]
 
     with mock.patch('os.name', 'nt'), \
          mock.patch('ctypes.windll', create=True) as mock_windll, \
@@ -169,14 +176,14 @@ def test_postprocessing_windows_end_to_end_paths_with_spaces_stay_single_tokens(
     args, kwargs = mock_popen.call_args
     assert kwargs['shell'] is False
     assert isinstance(args[0], list)
-    # Exactly five tokens: executable + four placeholders. shlex.split(posix=False)
-    # keeps the surrounding quotes, so the paths with spaces are not broken apart.
+    # Exactly five tokens: executable + four placeholders. Since pp_replace returns
+    # a list, each argument is separate and is passed directly to Popen without quotes.
     assert args[0] == [
         r'C:\script\test.bat',
-        f'"{episode}"',
-        f'"{subtitles}"',
-        '"eng"',
-        '"English"',
+        episode,
+        subtitles,
+        'eng',
+        'English',
     ]
 
 
@@ -194,7 +201,7 @@ def test_postprocessing_unix_passes_args_as_list():
     command = 'python3 /usr/local/bin/process.py "/srv/media/subtitle.srt"'
     with mock.patch('os.name', 'posix'), \
          mock.patch('subprocess.Popen', return_value=_make_mock_process()) as mock_popen:
-        postprocessing(command, '/srv/media/show.mkv')
+        postprocessing(shlex.split(command), '/srv/media/show.mkv')
 
     args, _ = mock_popen.call_args
     assert isinstance(args[0], list)
@@ -206,7 +213,7 @@ def test_postprocessing_unix_quoted_path_with_spaces():
     command = 'python3 /usr/local/bin/process.py "/srv/my media/subtitle.srt"'
     with mock.patch('os.name', 'posix'), \
          mock.patch('subprocess.Popen', return_value=_make_mock_process()) as mock_popen:
-        postprocessing(command, '/srv/my media/show.mkv')
+        postprocessing(shlex.split(command), '/srv/my media/show.mkv')
 
     args, _ = mock_popen.call_args
     assert args[0] == ['python3', '/usr/local/bin/process.py', '/srv/my media/subtitle.srt']
@@ -321,9 +328,9 @@ _WINDOWS_INJECTION_PAYLOADS = [
 
 @pytest.mark.parametrize("payload", _WINDOWS_INJECTION_PAYLOADS)
 def test_release_info_windows_metacharacters_stay_single_token(payload):
-    # pp_replace wraps the value in double quotes; shlex.split(posix=False) keeps
-    # those quotes and yields the whole payload as one token, so the cmd.exe
-    # metacharacters never become separate argv entries a shell could act on.
+    # pp_replace returns the payload as a separate list element, so the cmd.exe
+    # metacharacters never become separate argv entries. Popen with shell=False
+    # passes each element as a separate argument to the program.
     command = _replace_release_info(payload)
     with mock.patch('os.name', 'nt'), \
          mock.patch('ctypes.windll', create=True) as mock_windll, \
@@ -333,7 +340,7 @@ def test_release_info_windows_metacharacters_stay_single_token(payload):
 
     args, kwargs = mock_popen.call_args
     assert kwargs['shell'] is False
-    assert args[0] == ['cmd', f'"{payload}"']
+    assert args[0] == ['cmd', payload]
 
 
 # ──────────────────────────────────────────────────────────────────────────────

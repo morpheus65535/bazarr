@@ -121,7 +121,7 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
                            job_id=job_id)
 
     if use_postprocessing is True:
-        command = pp_replace(postprocessing_cmd, path, downloaded_path, downloaded_language, downloaded_language_code2,
+        args = pp_replace(postprocessing_cmd, path, downloaded_path, downloaded_language, downloaded_language_code2,
                              downloaded_language_code3, audio_language, audio_language_code2, audio_language_code3,
                              percent_score, subtitle_id, downloaded_provider, uploader, release_info, series_id,
                              episode_id)
@@ -134,8 +134,8 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
             pp_threshold = int(settings.general.postprocessing_threshold_movie)
 
         if not use_pp_threshold or (use_pp_threshold and percent_score < pp_threshold):
-            logging.debug(f"BAZARR Using post-processing command: {command}")
-            postprocessing(command, path)
+            logging.debug(f"BAZARR Using post-processing command: {args}")
+            postprocessing(args, path)
             set_chmod(subtitles_path=downloaded_path)
         else:
             logging.debug(f"BAZARR post-processing skipped because subtitles score isn't below this "
