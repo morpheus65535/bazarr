@@ -315,6 +315,7 @@ validators = [
     Validator('opensubtitlescom.include_machine_translated', must_exist=True, default=False, is_type_of=bool),
 
     # napiprojekt section
+    Validator('napiprojekt.hash_only', must_exist=True, default=False, is_type_of=bool),
     Validator('napiprojekt.only_authors', must_exist=True, default=False, is_type_of=bool),
     Validator('napiprojekt.only_real_names', must_exist=True, default=False, is_type_of=bool),
 
