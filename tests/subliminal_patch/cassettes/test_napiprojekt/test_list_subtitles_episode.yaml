@@ -11,7 +11,7 @@ interactions:
       User-Agent:
       - Subliminal/2.1
     method: GET
-    uri: http://napiprojekt.pl/unit_napisy/dl.php?v=dreambox&kolejka=false&nick=&pass=&napios=Linux&l=PL&f=fe93bb3a7743c39e12c8d7c4a864dff1&t=8410a
+    uri: https://napiprojekt.pl/unit_napisy/dl.php?v=dreambox&kolejka=false&nick=&pass=&napios=Linux&l=PL&f=fe93bb3a7743c39e12c8d7c4a864dff1&t=8410a
   response:
     body:
       string: !!binary |
