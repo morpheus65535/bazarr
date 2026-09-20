@@ -5,7 +5,7 @@ import ast
 from functools import reduce
 
 from api.swaggerui import subtitles_language_model
-from app.database import (TableEpisodes, TableShows, TableHistory, TableBlacklist, database, select, func,
+from app.database import (TableEpisodes, TableShows, TableHistory, TableBlacklist, database, select, distinct,
                           TableEpisodesSubtitles, func)
 from subtitles.upgrade import get_upgradable_episode_subtitles,  _language_still_desired
 
@@ -96,6 +96,7 @@ class EpisodesHistory(Resource):
                       TableHistory.not_matched,
                       TableEpisodesSubtitles.path.label('external_subtitles'),
                       blacklisted_subtitles.c.subs_id.label('blacklisted')) \
+            .distinct(TableHistory.id) \
             .select_from(TableHistory) \
             .join(TableShows, onclause=TableHistory.sonarrSeriesId == TableShows.sonarrSeriesId) \
             .join(TableEpisodes, onclause=TableHistory.sonarrEpisodeId == TableEpisodes.sonarrEpisodeId) \
