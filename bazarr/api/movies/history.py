@@ -7,7 +7,7 @@ import ast
 from flask_restx import Resource, Namespace, reqparse, fields, marshal
 from functools import reduce
 
-from app.database import (TableMovies, TableHistoryMovie, TableBlacklistMovie, database, select, func, distinct,
+from app.database import (TableMovies, TableHistoryMovie, TableBlacklistMovie, database, select, func,
                           TableMoviesSubtitles)
 from subtitles.upgrade import get_upgradable_movies_subtitles, _language_still_desired
 from api.swaggerui import subtitles_language_model

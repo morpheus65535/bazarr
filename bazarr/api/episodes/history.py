@@ -5,7 +5,7 @@ import ast
 from functools import reduce
 
 from api.swaggerui import subtitles_language_model
-from app.database import (TableEpisodes, TableShows, TableHistory, TableBlacklist, database, select, distinct,
+from app.database import (TableEpisodes, TableShows, TableHistory, TableBlacklist, database, select,
                           TableEpisodesSubtitles, func)
 from subtitles.upgrade import get_upgradable_episode_subtitles,  _language_still_desired
 
