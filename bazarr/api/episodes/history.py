@@ -67,6 +67,11 @@ class EpisodesHistory(Resource):
                                        TableBlacklist.subs_id) \
             .subquery()
 
+        external_subtitles_sq = select(
+            TableEpisodesSubtitles.sonarrEpisodeId,
+            func.min(TableEpisodesSubtitles.path).label('path')
+        ).group_by(TableEpisodesSubtitles.sonarrEpisodeId).subquery()
+
         query_conditions = [(TableEpisodes.title.is_not(None))]
         if episodeid:
             query_conditions.append((TableEpisodes.sonarrEpisodeId == episodeid))
@@ -94,18 +99,16 @@ class EpisodesHistory(Resource):
                       TableShows.profileId,
                       TableHistory.matched,
                       TableHistory.not_matched,
-                      TableEpisodesSubtitles.path.label('external_subtitles'),
+                      external_subtitles_sq.c.path.label('external_subtitles'),
                       blacklisted_subtitles.c.subs_id.label('blacklisted')) \
-            .distinct(TableHistory.id) \
             .select_from(TableHistory) \
             .join(TableShows, onclause=TableHistory.sonarrSeriesId == TableShows.sonarrSeriesId) \
             .join(TableEpisodes, onclause=TableHistory.sonarrEpisodeId == TableEpisodes.sonarrEpisodeId) \
-            .join(TableEpisodesSubtitles,
-                  onclause=TableHistory.sonarrEpisodeId == TableEpisodesSubtitles.sonarrEpisodeId, isouter=True) \
+            .join(external_subtitles_sq,
+                  onclause=TableHistory.sonarrEpisodeId == external_subtitles_sq.c.sonarrEpisodeId, isouter=True) \
             .join(blacklisted_subtitles, onclause=TableHistory.subs_id == blacklisted_subtitles.c.subs_id,
                   isouter=True) \
             .where(reduce(operator.and_, query_conditions)) \
-            .where(TableEpisodesSubtitles.path.is_not(None)) \
             .order_by(TableHistory.timestamp.desc())
         if length > 0:
             stmt = stmt.limit(length).offset(start)
