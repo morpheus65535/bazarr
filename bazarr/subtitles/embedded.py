@@ -279,7 +279,8 @@ def extract_embedded_subtitle(subtitles_id, media_type, job_id=None):
         subtitle_path=subtitles_path,
         media_path=video_path,
         language=language,
-        media_type=media_type
+        media_type=media_type,
+        action_type='add'
     )
 
     logging.debug(f"BAZARR extracted embedded subtitles to {subtitles_path}")
