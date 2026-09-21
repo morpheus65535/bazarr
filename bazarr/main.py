@@ -46,6 +46,7 @@ from app.notifier import update_notifier  # noqa E402
 from languages.get_languages import load_language_in_db  # noqa E402
 from app.jobs_queue import jobs_queue  # noqa E402
 from app.signalr_client import sonarr_signalr_client, radarr_signalr_client  # noqa E402
+from sportarr.sse_client import sportarr_sse_client  # noqa E402
 from app.server import webserver, app  # noqa E402
 from app.announcements import get_announcements_to_file  # noqa E402
 from utilities.central import stop_bazarr  # noqa E402
@@ -94,6 +95,10 @@ if not args.no_signalr:
         radarr_signalr_thread = Thread(target=radarr_signalr_client.start)
         radarr_signalr_thread.daemon = True
         radarr_signalr_thread.start()
+    if settings.general.use_sportarr:
+        sportarr_sse_thread = Thread(target=sportarr_sse_client.start)
+        sportarr_sse_thread.daemon = True
+        sportarr_sse_thread.start()
 
 
 if __name__ == "__main__":
