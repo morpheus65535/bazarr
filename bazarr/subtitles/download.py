@@ -20,7 +20,7 @@ from languages.get_languages import alpha3_from_alpha2, alpha2_from_alpha3
 
 from app.get_providers import blacklist_subtitle
 
-from .pool import update_pools, _get_pool
+from .pool import update_pools, _get_pool, _get_embedded_pool
 from .utils import get_video, _get_lang_obj, _get_scores, _set_forced_providers
 from .processing import process_subtitle
 
@@ -86,13 +86,35 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
                             break
 
                     try:
-                        downloaded_subtitles = download_best_subtitles(videos={video},
-                                                                       languages={language},
-                                                                       pool_instance=pool,
-                                                                       min_score=int(min_score),
-                                                                       hearing_impaired=hi_mode,
-                                                                       use_original_format=original_format in (1, "1", "True", True),
-                                                                       fallback_allowed=fallback_allowed)
+                        downloaded_subtitles = None
+
+                        # When "prefer embedded" is enabled, search the embedded
+                        # provider first: an embedded track comes from the media
+                        # file itself, so it always matches the release. If it
+                        # satisfies this language, skip the external providers.
+                        if settings.embeddedsubtitles.prefer_embedded:
+                            embedded_pool = _get_embedded_pool(media_type, profile_id)
+                            if embedded_pool is not None:
+                                downloaded_subtitles = download_best_subtitles(
+                                    videos={video},
+                                    languages={language},
+                                    pool_instance=embedded_pool,
+                                    min_score=int(min_score),
+                                    hearing_impaired=hi_mode,
+                                    use_original_format=original_format in (1, "1", "True", True),
+                                    fallback_allowed=fallback_allowed)
+                                if downloaded_subtitles and any(downloaded_subtitles.values()):
+                                    logging.debug(f"BAZARR found an embedded subtitle for "
+                                                  f"{parse_language_object(language)}; skipping external providers.")
+
+                        if not (downloaded_subtitles and any(downloaded_subtitles.values())):
+                            downloaded_subtitles = download_best_subtitles(videos={video},
+                                                                           languages={language},
+                                                                           pool_instance=pool,
+                                                                           min_score=int(min_score),
+                                                                           hearing_impaired=hi_mode,
+                                                                           use_original_format=original_format in (1, "1", "True", True),
+                                                                           fallback_allowed=fallback_allowed)
                     except Exception as e:
                         logging.exception(f'BAZARR Error downloading Subtitles for this file {path}: {str(e)}')
                         return None
