@@ -1,4 +1,4 @@
-import { FunctionComponent, useMemo, ReactNode } from "react";
+import { FunctionComponent, ReactNode, useMemo } from "react";
 import {
   Badge,
   Card,
@@ -16,34 +16,23 @@ import { QueryOverlay } from "@/components/async";
 import { BuildKey } from "@/utilities";
 
 const parseIssueLinks = (text: string): ReactNode[] => {
-  const parts: ReactNode[] = [];
-  const issueRegex = /#(\d+)/g;
-  let lastIndex = 0;
-  let match;
-
-  while ((match = issueRegex.exec(text)) !== null) {
-    if (match.index > lastIndex) {
-      parts.push(text.substring(lastIndex, match.index));
+  const parts = text.split(/(#\d+)/);
+  return parts.map((part, idx) => {
+    if (/^#\d+$/.test(part)) {
+      const issueNumber = part.slice(1);
+      return (
+        <a
+          key={idx}
+          href={`https://github.com/morpheus65535/bazarr/issues/${issueNumber}`}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {part}
+        </a>
+      );
     }
-    const issueNumber = match[1];
-    parts.push(
-      <a
-        key={`issue-${issueNumber}`}
-        href={`https://github.com/morpheus65535/bazarr/issues/${issueNumber}`}
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        #{issueNumber}
-      </a>,
-    );
-    lastIndex = issueRegex.lastIndex;
-  }
-
-  if (lastIndex < text.length) {
-    parts.push(text.substring(lastIndex));
-  }
-
-  return parts.length > 0 ? parts : [text];
+    return part;
+  });
 };
 
 const SystemReleasesView: FunctionComponent = () => {
