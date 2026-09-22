@@ -126,6 +126,19 @@ class SubsSabBzSubtitle(Subtitle):
         if isinstance(video, Movie):
             if video.imdb_id and self.imdb_id == video.imdb_id:
                 self.matches.add('imdb_id')
+                self.matches.add('title')
+
+            clean_video_title = unicodedata.normalize('NFKD', getattr(video, 'title', '')).encode('ascii', 'ignore').decode('ascii').strip()
+            if not clean_video_title and video.name:
+                parent_folder = os.path.basename(os.path.dirname(video.name))
+                folder_title = re.sub(r'\s*\(\d{4}\).*$', '', parent_folder).strip()
+                if folder_title and folder_title.lower() in self.title.lower():
+                    self.matches.add('title')
+        elif isinstance(video, Episode):
+            video_series_imdb = getattr(video, 'series_imdb_id', None) or getattr(video, 'imdb_id', None)
+            if video_series_imdb and self.imdb_id == video_series_imdb:
+                self.matches.add('series_imdb_id')
+                self.matches.add('series')
 
         self.matches |= guess_matches(video, guessit(self.title, {'type': self.type}))
 
@@ -182,8 +195,37 @@ class SubsSabBzProvider(Provider):
             params['yr'] = video.year
             title = sanitize(fix_movie_naming(video.title), {'\''})
 
-        # Strip diacritics/accents (e.g. Shōgun -> Shogun) for search compatibility
-        params['movie'] = unicodedata.normalize('NFKD', title).encode('ascii', 'ignore').decode('ascii')
+        # Strip diacritics/accents (e.g. Shogun) for search compatibility
+        search_title = unicodedata.normalize('NFKD', title).encode('ascii', 'ignore').decode('ascii').strip()
+
+        # Fallback for non-ASCII / Cyrillic titles (e.g. Radarr/Sonarr localized titles like 'Черната чанта')
+        if not search_title:
+            if video.name:
+                parent_folder = os.path.basename(os.path.dirname(video.name))
+                folder_clean = re.sub(r'\s*\(\d{4}\).*$', '', parent_folder).strip()
+                folder_ascii = unicodedata.normalize('NFKD', folder_clean).encode('ascii', 'ignore').decode('ascii').strip()
+                if folder_ascii and folder_ascii.lower() not in ('season', 'specials', 'filmi', 'serials', 'media', 'movies', 'tv'):
+                    search_title = folder_ascii
+                else:
+                    file_guess = guessit(os.path.basename(video.name))
+                    g_title = file_guess.get('title')
+                    if g_title:
+                        search_title = unicodedata.normalize('NFKD', str(g_title)).encode('ascii', 'ignore').decode('ascii').strip()
+
+            if not search_title:
+                alt_titles = getattr(video, 'alternative_titles', None) or getattr(video, 'alternative_series', None) or []
+                for alt in alt_titles:
+                    clean_alt = unicodedata.normalize('NFKD', str(alt)).encode('ascii', 'ignore').decode('ascii').strip()
+                    if clean_alt:
+                        search_title = clean_alt
+                        break
+
+        params['movie'] = search_title
+
+        # Never query subs.sab.bz with an empty movie title to avoid dumping unrelated uploads
+        if not search_title:
+            logger.warning('SubsSabBz: empty search title after normalization/fallback for video %r. Skipping query.', video.name)
+            return subtitles
 
         if language.alpha3 == 'eng':
             params['select-language'] = 1
@@ -238,6 +280,14 @@ class SubsSabBzProvider(Provider):
                         imdb_id = re.findall(r'imdb.com/title/(tt\d+)/?$', td[9].find('a').get('href'))[0]
                     except:
                         imdb_id = None
+
+                    # If both video and row have an IMDB ID and they differ, skip!
+                    video_imdb = getattr(video, 'imdb_id', None)
+                    if not video_imdb and isEpisode:
+                        video_imdb = getattr(video, 'series_imdb_id', None)
+                    if video_imdb and imdb_id and video_imdb != imdb_id:
+                        logger.debug('SubsSabBz: skipping subtitle %r due to mismatched IMDB ID: %s != %s', link, imdb_id, video_imdb)
+                        continue
 
                     logger.info('Found subtitle link %r', link)
                     try:
