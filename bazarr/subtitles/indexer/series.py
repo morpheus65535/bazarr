@@ -343,6 +343,12 @@ def list_missing_subtitles(no=None, epno=None, *args, **kwargs):  # job_id might
                            'hi': 'True'} in actual_subtitles_list):
                         # HI is considered as good as normal only if the language isn't set to exclude HI
                         cutoff_met = True
+                    elif (cutoff_temp['hi'] == HI_EXCLUDED and
+                          {'language': cutoff_language['language'],
+                           'forced': cutoff_language['forced'],
+                           'hi': 'False'} in actual_subtitles_list):
+                        # Cutoff is met by non-HI subtitles when HI subtitles are excluded in languages profile
+                        cutoff_met = True
 
             if cutoff_met:
                 missing_subtitles_text = str([])

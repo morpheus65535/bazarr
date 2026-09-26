@@ -349,6 +349,7 @@ class GeminiTranslatorService:
     ):
         """
         Process a batch of subtitles for translation with accurate progress tracking.
+        Splits oversized batches on retry to handle output token limit failures.
 
         Args:
             batch (List[SubtitleObject]): Batch of subtitles to translate
@@ -376,7 +377,11 @@ class GeminiTranslatorService:
             result = clean_json_string(''.join(part['text'] for part in parts))
 
             translated_lines = json_tricks.loads(result)
-            chunk_size = len(translated_lines)
+
+            # Validate translated lines BEFORE updating progress
+            if len(translated_lines) != len(batch):
+                raise ValueError(
+                    f"Gemini returned {len(translated_lines)} lines instead of expected {len(batch)} lines")
 
             # Process translated lines
             self._process_translated_lines(
@@ -385,15 +390,11 @@ class GeminiTranslatorService:
                 batch=batch,
             )
 
-            # Accurately calculate and display progress
+            # Update progress only after successful validation and processing
+            chunk_size = len(translated_lines)
             self.current_progress = self.current_progress + chunk_size
 
             jobs_queue.update_job_progress(job_id=self.job_id, progress_value=self.current_progress)
-
-            # Validate translated lines
-            if len(translated_lines) != len(batch):
-                raise ValueError(
-                    f"Gemini returned {len(translated_lines)} lines instead of expected {len(batch)} lines")
 
             # Clear the batch after successful processing
             batch.clear()
@@ -406,9 +407,24 @@ class GeminiTranslatorService:
                 self._handle_rate_limited_key(response)
                 if retry_num > 0:
                     return self._process_batch(batch, translated_subtitle, total, retry_num - 1)
+                else:
+                    jobs_queue.update_job_progress(job_id=self.job_id, progress_message=f"Translation request failed: {e}")
+                    raise e
 
-            if retry_num > 0:
-                return self._process_batch(batch, translated_subtitle, total, retry_num - 1)
+            # For non-rate-limit errors, try splitting the batch if it's large enough
+            if len(batch) > 1 and retry_num > 0:
+                mid = len(batch) // 2
+                first_half = batch[:mid]
+                second_half = batch[mid:]
+
+                try:
+                    self._process_batch(first_half, translated_subtitle, total, retry_num - 1)
+                    self._process_batch(second_half, translated_subtitle, total, retry_num - 1)
+                    batch.clear()
+                    return self.current_progress
+                except Exception as split_error:
+                    jobs_queue.update_job_progress(job_id=self.job_id, progress_message=f"Translation request failed: {split_error}")
+                    raise split_error
             else:
                 jobs_queue.update_job_progress(job_id=self.job_id, progress_message=f"Translation request failed: {e}")
                 raise e

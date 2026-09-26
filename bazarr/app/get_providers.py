@@ -260,7 +260,8 @@ def get_providers_auth():
                              'include_machine_translated': settings.opensubtitlescom.include_machine_translated,
                              'api_key': 's38zmzVlW7IlYruWi7mHwDYl2SfMQoC1'
                              },
-        'napiprojekt': {'only_authors': settings.napiprojekt.only_authors,
+        'napiprojekt': {'hash_only': settings.napiprojekt.hash_only,
+                        'only_authors': settings.napiprojekt.only_authors,
                         'only_real_names': settings.napiprojekt.only_real_names},
         'legendasdivx': {
             'username': settings.legendasdivx.username,
@@ -344,6 +345,7 @@ def get_providers_auth():
             'search_threshold': settings.animetosho.search_threshold,
         },
         "animetosho_xyz": {},
+        "tsukihime": {},
         "subdl": {
             'api_key': settings.subdl.api_key,
             'ai_translate': settings.subdl.ai_translate,

@@ -50,6 +50,9 @@ declare namespace FormType {
     maxOffsetSeconds?: string;
     noFixFramerate?: PythonBoolean;
     gss?: PythonBoolean;
+    qualityMinScore?: string;
+    qualityMaxOffsetSeconds?: string;
+    qualityMaxFramerateDev?: string;
   }
 
   interface DownloadSeries {

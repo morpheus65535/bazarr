@@ -315,6 +315,7 @@ validators = [
     Validator('opensubtitlescom.include_machine_translated', must_exist=True, default=False, is_type_of=bool),
 
     # napiprojekt section
+    Validator('napiprojekt.hash_only', must_exist=True, default=False, is_type_of=bool),
     Validator('napiprojekt.only_authors', must_exist=True, default=False, is_type_of=bool),
     Validator('napiprojekt.only_real_names', must_exist=True, default=False, is_type_of=bool),
 
@@ -453,6 +454,12 @@ validators = [
     Validator('subsync.gss', must_exist=True, default=True, is_type_of=bool),
     Validator('subsync.max_offset_seconds', must_exist=True, default=60, is_type_of=int,
               is_in=[60, 120, 300, 600]),
+    Validator('subsync.quality_min_score', must_exist=True, default=0.0, is_type_of=(int, float),
+              is_in=[0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]),
+    Validator('subsync.quality_max_offset_seconds', must_exist=True, default=30, is_type_of=int,
+              is_in=[5, 10, 15, 20, 30, 45, 60]),
+    Validator('subsync.quality_max_framerate_deviation', must_exist=True, default=0.1, is_type_of=(int, float),
+              is_in=[0.05, 0.1, 0.15, 0.2, 0.3]),
 
     # postgresql section
     Validator('postgresql.enabled', must_exist=True, default=False, is_type_of=bool),

@@ -24,7 +24,10 @@ def sync_subtitles(video_path,
                    no_fix_framerate=None,
                    reference=None,
                    force_sync=False,
-                   callback=None):
+                   callback=None,
+                   quality_min_score=None,
+                   quality_max_offset_seconds=None,
+                   quality_max_framerate_deviation=None):
     if not settings.subsync.use_subsync and not force_sync:
         logging.debug('BAZARR automatic syncing is disabled in settings. Skipping sync routine.')
         return False
@@ -54,6 +57,12 @@ def sync_subtitles(video_path,
                 no_fix_framerate = settings.subsync.no_fix_framerate
             if gss is None:
                 gss = settings.subsync.gss
+            if quality_min_score is None:
+                quality_min_score = settings.subsync.quality_min_score
+            if quality_max_offset_seconds is None:
+                quality_max_offset_seconds = settings.subsync.quality_max_offset_seconds
+            if quality_max_framerate_deviation is None:
+                quality_max_framerate_deviation = settings.subsync.quality_max_framerate_deviation
 
             subsync = SubSyncer()
             sync_kwargs = {
@@ -71,6 +80,9 @@ def sync_subtitles(video_path,
                 'radarr_id': radarr_id,
                 'job_id': job_id,
                 'force_sync': force_sync,
+                'quality_min_score': quality_min_score,
+                'quality_max_offset_seconds': quality_max_offset_seconds,
+                'quality_max_framerate_deviation': quality_max_framerate_deviation,
             }
             try:
                 subsync.sync(**sync_kwargs)
