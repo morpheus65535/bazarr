@@ -177,6 +177,7 @@ class FakeJellyfinClient:
 
         # Track calls for assertions
         self.refresh_item_calls = []
+        self.refresh_item_modes = []  # (item_id, metadata_refresh_mode, image_refresh_mode)
         self.report_media_updated_calls = []
 
     def get_system_info(self) -> dict:
@@ -218,10 +219,13 @@ class FakeJellyfinClient:
             validate_response(response, "/Shows/{seriesId}/Episodes")
         return response["Items"]
 
-    def refresh_item(self, item_id: str) -> None:
+    def refresh_item(self, item_id: str, metadata_refresh_mode: str = 'ValidationOnly',
+                     image_refresh_mode: str = 'None') -> None:
         if _has_spec():
-            _validate_enum("ValidationOnly", "/Items/{itemId}/Refresh", "post", "metadataRefreshMode")
+            _validate_enum(metadata_refresh_mode, "/Items/{itemId}/Refresh", "post", "metadataRefreshMode")
+            _validate_enum(image_refresh_mode, "/Items/{itemId}/Refresh", "post", "imageRefreshMode")
         self.refresh_item_calls.append(item_id)
+        self.refresh_item_modes.append((item_id, metadata_refresh_mode, image_refresh_mode))
 
     def report_media_updated(self, path: str) -> None:
         body = {"Updates": [{"Path": path, "UpdateType": "Modified"}]}
