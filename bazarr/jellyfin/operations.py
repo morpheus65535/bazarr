@@ -208,7 +208,7 @@ def jellyfin_update_library(client: JellyfinClient = None, is_movie_library: boo
                             library_ids: list = None) -> None:
     """
     Trigger a library refresh for configured libraries of the given type.
-    Uses POST /Library/Media/Updated with library paths for a directory rescan.
+    Uses POST /Items/{libraryId}/Refresh to fill missing metadata and images.
     """
     try:
         if client is None:
@@ -231,7 +231,10 @@ def jellyfin_update_library(client: JellyfinClient = None, is_movie_library: boo
                 continue
 
             try:
-                client.refresh_item(library_id)
+                # A library refresh can discover new items. ValidationOnly would
+                # create them without running metadata or image providers.
+                client.refresh_item(library_id, metadata_refresh_mode='Default',
+                                    image_refresh_mode='Default')
                 logger.info(f"Triggered refresh for Jellyfin library: {library_id}")
                 updated_count += 1
             except Exception as e:
