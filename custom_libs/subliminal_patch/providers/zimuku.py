@@ -180,6 +180,16 @@ class ZimukuProvider(Provider):
             a = sub.find("a")
             if not a:
                 continue
+
+            # Format check: ignore SUP subtitles (Bazarr only supports text subtitles)
+            fmt_span = sub.find("span", class_="label-info")
+            if fmt_span and fmt_span.get_text(strip=True).upper() == "SUP":
+                logger.debug("Zimuku skipping SUP subtitle %r", a.text.strip())
+                continue
+            if re.search(r'\.sup(?:\.|$|\s)', a.text, re.IGNORECASE) and not any(ext in a.text.lower() for ext in ['.srt', '.ass', '.ssa']):
+                logger.debug("Zimuku skipping .sup in title %r", a.text.strip())
+                continue
+
             name = _extract_name(a.text)
             name = os.path.splitext(name)[
                 0
@@ -386,6 +396,9 @@ class ZimukuProvider(Provider):
                     is_sub = sub_ext
                     break
             if not is_sub:
+                if filename.endswith(".sup") or r.content.startswith(b"PG"):
+                    logger.debug("Zimuku downloaded file is unsupported .sup format: %s", filename)
+                    return
                 logger.debug(
                     "unknown subtitle ext in downloaded file name: {}".format(filename)
                 )
@@ -411,22 +424,35 @@ def _get_subtitle_from_archive(archive):
         if not subname.lower().endswith(SUBTITLE_EXTENSIONS):
             continue
 
+        # try to decode subname for score matching if gbk encoded
+        name_lower = subname.lower()
+        try:
+            decoded_name = subname.encode('cp437').decode('gbk', 'ignore').lower()
+        except Exception:
+            decoded_name = name_lower
+
         # prefer ass/ssa/srt subtitles with double languages or simplified/traditional chinese
-        score = ("ass" in subname or "ssa" in subname or "srt" in subname) * 1
-        if "简体" in subname or "chs" in subname or ".gb." in subname:
+        score = ("ass" in name_lower or "ssa" in name_lower or "srt" in name_lower) * 1
+        if "简体" in decoded_name or "chs" in name_lower or ".gb." in name_lower:
             score += 2
-        if "繁体" in subname or "cht" in subname or ".big5." in subname:
+        if "繁体" in decoded_name or "cht" in name_lower or ".big5." in name_lower:
             score += 2
-        if "chs.eng" in subname or "chs&eng" in subname or "cht.eng" in subname or "cht&eng" in subname:
+        if "chs.eng" in name_lower or "chs&eng" in name_lower or "cht.eng" in name_lower or "cht&eng" in name_lower:
             score += 2
-        if "中英" in subname or "简英" in subname or "繁英" in subname or "双语" in subname or "简体&英文" in subname or "繁体&英文" in subname:
+        if any(w in decoded_name for w in ["中英", "简英", "繁英", "双语", "简体&英文", "繁体&英文"]):
             score += 4
         logger.debug("subtitle {}, score: {}".format(subname, score))
         if score > max_score:
             max_score = score
             extract_subname = subname
 
-    return archive.read(extract_subname) if max_score != -1 else None
+    if max_score != -1:
+        return archive.read(extract_subname)
+
+    sup_files = [subname for subname in archive.namelist() if subname.lower().endswith(".sup")]
+    if sup_files:
+        logger.debug("Zimuku archive only contains unsupported SUP/PGS files: %r", sup_files)
+    return None
 
 
 def _extract_name(name):
