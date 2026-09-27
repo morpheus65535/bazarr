@@ -222,6 +222,11 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
         key: "use_mediainfo",
         name: "Use mediainfo for language detection (detects region variants such as pt-BR that ffprobe may miss; requires the mediainfo binary)",
       },
+      {
+        type: "switch",
+        key: "prefer_embedded",
+        name: "Prefer embedded subtitles (search embedded tracks first and skip other providers for any language they satisfy)",
+      },
     ],
     message:
       "Warning for cloud users: this provider needs to read the entire file in order to extract subtitles.",
