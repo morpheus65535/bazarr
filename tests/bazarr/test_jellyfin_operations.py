@@ -250,3 +250,31 @@ def test_update_library_skips_empty_ids(fake, settings):
     settings.jellyfin.series_library_ids = ["", "lib1"]
     jellyfin_update_library(fake, is_movie_library=False, library_ids=["", "lib1"])
     assert fake.refresh_item_calls == ["lib1"]
+
+
+def test_update_library_fills_missing_metadata_and_images(fake, settings):
+    """A library refresh can discover new items, so providers must run for them. #3609"""
+    jellyfin_update_library(fake, is_movie_library=True, library_ids=["lib-movies"])
+    assert fake.refresh_item_modes == [("lib-movies", "Default", "Default")]
+
+
+def test_refresh_item_stays_lightweight(fake, settings):
+    """A known item only needs a file rescan — no provider lookups."""
+    settings.jellyfin.movie_library_ids = ["lib-movies"]
+    settings.jellyfin.get.return_value = "immediate"
+    fake.items = [make_movie(id="m1", imdb_id="tt123")]
+
+    jellyfin_refresh_item(imdb_id="tt123", is_movie=True)
+
+    assert fake.refresh_item_modes == [("m1", "ValidationOnly", "None")]
+
+
+def test_refresh_falls_back_to_library_update_on_error(fake, settings):
+    """An unexpected error during lookup still reaches the library fallback."""
+    settings.jellyfin.series_library_ids = ["lib-shows"]
+    settings.jellyfin.get.return_value = "immediate"
+
+    with patch("bazarr.jellyfin.operations._find_item", side_effect=RuntimeError("lookup failed")):
+        jellyfin_refresh_item(imdb_id="tt123", is_movie=False)
+
+    assert fake.refresh_item_modes == [("lib-shows", "Default", "Default")]
