@@ -92,6 +92,7 @@ const Layout: FunctionComponent<Props> = (props) => {
               <Toolbox.Button
                 type="submit"
                 icon={faSave}
+                data-onboarding="settings-save"
                 loading={isMutating}
                 disabled={totalStagedCount === 0}
                 rightSection={

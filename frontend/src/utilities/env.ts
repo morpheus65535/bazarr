@@ -30,6 +30,15 @@ export const Environment = {
       return window.Bazarr.hasUpdate;
     }
   },
+  get isConfigured(): boolean {
+    if (isDevEnv) {
+      return import.meta.env.VITE_IS_CONFIGURED === "true";
+    } else if (isTestEnv) {
+      return false;
+    } else {
+      return window.Bazarr.isConfigured;
+    }
+  },
   get baseUrl(): string {
     if (isDevEnv || isTestEnv) {
       return "";
@@ -41,6 +50,12 @@ export const Environment = {
   get queryDev(): boolean {
     if (isDevEnv) {
       return import.meta.env.VITE_QUERY_DEV === "true";
+    }
+    return false;
+  },
+  get forceOnboarding(): boolean {
+    if (isDevEnv) {
+      return import.meta.env.VITE_FORCE_ONBOARDING === "true";
     }
     return false;
   },

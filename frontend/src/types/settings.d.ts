@@ -82,6 +82,7 @@ declare namespace Settings {
     use_radarr: boolean;
     use_scenename: boolean;
     use_sonarr: boolean;
+    onboarding_completed: boolean;
     utf8_encode: boolean;
     wanted_search_frequency: number;
     wanted_search_frequency_movie: number;
