@@ -101,6 +101,12 @@ class Subtitles(Resource):
                                       help='Don\'t try to fix framerate from ["True", "False"]')
     patch_request_parser.add_argument('gss', type=str, required=False,
                                       help='Use Golden-Section Search from ["True", "False"]')
+    patch_request_parser.add_argument('quality_min_score', type=str, required=False,
+                                      help='Minimum quality score for sync (0.0-1.0)')
+    patch_request_parser.add_argument('quality_max_offset_seconds', type=str, required=False,
+                                      help='Maximum offset in seconds for quality checks')
+    patch_request_parser.add_argument('quality_max_framerate_deviation', type=str, required=False,
+                                      help='Maximum framerate deviation (0.0-1.0)')
     patch_request_parser.add_argument('subtitles_id', type=int, required=False,
                                       help='Subtitles database ID (required for the "extract" action)')
 
@@ -177,6 +183,12 @@ class Subtitles(Resource):
                                str(settings.subsync.max_offset_seconds),
                                no_fix_framerate=args.get('no_fix_framerate') == 'True',
                                gss=args.get('gss') == 'True',
+                               quality_min_score=args.get('quality_min_score') if
+                               args.get('quality_min_score') not in empty_values else None,
+                               quality_max_offset_seconds=args.get('quality_max_offset_seconds') if
+                               args.get('quality_max_offset_seconds') not in empty_values else None,
+                               quality_max_framerate_deviation=args.get('quality_max_framerate_deviation') if
+                               args.get('quality_max_framerate_deviation') not in empty_values else None,
                                sonarr_series_id=metadata.sonarrSeriesId if media_type == "episode" else None,
                                sonarr_episode_id=id if media_type == "episode" else None,
                                radarr_id=id if media_type == "movie" else None,

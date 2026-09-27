@@ -4,7 +4,7 @@ import pretty
 
 from flask_restx import Resource, Namespace, reqparse, fields, marshal
 
-from app.database import TableEpisodes, TableShows, TableBlacklist, database, select
+from app.database import TableEpisodes, TableShows, TableBlacklist, database, select, TableEpisodesSubtitles
 from subtitles.tools.delete import delete_subtitles
 from sonarr.blacklist import blacklist_log, blacklist_delete_all, blacklist_delete
 from utilities.path_mappings import path_mappings
@@ -105,27 +105,34 @@ class EpisodesBlacklist(Resource):
         if not episodeInfo:
             return 'Episode not found', 404
 
-        media_path = episodeInfo.path
-        subtitles_path = args.get('subtitles_path')
+        subtitles_path = path_mappings.path_replace_reverse(args.get('subtitles_path'))
 
-        blacklist_log(sonarr_series_id=sonarr_series_id,
-                      sonarr_episode_id=sonarr_episode_id,
-                      provider=provider,
-                      subs_id=subs_id,
-                      language=language)
-        if delete_subtitles(media_type='series',
-                            language=language,
-                            forced=False,
-                            hi=False,
-                            media_path=path_mappings.path_replace(media_path),
-                            subtitles_path=subtitles_path,
-                            sonarr_series_id=sonarr_series_id,
-                            sonarr_episode_id=sonarr_episode_id):
-            episode_download_subtitles(no=sonarr_episode_id)
-            event_stream(type='episode-history')
-            return '', 200
-        else:
-            return 'Subtitles file not found or permission issue.', 500
+        subtitles_path_found = database.execute(
+            select(TableEpisodesSubtitles)
+            .where(TableEpisodesSubtitles.path == subtitles_path)
+            .where(TableEpisodesSubtitles.sonarrSeriesId == sonarr_series_id)
+            .where(TableEpisodesSubtitles.sonarrEpisodeId == sonarr_episode_id)
+        ).first()
+
+        if subtitles_path_found:
+            if delete_subtitles(media_type='series',
+                                language=language,
+                                forced=False,
+                                hi=False,
+                                media_path=path_mappings.path_replace(episodeInfo.path),
+                                subtitles_path=subtitles_path,
+                                sonarr_series_id=sonarr_series_id,
+                                sonarr_episode_id=sonarr_episode_id):
+                blacklist_log(sonarr_series_id=sonarr_series_id,
+                              sonarr_episode_id=sonarr_episode_id,
+                              provider=provider,
+                              subs_id=subs_id,
+                              language=language)
+                episode_download_subtitles(no=sonarr_episode_id)
+                event_stream(type='episode-history')
+                return '', 200
+
+        return 'Subtitles file not found or permission issue.', 500
 
     delete_request_parser = reqparse.RequestParser()
     delete_request_parser.add_argument('all', type=str, required=False, help='Empty episodes subtitles blacklist')

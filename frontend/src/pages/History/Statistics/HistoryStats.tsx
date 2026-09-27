@@ -149,15 +149,17 @@ const HistoryStats: FunctionComponent = () => {
 
     return defineChart({
       marks: [createMark()],
-      x: {
-        scale: () => scaleBand().padding(isMobile ? 0.12 : 0.18),
-      },
-      y: {
-        scale: scaleLinear,
-        nice: true,
-        grid: true,
-        axis: {
-          ticks: { format: (value: number) => `${Math.round(value)}` },
+      scales: {
+        x: {
+          scale: () => scaleBand().padding(isMobile ? 0.12 : 0.18),
+        },
+        y: {
+          scale: scaleLinear,
+          nice: true,
+          grid: true,
+          axis: {
+            ticks: { format: (value: number) => `${Math.round(value)}` },
+          },
         },
       },
       tooltip: {

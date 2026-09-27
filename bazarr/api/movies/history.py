@@ -66,6 +66,11 @@ class MoviesHistory(Resource):
                                        TableBlacklistMovie.subs_id) \
             .subquery()
 
+        external_subtitles_sq = select(
+            TableMoviesSubtitles.radarrId,
+            func.min(TableMoviesSubtitles.path).label('path')
+        ).group_by(TableMoviesSubtitles.radarrId).subquery()
+
         query_conditions = [(TableMovies.title.is_not(None))]
         if radarrid:
             query_conditions.append((TableMovies.radarrId == radarrid))
@@ -89,16 +94,15 @@ class MoviesHistory(Resource):
                       TableHistoryMovie.matched,
                       TableHistoryMovie.not_matched,
                       TableMovies.profileId,
-                      TableMoviesSubtitles.path.label('external_subtitles'),
+                      external_subtitles_sq.c.path.label('external_subtitles'),
                       blacklisted_subtitles.c.subs_id.label('blacklisted')) \
             .select_from(TableHistoryMovie) \
             .join(TableMovies) \
-            .join(TableMoviesSubtitles,
-                  onclause=TableHistoryMovie.radarrId == TableMoviesSubtitles.radarrId, isouter=True) \
+            .join(external_subtitles_sq,
+                  onclause=TableHistoryMovie.radarrId == external_subtitles_sq.c.radarrId, isouter=True) \
             .join(blacklisted_subtitles, onclause=TableHistoryMovie.subs_id == blacklisted_subtitles.c.subs_id,
                   isouter=True) \
             .where(reduce(operator.and_, query_conditions)) \
-            .where(TableMoviesSubtitles.path.is_not(None)) \
             .order_by(TableHistoryMovie.timestamp.desc())
         if length > 0:
             stmt = stmt.limit(length).offset(start)

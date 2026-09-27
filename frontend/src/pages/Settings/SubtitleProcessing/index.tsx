@@ -19,6 +19,9 @@ import {
   colorOptions,
   forceAudioOption,
   providerOptions,
+  qualityMaxFramerateDeviationOptions,
+  qualityMaxOffsetSecondsOptions,
+  qualityMinScoreOptions,
   syncMaxOffsetSecondsOptions,
 } from "./options";
 
@@ -377,6 +380,42 @@ const SettingsSubtitleProcessingView: FunctionComponent = () => {
               If specified, subsync will not attempt to correct a framerate
               mismatch between reference and subtitles.
             </Message>
+            <CollapseBox
+              indent
+              settingKey="settings-subsync-no_fix_framerate"
+              on={(v) => v === false || v === "false"}
+            >
+              <Section header="Quality Checks (Framerate-Fix Mode)">
+                <Selector
+                  label="Minimum Quality Score"
+                  options={qualityMinScoreOptions}
+                  settingKey="settings-subsync-quality_min_score"
+                ></Selector>
+                <Message>
+                  Minimum alignment confidence score required to accept a
+                  synchronization result. Lower values are more permissive.
+                </Message>
+                <Selector
+                  label="Quality Max Offset Seconds"
+                  options={qualityMaxOffsetSecondsOptions}
+                  settingKey="settings-subsync-quality_max_offset_seconds"
+                ></Selector>
+                <Message>
+                  Maximum offset in seconds to allow when quality checks are
+                  enabled. Alignments suggesting larger offsets will be
+                  rejected.
+                </Message>
+                <Selector
+                  label="Max Framerate Deviation"
+                  options={qualityMaxFramerateDeviationOptions}
+                  settingKey="settings-subsync-quality_max_framerate_deviation"
+                ></Selector>
+                <Message>
+                  Maximum framerate deviation allowed. Prevents extreme stretch
+                  factors that indicate failed synchronization.
+                </Message>
+              </Section>
+            </CollapseBox>
             <Check
               label="Golden-Section Search"
               settingKey="settings-subsync-gss"

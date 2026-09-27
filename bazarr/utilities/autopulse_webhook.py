@@ -198,9 +198,9 @@ def _generate_config_from_template(template_data, server_url, decrypted_token, s
         return None
 
 
-def call_external_webhook(subtitle_path, media_path, language, media_type):
+def call_external_webhook(subtitle_path, media_path, language, media_type, action_type):
     """
-    Call external webhook after subtitle download.
+    Call external webhook after subtitle download and delete.
     Supports generic webhooks and Autopulse integration.
     """
     # Check if external webhook is enabled
@@ -220,29 +220,29 @@ def call_external_webhook(subtitle_path, media_path, language, media_type):
             return
 
         # Prepare query parameters
-        params = {'path': parent_dir}
+        params = {'path': parent_dir, 'action_type': action_type, 'language': language, 'media_type': media_type, 'subtitle_path': subtitle_path, 'media_path': media_path}
         full_url = f"{webhook_url}?{urlencode(params)}"
         
         headers = {'User-Agent': os.environ.get("SZ_USER_AGENT", 'Bazarr')}
         
-        logging.debug(f"BAZARR calling external webhook: {webhook_url} for path: {parent_dir}")
+        logging.debug(f"BAZARR calling external webhook: {webhook_url}, with params: {params}")
         
         # Make the webhook call with retry for network issues
         response = _make_webhook_request(full_url, auth, headers)
         
         if response.status_code == 200:
-            logging.info(f"BAZARR external webhook successful for {parent_dir}")
+            logging.info(f"BAZARR external webhook successful for {params}")
         elif response.status_code == 401:
-            logging.warning(f"BAZARR external webhook authentication failed (401) for {parent_dir}. Did you forget to save your external webhook settings?")
+            logging.warning(f"BAZARR external webhook authentication failed (401) for {params}. Did you forget to save your external webhook settings?")
         elif response.status_code == 400:
-            logging.warning(f"BAZARR external webhook bad request (400) for {parent_dir}. Check your webhook URL and credentials. Did you forget to save your external webhook settings?")
+            logging.warning(f"BAZARR external webhook bad request (400) for {params}. Check your webhook URL and credentials. Did you forget to save your external webhook settings?")
         else:
-            logging.warning(f"BAZARR external webhook failed with status {response.status_code} for {parent_dir}")
+            logging.warning(f"BAZARR external webhook failed with status {response.status_code} for {params}")
             
     except requests.exceptions.RequestException as e:
-        logging.error(f"BAZARR external webhook failed for {media_path}: {str(e)}. Did you forget to save your external webhook settings?")
+        logging.error(f"BAZARR external webhook failed for {params}: {str(e)}. Did you forget to save your external webhook settings?")
     except Exception as e:
-        logging.error(f"BAZARR unexpected error calling external webhook for {media_path}: {str(e)}")
+        logging.error(f"BAZARR unexpected error calling external webhook for {params}: {str(e)}")
 
 
 @retry(exceptions=(requests.exceptions.RequestException,), tries=3, delay=1, backoff=2, jitter=(0, 1))

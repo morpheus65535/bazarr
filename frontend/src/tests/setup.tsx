@@ -1,7 +1,7 @@
 import { http } from "msw";
 import { HttpResponse } from "msw";
 import { vi, vitest } from "vitest";
-import "@testing-library/jest-dom";
+import "@testing-library/jest-dom/vitest";
 import queryClient from "@/apis/queries";
 import server from "./mocks/node";
 

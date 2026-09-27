@@ -5,6 +5,7 @@ import os
 import logging
 
 from subliminal_patch import core, search_external_subtitles
+from sqlalchemy import not_, tuple_
 
 from languages.custom_lang import CustomLanguage
 from constants import HI_EXCLUDED
@@ -88,7 +89,7 @@ def store_subtitles(sonarr_episode_id, use_cache=True):
                     .where(TableEpisodesSubtitles.embedded_track_id.is_(None))
                 )
 
-                embedded_subtitles_id_list = []
+                embedded_subtitles_list = []
 
                 if len(embedded_subtitles):
                     # Insert new embedded subtitles or update existing ones
@@ -106,14 +107,19 @@ def store_subtitles(sonarr_episode_id, use_cache=True):
                         index_where=TableEpisodesSubtitles.path.is_(None)
                     )
                     database.execute(embedded_stmt)
-                    embedded_subtitles_id_list = [x['embedded_track_id'] for x in embedded_subtitles]
+                    embedded_subtitles_list = [(x['embedded_track_id'], x['language'], x['forced'], x['hi']) for x in embedded_subtitles]
 
                 # Delete prior indexed embedded subtitles that don't exist anymore
                 database.execute(
                     delete(TableEpisodesSubtitles)
                     .where(TableEpisodesSubtitles.sonarrEpisodeId == sonarr_episode_id)
                     .where(TableEpisodesSubtitles.path.is_(None))
-                    .where(TableEpisodesSubtitles.embedded_track_id.not_in(embedded_subtitles_id_list))
+                    .where(not_(tuple_(
+                        TableEpisodesSubtitles.embedded_track_id,
+                        TableEpisodesSubtitles.language,
+                        TableEpisodesSubtitles.forced,
+                        TableEpisodesSubtitles.hi,
+                    ).in_(embedded_subtitles_list)))
                 )
             except Exception:
                 logging.exception(f"BAZARR error when trying to analyze this {os.path.splitext(mapped_path)[1]} file: "
@@ -336,6 +342,12 @@ def list_missing_subtitles(no=None, epno=None, *args, **kwargs):  # job_id might
                            'forced': 'False',
                            'hi': 'True'} in actual_subtitles_list):
                         # HI is considered as good as normal only if the language isn't set to exclude HI
+                        cutoff_met = True
+                    elif (cutoff_temp['hi'] == HI_EXCLUDED and
+                          {'language': cutoff_language['language'],
+                           'forced': cutoff_language['forced'],
+                           'hi': 'False'} in actual_subtitles_list):
+                        # Cutoff is met by non-HI subtitles when HI subtitles are excluded in languages profile
                         cutoff_met = True
 
             if cutoff_met:

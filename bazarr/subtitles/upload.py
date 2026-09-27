@@ -161,11 +161,11 @@ def manual_upload_subtitle(path, language, forced, hi, media_type, subtitle, fil
     uploaded_language_code2 = alpha2_from_alpha3(language) + modifier_code
 
     if use_postprocessing:
-        command = pp_replace(postprocessing_cmd, path, subtitle_path, uploaded_language, uploaded_language_code2,
-                             uploaded_language_code3, audio_language['name'], audio_language['code2'],
-                             audio_language['code3'], 100, "1", "manual", "user", "unknown", sonarrSeriesId,
-                             sonarrEpisodeId or radarrId,)
-        postprocessing(command, path)
+        args = pp_replace(postprocessing_cmd, path, subtitle_path, uploaded_language, uploaded_language_code2,
+                          uploaded_language_code3, audio_language['name'], audio_language['code2'],
+                          audio_language['code3'], 100, "1", "manual", "user", "unknown", sonarrSeriesId,
+                          sonarrEpisodeId or radarrId,)
+        postprocessing(args, path)
         set_chmod(subtitles_path=subtitle_path)
 
     if media_type == 'series':
