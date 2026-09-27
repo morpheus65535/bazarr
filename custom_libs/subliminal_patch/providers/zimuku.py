@@ -97,7 +97,7 @@ class ZimukuProvider(Provider):
     video_types = (Episode, Movie)
     logger.info(str(supported_languages))
 
-    server_url = "https://srtku.com"
+    server_url = "https://zimuku.org"
     search_url = "/search?q={}"
 
     subtitle_class = ZimukuSubtitle
@@ -166,14 +166,20 @@ class ZimukuProvider(Provider):
         self.session.close()
 
     def _parse_episode_page(self, link, year):
+        if link.startswith("//"):
+            link = "https:" + link
         r = self.yunsuo_bypass(link)
         bs_obj = ParserBeautifulSoup(
             r.content.decode("utf-8", "ignore"), ["html.parser"]
         )
         subs_body = bs_obj.find("tbody")
+        if not subs_body:
+            return []
         subs = []
         for sub in subs_body.find_all("tr"):
             a = sub.find("a")
+            if not a:
+                continue
             name = _extract_name(a.text)
             name = os.path.splitext(name)[
                 0
@@ -182,7 +188,11 @@ class ZimukuProvider(Provider):
             language = Language("eng")
             language_list = []
 
-            for img in sub.find("td", class_="tac lang").find_all("img"):
+            lang_td = sub.find("td", class_="tac lang")
+            if not lang_td:
+                continue
+
+            for img in lang_td.find_all("img"):
                 if (
                         "china" in img.attrs["src"]
                         and "hongkong" in img.attrs["src"]
@@ -205,6 +215,8 @@ class ZimukuProvider(Provider):
                     language = Language('zho', 'TW', None)
                     language_list.append(language)
             sub_page_link = urljoin(self.server_url, a.attrs["href"])
+            if sub_page_link.startswith("//"):
+                sub_page_link = "https:" + sub_page_link
             backup_session = copy.deepcopy(self.session)
             backup_session.headers["Referer"] = link
 
@@ -257,7 +269,12 @@ class ZimukuProvider(Provider):
         if soup.find("div", {"class": "item"}):
             logger.debug("enter a non-shooter page")
             for item in soup.find_all("div", {"class": "item"}):
-                title_a = item.find("p", class_="tt clearfix").find("a")
+                tt = item.find("p", class_="tt clearfix")
+                if not tt:
+                    continue
+                title_a = tt.find("a")
+                if not title_a:
+                    continue
                 subs_year = year
                 if season:
                     # episode year in zimuku is the season's year not show's year
@@ -265,7 +282,7 @@ class ZimukuProvider(Provider):
                     if actual_subs_year:
                         subs_year = int(actual_subs_year[0]) - season + 1
                     title = title_a.text
-                    season_cn1 = re.search("第(.*)季", title)
+                    season_cn1 = re.search(r"第(.*)季", title)
                     if not season_cn1:
                         season_cn1 = "一"
                     else:
@@ -274,6 +291,8 @@ class ZimukuProvider(Provider):
                     if season_cn1 != season_cn2:
                         continue
                 episode_link = urljoin(self.server_url, title_a.attrs["href"])
+                if episode_link.startswith("//"):
+                    episode_link = "https:" + episode_link
                 new_subs = self._parse_episode_page(episode_link, subs_year)
                 subtitles += new_subs
 
@@ -318,24 +337,40 @@ class ZimukuProvider(Provider):
             bs_obj = ParserBeautifulSoup(
                 res.content.decode("utf-8", "ignore"), ["html.parser"]
             )
-            down_page_link = bs_obj.find("a", {"id": "down1"}).attrs["href"]
-            down_page_link = urljoin(sub_page_link, down_page_link)
+            down1 = bs_obj.find("a", {"id": "down1"})
+            if not down1 or "href" not in down1.attrs:
+                logger.error("Zimuku could not find #down1 link on page %s", sub_page_link)
+                return None, None
+            down_page_link = urljoin(sub_page_link, down1.attrs["href"])
+            if down_page_link.startswith("//"):
+                down_page_link = "https:" + down_page_link
+
             res = yunsuopass(down_page_link)
             bs_obj = ParserBeautifulSoup(
                 res.content.decode("utf-8", "ignore"), ["html.parser"]
             )
-            return urljoin(sub_page_link, bs_obj.find("a", {"rel": "nofollow"}).attrs["href"])
+            rel_a = bs_obj.find("a", {"rel": "nofollow"})
+            if not rel_a or "href" not in rel_a.attrs:
+                logger.error("Zimuku could not find rel=nofollow download link on %s", down_page_link)
+                return None, None
+            final_down_link = urljoin(down_page_link, rel_a.attrs["href"])
+            if final_down_link.startswith("//"):
+                final_down_link = "https:" + final_down_link
+            return final_down_link, down_page_link
 
         # download the subtitle
         logger.info("Downloading subtitle %r", subtitle)
-        download_link = _get_archive_download_link(self.yunsuo_bypass, subtitle.page_link)
-        r = self.yunsuo_bypass(download_link, headers={'Referer': subtitle.page_link}, timeout=30)
-        r.raise_for_status()
-        try:
-            filename = r.headers["Content-Disposition"].lower()
-        except KeyError:
-            logger.debug("Unable to parse subtitles filename. Dropping this subtitles.")
+        download_link, down_page_link = _get_archive_download_link(self.yunsuo_bypass, subtitle.page_link)
+        if not download_link:
+            logger.debug("Unable to resolve download link for %r", subtitle)
             return
+
+        referer = down_page_link or subtitle.page_link
+        r = self.yunsuo_bypass(download_link, headers={'Referer': referer}, timeout=30)
+        r.raise_for_status()
+
+        cd = r.headers.get("Content-Disposition", "")
+        filename = cd.lower()
 
         if not r.content:
             logger.debug("Unable to download subtitle. No data returned from provider")
@@ -345,20 +380,10 @@ class ZimukuProvider(Provider):
         archive = None
         if rarfile.is_rarfile(archive_stream):
             logger.debug("Identified rar archive")
-            if ".rar" not in filename:
-                logger.debug(
-                    ".rar should be in the downloaded file name: {}".format(filename)
-                )
-                return
             archive = rarfile.RarFile(archive_stream)
             subtitle_content = _get_subtitle_from_archive(archive)
         elif zipfile.is_zipfile(archive_stream):
             logger.debug("Identified zip archive")
-            if ".zip" not in filename:
-                logger.debug(
-                    ".zip should be in the downloaded file name: {}".format(filename)
-                )
-                return
             archive = zipfile.ZipFile(archive_stream)
             subtitle_content = _get_subtitle_from_archive(archive)
         else:
@@ -369,7 +394,7 @@ class ZimukuProvider(Provider):
                     break
             if not is_sub:
                 logger.debug(
-                    "unknown subtitle ext int downloaded file name: {}".format(filename)
+                    "unknown subtitle ext in downloaded file name: {}".format(filename)
                 )
                 return
             logger.debug("Identified {} file".format(is_sub))
