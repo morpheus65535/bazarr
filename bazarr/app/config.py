@@ -494,6 +494,9 @@ validators = [
 
     # subtitlecat section
     Validator('subtitlecat.include_machine_translated', must_exist=True, default=False, is_type_of=bool),
+
+    # subhd section
+    Validator('subhd.base_url', must_exist=True, default='https://subhd.tv', is_type_of=str),
 ]
 
 

@@ -136,7 +136,11 @@ def provider_throttle_map():
                 midnight_gmt_limit_reset_timedelta(),
                 f"{midnight_gmt_limit_reset_timedelta().seconds // 3600 + 1} hours"),
             APIThrottled: (datetime.timedelta(minutes=15), "15 minutes"),
-        }
+        },
+        "subhd": {
+            TooManyRequests: (datetime.timedelta(minutes=30), "30 minutes"),
+            DownloadLimitExceeded: (datetime.timedelta(minutes=30), "30 minutes"),
+        },
     }
 
 
@@ -385,6 +389,9 @@ def get_providers_auth():
         },
         'subtitlecat': {
             'include_machine_translated': settings.subtitlecat.include_machine_translated,
+        },
+        'subhd': {
+            'base_url': settings.subhd.base_url,
         },
     }
 
