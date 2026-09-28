@@ -124,6 +124,128 @@ class SevenZipArchive(object):
         self.close()
 
 
+# ---------------------------------------------------------------------------
+# Yunsuo WAF CAPTCHA Solver Constants
+# ---------------------------------------------------------------------------
+# Yunsuo CAPTCHA always renders exactly 5 digits
+_CAPTCHA_DIGIT_COUNT = 5
+
+# Horizontal width (in pixels) allocated for each digit slot (e.g. 0-19, 20-39, etc.)
+_CAPTCHA_SLOT_WIDTH = 20
+
+# Minimum expected image width (standard Yunsuo CAPTCHA is ~100px)
+_CAPTCHA_MIN_WIDTH = 90
+
+# Minimum expected image height (standard Yunsuo CAPTCHA is ~30px)
+_CAPTCHA_MIN_HEIGHT = 22
+
+# Vertical pixel row range [6, 22) scanned for digit strokes, avoiding top/bottom border noise
+_CAPTCHA_SCAN_Y_RANGE = range(6, 22)
+
+# Minimum green channel value (0-255) required for a pixel to be considered foreground
+_GREEN_MIN_INTENSITY = 80
+
+# Minimum difference (G - R and G - B) required to filter out neutral/gray noise lines
+_GREEN_DOMINANCE_THRESHOLD = 30
+
+# Maximum allowed bitwise pixel mismatches across a 14-row template before rejecting a digit
+_MAX_PIXEL_MISMATCH_THRESHOLD = 15
+
+# Maximum number of challenge attempts in the bypass loop to prevent hanging
+_MAX_YUNSUO_RETRIES = 6
+
+# ---------------------------------------------------------------------------
+# Yunsuo BMP CAPTCHA Digit Bitmaps (14 rows high, 7-9 cols wide)
+# ---------------------------------------------------------------------------
+# Each digit is mapped to (width, [14 row bitmasks]) where the most significant
+# bit (w - 1) is the leftmost pixel and bit 0 is the rightmost.
+#
+# To inspect or visualize these bitmasks as ASCII art, run in terminal:
+#
+#   python3 -c '
+#   from subliminal_patch.providers.zimuku import _DIGIT_TEMPLATES
+#   for digit, (w, rows) in _DIGIT_TEMPLATES.items():
+#       print(f"=== Digit {digit} ===")
+#       for r in rows:
+#           print("".join("#" if (r >> (w - 1 - x)) & 1 else " " for x in range(w)))
+#       print()
+#   '
+# ---------------------------------------------------------------------------
+_DIGIT_TEMPLATES = {
+    "0": (8, (0x3C, 0x7E, 0x66, 0xC3, 0xC3, 0xC3, 0xDB, 0xCB, 0xC3, 0xC3, 0xC3, 0x66, 0x7E, 0x3C)),
+    "1": (7, (0x18, 0x78, 0x68, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x7F, 0x7F)),
+    "2": (8, (0x7C, 0xFE, 0x87, 0x03, 0x03, 0x03, 0x07, 0x06, 0x0C, 0x18, 0x30, 0x60, 0xFF, 0xFF)),
+    "3": (8, (0x7C, 0xFE, 0x87, 0x03, 0x03, 0x07, 0x1E, 0x1E, 0x03, 0x03, 0x03, 0x87, 0xFE, 0x7C)),
+    "4": (9, (0x01C, 0x01C, 0x01C, 0x03C, 0x02C, 0x06C, 0x0CC, 0x0CC, 0x18C, 0x1FF, 0x1FF, 0x00E, 0x00C, 0x00C)),
+    "5": (8, (0x7E, 0x7E, 0x60, 0x60, 0x60, 0x7E, 0x7F, 0x03, 0x03, 0x03, 0x03, 0x82, 0xFE, 0x7C)),
+    "6": (8, (0x3C, 0x3E, 0x62, 0x60, 0xC0, 0xC0, 0xFE, 0xFF, 0xC3, 0xC3, 0xC3, 0x43, 0x7E, 0x3C)),
+    "7": (8, (0xFF, 0xFF, 0x06, 0x06, 0x06, 0x0C, 0x0C, 0x0C, 0x08, 0x08, 0x18, 0x10, 0x18, 0x30)),
+    "8": (8, (0x3C, 0x7E, 0xE7, 0xC3, 0xC3, 0x66, 0x7E, 0x7E, 0xC3, 0xC3, 0xC3, 0xC3, 0x7E, 0x3C)),
+    "9": (8, (0x3C, 0x7E, 0xE6, 0xC3, 0xC3, 0xC3, 0xFF, 0x7F, 0x3B, 0x03, 0x06, 0x46, 0x7E, 0x3C)),
+}
+
+
+def _is_green_stroke(r, g, b):
+    return (
+        g > _GREEN_MIN_INTENSITY
+        and (g - r > _GREEN_DOMINANCE_THRESHOLD)
+        and (g - b > _GREEN_DOMINANCE_THRESHOLD)
+    )
+
+
+def solve_bmp_captcha(bmp_bytes):
+    """Solves the 5-digit Yunsuo BMP captcha locally using template matching."""
+    try:
+        img = Image.open(io.BytesIO(bmp_bytes)).convert("RGB")
+        width, height = img.size
+        if width < _CAPTCHA_MIN_WIDTH or height < _CAPTCHA_MIN_HEIGHT:
+            return None
+
+        pixels = img.load()
+        grid = [
+            [_is_green_stroke(r, g, b) for r, g, b in (pixels[x, y] for x in range(width))]
+            for y in range(height)
+        ]
+
+        digits = []
+        for d in range(_CAPTCHA_DIGIT_COUNT):
+            slot_start = d * _CAPTCHA_SLOT_WIDTH
+            slot_end = (d + 1) * _CAPTCHA_SLOT_WIDTH
+            pts = [(x, y) for y in _CAPTCHA_SCAN_Y_RANGE for x in range(slot_start, slot_end) if grid[y][x]]
+            if not pts:
+                return None
+            min_x = min(x for x, _ in pts)
+            min_y = min(y for _, y in pts)
+
+            best_digit, best_diff = "?", float("inf")
+            for digit, (w, rows) in _DIGIT_TEMPLATES.items():
+                diff = 0
+                for dy, row_mask in enumerate(rows):
+                    py = min_y + dy
+                    if py >= height:
+                        diff += row_mask.bit_count()
+                        continue
+                    row_slice = grid[py][min_x:min_x + w]
+                    val = 0
+                    for b in row_slice:
+                        val = (val << 1) | b
+                    if len(row_slice) < w:
+                        val <<= (w - len(row_slice))
+                    diff += (val ^ row_mask).bit_count()
+                if diff < best_diff:
+                    best_diff = diff
+                    best_digit = digit
+
+            if best_diff > _MAX_PIXEL_MISMATCH_THRESHOLD:
+                return None
+            digits.append(best_digit)
+
+        return "".join(digits) if len(digits) == _CAPTCHA_DIGIT_COUNT else None
+    except Exception as e:
+        logger.debug("Failed to solve BMP captcha locally: %s", e)
+        return None
+
+
 class ZimukuProvider(Provider):
     """Zimuku Provider."""
 
@@ -147,50 +269,54 @@ class ZimukuProvider(Provider):
 
     def yunsuo_bypass(self, url, *args, **kwargs):
         def parse_verification_image(image_content: str):
+            try:
+                raw_bytes = base64.b64decode(image_content)
+                solved = solve_bmp_captcha(raw_bytes)
+                if solved:
+                    logger.debug("Zimuku Yunsuo captcha solved locally: %s", solved)
+                    return solved
+            except Exception as e:
+                logger.debug("Local captcha solver error: %s", e)
 
-            def bmp_to_image(base64_str, img_type='png'):
-                img_data = base64.b64decode(base64_str)
-                img = Image.open(io.BytesIO(img_data))
-                img = img.convert("RGB")
-                img_fp = io.BytesIO()
-                img.save(img_fp, img_type)
-                img_fp.seek(0)
-                return img_fp
+            anticaptcha_class = os.environ.get("ANTICAPTCHA_CLASS")
+            if anticaptcha_class:
+                pitcher_names = {
+                    "AntiCaptchaProxyLess": "AntiCaptchaImageToText",
+                    "CaptchaAIProxyLess": "CaptchaAIImageToText",
+                }
+                image_pitcher = pitcher_names.get(anticaptcha_class, "DeathByCaptchaImageToText")
+                try:
+                    img_fp = io.BytesIO()
+                    Image.open(io.BytesIO(raw_bytes)).convert("RGB").save(img_fp, "PNG")
+                    img_fp.seek(0)
+                    pitcher = pitchers.get_pitcher(image_pitcher)("Zimuku", img_fp)
+                    return pitcher.throw()
+                except Exception as e:
+                    logger.warning("External anti-captcha pitcher failed: %s", e)
 
-            fp = bmp_to_image(image_content)
-            anticaptcha_class = os.environ["ANTICAPTCHA_CLASS"]
-            if anticaptcha_class == 'AntiCaptchaProxyLess':
-                image_pitcher = "AntiCaptchaImageToText"
-            elif anticaptcha_class == 'CaptchaAIProxyLess':
-                image_pitcher = "CaptchaAIImageToText"
-            else:
-                image_pitcher = "DeathByCaptchaImageToText"
-            pitcher = pitchers.get_pitcher(image_pitcher)("Zimuku", fp)
-            return pitcher.throw()
+            return f"{randrange(800, 1920)},{randrange(600, 1080)}"
 
-        i = -1
-        while True:
-            i += 1
+        for _ in range(_MAX_YUNSUO_RETRIES):
             r = self.session.get(url, *args, **kwargs)
             if r.status_code == 404:
                 # mock js script logic
                 tr = self.location_re.findall(r.text)
                 verification_image = self.verification_image_re.findall(r.text)
-                if len(verification_image):
+                if verification_image:
                     self.code = parse_verification_image(verification_image[0])
                 else:
                     self.code = f"{randrange(800, 1920)},{randrange(600, 1080)}"
-                self.session.cookies.set("srcurl", string_to_hex(r.url))
+                self.session.cookies.set("srcurl", string_to_hex(r.url), path="/")
                 if tr:
-                    verify_resp = self.session.get(
-                        urljoin(self.server_url, tr[0] + string_to_hex(self.code)), allow_redirects=False)
-                    if verify_resp.status_code == 302 \
-                            and self.session.cookies.get("security_session_verify") is not None:
-                        pass
+                    verify_url = urljoin(self.server_url, tr[0] + string_to_hex(self.code))
+                    self.session.get(verify_url, allow_redirects=False, headers={"Referer": r.url})
                     continue
-            if len(self.location_re.findall(r.text)) == 0:
+            if not self.location_re.findall(r.text):
                 self.verify_token = string_to_hex(self.code)
                 return r
+
+        logger.warning("Zimuku Yunsuo bypass exceeded max retries for %s", url)
+        return r
 
     def initialize(self):
         self.session = Session()

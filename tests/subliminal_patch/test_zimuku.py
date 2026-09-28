@@ -1,10 +1,14 @@
 import io
 import tempfile
 import pytest
+from PIL import Image
 from py7zr import SevenZipFile
 from subliminal_patch.providers.zimuku import (
     SevenZipArchive,
+    _CAPTCHA_SLOT_WIDTH,
+    _DIGIT_TEMPLATES,
     _get_subtitle_from_archive,
+    solve_bmp_captcha,
 )
 
 
@@ -63,3 +67,35 @@ def test_seven_zip_archive_from_stream(sample_7z_bytes):
         assert len(names) == 3
         content = archive.read("Test.Show.S01E01.1080p.简英.srt")
         assert b"Hello Simplified" in content
+
+
+def _make_test_captcha(code):
+    img = Image.new("RGB", (100, 30), color=(255, 255, 255))
+    pixels = img.load()
+    for d_idx, char in enumerate(code):
+        w, rows = _DIGIT_TEMPLATES[char]
+        start_x = d_idx * _CAPTCHA_SLOT_WIDTH + 5
+        start_y = 8
+        for y, row_bits in enumerate(rows):
+            for x in range(w):
+                if (row_bits >> (w - 1 - x)) & 1:
+                    pixels[start_x + x, start_y + y] = (10, 180, 20)
+    buf = io.BytesIO()
+    img.save(buf, format="BMP")
+    return buf.getvalue()
+
+
+def test_solve_bmp_captcha():
+    assert solve_bmp_captcha(_make_test_captcha("58219")) == "58219"
+    assert solve_bmp_captcha(_make_test_captcha("01234")) == "01234"
+    assert solve_bmp_captcha(_make_test_captcha("96780")) == "96780"
+
+
+def test_solve_bmp_captcha_invalid():
+    assert solve_bmp_captcha(b"") is None
+    assert solve_bmp_captcha(b"not an image") is None
+    blank = Image.new("RGB", (100, 30), color=(255, 255, 255))
+    buf = io.BytesIO()
+    blank.save(buf, format="BMP")
+    assert solve_bmp_captcha(buf.getvalue()) is None
+
