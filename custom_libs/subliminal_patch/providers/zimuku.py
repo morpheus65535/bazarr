@@ -185,35 +185,28 @@ class ZimukuProvider(Provider):
                 0
             ]  # remove ext because it can be an archive type
 
-            language = Language("eng")
-            language_list = []
-
             lang_td = sub.find("td", class_="tac lang")
             if not lang_td:
                 continue
+            lang_imgs = [img.attrs.get("src", "") for img in lang_td.find_all("img")]
+            has_china = any("china" in src or "jollyroger" in src for src in lang_imgs)
+            has_hk = any("hongkong" in src for src in lang_imgs)
+            has_en = any("uk" in src or "en" in src for src in lang_imgs)
 
-            for img in lang_td.find_all("img"):
-                if (
-                        "china" in img.attrs["src"]
-                        and "hongkong" in img.attrs["src"]
-                ):
-                    logger.debug("language:" + str(language))
-                    
-                    language = Language("zho").add(Language('zho', 'TW', None))
-                    language_list.append(language)
-                elif (
-                        "china" in img.attrs["src"]
-                        or "jollyroger" in img.attrs["src"]
-                ):
-                    logger.debug("language chinese simplified found: " + str(language))
+            language_list = []
+            if has_china and has_hk:
+                language_list.append(Language("zho"))
+                language_list.append(Language("zho", "TW", None))
+            elif has_china:
+                language_list.append(Language("zho"))
+            elif has_hk:
+                language_list.append(Language("zho", "TW", None))
 
-                    language = Language("zho")
-                    language_list.append(language)
-                elif "hongkong" in img.attrs["src"]:
-                    logger.debug("language chinese traditional found: " + str(language))
+            if has_en:
+                language_list.append(Language("eng"))
 
-                    language = Language('zho', 'TW', None)
-                    language_list.append(language)
+            if not language_list:
+                language_list.append(Language("zho"))
             sub_page_link = urljoin(self.server_url, a.attrs["href"])
             if sub_page_link.startswith("//"):
                 sub_page_link = "https:" + sub_page_link
