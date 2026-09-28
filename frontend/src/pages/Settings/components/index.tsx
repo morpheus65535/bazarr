@@ -104,6 +104,50 @@ export const ProviderTestButton: FunctionComponent<{
   );
 };
 
+export const Unit3dTestButton: FunctionComponent = () => {
+  const testConnection = "Test Connection";
+  const [title, setTitle] = useState(testConnection);
+  const [color, setVar] = useState("primary");
+
+  const url = useSettingValue<string>("settings-unit3d-url");
+  const apiKey = useSettingValue<string>("settings-unit3d-api_key");
+
+  const click = useCallback(() => {
+    if (!url || !apiKey) {
+      setTitle("UNIT3D URL and API key are required");
+      setVar("danger");
+      return;
+    }
+
+    api.providers
+      .testUnit3d(url, apiKey)
+      .then((result) => {
+        if (result.status) {
+          setTitle(result.version ?? "Connected");
+          setVar("success");
+        } else {
+          setTitle(result.error ?? "Connection failed");
+          setVar("danger");
+        }
+      })
+      .catch(() => {
+        setTitle("Connection test failed");
+        setVar("danger");
+      });
+  }, [url, apiKey]);
+
+  useResetOnChange(JSON.stringify([url, apiKey]), () => {
+    setTitle(testConnection);
+    setVar("primary");
+  });
+
+  return (
+    <Button onClick={click} variant={color} title={title}>
+      {title}
+    </Button>
+  );
+};
+
 export * from "./Card";
 export * from "./Layout";
 export { default as Layout } from "./Layout";

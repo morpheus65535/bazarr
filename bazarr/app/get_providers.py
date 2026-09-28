@@ -375,6 +375,10 @@ def get_providers_auth():
             'base_url': settings.subsdump.base_url,
             'api_key': settings.subsdump.api_key,
         },
+        'unit3d': {
+            'url': settings.unit3d.url,
+            'api_key': settings.unit3d.api_key,
+        },
         'animesubinfo': {},
         'subx':
             {

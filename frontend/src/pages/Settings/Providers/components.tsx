@@ -36,6 +36,7 @@ import {
   ProviderTestButton,
   Selector as GlobalSelector,
   Text,
+  Unit3dTestButton,
 } from "@/pages/Settings/components";
 import {
   FormContext,
@@ -406,10 +407,14 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
           return;
         case "testbutton":
           elements.push(
-            <ProviderTestButton
-              key={BuildKey(itemKey, key)}
-              category={key}
-            ></ProviderTestButton>,
+            key === "unit3d" ? (
+              <Unit3dTestButton key={BuildKey(itemKey, key)}></Unit3dTestButton>
+            ) : (
+              <ProviderTestButton
+                key={BuildKey(itemKey, key)}
+                category={key}
+              ></ProviderTestButton>
+            ),
           );
           return;
         case "chips":

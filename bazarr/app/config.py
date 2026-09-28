@@ -486,6 +486,10 @@ validators = [
     Validator('subsdump.base_url', must_exist=True, default='', is_type_of=str),
     Validator('subsdump.api_key', must_exist=True, default='', is_type_of=str, cast=str),
 
+    # unit3d section
+    Validator('unit3d.url', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('unit3d.api_key', must_exist=True, default='', is_type_of=str, cast=str),
+
     # subx section
     Validator('subx.api_key', must_exist=True, default='', is_type_of=str),
     
@@ -860,6 +864,13 @@ def save_settings(settings_items):
 
         if key == 'settings-subsource-apikey':
             if value != settings.subsource.apikey:
+                reset_providers = True
+
+        if key == 'settings-unit3d-url':
+            if value != settings.unit3d.url:
+                reset_providers = True
+        elif key == 'settings-unit3d-api_key':
+            if value != settings.unit3d.api_key:
                 reset_providers = True
 
         if reset_providers:

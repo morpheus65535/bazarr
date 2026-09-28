@@ -1,6 +1,12 @@
 import { camelCaseKeys, snakeCaseKeys } from "@/utilities/case";
 import BaseApi from "./base";
 
+type Unit3dTestResponse = {
+  status: boolean;
+  version?: string;
+  error?: string;
+};
+
 class ProviderApi extends BaseApi {
   constructor() {
     super("/providers");
@@ -15,6 +21,14 @@ class ProviderApi extends BaseApi {
 
   async reset() {
     await this.post("", { action: "reset" });
+  }
+
+  async testUnit3d(url: string, apiKey: string) {
+    const response = await this.post<Unit3dTestResponse>("/unit3d/test", {
+      url,
+      api_key: apiKey,
+    });
+    return response.data;
   }
 
   async movies(id: number) {
