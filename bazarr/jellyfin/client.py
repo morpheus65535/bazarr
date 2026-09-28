@@ -60,11 +60,12 @@ class JellyfinClient:
         }).json()
         return data.get('Items', [])
 
-    def refresh_item(self, item_id: str) -> None:
-        """POST /Items/{itemId}/Refresh — trigger metadata refresh for a specific item."""
+    def refresh_item(self, item_id: str, metadata_refresh_mode: str = 'ValidationOnly',
+                     image_refresh_mode: str = 'None') -> None:
+        """POST /Items/{itemId}/Refresh — default to a lightweight subtitle refresh."""
         self.post(f'/Items/{item_id}/Refresh', params={
-            'metadataRefreshMode': 'ValidationOnly',
-            'imageRefreshMode': 'None',
+            'metadataRefreshMode': metadata_refresh_mode,
+            'imageRefreshMode': image_refresh_mode,
             'replaceAllMetadata': 'false',
             'replaceAllImages': 'false',
         })

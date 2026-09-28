@@ -39,6 +39,36 @@ def _get_pool(media_type, profile_id=None):
         return _pools[f'{media_type}_{profile_id or ""}']
 
 
+_EMBEDDED_PROVIDER = "embeddedsubtitles"
+_embedded_pools = {}
+
+
+def _get_embedded_pool(media_type, profile_id=None):
+    """Return a pool restricted to the embedded subtitles provider.
+
+    Used by the "prefer embedded" behavior to search embedded tracks before
+    querying external providers. Returns None when the embedded provider is not
+    enabled.
+    """
+    if _EMBEDDED_PROVIDER not in (get_providers() or []):
+        return None
+
+    pool_key = f'{media_type}_{profile_id or ""}'
+    pool = _embedded_pools.get(pool_key)
+    if pool is None:
+        pool = _init_pool(media_type, profile_id, providers=[_EMBEDDED_PROVIDER])
+        _embedded_pools[pool_key] = pool
+    else:
+        pool.update(
+            [_EMBEDDED_PROVIDER],
+            get_providers_auth(),
+            get_blacklist() if media_type == "series" else get_blacklist_movie(),
+            get_ban_list(profile_id),
+            get_language_equals(),
+        )
+    return pool
+
+
 def _update_pool(media_type, profile_id=None):
     pool_key = f'{media_type}_{profile_id or ""}'
     logging.debug("BAZARR updating pool: %s", pool_key)
