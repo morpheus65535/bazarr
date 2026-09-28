@@ -7,6 +7,7 @@ import os
 import zipfile
 import re
 import copy
+from py7zr import SevenZipFile, is_7zfile
 from PIL import Image
 
 try:
@@ -88,6 +89,39 @@ def string_to_hex(s):
     for i in s:
         val += hex(ord(i))[2:]
     return val
+
+
+class SevenZipArchive(object):
+    def __init__(self, stream_or_bytes):
+        if isinstance(stream_or_bytes, (bytes, bytearray)):
+            stream = io.BytesIO(stream_or_bytes)
+        else:
+            stream = stream_or_bytes
+            stream.seek(0)
+        self._archive = SevenZipFile(stream, mode="r")
+        self._files = self._archive.readall()
+
+    def namelist(self):
+        return list(self._files.keys())
+
+    def read(self, name):
+        bio = self._files.get(name)
+        if bio is not None:
+            bio.seek(0)
+            return bio.read()
+        return None
+
+    def close(self):
+        try:
+            self._archive.close()
+        except Exception:
+            pass
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
 
 
 class ZimukuProvider(Provider):
@@ -389,6 +423,17 @@ class ZimukuProvider(Provider):
             logger.debug("Identified zip archive")
             archive = zipfile.ZipFile(archive_stream)
             subtitle_content = _get_subtitle_from_archive(archive)
+        elif archive_stream.seek(0) == 0 and is_7zfile(archive_stream) or ".7z" in filename:
+            logger.debug("Identified 7z archive")
+            try:
+                archive = SevenZipArchive(archive_stream)
+                try:
+                    subtitle_content = _get_subtitle_from_archive(archive)
+                finally:
+                    archive.close()
+            except Exception as e:
+                logger.warning("Failed to extract 7z archive: %s", e)
+                subtitle_content = None
         else:
             is_sub = ""
             for sub_ext in SUBTITLE_EXTENSIONS:
