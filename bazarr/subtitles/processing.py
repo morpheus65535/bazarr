@@ -12,7 +12,6 @@ from app.database import TableShows, TableEpisodes, TableMovies, TableSportsEven
 from utilities.analytics import event_tracker
 from radarr.notify import notify_radarr
 from sonarr.notify import notify_sonarr
-from sportarr.notify import notify_sportarr
 from plex.operations import plex_set_movie_added_date_now, plex_set_episode_added_date_now, plex_refresh_item
 from jellyfin.operations import jellyfin_refresh_item
 from app.event_handler import event_stream
@@ -187,9 +186,8 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
     elif media_type == 'sports':
         reversed_path = path_mappings.path_replace_reverse_sports(path)
         reversed_subtitles_path = path_mappings.path_replace_reverse_sports(downloaded_path)
-        # Sportarr rescans the league folder, which is how it learns the file is
-        # there. It has no per-event notify endpoint.
-        notify_sportarr(sports_metadata.sportarrLeagueId)
+        from sportarr.media_refresh import refresh_sports_media_servers
+        refresh_sports_media_servers(path)
         event_stream(type='sports-event-history')
         event_stream(type='sports-event-wanted', action='delete', payload=sports_metadata.id)
     else:
