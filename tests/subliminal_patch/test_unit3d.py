@@ -65,6 +65,7 @@ def _record(subtitle_id=123, language="en", **overrides):
         "filename": f"[English.Subtitle]{RELEASE}.srt",
         "size": 12345,
         "downloads": 42,
+        "uploader": "subber",
         "forced": None,
         "hearing_impaired": None,
         "torrent_id": 456,
@@ -460,6 +461,8 @@ def test_subtitle_mapping(requests_mock, provider, video):
     assert subtitle.filename == f"[English.Subtitle]{RELEASE}.srt"
     assert subtitle.extension == "ass"
     assert subtitle.release_info == RELEASE
+    assert subtitle.page_link == f"{BASE_URL}/torrents/456"
+    assert subtitle.uploader == "subber"
     assert subtitle.hearing_impaired is False
     assert subtitle.language.hi is False
     assert subtitle.language.forced is False
@@ -467,6 +470,31 @@ def test_subtitle_mapping(requests_mock, provider, video):
     assert subtitle.format == "srt"
     subtitle.use_original_format = True
     assert subtitle.format == "ass"
+
+
+@pytest.mark.parametrize(
+    "overrides, page_link, uploader",
+    [
+        ({"torrent_id": None, "uploader": None}, None, None),
+        ({"torrent_id": 0, "uploader": "  Anonymous  "}, None, "Anonymous"),
+        ({"torrent_id": 789, "uploader": "x" * 100}, f"{BASE_URL}/torrents/789", "x" * 64),
+        ({"torrent_id": 789, "download_url": "https://evil.example.com/torrents/1"}, f"{BASE_URL}/torrents/789", "subber"),
+    ],
+)
+def test_page_link_and_uploader(requests_mock, provider, video, overrides, page_link, uploader):
+    requests_mock.get(SEARCH_URL, json=_search_response([_record(**overrides)]))
+
+    subtitle = provider.list_subtitles(video, {Language("eng")})[0]
+
+    assert subtitle.page_link == page_link
+    assert subtitle.uploader == uploader
+
+
+@pytest.mark.parametrize("overrides", [{"torrent_id": "456"}, {"uploader": 42}])
+def test_records_with_invalid_page_link_or_uploader_are_skipped(requests_mock, provider, video, overrides):
+    requests_mock.get(SEARCH_URL, json=_search_response([_record(**overrides)]))
+
+    assert provider.list_subtitles(video, {Language("eng")}) == []
 
 
 def test_subtitle_mapping_respects_explicit_flags(requests_mock, provider, video):

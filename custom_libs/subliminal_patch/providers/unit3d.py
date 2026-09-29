@@ -38,17 +38,20 @@ class Unit3dSubtitle(Subtitle):
     hash_verifiable = False
     hearing_impaired_verifiable = False
 
-    def __init__(self, language, record, matched_by, download_path, wanted_season=None, wanted_episode=None):
+    def __init__(self, language, record, matched_by, download_path, page_link=None, wanted_season=None,
+                 wanted_episode=None):
         hearing_impaired = record.get("hearing_impaired") is True
         if record.get("forced") is True:
             language = Language.rebuild(language, forced=True)
 
-        super().__init__(language, hearing_impaired=hearing_impaired)
+        super().__init__(language, hearing_impaired=hearing_impaired, page_link=page_link)
         self.subtitle_id = record["id"]
         self.download_path = download_path
         self.extension = record["extension"]
         self.filename = record.get("filename") or ""
         self.release_info = record["release"]
+        uploader = record.get("uploader")
+        self.uploader = uploader.strip()[:64] if isinstance(uploader, str) else None
         self.tmdb_id = record.get("tmdb_id")
         self.tvdb_id = record.get("tvdb_id")
         self.imdb_id = record.get("imdb_id")
@@ -236,7 +239,9 @@ class Unit3dProvider(Provider):
             return False
         if not isinstance(record.get("release"), str):
             return False
-        for key in ("tmdb_id", "tvdb_id", "season", "episode"):
+        if record.get("uploader") is not None and not isinstance(record["uploader"], str):
+            return False
+        for key in ("torrent_id", "tmdb_id", "tvdb_id", "season", "episode"):
             if record.get(key) is not None and not cls._is_int(record[key]):
                 return False
         if record.get("pack") is not None and record["pack"] not in _PACKS:
@@ -354,6 +359,7 @@ class Unit3dProvider(Provider):
                 {**record, "extension": extension},
                 matched_by,
                 f"{API_PATH}/{record['id']}/download",
+                page_link=self._torrent_page(record.get("torrent_id")),
                 wanted_season=params.get("season"),
                 wanted_episode=params.get("episode"),
             )
@@ -362,6 +368,10 @@ class Unit3dProvider(Provider):
 
         logger.debug("UNIT3D result count: %s", len(subtitles))
         return subtitles
+
+    def _torrent_page(self, torrent_id):
+        # Built from the configured URL, never taken from the response
+        return f"{self.base_url}/torrents/{torrent_id}" if self._is_int(torrent_id) and torrent_id > 0 else None
 
     def list_subtitles(self, video, languages):
         return self.query(languages, video)
