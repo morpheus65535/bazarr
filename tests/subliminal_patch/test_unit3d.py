@@ -15,6 +15,7 @@ from subliminal_patch.core import Episode, Movie
 from subliminal_patch.exceptions import ForbiddenError, TooManyRequests
 from subliminal_patch.providers import unit3d
 from subliminal_patch.providers.unit3d import Unit3dProvider, check_connection
+from subliminal_patch.score import MAX_SCORES, compute_score
 from subzero.language import Language
 
 BASE_URL = "https://tracker.example.com"
@@ -277,6 +278,7 @@ def test_search_by_tmdb_id(requests_mock, provider, video):
     assert requests_mock.last_request.qs == {
         "tmdb_id": ["278"],
         "imdb_id": ["tt0111161"],
+        "file_name": [f"{RELEASE}.mkv".lower()],
         "language": ["en"],
         "perpage": ["50"],
     }
@@ -680,6 +682,7 @@ def test_episode_search_params(requests_mock, provider, episode):
         "episode": ["5"],
         "tvdb_id": ["81189"],
         "imdb_id": ["tt0903747"],
+        "file_name": [f"{SHOW_RELEASE}.mkv".lower()],
         "language": ["en"],
         "perpage": ["50"],
     }
@@ -817,3 +820,123 @@ def test_pack_download_without_the_wanted_episode_fails(requests_mock, provider,
     with pytest.raises(ProviderError, match="does not contain the wanted subtitle"):
         provider.download_subtitle(subtitle)
     assert subtitle.content is None
+
+
+# Exact release
+
+
+def test_file_size_and_name_are_sent(requests_mock, provider, video):
+    video.size = 8589934592
+    requests_mock.get(SEARCH_URL, json=_search_response([]))
+
+    provider.list_subtitles(video, {Language("eng")})
+
+    qs = requests_mock.last_request.qs
+    assert qs["file_size"] == ["8589934592"]
+    assert qs["file_name"] == [f"{RELEASE}.mkv".lower()]
+
+
+def test_file_size_and_name_are_not_sent_when_disabled(requests_mock, video):
+    video.size = 8589934592
+    provider = Unit3dProvider(BASE_URL, API_KEY, match_files=False)
+    provider.initialize()
+    requests_mock.get(SEARCH_URL, json=_search_response([]))
+
+    provider.list_subtitles(video, {Language("eng")})
+
+    qs = requests_mock.last_request.qs
+    assert "file_size" not in qs and "file_name" not in qs
+    provider.terminate()
+
+
+def test_file_name_has_no_folders_and_size_is_optional(requests_mock, provider):
+    video = Movie("/movies/The Shawshank Redemption (1994)/Shawshank Redemption.mkv", "The Shawshank Redemption",
+                  year=1994, imdb_id="tt0111161")
+    requests_mock.get(SEARCH_URL, json=_search_response([]))
+
+    provider.list_subtitles(video, {Language("eng")})
+
+    qs = requests_mock.last_request.qs
+    assert qs["file_name"] == ["shawshank redemption.mkv"]
+    assert "file_size" not in qs
+
+
+@pytest.mark.parametrize(
+    "release_match, is_exact",
+    [
+        (None, False),
+        ({"file_size": False, "file_name": None}, False),
+        ({"file_size": True, "file_name": False}, True),
+        ({"file_size": None, "file_name": True}, True),
+    ],
+)
+def test_release_match_is_a_hash_match(requests_mock, provider, video, release_match, is_exact):
+    requests_mock.get(SEARCH_URL, json=_search_response([_record(release_match=release_match)]))
+
+    subtitle = provider.list_subtitles(video, {Language("eng")})[0]
+
+    assert ("hash" in subtitle.matches) is is_exact
+    assert subtitle.release_match is is_exact
+
+
+def test_release_match_gets_the_top_score(requests_mock, provider, video):
+    requests_mock.get(
+        SEARCH_URL,
+        json=_search_response(
+            [
+                _record(1, release_match={"file_size": True, "file_name": False}),
+                _record(2, release_match={"file_size": False, "file_name": False}),
+            ]
+        ),
+    )
+
+    exact, other = provider.list_subtitles(video, {Language("eng")})
+
+    exact_score, _ = compute_score(exact.get_matches(video), exact, video)
+    other_score, _ = compute_score(other.get_matches(video), other, video)
+    # A valid hash match gets the hash score, the best score apart from the hearing impaired point
+    assert exact_score == MAX_SCORES["movie"] - 1 > other_score
+
+
+def test_release_match_is_ignored_when_the_release_does_not_fit(requests_mock, provider, video):
+    # Bazarr only trusts a hash match when source and video codec match too
+    requests_mock.get(
+        SEARCH_URL,
+        json=_search_response(
+            [_record(release="The.Shawshank.Redemption.1994.720p.HDTV.XviD-OTHER", release_match={"file_size": True})]
+        ),
+    )
+
+    subtitle = provider.list_subtitles(video, {Language("eng")})[0]
+    score, _ = compute_score(subtitle.get_matches(video), subtitle, video)
+
+    assert score < MAX_SCORES["movie"]
+
+
+def test_release_match_on_an_episode_pack(requests_mock, provider, episode):
+    requests_mock.get(
+        SEARCH_URL,
+        json=_search_response(
+            [
+                _episode_record(
+                    release="Breaking.Bad.S01.1080p.WEB-DL.DD5.1.H.264-GRP",
+                    episode=None,
+                    pack="season",
+                    extension="zip",
+                    release_match={"file_size": True, "file_name": True},
+                )
+            ]
+        ),
+    )
+
+    subtitle = provider.list_subtitles(episode, {Language("eng")})[0]
+    score, _ = compute_score(subtitle.get_matches(episode), subtitle, episode)
+
+    assert score == MAX_SCORES["episode"] - 1
+
+
+@pytest.mark.parametrize("release_match", ["yes", {"file_size": "yes"}])
+def test_records_with_invalid_release_match_are_skipped(requests_mock, provider, video, release_match):
+    requests_mock.get(SEARCH_URL, json=_search_response([_record(release_match=release_match)]))
+
+    assert provider.list_subtitles(video, {Language("eng")}) == []

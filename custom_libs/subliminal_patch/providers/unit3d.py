@@ -35,7 +35,9 @@ _PACKS = {"season", "series"}
 
 class Unit3dSubtitle(Subtitle):
     provider_name = "unit3d"
-    hash_verifiable = False
+    # A file of the same size or name in the subtitle's torrent is reported as a
+    # hash match, which Bazarr validates against the other matches
+    hash_verifiable = True
     hearing_impaired_verifiable = False
 
     def __init__(self, language, record, matched_by, download_path, page_link=None, wanted_season=None,
@@ -58,6 +60,8 @@ class Unit3dSubtitle(Subtitle):
         self.season = record.get("season")
         self.episode = record.get("episode")
         self.pack = record.get("pack")
+        release_match = record.get("release_match") or {}
+        self.release_match = release_match.get("file_size") is True or release_match.get("file_name") is True
         self.matched_by = matched_by
         # The episode to extract from a season or series pack archive
         self.wanted_season = wanted_season
@@ -94,6 +98,9 @@ class Unit3dSubtitle(Subtitle):
                 # UNIT3D only returns exact title and year matches
                 matches |= {"title", "year"}
 
+        if self.release_match:
+            matches.add("hash")
+
         utils.update_matches(matches, video, self.release_info)
         self.matches = matches
         return matches
@@ -110,12 +117,14 @@ class Unit3dProvider(Provider):
         Language.fromalpha2(code) for code in language_converters["alpha2"].codes
     }
 
-    def __init__(self, url=None, api_key=None):
+    def __init__(self, url=None, api_key=None, match_files=True):
         self.base_url = self.normalize_url(url)
         if not api_key:
             raise ConfigurationError("UNIT3D API key is required")
 
         self._api_key = api_key
+        # Send the video file size and name so UNIT3D can find its exact release
+        self.match_files = match_files is not False
         self.session = None
 
     @staticmethod
@@ -246,6 +255,12 @@ class Unit3dProvider(Provider):
                 return False
         if record.get("pack") is not None and record["pack"] not in _PACKS:
             return False
+        release_match = record.get("release_match")
+        if release_match is not None and (
+            not isinstance(release_match, dict)
+            or any(value not in (True, False, None) for value in release_match.values())
+        ):
+            return False
         imdb_id = record.get("imdb_id")
         return imdb_id is None or isinstance(imdb_id, str)
 
@@ -289,6 +304,16 @@ class Unit3dProvider(Provider):
             return {}
         return params
 
+    @classmethod
+    def _file_params(cls, video):
+        params = {}
+        if cls._is_int(video.size) and video.size > 0:
+            params["file_size"] = video.size
+        file_name = os.path.basename(str(video.original_name or video.name or ""))
+        if file_name and len(file_name) <= 255:
+            params["file_name"] = file_name
+        return params
+
     @staticmethod
     def _same_media(record, params):
         """Guard against records of another movie, show or episode."""
@@ -322,6 +347,8 @@ class Unit3dProvider(Provider):
             logger.debug("UNIT3D search skipped: no id, or title and year")
             return []
 
+        if self.match_files:
+            params.update(self._file_params(video))
         params.update({"language": ",".join(sorted(language_codes)), "perPage": PER_PAGE})
         logger.debug("UNIT3D search: %s", params)
 

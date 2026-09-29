@@ -489,6 +489,7 @@ validators = [
     # unit3d section
     Validator('unit3d.url', must_exist=True, default='', is_type_of=str, cast=str),
     Validator('unit3d.api_key', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('unit3d.match_files', must_exist=True, default=True, is_type_of=bool),
 
     # subx section
     Validator('subx.api_key', must_exist=True, default='', is_type_of=str),
