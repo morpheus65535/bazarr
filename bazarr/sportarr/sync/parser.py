@@ -21,6 +21,13 @@ def eventParser(event, file):
         if len(parts) > 1:
             video_resolution = parts[1]
 
+    season = event.get('seasonNumber')
+    if season is None:
+        season_text = str(event.get('season') or '')
+        date_text = str(event.get('eventDate') or '')
+        season = int(season_text[:4]) if season_text[:4].isdigit() else \
+            int(date_text[:4]) if date_text[:4].isdigit() else 0
+
     return {
         'sportarrLeagueId': event['leagueId'],
         'sportarrEventId': event['id'],
@@ -29,8 +36,8 @@ def eventParser(event, file):
         'externalId': event.get('externalId'),
         'title': event['title'],
         'path': file['filePath'],
-        'season': event['seasonNumber'],
-        'episode': event['episodeNumber'],
+        'season': season,
+        'episode': event.get('episodeNumber') if event.get('episodeNumber') is not None else 0,
         'broadcastDate': event.get('broadcastDate') or event.get('eventDate'),
         'partName': file.get('partName'),
         # 0 keeps a single-file event distinct from a part, so the key stays

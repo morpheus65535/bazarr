@@ -4,7 +4,7 @@ import os
 import pickle
 
 from app.config import settings
-from app.database import TableEpisodes, TableMovies, database, update, select, get_subtitles
+from app.database import TableEpisodes, TableMovies, TableSportsEvents, database, update, select, get_subtitles
 from languages.custom_lang import CustomLanguage
 from languages.get_languages import language_from_alpha3, alpha3_from_alpha2
 from utilities.path_mappings import path_mappings
@@ -36,8 +36,9 @@ def _handle_alpha3(detected_language: dict):
     return alpha3
 
 
-def embedded_subs_reader(file, file_size, episode_file_id=None, movie_file_id=None, use_cache=True):
-    data = parse_video_metadata(file, file_size, episode_file_id, movie_file_id, use_cache=use_cache)
+def embedded_subs_reader(file, file_size, episode_file_id=None, movie_file_id=None, sports_event_id=None,
+                         use_cache=True):
+    data = parse_video_metadata(file, file_size, episode_file_id, movie_file_id, sports_event_id, use_cache=use_cache)
     und_default_language = alpha3_from_alpha2(settings.general.default_und_embedded_subtitles_lang)
 
     subtitles_list = []
@@ -227,7 +228,8 @@ def subtitles_sync_references(subtitles_path, sonarr_episode_id=None, radarr_mov
     return references_dict
 
 
-def parse_video_metadata(file, file_size, episode_file_id=None, movie_file_id=None, use_cache=True):
+def parse_video_metadata(file, file_size, episode_file_id=None, movie_file_id=None, sports_event_id=None,
+                         use_cache=True):
     """
     This function return the video file properties as parsed by knowit using ffprobe or mediainfo using the cached
     value by default.
@@ -240,6 +242,8 @@ def parse_video_metadata(file, file_size, episode_file_id=None, movie_file_id=No
     @param episode_file_id: episode ID of the video file from Sonarr (or None if it's a movie)
     @type movie_file_id: int or None
     @param movie_file_id: movie ID of the video file from Radarr (or None if it's an episode)
+    @type sports_event_id: int or None
+    @param sports_event_id: row ID of the sports event part from Sportarr (or None if it's not a sports event)
     @type use_cache: bool
     @param use_cache:
 
@@ -247,11 +251,13 @@ def parse_video_metadata(file, file_size, episode_file_id=None, movie_file_id=No
     @return: return a dictionary including the video file properties as parsed by ffprobe or mediainfo
     """
 
+    # Sportarr file IDs and Sonarr episode file IDs are unrelated sequences. Keep
+    # the sports cache in its own table, or a scan writes over an episode's cache.
     # Define default data keys value
     data = {
         "ffprobe": {},
         "mediainfo": {},
-        "file_id": episode_file_id or movie_file_id,
+        "file_id": episode_file_id or movie_file_id or sports_event_id,
         "file_size": file_size,
     }
 
@@ -269,6 +275,11 @@ def parse_video_metadata(file, file_size, episode_file_id=None, movie_file_id=No
                 select(TableMovies.ffprobe_cache)
                 .where(TableMovies.movie_file_id == movie_file_id)) \
                 .first()
+        elif sports_event_id:
+            cache_key = database.execute(
+                select(TableSportsEvents.ffprobe_cache)
+                .where(TableSportsEvents.id == sports_event_id)) \
+                .first()
         else:
             cache_key = None
 
@@ -282,7 +293,8 @@ def parse_video_metadata(file, file_size, episode_file_id=None, movie_file_id=No
         else:
             # Check if file size and file id matches and if so, we return the cached value if available for the
             # desired parser
-            if cached_value['file_size'] == file_size and cached_value['file_id'] in [episode_file_id, movie_file_id]:
+            if cached_value['file_size'] == file_size and cached_value['file_id'] in [episode_file_id, movie_file_id,
+                                                                                      sports_event_id]:
                 if embedded_subs_parser in cached_value and cached_value[embedded_subs_parser]:
                     return cached_value
                 else:
@@ -348,4 +360,9 @@ def parse_video_metadata(file, file_size, episode_file_id=None, movie_file_id=No
             update(TableMovies)
             .values(ffprobe_cache=pickle.dumps(data, pickle.HIGHEST_PROTOCOL))
             .where(TableMovies.movie_file_id == movie_file_id))
+    elif sports_event_id:
+        database.execute(
+            update(TableSportsEvents)
+            .values(ffprobe_cache=pickle.dumps(data, pickle.HIGHEST_PROTOCOL))
+            .where(TableSportsEvents.id == sports_event_id))
     return data

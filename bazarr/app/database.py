@@ -797,6 +797,48 @@ def fix_languages_profiles_with_duplicate_ids():
             )
 
 
+def get_sports_subtitles(sports_event_id: int) -> List[dict]:
+    """
+    Retrieves the subtitles indexed for one sports event row.
+
+    A row is one playable file, so a card's prelims and main card each have
+    their own subtitles rather than sharing a set.
+
+    :param sports_event_id: The table_sports_events row id.
+    :type sports_event_id: int
+    :return: A list of dictionaries with the same shape get_subtitles returns.
+    :rtype: List[dict]
+    """
+    from languages.get_languages import alpha3_from_alpha2, language_from_alpha2
+
+    subtitles = []
+    events_subtitles = database.execute(
+        select(TableSportsEventsSubtitles.path,
+               TableSportsEventsSubtitles.language,
+               TableSportsEventsSubtitles.forced,
+               TableSportsEventsSubtitles.hi,
+               TableSportsEventsSubtitles.size,
+               TableSportsEventsSubtitles.embedded_track_id,
+               TableSportsEventsSubtitles.id)
+        .where(TableSportsEventsSubtitles.sportsEventId == sports_event_id)
+    ).all()
+
+    for event_subtitles in events_subtitles:
+        subtitles.append(
+            {"path": path_mappings.path_replace_sports(event_subtitles.path),
+             "name": language_from_alpha2(event_subtitles.language),
+             "code2": event_subtitles.language,
+             "code3": alpha3_from_alpha2(event_subtitles.language),
+             "forced": event_subtitles.forced,
+             "hi": event_subtitles.hi,
+             "file_size": event_subtitles.size,
+             "embedded_track_id": event_subtitles.embedded_track_id,
+             "id": event_subtitles.id}
+        )
+
+    return subtitles
+
+
 def get_subtitles(sonarr_episode_id: int = None, radarr_id: int = None) -> List[dict]:
     """
     Retrieves a list of subtitles based on the provided episode or movie identifiers.
