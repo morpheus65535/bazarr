@@ -1,11 +1,13 @@
 import logging
+import os
 from typing import ClassVar
 from urllib.parse import urlsplit
 
 from babelfish import language_converters
+from guessit import guessit
 from requests import Session
 from requests.exceptions import ConnectionError, JSONDecodeError, SSLError, Timeout
-from subliminal import Movie
+from subliminal import Episode, Movie
 from subliminal.exceptions import (
     AuthenticationError,
     ConfigurationError,
@@ -28,6 +30,7 @@ MAX_FILE_SIZE = 20 * 1024 * 1024
 # Formats Bazarr can convert; UNIT3D also stores bitmap (.sup) subtitles which are skipped
 _TEXT_FORMATS = {"srt", "ass", "ssa", "vtt"}
 _ARCHIVE_FORMATS = {"zip"}
+_PACKS = {"season", "series"}
 
 
 class Unit3dSubtitle(Subtitle):
@@ -35,7 +38,7 @@ class Unit3dSubtitle(Subtitle):
     hash_verifiable = False
     hearing_impaired_verifiable = False
 
-    def __init__(self, language, record, matched_by, download_path):
+    def __init__(self, language, record, matched_by, download_path, wanted_season=None, wanted_episode=None):
         hearing_impaired = record.get("hearing_impaired") is True
         if record.get("forced") is True:
             language = Language.rebuild(language, forced=True)
@@ -47,8 +50,15 @@ class Unit3dSubtitle(Subtitle):
         self.filename = record.get("filename") or ""
         self.release_info = record["release"]
         self.tmdb_id = record.get("tmdb_id")
+        self.tvdb_id = record.get("tvdb_id")
         self.imdb_id = record.get("imdb_id")
+        self.season = record.get("season")
+        self.episode = record.get("episode")
+        self.pack = record.get("pack")
         self.matched_by = matched_by
+        # The episode to extract from a season or series pack archive
+        self.wanted_season = wanted_season
+        self.wanted_episode = wanted_episode
         if self.extension in _TEXT_FORMATS:
             self.format = self.extension
 
@@ -59,13 +69,27 @@ class Unit3dSubtitle(Subtitle):
     def get_matches(self, video):
         matches = set()
 
-        if self.tmdb_id and video.tmdb_id and str(self.tmdb_id) == str(video.tmdb_id):
-            matches |= {"title", "year"}
-        if self.imdb_id and video.imdb_id and self.imdb_id == video.imdb_id:
-            matches |= {"imdb_id", "title", "year"}
-        if self.matched_by == "title":
-            # UNIT3D only returns exact title and year matches
-            matches |= {"title", "year"}
+        if isinstance(video, Episode):
+            if self.tvdb_id and video.series_tvdb_id and str(self.tvdb_id) == str(video.series_tvdb_id):
+                matches |= {"series", "year", "series_tvdb_id"}
+            if self.imdb_id and video.series_imdb_id and self.imdb_id == video.series_imdb_id:
+                matches |= {"series", "year", "series_imdb_id"}
+            if self.matched_by == "title":
+                # UNIT3D only returns exact show name and first air year matches
+                matches |= {"series", "year"}
+            if self.pack == "series" or self.season == video.season:
+                matches.add("season")
+            # Pack archives are only used when they contain the wanted episode
+            if self.pack in _PACKS or self.episode == video.episode:
+                matches.add("episode")
+        else:
+            if self.tmdb_id and video.tmdb_id and str(self.tmdb_id) == str(video.tmdb_id):
+                matches |= {"title", "year"}
+            if self.imdb_id and video.imdb_id and self.imdb_id == video.imdb_id:
+                matches |= {"imdb_id", "title", "year"}
+            if self.matched_by == "title":
+                # UNIT3D only returns exact title and year matches
+                matches |= {"title", "year"}
 
         utils.update_matches(matches, video, self.release_info)
         self.matches = matches
@@ -77,7 +101,7 @@ class Unit3dProvider(Provider):
 
     provider_name = "unit3d"
     subtitle_class = Unit3dSubtitle
-    video_types = (Movie,)
+    video_types = (Episode, Movie)
     # UNIT3D languages are ISO 639-1 codes, without regional variants
     languages: ClassVar[set] = {
         Language.fromalpha2(code) for code in language_converters["alpha2"].codes
@@ -195,12 +219,16 @@ class Unit3dProvider(Provider):
         return payload
 
     @staticmethod
-    def _valid_record(record, language_codes):
+    def _is_int(value):
+        return isinstance(value, int) and not isinstance(value, bool)
+
+    @classmethod
+    def _valid_record(cls, record, language_codes):
         if not isinstance(record, dict):
             return False
 
         record_id = record.get("id")
-        if not isinstance(record_id, int) or isinstance(record_id, bool) or record_id < 1:
+        if not cls._is_int(record_id) or record_id < 1:
             return False
         if record.get("language") not in language_codes:
             return False
@@ -208,34 +236,71 @@ class Unit3dProvider(Provider):
             return False
         if not isinstance(record.get("release"), str):
             return False
-        tmdb_id = record.get("tmdb_id")
-        if tmdb_id is not None and (not isinstance(tmdb_id, int) or isinstance(tmdb_id, bool)):
+        for key in ("tmdb_id", "tvdb_id", "season", "episode"):
+            if record.get(key) is not None and not cls._is_int(record[key]):
+                return False
+        if record.get("pack") is not None and record["pack"] not in _PACKS:
             return False
         imdb_id = record.get("imdb_id")
         return imdb_id is None or isinstance(imdb_id, str)
 
     @staticmethod
-    def _search_params(video):
-        tmdb_id = str(video.tmdb_id or "").strip()
-        imdb_id = str(video.imdb_id or "").strip()
+    def _positive_id(value):
+        value = str(value or "").strip()
+        return int(value) if value.isdigit() and int(value) > 0 else None
 
-        params = {}
-        if tmdb_id.isdigit() and int(tmdb_id) > 0:
-            params["tmdb_id"] = int(tmdb_id)
-        if imdb_id.startswith("tt") and imdb_id[2:].isdigit() and int(imdb_id[2:]) > 0:
-            params["imdb_id"] = imdb_id
-        if not params and video.title and video.year:
-            params.update({"title": video.title[:255], "year": video.year})
+    @staticmethod
+    def _imdb_id(value):
+        value = str(value or "").strip()
+        return value if value.startswith("tt") and value[2:].isdigit() and int(value[2:]) > 0 else None
+
+    @classmethod
+    def _search_params(cls, video):
+        if isinstance(video, Episode):
+            episode = video.episode[0] if isinstance(video.episode, list) and video.episode else video.episode
+            if not cls._is_int(video.season) or not cls._is_int(episode):
+                return {}
+
+            params = {"type": "episode", "season": video.season, "episode": episode}
+            ids = {
+                "tvdb_id": cls._positive_id(video.series_tvdb_id),
+                "imdb_id": cls._imdb_id(video.series_imdb_id),
+            }
+            title = video.series
+        else:
+            params = {}
+            ids = {
+                "tmdb_id": cls._positive_id(video.tmdb_id),
+                "imdb_id": cls._imdb_id(video.imdb_id),
+            }
+            title = video.title
+
+        ids = {key: value for key, value in ids.items() if value is not None}
+        if ids:
+            params.update(ids)
+        elif title and video.year:
+            params.update({"title": title[:255], "year": video.year})
+        else:
+            return {}
         return params
 
     @staticmethod
-    def _same_movie(record, params):
-        """Guard against records of another movie when searching by id."""
-        if "tmdb_id" in params and record.get("tmdb_id") == params["tmdb_id"]:
+    def _same_media(record, params):
+        """Guard against records of another movie, show or episode."""
+        if "type" in params:
+            if record.get("type", "episode") != "episode":
+                return False
+            pack = record.get("pack")
+            if pack is None and (record.get("season"), record.get("episode")) != (params["season"], params["episode"]):
+                return False
+            if pack == "season" and record.get("season") != params["season"]:
+                return False
+        elif record.get("type", "movie") != "movie":
+            return False
+
+        if "title" in params:
             return True
-        if "imdb_id" in params and record.get("imdb_id") == params["imdb_id"]:
-            return True
-        return "title" in params
+        return any(key in params and record.get(key) == params[key] for key in ("tmdb_id", "tvdb_id", "imdb_id"))
 
     def query(self, languages, video):
         language_codes = {}
@@ -249,7 +314,7 @@ class Unit3dProvider(Provider):
 
         params = self._search_params(video)
         if not params:
-            logger.debug("UNIT3D search skipped: no TMDB id, IMDb id or title and year")
+            logger.debug("UNIT3D search skipped: no id, or title and year")
             return []
 
         params.update({"language": ",".join(sorted(language_codes)), "perPage": PER_PAGE})
@@ -271,13 +336,17 @@ class Unit3dProvider(Provider):
             if not self._valid_record(record, language_codes):
                 logger.debug("Skipping malformed UNIT3D subtitle record")
                 continue
-            if not self._same_movie(record, params):
-                logger.debug("Skipping UNIT3D subtitle %s of another movie", record["id"])
+            if not self._same_media(record, params):
+                logger.debug("Skipping UNIT3D subtitle %s of another movie or episode", record["id"])
                 continue
 
             extension = record["extension"].lower()
             if extension not in _TEXT_FORMATS | _ARCHIVE_FORMATS:
                 logger.debug("Skipping UNIT3D subtitle %s in unsupported format %s", record["id"], extension)
+                continue
+            if record.get("pack") in _PACKS and extension not in _ARCHIVE_FORMATS:
+                # The episode of a single file uploaded to a pack is unknown
+                logger.debug("Skipping UNIT3D pack subtitle %s that is not an archive", record["id"])
                 continue
 
             subtitle = Unit3dSubtitle(
@@ -285,6 +354,8 @@ class Unit3dProvider(Provider):
                 {**record, "extension": extension},
                 matched_by,
                 f"{API_PATH}/{record['id']}/download",
+                wanted_season=params.get("season"),
+                wanted_episode=params.get("episode"),
             )
             subtitle.get_matches(video)
             subtitles.append(subtitle)
@@ -294,6 +365,27 @@ class Unit3dProvider(Provider):
 
     def list_subtitles(self, video, languages):
         return self.query(languages, video)
+
+    @staticmethod
+    def _episode_from_archive(archive, season, episode, forced=False):
+        """Read the subtitle of an episode from a season or series pack archive."""
+        for name in archive.namelist():
+            base_name = os.path.basename(name)
+            stem, extension = os.path.splitext(base_name.lower())
+            if extension.lstrip(".") not in _TEXT_FORMATS:
+                continue
+            if not forced and stem.endswith("forced"):
+                continue
+
+            guess = guessit(base_name, {"type": "episode"})
+            guessed_episodes = guess.get("episode")
+            if not isinstance(guessed_episodes, list):
+                guessed_episodes = [guessed_episodes]
+            guessed_season = guess.get("season")
+            if episode in guessed_episodes and guessed_season in (None, season):
+                logger.debug("Using %s from UNIT3D pack archive", name)
+                return archive.read(name)
+        return None
 
     def download_subtitle(self, subtitle):
         logger.debug("UNIT3D download: subtitle %s", subtitle.subtitle_id)
@@ -312,9 +404,14 @@ class Unit3dProvider(Provider):
             archive = utils.get_archive_from_bytes(response.content)
             if archive is None:
                 raise ProviderError("UNIT3D returned an invalid subtitle archive")
-            content = utils.get_subtitle_from_archive(archive, forced=subtitle.language.forced)
+            if subtitle.pack in _PACKS:
+                content = self._episode_from_archive(
+                    archive, subtitle.wanted_season, subtitle.wanted_episode, forced=subtitle.language.forced
+                )
+            else:
+                content = utils.get_subtitle_from_archive(archive, forced=subtitle.language.forced)
             if content is None:
-                raise ProviderError("UNIT3D subtitle archive contains no subtitle")
+                raise ProviderError("UNIT3D subtitle archive does not contain the wanted subtitle")
         else:
             content = response.content
 

@@ -11,7 +11,7 @@ from subliminal.exceptions import (
     ProviderError,
     ServiceUnavailable,
 )
-from subliminal_patch.core import Movie
+from subliminal_patch.core import Episode, Movie
 from subliminal_patch.exceptions import ForbiddenError, TooManyRequests
 from subliminal_patch.providers import unit3d
 from subliminal_patch.providers.unit3d import Unit3dProvider, check_connection
@@ -599,3 +599,193 @@ def test_api_key_is_never_logged_or_exposed(requests_mock, provider, video, capl
     for request in requests_mock.request_history:
         assert API_KEY not in request.url
     assert API_KEY not in repr(provider)
+
+
+# TV episodes
+
+SHOW_RELEASE = "Breaking.Bad.S01E05.1080p.WEB-DL.DD5.1.H.264-GRP"
+
+
+@pytest.fixture
+def episode():
+    return Episode(
+        f"{SHOW_RELEASE}.mkv",
+        "Breaking Bad",
+        1,
+        5,
+        year=2008,
+        source="Web",
+        resolution="1080p",
+        video_codec="H.264",
+        release_group="GRP",
+        series_tvdb_id=81189,
+        series_imdb_id="tt0903747",
+    )
+
+
+def _episode_record(subtitle_id=200, season=1, episode=5, pack=None, **overrides):
+    return _record(
+        subtitle_id,
+        **{
+            "release": SHOW_RELEASE,
+            "type": "episode",
+            "season": season,
+            "episode": episode,
+            "pack": pack,
+            "tmdb_id": 1396,
+            "tvdb_id": 81189,
+            "imdb_id": "tt0903747",
+            **overrides,
+        },
+    )
+
+
+def test_episode_search_params(requests_mock, provider, episode):
+    requests_mock.get(SEARCH_URL, json=_search_response([_episode_record()], matched_by="tvdb"))
+
+    subtitles = provider.list_subtitles(episode, {Language("eng")})
+
+    assert len(subtitles) == 1
+    assert requests_mock.last_request.qs == {
+        "type": ["episode"],
+        "season": ["1"],
+        "episode": ["5"],
+        "tvdb_id": ["81189"],
+        "imdb_id": ["tt0903747"],
+        "language": ["en"],
+        "perpage": ["50"],
+    }
+
+
+def test_episode_search_by_show_name_and_year_when_no_id_is_known(requests_mock, provider, episode):
+    episode.series_tvdb_id = None
+    episode.series_imdb_id = None
+    requests_mock.get(SEARCH_URL, json=_search_response([_episode_record()], matched_by="title"))
+
+    subtitles = provider.list_subtitles(episode, {Language("eng")})
+
+    qs = requests_mock.last_request.qs
+    assert qs["title"] == ["breaking bad"]
+    assert qs["year"] == ["2008"]
+    assert "tvdb_id" not in qs and "imdb_id" not in qs
+    assert {"series", "year", "season", "episode"} <= subtitles[0].matches
+
+
+@pytest.mark.parametrize(
+    "changes",
+    [
+        {"series_tvdb_id": None, "series_imdb_id": None, "year": None},
+        {"season": None},
+        {"episode": None},
+    ],
+)
+def test_episode_search_is_skipped_without_enough_information(requests_mock, provider, episode, changes):
+    for key, value in changes.items():
+        setattr(episode, key, value)
+
+    assert provider.list_subtitles(episode, {Language("eng")}) == []
+    assert not requests_mock.called
+
+
+def test_episode_search_keeps_the_episode_and_pack_archives(requests_mock, provider, episode):
+    requests_mock.get(
+        SEARCH_URL,
+        json=_search_response(
+            [
+                _episode_record(1),
+                _episode_record(2, episode=None, pack="season", extension="zip"),
+                _episode_record(3, season=None, episode=None, pack="series", extension="zip"),
+                _episode_record(4, episode=None, pack="season", extension="srt"),
+                _episode_record(5, episode=6),
+                _episode_record(6, season=2, episode=None, pack="season", extension="zip"),
+                _episode_record(7, tmdb_id=1399, tvdb_id=121361, imdb_id="tt0944947"),
+                _record(8, type="movie", tvdb_id=81189),
+            ],
+            matched_by="tvdb",
+        ),
+    )
+
+    subtitles = provider.list_subtitles(episode, {Language("eng")})
+
+    assert [subtitle.subtitle_id for subtitle in subtitles] == [1, 2, 3]
+    for subtitle in subtitles:
+        assert {"series", "year", "season", "episode", "series_tvdb_id", "series_imdb_id"} <= subtitle.matches
+    assert {"source", "resolution", "release_group"} <= subtitles[0].matches
+
+
+def test_movie_search_skips_episode_records(requests_mock, provider, video):
+    requests_mock.get(SEARCH_URL, json=_search_response([_record(1), _episode_record(2, imdb_id="tt0111161")]))
+
+    subtitles = provider.list_subtitles(video, {Language("eng")})
+
+    assert [subtitle.subtitle_id for subtitle in subtitles] == [1]
+
+
+def test_episode_download(requests_mock, provider, episode):
+    requests_mock.get(SEARCH_URL, json=_search_response([_episode_record()]))
+    subtitle = provider.list_subtitles(episode, {Language("eng")})[0]
+    requests_mock.get(f"{BASE_URL}/api/subtitles/200/download", content=SRT)
+
+    provider.download_subtitle(subtitle)
+
+    assert subtitle.content == SRT.replace(b"\r\n", b"\n")
+
+
+def _pack_archive(files):
+    stream = io.BytesIO()
+    with zipfile.ZipFile(stream, "w") as archive:
+        for name, content in files.items():
+            archive.writestr(name, content)
+    return stream.getvalue()
+
+
+@pytest.mark.parametrize(
+    "pack, season, files",
+    [
+        (
+            "season",
+            1,
+            {
+                "Breaking.Bad.S01E04.srt": b"1\n00:00:01,000 --> 00:00:02,000\nWrong\n",
+                "Breaking.Bad.S01E05.srt": SRT,
+                "Breaking.Bad.S01E05.forced.srt": b"1\n00:00:01,000 --> 00:00:02,000\nForced\n",
+            },
+        ),
+        (
+            "series",
+            None,
+            {
+                "Season 2/Breaking.Bad.S02E05.srt": b"1\n00:00:01,000 --> 00:00:02,000\nWrong\n",
+                "Season 1/Breaking.Bad.S01E05.srt": SRT,
+            },
+        ),
+    ],
+)
+def test_pack_download_extracts_the_wanted_episode(requests_mock, provider, episode, pack, season, files):
+    requests_mock.get(
+        SEARCH_URL,
+        json=_search_response([_episode_record(season=season, episode=None, pack=pack, extension="zip")]),
+    )
+    subtitle = provider.list_subtitles(episode, {Language("eng")})[0]
+    requests_mock.get(f"{BASE_URL}/api/subtitles/200/download", content=_pack_archive(files))
+
+    provider.download_subtitle(subtitle)
+
+    assert subtitle.content == SRT.replace(b"\r\n", b"\n")
+
+
+def test_pack_download_without_the_wanted_episode_fails(requests_mock, provider, episode):
+    requests_mock.get(
+        SEARCH_URL,
+        json=_search_response([_episode_record(episode=None, pack="season", extension="zip")]),
+    )
+    subtitle = provider.list_subtitles(episode, {Language("eng")})[0]
+    # A single subtitle of another episode must not be used for this one
+    requests_mock.get(
+        f"{BASE_URL}/api/subtitles/200/download",
+        content=_pack_archive({"Breaking.Bad.S01E01.srt": SRT}),
+    )
+
+    with pytest.raises(ProviderError, match="does not contain the wanted subtitle"):
+        provider.download_subtitle(subtitle)
+    assert subtitle.content is None

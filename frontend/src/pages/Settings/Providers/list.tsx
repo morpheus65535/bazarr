@@ -743,7 +743,7 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     key: "unit3d",
     name: "UNIT3D",
     description:
-      "Subtitles from a UNIT3D private tracker (movies only). Requires a UNIT3D version that provides the subtitle API.",
+      "Subtitles for movies and episodes from a UNIT3D private tracker. Requires a UNIT3D version that provides the subtitle API.",
     message:
       "Use the API key shown on your UNIT3D account's API Keys settings page. Only subtitles approved by the tracker and available to your account are searched.",
     inputs: [
