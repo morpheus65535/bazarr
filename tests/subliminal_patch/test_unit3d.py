@@ -14,7 +14,7 @@ from subliminal.exceptions import (
 from subliminal_patch.core import Episode, Movie
 from subliminal_patch.exceptions import ForbiddenError, TooManyRequests
 from subliminal_patch.providers import unit3d
-from subliminal_patch.providers.unit3d import Unit3dProvider, check_connection
+from subliminal_patch.providers.unit3d import Unit3dProvider
 from subliminal_patch.score import MAX_SCORES, compute_score
 from subzero.language import Language
 
@@ -156,16 +156,16 @@ def test_uninitialized_provider_raises():
         Unit3dProvider(BASE_URL, API_KEY).status()
 
 
-# Connection test / status
+# Status
 
 
-def test_check_connection_success(requests_mock):
+def test_status(requests_mock, provider):
     requests_mock.get(
         STATUS_URL,
         json={"status": "ok", "provider": "unit3d", "version": "v9.2.0", "api_version": 1},
     )
 
-    assert check_connection(f"{BASE_URL}/", API_KEY) == {"status": True, "version": "UNIT3D v9.2.0"}
+    assert provider.status()["version"] == "v9.2.0"
     request = requests_mock.last_request
     assert request.headers["Authorization"] == f"Bearer {API_KEY}"
     assert request.headers["Accept"] == "application/json"
@@ -173,80 +173,31 @@ def test_check_connection_success(requests_mock):
 
 
 @pytest.mark.parametrize(
-    "permissions, message",
+    "response, error, message",
     [
-        ({"search": False, "download": True}, "missing the search permission"),
-        ({"search": True, "download": False}, "missing the download permission"),
-        ({"search": False, "download": False}, "missing the search and download permission"),
+        ({"status_code": 401, "json": {"message": "Unauthenticated."}}, AuthenticationError, "rejected the API key"),
+        ({"status_code": 403, "json": {}}, ForbiddenError, "denied access"),
+        ({"status_code": 404, "text": "Not Found"}, ConfigurationError, "does not provide the subtitle API"),
+        ({"status_code": 429, "json": {}}, TooManyRequests, "rate limit"),
+        ({"status_code": 500, "text": "Server Error"}, ServiceUnavailable, "HTTP 500"),
+        ({"status_code": 503, "text": "Maintenance"}, ServiceUnavailable, "HTTP 503"),
+        ({"status_code": 302, "headers": {"Location": "https://evil.example.com"}}, ConfigurationError, "redirected"),
+        ({"status_code": 200, "text": "<html>"}, ProviderError, "malformed JSON"),
+        ({"status_code": 200, "json": ["unexpected"]}, ProviderError, "unexpected response"),
+        ({"status_code": 200, "json": {"status": "ok", "provider": "other"}}, ProviderError, "does not provide"),
+        ({"status_code": 200, "json": {"message": "You are banned"}}, ForbiddenError, "refused the request"),
+        ({"exc": Timeout}, ProviderError, "timed out"),
+        ({"exc": ConnectionError}, ProviderError, "unreachable"),
     ],
 )
-def test_check_connection_requires_permissions(requests_mock, permissions, message):
-    requests_mock.get(
-        STATUS_URL,
-        json={"status": "ok", "provider": "unit3d", "version": "v9.2.0", "permissions": permissions},
-    )
-
-    result = check_connection(BASE_URL, API_KEY)
-
-    assert result == {"status": False, "error": f"UNIT3D API key is {message}"}
-
-
-def test_check_connection_with_permissions(requests_mock):
-    requests_mock.get(
-        STATUS_URL,
-        json={
-            "status": "ok",
-            "provider": "unit3d",
-            "version": "v9.2.0",
-            "permissions": {"search": True, "download": True},
-        },
-    )
-
-    assert check_connection(BASE_URL, API_KEY) == {"status": True, "version": "UNIT3D v9.2.0"}
-
-
-@pytest.mark.parametrize(
-    "response, message",
-    [
-        ({"status_code": 401, "json": {"message": "Unauthenticated."}}, "rejected the API key"),
-        ({"status_code": 403, "json": {}}, "denied access"),
-        ({"status_code": 404, "text": "Not Found"}, "does not provide the subtitle API"),
-        ({"status_code": 429, "json": {}}, "rate limit"),
-        ({"status_code": 500, "text": "Server Error"}, "HTTP 500"),
-        ({"status_code": 503, "text": "Maintenance"}, "HTTP 503"),
-        ({"status_code": 302, "headers": {"Location": "https://evil.example.com"}}, "redirected"),
-        ({"status_code": 200, "text": "<html>"}, "malformed JSON"),
-        ({"status_code": 200, "json": ["unexpected"]}, "unexpected response"),
-        ({"status_code": 200, "json": {"status": "ok", "provider": "other"}}, "does not provide"),
-        ({"status_code": 200, "json": {"message": "You are banned"}}, "refused the request"),
-        ({"exc": Timeout}, "timed out"),
-        ({"exc": ConnectionError}, "unreachable"),
-    ],
-)
-def test_check_connection_failures(requests_mock, response, message):
+def test_status_errors(requests_mock, provider, response, error, message):
     requests_mock.get(STATUS_URL, **response)
 
-    result = check_connection(BASE_URL, API_KEY)
+    with pytest.raises(error, match=message) as raised:
+        provider.status()
 
-    assert result["status"] is False
-    assert message in result["error"]
-    assert API_KEY not in result["error"]
-
-
-@pytest.mark.parametrize(
-    "url, api_key, message",
-    [
-        ("", API_KEY, "URL is required"),
-        ("tracker.example.com", API_KEY, "must begin with http"),
-        (BASE_URL, "", "API key is required"),
-    ],
-)
-def test_check_connection_configuration_errors(requests_mock, url, api_key, message):
-    result = check_connection(url, api_key)
-
-    assert result["status"] is False
-    assert message in result["error"]
-    assert not requests_mock.called
+    assert API_KEY not in str(raised.value)
+    assert provider.ping() is False
 
 
 def test_redirects_are_not_followed(requests_mock, provider):
@@ -618,8 +569,6 @@ def test_api_key_is_never_logged_or_exposed(requests_mock, provider, video, capl
         with pytest.raises(ProviderError) as error:
             provider.list_subtitles(video, {Language("eng")})
         errors.append(error.value)
-
-    check_connection(BASE_URL, API_KEY)
 
     assert API_KEY not in caplog.text
     assert "Authorization" not in caplog.text

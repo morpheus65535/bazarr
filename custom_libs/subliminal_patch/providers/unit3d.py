@@ -453,29 +453,3 @@ class Unit3dProvider(Provider):
             content = response.content
 
         subtitle.content = fix_line_ending(content)
-
-
-def check_connection(url, api_key):
-    """Check the UNIT3D connection for the provider settings "Test" button.
-
-    Returns a dict with ``status`` and either ``version`` or a user-friendly ``error``.
-    """
-    try:
-        provider = Unit3dProvider(url, api_key)
-        provider.initialize()
-        try:
-            info = provider.status()
-        finally:
-            provider.terminate()
-    except (ConfigurationError, ProviderError) as error:
-        logger.debug("UNIT3D connection test failed: %s", error)
-        return {"status": False, "error": str(error)}
-
-    permissions = info.get("permissions")
-    if isinstance(permissions, dict):
-        missing = [name for name in ("search", "download") if permissions.get(name) is not True]
-        if missing:
-            return {"status": False, "error": f"UNIT3D API key is missing the {' and '.join(missing)} permission"}
-
-    version = info.get("version")
-    return {"status": True, "version": f"UNIT3D {version}" if isinstance(version, str) else "UNIT3D"}

@@ -5,7 +5,6 @@ from operator import itemgetter
 
 from app.database import TableHistory, TableHistoryMovie, database, select
 from app.get_providers import list_throttled_providers, reset_throttled_providers
-from subliminal_patch.providers.unit3d import check_connection as unit3d_check_connection
 
 from ..utils import authenticate, False_Keys
 
@@ -81,26 +80,3 @@ class Providers(Resource):
             return '', 204
 
         return 'Unknown action', 400
-
-
-@api_ns_providers.route('providers/unit3d/test')
-class ProvidersUnit3dTest(Resource):
-    post_request_parser = reqparse.RequestParser()
-    post_request_parser.add_argument('url', type=str, required=True, location='form', help='UNIT3D URL')
-    post_request_parser.add_argument('api_key', type=str, required=True, location='form', help='UNIT3D API key')
-
-    post_response_model = api_ns_providers.model('ProvidersUnit3dTestPostResponse', {
-        'status': fields.Boolean(),
-        'version': fields.String(),
-        'error': fields.String(),
-    })
-
-    @authenticate
-    @api_ns_providers.doc(parser=post_request_parser)
-    @api_ns_providers.response(200, 'Success')
-    @api_ns_providers.response(401, 'Not Authenticated')
-    def post(self):
-        """Test the connection to a UNIT3D tracker"""
-        args = self.post_request_parser.parse_args()
-        return marshal(unit3d_check_connection(args.get('url'), args.get('api_key')), self.post_response_model,
-                       skip_none=True)

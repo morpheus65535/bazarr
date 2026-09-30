@@ -7,7 +7,7 @@ import api from "@/apis/raw";
 import { FormContext, FormValues } from "@/pages/Settings/utilities/FormValues";
 import { SettingsProvider } from "@/pages/Settings/utilities/SettingsProvider";
 import { AllProviders } from "@/providers";
-import { ProviderTestButton, Unit3dTestButton, URLTestButton } from "./index";
+import { ProviderTestButton, URLTestButton } from "./index";
 
 const sonarrSettings = {
   sonarr: {
@@ -22,13 +22,6 @@ const sonarrSettings = {
 const providerSettings = {
   opensubtitlescom: {
     endpoint: "http://api.opensubtitles.com",
-  },
-} as unknown as Settings;
-
-const unit3dSettings = {
-  unit3d: {
-    url: "https://tracker.example.com",
-    api_key: "unit3d-key",
   },
 } as unknown as Settings;
 
@@ -161,71 +154,5 @@ describe("Settings test buttons", () => {
     await userEvent.click(button);
 
     await screen.findByRole("button", { name: "Server error" });
-  });
-
-  it("Unit3dTestButton tests the connection and shows the version", async () => {
-    const testUnit3d = vitest
-      .fn()
-      .mockResolvedValue({ status: true, version: "UNIT3D v9.2.0" });
-    vi.spyOn(api.providers, "testUnit3d").mockImplementation(testUnit3d);
-
-    renderWithSettings(<Unit3dTestButton></Unit3dTestButton>, unit3dSettings);
-
-    const button = screen.getByRole("button", { name: "Test Connection" });
-    await userEvent.click(button);
-
-    expect(testUnit3d).toHaveBeenCalledWith(
-      "https://tracker.example.com",
-      "unit3d-key",
-    );
-    await screen.findByRole("button", { name: "UNIT3D v9.2.0" });
-  });
-
-  it("Unit3dTestButton shows the error returned by the test", async () => {
-    const testUnit3d = vitest.fn().mockResolvedValue({
-      status: false,
-      error: "UNIT3D rejected the API key",
-    });
-    vi.spyOn(api.providers, "testUnit3d").mockImplementation(testUnit3d);
-
-    renderWithSettings(<Unit3dTestButton></Unit3dTestButton>, unit3dSettings);
-
-    await userEvent.click(
-      screen.getByRole("button", { name: "Test Connection" }),
-    );
-
-    await screen.findByRole("button", { name: "UNIT3D rejected the API key" });
-  });
-
-  it("Unit3dTestButton shows an error when the request fails", async () => {
-    const testUnit3d = vitest.fn().mockRejectedValue(new Error("Network"));
-    vi.spyOn(api.providers, "testUnit3d").mockImplementation(testUnit3d);
-
-    renderWithSettings(<Unit3dTestButton></Unit3dTestButton>, unit3dSettings);
-
-    await userEvent.click(
-      screen.getByRole("button", { name: "Test Connection" }),
-    );
-
-    await screen.findByRole("button", { name: "Connection test failed" });
-  });
-
-  it("Unit3dTestButton requires a URL and an API key", async () => {
-    const testUnit3d = vitest.fn();
-    vi.spyOn(api.providers, "testUnit3d").mockImplementation(testUnit3d);
-
-    renderWithSettings(
-      <Unit3dTestButton></Unit3dTestButton>,
-      {} as unknown as Settings,
-    );
-
-    await userEvent.click(
-      screen.getByRole("button", { name: "Test Connection" }),
-    );
-
-    expect(testUnit3d).not.toHaveBeenCalled();
-    await screen.findByRole("button", {
-      name: "UNIT3D URL and API key are required",
-    });
   });
 });

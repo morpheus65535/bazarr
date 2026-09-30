@@ -763,11 +763,6 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
         name: "Match the exact release (sends the video file name and size to UNIT3D)",
         defaultValue: true,
       },
-      {
-        type: "testbutton",
-        key: "unit3d",
-        name: "Test Connection button",
-      },
     ],
   },
   {
