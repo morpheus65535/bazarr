@@ -109,7 +109,7 @@ export const forceAudioOption: SelectorOption<string>[] = [
 
 export const qualityMinScoreOptions: SelectorOption<number>[] = [
   {
-    label: "0.0 (Accept all results)",
+    label: "0.0 (Reject only anti-correlated results)",
     value: 0.0,
   },
   {
@@ -182,6 +182,18 @@ export const qualityMaxOffsetSecondsOptions: SelectorOption<number>[] = [
   {
     label: "60 seconds",
     value: 60,
+  },
+  {
+    label: "120 seconds",
+    value: 120,
+  },
+  {
+    label: "300 seconds",
+    value: 300,
+  },
+  {
+    label: "600 seconds",
+    value: 600,
   },
 ];
 
