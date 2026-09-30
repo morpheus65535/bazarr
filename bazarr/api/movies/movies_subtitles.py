@@ -7,15 +7,11 @@ from flask_restx import Resource, Namespace, reqparse
 from subliminal_patch.core import SUBTITLE_EXTENSIONS
 from werkzeug.datastructures import FileStorage
 
-from app.database import TableMovies, get_profile_id, database, select, TableMoviesSubtitles
+from app.database import TableMovies, database, select, TableMoviesSubtitles
 from utilities.path_mappings import path_mappings
 from subtitles.upload import manual_upload_subtitle
 from subtitles.mass_download.movies import movie_download_specific_subtitles
-from subtitles.download import generate_subtitles
 from subtitles.tools.delete import delete_subtitles
-from app.event_handler import event_stream
-from app.config import settings
-from app.jobs_queue import jobs_queue
 
 from ..utils import authenticate
 

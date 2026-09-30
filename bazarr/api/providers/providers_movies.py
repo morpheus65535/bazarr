@@ -8,8 +8,6 @@ from app.database import TableMovies, database, select, get_subtitles
 from utilities.path_mappings import path_mappings
 from app.get_providers import get_providers
 from subtitles.manual import manual_search, movie_manually_download_specific_subtitle
-from app.config import settings
-from app.jobs_queue import jobs_queue
 from subtitles.indexer.movies import store_subtitles_movie, list_missing_subtitles_movies
 
 from ..utils import authenticate
