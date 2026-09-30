@@ -29,13 +29,14 @@ def pytest_configure(config):
     checkout (e.g. CI)."""
     os.makedirs(os.path.join(os.path.dirname(__file__), "..", "data", "db"), exist_ok=True)
 
-    from app.database import engine, metadata
+    from app.database import database, engine, metadata
 
     metadata.create_all(engine)
 
     from languages.get_languages import load_language_in_db
 
     load_language_in_db()
+    database.commit()
 
 
 def pytest_report_header(config):
