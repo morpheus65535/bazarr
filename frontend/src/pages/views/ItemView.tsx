@@ -108,6 +108,7 @@ interface FilterConfig {
     profile?: boolean;
     audio?: boolean;
     tags?: boolean;
+    ended?: boolean;
   };
 }
 
@@ -355,6 +356,16 @@ const ItemViewFilterControls = ({
           falseLabel="Unmonitored"
           value={query.filters?.monitored}
           onChange={(value) => setFilter("monitored", value)}
+        />
+      )}
+
+      {filterConfig.filters?.ended && (
+        <TriStateFilter
+          ariaLabel="Series status"
+          trueLabel="Ended"
+          falseLabel="Continuing"
+          value={query.filters?.ended}
+          onChange={(value) => setFilter("ended", value)}
         />
       )}
 

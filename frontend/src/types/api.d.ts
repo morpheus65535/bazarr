@@ -311,6 +311,7 @@ declare namespace Parameter {
     profileId?: number;
     audioLanguage?: string;
     tags?: string[];
+    ended?: boolean;
   }
 
   interface ListQuery extends Range {
