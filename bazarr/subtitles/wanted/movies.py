@@ -304,10 +304,12 @@ def _run_wanted_search_missing_subtitles_movies(job_id, pending_failed_attempts)
     fallback_allowed = settings.general.use_whisper_fallback
     processed_count = 0
     if count_movies:
+        eligible_media_ids = select(TableMovies.radarrId).where(*exclusion_clause)
         for due_languages_by_chunk in iter_due_missing_languages_maps(
             'movie',
             adaptive_search_policy=adaptive_search_policy,
             batch_size=_DUE_MOVIE_DETAILS_BATCH_SIZE,
+            eligible_media_ids=eligible_media_ids,
         ):
             due_movie_id_chunk = list(due_languages_by_chunk)
             base_conditions = [TableMovies.radarrId.in_(due_movie_id_chunk)]

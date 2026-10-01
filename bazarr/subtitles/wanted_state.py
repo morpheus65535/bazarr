@@ -516,7 +516,8 @@ def count_due_missing_media(media_type, adaptive_search_policy=None):
     ).scalar() or 0
 
 
-def iter_due_missing_languages_maps(media_type, adaptive_search_policy=None, batch_size=None):
+def iter_due_missing_languages_maps(media_type, adaptive_search_policy=None, batch_size=None,
+                                   eligible_media_ids=None):
     if batch_size is None:
         batch_size = WANTED_STATE_QUERY_BATCH_SIZE
     if batch_size < 1:
@@ -525,6 +526,8 @@ def iter_due_missing_languages_maps(media_type, adaptive_search_policy=None, bat
         adaptive_search_policy = get_adaptive_search_policy()
 
     statement = due_missing_languages_statement(media_type, adaptive_search_policy)
+    if eligible_media_ids is not None:
+        statement = statement.where(TableMissingSubtitles.media_id.in_(eligible_media_ids))
     last_media_id = None
     while True:
         # Keyset pagination bounds ORM buffering and tolerates searches deleting
