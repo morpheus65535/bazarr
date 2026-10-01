@@ -25,6 +25,8 @@ from subtitles.language_utils import parse_language_token
 from subtitles.serialization import parse_missing_subtitles
 
 WANTED_STATE_QUERY_BATCH_SIZE = 5000
+# Leave room for fixed parameters in queries that filter by media type.
+WANTED_STATE_ID_QUERY_BATCH_SIZE = 900
 FAILED_ATTEMPT_TEMP_TABLE_MIN_SIZE = 1000
 FAILED_ATTEMPT_UPSERT_BATCH_SIZE = 100
 
@@ -321,7 +323,7 @@ def get_missing_languages_map(media_type, media_ids):
     if not media_ids:
         return missing_languages
 
-    for media_id_chunk in _iter_chunks(media_ids):
+    for media_id_chunk in _iter_chunks(media_ids, WANTED_STATE_ID_QUERY_BATCH_SIZE):
         for row in database.execute(
             select(TableMissingSubtitles.media_id, TableMissingSubtitles.language)
             .where(TableMissingSubtitles.media_type == media_type)
