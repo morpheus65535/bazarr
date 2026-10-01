@@ -50,8 +50,8 @@ parser.add_argument('--create-db-revision', default=False, type=bool, const=True
 
 
 if not no_cli:
-    args, unknown_args = parser.parse_known_args()
+    args = parser.parse_args()
     if no_update:
         args.no_update = True
 else:
-    args, unknown_args = parser.parse_known_args(["-c", config_dir, "--no-update"])
+    args = parser.parse_args(["-c", config_dir, "--no-update"])

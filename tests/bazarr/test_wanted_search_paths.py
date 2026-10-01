@@ -49,6 +49,16 @@ def _captured_scene_name(generate_calls):
     return generate_calls[0][0][3]
 
 
+def _keep_languages_due(monkeypatch, wanted_module, languages):
+    monkeypatch.setattr(
+        wanted_module,
+        "get_due_missing_languages_map",
+        lambda media_type, media_ids, adaptive_search_policy=None: {
+            media_id: list(languages) for media_id in media_ids
+        },
+    )
+
+
 def _run_wanted_worker(wanted_module, kind, row, providers=None, **kwargs):
     if providers is None:
         providers = ["provider"]
@@ -118,6 +128,7 @@ def test_wanted_handles_malformed_audio_profile_languages(
 
     monkeypatch.setattr(wanted_module, "generate_subtitles", partial(_capture_generate_subtitles, generate_calls))
     monkeypatch.setattr(wanted_module, "get_audio_profile_languages", lambda audio_language: [None, {"bad": "shape"}])
+    _keep_languages_due(monkeypatch, wanted_module, ["en"])
 
     _run_wanted_download_subtitles(wanted_download_subtitles, kind, row, due_languages=["en"])
 
@@ -133,6 +144,7 @@ def test_wanted_uses_none_for_missing_scene_name(
 
     monkeypatch.setattr(wanted_module, "generate_subtitles", partial(_capture_generate_subtitles, generate_calls))
     monkeypatch.setattr(wanted_module, "get_audio_profile_languages", _english_audio_languages)
+    _keep_languages_due(monkeypatch, wanted_module, ["en"])
 
     _run_wanted_download_subtitles(wanted_download_subtitles, kind, row, due_languages=["en"])
 
@@ -149,6 +161,7 @@ def test_wanted_skips_generate_when_path_missing(
 
     monkeypatch.setattr(wanted_module, "generate_subtitles", partial(_capture_generate_subtitles, generate_calls))
     monkeypatch.setattr(wanted_module, "get_audio_profile_languages", _english_audio_languages)
+    _keep_languages_due(monkeypatch, wanted_module, ["en"])
 
     _run_wanted_download_subtitles(wanted_download_subtitles, kind, row, due_languages=["en"])
 
