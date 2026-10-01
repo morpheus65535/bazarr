@@ -53,6 +53,9 @@ def get_missing_subtitle_rows(media_type, media_id, missing_subtitles):
     rows = []
     seen_languages = set()
     for language in parse_missing_subtitles(missing_subtitles):
+        parsed_language = parse_language_token(language)
+        if parsed_language is not None:
+            language = parsed_language[0]
         if language in seen_languages:
             continue
         seen_languages.add(language)
