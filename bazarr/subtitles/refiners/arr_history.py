@@ -24,7 +24,10 @@ def refine_info_url(video):
     else:
         return
 
-    for grab in history['records']:
+    if not isinstance(history, dict):
+        return
+
+    for grab in history.get('records', []):
         # take the latest grab for the episode
         if 'nzbInfoUrl' in grab['data'] and grab['data']['nzbInfoUrl']:
             video.info_url = grab['data']['nzbInfoUrl']
