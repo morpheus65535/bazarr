@@ -156,6 +156,57 @@ def test_scheduled_search_filters_excluded_media_before_pagination(
 
 
 @pytest.mark.parametrize("kind", ["movies", "series"])
+def test_scheduled_search_keeps_each_failure_completion_time(
+    kind, monkeypatch, wanted_module, row_factory, jobs_queue_factory, wanted_search_job, wanted_search_tables
+):
+    from datetime import datetime
+
+    for media_id in range(1, 4):
+        overrides = {"radarrId": media_id} if kind == "movies" else {
+            "sonarrEpisodeId": media_id,
+            "episode": media_id,
+        }
+        row_factory(**overrides, missing_languages=["en"], failed_attempts=[])
+
+    monkeypatch.setattr(wanted_module, "jobs_queue", jobs_queue_factory())
+    monkeypatch.setattr(wanted_module, "get_adaptive_search_policy", lambda: None)
+    monkeypatch.setattr(wanted_state, "get_adaptive_search_policy", lambda: None)
+    monkeypatch.setattr(wanted_module, "get_exclusion_clause", _no_exclusions)
+    monkeypatch.setattr(wanted_module, "get_providers", _single_provider_list)
+    monkeypatch.setattr(
+        wanted_module,
+        "_movie_needs_wanted_lookup_refresh" if kind == "movies" else "_episode_needs_wanted_lookup_refresh",
+        lambda item: False,
+    )
+    clock = [1000.0]
+    finished = []
+
+    class Clock:
+        timestamp = staticmethod(datetime.timestamp)
+
+        @staticmethod
+        def now():
+            return datetime.fromtimestamp(clock[0])
+
+    def search(*args, **kwargs):
+        clock[0] += 60
+        finished.append(clock[0])
+        return iter(())
+
+    monkeypatch.setattr(wanted_state, "datetime", Clock)
+    monkeypatch.setattr(wanted_module.time, "time", lambda: clock[0])
+    monkeypatch.setattr(wanted_module, "generate_subtitles", search)
+    wanted_search_job(job_id="job")
+
+    attempts = wanted_search_tables.failed_subtitle_attempts
+    persisted = wanted_module.database.execute(
+        select(attempts.c.latest_attempt_at).order_by(attempts.c.media_id)
+    ).scalars().all()
+    assert finished == [1060.0, 1120.0, 1180.0]
+    assert persisted == finished
+
+
+@pytest.mark.parametrize("kind", ["movies", "series"])
 def test_wanted_search_reports_throttled_when_all_providers_are_throttled(
     monkeypatch, wanted_module, row_factory, jobs_queue_factory, kind
 ):
