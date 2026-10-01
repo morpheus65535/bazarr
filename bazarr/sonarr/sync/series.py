@@ -9,8 +9,9 @@ from datetime import datetime
 from app.config import settings
 from subtitles.indexer.series import list_missing_subtitles
 from sonarr.rootfolder import check_sonarr_rootfolder
-from app.database import TableShows, TableLanguagesProfiles, database, insert, update, delete, select
+from app.database import TableShows, TableLanguagesProfiles, database, insert, update, select
 from utilities.helper import bool_map
+from subtitles.wanted_state import delete_series_and_wanted_search_state
 from utilities.path_mappings import path_mappings
 from app.event_handler import event_stream
 from app.jobs_queue import jobs_queue
@@ -57,6 +58,9 @@ def update_series(job_id=None, wait_for_completion=False):
         return
     else:
         if not isinstance(series, list):
+            logging.debug('BAZARR Sonarr series sync returned an invalid payload. Skipping sync.')
+            jobs_queue.update_job_name(job_id=job_id, new_job_name="Synced series with Sonarr")
+            gc.collect()
             return
 
         # Get current shows in DB
@@ -66,6 +70,7 @@ def update_series(job_id=None, wait_for_completion=False):
                             .all()]
 
         current_shows_sonarr = []
+        complete_series_list = True
 
         series_count = len(series)
         skipped_count = 0
@@ -83,42 +88,51 @@ def update_series(job_id=None, wait_for_completion=False):
 
         jobs_queue.update_job_progress(job_id=job_id, progress_max=series_count)
         for i, show in enumerate(series, start=1):
-            jobs_queue.update_job_progress(job_id=job_id, progress_value=i, progress_message=show['title'])
+            if not isinstance(show, dict) or type(show.get('id')) is not int or show['id'] <= 0:
+                complete_series_list = False
+                skipped_count += 1
+                continue
+            show_id = show.get('id')
+            jobs_queue.update_job_progress(job_id=job_id, progress_value=i, progress_message=show.get('title', 'Unknown'))
 
             if settings.sonarr.sync_only_monitored_series:
                 try:
-                    monitored_status_db = bool_map[series_monitored[show['id']]]
-                except KeyError:
+                    monitored_status_db = bool_map[series_monitored.get(show.get('id'))]
+                except (KeyError, TypeError):
                     monitored_status_db = None
                 if monitored_status_db is None:
                     # not in db, need to add
                     pass
-                elif monitored_status_db != show['monitored']:
+                elif monitored_status_db != show.get('monitored'):
                     # monitored status changed and we don't know about it until now
-                    trace(f"{i}: (Monitor Status Mismatch) {show['title']}")
+                    trace(f"{i}: (Monitor Status Mismatch) {show.get('title', 'Unknown')}")
                     # pass
-                elif not show['monitored']:
+                elif not show.get('monitored'):
                     # Add unmonitored series in sonarr to current series list, otherwise it will be deleted from db
-                    trace(f"{i}: (Skipped Unmonitored) {show['title']}")
-                    current_shows_sonarr.append(show['id'])
+                    trace(f"{i}: (Skipped Unmonitored) {show.get('title', 'Unknown')}")
+                    current_shows_sonarr.append(show_id)
                     skipped_count += 1
                     continue
 
-            trace(f"{i}: (Processing) {show['title']}")
+            trace(f"{i}: (Processing) {show.get('title', 'Unknown')}")
 
             # Add shows in Sonarr to current shows list
-            current_shows_sonarr.append(show['id'])
+            current_shows_sonarr.append(show_id)
 
             # Update series in DB
-            update_one_series(show['id'], action='updated', sync_episodes_after_update=False,
+            update_one_series(show_id, action='updated', sync_episodes_after_update=False,
                               series_data=[show], audio_profiles=audio_profiles, tagsDict=tagsDict,
                               language_profiles=language_profiles)
 
             # Update episodes in DB
-            sync_episodes(series_id=show['id'])
+            sync_episodes(series_id=show_id)
 
         # Calculate series to remove from DB
-        removed_series = list(set(current_shows_db) - set(current_shows_sonarr))
+        removed_series = (
+            list(set(current_shows_db) - set(current_shows_sonarr)) if complete_series_list else []
+        )
+        if not complete_series_list:
+            logging.warning('BAZARR Skipping series deletion because Sonarr returned unidentified series.')
 
         for series in removed_series:
             # Remove series from DB
@@ -146,9 +160,7 @@ def update_one_series(series_id, action, is_signalr=False, sync_episodes_after_u
 
     # Delete series from DB
     if action == 'deleted' and existing_series:
-        database.execute(
-            delete(TableShows)
-            .where(TableShows.sonarrSeriesId == int(series_id)))
+        delete_series_and_wanted_search_state(series_id)
 
         event_stream(type='series', action='delete', payload=int(series_id))
         return

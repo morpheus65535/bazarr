@@ -19,6 +19,7 @@ from utilities.video_analyzer import embedded_subs_reader
 from app.event_handler import event_stream
 from subtitles.indexer.utils import guess_external_subtitles, get_external_subtitles_path
 from subtitles.pool import get_language_equals
+from subtitles.wanted_state import store_missing_subtitles
 from app.jobs_queue import jobs_queue
 
 gc.enable()
@@ -36,9 +37,13 @@ def store_subtitles_movie(radarr_id, use_cache=True):
     if not item:
         logging.warning(f"BAZARR could not find movie with ID {radarr_id} in the database.")
         return
-    else:
-        original_path = item.path
-        mapped_path = path_mappings.path_replace_movie(original_path)
+
+    original_path = item.path
+    if not original_path:
+        logging.warning(f"BAZARR movie with ID {radarr_id} has no path in the database.")
+        return
+
+    mapped_path = path_mappings.path_replace_movie(original_path)
 
     logging.debug(f'BAZARR started subtitles indexing for this file: {mapped_path}')
     embedded_subtitles = []
@@ -173,7 +178,8 @@ def store_subtitles_movie(radarr_id, use_cache=True):
                     continue
 
                 if not valid_language:
-                    logging.debug(f'{language.alpha3} is an unsupported language code.')
+                    if hasattr(language, 'alpha3'):
+                        logging.debug(f'{language.alpha3} is an unsupported language code.')
                     continue
 
                 subtitle_path = get_external_subtitles_path(mapped_path, subtitle)
@@ -191,7 +197,7 @@ def store_subtitles_movie(radarr_id, use_cache=True):
                     external_subtitles.append({'radarrId': item.radarrId,
                                                'language': custom.split(':')[0],
                                                'forced': custom.endswith(':forced'),
-                                               'hi': custom.endswith(':hi'),
+                                               'hi': custom.endswith((':hi', ':HI')),
                                                'path': path_mappings.path_replace_reverse_movie(subtitle_path),
                                                'size': subtitle_size})
 
@@ -236,12 +242,13 @@ def store_subtitles_movie(radarr_id, use_cache=True):
 def list_missing_subtitles_movies(no=None, *args, **kwargs):  # job_id might be provided but isn't used for now
     stmt = select(TableMovies.radarrId,
                   TableMovies.profileId,
-                  TableMovies.audio_language)
+                  TableMovies.audio_language,
+                  TableMovies.missing_subtitles)
 
     if no:
-        movies_subtitles = database.execute(stmt.where(TableMovies.radarrId == no)).all()
+        movies_subtitles = database.execute(stmt.where(TableMovies.radarrId == no))
     else:
-        movies_subtitles = database.execute(stmt).all()
+        movies_subtitles = database.execute(stmt)
 
     use_embedded_subs = settings.general.use_embedded_subs
 
@@ -254,31 +261,50 @@ def list_missing_subtitles_movies(no=None, *args, **kwargs):  # job_id might be 
     for movie_subtitles in movies_subtitles:
         missing_subtitles_text = '[]'
         if movie_subtitles.profileId:
+            audio_language_codes = {
+                x['code2']
+                for x in get_audio_profile_languages(movie_subtitles.audio_language)
+            }
+            matches_audio = lambda language: language['language'] in audio_language_codes
+
             # get desired subtitles
             desired_subtitles_temp = get_profiles_list(profile_id=movie_subtitles.profileId)
             desired_subtitles_list = []
-            if desired_subtitles_temp:
-                for language in desired_subtitles_temp['items']:
-                    if language['audio_exclude'] == "True":
+            if desired_subtitles_temp and isinstance(desired_subtitles_temp, dict):
+                items = desired_subtitles_temp.get('items', [])
+                if not isinstance(items, (list, tuple)):
+                    items = []
+                for language in items:
+                    if not isinstance(language, dict):
+                        continue
+                    language_code = language.get('language')
+                    if not isinstance(language_code, str) or not language_code:
+                        continue
+                    if language.get('audio_exclude') == "True":
                         if matches_audio(language):
                             continue
-                    if language['audio_only_include'] == "True":
+                    if language.get('audio_only_include') == "True":
                         if not matches_audio(language):
                             continue
-                    desired_subtitles_list.append({'language': language['language'],
-                                                   'forced': str(language['forced']),
-                                                   'hi': str(language['hi'])})
+                    desired_subtitles_list.append({'language': language_code,
+                                                   'forced': str(language.get('forced', False)),
+                                                   'hi': str(language.get('hi', False))})
 
             # get existing subtitles
             actual_subtitles_list = []
-            actual_subtitles_temp = get_subtitles(radarr_id=movie_subtitles.radarrId)
+            actual_subtitles_temp = get_subtitles(radarr_id=movie_subtitles.radarrId) or []
             if not use_embedded_subs:
-                actual_subtitles_temp = [x for x in actual_subtitles_temp if x['path']]
+                actual_subtitles_temp = [x for x in actual_subtitles_temp if isinstance(x, dict) and x.get('path')]
 
             for subtitles in actual_subtitles_temp:
-                actual_subtitles_list.append({'language': subtitles['code2'],
-                                              'forced': str(subtitles['forced']),
-                                              'hi': str(subtitles['hi'])})
+                if not isinstance(subtitles, dict):
+                    continue
+                language_code = subtitles.get('code2')
+                if not isinstance(language_code, str) or not language_code:
+                    continue
+                actual_subtitles_list.append({'language': language_code,
+                                              'forced': str(subtitles.get('forced', False)),
+                                              'hi': str(subtitles.get('hi', False))})
 
             # Expand actual subtitles with language equals
             # Convert code2 languages to Language objects for expansion
@@ -313,14 +339,19 @@ def list_missing_subtitles_movies(no=None, *args, **kwargs):  # job_id might be 
 
             if cutoff_temp_list:
                 for cutoff_temp in cutoff_temp_list:
-                    cutoff_language = {'language': cutoff_temp['language'],
-                                       'forced': cutoff_temp['forced'],
-                                       'hi': cutoff_temp['hi']}
-                    if cutoff_temp['audio_only_include'] == 'True' and not matches_audio(cutoff_temp):
+                    if not isinstance(cutoff_temp, dict):
+                        continue
+                    cutoff_code = cutoff_temp.get('language')
+                    if not isinstance(cutoff_code, str) or not cutoff_code:
+                        continue
+                    cutoff_language = {'language': cutoff_code,
+                                       'forced': cutoff_temp.get('forced', 'False'),
+                                       'hi': cutoff_temp.get('hi', 'False')}
+                    if cutoff_temp.get('audio_only_include') == 'True' and not matches_audio(cutoff_temp):
                         # We don't want subs in this language unless it matches
                         # the audio. Don't use it to meet the cutoff.
                         continue
-                    elif cutoff_temp['audio_exclude'] == 'True' and matches_audio(cutoff_temp):
+                    elif cutoff_temp.get('audio_exclude') == 'True' and matches_audio(cutoff_temp):
                         # The cutoff is met through one of the audio tracks.
                         cutoff_met = True
                     elif cutoff_language in actual_subtitles_list:
@@ -328,13 +359,13 @@ def list_missing_subtitles_movies(no=None, *args, **kwargs):  # job_id might be 
                     elif cutoff_language in expanded_actual_subtitles_list:
                         # Check against expanded actual subtitles (includes language equals)
                         cutoff_met = True
-                    elif (cutoff_temp['hi'] == 'False' and cutoff_language and
+                    elif (cutoff_language['hi'] == 'False' and cutoff_language and
                           {'language': cutoff_language['language'],
                            'forced': 'False',
                            'hi': 'True'} in actual_subtitles_list):
                         # HI is considered as good as normal only if the language isn't set to exclude HI
                         cutoff_met = True
-                    elif (cutoff_temp['hi'] == HI_EXCLUDED and
+                    elif (cutoff_language['hi'] == HI_EXCLUDED and
                           {'language': cutoff_language['language'],
                            'forced': cutoff_language['forced'],
                            'hi': 'False'} in actual_subtitles_list):
@@ -352,7 +383,19 @@ def list_missing_subtitles_movies(no=None, *args, **kwargs):  # job_id might be 
                         missing_subtitles_list.append(item)
 
                 # get a dictionary of hi setting by language
-                hi_setting_by_language = {x['language']: x['hi'] for x in desired_subtitles_temp['items'] if x['forced'] == 'False'} if desired_subtitles_temp else {}
+                desired_profile_items = (
+                    desired_subtitles_temp.get('items', [])
+                    if isinstance(desired_subtitles_temp, dict) else []
+                )
+                if not isinstance(desired_profile_items, (list, tuple)):
+                    desired_profile_items = []
+                hi_setting_by_language = {
+                    item['language']: item.get('hi', 'False')
+                    for item in desired_profile_items
+                    if isinstance(item, dict)
+                    and isinstance(item.get('language'), str)
+                    and item.get('forced', 'False') == 'False'
+                }
                 for item in actual_subtitles_list:
                     if item['hi'] == 'True' and hi_setting_by_language.get(item['language']) != HI_EXCLUDED:
                         # remove missing that have forced or hi subtitles for this language in existing (unless the language is set to exclude HI)
@@ -383,11 +426,9 @@ def list_missing_subtitles_movies(no=None, *args, **kwargs):  # job_id might be 
 
                 missing_subtitles_text = str(missing_subtitles_output_list)
 
-        database.execute(
-            update(TableMovies)
-            .values(missing_subtitles=missing_subtitles_text)
-            .where(TableMovies.radarrId == movie_subtitles.radarrId))
-
+        store_missing_subtitles(
+            TableMovies.__table__, 'radarrId', 'movie', movie_subtitles.radarrId, missing_subtitles_text,
+        )
         event_stream(type='movie', payload=movie_subtitles.radarrId)
         event_stream(type='movie-wanted', action='update', payload=movie_subtitles.radarrId)
     event_stream(type='badges')

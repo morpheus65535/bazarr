@@ -1,5 +1,58 @@
+import importlib
+import os
+import subprocess
+import sys
+
+import pytest
+
 from bazarr.app import config
 
 
 def test_get_settings():
     assert isinstance(config.get_settings(), dict)
+
+
+def test_settings_exposes_general_defaults():
+    assert config.settings.general.minimum_score == 90
+
+
+def test_get_args_rejects_unknown_cli_arguments(monkeypatch, request):
+    monkeypatch.setenv("NO_CLI", "false")
+    monkeypatch.setattr(sys, "argv", ["pytest", "--unknown-flag", "value"])
+
+    module = importlib.import_module("bazarr.app.get_args")
+
+    def restore_module_state():
+        monkeypatch.undo()
+        importlib.reload(module)
+
+    request.addfinalizer(restore_module_state)
+
+    with pytest.raises(SystemExit) as error:
+        importlib.reload(module)
+
+    assert error.value.code == 2
+
+
+def test_config_import_does_not_import_subtitles_package_side_effects(tmp_path):
+    environment = os.environ.copy()
+    repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    environment["PYTHONPATH"] = os.path.join(repo_root, "bazarr")
+    environment.setdefault("BAZARR_VERSION", "v0.0.0-test")
+    environment.setdefault("SZ_USER_AGENT", "pytest")
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            "import sys, app.libs; from app.config import settings; "
+            "print(type(settings).__name__, 'subtitles' in sys.modules)",
+        ],
+        check=True,
+        cwd=tmp_path,
+        env=environment,
+        text=True,
+        capture_output=True,
+    )
+
+    assert result.stdout.strip() == "LazySettings False"
