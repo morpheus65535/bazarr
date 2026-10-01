@@ -20,7 +20,7 @@ from app.event_handler import event_stream
 from subtitles.indexer.utils import guess_external_subtitles, get_external_subtitles_path
 from subtitles.pool import get_language_equals
 from app.jobs_queue import jobs_queue
-from subtitles.wanted_state import refresh_wanted_search_state
+from subtitles.wanted_state import store_missing_subtitles
 
 gc.enable()
 
@@ -412,20 +412,11 @@ def list_missing_subtitles_movies(no=None, *args, **kwargs):  # job_id might be 
 
                 missing_subtitles_text = str(missing_subtitles_output_list)
 
-        if movie_subtitles.missing_subtitles != missing_subtitles_text:
-            database.execute(
-                update(TableMovies)
-                .values(missing_subtitles=missing_subtitles_text)
-                .where(TableMovies.radarrId == movie_subtitles.radarrId))
-            refresh_wanted_search_state(
-                'movie',
-                movie_subtitles.radarrId,
-                missing_subtitles_text,
-                refresh_failed_attempts=False,
-            )
-
-            event_stream(type='movie', payload=movie_subtitles.radarrId)
-            event_stream(type='movie-wanted', action='update', payload=movie_subtitles.radarrId)
+        store_missing_subtitles(
+            TableMovies.__table__, 'radarrId', 'movie', movie_subtitles.radarrId, missing_subtitles_text,
+        )
+        event_stream(type='movie', payload=movie_subtitles.radarrId)
+        event_stream(type='movie-wanted', action='update', payload=movie_subtitles.radarrId)
     event_stream(type='badges')
 
 

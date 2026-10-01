@@ -1,7 +1,7 @@
 """normalize missing subtitles state
 
 Revision ID: e6cbb0f6f9b1
-Revises: 0124f9e278fb
+Revises: 537e9b4d10e3
 Create Date: 2026-06-02 00:00:00.000000
 
 """
@@ -13,7 +13,7 @@ from subtitles.adaptive_searching import get_attempt_windows
 
 # revision identifiers, used by Alembic.
 revision = 'e6cbb0f6f9b1'
-down_revision = '0124f9e278fb'
+down_revision = '537e9b4d10e3'
 branch_labels = None
 depends_on = None
 

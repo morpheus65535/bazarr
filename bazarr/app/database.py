@@ -557,25 +557,25 @@ def get_profile_id_name(profile_id):
 
 
 def get_profile_cutoff(profile_id):
-    cutoff_language = None
-    profile_id_list = update_profile_id_list()
+    try:
+        profile_id = int(profile_id)
+    except (TypeError, ValueError):
+        return None
 
-    if profile_id and profile_id != 'null':
-        cutoff_language = []
-        for profile in profile_id_list:
-            profileId, name, cutoff, items, mustContain, mustNotContain, originalFormat, tag = profile.values()
-            if cutoff:
-                if profileId == int(profile_id):
-                    for item in items:
-                        if item['id'] == cutoff:
-                            return [item]
-                        elif cutoff == 65535:
-                            cutoff_language.append(item)
+    for profile in update_profile_id_list():
+        if profile.get('profileId') != profile_id:
+            continue
+        cutoff = profile.get('cutoff')
+        items = profile.get('items')
+        if not cutoff or not isinstance(items, list):
+            return None
+        items = [item for item in items if isinstance(item, dict)]
+        if cutoff == 65535:
+            return items or None
+        return next(([item] for item in items if item.get('id') == cutoff), None)
+    return None
 
-        if not len(cutoff_language):
-            cutoff_language = None
 
-    return cutoff_language
 def get_audio_profile_languages(audio_languages_list_str):
     from languages.get_languages import alpha2_from_language, alpha3_from_language, language_from_alpha2
     audio_languages = []
@@ -786,7 +786,6 @@ def get_subtitles(sonarr_episode_id: int = None, radarr_id: int = None) -> List[
 
         for episode_subtitles in episodes_subtitles:
             subtitles.append(_subtitle_payload(episode_subtitles, path_mappings.path_replace))
-            subtitles[-1]["id"] = episode_subtitles.id
     elif radarr_id:
         movies_subtitles = database.execute(
             select(TableMoviesSubtitles.path,
@@ -801,7 +800,6 @@ def get_subtitles(sonarr_episode_id: int = None, radarr_id: int = None) -> List[
 
         for movie_subtitles in movies_subtitles:
             subtitles.append(_subtitle_payload(movie_subtitles, path_mappings.path_replace_movie))
-            subtitles[-1]["id"] = movie_subtitles.id
 
     return _sort_subtitles(subtitles)
 
@@ -809,7 +807,8 @@ def get_subtitles(sonarr_episode_id: int = None, radarr_id: int = None) -> List[
 def _subtitle_payload(subtitle, replace_path):
     from languages.get_languages import alpha3_from_alpha2, language_from_alpha2
 
-    return {"path": replace_path(subtitle.path),
+    return {"id": subtitle.id,
+            "path": replace_path(subtitle.path),
             "name": language_from_alpha2(subtitle.language),
             "code2": subtitle.language,
             "code3": alpha3_from_alpha2(subtitle.language),
@@ -836,7 +835,8 @@ def get_subtitles_map(media_type: str, media_ids: list[int]) -> dict[int, List[d
                    TableEpisodesSubtitles.forced,
                    TableEpisodesSubtitles.hi,
                    TableEpisodesSubtitles.size,
-                   TableEpisodesSubtitles.embedded_track_id)
+                   TableEpisodesSubtitles.embedded_track_id,
+                   TableEpisodesSubtitles.id)
             .where(TableEpisodesSubtitles.sonarrEpisodeId.in_(media_ids))
         ).all()
         for row in rows:
@@ -849,7 +849,8 @@ def get_subtitles_map(media_type: str, media_ids: list[int]) -> dict[int, List[d
                    TableMoviesSubtitles.forced,
                    TableMoviesSubtitles.hi,
                    TableMoviesSubtitles.size,
-                   TableMoviesSubtitles.embedded_track_id)
+                   TableMoviesSubtitles.embedded_track_id,
+                   TableMoviesSubtitles.id)
             .where(TableMoviesSubtitles.radarrId.in_(media_ids))
         ).all()
         for row in rows:

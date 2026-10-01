@@ -8,6 +8,7 @@ def test_subtitle_payload_maps_language_and_path():
     original_languages = getattr(get_languages, "languages_dict", None)
     get_languages.languages_dict = [{"code2": "en", "code3": "eng", "code3b": None, "name": "English"}]
     subtitle = SimpleNamespace(
+        id=71,
         path="/media/movie.en.srt",
         language="en",
         forced=False,
@@ -25,6 +26,7 @@ def test_subtitle_payload_maps_language_and_path():
             get_languages.languages_dict = original_languages
 
     assert result == {
+        "id": 71,
         "path": "/mapped/movie.en.srt",
         "name": "English",
         "code2": "en",

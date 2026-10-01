@@ -20,7 +20,7 @@ from app.event_handler import event_stream
 from subtitles.indexer.utils import guess_external_subtitles, get_external_subtitles_path
 from subtitles.pool import get_language_equals
 from app.jobs_queue import jobs_queue
-from subtitles.wanted_state import refresh_wanted_search_state
+from subtitles.wanted_state import store_missing_subtitles
 
 gc.enable()
 
@@ -423,20 +423,12 @@ def list_missing_subtitles(no=None, epno=None, *args, **kwargs):  # job_id might
 
                 missing_subtitles_text = str(missing_subtitles_output_list)
 
-        if episode_subtitles.missing_subtitles != missing_subtitles_text:
-            database.execute(
-                update(TableEpisodes)
-                .values(missing_subtitles=missing_subtitles_text)
-                .where(TableEpisodes.sonarrEpisodeId == episode_subtitles.sonarrEpisodeId))
-            refresh_wanted_search_state(
-                'series',
-                episode_subtitles.sonarrEpisodeId,
-                missing_subtitles_text,
-                refresh_failed_attempts=False,
-            )
-
-            event_stream(type='episode', payload=episode_subtitles.sonarrEpisodeId)
-            event_stream(type='episode-wanted', action='update', payload=episode_subtitles.sonarrEpisodeId)
+        store_missing_subtitles(
+            TableEpisodes.__table__, 'sonarrEpisodeId', 'series', episode_subtitles.sonarrEpisodeId,
+            missing_subtitles_text,
+        )
+        event_stream(type='episode', payload=episode_subtitles.sonarrEpisodeId)
+        event_stream(type='episode-wanted', action='update', payload=episode_subtitles.sonarrEpisodeId)
     event_stream(type='badges')
 
 

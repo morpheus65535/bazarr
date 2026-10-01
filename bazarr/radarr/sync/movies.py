@@ -61,16 +61,24 @@ def _movie_file_path(movie_file):
 
 
 def _has_usable_movie_file(movie):
-    if not isinstance(movie, dict) or not movie.get('hasFile'):
+    # None means the response cannot tell us whether a known file was removed.
+    if not isinstance(movie, dict) or not isinstance(movie.get('hasFile'), bool):
+        return None
+    if not movie['hasFile']:
         return False
 
     movie_file = movie.get('movieFile')
     if not isinstance(movie_file, dict):
-        return False
+        return None
 
     movie_file_path = _movie_file_path(movie_file)
-    if not movie_file_path or movie_file.get('id') is None:
-        return False
+    if not movie_file_path or type(movie_file.get('id')) is not int or movie_file['id'] <= 0:
+        return None
+
+    try:
+        int(movie_file['size'])
+    except (KeyError, TypeError, ValueError):
+        return None
 
     return (
         _movie_file_size(movie_file) > MINIMUM_VIDEO_SIZE
@@ -190,16 +198,24 @@ def update_movies(job_id=None, wait_for_completion=False):
             }
             current_movies_id_db = set(current_movies_in_db)
 
+            complete_movie_list = all(
+                isinstance(movie, dict) and type(movie.get('id')) is int and movie['id'] > 0
+                for movie in movies
+            )
             current_movies_radarr = [
                 movie['id']
                 for movie in movies
                 if isinstance(movie, dict)
-                and movie.get('id') is not None
-                and _has_usable_movie_file(movie)
+                and type(movie.get('id')) is int and movie['id'] > 0
+                and _has_usable_movie_file(movie) is not False
             ]
 
             # Remove movies from DB that either no longer exist in Radarr or exist and Radarr says do not have a movie file
-            movies_to_delete = list(set(current_movies_id_db) - set(current_movies_radarr))
+            movies_to_delete = (
+                list(current_movies_id_db - set(current_movies_radarr)) if complete_movie_list else []
+            )
+            if not complete_movie_list:
+                logging.warning('BAZARR Skipping movie deletion because Radarr returned unidentified movies.')
             movies_deleted = []
             if len(movies_to_delete):
                 try:
@@ -224,7 +240,7 @@ def update_movies(job_id=None, wait_for_completion=False):
                 if not isinstance(movie, dict):
                     continue
                 movie_id = movie.get('id')
-                if movie_id is None:
+                if type(movie_id) is not int or movie_id <= 0:
                     continue
                 jobs_queue.update_job_progress(job_id=job_id, progress_value=i, progress_message=movie.get('title', 'Unknown'))
                 # Only movies that Radarr says have files downloaded will be kept up to date in the DB

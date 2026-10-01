@@ -360,11 +360,11 @@ def _get_language_obj(profile_id):
     try:
         normalized_profile_id = int(profile_id)
     except (TypeError, ValueError):
-        return language_set, False
+        return language_set, False, hi_excluded_keys
 
     profile = get_profiles_list(profile_id=normalized_profile_id)
     if not isinstance(profile, dict):
-        return language_set, False
+        return language_set, False, hi_excluded_keys
 
     language_items = profile.get('items')
     if not isinstance(language_items, list):
@@ -390,13 +390,14 @@ def _get_language_obj(profile_id):
         except (AttributeError, TypeError, ValueError):
             continue
 
-        if forced is True:
+        forced = forced is True or forced == "True"
+        if forced:
             lang_obj = Language.rebuild(lang_obj, forced=True)
 
-        if hi is True:
+        if hi is True or hi == "True":
             lang_obj = Language.rebuild(lang_obj, hi=True)
         elif hi == HI_EXCLUDED:
-            hi_excluded_keys.add((lang, forced == "True"))
+            hi_excluded_keys.add((lang, forced))
 
         language_set.add(lang_obj)
 

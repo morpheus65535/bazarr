@@ -70,6 +70,7 @@ def update_series(job_id=None, wait_for_completion=False):
                             .all()]
 
         current_shows_sonarr = []
+        complete_series_list = True
 
         series_count = len(series)
         skipped_count = 0
@@ -87,13 +88,11 @@ def update_series(job_id=None, wait_for_completion=False):
 
         jobs_queue.update_job_progress(job_id=job_id, progress_max=series_count)
         for i, show in enumerate(series, start=1):
-            if not isinstance(show, dict):
+            if not isinstance(show, dict) or type(show.get('id')) is not int or show['id'] <= 0:
+                complete_series_list = False
                 skipped_count += 1
                 continue
             show_id = show.get('id')
-            if show_id is None:
-                skipped_count += 1
-                continue
             jobs_queue.update_job_progress(job_id=job_id, progress_value=i, progress_message=show.get('title', 'Unknown'))
 
             if settings.sonarr.sync_only_monitored_series:
@@ -129,7 +128,11 @@ def update_series(job_id=None, wait_for_completion=False):
             sync_episodes(series_id=show_id)
 
         # Calculate series to remove from DB
-        removed_series = list(set(current_shows_db) - set(current_shows_sonarr))
+        removed_series = (
+            list(set(current_shows_db) - set(current_shows_sonarr)) if complete_series_list else []
+        )
+        if not complete_series_list:
+            logging.warning('BAZARR Skipping series deletion because Sonarr returned unidentified series.')
 
         for series in removed_series:
             # Remove series from DB

@@ -151,6 +151,10 @@ _failed_subtitle_attempt_rows = Table(
 
 
 class _TableProxy:
+    @property
+    def __table__(self):
+        return self._table
+
     def __init__(self, table):
         self._table = table
         for column in table.c:

@@ -1,8 +1,10 @@
 # coding=utf-8
 
 from datetime import datetime
+from contextlib import contextmanager
 
 from sqlalchemy import case, func, or_
+from sqlalchemy.engine import Connection
 
 from app.database import (
     TableFailedSubtitleAttempts,
@@ -205,6 +207,52 @@ def refresh_wanted_search_state(media_type, media_id, missing_subtitles, failed_
         refresh_failed_subtitle_attempts(media_type, media_id, failed_attempts)
 
 
+@contextmanager
+def _wanted_state_transaction():
+    bind = database.get_bind()
+    if isinstance(bind, Connection):
+        # Respect an existing transaction (for example a caller's unit of work).
+        with bind.begin_nested():
+            yield bind
+        return
+
+    # Runtime sessions use AUTOCOMMIT. Give these related writes their own real
+    # transaction, without changing the isolation of the caller's connection.
+    with bind.connect().execution_options(isolation_level=bind.dialect.default_isolation_level) as connection:
+        with connection.begin():
+            if connection.dialect.name == 'sqlite':
+                connection.exec_driver_sql('BEGIN IMMEDIATE')
+            yield connection
+
+
+def store_missing_subtitles(table, id_column_name, media_type, media_id, missing_subtitles):
+    """Save both representations atomically, repairing stale normalized rows too."""
+    id_column = table.c[id_column_name]
+    rows = get_missing_subtitle_rows(media_type, media_id, missing_subtitles)
+    with _wanted_state_transaction() as connection:
+        media = connection.execute(
+            select(table.c.missing_subtitles).where(id_column == media_id).with_for_update()
+        ).first()
+        if media is None:
+            return
+        if media.missing_subtitles != missing_subtitles:
+            connection.execute(
+                table.update().where(id_column == media_id).values(missing_subtitles=missing_subtitles)
+            )
+
+        missing_filter = (
+            (TableMissingSubtitles.media_type == media_type) &
+            (TableMissingSubtitles.media_id == media_id)
+        )
+        current_languages = connection.execute(
+            select(TableMissingSubtitles.language).where(missing_filter).order_by(TableMissingSubtitles.id)
+        ).scalars().all()
+        if current_languages != [row['language'] for row in rows]:
+            connection.execute(delete(TableMissingSubtitles).where(missing_filter))
+            if rows:
+                connection.execute(insert(TableMissingSubtitles), rows)
+
+
 def get_missing_languages(media_type, media_id):
     languages = [
         row.language
@@ -374,21 +422,32 @@ def count_due_missing_media(media_type, adaptive_search_policy=None):
 def iter_due_missing_languages_maps(media_type, adaptive_search_policy=None, batch_size=None):
     if batch_size is None:
         batch_size = WANTED_STATE_QUERY_BATCH_SIZE
+    if batch_size < 1:
+        raise ValueError('batch_size must be positive')
     if adaptive_search_policy is None:
         adaptive_search_policy = get_adaptive_search_policy()
 
-    statement = (
-        due_missing_languages_statement(media_type, adaptive_search_policy)
-        .order_by(TableMissingSubtitles.media_id, TableMissingSubtitles.id)
-    )
-    due_languages = {}
-    for row in database.execute(statement):
-        if row.media_id not in due_languages and len(due_languages) >= batch_size:
-            yield due_languages
-            due_languages = {}
-        due_languages.setdefault(row.media_id, []).append(row.language)
-
-    if due_languages:
+    statement = due_missing_languages_statement(media_type, adaptive_search_policy)
+    last_media_id = None
+    while True:
+        # Keyset pagination bounds ORM buffering and tolerates searches deleting
+        # earlier rows between batches. Fetch all languages for each selected ID.
+        ids_statement = (
+            statement.with_only_columns(TableMissingSubtitles.media_id)
+            .distinct().order_by(TableMissingSubtitles.media_id).limit(batch_size)
+        )
+        if last_media_id is not None:
+            ids_statement = ids_statement.where(TableMissingSubtitles.media_id > last_media_id)
+        media_ids = database.execute(ids_statement).scalars().all()
+        if not media_ids:
+            return
+        due_languages = {}
+        for row in database.execute(
+            statement.where(TableMissingSubtitles.media_id.in_(media_ids))
+            .order_by(TableMissingSubtitles.media_id, TableMissingSubtitles.id)
+        ):
+            due_languages.setdefault(row.media_id, []).append(row.language)
+        last_media_id = media_ids[-1]
         yield due_languages
 
 
