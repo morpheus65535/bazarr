@@ -57,7 +57,7 @@ _WANTED_MOVIE_DETAILS_SELECT = select(TableMovies.path,
                                       .label("has_incomplete_embedded_subtitles"))
 _WANTED_MOVIE_DETAILS_STMT = _WANTED_MOVIE_DETAILS_SELECT \
     .where(TableMovies.radarrId == bindparam("wanted_radarr_id"))
-_DUE_MOVIE_DETAILS_BATCH_SIZE = 5000
+_DUE_MOVIE_DETAILS_BATCH_SIZE = 300
 
 
 _WANTED_MOVIES_SELECT = select(TableMovies.radarrId,
@@ -114,6 +114,14 @@ def _wanted_movie(movie, providers_list, due_languages=None, job_id=None, adapti
             movie.radarrId,
             adaptive_search_policy=adaptive_search_policy,
         )
+    else:
+        current_due_languages = get_due_missing_languages_map(
+            'movie',
+            [movie.radarrId],
+            adaptive_search_policy=adaptive_search_policy,
+        ).get(movie.radarrId, [])
+        current_due_languages = set(current_due_languages)
+        due_missing_languages = [language for language in due_missing_languages if language in current_due_languages]
     if not due_missing_languages:
         return
     if not movie.path:

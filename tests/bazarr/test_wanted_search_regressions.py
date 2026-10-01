@@ -83,6 +83,41 @@ def test_bulk_subtitles_match_single_media_with_embedded_ids(runtime_database, m
     assert {subtitle['id'] for subtitle in single} == {71, 72}
 
 
+@pytest.mark.skipif(not hasattr(sqlite3.Connection, 'setlimit'), reason='requires SQLite connection limits')
+def test_bulk_database_queries_and_retry_upserts_respect_legacy_sqlite_limit(
+    runtime_database,
+    monkeypatch,
+):
+    engine, session = runtime_database
+    connection = session.connection()
+    raw_connection = connection.connection.driver_connection
+    previous_limit = raw_connection.getlimit(sqlite3.SQLITE_LIMIT_VARIABLE_NUMBER)
+    session.execute(insert(db.TableMissingSubtitles), [
+        {'media_type': 'movie', 'media_id': media_id, 'language': 'en'}
+        for media_id in range(1, 1001)
+    ])
+    monkeypatch.setattr(state, 'get_adaptive_search_policy', lambda: None)
+    raw_connection.setlimit(sqlite3.SQLITE_LIMIT_VARIABLE_NUMBER, 999)
+
+    try:
+        assert len(state.get_missing_languages_map('movie', list(range(1, 1000)))) == 999
+        assert db.get_subtitles_map('movie', list(range(1, 1001))) == {}
+        due_batches = list(state.iter_due_missing_languages_maps('movie', batch_size=1000))
+        assert len(due_batches) == 1
+        assert len(due_batches[0]) == 1000
+
+        connection.execute(insert(db.TableMovies), [
+            {'radarrId': media_id, 'title': 'Movie', 'tmdbId': str(media_id), 'path': f'/movie-{media_id}.mkv'}
+            for media_id in range(1, 1001)
+        ])
+        state.record_failed_subtitle_attempts_map(
+            'movie', {media_id: ['en'] for media_id in range(1, 1001)},
+        )
+        assert len(connection.execute(select(db.TableFailedSubtitleAttempts)).all()) == 1000
+    finally:
+        raw_connection.setlimit(sqlite3.SQLITE_LIMIT_VARIABLE_NUMBER, previous_limit)
+
+
 @pytest.mark.parametrize('media_type', ['movie', 'series'])
 def test_missing_state_failure_rolls_back_both_representations(runtime_database, monkeypatch, media_type):
     engine, session = runtime_database
@@ -156,41 +191,45 @@ def test_concurrent_missing_refreshes_keep_representations_consistent(runtime_da
 
 
 @pytest.mark.parametrize('media_type', ['movie', 'series'])
-def test_failed_attempt_mirror_rolls_back_with_normalized_rows(runtime_database, monkeypatch, media_type):
+def test_failed_attempt_upserts_roll_back_without_changing_legacy_snapshot(runtime_database, monkeypatch, media_type):
     engine, session = runtime_database
     media_table, id_column = seed_media(session, media_type)
 
-    def fail_legacy_update(connection, cursor, statement, parameters, context, executemany):
-        if statement.startswith(f'UPDATE {media_table.__tablename__}'):
-            raise sqlite3.OperationalError('interrupted legacy mirror update')
+    monkeypatch.setattr(state, 'FAILED_ATTEMPT_UPSERT_BATCH_SIZE', 1)
+    inserts = []
 
-    event.listen(engine, 'before_cursor_execute', fail_legacy_update)
+    def fail_second_insert(connection, cursor, statement, parameters, context, executemany):
+        if statement.startswith('INSERT INTO table_failed_subtitle_attempts'):
+            inserts.append(statement)
+            if len(inserts) == 2:
+                raise sqlite3.OperationalError('interrupted retry upsert')
+
+    event.listen(engine, 'before_cursor_execute', fail_second_insert)
     try:
         with pytest.raises(sqlite3.OperationalError):
-            state.record_failed_subtitle_attempts_map(media_type, {7: ['en']})
+            state.record_failed_subtitle_attempts_map(media_type, {7: ['en', 'fr']})
     finally:
-        event.remove(engine, 'before_cursor_execute', fail_legacy_update)
+        event.remove(engine, 'before_cursor_execute', fail_second_insert)
 
     assert state.get_failed_attempt_pairs(media_type, 7) == []
     assert session.execute(select(getattr(media_table, 'failedAttempts'))
                            .where(getattr(media_table, id_column) == 7)).scalar_one() is None
 
-    state.record_failed_subtitle_attempts_map(media_type, {7: ['en']})
-    normalized = state.get_failed_attempt_pairs(media_type, 7)
-    legacy = session.execute(select(getattr(media_table, 'failedAttempts'))
-                             .where(getattr(media_table, id_column) == 7)).scalar_one()
-    assert state.get_attempt_windows(legacy) == {'en': (normalized[0][1], normalized[-1][1])}
+    state.record_failed_subtitle_attempts_map(media_type, {7: ['en', 'fr']})
+    assert {language for language, _ in state.get_failed_attempt_pairs(media_type, 7)} == {'en', 'fr'}
+    assert session.execute(select(getattr(media_table, 'failedAttempts'))
+                           .where(getattr(media_table, id_column) == 7)).scalar_one() is None
 
 
 @pytest.mark.parametrize('media_type', ['movie', 'series'])
 def test_record_failed_attempts_ignores_media_deleted_before_write(runtime_database, media_type):
     _, _session = runtime_database
 
-    assert state.record_failed_subtitle_attempts(media_type, 7, ['en']) == '[]'
+    assert state.record_failed_subtitle_attempts(media_type, 7, ['en']) is None
     assert state.get_failed_attempt_pairs(media_type, 7) == []
 
 
-def test_concurrent_failed_attempts_keep_latest_timestamp_and_legacy_mirror(runtime_database, monkeypatch):
+def test_concurrent_failed_attempts_keep_timestamp_bounds_and_legacy_snapshot(runtime_database, monkeypatch):
     engine, session = runtime_database
     seed_media(session, 'movie')
     thread_sessions = scoped_session(sessionmaker(bind=engine))
@@ -209,18 +248,18 @@ def test_concurrent_failed_attempts_keep_latest_timestamp_and_legacy_mirror(runt
             first_insert.set()
             assert second_begin.wait(5), 'second writer did not reach its transaction'
 
-    def record():
+    def record(timestamp):
         try:
-            return state.record_failed_subtitle_attempts_map('movie', {7: ['en']})
+            return state.record_failed_subtitle_attempts_map('movie', {7: ['en']}, {7: timestamp})
         finally:
             thread_sessions.remove()
 
     event.listen(engine, 'before_cursor_execute', interleave)
     try:
         with ThreadPoolExecutor(max_workers=2) as workers:
-            first = workers.submit(record)
+            first = workers.submit(record, 200)
             assert first_insert.wait(5), 'first writer did not reach its upsert'
-            second = workers.submit(record)
+            second = workers.submit(record, 100)
             first.result(timeout=10)
             second.result(timeout=10)
     finally:
@@ -229,10 +268,8 @@ def test_concurrent_failed_attempts_keep_latest_timestamp_and_legacy_mirror(runt
     normalized = state.get_failed_attempt_pairs('movie', 7)
     legacy = session.execute(select(db.TableMovies.failedAttempts)
                              .where(db.TableMovies.radarrId == 7)).scalar_one()
-    windows = state.get_attempt_windows(legacy)
-    assert len(normalized) == 2
-    assert normalized[0][1] <= normalized[-1][1]
-    assert windows == {'en': (normalized[0][1], normalized[-1][1])}
+    assert normalized == [['en', 100.0], ['en', 200.0]]
+    assert legacy is None
 
 
 @pytest.mark.parametrize('media_type, event_type', [('movie', 'movie'), ('series', 'episode')])
@@ -394,3 +431,188 @@ def test_due_iterator_bounds_orm_fetches_and_handles_deleted_batches(monkeypatch
             assert max(fetched) <= 6
     finally:
         engine.dispose()
+
+
+@pytest.fixture
+def series_deletion_state(runtime_database):
+    engine, session = runtime_database
+
+    def enable_foreign_keys(connection, _record):
+        connection.execute('PRAGMA foreign_keys=ON')
+
+    event.listen(engine, 'connect', enable_foreign_keys)
+    session.connection().exec_driver_sql('PRAGMA foreign_keys=ON')
+    seed_media(session, 'series', "['en']")
+    state.refresh_wanted_search_state('series', 7, "['en']", failed_attempts="[['en', 10]]")
+    try:
+        yield engine, session
+    finally:
+        event.remove(engine, 'connect', enable_foreign_keys)
+
+
+@pytest.mark.parametrize('failed_table', [
+    'table_shows', 'table_missing_subtitles', 'table_failed_subtitle_attempts',
+])
+def test_series_deletion_failure_preserves_media_and_search_state(series_deletion_state, monkeypatch, failed_table):
+    engine, session = series_deletion_state
+    events = []
+    monkeypatch.setattr(sonarr, 'event_stream', lambda **kwargs: events.append(kwargs))
+
+    def fail_delete(connection, cursor, statement, parameters, context, executemany):
+        if statement.startswith(f'DELETE FROM {failed_table}'):
+            raise sqlite3.OperationalError('injected deletion failure')
+
+    event.listen(engine, 'before_cursor_execute', fail_delete)
+    try:
+        with pytest.raises(sqlite3.OperationalError, match='injected deletion failure'):
+            sonarr.update_one_series(7, 'deleted')
+    finally:
+        event.remove(engine, 'before_cursor_execute', fail_delete)
+
+    assert session.execute(select(db.TableShows.sonarrSeriesId)).scalars().all() == [7]
+    assert session.execute(select(db.TableEpisodes.missing_subtitles)).scalars().all() == ["['en']"]
+    assert state.get_missing_languages('series', 7) == ['en']
+    assert session.execute(select(db.TableFailedSubtitleAttempts.language)).scalars().all() == ['en']
+    assert events == []
+
+
+@pytest.mark.parametrize('writer_kind', ['missing', 'attempts'])
+def test_series_deletion_blocks_state_recreation(series_deletion_state, monkeypatch, writer_kind):
+    engine, session = series_deletion_state
+    thread_sessions = scoped_session(sessionmaker(bind=engine))
+    monkeypatch.setattr(state, 'database', thread_sessions)
+    monkeypatch.setattr(sonarr, 'database', thread_sessions)
+    deletion_started = Event()
+    writer_started = Event()
+    notifications = []
+
+    def notify(**kwargs):
+        # Notifications are sent only after the deletion transaction commits.
+        with engine.connect() as connection:
+            assert connection.execute(select(db.TableShows.sonarrSeriesId)).first() is None
+            assert connection.execute(select(db.TableMissingSubtitles.id)).first() is None
+        notifications.append(kwargs)
+
+    monkeypatch.setattr(sonarr, 'event_stream', notify)
+
+    def interleave(connection, cursor, statement, parameters, context, executemany):
+        if statement.startswith('DELETE FROM table_shows'):
+            deletion_started.set()
+            assert writer_started.wait(5), 'state writer did not reach its transaction'
+        elif statement == 'BEGIN IMMEDIATE' and deletion_started.is_set():
+            writer_started.set()
+
+    def delete_series():
+        try:
+            sonarr.update_one_series(7, 'deleted')
+        finally:
+            thread_sessions.remove()
+
+    def refresh_state():
+        try:
+            if writer_kind == 'missing':
+                state.store_missing_subtitles(db.TableEpisodes.__table__, 'sonarrEpisodeId', 'series', 7, "['fr']")
+            else:
+                state.record_failed_subtitle_attempts('series', 7, ['fr'])
+        finally:
+            thread_sessions.remove()
+
+    event.listen(engine, 'before_cursor_execute', interleave)
+    try:
+        with ThreadPoolExecutor(max_workers=2) as workers:
+            deletion = workers.submit(delete_series)
+            assert deletion_started.wait(5), 'series deletion did not start'
+            writer = workers.submit(refresh_state)
+            deletion.result(timeout=10)
+            writer.result(timeout=10)
+    finally:
+        event.remove(engine, 'before_cursor_execute', interleave)
+
+    for table in [db.TableShows, db.TableEpisodes, db.TableMissingSubtitles, db.TableFailedSubtitleAttempts]:
+        assert session.execute(select(table)).first() is None
+    assert notifications == [{'type': 'series', 'action': 'delete', 'payload': 7}]
+
+
+@pytest.fixture(params=['movie', 'series'])
+def deletable_media(runtime_database, request):
+    engine, session = runtime_database
+
+    def enable_foreign_keys(connection, _record):
+        connection.execute('PRAGMA foreign_keys=ON')
+
+    event.listen(engine, 'connect', enable_foreign_keys)
+    session.connection().exec_driver_sql('PRAGMA foreign_keys=ON')
+    table, id_column = seed_media(session, request.param, "['en']")
+    state.refresh_wanted_search_state(request.param, 7, "['en']", failed_attempts="[['en', 10]]")
+    try:
+        yield engine, session, request.param, table, id_column
+    finally:
+        event.remove(engine, 'connect', enable_foreign_keys)
+
+
+@pytest.mark.parametrize('failed_delete', ['table_missing_subtitles', 'table_failed_subtitle_attempts'])
+def test_media_deletion_rolls_back_parent_and_search_state(deletable_media, failed_delete):
+    engine, session, media_type, table, id_column = deletable_media
+    media_table = table.__table__
+
+    def fail_state_delete(connection, cursor, statement, parameters, context, executemany):
+        if statement.startswith(f'DELETE FROM {failed_delete}'):
+            raise sqlite3.OperationalError('injected search-state deletion failure')
+
+    event.listen(engine, 'before_cursor_execute', fail_state_delete)
+    try:
+        with pytest.raises(sqlite3.OperationalError, match='injected search-state deletion failure'):
+            state.delete_media_and_wanted_search_state(media_type, table, id_column, [7])
+    finally:
+        event.remove(engine, 'before_cursor_execute', fail_state_delete)
+
+    assert session.execute(select(media_table.c[id_column])).scalars().all() == [7]
+    assert state.get_missing_languages(media_type, 7) == ['en']
+    assert session.execute(select(db.TableFailedSubtitleAttempts.language)).scalars().all() == ['en']
+
+
+@pytest.mark.parametrize('writer_kind', ['missing', 'attempts'])
+def test_media_deletion_waits_for_concurrent_state_writer(deletable_media, monkeypatch, writer_kind):
+    engine, session, media_type, table, id_column = deletable_media
+    media_table = table.__table__
+    thread_sessions = scoped_session(sessionmaker(bind=engine))
+    monkeypatch.setattr(state, 'database', thread_sessions)
+    deletion_started = Event()
+    writer_started = Event()
+
+    def interleave(connection, cursor, statement, parameters, context, executemany):
+        if statement.startswith(f'DELETE FROM {media_table.name}'):
+            deletion_started.set()
+            assert writer_started.wait(5), 'state writer did not reach its transaction'
+        elif statement == 'BEGIN IMMEDIATE' and deletion_started.is_set():
+            writer_started.set()
+
+    def delete_media():
+        try:
+            state.delete_media_and_wanted_search_state(media_type, table, id_column, [7])
+        finally:
+            thread_sessions.remove()
+
+    def write_state():
+        try:
+            if writer_kind == 'missing':
+                state.store_missing_subtitles(media_table, id_column, media_type, 7, "['fr']")
+            else:
+                state.record_failed_subtitle_attempts(media_type, 7, ['fr'])
+        finally:
+            thread_sessions.remove()
+
+    event.listen(engine, 'before_cursor_execute', interleave)
+    try:
+        with ThreadPoolExecutor(max_workers=2) as workers:
+            deletion = workers.submit(delete_media)
+            assert deletion_started.wait(5), 'media deletion did not start'
+            writer = workers.submit(write_state)
+            deletion.result(timeout=10)
+            writer.result(timeout=10)
+    finally:
+        event.remove(engine, 'before_cursor_execute', interleave)
+
+    assert session.execute(select(media_table.c[id_column])).first() is None
+    assert session.execute(select(db.TableMissingSubtitles.id)).first() is None
+    assert session.execute(select(db.TableFailedSubtitleAttempts.id)).first() is None

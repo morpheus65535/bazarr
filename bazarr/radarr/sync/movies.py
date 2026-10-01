@@ -220,12 +220,13 @@ def update_movies(job_id=None, wait_for_completion=False):
             movies_deleted = []
             if len(movies_to_delete):
                 try:
-                    delete_media_and_wanted_search_state('movie', TableMovies, 'radarrId', movies_to_delete)
+                    deleted_movie_ids = delete_media_and_wanted_search_state(
+                        'movie', TableMovies, 'radarrId', movies_to_delete,
+                    )
                 except IntegrityError as e:
                     logging.error(f"BAZARR cannot delete movies because of {e}")
                 else:
-
-                    for removed_movie in movies_to_delete:
+                    for removed_movie in deleted_movie_ids:
                         movies_deleted.append(removed_movie)
                         event_stream(type='movie', action='delete', payload=removed_movie)
 
@@ -317,16 +318,18 @@ def update_one_movie(movie_id, action, defer_search=False, is_signalr=False):
     if action == 'deleted':
         if existing_movie:
             try:
-                delete_media_and_wanted_search_state('movie', TableMovies, 'radarrId', movie_id)
+                deleted_movie_ids = delete_media_and_wanted_search_state(
+                    'movie', TableMovies, 'radarrId', [movie_id],
+                )
             except IntegrityError as e:
                 logging.error(f"BAZARR cannot delete movie {path_mappings.path_replace_movie(existing_movie.path)} "
                               f"because of {e}")
             else:
-
-                event_stream(type='movie', action='delete', payload=int(movie_id))
-                logging.debug(
-                    f'BAZARR deleted this movie from the database: '
-                    f'{path_mappings.path_replace_movie(existing_movie.path)}')
+                if deleted_movie_ids:
+                    event_stream(type='movie', action='delete', payload=int(movie_id))
+                    logging.debug(
+                        f'BAZARR deleted this movie from the database: '
+                        f'{path_mappings.path_replace_movie(existing_movie.path)}')
         return
 
     movie_default_enabled = settings.general.movie_default_enabled
@@ -366,15 +369,17 @@ def update_one_movie(movie_id, action, defer_search=False, is_signalr=False):
     # Remove movie from DB
     if not movie and existing_movie:
         try:
-            delete_media_and_wanted_search_state('movie', TableMovies, 'radarrId', movie_id)
+            deleted_movie_ids = delete_media_and_wanted_search_state(
+                'movie', TableMovies, 'radarrId', [movie_id],
+            )
         except IntegrityError as e:
             logging.error(f"BAZARR cannot delete movie {path_mappings.path_replace_movie(existing_movie.path)} because "
                           f"of {e}")
         else:
-
-            event_stream(type='movie', action='delete', payload=int(movie_id))
-            logging.debug(
-                f'BAZARR deleted this movie from the database:{path_mappings.path_replace_movie(existing_movie.path)}')
+            if deleted_movie_ids:
+                event_stream(type='movie', action='delete', payload=int(movie_id))
+                logging.debug(
+                    f'BAZARR deleted this movie from the database:{path_mappings.path_replace_movie(existing_movie.path)}')
         return
 
     # Update existing movie in DB

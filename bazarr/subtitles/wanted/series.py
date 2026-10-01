@@ -64,7 +64,7 @@ _WANTED_EPISODE_DETAILS_SELECT = select(TableEpisodes.path,
     .join(TableShows)
 _WANTED_EPISODE_DETAILS_STMT = _WANTED_EPISODE_DETAILS_SELECT \
     .where(TableEpisodes.sonarrEpisodeId == bindparam("wanted_sonarr_episode_id"))
-_DUE_EPISODE_DETAILS_BATCH_SIZE = 5000
+_DUE_EPISODE_DETAILS_BATCH_SIZE = 300
 
 
 def _count_searchable_due_episodes(adaptive_search_policy, exclusion_clause):
@@ -99,6 +99,14 @@ def _wanted_episode(episode, providers_list, due_languages=None, job_id=None, ad
             episode.sonarrEpisodeId,
             adaptive_search_policy=adaptive_search_policy,
         )
+    else:
+        current_due_languages = get_due_missing_languages_map(
+            'series',
+            [episode.sonarrEpisodeId],
+            adaptive_search_policy=adaptive_search_policy,
+        ).get(episode.sonarrEpisodeId, [])
+        current_due_languages = set(current_due_languages)
+        due_missing_languages = [language for language in due_missing_languages if language in current_due_languages]
     if not due_missing_languages:
         return
     if not episode.path:

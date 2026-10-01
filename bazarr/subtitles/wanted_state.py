@@ -423,11 +423,12 @@ def iter_due_missing_languages_maps(media_type, adaptive_search_policy=None, bat
         if not media_ids:
             return
         due_languages = {}
-        for row in database.execute(
-            statement.where(TableMissingSubtitles.media_id.in_(media_ids))
-            .order_by(TableMissingSubtitles.media_id, TableMissingSubtitles.id)
-        ):
-            due_languages.setdefault(row.media_id, []).append(row.language)
+        for media_id_chunk in _iter_chunks(media_ids, WANTED_STATE_ID_QUERY_BATCH_SIZE):
+            for row in database.execute(
+                statement.where(TableMissingSubtitles.media_id.in_(media_id_chunk))
+                .order_by(TableMissingSubtitles.media_id, TableMissingSubtitles.id)
+            ):
+                due_languages.setdefault(row.media_id, []).append(row.language)
         last_media_id = media_ids[-1]
         yield due_languages
 
