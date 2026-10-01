@@ -21,7 +21,7 @@ from app.event_handler import event_stream
 from sonarr.info import get_sonarr_info
 from app.jobs_queue import jobs_queue
 from app.notifier import send_notifications
-from subtitles.wanted_state import delete_wanted_search_state, get_due_missing_languages_map
+from subtitles.wanted_state import delete_media_and_wanted_search_state, get_due_missing_languages_map
 
 from .parser import episodeParser
 from .utils import get_episodes_from_sonarr_api, get_episodesFiles_from_sonarr_api
@@ -149,12 +149,13 @@ def sync_episodes(series_id, defer_search=False, is_signalr=False):
 
     if len(episodes_to_delete):
         try:
-            database.execute(delete(TableEpisodes).where(TableEpisodes.sonarrEpisodeId.in_(episodes_to_delete)))
+            deleted_episode_ids = delete_media_and_wanted_search_state(
+                'series', TableEpisodes, 'sonarrEpisodeId', episodes_to_delete,
+            )
         except IntegrityError as e:
             logging.error(f"BAZARR cannot delete episodes because of {e}")
         else:
-            delete_wanted_search_state('series', episodes_to_delete)
-            for removed_episode in episodes_to_delete:
+            for removed_episode in deleted_episode_ids:
                 event_stream(type='episode', action='delete', payload=removed_episode)
 
     # Insert new episodes in DB
@@ -279,16 +280,16 @@ def sync_one_episode(episode_id, defer_search=False, is_signalr=False):
     # Remove episode from DB
     if not episode and existing_episode:
         try:
-            database.execute(
-                delete(TableEpisodes)
-                .where(TableEpisodes.sonarrEpisodeId == episode_id))
+            deleted_episode_ids = delete_media_and_wanted_search_state(
+                'series', TableEpisodes, 'sonarrEpisodeId', [episode_id],
+            )
         except IntegrityError as e:
             logging.error(f"BAZARR cannot delete episode {existing_episode.path} because of {e}")
         else:
-            delete_wanted_search_state('series', episode_id)
-            event_stream(type='episode', action='delete', payload=int(episode_id))
-            logging.debug(
-                f'BAZARR deleted this episode from the database:{path_mappings.path_replace(existing_episode.path)}')
+            if deleted_episode_ids:
+                event_stream(type='episode', action='delete', payload=int(episode_id))
+                logging.debug(
+                    f'BAZARR deleted this episode from the database:{path_mappings.path_replace(existing_episode.path)}')
         return
 
     # Update existing episodes in DB

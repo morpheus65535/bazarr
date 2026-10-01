@@ -1,3 +1,4 @@
+import sqlite3
 from functools import partial
 from unittest.mock import Mock
 
@@ -49,6 +50,64 @@ def test_scheduled_search_uses_normalized_due_rows(
 
     key = row.radarrId if kind == "movies" else row.sonarrEpisodeId
     assert searched == [key]
+
+
+@pytest.mark.parametrize("kind", ["movies", "series"])
+def test_wanted_download_rechecks_batched_due_languages(monkeypatch, wanted_module, row_factory, kind):
+    item = row_factory(missing_languages=["en"], failed_attempts=[])
+    provider_searches = []
+
+    monkeypatch.setattr(
+        wanted_module,
+        "get_due_missing_languages_map",
+        lambda media_type, media_ids, adaptive_search_policy=None: {media_ids[0]: []},
+    )
+    monkeypatch.setattr(
+        wanted_module,
+        "generate_subtitles",
+        lambda *args, **kwargs: provider_searches.append(args) or iter(()),
+    )
+
+    if kind == "movies":
+        wanted_module._wanted_movie(item, ["provider"], due_languages=["en"], adaptive_search_policy={})
+    else:
+        wanted_module._wanted_episode(item, ["provider"], due_languages=["en"], adaptive_search_policy={})
+
+    assert provider_searches == []
+
+
+@pytest.mark.skipif(not hasattr(sqlite3.Connection, "setlimit"), reason="requires SQLite connection limits")
+@pytest.mark.parametrize("kind", ["movies", "series"])
+def test_scheduled_search_bounds_detail_queries_for_legacy_sqlite(
+    kind,
+    monkeypatch,
+    wanted_module,
+    row_factory,
+    jobs_queue_factory,
+    transactional_connection,
+):
+    raw_connection = transactional_connection.connection.driver_connection
+    previous_limit = raw_connection.getlimit(sqlite3.SQLITE_LIMIT_VARIABLE_NUMBER)
+    raw_connection.setlimit(sqlite3.SQLITE_LIMIT_VARIABLE_NUMBER, 999)
+
+    for media_id in range(1, 1001):
+        overrides = {"radarrId": media_id} if kind == "movies" else {
+            "sonarrEpisodeId": media_id,
+            "episode": media_id,
+        }
+        row_factory(**overrides, missing_languages=["en"], failed_attempts=[])
+
+    monkeypatch.setattr(wanted_module, "jobs_queue", jobs_queue_factory())
+    monkeypatch.setattr(wanted_module, "get_exclusion_clause", _no_exclusions)
+    monkeypatch.setattr(wanted_module, "get_providers", _empty_provider_list)
+
+    try:
+        if kind == "movies":
+            wanted_module._run_wanted_search_missing_subtitles_movies("job", {})
+        else:
+            wanted_module._run_wanted_search_missing_subtitles_series("job", {})
+    finally:
+        raw_connection.setlimit(sqlite3.SQLITE_LIMIT_VARIABLE_NUMBER, previous_limit)
 
 
 @pytest.mark.parametrize("kind", ["movies", "series"])
