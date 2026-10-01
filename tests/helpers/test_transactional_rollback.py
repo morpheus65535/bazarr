@@ -1,3 +1,5 @@
+import pytest
+
 from sqlalchemy import Column
 from sqlalchemy import Integer
 from sqlalchemy import MetaData
@@ -16,9 +18,12 @@ widgets = Table(
 )
 
 
-def test_transactional_session_insert_exercise_assert(transactional_engine, transactional_session):
+@pytest.fixture(scope="session", autouse=True)
+def create_widgets_table(transactional_engine):
     metadata.create_all(transactional_engine)
 
+
+def test_transactional_session_insert_exercise_assert(transactional_engine, transactional_session):
     transactional_session.execute(widgets.insert().values(id=1, name="alpha"))
     transactional_session.flush()
 
@@ -27,7 +32,5 @@ def test_transactional_session_insert_exercise_assert(transactional_engine, tran
 
 
 def test_transactional_session_rolls_back_between_tests(transactional_engine, transactional_session):
-    metadata.create_all(transactional_engine)
-
     count = transactional_session.execute(text("SELECT COUNT(*) FROM widgets")).scalar_one()
     assert count == 0
