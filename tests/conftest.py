@@ -13,7 +13,7 @@ os.environ.setdefault("SZ_USER_AGENT", "pytest")
 # sys.path setup in parallel.
 import bazarr.app.libs  # noqa: F401
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.pool import StaticPool
 from sqlalchemy.orm import Session
 
@@ -64,16 +64,30 @@ def _get_conflicting(path):
 
 @pytest.fixture(scope="session")
 def transactional_engine():
+    engine = _create_transactional_engine()
+    try:
+        yield engine
+    finally:
+        engine.dispose()
+
+
+def _create_transactional_engine():
     engine = create_engine(
         "sqlite://",
         future=True,
         connect_args={"check_same_thread": False},
         poolclass=StaticPool,
     )
-    try:
-        yield engine
-    finally:
-        engine.dispose()
+
+    @event.listens_for(engine, "connect")
+    def disable_driver_transaction_control(connection, _record):
+        connection.isolation_level = None
+
+    @event.listens_for(engine, "begin")
+    def begin_sqlite_transaction(connection):
+        connection.exec_driver_sql("BEGIN")
+
+    return engine
 
 
 @pytest.fixture

@@ -1,6 +1,5 @@
 from datetime import datetime, timedelta, timezone
 from functools import partial
-from unittest.mock import Mock
 
 import pytest
 from sqlalchemy import select
@@ -12,10 +11,6 @@ def _no_exclusions(media_type):
 
 def _single_provider_list():
     return ["provider"]
-
-
-def _empty_provider_list():
-    return []
 
 
 def _english_audio_languages(audio_language):
@@ -202,97 +197,6 @@ def test_wanted_episode_does_not_stamp_failed_attempts_when_no_providers(
     ).all()
 
     assert attempts == []
-
-
-@pytest.mark.parametrize("kind", ["movies", "series"])
-def test_wanted_search_reports_throttled_when_all_providers_are_throttled(
-    monkeypatch, wanted_module, row_factory, jobs_queue_factory, kind
-):
-    progress_updates = []
-
-    row_factory()
-
-    monkeypatch.setattr(wanted_module, "jobs_queue", jobs_queue_factory(progress_updates=progress_updates))
-    monkeypatch.setattr(wanted_module, "get_exclusion_clause", _no_exclusions)
-    monkeypatch.setattr(wanted_module, "get_providers", _empty_provider_list)
-
-    if kind == "movies":
-        wanted_module.wanted_search_missing_subtitles_movies(job_id="job")
-    else:
-        wanted_module.wanted_search_missing_subtitles_series(job_id="job")
-
-    assert progress_updates[-1]["progress_message"] == "All providers throttled"
-
-
-@pytest.mark.parametrize("kind", ["movies", "series"])
-def test_wanted_search_marks_empty_run_complete(monkeypatch, wanted_module, jobs_queue_factory, kind):
-    progress_updates = []
-
-    monkeypatch.setattr(wanted_module, "jobs_queue", jobs_queue_factory(progress_updates=progress_updates))
-    monkeypatch.setattr(wanted_module, "get_exclusion_clause", _no_exclusions)
-    monkeypatch.setattr(wanted_module, "get_providers", _single_provider_list)
-
-    if kind == "movies":
-        wanted_module.wanted_search_missing_subtitles_movies(job_id="job")
-    else:
-        wanted_module.wanted_search_missing_subtitles_series(job_id="job")
-
-    assert any(update.get("progress_value") == "max" for update in progress_updates)
-    assert progress_updates[-1]["progress_message"] == "Search completed"
-
-
-@pytest.mark.parametrize("kind,id_attr", [("movies", "radarrId"), ("series", "sonarrEpisodeId")])
-def test_wanted_search_refreshes_provider_availability(
-    monkeypatch, wanted_module, row_factory, jobs_queue_factory, kind, id_attr
-):
-    row_one = row_factory()
-    if kind == "movies":
-        row_factory(radarrId=20, title="Second")
-    else:
-        row_factory(sonarrEpisodeId=20, title="Series", episodeTitle="Second", episode=2)
-
-    provider_results = Mock(side_effect=[["provider"], []])
-    searches = []
-    monkeypatch.setattr(wanted_module, "jobs_queue", jobs_queue_factory())
-
-    monkeypatch.setattr(wanted_module, "get_exclusion_clause", _no_exclusions)
-    monkeypatch.setattr(wanted_module, "get_providers", provider_results)
-    if kind == "movies":
-        monkeypatch.setattr(
-            wanted_module,
-            "wanted_download_subtitles_movie",
-            partial(_capture_wanted_download_subtitles, searches),
-        )
-        wanted_module.wanted_search_missing_subtitles_movies(job_id="job")
-    else:
-        monkeypatch.setattr(
-            wanted_module,
-            "wanted_download_subtitles",
-            partial(_capture_wanted_download_subtitles, searches),
-        )
-        wanted_module.wanted_search_missing_subtitles_series(job_id="job")
-
-    assert searches == [getattr(row_one, id_attr)]
-
-
-@pytest.mark.parametrize("kind", ["movies", "series"])
-def test_wanted_search_completes_with_empty_list(monkeypatch, wanted_module, jobs_queue_factory, kind):
-    names = []
-
-    monkeypatch.setattr(wanted_module, "jobs_queue", jobs_queue_factory(names=names))
-    monkeypatch.setattr(wanted_module, "get_exclusion_clause", _no_exclusions)
-    monkeypatch.setattr(wanted_module, "get_providers", _single_provider_list)
-
-    if kind == "movies":
-        wanted_module.wanted_search_missing_subtitles_movies(job_id="job")
-    else:
-        wanted_module.wanted_search_missing_subtitles_series(job_id="job")
-
-    assert names[-1] == (
-        "Searched for missing movies subtitles"
-        if kind == "movies"
-        else "Searched for missing series subtitles"
-    )
 
 
 @pytest.mark.parametrize("bad_value", [None, "1", "x", 1.5])

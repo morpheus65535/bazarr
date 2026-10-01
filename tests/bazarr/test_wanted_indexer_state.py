@@ -1,5 +1,6 @@
 import importlib
 
+import pytest
 from sqlalchemy import select
 
 
@@ -84,3 +85,37 @@ def test_episode_missing_recalculation_updates_normalized_wanted_rows(
 
     assert missing_subtitles == "['en']"
     assert wanted_state == {"missing": ["en"], "failed": ["en"]}
+
+
+@pytest.mark.parametrize("kind", ["movies", "series"])
+def test_missing_profile_flags_default_when_recalculating_wanted_rows(
+    bind_wanted_database,
+    monkeypatch,
+    movie_row_factory,
+    episode_row_factory,
+    transactional_session,
+    wanted_search_tables,
+    kind,
+):
+    module_name = "subtitles.indexer.movies" if kind == "movies" else "subtitles.indexer.series"
+    module = _bind_indexer_module(bind_wanted_database, module_name, kind, monkeypatch)
+    monkeypatch.setattr(module, "get_profiles_list", lambda **kwargs: {"items": [{"language": "en"}]})
+    monkeypatch.setattr(module, "get_profile_cutoff", lambda **kwargs: [{"language": "en"}])
+    monkeypatch.setattr(
+        module,
+        "get_subtitles",
+        lambda **kwargs: [{"code2": "en", "forced": False, "hi": True, "path": "/en.srt"}],
+    )
+
+    if kind == "movies":
+        item = movie_row_factory(missing_languages=[])
+        module.list_missing_subtitles_movies(no=item.radarrId)
+        media_id = item.radarrId
+        media_type = "movie"
+    else:
+        item = episode_row_factory(missing_languages=[])
+        module.list_missing_subtitles(epno=item.sonarrEpisodeId)
+        media_id = item.sonarrEpisodeId
+        media_type = "series"
+
+    assert _wanted_state_for(transactional_session, wanted_search_tables, media_type, media_id)["missing"] == []

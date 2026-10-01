@@ -289,11 +289,9 @@ def _run_wanted_search_missing_subtitles_movies(job_id, pending_failed_attempts)
     count_movies = _count_searchable_due_movies(adaptive_search_policy, exclusion_clause)
     jobs_queue.update_job_progress(job_id=job_id, progress_max=count_movies)
 
+    throttled = False
     if count_movies == 0:
         jobs_queue.update_job_progress(job_id=job_id, progress_value='max')
-        throttled = False
-    else:
-        throttled = False
 
     fallback_allowed = settings.general.use_whisper_fallback
     processed_count = 0

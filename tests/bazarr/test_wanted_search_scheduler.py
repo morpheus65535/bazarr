@@ -130,12 +130,16 @@ def test_wanted_search_completes_with_empty_list(monkeypatch, wanted_module, job
     monkeypatch.setattr(wanted_module, "get_exclusion_clause", _no_exclusions)
     monkeypatch.setattr(wanted_module, "get_providers", _single_provider_list)
 
+    expected_name = (
+        "Searched for missing movies subtitles"
+        if kind == "movies"
+        else "Searched for missing series subtitles"
+    )
     if kind == "movies":
         wanted_module.wanted_search_missing_subtitles_movies(job_id="job")
-        assert any("movie" in n.lower() or "search" in n.lower() or "subtitle" in n.lower() for n in names)
     else:
         wanted_module.wanted_search_missing_subtitles_series(job_id="job")
-        assert any("subtitle" in n.lower() or "search" in n.lower() or "series" in n.lower() for n in names)
+    assert names == [expected_name]
 
 
 @pytest.mark.parametrize("bad_value", [None, "1", "x", 1.5])

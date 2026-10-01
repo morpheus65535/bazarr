@@ -25,6 +25,7 @@ from subtitles.serialization import parse_missing_subtitles
 
 WANTED_STATE_QUERY_BATCH_SIZE = 5000
 FAILED_ATTEMPT_TEMP_TABLE_MIN_SIZE = 1000
+FAILED_ATTEMPT_UPSERT_BATCH_SIZE = 100
 
 
 def _iter_chunks(items, batch_size=None):
@@ -181,7 +182,7 @@ def record_failed_subtitle_attempts_map(media_type, languages_by_media_id):
                     })
 
             latest_timestamp = TableFailedSubtitleAttempts.latest_attempt_at
-            for row_chunk in _iter_chunks(rows):
+            for row_chunk in _iter_chunks(rows, FAILED_ATTEMPT_UPSERT_BATCH_SIZE):
                 statement = insert(TableFailedSubtitleAttempts).values(row_chunk)
                 connection.execute(
                     statement.on_conflict_do_update(
