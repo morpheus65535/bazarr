@@ -55,8 +55,8 @@ def _movie_file_size(movie_file):
 
 def _movie_file_path(movie_file):
     path = movie_file.get('path')
-    if isinstance(path, str):
-        return path.strip()
+    if isinstance(path, str) and path.strip():
+        return path
     return ''
 
 
