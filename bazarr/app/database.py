@@ -29,6 +29,8 @@ from utilities.path_mappings import path_mappings
 
 logger = logging.getLogger(__name__)
 
+SUBTITLE_MAP_QUERY_BATCH_SIZE = 900
+
 POSTGRES_ENABLED_ENV = os.getenv("POSTGRES_ENABLED")
 if POSTGRES_ENABLED_ENV:
     postgresql = POSTGRES_ENABLED_ENV.lower() == 'true'
@@ -830,31 +832,40 @@ def get_subtitles_map(media_type: str, media_ids: list[int]) -> dict[int, List[d
 
     subtitles_by_media_id = defaultdict(list)
     if media_type == "series":
-        rows = database.execute(
-            select(TableEpisodesSubtitles.sonarrEpisodeId,
-                   TableEpisodesSubtitles.path,
-                   TableEpisodesSubtitles.language,
-                   TableEpisodesSubtitles.forced,
-                   TableEpisodesSubtitles.hi,
-                   TableEpisodesSubtitles.size,
-                   TableEpisodesSubtitles.embedded_track_id,
-                   TableEpisodesSubtitles.id)
-            .where(TableEpisodesSubtitles.sonarrEpisodeId.in_(media_ids))
-        ).all()
-        for row in rows:
-            subtitles_by_media_id[row.sonarrEpisodeId].append(_subtitle_payload(row, path_mappings.path_replace))
+        media_id_column = TableEpisodesSubtitles.sonarrEpisodeId
+        subtitle_columns = (
+            media_id_column,
+            TableEpisodesSubtitles.path,
+            TableEpisodesSubtitles.language,
+            TableEpisodesSubtitles.forced,
+            TableEpisodesSubtitles.hi,
+            TableEpisodesSubtitles.size,
+            TableEpisodesSubtitles.embedded_track_id,
+            TableEpisodesSubtitles.id,
+        )
+        replace_path = path_mappings.path_replace
     elif media_type == "movie":
+        media_id_column = TableMoviesSubtitles.radarrId
+        subtitle_columns = (
+            media_id_column,
+            TableMoviesSubtitles.path,
+            TableMoviesSubtitles.language,
+            TableMoviesSubtitles.forced,
+            TableMoviesSubtitles.hi,
+            TableMoviesSubtitles.size,
+            TableMoviesSubtitles.embedded_track_id,
+            TableMoviesSubtitles.id,
+        )
+        replace_path = path_mappings.path_replace_movie
+    else:
+        return {}
+
+    # Keep bulk list endpoints compatible with SQLite's historical variable limit.
+    for index in range(0, len(media_ids), SUBTITLE_MAP_QUERY_BATCH_SIZE):
+        media_id_chunk = media_ids[index:index + SUBTITLE_MAP_QUERY_BATCH_SIZE]
         rows = database.execute(
-            select(TableMoviesSubtitles.radarrId,
-                   TableMoviesSubtitles.path,
-                   TableMoviesSubtitles.language,
-                   TableMoviesSubtitles.forced,
-                   TableMoviesSubtitles.hi,
-                   TableMoviesSubtitles.size,
-                   TableMoviesSubtitles.embedded_track_id,
-                   TableMoviesSubtitles.id)
-            .where(TableMoviesSubtitles.radarrId.in_(media_ids))
+            select(*subtitle_columns).where(media_id_column.in_(media_id_chunk))
         ).all()
         for row in rows:
-            subtitles_by_media_id[row.radarrId].append(_subtitle_payload(row, path_mappings.path_replace_movie))
+            subtitles_by_media_id[row[0]].append(_subtitle_payload(row, replace_path))
     return {media_id: _sort_subtitles(subtitles) for media_id, subtitles in subtitles_by_media_id.items()}
