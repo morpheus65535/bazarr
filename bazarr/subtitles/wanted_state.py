@@ -135,7 +135,8 @@ def record_failed_subtitle_attempts(media_type, media_id, languages):
     return record_failed_subtitle_attempts_map(media_type, {media_id: languages}).get(media_id, '[]')
 
 
-def record_failed_subtitle_attempts_map(media_type, languages_by_media_id):
+def record_failed_subtitle_attempts_map(media_type, languages_by_media_id, attempted_at_by_media_id=None):
+    attempted_at_by_media_id = attempted_at_by_media_id or {}
     languages_by_media_id = {
         media_id: list(dict.fromkeys(languages))
         for media_id, languages in languages_by_media_id.items()
@@ -185,12 +186,14 @@ def record_failed_subtitle_attempts_map(media_type, languages_by_media_id):
                         "media_id": media_id,
                         "language": language,
                         "initial_attempt_at": (
-                            existing_attempt.initial_attempt_at if existing_attempt else current_timestamp
+                            existing_attempt.initial_attempt_at if existing_attempt
+                            else attempted_at_by_media_id.get(media_id, current_timestamp)
                         ),
-                        "latest_attempt_at": current_timestamp,
+                        "latest_attempt_at": attempted_at_by_media_id.get(media_id, current_timestamp),
                     })
 
             latest_timestamp = TableFailedSubtitleAttempts.latest_attempt_at
+            incoming_timestamp = insert(TableFailedSubtitleAttempts).excluded.latest_attempt_at
             for row_chunk in _iter_chunks(rows, FAILED_ATTEMPT_UPSERT_BATCH_SIZE):
                 statement = insert(TableFailedSubtitleAttempts).values(row_chunk)
                 connection.execute(
@@ -198,7 +201,7 @@ def record_failed_subtitle_attempts_map(media_type, languages_by_media_id):
                         index_elements=["media_type", "media_id", "language"],
                         set_={
                             "latest_attempt_at": case(
-                                (latest_timestamp < current_timestamp, current_timestamp),
+                                (latest_timestamp < incoming_timestamp, incoming_timestamp),
                                 else_=latest_timestamp,
                             ),
                         },

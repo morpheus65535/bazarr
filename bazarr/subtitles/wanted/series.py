@@ -3,6 +3,7 @@
 
 import logging
 import operator
+import time
 
 from functools import reduce
 
@@ -243,17 +244,23 @@ def wanted_download_subtitles(
         logging.info("BAZARR All providers are throttled")
 
 
-def _record_failed_episode_attempts(failed_attempt_languages):
+def _record_failed_episode_attempts(failed_attempt_languages, attempted_at_by_media_id=None):
     return record_failed_subtitle_attempts_map(
         'series',
         failed_attempt_languages,
+        attempted_at_by_media_id=attempted_at_by_media_id,
     )
 
 
 def _record_pending_failed_episode_attempts(pending_failed_attempts):
     if not pending_failed_attempts:
         return
-    _record_failed_episode_attempts(dict(pending_failed_attempts))
+    languages_by_media_id = {}
+    attempted_at_by_media_id = {}
+    for media_id, (languages, attempted_at) in pending_failed_attempts.items():
+        languages_by_media_id[media_id] = languages
+        attempted_at_by_media_id[media_id] = attempted_at
+    _record_failed_episode_attempts(languages_by_media_id, attempted_at_by_media_id)
     pending_failed_attempts.clear()
 
 
@@ -336,7 +343,7 @@ def _run_wanted_search_missing_subtitles_series(job_id, pending_failed_attempts)
                             defer_failed_attempts=True,
                         )
                         if remaining_due_languages:
-                            pending_failed_attempts[episode.sonarrEpisodeId] = remaining_due_languages
+                            pending_failed_attempts[episode.sonarrEpisodeId] = (remaining_due_languages, time.time())
                     else:
                         remaining_due_languages = _wanted_episode(
                             episode,
@@ -348,7 +355,7 @@ def _run_wanted_search_missing_subtitles_series(job_id, pending_failed_attempts)
                             defer_failed_attempts=True,
                         )
                         if remaining_due_languages:
-                            pending_failed_attempts[episode.sonarrEpisodeId] = remaining_due_languages
+                            pending_failed_attempts[episode.sonarrEpisodeId] = (remaining_due_languages, time.time())
 
                     # make sure to override the progress value updated by the subtitles synchronization
                     jobs_queue.update_job_progress(job_id=job_id, progress_value=processed_count,
