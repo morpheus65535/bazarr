@@ -3,6 +3,8 @@ import os
 import subprocess
 import sys
 
+import pytest
+
 from bazarr.app import config
 
 
@@ -14,19 +16,28 @@ def test_settings_exposes_general_defaults():
     assert config.settings.general.minimum_score == 90
 
 
-def test_get_args_ignores_unknown_cli_arguments(monkeypatch):
+def test_get_args_rejects_unknown_cli_arguments(monkeypatch, request):
     monkeypatch.setenv("NO_CLI", "false")
     monkeypatch.setattr(sys, "argv", ["pytest", "--unknown-flag", "value"])
 
     module = importlib.import_module("bazarr.app.get_args")
-    reloaded = importlib.reload(module)
 
-    assert reloaded.args.config_dir.endswith("data")
+    def restore_module_state():
+        monkeypatch.undo()
+        importlib.reload(module)
+
+    request.addfinalizer(restore_module_state)
+
+    with pytest.raises(SystemExit) as error:
+        importlib.reload(module)
+
+    assert error.value.code == 2
 
 
-def test_config_import_does_not_import_subtitles_package_side_effects():
+def test_config_import_does_not_import_subtitles_package_side_effects(tmp_path):
     environment = os.environ.copy()
-    environment["PYTHONPATH"] = "bazarr"
+    repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    environment["PYTHONPATH"] = os.path.join(repo_root, "bazarr")
     environment.setdefault("BAZARR_VERSION", "v0.0.0-test")
     environment.setdefault("SZ_USER_AGENT", "pytest")
 
