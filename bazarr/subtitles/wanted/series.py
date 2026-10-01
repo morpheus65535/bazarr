@@ -33,7 +33,6 @@ from subtitles.wanted_state import (
     iter_due_missing_languages_maps,
     record_failed_subtitle_attempts,
     record_failed_subtitle_attempts_map,
-    update_failed_subtitle_attempts,
 )
 from .utils import get_language_search_items
 
@@ -241,14 +240,9 @@ def wanted_download_subtitles(
 
 
 def _record_failed_episode_attempts(failed_attempt_languages):
-    updated_attempts_by_episode = record_failed_subtitle_attempts_map(
+    return record_failed_subtitle_attempts_map(
         'series',
         failed_attempt_languages,
-    )
-    update_failed_subtitle_attempts(
-        TableEpisodes.__table__,
-        list(updated_attempts_by_episode.items()),
-        'sonarrEpisodeId',
     )
 
 
@@ -265,6 +259,19 @@ def wanted_search_missing_subtitles_series(job_id=None, wait_for_completion=Fals
                                          wait_for_completion=wait_for_completion)
         return
 
+    pending_failed_attempts = {}
+    try:
+        _run_wanted_search_missing_subtitles_series(job_id, pending_failed_attempts)
+    except Exception:
+        try:
+            _record_pending_failed_episode_attempts(pending_failed_attempts)
+        except Exception:
+            logging.exception("BAZARR failed to save completed series search attempts after a search error")
+        raise
+
+
+def _run_wanted_search_missing_subtitles_series(job_id, pending_failed_attempts):
+
     adaptive_search_policy = get_adaptive_search_policy()
     exclusion_clause = get_exclusion_clause('series')
     count_episodes = _count_searchable_due_episodes(adaptive_search_policy, exclusion_clause)
@@ -277,7 +284,6 @@ def wanted_search_missing_subtitles_series(job_id=None, wait_for_completion=Fals
         throttled = False
 
     fallback_allowed = settings.general.use_whisper_fallback
-    pending_failed_attempts = {}
     processed_count = 0
     if count_episodes:
         for due_languages_by_chunk in iter_due_missing_languages_maps(

@@ -2,6 +2,9 @@ from functools import partial
 from unittest.mock import Mock
 
 import pytest
+from sqlalchemy import select
+
+import subtitles.wanted_state as wanted_state
 
 
 def _no_exclusions(media_type):
@@ -160,3 +163,62 @@ def test_wanted_series_scheduled_search_handles_noninteger_episode_numbers(
 
     assert searched == [101]
     assert any("progress_message" in update for update in progress)
+
+
+@pytest.mark.parametrize("kind", ["movies", "series"])
+def test_completed_failures_are_saved_when_later_search_raises(
+    monkeypatch,
+    wanted_module,
+    wanted_search_job,
+    row_factory,
+    jobs_queue_factory,
+    wanted_search_tables,
+    transactional_session,
+    kind,
+):
+    first = row_factory(missing_languages=["en"], failed_attempts=[])
+    second = row_factory(
+        **({"radarrId": 20} if kind == "movies" else {"sonarrEpisodeId": 20, "episode": 2}),
+        missing_languages=["en"],
+        failed_attempts=[],
+    )
+    id_attr = "radarrId" if kind == "movies" else "sonarrEpisodeId"
+    media_type = "movie" if kind == "movies" else "series"
+    media_table = wanted_module.TableMovies if kind == "movies" else wanted_module.TableEpisodes
+    media_id_column = media_table.c[id_attr]
+    monkeypatch.setattr(
+        wanted_state,
+        "TableMovies" if kind == "movies" else "TableEpisodes",
+        media_table,
+    )
+    calls = []
+
+    def search(item, *args, **kwargs):
+        calls.append(getattr(item, id_attr))
+        if getattr(item, id_attr) == getattr(second, id_attr):
+            raise RuntimeError("later search failed")
+        return ["en"]
+
+    monkeypatch.setattr(wanted_module, "_movie_needs_wanted_lookup_refresh" if kind == "movies"
+                        else "_episode_needs_wanted_lookup_refresh", lambda item: False)
+    monkeypatch.setattr(wanted_module, "_wanted_movie" if kind == "movies" else "_wanted_episode", search)
+    monkeypatch.setattr(wanted_module, "get_exclusion_clause", _no_exclusions)
+    monkeypatch.setattr(wanted_module, "get_providers", _single_provider_list)
+    monkeypatch.setattr(wanted_module, "jobs_queue", jobs_queue_factory())
+
+    with pytest.raises(RuntimeError, match="later search failed"):
+        wanted_search_job(job_id="job")
+
+    assert calls == [getattr(first, id_attr), getattr(second, id_attr)]
+    media_id = getattr(first, id_attr)
+    attempts = wanted_search_tables.failed_subtitle_attempts
+    saved_languages = transactional_session.execute(
+        select(attempts.c.language)
+        .where(attempts.c.media_type == media_type)
+        .where(attempts.c.media_id == media_id)
+    ).scalars().all()
+    assert saved_languages == ["en"]
+    legacy = transactional_session.execute(
+        select(media_table.c.failedAttempts).where(media_id_column == media_id)
+    ).scalar_one()
+    assert wanted_state.get_attempt_windows(legacy)["en"][0] == wanted_state.get_attempt_windows(legacy)["en"][1]

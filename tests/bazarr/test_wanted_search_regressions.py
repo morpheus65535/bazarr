@@ -154,6 +154,78 @@ def test_concurrent_missing_refreshes_keep_representations_consistent(runtime_da
     assert state.get_missing_languages('movie', 7) == ['fr']
 
 
+@pytest.mark.parametrize('media_type', ['movie', 'series'])
+def test_failed_attempt_mirror_rolls_back_with_normalized_rows(runtime_database, monkeypatch, media_type):
+    engine, session = runtime_database
+    media_table, id_column = seed_media(session, media_type)
+
+    def fail_legacy_update(connection, cursor, statement, parameters, context, executemany):
+        if statement.startswith(f'UPDATE {media_table.__tablename__}'):
+            raise sqlite3.OperationalError('interrupted legacy mirror update')
+
+    event.listen(engine, 'before_cursor_execute', fail_legacy_update)
+    try:
+        with pytest.raises(sqlite3.OperationalError):
+            state.record_failed_subtitle_attempts_map(media_type, {7: ['en']})
+    finally:
+        event.remove(engine, 'before_cursor_execute', fail_legacy_update)
+
+    assert state.get_failed_attempt_pairs(media_type, 7) == []
+    assert session.execute(select(getattr(media_table, 'failedAttempts'))
+                           .where(getattr(media_table, id_column) == 7)).scalar_one() is None
+
+    state.record_failed_subtitle_attempts_map(media_type, {7: ['en']})
+    normalized = state.get_failed_attempt_pairs(media_type, 7)
+    legacy = session.execute(select(getattr(media_table, 'failedAttempts'))
+                             .where(getattr(media_table, id_column) == 7)).scalar_one()
+    assert state.get_attempt_windows(legacy) == {'en': (normalized[0][1], normalized[-1][1])}
+
+
+def test_concurrent_failed_attempts_keep_latest_timestamp_and_legacy_mirror(runtime_database, monkeypatch):
+    engine, session = runtime_database
+    seed_media(session, 'movie')
+    thread_sessions = scoped_session(sessionmaker(bind=engine))
+    monkeypatch.setattr(state, 'database', thread_sessions)
+    first_insert = Event()
+    second_begin = Event()
+    first_begin = Event()
+
+    def interleave(connection, cursor, statement, parameters, context, executemany):
+        if statement == 'BEGIN IMMEDIATE':
+            if first_begin.is_set():
+                second_begin.set()
+            else:
+                first_begin.set()
+        elif statement.startswith('INSERT INTO table_failed_subtitle_attempts') and first_begin.is_set():
+            first_insert.set()
+            assert second_begin.wait(5), 'second writer did not reach its transaction'
+
+    def record():
+        try:
+            return state.record_failed_subtitle_attempts_map('movie', {7: ['en']})
+        finally:
+            thread_sessions.remove()
+
+    event.listen(engine, 'before_cursor_execute', interleave)
+    try:
+        with ThreadPoolExecutor(max_workers=2) as workers:
+            first = workers.submit(record)
+            assert first_insert.wait(5), 'first writer did not reach its upsert'
+            second = workers.submit(record)
+            first.result(timeout=10)
+            second.result(timeout=10)
+    finally:
+        event.remove(engine, 'before_cursor_execute', interleave)
+
+    normalized = state.get_failed_attempt_pairs('movie', 7)
+    legacy = session.execute(select(db.TableMovies.failedAttempts)
+                             .where(db.TableMovies.radarrId == 7)).scalar_one()
+    windows = state.get_attempt_windows(legacy)
+    assert len(normalized) == 2
+    assert normalized[0][1] <= normalized[-1][1]
+    assert windows == {'en': (normalized[0][1], normalized[-1][1])}
+
+
 @pytest.mark.parametrize('media_type, event_type', [('movie', 'movie'), ('series', 'episode')])
 def test_unchanged_missing_state_notifies_rescan_without_rewriting(runtime_database, monkeypatch, media_type, event_type):
     engine, session = runtime_database

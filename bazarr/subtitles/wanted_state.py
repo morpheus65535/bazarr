@@ -7,8 +7,10 @@ from sqlalchemy import case, func, or_
 from sqlalchemy.engine import Connection
 
 from app.database import (
+    TableEpisodes,
     TableFailedSubtitleAttempts,
     TableMissingSubtitles,
+    TableMovies,
     database,
     delete,
     insert,
@@ -133,57 +135,92 @@ def record_failed_subtitle_attempts_map(media_type, languages_by_media_id):
         return {}
 
     media_ids = list(languages_by_media_id)
-    current_timestamp = datetime.timestamp(datetime.now())
     serialized_attempts = {}
+    media_table, media_id_column = {
+        'movie': (TableMovies.__table__, 'radarrId'),
+        'series': (TableEpisodes.__table__, 'sonarrEpisodeId'),
+    }[media_type]
     for media_id_chunk in _iter_chunks(media_ids):
-        existing_attempts = {media_id: {} for media_id in media_id_chunk}
-        for row in database.execute(
-            select(
-                TableFailedSubtitleAttempts.media_id,
-                TableFailedSubtitleAttempts.language,
-                TableFailedSubtitleAttempts.initial_attempt_at,
-                TableFailedSubtitleAttempts.latest_attempt_at,
-            )
-            .where(TableFailedSubtitleAttempts.media_type == media_type)
-            .where(TableFailedSubtitleAttempts.media_id.in_(media_id_chunk))
-        ):
-            existing_attempts[row.media_id][row.language] = row
+        with _wanted_state_transaction() as connection:
+            media_ids_to_update = connection.execute(
+                select(media_table.c[media_id_column])
+                .where(media_table.c[media_id_column].in_(media_id_chunk))
+                .order_by(media_table.c[media_id_column])
+                .with_for_update()
+            ).scalars().all()
+            if not media_ids_to_update:
+                continue
 
-        rows = []
-        updated_attempts = {
-            media_id: {
-                language: (row.initial_attempt_at, row.latest_attempt_at)
-                for language, row in media_attempts.items()
+            current_timestamp = datetime.timestamp(datetime.now())
+            media_ids_to_update = set(media_ids_to_update)
+            existing_attempts = {media_id: {} for media_id in media_ids_to_update}
+            for row in connection.execute(
+                select(
+                    TableFailedSubtitleAttempts.media_id,
+                    TableFailedSubtitleAttempts.language,
+                    TableFailedSubtitleAttempts.initial_attempt_at,
+                    TableFailedSubtitleAttempts.latest_attempt_at,
+                )
+                .where(TableFailedSubtitleAttempts.media_type == media_type)
+                .where(TableFailedSubtitleAttempts.media_id.in_(media_ids_to_update))
+            ):
+                existing_attempts[row.media_id][row.language] = row
+
+            rows = []
+            for media_id in media_ids_to_update:
+                for language in languages_by_media_id[media_id]:
+                    existing_attempt = existing_attempts[media_id].get(language)
+                    rows.append({
+                        "media_type": media_type,
+                        "media_id": media_id,
+                        "language": language,
+                        "initial_attempt_at": (
+                            existing_attempt.initial_attempt_at if existing_attempt else current_timestamp
+                        ),
+                        "latest_attempt_at": current_timestamp,
+                    })
+
+            latest_timestamp = TableFailedSubtitleAttempts.latest_attempt_at
+            for row_chunk in _iter_chunks(rows):
+                statement = insert(TableFailedSubtitleAttempts).values(row_chunk)
+                connection.execute(
+                    statement.on_conflict_do_update(
+                        index_elements=["media_type", "media_id", "language"],
+                        set_={
+                            "latest_attempt_at": case(
+                                (latest_timestamp < current_timestamp, current_timestamp),
+                                else_=latest_timestamp,
+                            ),
+                        },
+                    )
+                )
+
+            attempt_windows = {media_id: {} for media_id in media_ids_to_update}
+            for row in connection.execute(
+                select(
+                    TableFailedSubtitleAttempts.media_id,
+                    TableFailedSubtitleAttempts.language,
+                    TableFailedSubtitleAttempts.initial_attempt_at,
+                    TableFailedSubtitleAttempts.latest_attempt_at,
+                )
+                .where(TableFailedSubtitleAttempts.media_type == media_type)
+                .where(TableFailedSubtitleAttempts.media_id.in_(media_ids_to_update))
+            ):
+                attempt_windows[row.media_id][row.language] = (
+                    row.initial_attempt_at, row.latest_attempt_at,
+                )
+
+            serialized_chunk = {
+                media_id: serialize_legacy_failed_attempts(windows)
+                for media_id, windows in attempt_windows.items()
             }
-            for media_id, media_attempts in existing_attempts.items()
-        }
-        for media_id in media_id_chunk:
-            for language in languages_by_media_id[media_id]:
-                existing_attempt = existing_attempts[media_id].get(language)
-                initial_attempt_at = (
-                    existing_attempt.initial_attempt_at
-                    if existing_attempt is not None else current_timestamp
-                )
-                rows.append({
-                    "media_type": media_type,
-                    "media_id": media_id,
-                    "language": language,
-                    "initial_attempt_at": initial_attempt_at,
-                    "latest_attempt_at": current_timestamp,
-                })
-                updated_attempts[media_id][language] = (initial_attempt_at, current_timestamp)
-
-        for row_chunk in _iter_chunks(rows):
-            statement = insert(TableFailedSubtitleAttempts).values(row_chunk)
-            database.execute(
-                statement.on_conflict_do_update(
-                    index_elements=["media_type", "media_id", "language"],
-                    set_={"latest_attempt_at": current_timestamp},
-                )
+            update_failed_subtitle_attempts(
+                media_table,
+                list(serialized_chunk.items()),
+                media_id_column,
+                connection=connection,
             )
-
-        for media_id, media_attempts in updated_attempts.items():
-            serialized_attempts[media_id] = serialize_legacy_failed_attempts(media_attempts)
+            serialized_attempts.update(serialized_chunk)
 
     return serialized_attempts
 
@@ -309,13 +346,13 @@ def delete_wanted_search_state(media_type, media_ids):
         )
 
 
-def update_failed_subtitle_attempts(table, update_items, id_column_name):
+def update_failed_subtitle_attempts(table, update_items, id_column_name, connection=None):
     if not update_items:
         return
 
-    dialect_name = database.get_bind().dialect.name
+    dialect_name = connection.dialect.name if connection is not None else database.get_bind().dialect.name
     if len(update_items) >= FAILED_ATTEMPT_TEMP_TABLE_MIN_SIZE and dialect_name == 'sqlite':
-        connection = database.connection()
+        connection = connection or database.connection()
         connection.exec_driver_sql('DROP TABLE IF EXISTS temp_failed_attempt_updates')
         connection.exec_driver_sql(
             'CREATE TEMP TABLE temp_failed_attempt_updates '
@@ -344,7 +381,8 @@ def update_failed_subtitle_attempts(table, update_items, id_column_name):
 
     for index in range(0, len(update_items), WANTED_STATE_QUERY_BATCH_SIZE):
         chunk = dict(update_items[index:index + WANTED_STATE_QUERY_BATCH_SIZE])
-        database.execute(
+        execute = connection.execute if connection is not None else database.execute
+        execute(
             table.update()
             .where(id_column_ref.in_(chunk))
             .values(failedAttempts=case(chunk, value=id_column_ref))

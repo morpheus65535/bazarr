@@ -32,7 +32,6 @@ from subtitles.wanted_state import (
     iter_due_missing_languages_maps,
     record_failed_subtitle_attempts,
     record_failed_subtitle_attempts_map,
-    update_failed_subtitle_attempts,
 )
 from .utils import get_language_search_items
 
@@ -257,14 +256,9 @@ def wanted_download_subtitles_movie(
 
 
 def _record_failed_movie_attempts(failed_attempt_languages):
-    updated_attempts_by_movie = record_failed_subtitle_attempts_map(
+    return record_failed_subtitle_attempts_map(
         'movie',
         failed_attempt_languages,
-    )
-    update_failed_subtitle_attempts(
-        TableMovies.__table__,
-        list(updated_attempts_by_movie.items()),
-        'radarrId',
     )
 
 
@@ -281,6 +275,19 @@ def wanted_search_missing_subtitles_movies(job_id=None, wait_for_completion=Fals
                                          wait_for_completion=wait_for_completion)
         return
 
+    pending_failed_attempts = {}
+    try:
+        _run_wanted_search_missing_subtitles_movies(job_id, pending_failed_attempts)
+    except Exception:
+        try:
+            _record_pending_failed_movie_attempts(pending_failed_attempts)
+        except Exception:
+            logging.exception("BAZARR failed to save completed movie search attempts after a search error")
+        raise
+
+
+def _run_wanted_search_missing_subtitles_movies(job_id, pending_failed_attempts):
+
     adaptive_search_policy = get_adaptive_search_policy()
     exclusion_clause = get_exclusion_clause('movie')
     count_movies = _count_searchable_due_movies(adaptive_search_policy, exclusion_clause)
@@ -293,7 +300,6 @@ def wanted_search_missing_subtitles_movies(job_id=None, wait_for_completion=Fals
         throttled = False
 
     fallback_allowed = settings.general.use_whisper_fallback
-    pending_failed_attempts = {}
     processed_count = 0
     if count_movies:
         for due_languages_by_chunk in iter_due_missing_languages_maps(
