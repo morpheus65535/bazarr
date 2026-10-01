@@ -181,6 +181,14 @@ def test_failed_attempt_mirror_rolls_back_with_normalized_rows(runtime_database,
     assert state.get_attempt_windows(legacy) == {'en': (normalized[0][1], normalized[-1][1])}
 
 
+@pytest.mark.parametrize('media_type', ['movie', 'series'])
+def test_record_failed_attempts_ignores_media_deleted_before_write(runtime_database, media_type):
+    _, _session = runtime_database
+
+    assert state.record_failed_subtitle_attempts(media_type, 7, ['en']) == '[]'
+    assert state.get_failed_attempt_pairs(media_type, 7) == []
+
+
 def test_concurrent_failed_attempts_keep_latest_timestamp_and_legacy_mirror(runtime_database, monkeypatch):
     engine, session = runtime_database
     seed_media(session, 'movie')

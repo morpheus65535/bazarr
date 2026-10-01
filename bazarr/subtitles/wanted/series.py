@@ -16,7 +16,7 @@ from app.notifier import send_notifications
 from app.get_providers import get_providers
 from app.database import (
     get_exclusion_clause, get_audio_profile_languages, TableMissingSubtitles, TableShows, TableEpisodes,
-    TableEpisodesSubtitles, database, update, select, get_subtitles,
+    TableEpisodesSubtitles, database, select, get_subtitles,
 )
 from app.event_handler import event_stream
 from app.jobs_queue import jobs_queue
@@ -153,11 +153,7 @@ def _wanted_episode(episode, providers_list, due_languages=None, job_id=None, ad
         if defer_failed_attempts:
             return remaining_due_languages
 
-        updated_attempts = record_failed_subtitle_attempts('series', episode.sonarrEpisodeId, remaining_due_languages)
-        database.execute(
-            update(TableEpisodes)
-            .values(failedAttempts=updated_attempts)
-            .where(TableEpisodes.sonarrEpisodeId == episode.sonarrEpisodeId))
+        record_failed_subtitle_attempts('series', episode.sonarrEpisodeId, remaining_due_languages)
 
 
 def wanted_download_subtitles(

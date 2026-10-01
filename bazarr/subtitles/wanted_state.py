@@ -122,7 +122,7 @@ def record_failed_subtitle_attempts(media_type, media_id, languages):
     if not languages:
         return serialize_failed_subtitle_attempts(media_type, media_id)
 
-    return record_failed_subtitle_attempts_map(media_type, {media_id: languages})[media_id]
+    return record_failed_subtitle_attempts_map(media_type, {media_id: languages}).get(media_id, '[]')
 
 
 def record_failed_subtitle_attempts_map(media_type, languages_by_media_id):

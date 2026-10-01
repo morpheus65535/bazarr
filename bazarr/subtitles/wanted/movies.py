@@ -15,7 +15,7 @@ from app.notifier import send_notifications_movie
 from app.get_providers import get_providers
 from app.database import (
     get_exclusion_clause, get_audio_profile_languages, TableMissingSubtitles, TableMovies, TableMoviesSubtitles,
-    database, update, select, get_subtitles,
+    database, select, get_subtitles,
 )
 from app.event_handler import event_stream
 from app.jobs_queue import jobs_queue
@@ -169,11 +169,7 @@ def _wanted_movie(movie, providers_list, due_languages=None, job_id=None, adapti
         if defer_failed_attempts:
             return remaining_due_languages
 
-        updated_attempts = record_failed_subtitle_attempts('movie', movie.radarrId, remaining_due_languages)
-        database.execute(
-            update(TableMovies)
-            .values(failedAttempts=updated_attempts)
-            .where(TableMovies.radarrId == movie.radarrId))
+        record_failed_subtitle_attempts('movie', movie.radarrId, remaining_due_languages)
 
 
 def wanted_download_subtitles_movie(
