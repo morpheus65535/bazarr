@@ -8,6 +8,7 @@ Create Date: 2026-06-02 00:00:00.000000
 from alembic import op
 import sqlalchemy as sa
 
+from subtitles.language_utils import parse_language_token
 from utilities.text_list import parse_text_list_or_default
 from subtitles.adaptive_searching import get_attempt_windows
 
@@ -45,7 +46,13 @@ def index_exists(bind, table_name, index_name):
 
 
 def _parse_missing_text_list(value):
-    return [language for language in parse_text_list_or_default(value) if language is not None]
+    languages = []
+    for language in parse_text_list_or_default(value):
+        if language is None:
+            continue
+        parsed_language = parse_language_token(language)
+        languages.append(parsed_language[0] if parsed_language is not None else language)
+    return languages
 
 
 def _attempt_window_items(value):

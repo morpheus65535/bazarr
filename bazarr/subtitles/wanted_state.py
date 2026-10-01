@@ -21,6 +21,7 @@ from subtitles.adaptive_searching import (
     get_active_search_languages,
     get_attempt_windows,
 )
+from subtitles.language_utils import parse_language_token
 from subtitles.serialization import parse_missing_subtitles
 
 WANTED_STATE_QUERY_BATCH_SIZE = 5000
@@ -50,6 +51,9 @@ def get_missing_subtitle_rows(media_type, media_id, missing_subtitles):
     rows = []
     seen_languages = set()
     for language in parse_missing_subtitles(missing_subtitles):
+        parsed_language = parse_language_token(language)
+        if parsed_language is not None:
+            language = parsed_language[0]
         if language in seen_languages:
             continue
         seen_languages.add(language)
