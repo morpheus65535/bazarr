@@ -111,6 +111,51 @@ def test_scheduled_search_bounds_detail_queries_for_legacy_sqlite(
 
 
 @pytest.mark.parametrize("kind", ["movies", "series"])
+def test_scheduled_search_filters_excluded_media_before_pagination(
+    kind, monkeypatch, wanted_module, row_factory, jobs_queue_factory, wanted_search_job
+):
+    table = wanted_module.TableMovies if kind == "movies" else wanted_module.TableEpisodes
+    searched = []
+    batches = []
+    key = "radarrId" if kind == "movies" else "sonarrEpisodeId"
+    for media_id in range(1, 302):
+        overrides = {"radarrId": media_id} if kind == "movies" else {
+            "sonarrEpisodeId": media_id,
+            "episode": media_id,
+        }
+        row_factory(**overrides, missing_languages=["en"], failed_attempts=[], monitored=media_id == 301)
+
+    monkeypatch.setattr(wanted_module, "jobs_queue", jobs_queue_factory())
+    monkeypatch.setattr(wanted_module, "get_adaptive_search_policy", lambda: None)
+    monkeypatch.setattr(wanted_state, "get_adaptive_search_policy", lambda: None)
+    monkeypatch.setattr(wanted_module, "get_exclusion_clause", lambda media_type: [table.monitored.is_(True)])
+    monkeypatch.setattr(wanted_module, "get_providers", lambda: ["provider"])
+    monkeypatch.setattr(
+        wanted_module,
+        "_movie_needs_wanted_lookup_refresh" if kind == "movies" else "_episode_needs_wanted_lookup_refresh",
+        lambda item: False,
+    )
+    monkeypatch.setattr(
+        wanted_module,
+        "_wanted_movie" if kind == "movies" else "_wanted_episode",
+        lambda item, *args, **kwargs: searched.append(getattr(item, key)),
+    )
+
+    original_iterator = wanted_module.iter_due_missing_languages_maps
+
+    def capture_batches(*args, **kwargs):
+        for batch in original_iterator(*args, **kwargs):
+            batches.extend(batch)
+            yield batch
+
+    monkeypatch.setattr(wanted_module, "iter_due_missing_languages_maps", capture_batches)
+    wanted_search_job(job_id="job")
+
+    assert searched == [301]
+    assert batches == [301]
+
+
+@pytest.mark.parametrize("kind", ["movies", "series"])
 def test_wanted_search_reports_throttled_when_all_providers_are_throttled(
     monkeypatch, wanted_module, row_factory, jobs_queue_factory, kind
 ):
