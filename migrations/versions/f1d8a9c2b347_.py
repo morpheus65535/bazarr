@@ -33,8 +33,13 @@ def index_exists(bind, table_name, index_name):
     return any(i["name"] == index_name for i in indexes)
 
 def _parse_missing_text_list(value):
-    return [language for language in parse_text_list_or_default(value) if language is not None]
-
+    languages = []
+    for language in parse_text_list_or_default(value):
+        if language is None:
+            continue
+        parsed_language = parse_language_token(language)
+        languages.append(parsed_language[0] if parsed_language is not None else language)
+    return languages
 
 def _insert_missing_subtitles(bind, rows):
     if not rows:
