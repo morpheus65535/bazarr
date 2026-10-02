@@ -189,6 +189,7 @@ def test_scheduled_search_keeps_each_failure_completion_time(
             return datetime.fromtimestamp(clock[0])
 
     def search(*args, **kwargs):
+        kwargs["attempted_languages"].update(args[1])
         clock[0] += 60
         finished.append(clock[0])
         return iter(())
