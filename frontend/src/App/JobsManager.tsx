@@ -85,7 +85,7 @@ const JobsManager: FunctionComponent<JobsManagerProps> = ({
       });
       showNotification(
         notification.success(
-          "Job Cancelled",
+          "Job Canceled",
           "The job has been removed from the queue",
         ),
       );
@@ -133,6 +133,7 @@ const JobsManager: FunctionComponent<JobsManagerProps> = ({
         move_top: "Moved to top",
         move_bottom: "Moved to bottom",
         force_start: "Force started",
+        cancel: "Cancellation requested",
       };
       const label = actionLabels[variables.action] || "Action completed";
       showNotification(notification.success("Job Updated", label));
@@ -162,6 +163,8 @@ const JobsManager: FunctionComponent<JobsManagerProps> = ({
   >({
     running: false,
     pending: false,
+    failed: false,
+    canceled: false,
     completed: false,
   });
 
@@ -176,6 +179,7 @@ const JobsManager: FunctionComponent<JobsManagerProps> = ({
     running: "info",
     pending: "warning",
     failed: "danger",
+    canceled: "gray",
     completed: "success",
     unknown: "secondary",
   };
@@ -224,6 +228,7 @@ const JobsManager: FunctionComponent<JobsManagerProps> = ({
                   "pending",
                   "failed",
                   "completed",
+                  "canceled",
                   "unknown",
                 ];
 
@@ -597,6 +602,79 @@ const JobsManager: FunctionComponent<JobsManagerProps> = ({
                                                   )
                                                 }
                                                 disabled={isCancelling}
+                                              >
+                                                Cancel
+                                              </Menu.Item>
+                                            </Menu.Dropdown>
+                                          </Menu>
+                                        ) : status === "running" &&
+                                          job.is_cancellable ? (
+                                          <Menu
+                                            position="bottom-end"
+                                            withArrow
+                                            opened={
+                                              openMenus[`job-${job?.job_id}`] ||
+                                              false
+                                            }
+                                            onChange={(opened) =>
+                                              setOpenMenus((prev) => ({
+                                                ...prev,
+                                                [`job-${job?.job_id}`]: opened,
+                                              }))
+                                            }
+                                          >
+                                            <Menu.Target>
+                                              <ActionIcon
+                                                variant="subtle"
+                                                color="secondary"
+                                                size="sm"
+                                              >
+                                                <FontAwesomeIcon
+                                                  icon={faEllipsis}
+                                                />
+                                              </ActionIcon>
+                                            </Menu.Target>
+                                            <Menu.Dropdown>
+                                              <Menu.Item
+                                                leftSection={
+                                                  <FontAwesomeIcon
+                                                    icon={faXmark}
+                                                    color="var(--mantine-color-danger-6)"
+                                                  />
+                                                }
+                                                onClick={() =>
+                                                  handleMenuAction(
+                                                    job?.job_id || 0,
+                                                    () =>
+                                                      modals.openConfirmModal({
+                                                        title: "Cancel Job",
+                                                        children: (
+                                                          <Text size="sm">
+                                                            Are you sure you
+                                                            want to cancel this
+                                                            running job?
+                                                          </Text>
+                                                        ),
+                                                        labels: {
+                                                          confirm: "Cancel",
+                                                          cancel:
+                                                            "Keep Running",
+                                                        },
+                                                        confirmProps: {
+                                                          color: "danger",
+                                                        },
+                                                        onConfirm: () =>
+                                                          job?.job_id &&
+                                                          debouncedActionOnJobs(
+                                                            {
+                                                              id: job.job_id,
+                                                              action: "cancel",
+                                                            },
+                                                          ),
+                                                      }),
+                                                    `job-${job?.job_id}`,
+                                                  )
+                                                }
                                               >
                                                 Cancel
                                               </Menu.Item>

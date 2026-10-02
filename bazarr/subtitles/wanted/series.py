@@ -17,7 +17,7 @@ from app.get_providers import get_providers
 from app.database import get_exclusion_clause, get_audio_profile_languages, TableShows, TableEpisodes, database, \
     update, select, get_subtitles
 from app.event_handler import event_stream
-from app.jobs_queue import jobs_queue
+from app.jobs_queue import jobs_queue, JobCanceled
 from app.config import settings
 
 from ..adaptive_searching import is_search_active, updateFailedAttempts
@@ -117,8 +117,10 @@ def wanted_download_subtitles(sonarr_episode_id, job_id=None):
 def wanted_search_missing_subtitles_series(job_id=None, wait_for_completion=False):
     if not job_id:
         jobs_queue.add_job_from_function("Searching for missing series subtitles", is_progress=True,
-                                         wait_for_completion=wait_for_completion)
+                                         wait_for_completion=wait_for_completion, is_cancellable=True)
         return
+    else:
+        job = jobs_queue.get_job(job_id=job_id)
 
     conditions = [(TableEpisodes.missing_subtitles.is_not(None)),
                   (TableEpisodes.missing_subtitles != '[]')]
@@ -146,6 +148,9 @@ def wanted_search_missing_subtitles_series(job_id=None, wait_for_completion=Fals
 
     throttled = False
     for i, episode in enumerate(episodes, start=1):
+        if job.cancel_event.is_set():
+            raise JobCanceled
+
         jobs_queue.update_job_progress(job_id=job_id, progress_value=i,
                                        progress_message=f'{episode.title} - S{episode.season:02d}E{episode.episode:02d}'
                                                         f' - {episode.episodeTitle}')

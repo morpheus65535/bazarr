@@ -21,6 +21,7 @@ declare namespace System {
     job_name: string;
     status: string;
     last_run_time: string;
+    is_cancellable: boolean;
     is_progress: boolean;
     is_signalr: boolean;
     progress_value: number;

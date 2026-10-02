@@ -916,14 +916,16 @@ def save_settings(settings_items):
                                                func='series_full_scan_subtitles',
                                                args=[],
                                                kwargs={'use_cache': True},
-                                               is_progress=True)
+                                               is_progress=True,
+                                               is_cancellable=True)
         if settings.general.use_radarr:
             jobs_queue.feed_jobs_pending_queue(job_name=f'Indexing all existing movies subtitles',
                                                module='subtitles.indexer.movies',
                                                func='movies_full_scan_subtitles',
                                                args=[],
                                                kwargs={'use_cache': True},
-                                               is_progress=True)
+                                               is_progress=True,
+                                               is_cancellable=True)
 
     if audio_tracks_parsing_changed:
         if settings.general.use_sonarr:
@@ -932,14 +934,16 @@ def save_settings(settings_items):
                                                func='update_series',
                                                args=[],
                                                kwargs={},
-                                               is_progress=True)
+                                               is_progress=True,
+                                               is_cancellable=True)
         if settings.general.use_radarr:
             jobs_queue.feed_jobs_pending_queue(job_name=f'Syncing movies with Radarr',
                                                module='radarr.sync.movies',
                                                func='update_movies',
                                                args=[],
                                                kwargs={},
-                                               is_progress=True)
+                                               is_progress=True,
+                                               is_cancellable=True)
 
     if update_subzero:
         settings.general.subzero_mods = ','.join(subzero_mods)
