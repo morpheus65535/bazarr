@@ -45,18 +45,17 @@ class MoviesBlacklist(Resource):
         start = args.get('start')
         length = args.get('length')
 
-        data = database.execute(
-            select(TableMovies.title,
-                   TableMovies.radarrId,
-                   TableBlacklistMovie.provider,
-                   TableBlacklistMovie.subs_id,
-                   TableBlacklistMovie.language,
-                   TableBlacklistMovie.timestamp)
-            .select_from(TableBlacklistMovie)
-            .join(TableMovies)
-            .order_by(TableBlacklistMovie.timestamp.desc()))
+        stmt = select(TableMovies.title,
+                      TableMovies.radarrId,
+                      TableBlacklistMovie.provider,
+                      TableBlacklistMovie.subs_id,
+                      TableBlacklistMovie.language,
+                      TableBlacklistMovie.timestamp) \
+            .select_from(TableBlacklistMovie) \
+            .join(TableMovies) \
+            .order_by(TableBlacklistMovie.timestamp.desc())
         if length > 0:
-            data = data.limit(length).offset(start)
+            stmt = stmt.limit(length).offset(start)
 
         return marshal([postprocess({
             'title': x.title,
@@ -66,7 +65,7 @@ class MoviesBlacklist(Resource):
             'language': x.language,
             'timestamp': pretty.date(x.timestamp),
             'parsed_timestamp': x.timestamp.strftime('%x %X'),
-        }) for x in data.all()], self.get_response_model, envelope='data')
+        }) for x in database.execute(stmt).all()], self.get_response_model, envelope='data')
 
     post_request_parser = reqparse.RequestParser()
     post_request_parser.add_argument('radarrid', type=int, required=True, help='Radarr ID')
