@@ -28,7 +28,8 @@ from .processing import process_subtitle
 @update_pools
 def generate_subtitles(path, languages, audio_language, sceneName, title, media_type, profile_id,
                        forced_minimum_score=None, is_upgrade=False, check_if_still_required=False,
-                       previous_subtitles_to_delete=None, job_id=None, fallback_allowed=False):
+                       previous_subtitles_to_delete=None, job_id=None, fallback_allowed=False,
+                       attempted_languages=None):
     if not languages:
         return None
 
@@ -42,7 +43,11 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
     pool = _get_pool(media_type, profile_id)
     providers = pool.providers
 
-    language_set = _get_language_obj(languages=languages)
+    language_items_by_object = {} if attempted_languages is not None else None
+    language_set = _get_language_obj(
+        languages=languages,
+        language_items_by_object=language_items_by_object,
+    )
     profile = get_profiles_list(profile_id=profile_id)
     if not profile or not isinstance(profile, dict):
         logging.warning(f"BAZARR unable to get subtitle profile (profile_id={profile_id})")
@@ -78,6 +83,9 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
                                   f"has been reached during this search.")
                     continue
                 else:
+                    if attempted_languages is not None:
+                        attempted_languages.add(language_items_by_object[language])
+
                     # resolve per-language hearing_impaired mode from profile
                     lang_alpha2 = alpha2_from_alpha3(language.alpha3)
                     hi_mode = "don't prefer"
@@ -207,7 +215,7 @@ def _blacklist_unusable_subtitles(video, subtitles, media_type, language, failed
         blacklist_subtitle(subtitle.provider_name, subtitle.id, media_type, ids, language)
 
 
-def _get_language_obj(languages):
+def _get_language_obj(languages, language_items_by_object=None):
     language_set = set()
 
     if not isinstance(languages, (set, list)):
@@ -215,6 +223,7 @@ def _get_language_obj(languages):
 
     for language in languages:
         lang, hi_item, forced_item = language
+        language_item = (lang, hi_item, forced_item)
 
         # Always use alpha2 in API Request
         lang = alpha3_from_alpha2(lang)
@@ -227,6 +236,8 @@ def _get_language_obj(languages):
             lang_obj = Language.rebuild(lang_obj, hi=True)
 
         language_set.add(lang_obj)
+        if language_items_by_object is not None:
+            language_items_by_object[lang_obj] = language_item
 
     return language_set
 
