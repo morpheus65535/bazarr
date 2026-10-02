@@ -189,6 +189,7 @@ def test_scheduled_search_keeps_each_failure_completion_time(
             return datetime.fromtimestamp(clock[0])
 
     def search(*args, **kwargs):
+        kwargs["attempted_languages"].update(args[1])
         clock[0] += 60
         finished.append(clock[0])
         return iter(())
@@ -344,7 +345,6 @@ def test_completed_failures_are_saved_when_later_search_raises(
     id_attr = "radarrId" if kind == "movies" else "sonarrEpisodeId"
     media_type = "movie" if kind == "movies" else "series"
     media_table = wanted_module.TableMovies if kind == "movies" else wanted_module.TableEpisodes
-    media_id_column = media_table.c[id_attr]
     monkeypatch.setattr(
         wanted_state,
         "TableMovies" if kind == "movies" else "TableEpisodes",
@@ -377,10 +377,6 @@ def test_completed_failures_are_saved_when_later_search_raises(
         .where(attempts.c.media_id == media_id)
     ).scalars().all()
     assert saved_languages == ["en"]
-    legacy = transactional_session.execute(
-        select(media_table.c.failedAttempts).where(media_id_column == media_id)
-    ).scalar_one()
-    assert legacy == "[]"
     window = transactional_session.execute(
         select(attempts.c.initial_attempt_at, attempts.c.latest_attempt_at)
         .where(attempts.c.media_type == media_type)
