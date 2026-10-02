@@ -164,34 +164,20 @@ def record_failed_subtitle_attempts_map(media_type, languages_by_media_id, attem
 
             current_timestamp = datetime.timestamp(datetime.now())
             media_ids_to_update = set(media_ids_to_update)
-            existing_attempts = {media_id: {} for media_id in media_ids_to_update}
-            for row in connection.execute(
-                select(
-                    TableFailedSubtitleAttempts.media_id,
-                    TableFailedSubtitleAttempts.language,
-                    TableFailedSubtitleAttempts.initial_attempt_at,
-                    TableFailedSubtitleAttempts.latest_attempt_at,
-                )
-                .where(TableFailedSubtitleAttempts.media_type == media_type)
-                .where(TableFailedSubtitleAttempts.media_id.in_(media_ids_to_update))
-            ):
-                existing_attempts[row.media_id][row.language] = row
-
             rows = []
             for media_id in media_ids_to_update:
                 for language in languages_by_media_id[media_id]:
-                    existing_attempt = existing_attempts[media_id].get(language)
+                    attempted_at = attempted_at_by_media_id.get(media_id, current_timestamp)
                     rows.append({
                         "media_type": media_type,
                         "media_id": media_id,
                         "language": language,
-                        "initial_attempt_at": (
-                            existing_attempt.initial_attempt_at if existing_attempt
-                            else attempted_at_by_media_id.get(media_id, current_timestamp)
-                        ),
-                        "latest_attempt_at": attempted_at_by_media_id.get(media_id, current_timestamp),
+                        "initial_attempt_at": attempted_at,
+                        "latest_attempt_at": attempted_at,
                     })
 
+            initial_timestamp = TableFailedSubtitleAttempts.initial_attempt_at
+            incoming_initial_timestamp = insert(TableFailedSubtitleAttempts).excluded.initial_attempt_at
             latest_timestamp = TableFailedSubtitleAttempts.latest_attempt_at
             incoming_timestamp = insert(TableFailedSubtitleAttempts).excluded.latest_attempt_at
             for row_chunk in _iter_chunks(rows, FAILED_ATTEMPT_UPSERT_BATCH_SIZE):
@@ -200,6 +186,10 @@ def record_failed_subtitle_attempts_map(media_type, languages_by_media_id, attem
                     statement.on_conflict_do_update(
                         index_elements=["media_type", "media_id", "language"],
                         set_={
+                            "initial_attempt_at": case(
+                                (initial_timestamp > incoming_initial_timestamp, incoming_initial_timestamp),
+                                else_=initial_timestamp,
+                            ),
                             "latest_attempt_at": case(
                                 (latest_timestamp < incoming_timestamp, incoming_timestamp),
                                 else_=latest_timestamp,

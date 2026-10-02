@@ -322,7 +322,7 @@ def _run_wanted_search_missing_subtitles_movies(job_id, pending_failed_attempts)
             base_conditions = [TableMovies.radarrId.in_(due_movie_id_chunk)]
             base_conditions += exclusion_clause
             for movie in database.execute(
-                _WANTED_MOVIES_SELECT
+                _WANTED_MOVIES_SELECT.with_only_columns(TableMovies.radarrId, TableMovies.title)
                 .where(reduce(operator.and_, base_conditions))
             ):
                 due_languages = due_languages_by_chunk.get(movie.radarrId)
@@ -335,31 +335,17 @@ def _run_wanted_search_missing_subtitles_movies(job_id, pending_failed_attempts)
 
                 providers = get_providers()
                 if providers:
-                    if _movie_needs_wanted_lookup_refresh(movie):
-                        remaining_due_languages = wanted_download_subtitles_movie(
-                            movie.radarrId,
-                            job_id=job_id,
-                            providers_list=providers,
-                            movie=movie,
-                            due_languages=due_languages,
-                            adaptive_search_policy=adaptive_search_policy,
-                            fallback_allowed=fallback_allowed,
-                            defer_failed_attempts=True,
-                        )
-                        if remaining_due_languages:
-                            pending_failed_attempts[movie.radarrId] = (remaining_due_languages, time.time())
-                    else:
-                        remaining_due_languages = _wanted_movie(
-                            movie,
-                            providers,
-                            due_languages=due_languages,
-                            job_id=job_id,
-                            adaptive_search_policy=adaptive_search_policy,
-                            fallback_allowed=fallback_allowed,
-                            defer_failed_attempts=True,
-                        )
-                        if remaining_due_languages:
-                            pending_failed_attempts[movie.radarrId] = (remaining_due_languages, time.time())
+                    remaining_due_languages = wanted_download_subtitles_movie(
+                        movie.radarrId,
+                        job_id=job_id,
+                        providers_list=providers,
+                        due_languages=due_languages,
+                        adaptive_search_policy=adaptive_search_policy,
+                        fallback_allowed=fallback_allowed,
+                        defer_failed_attempts=True,
+                    )
+                    if remaining_due_languages:
+                        pending_failed_attempts[movie.radarrId] = (remaining_due_languages, time.time())
 
                     # make sure to override the progress value updated by the subtitles synchronization
                     jobs_queue.update_job_progress(job_id=job_id, progress_value=processed_count,
