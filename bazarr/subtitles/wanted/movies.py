@@ -133,6 +133,7 @@ def _wanted_movie(movie, providers_list, due_languages=None, job_id=None, adapti
         fallback_allowed = settings.general.use_whisper_fallback
 
     languages = get_language_search_items(due_missing_languages)
+    attempted_languages = set() if defer_failed_attempts else None
 
     found_any = False
     for result in generate_subtitles(path_mappings.path_replace_movie(movie.path),
@@ -144,7 +145,8 @@ def _wanted_movie(movie, providers_list, due_languages=None, job_id=None, adapti
                                      movie.profileId,
                                      check_if_still_required=True,
                                      job_id=job_id,
-                                     fallback_allowed=fallback_allowed):
+                                     fallback_allowed=fallback_allowed,
+                                     attempted_languages=attempted_languages):
 
         if result:
             found_any = True
@@ -153,6 +155,14 @@ def _wanted_movie(movie, providers_list, due_languages=None, job_id=None, adapti
             if hasattr(result, 'message'):
                 send_notifications_movie(movie.radarrId, result.message)
             event_stream(type='movie-wanted', action='delete', payload=movie.radarrId)
+
+    attempted_due_languages = due_missing_languages
+    if attempted_languages is not None:
+        attempted_due_languages = [
+            missing_language
+            for missing_language, search_language in zip(due_missing_languages, languages)
+            if search_language in attempted_languages
+        ]
 
     if providers_list:
         if found_any:
@@ -165,11 +175,11 @@ def _wanted_movie(movie, providers_list, due_languages=None, job_id=None, adapti
 
             current_missing_languages = set(get_missing_languages('movie', movie.radarrId))
             remaining_due_languages = [
-                language for language in due_missing_languages
+                language for language in attempted_due_languages
                 if language in current_missing_languages
             ]
         else:
-            remaining_due_languages = due_missing_languages
+            remaining_due_languages = attempted_due_languages
         if not remaining_due_languages:
             return
 
