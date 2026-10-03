@@ -81,6 +81,23 @@ const SettingsProvidersTranslationView: FunctionComponent = () => {
             instance doesn't require authentication.
           </Message>
         </CollapseBox>
+        <CollapseBox
+          settingKey="settings-translator-translator_type"
+          on={(val) => val === "openai_compatible"}
+        >
+          <Text label="OpenAI-compatible API base URL" settingKey="settings-translator-openai_base_url" />
+          <Text label="Model" settingKey="settings-translator-openai_model" />
+          <Text label="API key (optional)" settingKey="settings-translator-openai_api_key" />
+          <Number label="Batch size" settingKey="settings-translator-openai_batch_size" min={1} />
+          <Number label="Request timeout (seconds)" settingKey="settings-translator-openai_timeout" min={1} />
+        </CollapseBox>
+        <Check label="When the requested language is unavailable, download and translate a fallback subtitle"
+          settingKey="settings-translator-translate_fallback_enabled" />
+        <CollapseBox settingKey="settings-translator-translate_fallback_enabled" on={(val) => val === true}>
+          <Text label="Fallback source language (ISO 639-1)"
+            settingKey="settings-translator-translate_fallback_source_language" />
+          <Message>Default: en. Translation uses the selected translator and writes a separate target-language subtitle.</Message>
+        </CollapseBox>
         <Check
           label="Add translation info at the beginning"
           settingKey="settings-translator-translator_info"

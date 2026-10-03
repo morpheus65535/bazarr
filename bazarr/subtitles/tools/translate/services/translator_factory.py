@@ -16,6 +16,10 @@ class TranslatorFactory:
             from .lingarr_translator import LingarrTranslatorService
             return LingarrTranslatorService(**kwargs)
 
+        elif translator_type == 'openai_compatible':
+            from .openai_compatible_translator import OpenAICompatibleTranslatorService
+            return OpenAICompatibleTranslatorService(**kwargs)
+
         else:
             raise ValueError(
                 f"Unknown translator type: '{translator_type}'"
