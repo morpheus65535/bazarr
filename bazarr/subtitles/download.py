@@ -12,7 +12,7 @@ from subliminal_patch.core import save_subtitles
 from subliminal_patch.core_persistent import download_best_subtitles
 
 from app.config import settings, get_array_from
-from app.database import TableEpisodes, TableMovies, database, select, get_profiles_list
+from app.database import TableEpisodes, TableMovies, TableSportsEvents, database, select, get_profiles_list
 from utilities.path_mappings import path_mappings
 from utilities.helper import get_target_folder, force_unicode
 from languages.get_languages import alpha3_from_alpha2
@@ -178,12 +178,25 @@ def parse_language_object(language):
         return language
 
 
+def _reverse_path(path, media_type):
+    if media_type == 'series':
+        return path_mappings.path_replace_reverse(path)
+    elif media_type == 'sports':
+        return path_mappings.path_replace_reverse_sports(path)
+    return path_mappings.path_replace_reverse_movie(path)
+
+
 def check_missing_languages(path, media_type):
     # confirm if language is still missing or if cutoff has been reached
     if media_type == 'series':
         confirmed_missing_subs = database.execute(
             select(TableEpisodes.missing_subtitles)
             .where(TableEpisodes.path == path_mappings.path_replace_reverse(path)))\
+            .first()
+    elif media_type == 'sports':
+        confirmed_missing_subs = database.execute(
+            select(TableSportsEvents.missing_subtitles)
+            .where(TableSportsEvents.path == path_mappings.path_replace_reverse_sports(path)))\
             .first()
     else:
         confirmed_missing_subs = database.execute(
@@ -192,8 +205,7 @@ def check_missing_languages(path, media_type):
             .first()
 
     if not confirmed_missing_subs:
-        reversed_path = path_mappings.path_replace_reverse(path) if media_type == 'series' else \
-            path_mappings.path_replace_reverse_movie(path)
+        reversed_path = _reverse_path(path, media_type)
         logging.debug(f"BAZARR no media with this path have been found in database: {reversed_path}")
         return []
 

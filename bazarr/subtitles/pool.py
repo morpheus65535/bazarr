@@ -7,6 +7,7 @@ import time
 from inspect import getfullargspec
 
 from radarr.blacklist import get_blacklist_movie
+from sportarr.blacklist import get_blacklist_sports
 from sonarr.blacklist import get_blacklist
 from app.get_providers import get_providers, get_providers_auth, provider_throttle, provider_pool, get_language_equals
 
@@ -14,12 +15,20 @@ from .utils import get_ban_list
 
 
 # fmt: on
+def _blacklist_for(media_type):
+    if media_type == "series":
+        return get_blacklist()
+    elif media_type == "sports":
+        return get_blacklist_sports()
+    return get_blacklist_movie()
+
+
 def _init_pool(media_type, profile_id=None, providers=None):
     pool = provider_pool()
     return pool(
         providers=providers or get_providers(),
         provider_configs=get_providers_auth(),
-        blacklist=get_blacklist() if media_type == "series" else get_blacklist_movie(),
+        blacklist=_blacklist_for(media_type),
         throttle_callback=provider_throttle,
         ban_list=get_ban_list(profile_id),
         language_hook=None,
@@ -55,7 +64,7 @@ def _update_pool(media_type, profile_id=None):
     return pool.update(
         get_providers(),
         get_providers_auth(),
-        get_blacklist() if media_type == "series" else get_blacklist_movie(),
+        _blacklist_for(media_type),
         get_ban_list(profile_id),
         get_language_equals(),
     )
@@ -65,7 +74,7 @@ def _pool_update(pool, media_type, profile_id=None):
     return pool.update(
         get_providers(),
         get_providers_auth(),
-        get_blacklist() if media_type == "series" else get_blacklist_movie(),
+        _blacklist_for(media_type),
         get_ban_list(profile_id),
         get_language_equals(),
     )
