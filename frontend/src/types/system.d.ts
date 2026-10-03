@@ -27,6 +27,7 @@ declare namespace System {
     progress_value: number;
     progress_max: number;
     progress_message: string;
+    duration: number;
   }
 
   interface Status {

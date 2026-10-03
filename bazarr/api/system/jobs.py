@@ -22,6 +22,7 @@ class SystemJobs(Resource):
         'progress_value': fields.Integer(),
         'progress_max': fields.Integer(),
         'progress_message': fields.String(),
+        'duration': fields.Integer(),
     })
 
     get_request_parser = reqparse.RequestParser()

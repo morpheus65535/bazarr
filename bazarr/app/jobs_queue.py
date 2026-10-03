@@ -55,6 +55,10 @@ class Job:
     :type progress_message: str
     :ivar job_returned_value: Value returned by the job function, initialized to None.
     :type job_returned_value: Any
+    :ivar is_cancellable: Indicates whether the job is cancellable, defaults to False.
+    :type is_cancellable: bool
+    :ivar duration: Indicates how long the job was executed in seconds, initialized to 0.
+    :type duration: int
     :ivar cancel_event: Event to cancel this job, initialized to None.
     :type cancel_event: Event
     """
@@ -76,6 +80,7 @@ class Job:
         self.job_returned_value = job_returned_value
         self.is_cancellable = is_cancellable
         self.cancel_event = Event()
+        self.duration = 0
 
     def __eq__(self, other):
         """
@@ -641,24 +646,22 @@ class JobsQueue:
         except JobCanceled:
             logging.debug(f"Job {job.job_name} ({job.job_id}) canceled by user")
             job.status = 'canceled'
-            job.last_run_time = datetime.now(timezone.utc).isoformat()
             self.jobs_running_queue.remove(job)
             self.jobs_canceled_queue.append(job)
             return True
         except Exception as e:
             logging.exception(f"Exception raised while running function: {e}")
             job.status = 'failed'
-            job.last_run_time = datetime.now(timezone.utc).isoformat()
             self.jobs_running_queue.remove(job)
             self.jobs_failed_queue.append(job)
             return False
         else:
             job.status = 'completed'
-            job.last_run_time = datetime.now(timezone.utc).isoformat()
             self.jobs_running_queue.remove(job)
             self.jobs_completed_queue.append(job)
             return True
         finally:
+            job.duration = (datetime.now(timezone.utc) - datetime.fromisoformat(job.last_run_time)).total_seconds()
             try:
                 # Send a complete event payload with status and progress_value
                 # progress_value being None forces frontend to fetch a full job payload
