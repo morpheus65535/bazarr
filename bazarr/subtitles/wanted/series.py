@@ -113,6 +113,11 @@ def wanted_download_subtitles(sonarr_episode_id, job_id=None):
     else:
         logging.info("BAZARR All providers are throttled")
 
+    # translation needs no provider: for languages still missing after the search,
+    # fall back to translating an existing (possibly embedded) subtitle track
+    from ..tools.translate.fallback import auto_translate_missing
+    auto_translate_missing(sonarr_episode_id=sonarr_episode_id)
+
 
 def wanted_search_missing_subtitles_series(job_id=None, wait_for_completion=False):
     if not job_id:

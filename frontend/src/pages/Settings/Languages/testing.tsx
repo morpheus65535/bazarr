@@ -72,6 +72,7 @@ export const baseProfiles: Language.Profile[] = [
     mustContain: [],
     mustNotContain: [],
     originalFormat: false,
+    autoTranslate: false,
   },
 ];
 
