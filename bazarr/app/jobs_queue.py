@@ -14,6 +14,7 @@ from threading import Thread, Lock, RLock, Event
 
 from app.event_handler import event_stream
 from app.config import settings
+from app.database import database
 
 bazarr_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
@@ -661,6 +662,7 @@ class JobsQueue:
             self.jobs_completed_queue.append(job)
             return True
         finally:
+            database.remove()  # close this specific thread scoped_session to prevent connection exhaustion on PostgreSQL
             job.duration = (datetime.now(timezone.utc) - datetime.fromisoformat(job.last_run_time)).total_seconds()
             try:
                 # Send a complete event payload with status and progress_value
