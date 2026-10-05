@@ -604,6 +604,7 @@ array_keys = ['excluded_tags',
 empty_values = ['', 'None', 'null', 'undefined', None, []]
 
 str_keys = ['chmod', 'log_include_filter', 'log_exclude_filter', 'password', 'f_password', 'hashed_password']
+float_keys = ['quality_min_score', 'quality_max_framerate_deviation']
 
 # Increase Sonarr and Radarr sync interval since we now use SignalR feed to update in real time
 if settings.sonarr.series_sync < 15:
@@ -725,12 +726,17 @@ def save_settings(settings_items):
             if value in empty_values and value != '':
                 value = None
 
-        # try to cast string as integer
+        # Try to cast numeric form values. Browser form submissions are strings,
+        # including decimal values such as Subsync's quality score.
         if isinstance(value, str) and settings_keys[-1] not in str_keys:
             try:
                 value = int(value)
             except ValueError:
-                pass
+                if settings_keys[-1] in float_keys:
+                    try:
+                        value = float(value)
+                    except ValueError:
+                        pass
 
         # Make sure empty language list are stored correctly
         if settings_keys[-1] in array_keys and value[0] in empty_values:
