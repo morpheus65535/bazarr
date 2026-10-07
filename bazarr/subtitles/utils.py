@@ -71,7 +71,9 @@ def _get_lang_obj(alpha3):
 
 
 def _get_scores(media_type, min_movie=None, min_ep=None):
-    series = "series" == media_type
+    # A sports event carries a season and an episode number from Sportarr, and
+    # get_video builds it as an episode, so it is scored as one.
+    series = media_type in ("series", "sports")
     handler = DEFAULT_SCORES['episode'] if series else DEFAULT_SCORES['movie']
 
     max_score = MAX_SCORES['episode' if series else 'movie']

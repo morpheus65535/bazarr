@@ -10,3 +10,5 @@ MINIMUM_VIDEO_SIZE = 20480
 
 # maximum size for a subtitles file
 MAXIMUM_SUBTITLE_SIZE = 1 * 1024 * 1024
+
+HI_EXCLUDED = "Excluded"

@@ -25,7 +25,8 @@ from radarr.sync.movies import update_movies
 from subtitles.indexer.movies import movies_full_scan_subtitles
 from subtitles.indexer.series import series_full_scan_subtitles
 from subtitles.indexer.sports import sports_full_scan_subtitles
-from subtitles.wanted import wanted_search_missing_subtitles_series, wanted_search_missing_subtitles_movies
+from subtitles.wanted import wanted_search_missing_subtitles_series, wanted_search_missing_subtitles_movies, \
+    wanted_search_missing_subtitles_sports
 from subtitles.upgrade import upgrade_subtitles
 from utilities.cache import cache_maintenance
 from utilities.health import check_health
@@ -349,6 +350,15 @@ class Scheduler:
                 hours=int(settings.general.wanted_search_frequency_movie), max_instances=1, coalesce=True,
                 misfire_grace_time=15, id='wanted_search_missing_subtitles_movies',
                 name='Search for Missing Movies Subtitles', replace_existing=True,
+                kwargs=dict(wait_for_completion=True))
+        if settings.general.use_sportarr:
+            # A sports event is scored as an episode, so it follows the series
+            # search frequency rather than the movies one.
+            self.aps_scheduler.add_job(
+                wanted_search_missing_subtitles_sports, 'interval',
+                hours=int(settings.general.wanted_search_frequency), max_instances=1, coalesce=True,
+                misfire_grace_time=15, id='wanted_search_missing_subtitles_sports',
+                name='Search for Missing Sports Events Subtitles', replace_existing=True,
                 kwargs=dict(wait_for_completion=True))
 
     def __upgrade_subtitles_task(self):
