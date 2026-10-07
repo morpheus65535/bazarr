@@ -5,8 +5,10 @@ import os
 import logging
 
 from subliminal_patch import core, search_external_subtitles
+from sqlalchemy import not_, tuple_
 
 from languages.custom_lang import CustomLanguage
+from constants import HI_EXCLUDED
 from app.database import get_profiles_list, get_profile_cutoff, TableSportsEvents, TableSportsLeagues, \
     TableSportsEventsSubtitles, get_audio_profile_languages, get_sports_subtitles, database, update, select, insert, \
     delete
@@ -17,6 +19,7 @@ from utilities.path_mappings import path_mappings
 from utilities.video_analyzer import embedded_subs_reader
 from app.event_handler import event_stream
 from subtitles.indexer.utils import guess_external_subtitles, get_external_subtitles_path
+from subtitles.pool import get_language_equals
 from app.jobs_queue import jobs_queue
 
 gc.enable()
@@ -80,7 +83,7 @@ def store_subtitles_sports(sports_event_id, use_cache=True):
                     .where(TableSportsEventsSubtitles.embedded_track_id.is_(None))
                 )
 
-                embedded_subtitles_id_list = []
+                embedded_subtitles_list = []
 
                 if len(embedded_subtitles):
                     embedded_stmt = insert(TableSportsEventsSubtitles).values(embedded_subtitles)
@@ -97,13 +100,21 @@ def store_subtitles_sports(sports_event_id, use_cache=True):
                         index_where=TableSportsEventsSubtitles.path.is_(None)
                     )
                     database.execute(embedded_stmt)
-                    embedded_subtitles_id_list = [x['embedded_track_id'] for x in embedded_subtitles]
+                    embedded_subtitles_list = [
+                        (x['embedded_track_id'], x['language'], x['forced'], x['hi'])
+                        for x in embedded_subtitles
+                    ]
 
                 database.execute(
                     delete(TableSportsEventsSubtitles)
                     .where(TableSportsEventsSubtitles.sportsEventId == sports_event_id)
                     .where(TableSportsEventsSubtitles.path.is_(None))
-                    .where(TableSportsEventsSubtitles.embedded_track_id.not_in(embedded_subtitles_id_list))
+                    .where(not_(tuple_(
+                        TableSportsEventsSubtitles.embedded_track_id,
+                        TableSportsEventsSubtitles.language,
+                        TableSportsEventsSubtitles.forced,
+                        TableSportsEventsSubtitles.hi,
+                    ).in_(embedded_subtitles_list)))
                 )
             except Exception:
                 logging.exception(f"BAZARR error when trying to analyze this {os.path.splitext(mapped_path)[1]} file: "
@@ -208,6 +219,7 @@ def list_missing_subtitles_sports(no=None, evno=None):
         events_subtitles = database.execute(stmt).all()
 
     use_embedded_subs = settings.general.use_embedded_subs
+    lang_equals = core._LanguageEquals(get_language_equals())
 
     for event_subtitles in events_subtitles:
         def matches_audio(language):
@@ -242,6 +254,26 @@ def list_missing_subtitles_sports(no=None, evno=None):
                                               'forced': str(subtitles['forced']),
                                               'hi': str(subtitles['hi'])})
 
+            actual_subtitles_lang_set = set()
+            for sub in actual_subtitles_list:
+                try:
+                    lang_obj = core.Language.fromietf(sub['language'])
+                    lang_obj.forced = sub['forced'] == 'True'
+                    lang_obj.hi = sub['hi'] == 'True'
+                    actual_subtitles_lang_set.add(lang_obj)
+                except Exception:
+                    actual_subtitles_lang_set.add(sub['language'])
+
+            expanded_actual_subtitles_list = []
+            for lang_obj in lang_equals.check_set(actual_subtitles_lang_set):
+                if isinstance(lang_obj, core.Language):
+                    custom = CustomLanguage.from_value(lang_obj, "language")
+                    expanded_actual_subtitles_list.append({
+                        'language': custom.alpha2 if custom else lang_obj.alpha2,
+                        'forced': 'True' if lang_obj.forced else 'False',
+                        'hi': 'True' if lang_obj.hi else 'False',
+                    })
+
             # check if cutoff is reached and skip any further check
             cutoff_met = False
             cutoff_temp_list = get_profile_cutoff(profile_id=event_subtitles.profileId)
@@ -260,11 +292,17 @@ def list_missing_subtitles_sports(no=None, evno=None):
                         cutoff_met = True
                     elif cutoff_language in actual_subtitles_list:
                         cutoff_met = True
-                    # HI is considered as good as normal
-                    elif (cutoff_language and
+                    elif cutoff_language in expanded_actual_subtitles_list:
+                        cutoff_met = True
+                    elif (cutoff_temp['hi'] == 'False' and cutoff_language and
                           {'language': cutoff_language['language'],
                            'forced': 'False',
-                           'hi': 'True'} in actual_subtitles_list):
+                           'hi': 'True'} in actual_subtitles_list + expanded_actual_subtitles_list):
+                        cutoff_met = True
+                    elif (cutoff_temp['hi'] == HI_EXCLUDED and
+                          {'language': cutoff_language['language'],
+                           'forced': cutoff_language['forced'],
+                           'hi': 'False'} in actual_subtitles_list + expanded_actual_subtitles_list):
                         cutoff_met = True
 
             if cutoff_met:
@@ -275,16 +313,26 @@ def list_missing_subtitles_sports(no=None, evno=None):
                 # get difference between desired and existing subtitles
                 missing_subtitles_list = []
                 for item in desired_subtitles_list:
-                    if item not in actual_subtitles_list:
+                    if item not in actual_subtitles_list and item not in expanded_actual_subtitles_list:
                         missing_subtitles_list.append(item)
 
-                # remove missing that have hi subtitles for this language in existing
-                for item in actual_subtitles_list:
-                    if item['hi'] == 'True':
+                hi_setting_by_language = {
+                    (x['language'], x['forced']): x['hi'] for x in desired_subtitles_temp['items']
+                } if desired_subtitles_temp else {}
+                for item in actual_subtitles_list + expanded_actual_subtitles_list:
+                    hi_setting = hi_setting_by_language.get((item['language'], item['forced']))
+                    if item['hi'] == 'True' and hi_setting == 'False':
                         try:
                             missing_subtitles_list.remove({'language': item['language'],
-                                                           'forced': 'False',
+                                                           'forced': item['forced'],
                                                            'hi': 'False'})
+                        except ValueError:
+                            pass
+                    elif item['hi'] == 'False' and hi_setting == HI_EXCLUDED:
+                        try:
+                            missing_subtitles_list.remove({'language': item['language'],
+                                                           'forced': item['forced'],
+                                                           'hi': HI_EXCLUDED})
                         except ValueError:
                             pass
 
