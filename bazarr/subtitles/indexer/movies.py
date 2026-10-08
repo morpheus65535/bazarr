@@ -285,7 +285,12 @@ def list_missing_subtitles_movies(no=None, *args, **kwargs):  # job_id might be 
             actual_subtitles_lang_set = set()
             for sub in actual_subtitles_list:
                 try:
-                    lang_obj = core.Language.fromietf(sub['language'])
+                    # Check for custom alpha2 codes first
+                    custom = CustomLanguage.from_value(sub['language'], "alpha2")
+                    if custom:
+                        lang_obj = custom.subzero_language()
+                    else:
+                        lang_obj = core.Language.fromietf(sub['language'])
                     lang_obj.forced = sub['forced'] == 'True'
                     lang_obj.hi = sub['hi'] == 'True'
                     actual_subtitles_lang_set.add(lang_obj)
