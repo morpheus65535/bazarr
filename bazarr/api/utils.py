@@ -232,12 +232,20 @@ def postprocess(item):
         item['external_subtitles'] = path_replace(item['external_subtitles'])
 
     # map poster and fanart to server proxy
+    # Sonarr and Radarr give a path to proxy. Sportarr gives a complete URL,
+    # which needs no proxy and must not get a prefix.
     if item.get('poster') is not None:
         poster = item['poster']
-        item['poster'] = f"{base_url}/images/{'movies' if item.get('radarrId') else 'series'}{poster}" if poster else None
+        item['poster'] = _proxied_image(poster, base_url, item) if poster else None
 
     if item.get('fanart') is not None:
         fanart = item['fanart']
-        item['fanart'] = f"{base_url}/images/{'movies' if item.get('radarrId') else 'series'}{fanart}" if fanart else None
+        item['fanart'] = _proxied_image(fanart, base_url, item) if fanart else None
 
     return item
+
+
+def _proxied_image(image, base_url, item):
+    if image.startswith(('http://', 'https://')):
+        return image
+    return f"{base_url}/images/{'movies' if item.get('radarrId') else 'series'}{image}"

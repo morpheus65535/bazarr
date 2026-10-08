@@ -13,17 +13,20 @@ from utilities.path_mappings import path_mappings
 from utilities.autopulse_webhook import call_external_webhook
 from subtitles.indexer.series import store_subtitles
 from subtitles.indexer.movies import store_subtitles_movie
+from subtitles.indexer.sports import store_subtitles_sports
 from subtitles.processing import ProcessSubtitlesResult
 from sonarr.history import history_log
 from radarr.history import history_log_movie
+from sportarr.history import history_log_sports
 from sonarr.notify import notify_sonarr
 from radarr.notify import notify_radarr
+from sportarr.notify import notify_sportarr
 from plex.operations import plex_refresh_item
 from jellyfin.operations import jellyfin_refresh_item
 
 
 def delete_subtitles(media_type, language, forced, hi, media_path, subtitles_path, sonarr_series_id=None,
-                     sonarr_episode_id=None, radarr_id=None):
+                     sonarr_episode_id=None, radarr_id=None, sportarr_league_id=None, sports_event_id=None):
     if not subtitles_path:
         logging.error('No subtitles to delete.')
         return False
@@ -49,6 +52,13 @@ def delete_subtitles(media_type, language, forced, hi, media_path, subtitles_pat
             select(TableEpisodes.season, TableEpisodes.episode, TableShows.imdbId, TableShows.tvdbId)
             .join(TableShows)
             .where(TableEpisodes.sonarrEpisodeId == sonarr_episode_id)).first()
+    elif media_type == 'sports':
+        pr = path_mappings.path_replace_sports
+        prr = path_mappings.path_replace_reverse_sports
+
+        # Sports events carry no media server ids, so there is nothing to
+        # refresh an item with. The rescan below covers Sportarr.
+        metadata = None
     else:
         pr = path_mappings.path_replace_movie
         prr = path_mappings.path_replace_reverse_movie
@@ -66,6 +76,29 @@ def delete_subtitles(media_type, language, forced, hi, media_path, subtitles_pat
                                     subtitle_id=None,
                                     reversed_subtitles_path=prr(subtitles_path),
                                     hearing_impaired=None)
+
+    if media_type == 'sports':
+        try:
+            os.remove(pr(subtitles_path))
+        except OSError:
+            logging.exception(f'BAZARR cannot delete subtitles file: {subtitles_path}')
+            store_subtitles_sports(sports_event_id)
+            return False
+        else:
+            store_subtitles_sports(sports_event_id)
+            history_log_sports(0, sportarr_league_id, sports_event_id, result)
+            notify_sportarr(sportarr_league_id)
+            event_stream(type='sports-league', action='update', payload=sportarr_league_id)
+            event_stream(type='sports-event-wanted', action='update', payload=sports_event_id)
+
+            call_external_webhook(
+                subtitle_path=subtitles_path,
+                media_path=media_path,
+                language=language_log,
+                media_type=media_type
+            )
+
+            return True
 
     if media_type == 'series':
         try:
@@ -123,5 +156,5 @@ def delete_subtitles(media_type, language, forced, hi, media_path, subtitles_pat
                 language=language_log,
                 media_type=media_type
             )
-            
+
             return True

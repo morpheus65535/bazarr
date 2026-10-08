@@ -6,11 +6,13 @@ import ast
 from functools import reduce
 from flask_restx import Resource, Namespace, fields, marshal
 
-from app.database import get_exclusion_clause, TableEpisodes, TableShows, TableMovies, database, select
+from app.database import (get_exclusion_clause, TableEpisodes, TableShows, TableMovies, TableSportsEvents,
+                          TableSportsLeagues, database, select)
 from app.config import settings
 
 from app.get_providers import get_throttled_providers
 from app.signalr_client import sonarr_signalr_client, radarr_signalr_client
+from sportarr.sse_client import sportarr_sse_client
 from app.announcements import get_all_announcements
 from utilities.health import get_health_issues
 
@@ -25,10 +27,12 @@ class Badges(Resource):
     get_model = api_ns_badges.model('BadgesGet', {
         'episodes': fields.Integer(),
         'movies': fields.Integer(),
+        'sports': fields.Integer(),
         'providers': fields.Integer(),
         'status': fields.Integer(),
         'sonarr_signalr': fields.String(),
         'radarr_signalr': fields.String(),
+        'sportarr_sse': fields.String(),
         'announcements': fields.Integer(),
     })
 
@@ -62,6 +66,21 @@ class Badges(Resource):
         for movie in missing_movies:
             missing_movies_count += len(ast.literal_eval(movie.missing_subtitles))
 
+        # Counted per playable file, because a sports row is one part. An event
+        # with two parts wants subtitles for both.
+        sports_conditions = [(TableSportsEvents.missing_subtitles.is_not(None)),
+                             (TableSportsEvents.missing_subtitles != '[]')]
+        sports_conditions += get_exclusion_clause('sports')
+        missing_sports = database.execute(
+            select(TableSportsEvents.missing_subtitles)
+            .select_from(TableSportsEvents)
+            .join(TableSportsLeagues)
+            .where(reduce(operator.and_, sports_conditions))) \
+            .all()
+        missing_sports_count = 0
+        for event in missing_sports:
+            missing_sports_count += len(ast.literal_eval(event.missing_subtitles))
+
         throttled_providers = len(get_throttled_providers())
 
         health_issues = len(get_health_issues())
@@ -71,10 +90,12 @@ class Badges(Resource):
         result = {
             "episodes": missing_episodes_count,
             "movies": missing_movies_count,
+            "sports": missing_sports_count,
             "providers": throttled_providers,
             "status": health_issues,
             'sonarr_signalr': live_str if sonarr_signalr_client.connected else "DOWN",
             'radarr_signalr': live_str if radarr_signalr_client.connected else "DOWN",
+            'sportarr_sse': live_str if sportarr_sse_client.connected else "DOWN",
             'announcements': len(get_all_announcements()),
         }
         return marshal(result, self.get_model)
