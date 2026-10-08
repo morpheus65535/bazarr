@@ -1,0 +1,50 @@
+// Layout of the bulk selection toolbar.
+//
+// Wide screens, one row:      [Cancel] [controls ............] [Search] [Save]
+// Narrow screens, stacked:    [Cancel] ........................ [Search]
+//                             [controls ...........................]
+//                                                              [Save]
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--mantine-spacing-sm);
+  flex: 1;
+  min-width: 0;
+}
+
+.cancel {
+  flex-shrink: 0;
+}
+
+.controls {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.search,
+.save {
+  flex-shrink: 0;
+}
+
+@include mantine.smaller-than(mantine.$mantine-breakpoint-md) {
+  .cancel {
+    order: 1;
+  }
+
+  // Same row as Cancel, pushed to the right-hand corner.
+  .search {
+    order: 2;
+    margin-inline-start: auto;
+  }
+
+  .controls {
+    order: 3;
+    flex: 1 1 100%;
+  }
+
+  .save {
+    order: 4;
+    margin-inline-start: auto;
+  }
+}

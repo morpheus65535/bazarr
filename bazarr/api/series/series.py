@@ -2,18 +2,18 @@
 
 import operator
 
-from flask_restx import Resource, Namespace, reqparse, fields, marshal
+from flask_restx import Resource, Namespace, reqparse, fields, marshal, inputs
 from functools import reduce
 
 from app.database import get_exclusion_clause, TableEpisodes, TableShows, database, select, update, func
 from sonarr.sync.series import update_one_series
 from subtitles.indexer.series import list_missing_subtitles, series_scan_subtitles
-from subtitles.mass_download import series_download_subtitles
+from subtitles.mass_download import series_download_subtitles, series_batch_download_subtitles
 from subtitles.wanted import wanted_search_missing_subtitles_series
 from app.event_handler import event_stream
 from api.swaggerui import subtitles_model, subtitles_language_model, audio_language_model
 
-from api.utils import authenticate, None_Keys, postprocess, add_list_query_args, profile_filter_clause, \
+from api.utils import parse_id_list, authenticate, None_Keys, postprocess, add_list_query_args, profile_filter_clause, \
     monitored_filter_clause, tags_filter_clause, series_audio_language_filter_clause, apply_sort, ended_filter_clause
 
 api_ns_series = Namespace('Series', description='List series metadata, update series languages profile or run actions '
@@ -244,8 +244,15 @@ class Series(Resource):
 
     patch_request_parser = reqparse.RequestParser()
     patch_request_parser.add_argument('seriesid', type=int, required=False, help='Sonarr series ID')
+    patch_request_parser.add_argument('seriesids', type=str, required=False,
+                                      help='Comma separated Sonarr series IDs, for "search-missing-selected"')
+    patch_request_parser.add_argument('whisper_fallback', type=inputs.boolean, required=False, default=True,
+                                      help='Only used by "search-missing-selected". Set to false to skip the Whisper '
+                                           'fallback for the whole batch. It cannot enable a fallback disabled in the '
+                                           'settings.')
     patch_request_parser.add_argument('action', type=str, required=False, help='Action to perform from ["scan-disk", '
-                                                                               '"search-missing", "search-wanted", "sync"]')
+                                                                               '"search-missing", "search-missing-selected", '
+                                                                               '"search-wanted", "sync"]')
 
     @authenticate
     @api_ns_series.doc(parser=patch_request_parser)
@@ -268,6 +275,13 @@ class Series(Resource):
                 return 'Series directory not found. Path mapping issue?', 500
             else:
                 return '', 204
+        elif action == "search-missing-selected":
+            seriesids = parse_id_list(args.get('seriesids'))
+            if not seriesids:
+                return 'No valid series IDs provided', 400
+            # A single task, cancellable from the jobs manager, goes through the selected series one by one.
+            series_batch_download_subtitles(seriesids, whisper_fallback=args.get('whisper_fallback'))
+            return '', 204
         elif action == "search-wanted":
             wanted_search_missing_subtitles_series()
             return '', 204

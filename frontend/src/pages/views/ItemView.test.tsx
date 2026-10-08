@@ -63,6 +63,70 @@ describe("ItemView", () => {
     window.history.pushState({}, "", "/");
   });
 
+  it("shows Search Selected disabled, then enables it once items are selected", async () => {
+    // GetItemId() only recognises a series by its episodeFileCount field.
+    const selectable = { ...item, episodeFileCount: 0 } as Item.Series;
+    const queryFn: RangeQuery<Item.Series> = vitest.fn(() =>
+      Promise.resolve({ data: [selectable], total: 1 }),
+    );
+
+    customRender(
+      <ItemView
+        queryKey={queryKey}
+        queryFn={queryFn}
+        columns={columns}
+        useAllItems={mockUseAllItems}
+        modifyMutation={mockMutation}
+        searchMissing={{
+          mutation: {
+            mutateAsync: vitest.fn(),
+          } as unknown as UseMutationResult<
+            void,
+            unknown,
+            FormType.SearchMissing
+          >,
+          unit: { singular: "series", plural: "series" },
+        }}
+        filterConfig={filterConfig}
+      ></ItemView>,
+    );
+
+    // Visible but disabled before entering select mode.
+    expect(
+      await screen.findByRole("button", { name: "Search Selected" }),
+    ).toBeDisabled();
+
+    await userEvent.click(screen.getByRole("button", { name: "Select" }));
+
+    // Still disabled in select mode until something is selected.
+    const searchButton = await screen.findByRole("button", {
+      name: "Search Selected (0)",
+    });
+    expect(searchButton).toBeDisabled();
+
+    // Layout: Cancel first, Search Selected before Save (CSS moves them on
+    // narrow screens, but the DOM order is the wide-screen order).
+    const cancelButton = screen.getByRole("button", { name: "Cancel" });
+    const saveButton = screen.getByRole("button", { name: /^Save/ });
+    expect(
+      cancelButton.compareDocumentPosition(searchButton) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(
+      searchButton.compareDocumentPosition(saveButton) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+
+    // Wait until the page's rows are loaded and registered with the toolbar.
+    await screen.findByRole("button", { name: /^Select all 1 on this page/ });
+    const checkboxes = screen.getAllByRole("checkbox");
+    await userEvent.click(checkboxes[checkboxes.length - 1]);
+
+    expect(
+      await screen.findByRole("button", { name: "Search Selected (1)" }),
+    ).toBeEnabled();
+  });
+
   it("renders the table view by default", async () => {
     customRender(
       <ItemView

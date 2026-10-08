@@ -73,6 +73,8 @@ declare namespace Settings {
     update_restart: boolean;
     upgrade_frequency: number;
     upgrade_manual: boolean;
+    use_whisper_fallback: boolean;
+    use_whisper_fallback_series: boolean;
     use_embedded_subs: boolean;
     use_postprocessing: boolean;
     use_postprocessing_threshold: boolean;

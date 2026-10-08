@@ -1,12 +1,14 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Button, Group, Text, useCombobox } from "@mantine/core";
-import { faCheck } from "@fortawesome/free-solid-svg-icons";
+import { faCheck, faSearch } from "@fortawesome/free-solid-svg-icons";
 import { UseMutationResult } from "@tanstack/react-query";
 import { chunk } from "lodash";
 import { useIsAnyMutationRunning, useLanguageProfiles } from "@/apis/hooks";
 import { GroupedSelector, GroupedSelectorOptions, Toolbox } from "@/components";
 import { useSelectorOptions } from "@/utilities";
 import { BulkSelection } from "@/utilities/bulkSelection";
+import SearchMissingModal, { SearchMissingConfig } from "./SearchMissingModal";
+import ToolboxIconButton from "./ToolboxIconButton";
 
 // Module-scoped so useSelectorOptions stays referentially stable across
 // renders (this component re-renders on every selection change).
@@ -141,5 +143,40 @@ export const BulkActionBarSaveButton = (props: SaveButtonProps) => {
     >
       {`Save (${dirties.size})`}
     </Toolbox.MutateButton>
+  );
+};
+
+interface SearchButtonProps {
+  selection: BulkSelection;
+  config: SearchMissingConfig;
+}
+
+// Searches for missing subtitles for the selected items. Disabled until at
+// least one item is selected.
+export const BulkActionBarSearchButton = (props: SearchButtonProps) => {
+  const { selection, config } = props;
+  const [opened, setOpened] = useState(false);
+
+  const ids = useMemo(
+    () => Array.from(selection.selectedIds),
+    [selection.selectedIds],
+  );
+
+  return (
+    <>
+      <ToolboxIconButton
+        icon={faSearch}
+        disabled={ids.length === 0}
+        onClick={() => setOpened(true)}
+      >
+        {`Search Selected (${ids.length})`}
+      </ToolboxIconButton>
+      <SearchMissingModal
+        opened={opened}
+        onClose={() => setOpened(false)}
+        ids={ids}
+        config={config}
+      ></SearchMissingModal>
+    </>
   );
 };

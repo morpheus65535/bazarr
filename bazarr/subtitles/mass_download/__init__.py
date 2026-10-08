@@ -1,4 +1,4 @@
 # coding=utf-8
 
-from .movies import movies_download_subtitles  # noqa: W0611
-from .series import series_download_subtitles, episode_download_subtitles  # noqa: W0611
+from .movies import movies_download_subtitles, movies_batch_download_subtitles  # noqa: W0611
+from .series import series_download_subtitles, series_batch_download_subtitles, episode_download_subtitles  # noqa: W0611

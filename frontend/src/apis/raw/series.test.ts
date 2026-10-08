@@ -44,4 +44,44 @@ describe("SeriesApi", () => {
       expect(capturedBody.current!.get("seriesid")).toBeNull();
     });
   });
+
+  describe("searchMissingSelected", () => {
+    it("sends all ids in ONE request as a comma separated list", async () => {
+      const bodies: FormData[] = [];
+
+      server.use(
+        http.patch("/api/series", async ({ request }) => {
+          bodies.push(await request.formData());
+          return new HttpResponse();
+        }),
+      );
+
+      // Far above the server's per-request form-field cap: still one request.
+      const ids = Array.from({ length: 2500 }, (_, i) => i + 1);
+      await api.series.searchMissingSelected(ids);
+
+      expect(bodies).toHaveLength(1);
+      expect(bodies[0].get("action")).toBe("search-missing-selected");
+      expect(bodies[0].get("seriesids")).toBe(ids.join(","));
+    });
+
+    it("sends whisper_fallback=false only when it is set", async () => {
+      const bodies: FormData[] = [];
+
+      server.use(
+        http.patch("/api/series", async ({ request }) => {
+          bodies.push(await request.formData());
+          return new HttpResponse();
+        }),
+      );
+
+      await api.series.searchMissingSelected([1], { whisperFallback: false });
+      await api.series.searchMissingSelected([2], { whisperFallback: true });
+      await api.series.searchMissingSelected([3]);
+
+      expect(bodies[0].get("whisper_fallback")).toBe("false");
+      expect(bodies[1].get("whisper_fallback")).toBe("true");
+      expect(bodies[2].has("whisper_fallback")).toBe(false);
+    });
+  });
 });

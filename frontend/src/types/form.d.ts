@@ -4,6 +4,13 @@ declare namespace FormType {
     profileId: (number | null)[];
   }
 
+  // A batch "search missing" over several series/movies. whisperFallback is
+  // only meaningful for series: false skips the Whisper fallback.
+  interface SearchMissing {
+    ids: number[];
+    whisperFallback?: boolean;
+  }
+
   type SeriesAction = OneSeriesAction | SearchWantedAction;
 
   type MoviesAction = OneMovieAction | SearchWantedAction;

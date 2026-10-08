@@ -8,10 +8,10 @@ from radarr.sync.movies import update_one_movie
 from subtitles.indexer.movies import list_missing_subtitles_movies, movies_scan_subtitles
 from app.event_handler import event_stream
 from subtitles.wanted import wanted_search_missing_subtitles_movies
-from subtitles.mass_download import movies_download_subtitles
+from subtitles.mass_download import movies_download_subtitles, movies_batch_download_subtitles
 from api.swaggerui import subtitles_model, subtitles_language_model, audio_language_model
 
-from api.utils import authenticate, None_Keys, postprocess, add_list_query_args, profile_filter_clause, \
+from api.utils import parse_id_list, authenticate, None_Keys, postprocess, add_list_query_args, profile_filter_clause, \
     monitored_filter_clause, tags_filter_clause, audio_language_filter_clause, apply_sort
 
 api_ns_movies = Namespace('Movies', description='List movies metadata, update movie languages profile or run actions '
@@ -198,8 +198,11 @@ class Movies(Resource):
 
     patch_request_parser = reqparse.RequestParser()
     patch_request_parser.add_argument('radarrid', type=int, required=False, help='Radarr movie ID')
+    patch_request_parser.add_argument('radarrids', type=str, required=False,
+                                      help='Comma separated Radarr movie IDs, for "search-missing-selected"')
     patch_request_parser.add_argument('action', type=str, required=False, help='Action to perform from ["scan-disk", '
-                                                                               '"search-missing", "search-wanted", "sync"]')
+                                                                               '"search-missing", "search-missing-selected", '
+                                                                               '"search-wanted", "sync"]')
 
     @authenticate
     @api_ns_movies.doc(parser=patch_request_parser)
@@ -222,6 +225,13 @@ class Movies(Resource):
                 return 'Movie file not found. Path mapping issue?', 500
             else:
                 return '', 204
+        elif action == "search-missing-selected":
+            radarrids = parse_id_list(args.get('radarrids'))
+            if not radarrids:
+                return 'No valid movie IDs provided', 400
+            # A single task, cancellable from the jobs manager, goes through the selected movies one by one.
+            movies_batch_download_subtitles(radarrids)
+            return '', 204
         elif action == "search-wanted":
             wanted_search_missing_subtitles_movies()
             return '', 204

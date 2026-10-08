@@ -174,3 +174,18 @@ export const useMovieHistory = (radarrId?: number) => {
     },
   });
 };
+
+export const useMovieSearchMissing = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationKey: [QueryKeys.Actions, QueryKeys.Movies],
+    mutationFn: ({ ids }: FormType.SearchMissing) =>
+      api.movies.searchMissingSelected(ids),
+
+    onSuccess: () => {
+      void client.invalidateQueries({
+        queryKey: [QueryKeys.Movies],
+      });
+    },
+  });
+};

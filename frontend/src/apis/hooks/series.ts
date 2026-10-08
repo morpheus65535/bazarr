@@ -114,3 +114,18 @@ export const useSeriesAction = () => {
     },
   });
 };
+
+export const useSeriesSearchMissing = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationKey: [QueryKeys.Actions, QueryKeys.Series],
+    mutationFn: ({ ids, whisperFallback }: FormType.SearchMissing) =>
+      api.series.searchMissingSelected(ids, { whisperFallback }),
+
+    onSuccess: () => {
+      void client.invalidateQueries({
+        queryKey: [QueryKeys.Series],
+      });
+    },
+  });
+};

@@ -98,6 +98,16 @@ class MovieApi extends BaseApi {
     await this.patch("", payload);
   }
 
+  // Starts ONE task that searches missing subtitles for every given movie,
+  // one after the other. The ids travel as a single comma separated field, so
+  // the size of the selection isn't limited by the server's form-field cap.
+  async searchMissingSelected(ids: number[]) {
+    await this.patch("", {
+      action: "search-missing-selected",
+      radarrids: ids.join(","),
+    });
+  }
+
   async downloadSubtitles(radarrid: number, form: FormType.Subtitle) {
     await this.patch("/subtitles", form, { radarrid });
   }

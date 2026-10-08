@@ -43,6 +43,24 @@ class SeriesApi extends BaseApi {
 
     await this.patch("", payload);
   }
+
+  // Starts ONE task that searches missing subtitles for every given series,
+  // one after the other. The ids travel as a single comma separated field, so
+  // the size of the selection isn't limited by the server's form-field cap.
+  // whisperFallback: false skips the Whisper fallback for the batch; leave it
+  // undefined to follow the settings.
+  async searchMissingSelected(
+    ids: number[],
+    options?: { whisperFallback?: boolean },
+  ) {
+    await this.patch("", {
+      action: "search-missing-selected",
+      seriesids: ids.join(","),
+      ...(options?.whisperFallback !== undefined && {
+        whisper_fallback: options.whisperFallback,
+      }),
+    });
+  }
 }
 
 const seriesApi = new SeriesApi();

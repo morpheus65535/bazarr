@@ -24,6 +24,18 @@ None_Keys = ['null', 'undefined', '', None]
 False_Keys = ['False', 'false', '0']
 
 
+def parse_id_list(value):
+    """Parse a comma separated string of ids ("1,2,3") into a list of unique ints, keeping the order.
+    Returns None if the value is empty or contains anything that isn't an integer."""
+    if not value:
+        return None
+    try:
+        ids = [int(item) for item in str(value).split(',') if item.strip()]
+    except ValueError:
+        return None
+    return list(dict.fromkeys(ids)) or None
+
+
 def profile_id_type(value):
     # reqparse type for the profileid filter: a profile ID or "none" to list
     # items without a languages profile. Raises ValueError (400) otherwise.

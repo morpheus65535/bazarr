@@ -15,7 +15,7 @@ from app.notifier import send_notifications_movie
 from app.get_providers import get_providers
 from app.database import (get_exclusion_clause, get_audio_profile_languages, TableMovies, database, select,
                           get_profile_id, get_subtitles)
-from app.jobs_queue import jobs_queue
+from app.jobs_queue import jobs_queue, JobCanceled
 from app.event_handler import event_stream
 
 from ..download import generate_subtitles
@@ -30,6 +30,10 @@ def movies_download_subtitles(no, job_id=None, job_sub_function=False):
                                                                 .where(TableMovies.radarrId == no))})""",
                                          is_progress=True)
         return
+
+    # When this runs as one step of a batch task (job_sub_function), the batch owns the job's progress, name and
+    # message: don't let this movie overwrite them.
+    own_job = not job_sub_function
 
     conditions = [(TableMovies.radarrId == no)]
     conditions += get_exclusion_clause('movie')
@@ -48,7 +52,8 @@ def movies_download_subtitles(no, job_id=None, job_sub_function=False):
 
     if not movie:
         logging.debug(f"BAZARR no movie with that radarrId can be found in database: {no}")
-        jobs_queue.update_job_progress(job_id=job_id, progress_message="Movie not found in database.")
+        if own_job:
+            jobs_queue.update_job_progress(job_id=job_id, progress_message="Movie not found in database.")
         return
 
     previously_indexed_subtitles = get_subtitles(radarr_id=movie.radarrId)
@@ -67,7 +72,8 @@ def movies_download_subtitles(no, job_id=None, job_sub_function=False):
 
     if not os.path.exists(moviePath):
         logging.debug(f"BAZARR movie file not found. Path mapping issue?: {moviePath}")
-        jobs_queue.update_job_progress(job_id=job_id, progress_message=f"Movie path doesn't exists: {moviePath}")
+        if own_job:
+            jobs_queue.update_job_progress(job_id=job_id, progress_message=f"Movie path doesn't exists: {moviePath}")
         raise OSError
 
     if ast.literal_eval(movie.missing_subtitles):
@@ -83,7 +89,8 @@ def movies_download_subtitles(no, job_id=None, job_sub_function=False):
 
     languages = []
 
-    jobs_queue.update_job_progress(job_id=job_id, progress_max=count_movie, progress_message=movie.title)
+    if own_job:
+        jobs_queue.update_job_progress(job_id=job_id, progress_max=count_movie, progress_message=movie.title)
 
     providers_list = get_providers()
 
@@ -104,7 +111,7 @@ def movies_download_subtitles(no, job_id=None, job_sub_function=False):
                                              'movie',
                                              movie.profileId,
                                              check_if_still_required=True,
-                                             job_id=job_id):
+                                             job_id=job_id if own_job else None):
                 if result:
                     store_subtitles_movie(no)
                     history_log_movie(1, no, result)
@@ -116,9 +123,65 @@ def movies_download_subtitles(no, job_id=None, job_sub_function=False):
         logging.info("BAZARR All providers are throttled")
         outcome_msg = "All providers throttled"
 
-    jobs_queue.update_job_progress(job_id=job_id, progress_value="max",
-                                   progress_message=outcome_msg)
-    jobs_queue.update_job_name(job_id=job_id, new_job_name=f"Downloaded missing subtitles for {movie.title} ({movie.year})")
+    if own_job:
+        jobs_queue.update_job_progress(job_id=job_id, progress_value="max",
+                                       progress_message=outcome_msg)
+        jobs_queue.update_job_name(job_id=job_id,
+                                   new_job_name=f"Downloaded missing subtitles for {movie.title} ({movie.year})")
+
+
+def movies_batch_download_subtitles(movie_ids, job_id=None):
+    """Single, cancellable task that searches missing subtitles for each selected movie, one after the other."""
+    if not job_id:
+        # add_job_from_function() binds this function's local variables to its signature: don't define any other
+        # local variable before calling it.
+        jobs_queue.add_job_from_function(f"Searching for missing subtitles for {len(movie_ids)} selected movies",
+                                         is_progress=True, is_cancellable=True)
+        return
+
+    total = len(movie_ids)
+    batch_name = f"Searching for missing subtitles for {total} selected movies"
+    job = jobs_queue.get_job(job_id=job_id)
+
+    jobs_queue.update_job_progress(job_id=job_id, progress_max=total)
+
+    skipped = 0
+    throttled = False
+    for i, movie_id in enumerate(movie_ids, start=1):
+        if job.cancel_event.is_set():
+            raise JobCanceled
+
+        title = database.scalar(select(TableMovies.title).where(TableMovies.radarrId == movie_id))
+        jobs_queue.update_job_progress(job_id=job_id, progress_value=i, progress_message=title or 'Unknown movie')
+
+        if not get_providers():
+            logging.info("BAZARR All providers are throttled")
+            throttled = True
+            break
+
+        try:
+            movies_download_subtitles(movie_id, job_id=job_id, job_sub_function=True)
+        except JobCanceled:
+            raise
+        except Exception as e:
+            # One movie that can't be searched (e.g. path mapping issue) must not stop the rest of the batch.
+            skipped += 1
+            logging.warning(f"BAZARR skipped movie {title or movie_id} ({movie_id}) while searching for missing "
+                            f"subtitles: {e!r}")
+
+        # The per movie search reports its own progress and renames the job: put the batch ones back.
+        jobs_queue.update_job_progress(job_id=job_id, progress_value=i, progress_max=total,
+                                      progress_message=title or 'Unknown movie')
+        jobs_queue.update_job_name(job_id=job_id, new_job_name=batch_name)
+
+    if throttled:
+        outcome_msg = "All providers throttled"
+    elif skipped:
+        outcome_msg = f"Search completed ({skipped} skipped, see logs)"
+    else:
+        outcome_msg = "Search completed"
+    jobs_queue.update_job_progress(job_id=job_id, progress_message=outcome_msg)
+    jobs_queue.update_job_name(job_id=job_id, new_job_name=f"Searched for missing subtitles for {total} selected movies")
 
 
 def movie_download_specific_subtitles(radarr_id, language, hi, forced, job_id=None):

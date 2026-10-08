@@ -1,5 +1,4 @@
 import {
-  ComponentProps,
   ReactNode,
   useCallback,
   useEffect,
@@ -9,8 +8,6 @@ import {
   useState,
 } from "react";
 import {
-  Button,
-  ButtonProps,
   Checkbox,
   Group,
   Indicator,
@@ -22,13 +19,13 @@ import {
   Table,
   Tooltip,
 } from "@mantine/core";
-import { IconDefinition } from "@fortawesome/fontawesome-common-types";
 import {
   faCaretDown,
   faCaretUp,
   faCheck,
   faClock,
   faFilter,
+  faSearch,
   faSort,
   faSquareCheck,
   faTableCellsLarge,
@@ -68,32 +65,14 @@ import { useViewMode, ViewMode } from "@/utilities/viewMode";
 import {
   BulkActionBarControls,
   BulkActionBarSaveButton,
+  BulkActionBarSearchButton,
 } from "./BulkActionBar";
+import { SearchMissingConfig } from "./SearchMissingModal";
+import ToolboxIconButton from "./ToolboxIconButton";
+import styles from "./BulkActionBar.module.scss";
 
 const EMPTY_TAGS: string[] = [];
 const MAX_VISIBLE_TAGS = 2;
-
-const ToolboxIconButton = ({
-  icon,
-  children,
-  ...props
-}: { icon: IconDefinition } & ButtonProps &
-  Omit<ComponentProps<"button">, "ref">) => (
-  <Button
-    variant="subtle"
-    color="gray"
-    size="xs"
-    leftSection={<FontAwesomeIcon icon={icon} size="lg" />}
-    styles={{
-      root: { height: "auto", padding: "6px 12px" },
-      inner: { flexDirection: "column", gap: 6 },
-      section: { marginInlineEnd: 0 },
-    }}
-    {...props}
-  >
-    {children}
-  </Button>
-);
 
 interface SortField {
   value: string;
@@ -143,6 +122,8 @@ interface Props<T extends Item.Base = Item.Base> {
     "data" | "isSuccess" | "isFetching" | "isError"
   >;
   modifyMutation: UseMutationResult<void, unknown, FormType.ModifyItem>;
+  // Enables "Search Selected" in the bulk selection toolbar.
+  searchMissing?: SearchMissingConfig;
 }
 
 interface FilterControlsProps {
@@ -430,6 +411,7 @@ interface ToolboxProps {
   setSort: (by: string, order: "asc" | "desc") => void;
   setFilter: SetFilter;
   bulkSelection: BulkSelection;
+  searchMissing?: SearchMissingConfig;
   loadedIds: number[];
   loadedLabel: string;
   onSelectAllMatching: () => void;
@@ -460,6 +442,7 @@ const ItemViewToolbox = ({
   setSort,
   setFilter,
   bulkSelection,
+  searchMissing,
   loadedIds,
   loadedLabel,
   onSelectAllMatching,
@@ -528,27 +511,39 @@ const ItemViewToolbox = ({
   if (bulkSelection.active) {
     return (
       <Toolbox>
-        <Group gap="sm" wrap="wrap" align="center" flex={1} miw={0}>
+        <div className={styles.bar}>
           <ToolboxIconButton
             icon={faXmark}
-            style={{ flexShrink: 0 }}
+            className={styles.cancel}
             onClick={bulkSelection.toggleActive}
           >
             Cancel
           </ToolboxIconButton>
-          <BulkActionBarControls
-            selection={bulkSelection}
-            totalCount={totalCount}
-            loadedIds={loadedIds}
-            loadedLabel={loadedLabel}
-            onSelectAllMatching={onSelectAllMatching}
-            isSelectingAllMatching={isSelectingAllMatching}
-          ></BulkActionBarControls>
-        </Group>
-        <BulkActionBarSaveButton
-          selection={bulkSelection}
-          mutation={modifyMutation}
-        ></BulkActionBarSaveButton>
+          <div className={styles.controls}>
+            <BulkActionBarControls
+              selection={bulkSelection}
+              totalCount={totalCount}
+              loadedIds={loadedIds}
+              loadedLabel={loadedLabel}
+              onSelectAllMatching={onSelectAllMatching}
+              isSelectingAllMatching={isSelectingAllMatching}
+            ></BulkActionBarControls>
+          </div>
+          {searchMissing && (
+            <div className={styles.search}>
+              <BulkActionBarSearchButton
+                selection={bulkSelection}
+                config={searchMissing}
+              ></BulkActionBarSearchButton>
+            </div>
+          )}
+          <div className={styles.save}>
+            <BulkActionBarSaveButton
+              selection={bulkSelection}
+              mutation={modifyMutation}
+            ></BulkActionBarSaveButton>
+          </div>
+        </div>
       </Toolbox>
     );
   }
@@ -572,6 +567,22 @@ const ItemViewToolbox = ({
         >
           Select
         </ToolboxIconButton>
+
+        {searchMissing && (
+          // Always shown, but disabled until items are selected, so the
+          // option is discoverable. The div lets the tooltip show while the
+          // button is disabled (disabled buttons swallow mouse events).
+          <Tooltip
+            label='Click "Select" and choose items to search for missing subtitles'
+            withinPortal
+          >
+            <div style={{ flexShrink: 0 }}>
+              <ToolboxIconButton disabled icon={faSearch}>
+                Search Selected
+              </ToolboxIconButton>
+            </div>
+          </Tooltip>
+        )}
 
         {!collapsed && (
           <Group
@@ -901,6 +912,7 @@ const ItemView = <T extends Item.Base>({
   statePrefix,
   useAllItems,
   modifyMutation,
+  searchMissing,
 }: Props<T>) => {
   const [viewMode, setViewMode] = useViewMode(viewModeKey ?? "item-view-mode");
   const { query, setSort, setFilter } = useListQueryState(statePrefix);
@@ -952,6 +964,7 @@ const ItemView = <T extends Item.Base>({
     setSort,
     setFilter,
     bulkSelection,
+    searchMissing,
   };
 
   // Only one view is mounted at a time, keeping a single active query. Each

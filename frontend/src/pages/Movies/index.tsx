@@ -11,6 +11,7 @@ import {
   moviesPaginationQuery,
   useMovieModification,
   useMovies,
+  useMovieSearchMissing,
   useMovieTags,
 } from "@/apis/hooks";
 import { useInstanceName } from "@/apis/hooks/site";
@@ -45,6 +46,14 @@ const moviesFilterConfig = {
 
 const MovieView: FunctionComponent = () => {
   const modifyMovie = useMovieModification();
+  const searchMutation = useMovieSearchMissing();
+  const searchMissing = useMemo(
+    () => ({
+      mutation: searchMutation,
+      unit: { singular: "movie", plural: "movies" },
+    }),
+    [searchMutation],
+  );
 
   const modals = useModals();
 
@@ -207,6 +216,7 @@ const MovieView: FunctionComponent = () => {
         statePrefix="movies"
         useAllItems={useMovies}
         modifyMutation={modifyMovie}
+        searchMissing={searchMissing}
       ></ItemView>
     </Container>
   );

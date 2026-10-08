@@ -22,7 +22,7 @@ from app.config import settings
 from ..download import generate_subtitles
 
 
-def series_download_subtitles(no, job_id=None, job_sub_function=False):
+def series_download_subtitles(no, job_id=None, job_sub_function=False, whisper_fallback=True):
     if not job_sub_function and not job_id:
         jobs_queue.add_job_from_function(f"""Downloading missing subtitles for {database.scalar(
             select(TableShows.title).where(TableShows.sonarrSeriesId == no)) or 'Unknown Series'}""", is_progress=True, is_cancellable=True)
@@ -70,7 +70,8 @@ def series_download_subtitles(no, job_id=None, job_sub_function=False):
                                                             f'{episode.episode:02d} - {episode.episodeTitle}')
 
             providers_list = get_providers()
-            fallback_allowed = settings.general.use_whisper_fallback and settings.general.use_whisper_fallback_series
+            fallback_allowed = (whisper_fallback and settings.general.use_whisper_fallback and
+                                settings.general.use_whisper_fallback_series)
             if providers_list:
                 episode_download_subtitles(no=episode.sonarrEpisodeId, job_id=job_id, job_sub_function=True,
                                            providers_list=providers_list, fallback_allowed=fallback_allowed)
@@ -84,6 +85,64 @@ def series_download_subtitles(no, job_id=None, job_sub_function=False):
                    else "Search completed")
     jobs_queue.update_job_progress(job_id=job_id, progress_message=outcome_msg)
     jobs_queue.update_job_name(job_id=job_id, new_job_name=f"Downloaded missing subtitles for {series_row.title}")
+
+
+def series_batch_download_subtitles(series_ids, whisper_fallback=True, job_id=None):
+    """Single, cancellable task that searches missing subtitles for each selected series, one after the other.
+
+    whisper_fallback=False opts the whole batch out of the Whisper fallback. It can never turn it on: the settings
+    still have to allow it.
+    """
+    if not job_id:
+        # add_job_from_function() binds this function's local variables to its signature: don't define any other
+        # local variable before calling it.
+        jobs_queue.add_job_from_function(f"Searching for missing subtitles for {len(series_ids)} selected series",
+                                         is_progress=True, is_cancellable=True)
+        return
+
+    total = len(series_ids)
+    batch_name = f"Searching for missing subtitles for {total} selected series"
+    job = jobs_queue.get_job(job_id=job_id)
+
+    jobs_queue.update_job_progress(job_id=job_id, progress_max=total)
+
+    skipped = 0
+    throttled = False
+    for i, series_id in enumerate(series_ids, start=1):
+        if job.cancel_event.is_set():
+            raise JobCanceled
+
+        title = database.scalar(select(TableShows.title).where(TableShows.sonarrSeriesId == series_id))
+        jobs_queue.update_job_progress(job_id=job_id, progress_value=i, progress_message=title or 'Unknown series')
+
+        if not get_providers():
+            logging.info("BAZARR All providers are throttled")
+            throttled = True
+            break
+
+        try:
+            series_download_subtitles(series_id, job_id=job_id, job_sub_function=True,
+                                      whisper_fallback=whisper_fallback)
+        except JobCanceled:
+            raise
+        except Exception as e:
+            # One series that can't be searched (e.g. path mapping issue) must not stop the rest of the batch.
+            skipped += 1
+            logging.warning(f"BAZARR skipped series {series_id} while searching for missing subtitles: {e!r}")
+
+        # The per series search reports its own progress and renames the job: put the batch ones back.
+        jobs_queue.update_job_progress(job_id=job_id, progress_value=i, progress_max=total,
+                                      progress_message=title or 'Unknown series')
+        jobs_queue.update_job_name(job_id=job_id, new_job_name=batch_name)
+
+    if throttled:
+        outcome_msg = "All providers throttled"
+    elif skipped:
+        outcome_msg = f"Search completed ({skipped} skipped, see logs)"
+    else:
+        outcome_msg = "Search completed"
+    jobs_queue.update_job_progress(job_id=job_id, progress_message=outcome_msg)
+    jobs_queue.update_job_name(job_id=job_id, new_job_name=f"Searched for missing subtitles for {total} selected series")
 
 
 def episode_download_subtitles(no, job_id=None, job_sub_function=False, providers_list=None, fallback_allowed=False):

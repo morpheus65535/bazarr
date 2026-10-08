@@ -15,7 +15,9 @@ import {
   seriesPaginationQuery,
   useSeries,
   useSeriesModification,
+  useSeriesSearchMissing,
   useSeriesTags,
+  useSystemSettings,
 } from "@/apis/hooks";
 import { useInstanceName } from "@/apis/hooks/site";
 import { Action } from "@/components";
@@ -49,6 +51,20 @@ const seriesFilterConfig = {
 
 const SeriesView: FunctionComponent = () => {
   const mutation = useSeriesModification();
+  const searchMutation = useSeriesSearchMissing();
+  const { data: settings } = useSystemSettings();
+  // Offered only when the Whisper fallback would actually run for series.
+  const whisperFallbackOption =
+    settings?.general.use_whisper_fallback === true &&
+    settings.general.use_whisper_fallback_series === true;
+  const searchMissing = useMemo(
+    () => ({
+      mutation: searchMutation,
+      unit: { singular: "series", plural: "series" },
+      whisperFallbackOption,
+    }),
+    [searchMutation, whisperFallbackOption],
+  );
 
   const modals = useModals();
 
@@ -222,6 +238,7 @@ const SeriesView: FunctionComponent = () => {
         statePrefix="series"
         useAllItems={useSeries}
         modifyMutation={mutation}
+        searchMissing={searchMissing}
       ></ItemView>
     </Container>
   );

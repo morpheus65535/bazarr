@@ -44,4 +44,25 @@ describe("MovieApi", () => {
       expect(capturedBody.current!.get("radarrid")).toBeNull();
     });
   });
+
+  describe("searchMissingSelected", () => {
+    it("sends all ids in ONE request as a comma separated list", async () => {
+      const bodies: FormData[] = [];
+
+      server.use(
+        http.patch("/api/movies", async ({ request }) => {
+          bodies.push(await request.formData());
+          return new HttpResponse();
+        }),
+      );
+
+      // Far above the server's per-request form-field cap: still one request.
+      const ids = Array.from({ length: 2500 }, (_, i) => i + 1);
+      await api.movies.searchMissingSelected(ids);
+
+      expect(bodies).toHaveLength(1);
+      expect(bodies[0].get("action")).toBe("search-missing-selected");
+      expect(bodies[0].get("radarrids")).toBe(ids.join(","));
+    });
+  });
 });
