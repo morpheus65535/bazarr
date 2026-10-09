@@ -178,6 +178,61 @@ export const createDefaultReducer = (): SocketIO.Reducer[] => [
     },
   },
   {
+    key: "sports-league",
+    any: () => {
+      void queryClient.invalidateQueries({
+        queryKey: [QueryKeys.SportsLeagues],
+      });
+    },
+  },
+  {
+    key: "sports-event",
+    any: () => {
+      void queryClient.invalidateQueries({
+        queryKey: [QueryKeys.SportsEvents],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: [QueryKeys.SportsLeagues],
+      });
+    },
+  },
+  {
+    key: "sports-event-wanted",
+    any: () => {
+      void queryClient.invalidateQueries({
+        queryKey: [
+          QueryKeys.SportsLeagues,
+          QueryKeys.SportsEvents,
+          QueryKeys.Wanted,
+        ],
+      });
+    },
+  },
+  {
+    key: "sports-event-blacklist",
+    any: () => {
+      void queryClient.invalidateQueries({
+        queryKey: [
+          QueryKeys.SportsLeagues,
+          QueryKeys.SportsEvents,
+          QueryKeys.Blacklist,
+        ],
+      });
+    },
+  },
+  {
+    key: "sports-event-history",
+    any: () => {
+      void queryClient.invalidateQueries({
+        queryKey: [
+          QueryKeys.SportsLeagues,
+          QueryKeys.SportsEvents,
+          QueryKeys.History,
+        ],
+      });
+    },
+  },
+  {
     key: "episode-history",
     any: () => {
       void queryClient.invalidateQueries({

@@ -2,7 +2,7 @@
 
 import json
 import logging
-import time
+from threading import Event, Lock, Thread
 
 from requests import Session
 from requests.exceptions import RequestException
@@ -25,9 +25,9 @@ class SportarrSSEClient:
     """
 
     def __init__(self):
-        self.session = Session()
-        self.session.verify = False
-        self.session.headers = HEADERS
+        self._lock = Lock()
+        self._run_stop = None
+        self._response = None
         self.connected = False
         self.stopped = False
         self.last_event_id = None
@@ -36,61 +36,112 @@ class SportarrSSEClient:
         if not settings.general.use_sportarr:
             return
 
-        self.stopped = False
-        while not self.stopped:
-            try:
-                self.connect()
-            except RequestException:
-                logging.debug('BAZARR connection to Sportarr event stream was lost.')
-            except Exception:
-                logging.exception('BAZARR unexpected error reading the Sportarr event stream.')
+        run_stop = Event()
+        with self._lock:
+            previous_stop = self._run_stop
+            previous_response = self._response
+            if previous_stop:
+                previous_stop.set()
+            self._run_stop = run_stop
+            self._response = None
+            self.stopped = False
+            self.connected = False
+        if previous_response:
+            self._close_response(previous_response)
 
-            if self.stopped:
+        while not run_stop.is_set():
+            try:
+                self.connect(run_stop)
+            except RequestException:
+                if not run_stop.is_set():
+                    logging.debug('BAZARR connection to Sportarr event stream was lost.')
+            except Exception:
+                if not run_stop.is_set():
+                    logging.exception('BAZARR unexpected error reading the Sportarr event stream.')
+
+            if run_stop.is_set():
                 break
 
-            self.connected = False
+            with self._lock:
+                if self._run_stop is run_stop:
+                    self.connected = False
             # Sportarr keeps a window of past events, so reconnecting after a
             # pause still returns what was missed.
-            time.sleep(5)
+            run_stop.wait(5)
 
     def stop(self):
-        self.stopped = True
-        self.connected = False
+        with self._lock:
+            run_stop = self._run_stop
+            response = self._response
+            self._run_stop = None
+            self._response = None
+            self.stopped = True
+            self.connected = False
+            if run_stop:
+                run_stop.set()
+        if response:
+            self._close_response(response)
         logging.info('BAZARR SSE client for Sportarr is now disconnected.')
 
     def restart(self):
-        if self.connected:
-            self.stop()
+        self.stop()
+        self.last_event_id = None
         if settings.general.use_sportarr:
-            self.start()
+            Thread(target=self.start, daemon=True).start()
 
-    def connect(self):
+    @staticmethod
+    def _close_response(response):
+        # Shutdown wakes a reader blocked while waiting for the next frame.
+        try:
+            response.raw.shutdown()
+        except (AttributeError, ValueError, RuntimeError, OSError):
+            pass
+        response.close()
+
+    def connect(self, run_stop):
         url = f"{url_sportarr()}/api/stream?apikey={settings.sportarr.apikey}"
         if self.last_event_id:
             url += f"&since={self.last_event_id}"
 
         logging.info('BAZARR trying to connect to Sportarr event stream...')
-        with self.session.get(url, stream=True, timeout=(10, None)) as response:
-            response.raise_for_status()
-            self.connected = True
-            logging.info('BAZARR SSE client for Sportarr is connected and waiting for events.')
+        with Session() as session:
+            session.verify = False
+            session.headers = HEADERS
+            with session.get(url, stream=True, timeout=(10, 60)) as response:
+                response.raise_for_status()
+                with self._lock:
+                    if run_stop.is_set() or self._run_stop is not run_stop:
+                        return
+                    self._response = response
+                    self.connected = True
+                logging.info('BAZARR SSE client for Sportarr is connected and waiting for events.')
 
-            event_id = None
-            for line in response.iter_lines(decode_unicode=True):
-                if self.stopped:
-                    break
-                if not line:
-                    continue
-                # Lines opening with a colon are keepalive comments.
-                if line.startswith(':'):
-                    continue
+                try:
+                    event_id = None
+                    for line in response.iter_lines(decode_unicode=True):
+                        if run_stop.is_set():
+                            break
+                        if not line:
+                            continue
+                        # Lines opening with a colon are keepalive comments.
+                        if line.startswith(':'):
+                            continue
 
-                if line.startswith('id:'):
-                    event_id = line[3:].strip()
-                elif line.startswith('data:'):
-                    if event_id:
-                        self.last_event_id = event_id
-                    self.dispatch(line[5:].strip())
+                        if line.startswith('id:'):
+                            event_id = line[3:].strip()
+                        elif line.startswith('data:'):
+                            if event_id:
+                                with self._lock:
+                                    if run_stop.is_set() or self._run_stop is not run_stop:
+                                        break
+                                    self.last_event_id = event_id
+                            self.dispatch(line[5:].strip())
+                finally:
+                    with self._lock:
+                        if self._response is response:
+                            self._response = None
+                        if self._run_stop is run_stop:
+                            self.connected = False
 
     def dispatch(self, raw):
         try:

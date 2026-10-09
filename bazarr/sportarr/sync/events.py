@@ -130,7 +130,7 @@ def sync_events(league_id):
         except IntegrityError as e:
             logging.error(f"BAZARR cannot delete events because of {e}")
         else:
-            event_stream(type='event', action='delete', payload=event_key[0])
+            event_stream(type='sports-event', action='delete', payload=event_key[0])
 
     # Insert new events in DB
     for added_event in events_to_add:
@@ -145,7 +145,7 @@ def sync_events(league_id):
             row_id = get_event_row_id(added_event['sportarrEventId'], added_event['partNumber'])
             if row_id:
                 store_subtitles_sports(row_id)
-            event_stream(type='event', payload=added_event['sportarrEventId'])
+            event_stream(type='sports-event', payload=added_event['sportarrEventId'])
 
     # Update existing events in DB
     for updated_event in events_to_update:
@@ -173,7 +173,7 @@ def sync_events(league_id):
                 logging.debug(f'BAZARR updating subtitles for event '
                               f'{path_mappings.path_replace_sports(updated_event["path"])}')
                 store_subtitles_sports(previous_event_data.id)
-            event_stream(type='event', action='update', payload=updated_event['sportarrEventId'])
+            event_stream(type='sports-event', action='update', payload=updated_event['sportarrEventId'])
 
     league_title = database.execute(
         select(TableSportsLeagues.title)

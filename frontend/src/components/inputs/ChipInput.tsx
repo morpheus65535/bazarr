@@ -5,6 +5,7 @@ export interface ChipInputProps {
   defaultValue?: string[] | undefined;
   value?: readonly string[] | null;
   label?: string;
+  data?: string[];
   onChange?: (value: string[]) => void;
 }
 
@@ -12,6 +13,7 @@ const ChipInput: FunctionComponent<ChipInputProps> = ({
   defaultValue,
   value,
   label,
+  data,
   onChange,
 }: ChipInputProps) => {
   // TODO: Replace with our own custom implementation instead of just using the
@@ -20,6 +22,7 @@ const ChipInput: FunctionComponent<ChipInputProps> = ({
     <TagsInput
       defaultValue={defaultValue}
       label={label}
+      data={data}
       value={value ? value?.map((v) => v) : []}
       onChange={onChange}
       clearable
