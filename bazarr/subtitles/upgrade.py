@@ -3,7 +3,6 @@
 
 import logging
 import operator
-import ast
 
 from datetime import datetime, timedelta
 from functools import reduce
@@ -14,7 +13,7 @@ from constants import HI_EXCLUDED
 from app.database import (get_exclusion_clause, get_audio_profile_languages, TableShows, TableEpisodes, TableMovies,
      TableHistory, TableHistoryMovie, database, select, func, get_profiles_list, TableEpisodesSubtitles,
      TableMoviesSubtitles)
-from app.jobs_queue import jobs_queue
+from app.jobs_queue import jobs_queue, JobCanceled
 from app.get_providers import get_providers
 from app.notifier import send_notifications, send_notifications_movie
 from radarr.history import history_log_movie
@@ -42,8 +41,10 @@ def upgrade_subtitles(wait_for_completion=False):
 def upgrade_episodes_subtitles(job_id=None, wait_for_completion=False):
     if not job_id:
         jobs_queue.add_job_from_function("Trying to upgrade episodes subtitles", is_progress=True,
-                                         wait_for_completion=wait_for_completion)
+                                         wait_for_completion=wait_for_completion, is_cancellable=True)
         return
+    else:
+        job = jobs_queue.get_job(job_id=job_id)
 
     episodes_to_upgrade = get_upgradable_episode_subtitles()
     episodes_data = [{
@@ -110,6 +111,9 @@ def upgrade_episodes_subtitles(job_id=None, wait_for_completion=False):
         jobs_queue.update_job_progress(job_id=job_id, progress_value='max')
 
     for i, episode in enumerate(episodes_data, start=1):
+        if job.cancel_event.is_set():
+            raise JobCanceled
+
         providers_list = get_providers()
 
         jobs_queue.update_job_progress(job_id=job_id, progress_value=i,
@@ -157,8 +161,10 @@ def upgrade_episodes_subtitles(job_id=None, wait_for_completion=False):
 def upgrade_movies_subtitles(job_id=None, wait_for_completion=False):
     if not job_id:
         jobs_queue.add_job_from_function("Trying to upgrade movies subtitles", is_progress=True,
-                                         wait_for_completion=wait_for_completion)
+                                         wait_for_completion=wait_for_completion, is_cancellable=True)
         return
+    else:
+        job = jobs_queue.get_job(job_id=job_id)
 
     movies_to_upgrade = get_upgradable_movies_subtitles()
     movies_data = [{
@@ -216,6 +222,9 @@ def upgrade_movies_subtitles(job_id=None, wait_for_completion=False):
         jobs_queue.update_job_progress(job_id=job_id, progress_value='max')
 
     for i, movie in enumerate(movies_data, start=1):
+        if job.cancel_event.is_set():
+            raise JobCanceled
+
         providers_list = get_providers()
 
         jobs_queue.update_job_progress(job_id=job_id, progress_value=i, progress_message=movie['title'])

@@ -66,8 +66,12 @@ class TestFakeClientMatchesContract:
 def test_refresh_item(mock_post, client):
     mock_post.return_value = MagicMock()
     client.refresh_item("item-123")
-    mock_post.assert_called_once()
-    assert "/Items/item-123/Refresh" in mock_post.call_args[0][0]
+    mock_post.assert_called_once_with("/Items/item-123/Refresh", params={
+        "metadataRefreshMode": "ValidationOnly",
+        "imageRefreshMode": "None",
+        "replaceAllMetadata": "false",
+        "replaceAllImages": "false",
+    })
 
 
 @patch.object(JellyfinClient, "post")

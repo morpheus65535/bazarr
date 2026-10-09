@@ -8,8 +8,6 @@ from app.database import TableEpisodes, TableShows, database, select, get_subtit
 from utilities.path_mappings import path_mappings
 from app.get_providers import get_providers
 from subtitles.manual import manual_search, episode_manually_download_specific_subtitle
-from app.config import settings
-from app.jobs_queue import jobs_queue
 from subtitles.indexer.series import store_subtitles, list_missing_subtitles
 
 from ..utils import authenticate

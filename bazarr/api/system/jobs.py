@@ -16,17 +16,19 @@ class SystemJobs(Resource):
         'job_name': fields.String(),
         'status': fields.String(),
         'last_run_time': fields.String(),
+        'is_cancellable': fields.Boolean(),
         'is_progress': fields.Boolean(),
         'is_signalr': fields.Boolean(),
         'progress_value': fields.Integer(),
         'progress_max': fields.Integer(),
         'progress_message': fields.String(),
+        'duration': fields.Integer(),
     })
 
     get_request_parser = reqparse.RequestParser()
     get_request_parser.add_argument('id', type=int, required=False, help='Job ID to return', default=None)
     get_request_parser.add_argument('status', type=str, required=False, help='Job status to return', default=None,
-                                    choices=['pending', 'running', 'failed', 'completed'])
+                                    choices=['pending', 'running', 'failed', 'canceled', 'completed'])
 
     @authenticate
     @api_ns_system_jobs.doc(parser=get_request_parser)
@@ -43,14 +45,14 @@ class SystemJobs(Resource):
     post_request_parser = reqparse.RequestParser()
     post_request_parser.add_argument('id', type=int, required=True, help='Job ID act onto')
     post_request_parser.add_argument('action', type=str, required=True,
-                                     help='Action to perform from ["force_start", "move_top", "move_bottom"]')
+                                     help='Action to perform from ["force_start", "move_top", "move_bottom", "cancel"]')
 
     @authenticate
     @api_ns_system_jobs.doc(parser=post_request_parser)
     @api_ns_system_jobs.response(204, 'Success')
     @api_ns_system_jobs.response(401, 'Not Authenticated')
     def post(self):
-        """Force start, move to top or move to bottom of the queue a specific job"""
+        """Force start, move to top / bottom of the queue or cancel a specific job"""
         args = self.post_request_parser.parse_args()
         job_id = args.get('id')
         action = args.get('action')
@@ -60,11 +62,13 @@ class SystemJobs(Resource):
             jobs_queue.move_job_in_pending_queue(job_id=job_id, move_destination="top")
         elif action == "move_bottom":
             jobs_queue.move_job_in_pending_queue(job_id=job_id, move_destination="bottom")
+        elif action == "cancel":
+            jobs_queue.cancel_running_job(job_id=job_id)
         return '', 204
 
     patch_request_parser = reqparse.RequestParser()
     patch_request_parser.add_argument('queueName', type=str, required=True, help='Jobs queue name to empty',
-                                      choices=['pending', 'failed', 'completed'])
+                                      choices=['pending', 'failed', 'canceled', 'completed'])
 
     @authenticate
     @api_ns_system_jobs.doc(parser=patch_request_parser)

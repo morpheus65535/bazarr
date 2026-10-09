@@ -19,6 +19,9 @@ import {
   colorOptions,
   forceAudioOption,
   providerOptions,
+  qualityMaxFramerateDeviationOptions,
+  qualityMaxOffsetSecondsOptions,
+  qualityMinScoreOptions,
   syncMaxOffsetSecondsOptions,
 } from "./options";
 
@@ -377,14 +380,51 @@ const SettingsSubtitleProcessingView: FunctionComponent = () => {
               If specified, subsync will not attempt to correct a framerate
               mismatch between reference and subtitles.
             </Message>
-            <Check
-              label="Golden-Section Search"
-              settingKey="settings-subsync-gss"
-            ></Check>
-            <Message>
-              If specified, use golden-section search to try to find the optimal
-              framerate ratio between video and subtitles.
-            </Message>
+            <CollapseBox
+              indent
+              settingKey="settings-subsync-no_fix_framerate"
+              on={(v) => v === false || v === "false"}
+            >
+              <Check
+                label="Golden-Section Search"
+                settingKey="settings-subsync-gss"
+              ></Check>
+              <Message>
+                If specified, use golden-section search to try to find the
+                optimal framerate ratio between video and subtitles.
+              </Message>
+              <Selector
+                label="Max Framerate Deviation"
+                options={qualityMaxFramerateDeviationOptions}
+                settingKey="settings-subsync-quality_max_framerate_deviation"
+              ></Selector>
+              <Message>
+                Maximum framerate deviation allowed. Prevents extreme stretch
+                factors that indicate failed synchronization.
+              </Message>
+            </CollapseBox>
+            <Section header="Quality Checks">
+              <Selector
+                label="Minimum Quality Score"
+                options={qualityMinScoreOptions}
+                settingKey="settings-subsync-quality_min_score"
+              ></Selector>
+              <Message>
+                Minimum alignment score required to accept a synchronization
+                result. The score is not normalized, so only its sign is
+                meaningful: the default of 0 rejects anti-correlated (clearly
+                wrong) alignments.
+              </Message>
+              <Selector
+                label="Quality Max Offset Seconds"
+                options={qualityMaxOffsetSecondsOptions}
+                settingKey="settings-subsync-quality_max_offset_seconds"
+              ></Selector>
+              <Message>
+                Alignments suggesting a larger offset than this are rejected and
+                the original subtitles are left untouched.
+              </Message>
+            </Section>
             <Selector
               label="Max Offset Seconds"
               options={syncMaxOffsetSecondsOptions}

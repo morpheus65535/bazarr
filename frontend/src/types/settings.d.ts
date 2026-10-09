@@ -133,6 +133,9 @@ declare namespace Settings {
     max_offset_seconds: number;
     no_fix_framerate: boolean;
     gss: boolean;
+    quality_min_score: number;
+    quality_max_offset_seconds: number;
+    quality_max_framerate_deviation: number;
   }
 
   interface Analytic {

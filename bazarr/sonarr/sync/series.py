@@ -7,13 +7,12 @@ from sqlalchemy.exc import IntegrityError
 from datetime import datetime
 
 from app.config import settings
-from subtitles.indexer.series import list_missing_subtitles
 from sonarr.rootfolder import check_sonarr_rootfolder
 from app.database import TableShows, TableLanguagesProfiles, database, insert, update, delete, select
 from utilities.helper import bool_map
 from utilities.path_mappings import path_mappings
 from app.event_handler import event_stream
-from app.jobs_queue import jobs_queue
+from app.jobs_queue import jobs_queue, JobCanceled
 
 from .episodes import sync_episodes
 from .parser import seriesParser
@@ -43,8 +42,10 @@ def get_series_monitored_table():
 def update_series(job_id=None, wait_for_completion=False):
     if not job_id:
         jobs_queue.add_job_from_function("Syncing series with Sonarr", is_progress=True,
-                                         wait_for_completion=wait_for_completion)
+                                         wait_for_completion=wait_for_completion, is_cancellable=True)
         return
+    else:
+        job = jobs_queue.get_job(job_id=job_id)
 
     # Update root folders and update their health status
     check_sonarr_rootfolder()
@@ -83,6 +84,9 @@ def update_series(job_id=None, wait_for_completion=False):
 
         jobs_queue.update_job_progress(job_id=job_id, progress_max=series_count)
         for i, show in enumerate(series, start=1):
+            if job.cancel_event.is_set():
+                raise JobCanceled
+
             jobs_queue.update_job_progress(job_id=job_id, progress_value=i, progress_message=show['title'])
 
             if settings.sonarr.sync_only_monitored_series:

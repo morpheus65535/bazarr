@@ -236,6 +236,15 @@ _FFPROBE_BINARY = get_binary("ffprobe")
 _FFMPEG_BINARY = get_binary("ffmpeg")
 
 
+def _get_mediainfo_binary():
+    try:
+        return get_binary("mediainfo")
+    except Exception:
+        logging.warning("BAZARR could not find the mediainfo binary; embedded subtitles "
+                        "language detection will fall back to ffprobe.")
+        return None
+
+
 def get_providers_auth():
     return {
         'addic7ed': {
@@ -260,7 +269,8 @@ def get_providers_auth():
                              'include_machine_translated': settings.opensubtitlescom.include_machine_translated,
                              'api_key': 's38zmzVlW7IlYruWi7mHwDYl2SfMQoC1'
                              },
-        'napiprojekt': {'only_authors': settings.napiprojekt.only_authors,
+        'napiprojekt': {'hash_only': settings.napiprojekt.hash_only,
+                        'only_authors': settings.napiprojekt.only_authors,
                         'only_real_names': settings.napiprojekt.only_real_names},
         'legendasdivx': {
             'username': settings.legendasdivx.username,
@@ -316,6 +326,7 @@ def get_providers_auth():
             'timeout': settings.embeddedsubtitles.timeout,
             'unknown_as_fallback': settings.embeddedsubtitles.unknown_as_fallback,
             'fallback_lang': settings.embeddedsubtitles.fallback_lang,
+            'mediainfo_path': _get_mediainfo_binary() if settings.embeddedsubtitles.use_mediainfo else None,
         },
         'karagarga': {
             'username': settings.karagarga.username,
@@ -344,6 +355,7 @@ def get_providers_auth():
             'search_threshold': settings.animetosho.search_threshold,
         },
         "animetosho_xyz": {},
+        "tsukihime": {},
         "subdl": {
             'api_key': settings.subdl.api_key,
             'ai_translate': settings.subdl.ai_translate,

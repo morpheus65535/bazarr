@@ -19,7 +19,7 @@ from utilities.video_analyzer import embedded_subs_reader
 from app.event_handler import event_stream
 from subtitles.indexer.utils import guess_external_subtitles, get_external_subtitles_path
 from subtitles.pool import get_language_equals
-from app.jobs_queue import jobs_queue
+from app.jobs_queue import jobs_queue, JobCanceled
 
 gc.enable()
 
@@ -294,7 +294,12 @@ def list_missing_subtitles(no=None, epno=None, *args, **kwargs):  # job_id might
             actual_subtitles_lang_set = set()
             for sub in actual_subtitles_list:
                 try:
-                    lang_obj = core.Language.fromietf(sub['language'])
+                    # Check for custom alpha2 codes first
+                    custom = CustomLanguage.from_value(sub['language'], "alpha2")
+                    if custom:
+                        lang_obj = custom.subzero_language()
+                    else:
+                        lang_obj = core.Language.fromietf(sub['language'])
                     lang_obj.forced = sub['forced'] == 'True'
                     lang_obj.hi = sub['hi'] == 'True'
                     actual_subtitles_lang_set.add(lang_obj)
@@ -342,6 +347,12 @@ def list_missing_subtitles(no=None, epno=None, *args, **kwargs):  # job_id might
                            'forced': 'False',
                            'hi': 'True'} in actual_subtitles_list):
                         # HI is considered as good as normal only if the language isn't set to exclude HI
+                        cutoff_met = True
+                    elif (cutoff_temp['hi'] == HI_EXCLUDED and
+                          {'language': cutoff_language['language'],
+                           'forced': cutoff_language['forced'],
+                           'hi': 'False'} in actual_subtitles_list):
+                        # Cutoff is met by non-HI subtitles when HI subtitles are excluded in languages profile
                         cutoff_met = True
 
             if cutoff_met:
@@ -401,8 +412,10 @@ def list_missing_subtitles(no=None, epno=None, *args, **kwargs):  # job_id might
 def series_full_scan_subtitles(job_id=None, use_cache=None, wait_for_completion=False):
     if not job_id:
         jobs_queue.add_job_from_function("Indexing all existing episodes subtitles", is_progress=True,
-                                         wait_for_completion=wait_for_completion)
+                                         wait_for_completion=wait_for_completion, is_cancellable=True)
         return
+    else:
+        job = jobs_queue.get_job(job_id=job_id)
 
     if use_cache is None:
         use_cache = settings.sonarr.use_ffprobe_cache
@@ -420,6 +433,9 @@ def series_full_scan_subtitles(job_id=None, use_cache=None, wait_for_completion=
 
     jobs_queue.update_job_progress(job_id=job_id, progress_max=len(episodes), progress_message='Indexing')
     for i, episode in enumerate(episodes, start=1):
+        if job.cancel_event.is_set():
+            raise JobCanceled
+
         jobs_queue.update_job_progress(
             job_id=job_id, progress_value=i,
             progress_message=f"{episode.title} - S{episode.season:02d}E{episode.episode:02d} - {episode.episodeTitle}")

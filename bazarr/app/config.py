@@ -315,6 +315,7 @@ validators = [
     Validator('opensubtitlescom.include_machine_translated', must_exist=True, default=False, is_type_of=bool),
 
     # napiprojekt section
+    Validator('napiprojekt.hash_only', must_exist=True, default=False, is_type_of=bool),
     Validator('napiprojekt.only_authors', must_exist=True, default=False, is_type_of=bool),
     Validator('napiprojekt.only_real_names', must_exist=True, default=False, is_type_of=bool),
 
@@ -420,6 +421,8 @@ validators = [
     Validator('embeddedsubtitles.timeout', must_exist=True, default=600, is_type_of=int, gte=1),
     Validator('embeddedsubtitles.unknown_as_fallback', must_exist=True, default=False, is_type_of=bool),
     Validator('embeddedsubtitles.fallback_lang', must_exist=True, default='en', is_type_of=str, cast=str),
+    Validator('embeddedsubtitles.use_mediainfo', must_exist=True, default=False, is_type_of=bool),
+    Validator('embeddedsubtitles.prefer_embedded', must_exist=True, default=False, is_type_of=bool),
 
     # karagarga section
     Validator('karagarga.username', must_exist=True, default='', is_type_of=str, cast=str),
@@ -453,6 +456,12 @@ validators = [
     Validator('subsync.gss', must_exist=True, default=True, is_type_of=bool),
     Validator('subsync.max_offset_seconds', must_exist=True, default=60, is_type_of=int,
               is_in=[60, 120, 300, 600]),
+    Validator('subsync.quality_min_score', must_exist=True, default=0.0, is_type_of=(int, float),
+              is_in=[0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]),
+    Validator('subsync.quality_max_offset_seconds', must_exist=True, default=30, is_type_of=int,
+              is_in=[5, 10, 15, 20, 30, 45, 60, 120, 300, 600]),
+    Validator('subsync.quality_max_framerate_deviation', must_exist=True, default=0.1, is_type_of=(int, float),
+              is_in=[0.05, 0.1, 0.15, 0.2, 0.3]),
 
     # postgresql section
     Validator('postgresql.enabled', must_exist=True, default=False, is_type_of=bool),
@@ -595,6 +604,7 @@ array_keys = ['excluded_tags',
 empty_values = ['', 'None', 'null', 'undefined', None, []]
 
 str_keys = ['chmod', 'log_include_filter', 'log_exclude_filter', 'password', 'f_password', 'hashed_password']
+float_keys = ['quality_min_score', 'quality_max_framerate_deviation']
 
 # Increase Sonarr and Radarr sync interval since we now use SignalR feed to update in real time
 if settings.sonarr.series_sync < 15:
@@ -716,12 +726,17 @@ def save_settings(settings_items):
             if value in empty_values and value != '':
                 value = None
 
-        # try to cast string as integer
+        # Try to cast numeric form values. Browser form submissions are strings,
+        # including decimal values such as Subsync's quality score.
         if isinstance(value, str) and settings_keys[-1] not in str_keys:
             try:
                 value = int(value)
             except ValueError:
-                pass
+                if settings_keys[-1] in float_keys:
+                    try:
+                        value = float(value)
+                    except ValueError:
+                        pass
 
         # Make sure empty language list are stored correctly
         if settings_keys[-1] in array_keys and value[0] in empty_values:
@@ -907,14 +922,16 @@ def save_settings(settings_items):
                                                func='series_full_scan_subtitles',
                                                args=[],
                                                kwargs={'use_cache': True},
-                                               is_progress=True)
+                                               is_progress=True,
+                                               is_cancellable=True)
         if settings.general.use_radarr:
             jobs_queue.feed_jobs_pending_queue(job_name=f'Indexing all existing movies subtitles',
                                                module='subtitles.indexer.movies',
                                                func='movies_full_scan_subtitles',
                                                args=[],
                                                kwargs={'use_cache': True},
-                                               is_progress=True)
+                                               is_progress=True,
+                                               is_cancellable=True)
 
     if audio_tracks_parsing_changed:
         if settings.general.use_sonarr:
@@ -923,14 +940,16 @@ def save_settings(settings_items):
                                                func='update_series',
                                                args=[],
                                                kwargs={},
-                                               is_progress=True)
+                                               is_progress=True,
+                                               is_cancellable=True)
         if settings.general.use_radarr:
             jobs_queue.feed_jobs_pending_queue(job_name=f'Syncing movies with Radarr',
                                                module='radarr.sync.movies',
                                                func='update_movies',
                                                args=[],
                                                kwargs={},
-                                               is_progress=True)
+                                               is_progress=True,
+                                               is_cancellable=True)
 
     if update_subzero:
         settings.general.subzero_mods = ','.join(subzero_mods)

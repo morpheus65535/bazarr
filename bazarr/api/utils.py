@@ -43,6 +43,8 @@ def add_list_query_args(parser):
                         help='Filter by languages profile ID or "none"')
     parser.add_argument('missing', type=str, required=False, choices=('true', 'false'),
                         help='Filter by missing subtitles')
+    parser.add_argument('ended', type=str, required=False, choices=('true', 'false'),
+                        help='Filter by series ended status')
     parser.add_argument('audio_language', type=str, required=False,
                         help='Filter by audio language name')
     parser.add_argument('tags[]', type=str, action='append', required=False, default=[],
@@ -57,6 +59,11 @@ def profile_filter_clause(column, value):
 
 def monitored_filter_clause(column, value):
     # monitored is stored as the string 'True'/'False', not a boolean
+    return column == str(bool_map[value])
+
+
+def ended_filter_clause(column, value):
+    # ended is stored as the string 'True'/'False', not a boolean
     return column == str(bool_map[value])
 
 

@@ -7,15 +7,11 @@ from flask_restx import Resource, Namespace, reqparse
 from subliminal_patch.core import SUBTITLE_EXTENSIONS
 from werkzeug.datastructures import FileStorage
 
-from app.database import TableMovies, get_profile_id, database, select
+from app.database import TableMovies, database, select, TableMoviesSubtitles
 from utilities.path_mappings import path_mappings
 from subtitles.upload import manual_upload_subtitle
 from subtitles.mass_download.movies import movie_download_specific_subtitles
-from subtitles.download import generate_subtitles
 from subtitles.tools.delete import delete_subtitles
-from app.event_handler import event_stream
-from app.config import settings
-from app.jobs_queue import jobs_queue
 
 from ..utils import authenticate
 
@@ -137,14 +133,20 @@ class MoviesSubtitles(Resource):
 
         subtitlesPath = path_mappings.path_replace_reverse_movie(subtitlesPath)
 
-        if delete_subtitles(media_type='movie',
-                            language=language,
-                            forced=forced,
-                            hi=hi,
-                            media_path=moviePath,
-                            subtitles_path=subtitlesPath,
-                            radarr_id=radarrId):
-            return '', 204
-        else:
-            return 'Subtitles file not found or permission issue.', 500
+        subtitles_path_found = database.execute(
+            select(TableMoviesSubtitles)
+            .where(TableMoviesSubtitles.path == subtitlesPath)
+            .where(TableMoviesSubtitles.radarrId == radarrId)
+        ).first()
 
+        if subtitles_path_found:
+            if delete_subtitles(media_type='movie',
+                                language=language,
+                                forced=forced,
+                                hi=hi,
+                                media_path=moviePath,
+                                subtitles_path=subtitlesPath,
+                                radarr_id=radarrId):
+                return '', 204
+
+        return 'Subtitles file not found or permission issue.', 500
