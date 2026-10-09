@@ -73,6 +73,8 @@ class SystemSettings(Resource):
                             mustNotContain=str(item['mustNotContain']),
                             originalFormat=int(item['originalFormat']) if item['originalFormat'] not in None_Keys else
                             None,
+                            autoTranslate=int(item['autoTranslate']) if item.get('autoTranslate') not in None_Keys
+                            else None,
                             tag=item['tag'] if 'tag' in item else None,
                         )
                         .where(TableLanguagesProfiles.profileId == item['profileId']))
@@ -90,6 +92,8 @@ class SystemSettings(Resource):
                             mustNotContain=str(item['mustNotContain']),
                             originalFormat=int(item['originalFormat']) if item['originalFormat'] not in None_Keys else
                             None,
+                            autoTranslate=int(item['autoTranslate']) if item.get('autoTranslate') not in None_Keys
+                            else None,
                             tag=item['tag'] if 'tag' in item else None,
                         ))
             for profileId in existing:
