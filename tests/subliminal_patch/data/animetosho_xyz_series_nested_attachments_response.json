@@ -1,0 +1,71 @@
+{
+  "id": 592301,
+  "title": "Frieren Beyond Journeys End S02E01 Shall We Go Then 1080p CR WEB-DL MULTi AAC2.0 H 264-VARYG (Sousou no Frieren, Multi-Audio, Multi-Subs)",
+  "torrent_name": "Frieren Beyond Journeys End S02E01 Shall We Go Then 1080p CR WEB-DL MULTi AAC2.0 H 264-VARYG (Sousou no Frieren, Multi-Audio, Multi-Subs)",
+  "link": "https://animetosho.xyz/view/592301",
+  "timestamp": 1770422161,
+  "status": "complete",
+  "anidb_aid": 18886,
+  "anidb_eid": 306529,
+  "num_files": 1,
+  "primary_file_id": 1359162,
+  "attachments": null,
+  "files": [
+    {
+      "id": 1359162,
+      "filename": "Frieren.Beyond.Journeys.End.S02E01.Shall.We.Go.Then.1080p.CR.WEB-DL.MULTi.AAC2.0.H.264-VARYG.mkv",
+      "name": "Frieren.Beyond.Journeys.End.S02E01.Shall.We.Go.Then.1080p.CR.WEB-DL.MULTi.AAC2.0.H.264-VARYG.mkv",
+      "size": 1762960405,
+      "attachments": [
+        {
+          "id": 3146378,
+          "info": {
+            "default": true,
+            "forced": false,
+            "format": "ASS",
+            "language_code": "eng"
+          },
+          "size": null,
+          "type": "subtitle",
+          "url": "https://storage.animetosho.xyz/attachments/0029a/811.xz"
+        },
+        {
+          "id": 3548588,
+          "info": {
+            "default": false,
+            "forced": true,
+            "format": "ASS",
+            "language_code": "eng"
+          },
+          "size": null,
+          "type": "subtitle",
+          "url": "https://storage.animetosho.xyz/attachments/002a1/6fb.xz"
+        },
+        {
+          "id": 3235500,
+          "info": {
+            "default": false,
+            "forced": false,
+            "format": "ASS",
+            "language_code": "por"
+          },
+          "size": null,
+          "type": "subtitle",
+          "url": "https://storage.animetosho.xyz/attachments/0029a/81a.xz"
+        },
+        {
+          "id": 3385037,
+          "info": {
+            "default": false,
+            "forced": true,
+            "format": "ASS",
+            "language_code": "por"
+          },
+          "size": null,
+          "type": "subtitle",
+          "url": "https://storage.animetosho.xyz/attachments/002a1/975.xz"
+        }
+      ]
+    }
+  ]
+}

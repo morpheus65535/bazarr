@@ -252,7 +252,7 @@ class TitrariProvider(Provider, ProviderSubtitleArchiveMixin):
 
             comments = ''
             try:
-                comments = row.parent.parent.select('.comment')[1].text
+                comments = row.parent.parent.select('.comment')[index * 2 + 1].text
             except:
                 logger.error("Error parsing comments")
 

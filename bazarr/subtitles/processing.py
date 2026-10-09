@@ -12,7 +12,7 @@ from app.database import TableShows, TableEpisodes, TableMovies, database, selec
 from utilities.analytics import event_tracker
 from radarr.notify import notify_radarr
 from sonarr.notify import notify_sonarr
-from plex.operations import plex_set_movie_added_date_now, plex_update_library, plex_set_episode_added_date_now, plex_refresh_item
+from plex.operations import plex_set_movie_added_date_now, plex_set_episode_added_date_now, plex_refresh_item
 from jellyfin.operations import jellyfin_refresh_item
 from app.event_handler import event_stream
 
@@ -121,7 +121,7 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
                            job_id=job_id)
 
     if use_postprocessing is True:
-        command = pp_replace(postprocessing_cmd, path, downloaded_path, downloaded_language, downloaded_language_code2,
+        args = pp_replace(postprocessing_cmd, path, downloaded_path, downloaded_language, downloaded_language_code2,
                              downloaded_language_code3, audio_language, audio_language_code2, audio_language_code3,
                              percent_score, subtitle_id, downloaded_provider, uploader, release_info, series_id,
                              episode_id)
@@ -134,8 +134,8 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
             pp_threshold = int(settings.general.postprocessing_threshold_movie)
 
         if not use_pp_threshold or (use_pp_threshold and percent_score < pp_threshold):
-            logging.debug(f"BAZARR Using post-processing command: {command}")
-            postprocessing(command, path)
+            logging.debug(f"BAZARR Using post-processing command: {args}")
+            postprocessing(args, path)
             set_chmod(subtitles_path=downloaded_path)
         else:
             logging.debug(f"BAZARR post-processing skipped because subtitles score isn't below this "
@@ -146,6 +146,7 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
         reversed_subtitles_path = path_mappings.path_replace_reverse(downloaded_path)
         notify_sonarr(episode_metadata.sonarrSeriesId)
         event_stream(type='series', action='update', payload=episode_metadata.sonarrSeriesId)
+        event_stream(type="episode-history")
         event_stream(type='episode-wanted', action='delete',
                      payload=episode_metadata.sonarrEpisodeId)
         if settings.general.use_plex is True:
@@ -165,6 +166,7 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
         reversed_path = path_mappings.path_replace_reverse_movie(path)
         reversed_subtitles_path = path_mappings.path_replace_reverse_movie(downloaded_path)
         notify_radarr(movie_metadata.radarrId)
+        event_stream(type="movie-history")
         event_stream(type='movie-wanted', action='delete', payload=movie_metadata.radarrId)
         if settings.general.use_plex is True:
             if settings.plex.set_movie_added is True:
@@ -182,7 +184,8 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
         subtitle_path=downloaded_path,
         media_path=path,
         language=downloaded_language,
-        media_type=media_type
+        media_type=media_type,
+        action_type='add'
     )
 
     event_tracker.track_subtitles(provider=downloaded_provider, action=action, language=downloaded_language)
@@ -197,7 +200,7 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
                                   reversed_subtitles_path=reversed_subtitles_path,
                                   hearing_impaired=subtitle.language.hi,
                                   matched=list(subtitle.matches or []),
-                                  not_matched=_get_not_matched(subtitle, media_type)),
+                                  not_matched=_get_not_matched(subtitle, media_type))
 
 
 def _get_not_matched(subtitle, media_type):

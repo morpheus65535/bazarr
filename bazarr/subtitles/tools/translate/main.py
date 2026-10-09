@@ -7,7 +7,7 @@ import os
 from subliminal_patch.core import get_subtitle_path
 from subzero.language import Language
 
-from .core.translator_utils import validate_translation_params, convert_language_codes
+from .core.translator_utils import validate_translation_params, convert_language_codes, get_translation_extension
 from .services.translator_factory import TranslatorFactory
 from languages.get_languages import alpha3_from_alpha2
 from app.config import settings
@@ -15,8 +15,34 @@ from app.jobs_queue import jobs_queue
 from utilities.helper import get_target_folder
 
 
+def extract_and_translate_embedded(subtitles_id, media_type, video_path, from_lang, to_lang, forced, hi,
+                                   sonarr_series_id, sonarr_episode_id, radarr_id, metadata,
+                                   original_format=False, job_id=None):
+    # Extract an embedded subtitles track then translate the resulting external file, both inside a single job.
+    # add_job_from_function must remain the first statement: it binds the caller's locals to this signature, so
+    # no other local variable can exist yet.
+    if not job_id:
+        jobs_queue.add_job_from_function(f'Extracting and translating from {from_lang.upper()} to '
+                                         f'{to_lang.upper()}', is_progress=True)
+        return
+
+    from subtitles.embedded import extract_embedded_subtitle
+    subtitles_path = extract_embedded_subtitle(subtitles_id=subtitles_id, media_type=media_type, job_id=job_id)
+    if not subtitles_path:
+        logging.error(f'BAZARR was unable to extract embedded subtitles track id {subtitles_id}, '
+                      f'aborting translation')
+        return
+
+    translate_subtitles_file(video_path=video_path, source_srt_file=subtitles_path, from_lang=from_lang,
+                             to_lang=to_lang, forced=forced, hi=hi, media_type=media_type,
+                             sonarr_series_id=sonarr_series_id, sonarr_episode_id=sonarr_episode_id,
+                             radarr_id=radarr_id, metadata=metadata, original_format=original_format,
+                             job_id=job_id)
+
+
 def translate_subtitles_file(video_path, source_srt_file, from_lang, to_lang, forced, hi,
-                             media_type, sonarr_series_id, sonarr_episode_id, radarr_id, metadata, job_id=None):
+                             media_type, sonarr_series_id, sonarr_episode_id, radarr_id, metadata,
+                             original_format=False, job_id=None):
     if not job_id:
         jobs_queue.add_job_from_function(f'Translating from {from_lang.upper()} to {to_lang.upper()} using '
                                          f'{settings.translator.translator_type.replace("_", " ").title()}',
@@ -31,11 +57,19 @@ def translate_subtitles_file(video_path, source_srt_file, from_lang, to_lang, fo
 
         logging.debug(f'BAZARR is translating in {lang_obj} this subtitles {source_srt_file}')
 
+        translator_type = settings.translator.translator_type or 'google'
+
+        # Preserve the source subtitle format (.ass/.vtt) when requested instead of always
+        # writing .srt. Gemini only supports SRT and is handled by get_translation_extension.
+        dest_extension = get_translation_extension(source_srt_file, original_format, translator_type)
+        logging.debug(f'Translation destination extension: {dest_extension} '
+                      f'(original_format={original_format}, translator={translator_type})')
+
         # get the destination path if the subtitles are alongside the video
         dest_srt_file_if_alongside_video = get_subtitle_path(
             video_path,
             language=lang_obj if isinstance(lang_obj, Language) else lang_obj.subzero_language(),
-            extension='.srt',
+            extension=dest_extension,
             forced_tag=forced,
             hi_tag=hi
         )
@@ -51,7 +85,6 @@ def translate_subtitles_file(video_path, source_srt_file, from_lang, to_lang, fo
             # otherwise, we just use the destination path as it is
             dest_srt_file = dest_srt_file_if_alongside_video
 
-        translator_type = settings.translator.translator_type or 'google'
         logging.debug(f'Using translator type: {translator_type}')
 
         translator = TranslatorFactory.create_translator(

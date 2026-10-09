@@ -18,21 +18,10 @@ const LanguageText: FunctionComponent<LanguageTextProps> = ({
   ...props
 }) => {
   const result = useMemo(() => {
-    let lang = value.code2;
-    let hi = ":HI";
-    let forced = ":Forced";
-    if (long) {
-      lang = value.name;
-      hi = " HI";
-      forced = " Forced";
-    }
-
-    let res = lang;
-    if (value.hi) {
-      res += hi;
-    } else if (value.forced) {
-      res += forced;
-    }
+    const lang = long ? value.name : value.code2;
+    const hi = long ? " HI" : ":HI";
+    const forced = long ? " Forced" : ":Forced";
+    const res = lang + (value.hi ? hi : value.forced ? forced : "");
     return res;
   }, [value, long]);
 

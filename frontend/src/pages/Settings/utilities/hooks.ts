@@ -1,11 +1,11 @@
-import { useCallback, useMemo, useRef } from "react";
-import { get, isNull, isUndefined, uniqBy } from "lodash";
+import { useCallback, useMemo } from "react";
+import { get, isEqual, isNull, isUndefined, uniqBy } from "lodash";
 import {
   HookType,
   useFormActions,
   useStagedValues,
 } from "@/pages/Settings/utilities/FormValues";
-import { useSettings } from "@/pages/Settings/utilities/SettingsProvider";
+import { useSettings } from "@/pages/Settings/utilities/useSettings";
 import { LOG } from "@/utilities/console";
 
 export interface BaseInput<T> {
@@ -22,38 +22,47 @@ export type SettingValueOptions<T> = {
   onSubmit?: (value: T) => unknown;
 };
 
-export function useBaseInput<T, V>(props: T & BaseInput<V>) {
+export const useBaseInput = <T, V>(props: T & BaseInput<V>) => {
   const { settingKey, settingOptions, ...rest } = props;
   // TODO: Opti options
   const value = useSettingValue<V>(settingKey, settingOptions);
+  // The original (server/default) value, ignoring any staged changes. Used to
+  // detect when a field has been reverted back to its original state.
+  const originalValue = useSettingValue<V>(settingKey, {
+    ...settingOptions,
+    original: true,
+  });
 
-  const { setValue } = useFormActions();
+  const { setValue, removeValue } = useFormActions();
 
   const update = useCallback(
     (newValue: V | null) => {
       const moddedValue =
         (newValue && settingOptions?.onSaved?.(newValue)) ?? newValue;
 
-      setValue(moddedValue, settingKey, settingOptions?.onSubmit);
+      // Reverting back to the original value should clear the staged change
+      // so it no longer counts as an unsaved change.
+      if (isEqual(moddedValue, originalValue)) {
+        removeValue(settingKey);
+      } else {
+        setValue(moddedValue, settingKey, settingOptions?.onSubmit as HookType);
+      }
     },
-    [settingOptions, setValue, settingKey],
+    [settingOptions, setValue, removeValue, settingKey, originalValue],
   );
 
   return { value, update, rest };
-}
+};
 
-export function useSettingValue<T>(
+export const useSettingValue = <T>(
   key: string,
   options?: SettingValueOptions<T>,
-): Readonly<Nullable<T>> {
+): Readonly<Nullable<T>> => {
   const settings = useSettings();
 
-  const optionsRef = useRef(options);
-  optionsRef.current = options;
-
   const originalValue = useMemo(() => {
-    const onLoaded = optionsRef.current?.onLoaded;
-    const defaultValue = optionsRef.current?.defaultValue;
+    const onLoaded = options?.onLoaded;
+    const defaultValue = options?.defaultValue;
     if (onLoaded && settings) {
       LOG("info", `${key} is using custom loader`);
 
@@ -71,31 +80,28 @@ export function useSettingValue<T>(
     }
 
     return value;
-  }, [key, settings]);
+  }, [key, settings, options]);
 
   const stagedValue = useStagedValues();
 
-  if (key in stagedValue && optionsRef.current?.original !== true) {
+  if (key in stagedValue && options?.original !== true) {
     return stagedValue[key] as T;
   } else {
     return originalValue;
   }
-}
+};
 
-export function useUpdateArray<T>(
+export const useUpdateArray = <T>(
   key: string,
   current: Readonly<T[]>,
   compare: keyof T,
-) {
+) => {
   const { setValue } = useFormActions();
   const stagedValue = useStagedValues();
 
-  const compareRef = useRef(compare);
-  compareRef.current = compare;
-
-  const staged: T[] = useMemo(() => {
+  const staged: Readonly<T[]> = useMemo(() => {
     if (key in stagedValue) {
-      return stagedValue[key];
+      return stagedValue[key] as T[];
     } else {
       return current;
     }
@@ -103,9 +109,9 @@ export function useUpdateArray<T>(
 
   return useCallback(
     (v: T, hook?: HookType) => {
-      const newArray = uniqBy([v, ...staged], compareRef.current);
+      const newArray = uniqBy([v, ...staged], compare);
       setValue(newArray, key, hook);
     },
-    [staged, setValue, key],
+    [staged, setValue, key, compare],
   );
-}
+};

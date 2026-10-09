@@ -16,7 +16,6 @@ import {
   runHooks,
 } from "@/pages/Settings/utilities/FormValues";
 import { SettingsProvider } from "@/pages/Settings/utilities/SettingsProvider";
-import { useOnValueChange } from "@/utilities";
 import { LOG } from "@/utilities/console";
 
 interface Props {
@@ -27,7 +26,7 @@ interface Props {
 const LayoutModal: FunctionComponent<Props> = (props) => {
   const { children, callbackModal } = props;
 
-  const { data: settings, isLoading, isRefetching } = useSystemSettings();
+  const { data: settings, isLoading } = useSystemSettings();
   const { mutate, isPending: isMutating } = useSettingsMutation();
 
   const form = useForm<FormValues>({
@@ -37,12 +36,6 @@ const LayoutModal: FunctionComponent<Props> = (props) => {
     },
   });
 
-  useOnValueChange(isRefetching, (value) => {
-    if (!value) {
-      form.reset();
-    }
-  });
-
   const submit = useCallback(
     (values: FormValues) => {
       const { settings, hooks } = values;
@@ -50,12 +43,11 @@ const LayoutModal: FunctionComponent<Props> = (props) => {
         const settingsToSubmit = { ...settings };
         runHooks(hooks, settingsToSubmit);
         LOG("info", "submitting settings", settingsToSubmit);
-        mutate(settingsToSubmit);
-        // wait for settings to be validated before callback
-        // let the user see the spinning indicator on the Save button before the modal closes
-        setTimeout(() => {
-          callbackModal(true);
-        }, 500);
+        mutate(settingsToSubmit, {
+          onSuccess: () => {
+            callbackModal(true);
+          },
+        });
       }
     },
     [mutate, callbackModal],

@@ -24,7 +24,6 @@ interface Settings {
   titlovi: Settings.Titlovi;
   ktuvit: Settings.Ktuvit;
   notifications: Settings.Notifications;
-  language_equals: string[];
 }
 
 declare namespace Settings {
@@ -48,6 +47,7 @@ declare namespace Settings {
     ignore_vobsub_subs: boolean;
     instance_name: string;
     ip: string;
+    language_equals: string[];
     multithreading: boolean;
     minimum_score: number;
     minimum_score_movie: number;
@@ -77,6 +77,8 @@ declare namespace Settings {
     use_postprocessing: boolean;
     use_postprocessing_threshold: boolean;
     use_postprocessing_threshold_movie: boolean;
+    use_jellyfin: boolean;
+    use_plex: boolean;
     use_radarr: boolean;
     use_scenename: boolean;
     use_sonarr: boolean;
@@ -131,6 +133,9 @@ declare namespace Settings {
     max_offset_seconds: number;
     no_fix_framerate: boolean;
     gss: boolean;
+    quality_min_score: number;
+    quality_max_offset_seconds: number;
+    quality_max_framerate_deviation: number;
   }
 
   interface Analytic {

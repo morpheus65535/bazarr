@@ -117,6 +117,71 @@ def test_update_series_runs_one_explicit_episode_sync(monkeypatch):
     assert update_calls[0][1]["sync_episodes_after_update"] is False
 
 
+def test_update_series_returns_early_when_sonarr_api_returns_none(monkeypatch):
+    from sonarr.sync import series as series_sync
+
+    execute_calls = []
+    episode_sync_calls = []
+    update_one_series_calls = []
+    job_name_updates = []
+
+    class _Database:
+        def execute(self, statement):
+            execute_calls.append(statement)
+            return _Result(all_value=[])
+
+    monkeypatch.setattr(series_sync, "database", _Database())
+    monkeypatch.setattr(
+        series_sync,
+        "settings",
+        SimpleNamespace(
+            general=SimpleNamespace(debug=False),
+            sonarr=SimpleNamespace(
+                apikey="sonarr-key",
+                sync_only_monitored_series=False,
+            ),
+        ),
+    )
+    monkeypatch.setattr(series_sync, "check_sonarr_rootfolder", lambda: None)
+    # The API helper swallows ConnectionError/Timeout errors and returns None.
+    monkeypatch.setattr(
+        series_sync,
+        "get_series_from_sonarr_api",
+        lambda **kwargs: None,
+    )
+    monkeypatch.setattr(series_sync, "get_profile_list", lambda: [])
+    monkeypatch.setattr(series_sync, "get_tags", lambda: {})
+    monkeypatch.setattr(series_sync, "get_language_profiles", lambda: [])
+    monkeypatch.setattr(
+        series_sync,
+        "update_one_series",
+        lambda *args, **kwargs: update_one_series_calls.append((args, kwargs)),
+    )
+    monkeypatch.setattr(
+        series_sync,
+        "sync_episodes",
+        lambda series_id: episode_sync_calls.append(series_id),
+    )
+    monkeypatch.setattr(
+        series_sync,
+        "jobs_queue",
+        SimpleNamespace(
+            add_job_from_function=lambda *args, **kwargs: None,
+            update_job_progress=lambda *args, **kwargs: None,
+            update_job_name=lambda *args, **kwargs: job_name_updates.append(
+                (args, kwargs)
+            ),
+        ),
+    )
+
+    series_sync.update_series(job_id="job")
+
+    assert execute_calls == []
+    assert episode_sync_calls == []
+    assert update_one_series_calls == []
+    assert job_name_updates == []
+
+
 def test_unchanged_series_skips_update_but_manual_call_syncs_episodes(monkeypatch):
     from sonarr.sync import series as series_sync
 

@@ -260,7 +260,8 @@ def get_providers_auth():
                              'include_machine_translated': settings.opensubtitlescom.include_machine_translated,
                              'api_key': 's38zmzVlW7IlYruWi7mHwDYl2SfMQoC1'
                              },
-        'napiprojekt': {'only_authors': settings.napiprojekt.only_authors,
+        'napiprojekt': {'hash_only': settings.napiprojekt.hash_only,
+                        'only_authors': settings.napiprojekt.only_authors,
                         'only_real_names': settings.napiprojekt.only_real_names},
         'legendasdivx': {
             'username': settings.legendasdivx.username,
@@ -336,14 +337,19 @@ def get_providers_auth():
             'response': settings.whisperai.response,
             'timeout': settings.whisperai.timeout,
             'ffmpeg_path': _FFMPEG_BINARY,
+            'ffprobe_path': _FFPROBE_BINARY,
             'loglevel': settings.whisperai.loglevel,
             'pass_video_name': settings.whisperai.pass_video_name,
         },
         "animetosho": {
             'search_threshold': settings.animetosho.search_threshold,
         },
+        "animetosho_xyz": {},
+        "tsukihime": {},
         "subdl": {
             'api_key': settings.subdl.api_key,
+            'ai_translate': settings.subdl.ai_translate,
+            'include_ai_translated': settings.subdl.include_ai_translated,
         },
         'turkcealtyaziorg': {
             'cookies': settings.turkcealtyaziorg.cookies,
@@ -355,6 +361,10 @@ def get_providers_auth():
         'subsarr': {
             'base_url': settings.subsarr.base_url,
         },
+        'subsdump': {
+            'base_url': settings.subsdump.base_url,
+            'api_key': settings.subsdump.api_key,
+        },
         'animesubinfo': {},
         'subx':
             {
@@ -362,11 +372,16 @@ def get_providers_auth():
             },
         'subsro': {
             'api_key': settings.subsro.api_key,
-        }
+        },
+        'subtitlecat': {
+            'include_machine_translated': settings.subtitlecat.include_machine_translated,
+        },
     }
 
 
-def _handle_mgb(name, exception, ids, language):
+# download.py doesn't have an exception with the id and media type on it, so can't take an exception 
+# as _handle_mgb() does. 
+def blacklist_subtitle(name, subs_id, media_type, ids, language):
     if language.forced:
         language_str = f'{language.basename}:forced'
     elif language.hi:
@@ -375,11 +390,20 @@ def _handle_mgb(name, exception, ids, language):
         language_str = language.basename
 
     if ids:
-        if exception.media_type == "series":
-            if 'sonarrSeriesId' in ids and 'sonarrEpsiodeId' in ids:
-                blacklist_log(ids['sonarrSeriesId'], ids['sonarrEpisodeId'], name, exception.id, language_str)
+        if media_type == "series":
+            if ids.get('sonarrSeriesId') and ids.get('sonarrEpisodeId'):
+                blacklist_log(ids['sonarrSeriesId'], ids['sonarrEpisodeId'], name, subs_id, language_str)
+            else:
+                logging.debug(f'BAZARR cannot blacklist subtitle {subs_id} from {name}: unknown series or '
+                              f'episode id')
+        elif ids.get('radarrId'):
+            blacklist_log_movie(ids['radarrId'], name, subs_id, language_str)
         else:
-            blacklist_log_movie(ids['radarrId'], name, exception.id, language_str)
+            logging.debug(f'BAZARR cannot blacklist subtitle {subs_id} from {name}: unknown id')
+
+
+def _handle_mgb(name, exception, ids, language):
+    blacklist_subtitle(name, exception.id, exception.media_type, ids, language)
 
 
 def provider_throttle(name, exception, ids=None, language=None):
@@ -459,12 +483,17 @@ def throttled_count(name):
     else:
         throttle_count[name] = {"count": 1, "time": (datetime.datetime.now() + datetime.timedelta(seconds=120))}
 
-    if throttle_count[name]['count'] >= 5:
-        return True
+    # the window is evaluated first so that failures older than it cannot add up to a
+    # throttle: a provider that has been quiet since then starts counting again from one
     if throttle_count[name]['time'] <= datetime.datetime.now():
         throttle_count[name] = {"count": 1, "time": (datetime.datetime.now() + datetime.timedelta(seconds=120))}
-    logging.info("Provider %s throttle count %s of 5, waiting 5sec and trying again", name,
-                 throttle_count[name]['count'])
+    count = throttle_count[name]['count']
+    if count >= 5:
+        # spent on the throttle being applied, so the next one starts from a clean count.
+        # Searches run in parallel and can report the same provider, hence the tolerant pop
+        throttle_count.pop(name, None)
+        return True
+    logging.info("Provider %s throttle count %s of 5, waiting 5sec and trying again", name, count)
     time.sleep(5)
     return False
 
@@ -518,6 +547,8 @@ def reset_throttled_providers(only_auth_or_conf_error=False):
                                                                'PaymentRequired']:
             continue
         tp.pop(provider, None)
+        # the reset hands back a clean slate, including strikes not yet spent on a throttle
+        throttle_count.pop(provider, None)
     set_throttled_providers(str(tp))
     update_throttled_provider()
     if only_auth_or_conf_error:
@@ -538,8 +569,7 @@ def get_throttled_providers():
         # set empty content in throttled_providers.dat
         logging.error("Invalid content in throttled_providers.dat. Resetting")
         set_throttled_providers(str(providers))
-    finally:
-        return providers
+    return providers
 
 
 def set_throttled_providers(data):

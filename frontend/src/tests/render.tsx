@@ -7,18 +7,13 @@ export interface RenderTestCase {
   setupEach?: () => void;
 }
 
-export function renderTest(name: string, cases: RenderTestCase[]) {
+export const renderTest = (name: string, cases: RenderTestCase[]) => {
   describe(name, () => {
-    beforeEach(() => {
-      cases.forEach((element) => {
-        element.setupEach?.();
-      });
-    });
-
     cases.forEach((element) => {
       it(`${element.name.toLowerCase()} should render`, () => {
+        element.setupEach?.();
         customRender(<element.ui />);
       });
     });
   });
-}
+};

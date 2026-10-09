@@ -18,19 +18,18 @@ import { useSelectorOptions } from "@/utilities";
 
 const TaskName = "Two-Point Fit";
 
-function convertToAction(
+const convertToAction = (
   r: { hour: number; min: number; sec: number; ms: number }, // offset to zero
   o: { hour: number; min: number; sec: number; ms: number }, // offset
   s: { from: number; to: number }, // scale
-) {
-  return `two_point_fit(rh=${r.hour},rm=${r.min},rs=${r.sec},rms=${r.ms},oh=${o.hour},om=${o.min},os=${o.sec},oms=${o.ms},from=${s.from},to=${s.to})`;
-}
+) =>
+  `two_point_fit(rh=${r.hour},rm=${r.min},rs=${r.sec},rms=${r.ms},oh=${o.hour},om=${o.min},os=${o.sec},oms=${o.ms},from=${s.from},to=${s.to})`;
 
 const totalMs = (t: { hour: number; min: number; sec: number; ms: number }) =>
   t.hour * 3600000 + t.min * 60000 + t.sec * 1000 + t.ms;
 
 const lineStartMs = (t: SubtitleContents.LineTime) =>
-  t.total_seconds * 1000 + Math.round(t.microseconds / 1000);
+  t.totalSeconds * 1000 + Math.round(t.microseconds / 1000);
 
 const lineStartToTime = (t: SubtitleContents.LineTime) => ({
   hour: t.hours,
@@ -51,8 +50,8 @@ const TwoPointFitForm: FunctionComponent<Props> = ({
   const { mutateAsync } = useSubtitleAction();
   const modals = useModals();
 
-  const query = useSubtitleContents(selections[0].path);
-  const lines = useMemo(() => query.data ?? [], [query]);
+  const query = useSubtitleContents(selections[0].path!);
+  const lines = useMemo(() => query.data ?? [], [query.data]);
 
   const form = useForm({
     initialValues: {
@@ -82,7 +81,7 @@ const TwoPointFitForm: FunctionComponent<Props> = ({
 
   // Preselect default lines when data loads
   useEffect(() => {
-    if (lines.length === 0) return;
+    if (lines.length === 0 || form.values.first.line !== null) return;
 
     const firstLine = lines.length < 50 ? lines[0] : lines[9];
     const lastLine =
@@ -92,8 +91,7 @@ const TwoPointFitForm: FunctionComponent<Props> = ({
     form.setFieldValue("first.to", lineStartToTime(firstLine.start));
     form.setFieldValue("last.line", lastLine);
     form.setFieldValue("last.to", lineStartToTime(lastLine.start));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lines]);
+  }, [form, lines]);
 
   const wrongOrder = useMemo(() => {
     const { first, last } = form.values;
@@ -131,10 +129,15 @@ const TwoPointFitForm: FunctionComponent<Props> = ({
         const action = convertToAction(r, first.to, scale);
 
         selections.forEach((s) =>
-          task.create(s.path, TaskName, mutateAsync, {
-            action,
-            form: s,
-          }),
+          task.create(
+            s.path ?? s.mediaTitle ?? "Unknown subtitle",
+            TaskName,
+            mutateAsync,
+            {
+              action,
+              form: s,
+            },
+          ),
         );
 
         onSubmit?.();
@@ -152,7 +155,7 @@ const TwoPointFitForm: FunctionComponent<Props> = ({
           will fit (offset and scale) every sentence.
         </Alert>
         {wrongOrder && (
-          <Alert color="yellow" variant="filled">
+          <Alert color="warning" variant="filled">
             The first sentence appears after the last sentence in the subtitle
             file. Are the selections correct?
           </Alert>

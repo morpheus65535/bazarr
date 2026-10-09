@@ -1,7 +1,8 @@
-import { FunctionComponent, useCallback, useEffect, useState } from "react";
+import { FunctionComponent, useCallback, useState } from "react";
 import { Button } from "@mantine/core";
 import api from "@/apis/raw";
 import { useSettingValue } from "@/pages/Settings/utilities/hooks";
+import { useResetOnChange } from "@/utilities/resetOnChange";
 
 export const URLTestButton: FunctionComponent<{
   category: "sonarr" | "radarr";
@@ -17,18 +18,10 @@ export const URLTestButton: FunctionComponent<{
 
   const click = useCallback(() => {
     if (address && apikey && ssl !== null) {
-      let testUrl: string;
-
-      let baseUrl = url;
-      if (baseUrl && baseUrl.startsWith("/") === false) {
-        baseUrl = "/" + baseUrl;
-      }
-
-      if (port) {
-        testUrl = `${address}:${port}${baseUrl ?? ""}`;
-      } else {
-        testUrl = `${address}${baseUrl ?? ""}`;
-      }
+      const baseUrl = url && !url.startsWith("/") ? "/" + url : url;
+      const testUrl = port
+        ? `${address}:${port}${baseUrl ?? ""}`
+        : `${address}${baseUrl ?? ""}`;
       const request = {
         protocol: ssl ? "https" : "http",
         url: testUrl,
@@ -102,9 +95,7 @@ export const ProviderTestButton: FunctionComponent<{
     }
   }, [testUrl]);
 
-  useEffect(() => {
-    setTitle(testConnection);
-  }, [testUrl]);
+  useResetOnChange(testUrl ?? "", () => setTitle(testConnection));
 
   return (
     <Button onClick={click} variant={color} title={title}>
@@ -119,6 +110,8 @@ export { default as Layout } from "./Layout";
 export { default as LayoutModal } from "./LayoutModal";
 export * from "./Message";
 export * from "./Section";
+export { default as SegmentedTabs } from "./SegmentedTabs";
+export type { SegmentedTab } from "./SegmentedTabs";
 export * from "./collapse";
 export { default as CollapseBox } from "./collapse";
 export * from "./forms";

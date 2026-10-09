@@ -10,9 +10,8 @@ import FormUtils from "@/utilities/form";
 
 const TaskName = "Changing Time";
 
-function convertToAction(h: number, m: number, s: number, ms: number) {
-  return `shift_offset(h=${h},m=${m},s=${s},ms=${ms})`;
-}
+const convertToAction = (h: number, m: number, s: number, ms: number) =>
+  `shift_offset(h=${h},m=${m},s=${s},ms=${ms})`;
 
 interface Props {
   selections: FormType.ModifySubtitle[];
@@ -60,18 +59,20 @@ const TimeOffsetForm: FunctionComponent<Props> = ({ selections, onSubmit }) => {
   return (
     <form
       onSubmit={form.onSubmit(({ positive, hour, min, sec, ms }) => {
-        let action: string;
-        if (positive) {
-          action = convertToAction(hour, min, sec, ms);
-        } else {
-          action = convertToAction(-hour, -min, -sec, -ms);
-        }
+        const action = positive
+          ? convertToAction(hour, min, sec, ms)
+          : convertToAction(-hour, -min, -sec, -ms);
 
         selections.forEach((s) =>
-          task.create(s.path, TaskName, mutateAsync, {
-            action,
-            form: s,
-          }),
+          task.create(
+            s.path ?? s.mediaTitle ?? "Unknown subtitle",
+            TaskName,
+            mutateAsync,
+            {
+              action,
+              form: s,
+            },
+          ),
         );
 
         onSubmit?.();
@@ -81,7 +82,7 @@ const TimeOffsetForm: FunctionComponent<Props> = ({ selections, onSubmit }) => {
       <Stack>
         <Group align="end" gap="xs" wrap="nowrap">
           <Button
-            color="gray"
+            color="secondary"
             variant="filled"
             style={{ overflow: "visible" }}
             onClick={() =>

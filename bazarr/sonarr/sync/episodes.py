@@ -12,6 +12,7 @@ from functools import reduce
 from constants import MINIMUM_VIDEO_SIZE
 from app.database import database, TableShows, TableEpisodes, delete, update, insert, select, get_exclusion_clause
 from app.config import settings
+from utilities.helper import bool_map
 from utilities.path_mappings import path_mappings
 from subtitles.indexer.series import store_subtitles, series_full_scan_subtitles
 from subtitles.mass_download import episode_download_subtitles
@@ -23,9 +24,6 @@ from subtitles.adaptive_searching import is_search_active
 
 from .parser import episodeParser
 from .utils import get_episodes_from_sonarr_api, get_episodesFiles_from_sonarr_api
-
-# map between booleans and strings in DB
-bool_map = {"True": True, "False": False}
 
 FEATURE_PREFIX = "SYNC_EPISODES "
 
@@ -181,8 +179,8 @@ def sync_episodes(series_id, defer_search=False, is_signalr=False):
                 ).first()
 
                 previous_episode_id = updated_episode['sonarrEpisodeId']
-                previous_episode_file_id = previous_episode_data.episode_file_id
-                previous_episode_path = previous_episode_data.path
+                previous_episode_file_id = previous_episode_data.episode_file_id if previous_episode_data else None
+                previous_episode_path = previous_episode_data.path if previous_episode_data else None
 
                 updated_episode['updated_at_timestamp'] = datetime.now()
                 database.execute(update(TableEpisodes)
@@ -194,11 +192,13 @@ def sync_episodes(series_id, defer_search=False, is_signalr=False):
                 if (previous_episode_file_id != updated_episode['episode_file_id'] or
                         previous_episode_path != updated_episode['path']):
                     # Store subtitles for updated episode where path or episode_file_id changed
-                    logging.debug(f'BAZARR updating subtitles for episode {updated_episode["path"]}')
+                    logging.debug(f'BAZARR updating subtitles for episode '
+                                  f'{path_mappings.path_replace(updated_episode["path"])}')
                     store_subtitles(previous_episode_id)
                 else:
-                    logging.debug(f'BAZARR skipping subtitle update for episode {updated_episode["path"]} as path '
-                                  f'and episode_file_id unchanged')
+                    logging.debug(f'BAZARR skipping subtitle update for episode '
+                                  f'{path_mappings.path_replace(updated_episode["path"])} as path and episode_file_id '
+                                  f'unchanged')
                 event_stream(type='episode', action='update', payload=previous_episode_id)
 
     # Downloading missing subtitles
@@ -299,7 +299,16 @@ def sync_one_episode(episode_id, defer_search=False, is_signalr=False):
         except IntegrityError as e:
             logging.error(f"BAZARR cannot update episode {episode['path']} because of {e}")
         else:
-            store_subtitles(episode_id)
+            if (existing_episode.episode_file_id != episode['episode_file_id'] or
+                    existing_episode.path != episode['path']):
+                # Store subtitles for updated episode where path or episode_file_id changed
+                logging.debug(f'BAZARR updating subtitles for episode {path_mappings.path_replace(episode["path"])}')
+                store_subtitles(episode_id)
+            else:
+                logging.debug(f'BAZARR skipping subtitle update for episode '
+                              f'{path_mappings.path_replace(episode["path"])} as path and episode_file_id unchanged')
+                defer_search = True
+
             event_stream(type='episode', action='update', payload=int(episode_id))
             logging.debug(
                 f'BAZARR updated this episode into the database:{path_mappings.path_replace(episode["path"])}')

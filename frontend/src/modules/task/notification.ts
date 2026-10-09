@@ -9,6 +9,15 @@ export const notification = {
     };
   },
 
+  success: (title: string, message: string): NotificationData => {
+    return {
+      title,
+      message,
+      color: "green",
+      autoClose: 4 * 1000,
+    };
+  },
+
   warn: (title: string, message: string): NotificationData => {
     return {
       title,

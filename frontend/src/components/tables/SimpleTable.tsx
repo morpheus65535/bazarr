@@ -1,17 +1,18 @@
-import { MutableRefObject, useEffect, useMemo } from "react";
-import {
-  getCoreRowModel,
-  Row,
-  Table,
-  TableOptions,
-  useReactTable,
-} from "@tanstack/react-table";
+import { MutableRefObject, useEffect, useMemo, useRef } from "react";
+import { useTable } from "@tanstack/react-table";
 import BaseTable, { TableStyleProps } from "@/components/tables/BaseTable";
+import {
+  AppRow as Row,
+  AppTable as Table,
+  appTableFeatures,
+  AppTableOptions as TableOptions,
+  RowData,
+} from "@/components/tables/features";
 import { usePageSize } from "@/utilities/storage";
 
-export type SimpleTableProps<T extends object> = Omit<
+export type SimpleTableProps<T extends RowData> = Omit<
   TableOptions<T>,
-  "getCoreRowModel"
+  "features"
 > & {
   instanceRef?: MutableRefObject<Table<T> | null>;
   tableStyles?: TableStyleProps<T>;
@@ -19,9 +20,7 @@ export type SimpleTableProps<T extends object> = Omit<
   onAllRowsExpandedChanged?: (isAllRowsExpanded: boolean) => void;
 };
 
-export default function SimpleTable<T extends object>(
-  props: SimpleTableProps<T>,
-) {
+const SimpleTable = <T extends RowData>(props: SimpleTableProps<T>) => {
   const {
     instanceRef,
     tableStyles,
@@ -32,34 +31,42 @@ export default function SimpleTable<T extends object>(
 
   const pageSize = usePageSize();
 
-  const instance = useReactTable({
+  const instance = useTable({
+    features: appTableFeatures,
     ...options,
-    getCoreRowModel: getCoreRowModel(),
     autoResetPageIndex: false,
     autoResetExpanded: false,
     pageCount: pageSize,
+    manualPagination: true,
   });
 
-  if (instanceRef) {
-    instanceRef.current = instance;
-  }
+  useEffect(() => {
+    if (instanceRef) {
+      instanceRef.current = instance;
+    }
+  });
 
   const selectedRows = instance.getSelectedRowModel().rows;
 
   const memoizedRows = useMemo(() => selectedRows, [selectedRows]);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const memoizedRowSelectionChanged = useMemo(() => onRowSelectionChanged, []);
+  const onRowSelectionChangedRef = useRef(onRowSelectionChanged);
 
   const isAllRowsExpanded = instance.getIsAllRowsExpanded();
 
   useEffect(() => {
-    memoizedRowSelectionChanged?.(memoizedRows);
-  }, [memoizedRowSelectionChanged, memoizedRows]);
+    onRowSelectionChangedRef.current = onRowSelectionChanged;
+  });
+
+  useEffect(() => {
+    onRowSelectionChangedRef.current?.(memoizedRows);
+  }, [memoizedRows]);
 
   useEffect(() => {
     onAllRowsExpandedChanged?.(isAllRowsExpanded);
   }, [onAllRowsExpandedChanged, isAllRowsExpanded]);
 
   return <BaseTable tableStyles={tableStyles} instance={instance}></BaseTable>;
-}
+};
+
+export default SimpleTable;

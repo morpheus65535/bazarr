@@ -1,0 +1,15 @@
+.shortcut {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.separator {
+  color: var(--mantine-color-dimmed);
+  font-size: 0.75rem;
+}
+
+.input {
+  cursor: pointer;
+}

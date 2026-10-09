@@ -43,8 +43,9 @@ class NapiProjektProvider(ProviderRetryMixin, _NapiProjektProvider):
     video_types = (Episode, Movie)
     subtitle_class = NapiProjektSubtitle
 
-    def __init__(self, only_authors=None, only_real_names=None):
+    def __init__(self, only_authors=None, only_real_names=None, hash_only=False):
         super().__init__()
+        self.hash_only = hash_only
         self.only_authors = only_authors
         self.only_real_names = only_real_names
 
@@ -91,12 +92,15 @@ class NapiProjektProvider(ProviderRetryMixin, _NapiProjektProvider):
 
         # Determine the source of subtitles based on conditions
         hash_subtitles = []
-        if not (self.only_authors or self.only_real_names):
+        if self.hash_only or not (self.only_authors or self.only_real_names):
             hash_subtitles = [
                 subtitle
                 for language in languages
                 if (subtitle := self.query(language, video.hashes.get('napiprojekt'))) is not None
             ]
+
+        if self.hash_only:
+            return hash_subtitles
 
         # Scrape additional subtitles
         scraped_subtitles = flatten([self._scrape(video, language) for language in languages])

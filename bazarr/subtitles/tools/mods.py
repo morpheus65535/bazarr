@@ -60,3 +60,5 @@ def subtitles_apply_mods(language, subtitle_path, mods, video_path):
 
         with open(modded_subtitles_path, 'wb') as f:
             f.write(content)
+
+        return modded_subtitles_path

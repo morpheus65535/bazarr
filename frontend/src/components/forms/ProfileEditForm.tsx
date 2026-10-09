@@ -11,9 +11,9 @@ import {
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
-import { ColumnDef } from "@tanstack/react-table";
 import { Action, Selector, SelectorOption } from "@/components";
 import ChipInput from "@/components/inputs/ChipInput";
+import { AppColumnDef as ColumnDef } from "@/components/tables/features";
 import SimpleTable from "@/components/tables/SimpleTable";
 import { useModals, withModal } from "@/modules/modals";
 import { useArrayAction, useSelectorOptions } from "@/utilities";
@@ -28,10 +28,8 @@ const defaultCutoffOptions: SelectorOption<Language.ProfileItem>[] = [
     label: "Any",
     value: {
       id: anyCutoff,
-      // eslint-disable-next-line camelcase
-      audio_exclude: "False",
-      // eslint-disable-next-line camelcase
-      audio_only_include: "False",
+      audioExclude: "False",
+      audioOnlyInclude: "False",
       forced: "False",
       hi: "False",
       language: "any",
@@ -49,6 +47,10 @@ const subtitlesTypeOptions: SelectorOption<string>[] = [
     value: "hi",
   },
   {
+    label: "Non-HI only (exclude hearing-impaired)",
+    value: "nonHi",
+  },
+  {
     label: "Forced (foreign part only)",
     value: "forced",
   },
@@ -61,11 +63,11 @@ const inclusionOptions: SelectorOption<string>[] = [
   },
   {
     label: "audio track matches",
-    value: "audio_only_include",
+    value: "audioOnlyInclude",
   },
   {
     label: "no audio track matches",
-    value: "audio_exclude",
+    value: "audioExclude",
   },
 ];
 
@@ -109,7 +111,13 @@ const ProfileEditForm: FunctionComponent<Props> = ({
     form.values.items,
     (v) => {
       const suffix =
-        v.hi === "True" ? ":hi" : v.forced === "True" ? ":forced" : "";
+        v.hi === "True"
+          ? ":hi"
+          : v.forced === "True"
+            ? ":forced"
+            : v.hi === "Excluded"
+              ? ":non-hi"
+              : "";
 
       return v.language + suffix;
     },
@@ -159,10 +167,8 @@ const ProfileEditForm: FunctionComponent<Props> = ({
       const item: Language.ProfileItem = {
         id,
         language,
-        // eslint-disable-next-line camelcase
-        audio_exclude: "False",
-        // eslint-disable-next-line camelcase
-        audio_only_include: "False",
+        audioExclude: "False",
+        audioOnlyInclude: "False",
         hi: "False",
         forced: "False",
       };
@@ -203,6 +209,8 @@ const ProfileEditForm: FunctionComponent<Props> = ({
           return "forced";
         } else if (item.hi === "True") {
           return "hi";
+        } else if (item.hi === "Excluded") {
+          return "nonHi";
         } else {
           return "normal";
         }
@@ -216,7 +224,12 @@ const ProfileEditForm: FunctionComponent<Props> = ({
             if (value) {
               action.mutate(index, {
                 ...item,
-                hi: value === "hi" ? "True" : "False",
+                hi:
+                  value === "hi"
+                    ? "True"
+                    : value === "nonHi"
+                      ? "Excluded"
+                      : "False",
                 forced: value === "forced" ? "True" : "False",
               });
             }
@@ -229,14 +242,14 @@ const ProfileEditForm: FunctionComponent<Props> = ({
   const InclusionCell = React.memo(
     ({ item, index }: { item: Language.ProfileItem; index: number }) => {
       const selectValue = useMemo(() => {
-        if (item.audio_exclude === "True") {
-          return "audio_exclude";
-        } else if (item.audio_only_include === "True") {
-          return "audio_only_include";
+        if (item.audioExclude === "True") {
+          return "audioExclude";
+        } else if (item.audioOnlyInclude === "True") {
+          return "audioOnlyInclude";
         } else {
           return "always_include";
         }
-      }, [item.audio_exclude, item.audio_only_include]);
+      }, [item.audioExclude, item.audioOnlyInclude]);
 
       return (
         <Select
@@ -246,11 +259,9 @@ const ProfileEditForm: FunctionComponent<Props> = ({
             if (value) {
               action.mutate(index, {
                 ...item,
-                // eslint-disable-next-line camelcase
-                audio_exclude: value === "audio_exclude" ? "True" : "False",
-                // eslint-disable-next-line camelcase
-                audio_only_include:
-                  value === "audio_only_include" ? "True" : "False",
+                audioExclude: value === "audioExclude" ? "True" : "False",
+                audioOnlyInclude:
+                  value === "audioOnlyInclude" ? "True" : "False",
               });
             }
           }}
@@ -281,7 +292,7 @@ const ProfileEditForm: FunctionComponent<Props> = ({
       },
       {
         header: "Search only when...",
-        accessorKey: "audio_exclude",
+        accessorKey: "audioExclude",
         cell: ({ row: { original: item, index } }) => {
           return <InclusionCell item={item} index={index} />;
         },
@@ -293,7 +304,7 @@ const ProfileEditForm: FunctionComponent<Props> = ({
             <Action
               label="Remove"
               icon={faTrash}
-              c="red"
+              c="danger"
               onClick={() => action.remove(row.index)}
             ></Action>
           );
@@ -393,7 +404,7 @@ const ProfileEditForm: FunctionComponent<Props> = ({
             </Stack>
           </Accordion.Item>
         </Accordion>
-        <Button type="submit">Save</Button>
+        <Button type="submit">Confirm</Button>
       </Stack>
     </form>
   );

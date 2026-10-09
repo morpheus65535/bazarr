@@ -1,3 +1,4 @@
+import { camelCaseKeys, snakeCaseKeys } from "@/utilities/case";
 import BaseApi from "./base";
 
 class SubtitlesApi extends BaseApi {
@@ -9,22 +10,22 @@ class SubtitlesApi extends BaseApi {
     subtitlesPath: string,
     sonarrEpisodeId: number,
   ) {
-    const response = await this.get<DataWrapper<Item.RefTracks>>("", {
+    const response = await this.get<DataWrapper<Item.RawRefTracks>>("", {
       subtitlesPath,
       sonarrEpisodeId,
     });
-    return response.data;
+    return camelCaseKeys(response.data);
   }
 
   async getRefTracksByMovieId(
     subtitlesPath: string,
     radarrMovieId?: number | undefined,
   ) {
-    const response = await this.get<DataWrapper<Item.RefTracks>>("", {
+    const response = await this.get<DataWrapper<Item.RawRefTracks>>("", {
       subtitlesPath,
       radarrMovieId,
     });
-    return response.data;
+    return camelCaseKeys(response.data);
   }
 
   async info(names: string[]) {
@@ -35,17 +36,23 @@ class SubtitlesApi extends BaseApi {
   }
 
   async modify(action: string, form: FormType.ModifySubtitle) {
-    await this.patch("", form, { action });
+    const payload = snakeCaseKeys(form);
+    const cleaned = Object.fromEntries(
+      Object.entries(payload)
+        .filter(([, value]) => value != null)
+        .filter(([key]) => key !== "media_title"),
+    );
+    await this.patch("", cleaned, { action });
   }
 
   async contents(subtitlePath: string) {
-    const response = await this.get<DataWrapper<SubtitleContents.Line[]>>(
+    const response = await this.get<DataWrapper<SubtitleContents.RawLine[]>>(
       "/contents",
       {
         subtitlePath,
       },
     );
-    return response.data;
+    return response.data.map((line) => camelCaseKeys(line));
   }
 }
 

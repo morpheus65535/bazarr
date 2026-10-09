@@ -91,7 +91,7 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
 
   const audioBadges = useMemo(
     () =>
-      item?.audio_language.map((v, idx) => (
+      item?.audioLanguage.map((v, idx) => (
         <ItemBadge
           key={BuildKey(idx, "audio", v.code2)}
           icon={faMusic}
@@ -100,7 +100,7 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
           {normalizeAudioLanguage(v.name)}
         </ItemBadge>
       )) ?? [],
-    [item?.audio_language],
+    [item?.audioLanguage],
   );
 
   const profile = useLanguageProfileBy(item?.profileId);
@@ -136,70 +136,89 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
     return badges;
   }, [profile, profileItems]);
 
-  return (
-    <BackgroundImage src={item?.fanart ?? ""}>
-      <Grid
-        align="flex-start"
-        grow
-        gap="xs"
-        p={24}
-        m={0}
-        style={{
-          backgroundColor: "rgba(0,0,0,0.7)",
-        }}
-        styles={{
-          inner: { flexWrap: "nowrap" },
-        }}
-      >
-        <Grid.Col span={1} visibleFrom="sm">
-          <Image src={item?.poster} mx="auto" maw="250px"></Image>
-        </Grid.Col>
-        <Grid.Col span={8} maw="100%" style={{ overflow: "hidden" }}>
-          <Stack align="flex-start" gap="xs" mx={6}>
-            <Group align="flex-start" wrap="nowrap" maw="100%">
-              <Title my={0}>
-                <Text inherit c="white">
-                  <Box component="span" mr={12}>
+  const content = (
+    <Grid
+      align="flex-start"
+      grow
+      gap="xs"
+      p={24}
+      m={0}
+      style={{
+        // Fixed dark scrim over the (optional) fanart backdrop. This is
+        // intentionally theme-independent so the white text below stays
+        // readable in both light and dark mode.
+        backgroundColor: "rgba(0,0,0,0.7)",
+      }}
+      styles={{
+        inner: { flexWrap: "nowrap" },
+      }}
+    >
+      <Grid.Col span={1} visibleFrom="sm">
+        <Image
+          src={item?.poster || undefined}
+          mx="auto"
+          w="100%"
+          maw="250px"
+          fit="cover"
+          // Reserve the poster's 2:3 footprint up front (scaled by width, no
+          // fixed height) so the layout doesn't shift when the image loads.
+          style={{ aspectRatio: "2 / 3" }}
+        ></Image>
+      </Grid.Col>
+      <Grid.Col span={8} maw="100%" style={{ overflow: "hidden" }}>
+        <Stack align="flex-start" gap="xs" mx={6}>
+          <Group align="flex-start" wrap="nowrap" maw="100%">
+            <Title my={0}>
+              <Text inherit c="white">
+                <Box component="span" mr={12}>
+                  <Tooltip
+                    label={item?.monitored ? "Monitored" : "Unmonitored"}
+                  >
                     <FontAwesomeIcon
-                      title={item?.monitored ? "monitored" : "unmonitored"}
                       icon={item?.monitored ? faBookmark : farBookmark}
                     ></FontAwesomeIcon>
-                  </Box>
-                  {item?.title}
+                  </Tooltip>
+                </Box>
+                {item?.title}
+              </Text>
+            </Title>
+            <HoverCard position="bottom" withArrow>
+              <HoverCard.Target>
+                <Text hidden={item?.alternativeTitles.length === 0} c="white">
+                  <FontAwesomeIcon icon={faClone} />
                 </Text>
-              </Title>
-              <HoverCard position="bottom" withArrow>
-                <HoverCard.Target>
-                  <Text hidden={item?.alternativeTitles.length === 0} c="white">
-                    <FontAwesomeIcon icon={faClone} />
-                  </Text>
-                </HoverCard.Target>
-                <HoverCard.Dropdown>
-                  <List>
-                    {item?.alternativeTitles.map((v, idx) => (
-                      <List.Item key={BuildKey(idx, v)}>{v}</List.Item>
-                    ))}
-                  </List>
-                </HoverCard.Dropdown>
-              </HoverCard>
-            </Group>
-            <Group gap="xs" maw="100%">
-              {detailBadges}
-            </Group>
-            <Group gap="xs" maw="100%">
-              {audioBadges}
-            </Group>
-            <Group gap="xs" maw="100%">
-              {languageBadges}
-            </Group>
-            <Text size="sm" c="white">
-              {item?.overview}
-            </Text>
-          </Stack>
-        </Grid.Col>
-      </Grid>
-    </BackgroundImage>
+              </HoverCard.Target>
+              <HoverCard.Dropdown>
+                <List>
+                  {item?.alternativeTitles.map((v, idx) => (
+                    <List.Item key={BuildKey(idx, v)}>{v}</List.Item>
+                  ))}
+                </List>
+              </HoverCard.Dropdown>
+            </HoverCard>
+          </Group>
+          <Group gap="xs" maw="100%">
+            {detailBadges}
+          </Group>
+          <Group gap="xs" maw="100%">
+            {audioBadges}
+          </Group>
+          <Group gap="xs" maw="100%">
+            {languageBadges}
+          </Group>
+          <Text size="sm" c="white">
+            {item?.overview}
+          </Text>
+        </Stack>
+      </Grid.Col>
+    </Grid>
   );
+
+  if (item?.fanart) {
+    return <BackgroundImage src={item.fanart}>{content}</BackgroundImage>;
+  }
+
+  return content;
 };
 
 type ItemBadgeProps = Omit<BadgeProps, "leftSection"> & {

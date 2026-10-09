@@ -84,7 +84,7 @@ def series_download_subtitles(no, job_id=None, job_sub_function=False):
 def episode_download_subtitles(no, job_id=None, job_sub_function=False, providers_list=None, fallback_allowed=False):
     if not job_sub_function and not job_id:
         jobs_queue.add_job_from_function(f"""Downloading missing subtitles for {database.scalar(
-            select(TableShows.title).where(TableShows.sonarrSeriesId == no)) or 'Unknown Series'}""", is_progress=True)
+            select(TableShows.title).join(TableEpisodes).where(TableEpisodes.sonarrEpisodeId == no)) or 'Unknown Series'}""", is_progress=True)
         return
 
     conditions = [(TableEpisodes.sonarrEpisodeId == no)]
@@ -167,8 +167,6 @@ def episode_download_subtitles(no, job_id=None, job_sub_function=False, provider
                                              job_id=job_id,
                                              fallback_allowed=fallback_allowed):
                 if result:
-                    if isinstance(result, tuple) and len(result):
-                        result = result[0]
                     store_subtitles(episode.sonarrEpisodeId)
                     history_log(1, episode.sonarrSeriesId, episode.sonarrEpisodeId, result)
                     send_notifications(episode.sonarrSeriesId, episode.sonarrEpisodeId, result.message)
@@ -238,8 +236,6 @@ def episode_download_specific_subtitles(sonarr_series_id, sonarr_episode_id, lan
                                          job_id=job_id))
         if isinstance(result, list) and len(result):
             result = result[0]
-            if isinstance(result, tuple) and len(result):
-                result = result[0]
             store_subtitles(sonarr_episode_id)
             history_log(1, sonarr_series_id, sonarr_episode_id, result)
             send_notifications(sonarr_series_id, sonarr_episode_id, result.message)

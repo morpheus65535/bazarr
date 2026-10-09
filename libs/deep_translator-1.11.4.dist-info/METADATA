@@ -367,11 +367,13 @@ Google Translate
     # the translate_sentences function is deprecated, use the translate_batch function instead
     translated = GoogleTranslator('de', 'en').translate_batch(texts)
 
-- Translate from a file:
+- Translate text from txt/docx/pdf:
 
 .. code-block:: python
 
-    translated = GoogleTranslator(source='auto', target='german').translate_file('path/to/file')
+    path = "your_file.txt"
+
+    translated = GoogleTranslator(source='auto', target='german').translate_file(path)
 
 Mymemory Translator
 --------------------
@@ -399,7 +401,7 @@ Mymemory Translator
     # the translate_sentences function is deprecated, use the translate_batch function instead
     translated = MyMemoryTranslator('de', 'en').translate_batch(texts)
 
-- Translate from file
+- Translate text from txt/docx/pdf:
 
 .. code-block:: python
 
@@ -709,6 +711,35 @@ Libre Translator
 
     translated = LibreTranslator(source='auto', target='en').translate_file('path/to/file')
 
+TencentTranslator
+-----------------
+
+.. note::
+
+    In order to use the TencentTranslator translator, you need to generate a secret_id and a secret_key.
+    deep-translator supports both Pro and free APIs. Just check the examples below.
+    Visit https://cloud.tencent.com/document/api/551/15619 for more information on how to generate your Tencent secret_id
+    and secret_key.
+
+- Simple translation
+
+.. code-block:: python
+
+    text = 'Hello world'
+    translated = TencentTranslator(secret_id="your-secret_id", secret_key="your-secret_key" source="en", target="zh").translate(text)
+
+- Translate batch of texts
+
+.. code-block:: python
+
+    texts = ["Hello world", "How are you?"]
+    translated = TencentTranslator(secret_id="your-secret_id", secret_key="your-secret_key" source="en", target="zh").translate_batch(texts)
+
+- Translate from a file:
+
+.. code-block:: python
+
+    translated = TencentTranslator(secret_id="your-secret_id", secret_key="your-secret_key" source="en", target="zh").translate_file('path/to/file')
 
 BaiduTranslator
 -----------------
@@ -807,6 +838,16 @@ For PDF translation:
 .. code-block:: console
 
     pip install deep-translator[pdf]
+
+- Translate text from txt/docx/pdf:
+
+Here is sample code for translating text directly from files
+
+.. code-block:: python
+
+    path = "example/test.pdf"
+
+    translated = GoogleTranslator(source='auto', target='german').translate_file(path)
 
 
 Usage from Terminal

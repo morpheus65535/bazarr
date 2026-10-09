@@ -4,25 +4,25 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { QueryKeys } from "@/apis/queries/keys";
 import api from "@/apis/raw";
 import { notification } from "@/modules/task";
+import { RouterNames } from "@/Router/RouterNames";
 import { Environment } from "@/utilities";
 import { setAuthenticated } from "@/utilities/event";
 
-export function useBadges() {
-  return useQuery({
+export const useBadges = () =>
+  useQuery({
     queryKey: [QueryKeys.System, QueryKeys.Badges],
     queryFn: () => api.badges.all(),
     refetchOnWindowFocus: "always",
     refetchInterval: 1000 * 60,
     staleTime: 1000 * 10,
   });
-}
 
-export function useFileSystem(
+export const useFileSystem = (
   type: "bazarr" | "sonarr" | "radarr",
   path: string,
   enabled: boolean,
-) {
-  return useQuery({
+) =>
+  useQuery({
     queryKey: [QueryKeys.FileSystem, type, path],
 
     queryFn: () => {
@@ -39,29 +39,33 @@ export function useFileSystem(
 
     enabled,
   });
-}
 
-export function useSystemSettings() {
-  return useQuery({
+export const useSystemSettings = () =>
+  useQuery({
     queryKey: [QueryKeys.System, QueryKeys.Settings],
     queryFn: () => api.system.settings(),
     staleTime: Infinity,
   });
-}
 
-export function useSystemJobs() {
-  return useQuery({
+export const useSystemJobs = () =>
+  useQuery({
     queryKey: [QueryKeys.System, QueryKeys.Jobs],
     queryFn: () => api.system.jobs(),
-    staleTime: Infinity,
+    staleTime: 30_000,
+    refetchOnWindowFocus: true,
+    refetchInterval: (query) => {
+      const hasRunning = query.state.data?.some((j) => j.status === "running");
+      return hasRunning ? 10_000 : false;
+    },
   });
-}
 
-export function useSettingsMutation() {
+export const useSettingsMutation = (options?: { silent?: boolean }) => {
   const client = useQueryClient();
+  const silent = options?.silent ?? false;
   return useMutation({
     mutationKey: [QueryKeys.System, QueryKeys.Settings],
-    mutationFn: (data: LooseObject) => api.system.updateSettings(data),
+    mutationFn: (data: Record<string, unknown>) =>
+      api.system.updateSettings(data),
 
     onSuccess: () => {
       void client.invalidateQueries({
@@ -93,9 +97,11 @@ export function useSettingsMutation() {
         queryKey: [QueryKeys.Plex, "libraries"],
       });
 
-      showNotification(
-        notification.info("Settings saved", "Your changes have been saved"),
-      );
+      if (!silent) {
+        showNotification(
+          notification.info("Settings saved", "Your changes have been saved"),
+        );
+      }
     },
 
     onError: () => {
@@ -107,27 +113,25 @@ export function useSettingsMutation() {
       );
     },
   });
-}
+};
 
-export function useServerSearch(query: string, enabled: boolean) {
-  return useQuery({
+export const useServerSearch = (query: string, enabled: boolean) =>
+  useQuery({
     queryKey: [QueryKeys.System, QueryKeys.Search, query],
     queryFn: () => api.system.search(query),
     enabled,
   });
-}
 
-export function useSystemLogs() {
-  return useQuery({
+export const useSystemLogs = () =>
+  useQuery({
     queryKey: [QueryKeys.System, QueryKeys.Logs],
     queryFn: () => api.system.logs(),
     refetchOnWindowFocus: "always",
     refetchInterval: 1000 * 60,
     staleTime: 1000 * 10,
   });
-}
 
-export function useDeleteLogs() {
+export const useDeleteLogs = () => {
   const client = useQueryClient();
   return useMutation({
     mutationKey: [QueryKeys.System, QueryKeys.Logs],
@@ -139,19 +143,18 @@ export function useDeleteLogs() {
       });
     },
   });
-}
+};
 
-export function useSystemAnnouncements() {
-  return useQuery({
+export const useSystemAnnouncements = () =>
+  useQuery({
     queryKey: [QueryKeys.System, QueryKeys.Announcements],
     queryFn: () => api.system.announcements(),
     refetchOnWindowFocus: "always",
     refetchInterval: 1000 * 60,
     staleTime: 1000 * 10,
   });
-}
 
-export function useSystemAnnouncementsAddDismiss() {
+export const useSystemAnnouncementsAddDismiss = () => {
   const client = useQueryClient();
   return useMutation({
     mutationKey: [QueryKeys.System, QueryKeys.Announcements],
@@ -171,19 +174,18 @@ export function useSystemAnnouncementsAddDismiss() {
       });
     },
   });
-}
+};
 
-export function useSystemTasks() {
-  return useQuery({
+export const useSystemTasks = () =>
+  useQuery({
     queryKey: [QueryKeys.System, QueryKeys.Tasks],
     queryFn: () => api.system.tasks(),
     refetchOnWindowFocus: "always",
     refetchInterval: 1000 * 60,
     staleTime: 1000 * 10,
   });
-}
 
-export function useRunTask() {
+export const useRunTask = () => {
   const client = useQueryClient();
   return useMutation({
     mutationKey: [QueryKeys.System, QueryKeys.Tasks],
@@ -199,16 +201,15 @@ export function useRunTask() {
       });
     },
   });
-}
+};
 
-export function useSystemBackups() {
-  return useQuery({
+export const useSystemBackups = () =>
+  useQuery({
     queryKey: [QueryKeys.System, "backups"],
     queryFn: () => api.system.backups(),
   });
-}
 
-export function useCreateBackups() {
+export const useCreateBackups = () => {
   const client = useQueryClient();
   return useMutation({
     mutationKey: [QueryKeys.System, QueryKeys.Backups],
@@ -220,9 +221,9 @@ export function useCreateBackups() {
       });
     },
   });
-}
+};
 
-export function useRestoreBackups() {
+export const useRestoreBackups = () => {
   const client = useQueryClient();
   return useMutation({
     mutationKey: [QueryKeys.System, QueryKeys.Backups],
@@ -234,9 +235,9 @@ export function useRestoreBackups() {
       });
     },
   });
-}
+};
 
-export function useDeleteBackups() {
+export const useDeleteBackups = () => {
   const client = useQueryClient();
   return useMutation({
     mutationKey: [QueryKeys.System, QueryKeys.Backups],
@@ -248,30 +249,27 @@ export function useDeleteBackups() {
       });
     },
   });
-}
+};
 
-export function useSystemStatus() {
-  return useQuery({
+export const useSystemStatus = () =>
+  useQuery({
     queryKey: [QueryKeys.System, "status"],
     queryFn: () => api.system.status(),
   });
-}
 
-export function useSystemHealth() {
-  return useQuery({
+export const useSystemHealth = () =>
+  useQuery({
     queryKey: [QueryKeys.System, "health"],
     queryFn: () => api.system.health(),
   });
-}
 
-export function useSystemReleases() {
-  return useQuery({
+export const useSystemReleases = () =>
+  useQuery({
     queryKey: [QueryKeys.System, "releases"],
     queryFn: () => api.system.releases(),
   });
-}
 
-export function useSystem() {
+export const useSystem = () => {
   const client = useQueryClient();
   const { mutate: logout, isPending: isLoggingOut } = useMutation({
     mutationKey: [QueryKeys.System, QueryKeys.Actions],
@@ -290,8 +288,21 @@ export function useSystem() {
       api.system.login(param.username, param.password),
 
     onSuccess: () => {
-      // TODO: Hard-coded value
-      window.location.replace(Environment.baseUrl);
+      const params = new URLSearchParams(window.location.search);
+      const returnTo = params.get("returnTo");
+      const safeReturnTo =
+        returnTo &&
+        returnTo.startsWith("/") &&
+        !returnTo.startsWith("//") &&
+        returnTo !== RouterNames.Auth
+          ? returnTo
+          : undefined;
+
+      const redirectUrl = safeReturnTo
+        ? `${Environment.baseUrl}${safeReturnTo}`
+        : Environment.baseUrl;
+
+      window.location.replace(redirectUrl);
     },
   });
 
@@ -320,6 +331,7 @@ export function useSystem() {
       restart,
       login,
       isMutating: isLoggingOut || isShuttingDown || isRestarting || isLoggingIn,
+      isLoggingIn,
     }),
     [
       isLoggingIn,
@@ -332,10 +344,9 @@ export function useSystem() {
       shutdown,
     ],
   );
-}
+};
 
-export function useSystemWebhookTestMutation() {
-  return useMutation({
+export const useSystemWebhookTestMutation = () =>
+  useMutation({
     mutationFn: () => api.system.testWebhook(),
   });
-}

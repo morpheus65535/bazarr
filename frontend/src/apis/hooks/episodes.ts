@@ -25,7 +25,7 @@ const cacheEpisodes = (client: QueryClient, episodes: Item.Episode[]) => {
   });
 };
 
-export function useEpisodesBySeriesId(id: number) {
+export const useEpisodesBySeriesId = (id: number) => {
   const client = useQueryClient();
 
   const query = useQuery({
@@ -40,22 +40,20 @@ export function useEpisodesBySeriesId(id: number) {
   }, [query.isSuccess, query.data, client]);
 
   return query;
-}
+};
 
-export function useEpisodeWantedPagination() {
-  return usePaginationQuery([QueryKeys.Series, QueryKeys.Wanted], (param) =>
+export const useEpisodeWantedPagination = () =>
+  usePaginationQuery([QueryKeys.Series, QueryKeys.Wanted], (param) =>
     api.episodes.wanted(param),
   );
-}
 
-export function useEpisodeBlacklist() {
-  return useQuery({
+export const useEpisodeBlacklist = () =>
+  useQuery({
     queryKey: [QueryKeys.Series, QueryKeys.Episodes, QueryKeys.Blacklist],
     queryFn: () => api.episodes.blacklist(),
   });
-}
 
-export function useEpisodeAddBlacklist() {
+export const useEpisodeAddBlacklist = () => {
   const client = useQueryClient();
   return useMutation({
     mutationKey: [QueryKeys.Series, QueryKeys.Episodes, QueryKeys.Blacklist],
@@ -79,9 +77,9 @@ export function useEpisodeAddBlacklist() {
       });
     },
   });
-}
+};
 
-export function useEpisodeDeleteBlacklist() {
+export const useEpisodeDeleteBlacklist = () => {
   const client = useQueryClient();
   return useMutation({
     mutationKey: [QueryKeys.Series, QueryKeys.Episodes, QueryKeys.Blacklist],
@@ -95,18 +93,17 @@ export function useEpisodeDeleteBlacklist() {
       });
     },
   });
-}
+};
 
-export function useEpisodeHistoryPagination() {
-  return usePaginationQuery(
+export const useEpisodeHistoryPagination = () =>
+  usePaginationQuery(
     [QueryKeys.Series, QueryKeys.Episodes, QueryKeys.History],
     (param) => api.episodes.history(param),
     false,
   );
-}
 
-export function useEpisodeHistory(episodeId?: number) {
-  return useQuery({
+export const useEpisodeHistory = (episodeId?: number) =>
+  useQuery({
     queryKey: [
       QueryKeys.Series,
       QueryKeys.Episodes,
@@ -122,4 +119,3 @@ export function useEpisodeHistory(episodeId?: number) {
       return [];
     },
   });
-}

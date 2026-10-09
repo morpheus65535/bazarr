@@ -2,7 +2,7 @@
 
 from flask_restx import Resource, Namespace, reqparse, fields, marshal
 
-from app.database import TableEpisodes, database, select
+from app.database import TableEpisodes, database, select, TableShows
 from api.swaggerui import subtitles_model, subtitles_language_model, audio_language_model
 
 from ..utils import authenticate, postprocess
@@ -58,7 +58,8 @@ class Episodes(Resource):
                 TableEpisodes.sonarrSeriesId,
                 TableEpisodes.title,
                 TableEpisodes.sceneName,
-            )
+                TableShows.profileId
+            ).join(TableShows)
 
         if len(episodeId) > 0:
             stmt_query = database.execute(
@@ -85,4 +86,5 @@ class Episodes(Resource):
                 'sonarrSeriesId': x.sonarrSeriesId,
                 'title': x.title,
                 'sceneName': x.sceneName,
+                'profileId': x.profileId,  # required to filter desired subtitles when settings.general.embedded_subs_show_desired
                 }) for x in stmt_query], self.get_response_model, envelope='data')

@@ -13,9 +13,12 @@ from subliminal_patch.core_persistent import download_best_subtitles
 
 from app.config import settings, get_array_from
 from app.database import TableEpisodes, TableMovies, database, select, get_profiles_list
+from constants import HI_EXCLUDED
 from utilities.path_mappings import path_mappings
 from utilities.helper import get_target_folder, force_unicode
-from languages.get_languages import alpha3_from_alpha2
+from languages.get_languages import alpha3_from_alpha2, alpha2_from_alpha3
+
+from app.get_providers import blacklist_subtitle
 
 from .pool import update_pools, _get_pool
 from .utils import get_video, _get_lang_obj, _get_scores, _set_forced_providers
@@ -42,7 +45,6 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
     language_set = _get_language_obj(languages=languages)
     profile = get_profiles_list(profile_id=profile_id)
     original_format = profile['originalFormat']
-    hi_required = "force HI" if all([x.hi for x in language_set]) else "don't prefer"
     also_forced = any([x.forced for x in language_set])
     forced_required = all([x.forced for x in language_set])
     _set_forced_providers(pool=pool, also_forced=also_forced, forced_required=forced_required)
@@ -72,16 +74,27 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
                                   f"has been reached during this search.")
                     continue
                 else:
+                    # resolve per-language hearing_impaired mode from profile
+                    lang_alpha2 = alpha2_from_alpha3(language.alpha3)
+                    hi_mode = "don't prefer"
+                    for item in profile['items']:
+                        if item['language'] == lang_alpha2 and item['forced'] == ("True" if language.forced else "False"):
+                            if item['hi'] == "True":
+                                hi_mode = "force HI"
+                            elif item['hi'] == HI_EXCLUDED:
+                                hi_mode = "force non-HI"
+                            break
+
                     try:
                         downloaded_subtitles = download_best_subtitles(videos={video},
                                                                        languages={language},
                                                                        pool_instance=pool,
                                                                        min_score=int(min_score),
-                                                                       hearing_impaired=hi_required,
+                                                                       hearing_impaired=hi_mode,
                                                                        use_original_format=original_format in (1, "1", "True", True),
                                                                        fallback_allowed=fallback_allowed)
                     except Exception as e:
-                        logging.exception(f'BAZARR Error downloading Subtitles for this file {path}: {repr(e)}')
+                        logging.exception(f'BAZARR Error downloading Subtitles for this file {path}: {str(e)}')
                         return None
 
                 if downloaded_subtitles:
@@ -113,10 +126,17 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
                                                              formats=subtitle_formats,
                                                              path_decoder=force_unicode
                                                              )
+                        # for decode/reencode errors ONLY, add the subtitles file to the blacklist so they're not re-tried endlessly.
+                        # Purposely only catches UnicodeError as an IO error etc should not blacklist a file. UnicodeError handles
+                        # UnicodeEncodeError, UnicodeDecodeError and UnicodeTranslateError cases.
+                        except UnicodeError as e:
+                            logging.exception(
+                                f'BAZARR Cannot decode Subtitles file for this file {path}: {str(e)}')
+                            _blacklist_unusable_subtitles(video, subtitles, media_type, language,
+                                                          getattr(e, 'bazarr_failed_subtitle', None))
                         except Exception as e:
                             logging.exception(
-                                f'BAZARR Error saving Subtitles file to disk for this file {path}: {repr(e)}')
-                            pass
+                                f'BAZARR Error saving Subtitles file to disk for this file {path}: {str(e)}')
                         else:
                             saved_any = True
                             for subtitle in saved_subtitles:
@@ -143,6 +163,22 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
     subliminal.region.backend.sync()
 
     logging.debug(f'BAZARR Ended searching Subtitles for file: {path}')
+
+
+def _blacklist_unusable_subtitles(video, subtitles, media_type, language, failed_subtitle=None):
+    # A subtitle we cannot decode will be downloaded and fail to save again,
+    # so record it as bad rather than retrying it forever.
+    ids = {
+        'radarrId': getattr(video, 'radarrId', None),
+        'sonarrSeriesId': getattr(video, 'sonarrSeriesId', None),
+        'sonarrEpisodeId': getattr(video, 'sonarrEpisodeId', None),
+    }
+
+    # save_subtitles tags the exception with the subtitle it choked on. Without
+    # that tag we cannot tell which one failed, so fall back to the whole batch.
+    for subtitle in [failed_subtitle] if failed_subtitle is not None else subtitles:
+        logging.info(f'BAZARR blacklisting undecodable subtitle {subtitle.id} from {subtitle.provider_name}')
+        blacklist_subtitle(subtitle.provider_name, subtitle.id, media_type, ids, language)
 
 
 def _get_language_obj(languages):

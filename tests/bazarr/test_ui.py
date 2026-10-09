@@ -2,10 +2,11 @@
 Test for Bazarr UI functionality including authentication decorators.
 """
 import pytest
+import requests
 from unittest.mock import Mock, patch
 from flask import Flask
 
-from bazarr.app.ui import check_login
+from bazarr.app.ui import check_login, _proxy_image
 
 
 def test_check_login_decorator_preserves_function_signature():
@@ -236,3 +237,51 @@ def test_check_login_with_different_return_types():
 
             assert result == expected_value
             assert type(result) == expected_type
+
+
+def test_proxy_image_returns_not_found_on_request_exception():
+    """
+    Test that _proxy_image returns an empty 404 when the upstream request fails.
+    """
+    app = Flask(__name__)
+    with app.test_request_context():
+        with patch('bazarr.app.ui.requests.get',
+                   side_effect=requests.exceptions.ConnectionError("upstream down")):
+            result = _proxy_image('http://sonarr/MediaCover/1/poster-250.jpg?apikey=key')
+
+            assert result == ('', 404)
+
+
+def test_proxy_image_returns_not_found_on_upstream_error_status():
+    """
+    Test that _proxy_image returns an empty 404 when the upstream responds with an error status.
+    """
+    app = Flask(__name__)
+    with app.test_request_context():
+        mock_response = Mock()
+        mock_response.status_code = 404
+
+        with patch('bazarr.app.ui.requests.get', return_value=mock_response):
+            result = _proxy_image('http://sonarr/MediaCover/1/poster-250.jpg?apikey=key')
+
+            assert result == ('', 404)
+
+
+def test_proxy_image_streams_upstream_response_with_cache_headers():
+    """
+    Test that _proxy_image streams the upstream content with its content type and cache headers.
+    """
+    app = Flask(__name__)
+    with app.test_request_context():
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.headers = {'content-type': 'image/jpeg'}
+        mock_response.iter_content.return_value = iter([b'image-data'])
+
+        with patch('bazarr.app.ui.requests.get', return_value=mock_response):
+            result = _proxy_image('http://sonarr/MediaCover/1/poster-250.jpg?apikey=key')
+
+            assert result.status_code == 200
+            assert result.content_type == 'image/jpeg'
+            assert result.headers['Cache-Control'] == 'private, max-age=86400'
+            assert b''.join(result.response) == b'image-data'

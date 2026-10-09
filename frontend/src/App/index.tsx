@@ -1,9 +1,15 @@
 import { FunctionComponent, useEffect, useState } from "react";
-import { Outlet, useNavigate } from "react-router";
+import {
+  Outlet,
+  ScrollRestoration,
+  useLocation,
+  useNavigate,
+} from "react-router";
 import { AppShell } from "@mantine/core";
 import { useWindowEvent } from "@mantine/hooks";
 import { showNotification } from "@mantine/notifications";
 import AppNavbar from "@/App/Navbar";
+import AppSpotlight from "@/components/AppSpotlight";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import NavbarProvider from "@/contexts/Navbar";
 import OnlineProvider from "@/contexts/Online";
@@ -12,10 +18,12 @@ import CriticalError from "@/pages/errors/CriticalError";
 import { RouterNames } from "@/Router/RouterNames";
 import { Environment } from "@/utilities";
 import AppHeader from "./Header";
+import styles from "./index.module.scss";
 import styleVars from "@/assets/_variables.module.scss";
 
 const App: FunctionComponent = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [criticalError, setCriticalError] = useState<string | null>(null);
   const [navbar, setNavbar] = useState(false);
@@ -27,7 +35,14 @@ const App: FunctionComponent = () => {
 
   useWindowEvent("app-auth-changed", (ev) => {
     if (!ev.detail.authenticated) {
-      navigate(RouterNames.Auth);
+      const returnTo =
+        location.pathname !== RouterNames.Auth
+          ? `${location.pathname}${location.search}`
+          : "";
+      navigate({
+        pathname: RouterNames.Auth,
+        search: returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : "",
+      });
     }
   });
 
@@ -65,10 +80,12 @@ const App: FunctionComponent = () => {
           >
             <AppHeader></AppHeader>
             <AppNavbar></AppNavbar>
-            <AppShell.Main>
+            <AppShell.Main className={styles.main}>
               <Outlet></Outlet>
             </AppShell.Main>
           </AppShell>
+          <ScrollRestoration></ScrollRestoration>
+          <AppSpotlight></AppSpotlight>
         </OnlineProvider>
       </NavbarProvider>
     </ErrorBoundary>

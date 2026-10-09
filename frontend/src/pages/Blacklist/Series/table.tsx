@@ -2,10 +2,10 @@ import { FunctionComponent, useMemo } from "react";
 import { Link } from "react-router";
 import { Anchor, Text } from "@mantine/core";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
-import { ColumnDef } from "@tanstack/react-table";
 import { useEpisodeDeleteBlacklist } from "@/apis/hooks";
 import MutateAction from "@/components/async/MutateAction";
 import Language from "@/components/bazarr/Language";
+import { AppColumnDef as ColumnDef } from "@/components/tables/features";
 import PageTable from "@/components/tables/PageTable";
 import TextPopover from "@/components/TextPopover";
 
@@ -36,7 +36,7 @@ const Table: FunctionComponent<Props> = ({ blacklist }) => {
       },
       {
         header: "Episode",
-        accessorKey: "episode_number",
+        accessorKey: "episodeNumber",
       },
       {
         id: "episodeTitle",
@@ -65,7 +65,7 @@ const Table: FunctionComponent<Props> = ({ blacklist }) => {
         accessorKey: "timestamp",
         cell: ({
           row: {
-            original: { timestamp, parsed_timestamp: parsedTimestamp },
+            original: { timestamp, parsedTimestamp },
           },
         }) => {
           if (timestamp) {
@@ -80,10 +80,10 @@ const Table: FunctionComponent<Props> = ({ blacklist }) => {
         },
       },
       {
-        id: "subs_id",
+        id: "subsId",
         cell: ({
           row: {
-            original: { subs_id: subsId, provider },
+            original: { subsId, provider },
           },
         }) => {
           return (
@@ -95,8 +95,7 @@ const Table: FunctionComponent<Props> = ({ blacklist }) => {
                 all: false,
                 form: {
                   provider: provider,
-                  // eslint-disable-next-line camelcase
-                  subs_id: subsId,
+                  subsId,
                 },
               })}
             ></MutateAction>

@@ -7,6 +7,7 @@ import json
 from typing import Callable
 
 from zipfile import ZipFile, is_zipfile
+from rarfile import RarFile, is_rarfile
 from urllib.parse import urljoin
 from requests import Session, Response
 
@@ -137,32 +138,38 @@ class LegendasNetProvider(ProviderRetryMixin, Provider):
 
         # query the server
         if isinstance(self.video, Episode):
+            search_params = {
+                'page': 1,
+                'per_page': 25,
+                'tv_episode': video.episode,
+                'tv_season': video.season,
+                'imdb_id': video.series_imdb_id
+            }
+            if not video.series_imdb_id:
+                search_params['name'] = video.series
+
             res = self.retry(
                 lambda: self.checked(
                     lambda: self.session.get(self.server_url() + 'search/tv',
-                                             json={
-                                                 'name': video.series,
-                                                 'page': 1,
-                                                 'per_page': 25,
-                                                 'tv_episode': video.episode,
-                                                 'tv_season': video.season,
-                                                 'imdb_id': video.series_imdb_id
-                                             },
+                                             json=search_params,
                                              headers={'Content-Type': 'application/json'},
                                              timeout=30)),
                 amount=retry_amount,
                 retry_timeout=retry_timeout
             )
         else:
+            search_params = {
+                'page': 1,
+                'per_page': 25,
+                'imdb_id': video.imdb_id
+            }
+            if not video.imdb_id:
+                search_params['name'] = video.title
+
             res = self.retry(
                 lambda: self.checked(
                     lambda: self.session.get(self.server_url() + 'search/movie',
-                                             json={
-                                                 'name': video.title,
-                                                 'page': 1,
-                                                 'per_page': 25,
-                                                 'imdb_id': video.imdb_id
-                                             },
+                                             json=search_params,
                                              headers={'Content-Type': 'application/json'},
                                              timeout=30)),
                 amount=retry_amount,
@@ -250,6 +257,12 @@ class LegendasNetProvider(ProviderRetryMixin, Provider):
             archive_stream = io.BytesIO(r.content)
             if is_zipfile(archive_stream):
                 archive = ZipFile(archive_stream)
+                for name in archive.namelist():
+                    subtitle_content = archive.read(name)
+                    subtitle.content = fix_line_ending(subtitle_content)
+                    return
+            elif is_rarfile(archive_stream):
+                archive = RarFile(archive_stream)
                 for name in archive.namelist():
                     subtitle_content = archive.read(name)
                     subtitle.content = fix_line_ending(subtitle_content)

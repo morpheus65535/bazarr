@@ -134,7 +134,7 @@ def manual_upload_subtitle(path, language, forced, hi, media_type, subtitle, fil
                                          formats=sub_format if use_original_format else ("srt",),
                                          path_decoder=force_unicode)
     except Exception as e:
-        logging.exception(f'BAZARR Error saving Subtitles file to disk for this file {path}: {repr(e)}')
+        logging.exception(f'BAZARR Error saving Subtitles file to disk for this file {path}: {str(e)}')
         return
 
     if len(saved_subtitles) < 1:
@@ -161,11 +161,11 @@ def manual_upload_subtitle(path, language, forced, hi, media_type, subtitle, fil
     uploaded_language_code2 = alpha2_from_alpha3(language) + modifier_code
 
     if use_postprocessing:
-        command = pp_replace(postprocessing_cmd, path, subtitle_path, uploaded_language, uploaded_language_code2,
-                             uploaded_language_code3, audio_language['name'], audio_language['code2'],
-                             audio_language['code3'], 100, "1", "manual", "user", "unknown", sonarrSeriesId,
-                             sonarrEpisodeId or radarrId,)
-        postprocessing(command, path)
+        args = pp_replace(postprocessing_cmd, path, subtitle_path, uploaded_language, uploaded_language_code2,
+                          uploaded_language_code3, audio_language['name'], audio_language['code2'],
+                          audio_language['code3'], 100, "1", "manual", "user", "unknown", sonarrSeriesId,
+                          sonarrEpisodeId or radarrId,)
+        postprocessing(args, path)
         set_chmod(subtitles_path=subtitle_path)
 
     if media_type == 'series':
@@ -201,8 +201,6 @@ def manual_upload_subtitle(path, language, forced, hi, media_type, subtitle, fil
         logging.debug(f"BAZARR unable to process subtitles for this {'episode' if media_type == 'series' else 'movie'}:"
                       f" {path}")
     else:
-        if isinstance(result, tuple) and len(result):
-            result = result[0]
         provider = "manual"
         if media_type == 'series':
             store_subtitles(sonarrEpisodeId)

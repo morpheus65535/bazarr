@@ -10,6 +10,7 @@ export enum QueryKeys {
   Providers = "providers",
   Languages = "languages",
   LanguagesProfiles = "languages-profiles",
+  Tags = "tags",
   Blacklist = "blacklist",
   Search = "search",
   Actions = "actions",

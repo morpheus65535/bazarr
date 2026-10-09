@@ -1,4 +1,3 @@
-/* eslint-disable camelcase */
 import { http } from "msw";
 import { HttpResponse } from "msw";
 import { customRender, screen, waitFor } from "@/tests";

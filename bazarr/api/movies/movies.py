@@ -1,6 +1,7 @@
 # coding=utf-8
 
 from flask_restx import Resource, Namespace, reqparse, fields, marshal
+from sqlalchemy import or_
 
 from app.database import TableMovies, database, update, select, func
 from radarr.sync.movies import update_one_movie
@@ -10,7 +11,8 @@ from subtitles.wanted import wanted_search_missing_subtitles_movies
 from subtitles.mass_download import movies_download_subtitles
 from api.swaggerui import subtitles_model, subtitles_language_model, audio_language_model
 
-from api.utils import authenticate, None_Keys, postprocess
+from api.utils import authenticate, None_Keys, postprocess, add_list_query_args, profile_filter_clause, \
+    monitored_filter_clause, tags_filter_clause, audio_language_filter_clause, apply_sort
 
 api_ns_movies = Namespace('Movies', description='List movies metadata, update movie languages profile or run actions '
                                                 'for specific movies.')
@@ -22,7 +24,8 @@ class Movies(Resource):
     get_request_parser.add_argument('start', type=int, required=False, default=0, help='Paging start integer')
     get_request_parser.add_argument('length', type=int, required=False, default=-1, help='Paging length integer')
     get_request_parser.add_argument('radarrid[]', type=int, action='append', required=False, default=[],
-                                    help='Movies IDs to get metadata for')
+                                     help='Movies IDs to get metadata for')
+    add_list_query_args(get_request_parser)
 
     get_subtitles_model = api_ns_movies.model('subtitles_model', subtitles_model)
     get_subtitles_language_model = api_ns_movies.model('subtitles_language_model', subtitles_language_model)
@@ -31,6 +34,7 @@ class Movies(Resource):
     data_model = api_ns_movies.model('movies_data_model', {
         'alternativeTitles': fields.List(fields.String),
         'audio_language': fields.Nested(get_audio_language_model),
+        'created_at_timestamp': fields.String(),
         'fanart': fields.String(),
         'imdbId': fields.String(),
         'missing_subtitles': fields.Nested(get_subtitles_language_model),
@@ -62,9 +66,17 @@ class Movies(Resource):
         start = args.get('start')
         length = args.get('length')
         radarrId = args.get('radarrid[]')
+        sort_by = args.get('sort_by')
+        sort_order = args.get('sort_order')
+        monitored = args.get('monitored')
+        profile_id = args.get('profileid')
+        missing = args.get('missing')
+        audio_language = args.get('audio_language')
+        tags = args.get('tags[]')
 
         stmt = select(TableMovies.alternativeTitles,
                       TableMovies.audio_language,
+                      TableMovies.created_at_timestamp,
                       TableMovies.fanart,
                       TableMovies.imdbId,
                       TableMovies.missing_subtitles,
@@ -78,11 +90,39 @@ class Movies(Resource):
                       TableMovies.tags,
                       TableMovies.title,
                       TableMovies.year,
-                      )\
-            .order_by(TableMovies.sortTitle)
+                      )
+
+        where_clauses = []
 
         if len(radarrId) != 0:
-            stmt = stmt.where(TableMovies.radarrId.in_(radarrId))
+            where_clauses.append(TableMovies.radarrId.in_(radarrId))
+        if monitored is not None:
+            where_clauses.append(monitored_filter_clause(TableMovies.monitored, monitored))
+        if profile_id is not None:
+            where_clauses.append(profile_filter_clause(TableMovies.profileId, profile_id))
+        if missing is not None:
+            if missing == 'true':
+                where_clauses.append(TableMovies.missing_subtitles.is_not(None))
+                where_clauses.append(TableMovies.missing_subtitles != '[]')
+            else:
+                where_clauses.append(or_(TableMovies.missing_subtitles.is_(None),
+                                         TableMovies.missing_subtitles == '[]'))
+        if audio_language is not None:
+            where_clauses.append(audio_language_filter_clause(TableMovies.audio_language, audio_language))
+        if tags:
+            where_clauses.append(tags_filter_clause(TableMovies.tags, tags))
+
+        if where_clauses:
+            stmt = stmt.where(*where_clauses)
+
+        stmt = apply_sort(stmt, {
+            'title': TableMovies.sortTitle,
+            'year': TableMovies.year,
+            'profileId': TableMovies.profileId,
+            'audio_language': TableMovies.audio_language,
+            'audioLanguage': TableMovies.audio_language,
+            'createdAtTimestamp': TableMovies.created_at_timestamp,
+        }, TableMovies.sortTitle, sort_by, sort_order)
 
         if length > 0:
             stmt = stmt.limit(length).offset(start)
@@ -90,6 +130,7 @@ class Movies(Resource):
         results = [postprocess({
             'alternativeTitles': x.alternativeTitles,
             'audio_language': x.audio_language,
+            'created_at_timestamp': x.created_at_timestamp,
             'fanart': x.fanart,
             'imdbId': x.imdbId,
             'missing_subtitles': x.missing_subtitles,
@@ -105,10 +146,11 @@ class Movies(Resource):
             'year': x.year,
         }) for x in database.execute(stmt).all()]
 
-        count = database.execute(
-            select(func.count())
-            .select_from(TableMovies)) \
-            .scalar()
+        count_stmt = select(func.count()).select_from(TableMovies)
+        if where_clauses:
+            count_stmt = count_stmt.where(*where_clauses)
+
+        count = database.execute(count_stmt).scalar()
 
         return marshal({'data': results, 'total': count}, self.get_response_model)
 

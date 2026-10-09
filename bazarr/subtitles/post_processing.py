@@ -9,7 +9,7 @@ import shlex
 from locale import getpreferredencoding
 
 
-def postprocessing(command, path):
+def postprocessing(args, path):
     try:
         encoding = getpreferredencoding()
         if os.name == 'nt':
@@ -17,23 +17,17 @@ def postprocessing(command, path):
             code_page = windll.kernel32.GetConsoleOutputCP()
             encoding = f"cp{code_page}"
 
-        # On Windows, use shell=True so cmd.exe handles backslash paths (UNC paths,
-        # drive letters) correctly. On Unix, use shlex.split + shell=False to avoid
-        # CWE-78 OS command injection via shell metacharacters.
-        if os.name == 'nt':
-            process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,
-                                       stderr=subprocess.PIPE, encoding=encoding)
-        else:
-            args = shlex.split(command)
-            process = subprocess.Popen(args, shell=False, stdout=subprocess.PIPE,
-                                       stderr=subprocess.PIPE, encoding=encoding)
+        # Use shell=False to avoid CWE-78 OS command injection via shell metacharacters.
+        process = subprocess.Popen(args, shell=False, stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE, encoding=encoding)
+
         # wait for the process to terminate
         out, err = process.communicate()
 
         out = out.replace('\n', ' ').replace('\r', ' ')
 
     except Exception as e:
-        logging.error(f'BAZARR Post-processing failed for file {path}: {repr(e)}')
+        logging.error(f'BAZARR Post-processing failed for file {path}: {str(e)}', exc_info=True)
     else:
         if err:
             parsed_err = err.replace('\n', ' ').replace('\r', ' ')

@@ -3,11 +3,13 @@ import {
   FunctionComponent,
   JSX,
   useCallback,
+  useEffect,
   useMemo,
   useRef,
   useState,
 } from "react";
 import {
+  Alert,
   AutocompleteProps,
   Button,
   Divider,
@@ -17,6 +19,11 @@ import {
   Text as MantineText,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
+import {
+  faCircleCheck,
+  faTriangleExclamation,
+} from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { capitalize } from "lodash";
 import { Selector } from "@/components";
 import { useModals, withModal } from "@/modules/modals";
@@ -38,13 +45,11 @@ import {
   useStagedValues,
 } from "@/pages/Settings/utilities/FormValues";
 import { useSettingValue } from "@/pages/Settings/utilities/hooks";
-import {
-  SettingsProvider,
-  useSettings,
-} from "@/pages/Settings/utilities/SettingsProvider";
+import { SettingsProvider } from "@/pages/Settings/utilities/SettingsProvider";
+import { useSettings } from "@/pages/Settings/utilities/useSettings";
 import { BuildKey, useSelectorOptions } from "@/utilities";
 import { ASSERT } from "@/utilities/console";
-import { ProviderInfo, ProviderList } from "./list";
+import { IntegrationList, ProviderInfo, ProviderList } from "./list";
 
 type SettingsKey =
   | "settings-general-enabled_providers"
@@ -72,18 +77,27 @@ export const ProviderView: FunctionComponent<ProviderViewProps> = ({
 
   const modals = useModals();
 
+  const modalTitle =
+    settingsKey === "settings-general-enabled_integrations"
+      ? "Integration"
+      : "Provider";
+
   const select = useCallback(
     (v?: ProviderInfo) => {
       if (settings) {
-        modals.openContextModal(ProviderModal, {
-          payload: v ?? null,
-          enabledProviders: providers ?? [],
-          staged,
-          settings,
-          onChange: update,
-          availableOptions: availableOptions,
-          settingsKey: settingsKey,
-        });
+        modals.openContextModal(
+          ProviderModal,
+          {
+            payload: v ?? null,
+            enabledProviders: providers ?? [],
+            staged,
+            settings,
+            onChange: update,
+            availableOptions: availableOptions,
+            settingsKey: settingsKey,
+          },
+          { title: modalTitle },
+        );
       }
     },
     [
@@ -94,6 +108,7 @@ export const ProviderView: FunctionComponent<ProviderViewProps> = ({
       update,
       availableOptions,
       settingsKey,
+      modalTitle,
     ],
   );
 
@@ -124,7 +139,7 @@ export const ProviderView: FunctionComponent<ProviderViewProps> = ({
   }, [providers, select, availableOptions]);
 
   return (
-    <SimpleGrid cols={3}>
+    <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }}>
       {cards}
       <Card plus onClick={() => select()}></Card>
     </SimpleGrid>
@@ -135,9 +150,9 @@ interface ProviderToolProps {
   payload: ProviderInfo | null;
   // TODO: Find a better solution to pass this info to modal
   enabledProviders: readonly string[];
-  staged: LooseObject;
+  staged: Record<string, unknown>;
   settings: Settings;
-  onChange: (v: LooseObject) => void;
+  onChange: (v: Record<string, unknown>) => void;
   availableOptions: Readonly<ProviderInfo[]>;
   settingsKey: Readonly<SettingsKey>;
 }
@@ -174,6 +189,58 @@ const validation = ProviderList.map((provider) => {
     return { ...acc, ...item };
   }, {});
 
+const RequiredIntegrationAlert: FunctionComponent<{
+  integrationKey: string;
+}> = ({ integrationKey }) => {
+  const integration = IntegrationList.find((v) => v.key === integrationKey);
+  const integrationName = integration?.name ?? capitalize(integrationKey);
+  // The first input of the integration is treated as its primary credential.
+  const primaryInputKey = integration?.inputs?.[0]?.key;
+
+  const enabledIntegrations = useSettingValue<string[]>(
+    "settings-general-enabled_integrations",
+  );
+  const primaryValue = useSettingValue<string | number>(
+    `settings-${integrationKey}-${primaryInputKey ?? ""}`,
+  );
+
+  const isEnabled = enabledIntegrations?.includes(integrationKey) ?? false;
+  const hasCredential =
+    primaryInputKey === undefined ||
+    (primaryValue !== null &&
+      primaryValue !== undefined &&
+      String(primaryValue).length > 0);
+
+  if (isEnabled && hasCredential) {
+    return (
+      <Alert
+        variant="light"
+        color="success"
+        icon={<FontAwesomeIcon icon={faCircleCheck} />}
+      >
+        This provider uses the {integrationName} integration, which is enabled
+        and configured.
+      </Alert>
+    );
+  }
+
+  return (
+    <Alert
+      variant="light"
+      color="warning"
+      title={`${integrationName} integration required`}
+      icon={<FontAwesomeIcon icon={faTriangleExclamation} />}
+    >
+      {isEnabled
+        ? `This provider requires the ${integrationName} integration, which is enabled but missing its ${
+            integration?.inputs?.[0]?.name ?? "API credentials"
+          }. `
+        : `This provider requires the ${integrationName} integration, which is not enabled yet. `}
+      Enable and configure it in the Metadata tab for this provider to work.
+    </Alert>
+  );
+};
+
 const ProviderTool: FunctionComponent<ProviderToolProps> = ({
   payload,
   enabledProviders,
@@ -186,7 +253,10 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
   const modals = useModals();
 
   const onChangeRef = useRef(onChange);
-  onChangeRef.current = onChange;
+
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  });
 
   const [info, setInfo] = useState<Nullable<ProviderInfo>>(payload);
 
@@ -282,7 +352,7 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
       const options = value.options ?? [];
 
       const error = form.errors[`settings.settings-${itemKey}-${key}`] ? (
-        <MantineText c="red" component="span" size="xs">
+        <MantineText c="danger" component="span" size="xs">
           {form.errors[`settings.settings-${itemKey}-${key}`]}
         </MantineText>
       ) : null;
@@ -336,7 +406,10 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
           return;
         case "testbutton":
           elements.push(
-            <ProviderTestButton category={key}></ProviderTestButton>,
+            <ProviderTestButton
+              key={BuildKey(itemKey, key)}
+              category={key}
+            ></ProviderTestButton>,
           );
           return;
         case "chips":
@@ -362,6 +435,11 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
     <SettingsProvider value={settings}>
       <FormContext.Provider value={form}>
         <Stack>
+          {info?.requiredIntegration ? (
+            <RequiredIntegrationAlert
+              integrationKey={info.requiredIntegration}
+            ></RequiredIntegrationAlert>
+          ) : null}
           <Stack gap="xs">
             <Selector
               data-autofocus
@@ -381,9 +459,11 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
           </Stack>
           <Divider></Divider>
           <Group justify="right">
-            <Button hidden={!payload} color="red" onClick={deletePayload}>
-              Disable
-            </Button>
+            {payload ? (
+              <Button color="danger" onClick={deletePayload}>
+                Disable
+              </Button>
+            ) : null}
             <Button
               disabled={!canSave}
               onClick={() => {
@@ -401,5 +481,5 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
 
 const ProviderModal = withModal(ProviderTool, "provider-tool", {
   title: "Provider",
-  size: "calc(50vw)",
+  size: "lg",
 });

@@ -1,12 +1,12 @@
 import { useMemo } from "react";
 import { useLanguageProfiles, useLanguages } from "@/apis/hooks";
 
-export function useLanguageProfileBy(id: number | null | undefined) {
+export const useLanguageProfileBy = (id: number | null | undefined) => {
   const { data } = useLanguageProfiles();
   return useMemo(() => data?.find((v) => v.profileId === id), [id, data]);
-}
+};
 
-export function useEnabledLanguages() {
+export const useEnabledLanguages = () => {
   const query = useLanguages();
 
   const enabled = useMemo(() => {
@@ -22,10 +22,10 @@ export function useEnabledLanguages() {
   }, [query]);
 
   return enabled;
-}
+};
 
 // Convert languageprofile items to language
-export function useProfileItemsToLanguages(profile?: Language.Profile) {
+export const useProfileItemsToLanguages = (profile?: Language.Profile) => {
   const { data } = useLanguages();
 
   return useMemo(
@@ -41,16 +41,16 @@ export function useProfileItemsToLanguages(profile?: Language.Profile) {
       }) ?? [],
     [data, profile?.items],
   );
-}
+};
 
-export function useLanguageFromCode3(code3: string) {
+export const useLanguageFromCode3 = (code3: string) => {
   const { data } = useLanguages();
 
   return useMemo(
     () => data?.find((value) => value.code3 === code3),
     [data, code3],
   );
-}
+};
 
 export const normalizeAudioLanguage = (name: string) => {
   return name === "Chinese Simplified" ? "Chinese" : name;

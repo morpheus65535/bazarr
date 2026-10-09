@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { QueryKeys } from "@/apis/queries/keys";
 import api from "@/apis/raw";
 
-export function useSubtitleAction() {
+export const useSubtitleAction = () => {
   const client = useQueryClient();
   interface Param {
     action: string;
@@ -31,9 +31,9 @@ export function useSubtitleAction() {
       }
     },
   });
-}
+};
 
-export function useEpisodeSubtitleModification() {
+export const useEpisodeSubtitleModification = () => {
   const client = useQueryClient();
 
   interface Param<T> {
@@ -86,9 +86,9 @@ export function useEpisodeSubtitleModification() {
   });
 
   return { download, remove, upload };
-}
+};
 
-export function useMovieSubtitleModification() {
+export const useMovieSubtitleModification = () => {
   const client = useQueryClient();
 
   interface Param<T> {
@@ -136,30 +136,28 @@ export function useMovieSubtitleModification() {
   });
 
   return { download, remove, upload };
-}
+};
 
-export function useSubtitleInfos(names: string[]) {
-  return useQuery({
+export const useSubtitleInfos = (names: string[]) =>
+  useQuery({
     queryKey: [QueryKeys.Subtitles, QueryKeys.Infos, names],
 
     queryFn: () => api.subtitles.info(names),
   });
-}
 
-export function useSubtitleContents(subtitlePath: string) {
-  return useQuery({
+export const useSubtitleContents = (subtitlePath: string) =>
+  useQuery({
     queryKey: [QueryKeys.Subtitles, subtitlePath],
     queryFn: () => api.subtitles.contents(subtitlePath),
     staleTime: Infinity,
   });
-}
 
-export function useRefTracksByEpisodeId(
+export const useRefTracksByEpisodeId = (
   subtitlesPath: string,
   sonarrEpisodeId: number,
   isEpisode: boolean,
-) {
-  return useQuery({
+) =>
+  useQuery({
     queryKey: [
       QueryKeys.Episodes,
       sonarrEpisodeId,
@@ -170,14 +168,13 @@ export function useRefTracksByEpisodeId(
       api.subtitles.getRefTracksByEpisodeId(subtitlesPath, sonarrEpisodeId),
     enabled: isEpisode,
   });
-}
 
-export function useRefTracksByMovieId(
+export const useRefTracksByMovieId = (
   subtitlesPath: string,
   radarrMovieId: number,
   isMovie: boolean,
-) {
-  return useQuery({
+) =>
+  useQuery({
     queryKey: [
       QueryKeys.Movies,
       radarrMovieId,
@@ -188,4 +185,3 @@ export function useRefTracksByMovieId(
       api.subtitles.getRefTracksByMovieId(subtitlesPath, radarrMovieId),
     enabled: isMovie,
   });
-}

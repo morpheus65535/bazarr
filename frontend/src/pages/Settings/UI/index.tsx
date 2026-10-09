@@ -14,7 +14,7 @@ import {
 
 const SettingsUIView: FunctionComponent = () => {
   return (
-    <Layout name="Interface">
+    <Layout name="UI">
       <Section header="List View">
         <Selector
           label="Page Size"

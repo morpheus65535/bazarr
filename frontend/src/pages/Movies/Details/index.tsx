@@ -1,7 +1,6 @@
 import { FunctionComponent, useCallback, useRef } from "react";
 import { Navigate, useParams } from "react-router";
 import { Container, Group, Menu, Stack } from "@mantine/core";
-import { Dropzone } from "@mantine/dropzone";
 import { useDocumentTitle } from "@mantine/hooks";
 import { showNotification } from "@mantine/notifications";
 import {
@@ -28,7 +27,7 @@ import {
   useMovieModification,
 } from "@/apis/hooks/movies";
 import { useInstanceName } from "@/apis/hooks/site";
-import { Action, DropContent, Toolbox } from "@/components";
+import { Action, Toolbox, UploadDropzone } from "@/components";
 import { QueryOverlay } from "@/components/async";
 import { ItemEditModal } from "@/components/forms/ItemEditForm";
 import { MovieUploadModal } from "@/components/forms/MovieUploadForm";
@@ -59,11 +58,11 @@ const MovieDetailView: FunctionComponent = () => {
     (item: Item.Movie, result: SearchResultType) => {
       const {
         language,
-        hearing_impaired: hi,
+        hearingImpaired: hi,
         forced,
         provider,
         subtitle,
-        original_format: originalFormat,
+        originalFormat,
       } = result;
       const { radarrId } = item;
 
@@ -75,8 +74,7 @@ const MovieDetailView: FunctionComponent = () => {
           forced,
           provider,
           subtitle,
-          // eslint-disable-next-line camelcase
-          original_format: originalFormat,
+          originalFormat,
         },
       });
     },
@@ -119,13 +117,11 @@ const MovieDetailView: FunctionComponent = () => {
   return (
     <Container fluid px={0}>
       <QueryOverlay result={movieQuery}>
-        <Dropzone.FullScreen
+        <UploadDropzone
           openRef={openDropzone}
           active={profile !== undefined}
           onDrop={onDrop}
-        >
-          <DropContent></DropContent>
-        </Dropzone.FullScreen>
+        ></UploadDropzone>
         <Toolbox>
           <Group gap="xs">
             <Toolbox.Button
@@ -135,7 +131,7 @@ const MovieDetailView: FunctionComponent = () => {
                 if (movie) {
                   await action({
                     action: "sync",
-                    radarrid: id,
+                    radarrId: id,
                   });
                 }
               }}
@@ -149,7 +145,7 @@ const MovieDetailView: FunctionComponent = () => {
                 if (movie) {
                   task.create(movie.title, TaskGroup.ScanDisk, action, {
                     action: "scan-disk",
-                    radarrid: id,
+                    radarrId: id,
                   });
                 }
               }}
@@ -164,7 +160,7 @@ const MovieDetailView: FunctionComponent = () => {
                 if (movie) {
                   await action({
                     action: "search-missing",
-                    radarrid: id,
+                    radarrId: id,
                   });
                 }
               }}
@@ -250,11 +246,7 @@ const MovieDetailView: FunctionComponent = () => {
         </Toolbox>
         <Stack>
           <ItemOverview item={movie ?? null} details={[]}></ItemOverview>
-          <Table
-            movie={movie ?? null}
-            profile={profile}
-            disabled={hasTask}
-          ></Table>
+          <Table movie={movie ?? null} disabled={hasTask}></Table>
         </Stack>
       </QueryOverlay>
     </Container>

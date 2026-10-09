@@ -8,7 +8,7 @@ import {
   usePlexWebhookListQuery,
 } from "@/apis/hooks/plex";
 import { useInstanceName } from "@/apis/hooks/site";
-import styles from "@/pages/Settings/Plex/WebhookSelector.module.scss";
+import { Message } from "@/pages/Settings/components";
 
 export type WebhookSelectorProps = {
   label: string;
@@ -25,7 +25,7 @@ const WebhookSelector: FunctionComponent<WebhookSelectorProps> = (props) => {
   // Check if user is authenticated with OAuth
   const { data: authData } = usePlexAuthValidationQuery();
   const isAuthenticated = Boolean(
-    authData?.valid && authData?.auth_method === "oauth",
+    authData?.valid && authData?.authMethod === "oauth",
   );
 
   // Fetch webhooks if authenticated
@@ -51,7 +51,7 @@ const WebhookSelector: FunctionComponent<WebhookSelectorProps> = (props) => {
 
   // Check Plex Pass subscription status for webhooks feature
   const plexPassSubscription = webhooks?.plexPassSubscription;
-  const hasWebhooksFeature = plexPassSubscription?.has_webhooks_feature ?? true;
+  const hasWebhooksFeature = plexPassSubscription?.hasWebhooksFeature ?? true;
 
   // Create select data with Bazarr webhook first if it exists
   const selectData =
@@ -76,14 +76,14 @@ const WebhookSelector: FunctionComponent<WebhookSelectorProps> = (props) => {
       notifications.show({
         title: "Success",
         message: "Plex webhook created successfully",
-        color: "green",
+        color: "success",
       });
       await refetch();
     } catch {
       notifications.show({
         title: "Error",
         message: "Failed to create webhook",
-        color: "red",
+        color: "danger",
       });
     }
   };
@@ -94,7 +94,7 @@ const WebhookSelector: FunctionComponent<WebhookSelectorProps> = (props) => {
       notifications.show({
         title: "Success",
         message: "Webhook deleted successfully",
-        color: "green",
+        color: "success",
       });
       // Clear selection if we deleted the currently selected webhook
       if (webhookUrl === currentValue) {
@@ -105,42 +105,42 @@ const WebhookSelector: FunctionComponent<WebhookSelectorProps> = (props) => {
       notifications.show({
         title: "Error",
         message: "Failed to delete webhook",
-        color: "red",
+        color: "danger",
       });
     }
   };
 
   if (!isAuthenticated) {
     return (
-      <Stack gap="xs" className={styles.webhookSelector}>
-        <Text fw={500} className={styles.labelText}>
+      <Stack gap="xs">
+        <Text fw={500} size="sm">
           {label}
         </Text>
-        <Alert color="brand" variant="light" className={styles.alertMessage}>
-          Enable Plex OAuth above to automatically discover your webhooks.
-        </Alert>
+        <Message>
+          Connect to Plex above to automatically discover your webhooks.
+        </Message>
       </Stack>
     );
   }
 
   if (isLoading) {
     return (
-      <Stack gap="xs" className={styles.webhookSelector}>
-        <Select
-          label={label}
-          placeholder="Loading webhooks..."
-          data={[]}
-          disabled
-          className={styles.loadingField}
-        />
-      </Stack>
+      <Select
+        label={label}
+        placeholder="Loading webhooks..."
+        data={[]}
+        disabled
+      />
     );
   }
 
   if (error) {
     return (
-      <Stack gap="xs" className={styles.webhookSelector}>
-        <Alert color="red" variant="light" className={styles.alertMessage}>
+      <Stack gap="xs">
+        <Text fw={500} size="sm">
+          {label}
+        </Text>
+        <Alert color="danger" variant="light">
           Failed to load webhooks:{" "}
           {(error as Error)?.message || "Unknown error"}
         </Alert>
@@ -150,72 +150,25 @@ const WebhookSelector: FunctionComponent<WebhookSelectorProps> = (props) => {
 
   if (selectData.length === 0) {
     return (
-      <div className={styles.webhookSelector}>
-        <Stack gap="xs">
-          <Group justify="space-between" align="flex-end">
-            <div>
-              <Text fw={500} className={styles.labelText}>
-                {label}
-              </Text>
-              {description && (
-                <Text size="sm" c="dimmed">
-                  {description}
-                </Text>
-              )}
-            </div>
-            <Button
-              onClick={handleCreateWebhook}
-              loading={createMutation.isPending}
-              size="sm"
-              disabled={!hasWebhooksFeature}
-            >
-              Add
-            </Button>
-          </Group>
-          {!hasWebhooksFeature && (
-            <Alert
-              color="brand"
-              variant="light"
-              className={styles.alertMessage}
-            >
-              Webhooks require a Plex Pass subscription.{" "}
-              <a
-                href="https://www.plex.tv/plans/"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Learn more
-              </a>
-            </Alert>
-          )}
-          {hasWebhooksFeature && (
-            <Alert
-              color="brand"
-              variant="light"
-              className={styles.alertMessage}
-            >
-              No webhooks found on your Plex server.
-            </Alert>
-          )}
-        </Stack>
-      </div>
-    );
-  }
-
-  return (
-    <div className={styles.webhookSelector}>
       <Stack gap="xs">
-        <div>
-          <Text fw={500} className={styles.labelText}>
-            {label}
-          </Text>
-          <Text size="sm" c="dimmed">
-            {description ||
-              "Create or remove webhooks in Plex to trigger subtitle searches. In this list you can find your current webhooks."}
-          </Text>
-        </div>
+        <Group justify="space-between" align="flex-end">
+          <Stack gap={2}>
+            <Text fw={500} size="sm">
+              {label}
+            </Text>
+            {description && <Message>{description}</Message>}
+          </Stack>
+          <Button
+            onClick={handleCreateWebhook}
+            loading={createMutation.isPending}
+            size="sm"
+            disabled={!hasWebhooksFeature}
+          >
+            Add
+          </Button>
+        </Group>
         {!hasWebhooksFeature && (
-          <Alert color="brand" variant="light" className={styles.alertMessage}>
+          <Alert color="warning" variant="light">
             Webhooks require a Plex Pass subscription.{" "}
             <a
               href="https://www.plex.tv/plans/"
@@ -226,41 +179,67 @@ const WebhookSelector: FunctionComponent<WebhookSelectorProps> = (props) => {
             </a>
           </Alert>
         )}
-        <Select
-          placeholder="Select webhook..."
-          data={selectData}
-          value={currentValue}
-          onChange={(value) => setSelectedWebhookUrl(value || "")}
-          allowDeselect={false}
-          className={styles.selectField}
-        />
-
-        <Group gap="xs">
-          {!bazarrWebhook && (
-            <Button
-              onClick={handleCreateWebhook}
-              loading={createMutation.isPending}
-              size="sm"
-              disabled={!hasWebhooksFeature}
-            >
-              Add
-            </Button>
-          )}
-
-          {currentValue && (
-            <Button
-              onClick={() => handleDeleteWebhook(currentValue)}
-              loading={deleteMutation.isPending}
-              size="sm"
-              variant="light"
-              color="brand"
-            >
-              Remove
-            </Button>
-          )}
-        </Group>
+        {hasWebhooksFeature && (
+          <Alert color="secondary" variant="light">
+            No webhooks found on your Plex server.
+          </Alert>
+        )}
       </Stack>
-    </div>
+    );
+  }
+
+  return (
+    <Stack gap="xs">
+      {!hasWebhooksFeature && (
+        <Alert color="warning" variant="light">
+          Webhooks require a Plex Pass subscription.{" "}
+          <a
+            href="https://www.plex.tv/plans/"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Learn more
+          </a>
+        </Alert>
+      )}
+      <Select
+        data-testid="webhook-select"
+        label={label}
+        placeholder="Select webhook..."
+        data={selectData}
+        value={currentValue}
+        onChange={(value) => setSelectedWebhookUrl(value || "")}
+        allowDeselect={false}
+      />
+      <Message>
+        {description ||
+          "Create or remove webhooks in Plex to trigger subtitle searches. In this list you can find your current webhooks."}
+      </Message>
+
+      <Group gap="xs">
+        {!bazarrWebhook && (
+          <Button
+            onClick={handleCreateWebhook}
+            loading={createMutation.isPending}
+            size="sm"
+            disabled={!hasWebhooksFeature}
+          >
+            Add
+          </Button>
+        )}
+
+        {currentValue && (
+          <Button
+            onClick={() => handleDeleteWebhook(currentValue)}
+            loading={deleteMutation.isPending}
+            size="sm"
+            color="danger"
+          >
+            Remove
+          </Button>
+        )}
+      </Group>
+    </Stack>
   );
 };
 

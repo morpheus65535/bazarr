@@ -9,7 +9,6 @@ jobs:
       STATUS_WORKFLOW_NAME: "ci.yml"
       UI_DIRECTORY: ./frontend
       ASSET_DIRECTORY: ./__builds__
-      FETCH_DEPTH: 15 # Should be enough
     steps:
       - name: Validate branch
         if: ${{ github.ref != 'refs/heads/development' }}
@@ -18,25 +17,25 @@ jobs:
           exit 1
 
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
         with:
-          fetch-depth: ${{ env.FETCH_DEPTH }}
+          fetch-depth: 0
           ref: development
 
       - name: Setup Git
         run: |
           git config --global user.name "github-actions" &&
-          git fetch --depth ${{ env.FETCH_DEPTH }} --tags
+          git fetch --tags
 
       - name: Cache node_modules
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: "${{ env.UI_DIRECTORY }}/node_modules"
           key: ${{ runner.os }}-modules-${{ hashFiles('**/package-lock.json') }}
           restore-keys: ${{ runner.os }}-modules-
 
       - name: Setup NodeJS
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version-file: "${{ env.UI_DIRECTORY }}/.nvmrc"
 
@@ -51,17 +50,23 @@ jobs:
         run: npm run build
         working-directory: ${{ env.UI_DIRECTORY }}
 
-      - name: Validate CI
-        id: check-ci
-        uses: LASER-Yi/workflow-status@v0.1.0
+      - name: Download outcome artifact from Workflow CI
+        uses: dawidd6/action-download-artifact@v24
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
           workflow: ci.yml
-          event: push
-          branch: development
+          workflow_conclusion: completed
+          name: shared-metadata
+          path: ./upstream-data
+
+      - name: Read the CI output value
+        id: check-ci
+        run: |
+          CONCLUSION=$(cat ./upstream-data/outcome.txt)
+          echo "The value from the last CI run was: $CONCLUSION"
+          echo "CONCLUSION=$CONCLUSION" >> "$GITHUB_OUTPUT"
 
       - name: Create Release (Conditional)
-        if: ${{ steps.check-ci.outputs.conclusion == 'success' }}
+        if: ${{ steps.check-ci.outputs.CONCLUSION == 'success' }}
         run: |
           git config user.name "${{github.actor}}"
           git config user.email "${{github.actor}}@users.noreply.github.com"

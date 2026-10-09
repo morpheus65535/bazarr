@@ -13,13 +13,13 @@ type MutateActionProps<DATA, VAR> = Omit<
   onError?: () => void;
 };
 
-function MutateAction<DATA, VAR>({
+const MutateAction = <DATA, VAR>({
   mutation,
   onSuccess,
   onError,
   args,
   ...props
-}: MutateActionProps<DATA, VAR>) {
+}: MutateActionProps<DATA, VAR>) => {
   const { mutateAsync } = mutation;
 
   const [isLoading, setLoading] = useState(false);
@@ -41,6 +41,6 @@ function MutateAction<DATA, VAR>({
   }, [args, mutateAsync, onError, onSuccess]);
 
   return <Action {...props} loading={isLoading} onClick={onClick}></Action>;
-}
+};
 
 export default MutateAction;

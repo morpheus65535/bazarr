@@ -1,0 +1,18 @@
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: var(--mantine-spacing-md);
+  padding: var(--mantine-spacing-md);
+
+  @include mantine.smaller-than(mantine.$mantine-breakpoint-xs) {
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: var(--mantine-spacing-sm);
+    padding: var(--mantine-spacing-sm);
+  }
+}
+
+.skeleton {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 2 / 3;
+}

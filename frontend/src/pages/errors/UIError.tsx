@@ -23,10 +23,10 @@ interface Props {
 
 const UIError: FunctionComponent<Props> = ({ error }) => {
   const stack = useMemo(() => {
-    let callStack = error.stack ?? "";
-
-    // Remove sensitive information from the stack
-    callStack = callStack.replaceAll(window.location.host, Placeholder);
+    const callStack = (error.stack ?? "").replaceAll(
+      window.location.host,
+      Placeholder,
+    );
 
     return callStack;
   }, [error.stack]);
@@ -47,7 +47,7 @@ const UIError: FunctionComponent<Props> = ({ error }) => {
       </Center>
       <Group justify="center">
         <Anchor href={`${GithubRepoRoot}/issues/new/choose`} target="_blank">
-          <Button color="yellow">Report Issue</Button>
+          <Button color="warning">Report Issue</Button>
         </Anchor>
         <Button onClick={Reload}>Reload Page</Button>
       </Group>

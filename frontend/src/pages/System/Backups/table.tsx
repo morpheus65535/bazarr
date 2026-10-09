@@ -1,9 +1,9 @@
 import { FunctionComponent, useMemo } from "react";
 import { Anchor, Text } from "@mantine/core";
 import { faHistory, faTrash } from "@fortawesome/free-solid-svg-icons";
-import { ColumnDef } from "@tanstack/react-table";
 import { useDeleteBackups, useRestoreBackups } from "@/apis/hooks";
 import { Action } from "@/components";
+import { AppColumnDef as ColumnDef } from "@/components/tables/features";
 import PageTable from "@/components/tables/PageTable";
 import { useModals } from "@/modules/modals";
 import { Environment } from "@/utilities";
@@ -83,7 +83,7 @@ const Table: FunctionComponent<Props> = ({ backups }) => {
                     </Text>
                   ),
                   labels: { confirm: "Restore", cancel: "Cancel" },
-                  confirmProps: { color: "red" },
+                  confirmProps: { color: "danger" },
                   onConfirm: () => restore.mutate(filename),
                 })
               }
@@ -104,7 +104,7 @@ const Table: FunctionComponent<Props> = ({ backups }) => {
           return (
             <Action
               label="Delete"
-              c="red"
+              c="danger"
               onClick={() =>
                 modals.openConfirmModal({
                   title: "Delete Backup",
@@ -114,7 +114,7 @@ const Table: FunctionComponent<Props> = ({ backups }) => {
                     </Text>
                   ),
                   labels: { confirm: "Delete", cancel: "Cancel" },
-                  confirmProps: { color: "red" },
+                  confirmProps: { color: "danger" },
                   onConfirm: () => remove.mutate(filename),
                 })
               }

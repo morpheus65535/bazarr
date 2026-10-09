@@ -2,8 +2,10 @@
 /// <reference types="node" />
 
 import { readFileSync } from "fs";
-import { get } from "lodash";
+import lodash from "lodash";
 import { parse } from "yaml";
+
+const { get } = lodash;
 
 class ConfigReader {
   config: object;

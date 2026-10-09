@@ -1,19 +1,26 @@
 import { FunctionComponent, useCallback, useMemo } from "react";
 import { Badge, Button, Group } from "@mantine/core";
 import { faTrash, faWrench } from "@fortawesome/free-solid-svg-icons";
-import { ColumnDef } from "@tanstack/react-table";
 import { cloneDeep, includes, maxBy } from "lodash";
 import { Action } from "@/components";
 import {
   anyCutoff,
   ProfileEditModal,
 } from "@/components/forms/ProfileEditForm";
+import { AppColumnDef as ColumnDef } from "@/components/tables/features";
 import SimpleTable from "@/components/tables/SimpleTable";
 import { useModals } from "@/modules/modals";
 import { languageProfileKey } from "@/pages/Settings/keys";
-import { useFormActions } from "@/pages/Settings/utilities/FormValues";
+import {
+  HookType,
+  useFormActions,
+} from "@/pages/Settings/utilities/FormValues";
 import { BuildKey, useArrayAction } from "@/utilities";
-import { useLatestEnabledLanguages, useLatestProfiles } from ".";
+import { snakeCaseKeys } from "@/utilities/case";
+import {
+  useLatestEnabledLanguages,
+  useLatestProfiles,
+} from "./useLatestLanguages";
 
 const Table: FunctionComponent = () => {
   const profiles = useLatestProfiles();
@@ -33,7 +40,16 @@ const Table: FunctionComponent = () => {
 
   const submitProfiles = useCallback(
     (list: Language.Profile[]) => {
-      setValue(list, languageProfileKey, (value) => JSON.stringify(value));
+      setValue(list, languageProfileKey, ((value: Language.Profile[]) => {
+        const raw: Language.RawProfile[] = value.map((profile) => ({
+          ...profile,
+          items: profile.items.map(
+            (item) => snakeCaseKeys(item) as unknown as Language.RawProfileItem,
+          ),
+        }));
+
+        return JSON.stringify(raw);
+      }) as HookType);
     },
     [setValue],
   );
@@ -104,7 +120,7 @@ const Table: FunctionComponent = () => {
             <>
               {mustContain.map((v, idx) => {
                 return (
-                  <Badge key={BuildKey(idx, v)} color="gray">
+                  <Badge key={BuildKey(idx, v)} color="secondary">
                     {v}
                   </Badge>
                 );
@@ -128,7 +144,7 @@ const Table: FunctionComponent = () => {
             <>
               {mustNotContain.map((v, idx) => {
                 return (
-                  <Badge key={BuildKey(idx, v)} color="gray">
+                  <Badge key={BuildKey(idx, v)} color="secondary">
                     {v}
                   </Badge>
                 );
@@ -146,7 +162,7 @@ const Table: FunctionComponent = () => {
               <Action
                 label="Edit Profile"
                 icon={faWrench}
-                c="gray"
+                c="secondary"
                 onClick={() => {
                   const lastId = maxBy(profile.items, "id")?.id || 0;
 
@@ -194,7 +210,7 @@ const Table: FunctionComponent = () => {
               <Action
                 label="Remove"
                 icon={faTrash}
-                c="red"
+                c="danger"
                 onClick={() => action.remove(row.index)}
               ></Action>
             </Group>
@@ -245,18 +261,21 @@ interface ItemProps {
 
 const ItemBadge: FunctionComponent<ItemProps> = ({ cutoff, item }) => {
   const text = useMemo(() => {
-    let result = item.language;
-    if (item.hi === "True") {
-      result += ":HI";
-    } else if (item.forced === "True") {
-      result += ":Forced";
-    }
+    const result =
+      item.language +
+      (item.hi === "True"
+        ? ":HI"
+        : item.forced === "True"
+          ? ":Forced"
+          : item.hi === "Excluded"
+            ? ":Non-HI"
+            : "");
     return result;
   }, [item.hi, item.forced, item.language]);
   return (
     <Badge
       title={cutoff ? "Ignore others if this one is available" : undefined}
-      color={cutoff ? "primary" : "secondary"}
+      color={cutoff ? "brand" : "secondary"}
     >
       {text}
     </Badge>
