@@ -209,6 +209,7 @@ def call_external_webhook(subtitle_path, media_path, language, media_type, actio
 
     try:
         # Use parent directory instead of specific file for better grouping
+        media_path = "" if media_path is None else media_path
         parent_dir = os.path.dirname(media_path)
         
         # Get webhook configuration
@@ -220,6 +221,11 @@ def call_external_webhook(subtitle_path, media_path, language, media_type, actio
             return
 
         # Prepare query parameters
+        # Note: 'path' is included even though it's redundant with 'media_path' for backward compatibility with Autopulse
+        action_type   = "" if action_type is None else action_type
+        language      = "" if language is None else language
+        media_type    = "" if media_type is None else media_type
+        subtitle_path = "" if subtitle_path is None else subtitle_path
         params = {'path': parent_dir, 'action_type': action_type, 'language': language, 'media_type': media_type, 'subtitle_path': subtitle_path, 'media_path': media_path}
         full_url = f"{webhook_url}?{urlencode(params)}"
         
