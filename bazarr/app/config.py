@@ -209,6 +209,13 @@ validators = [
     Validator('translator.translator_type', must_exist=True, default='google_translate', is_type_of=str, cast=str),
     Validator('translator.lingarr_url', must_exist=True, default='http://lingarr:9876', is_type_of=str),
     Validator('translator.lingarr_token', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('translator.openai_base_url', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('translator.openai_model', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('translator.openai_api_key', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('translator.openai_batch_size', must_exist=True, default=12, is_type_of=int, gte=1),
+    Validator('translator.openai_timeout', must_exist=True, default=180, is_type_of=int, gte=1),
+    Validator('translator.translate_fallback_enabled', must_exist=True, default=False, is_type_of=bool),
+    Validator('translator.translate_fallback_source_language', must_exist=True, default='en', is_type_of=str, cast=str),
 
     # sonarr section
     Validator('sonarr.ip', must_exist=True, default='127.0.0.1', is_type_of=str),

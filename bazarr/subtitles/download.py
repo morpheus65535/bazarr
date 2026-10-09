@@ -2,6 +2,7 @@
 # fmt: off
 
 import os
+import subprocess
 import sys
 import logging
 import subliminal
@@ -23,6 +24,42 @@ from app.get_providers import blacklist_subtitle
 from .pool import update_pools, _get_pool, _get_embedded_pool
 from .utils import get_video, _get_lang_obj, _get_scores, _set_forced_providers
 from .processing import process_subtitle
+from .tools.translate.main import translate_subtitles_file
+
+
+def _extract_embedded_fallback_source(path, source_language):
+    """Extract the embedded source-language text track when no provider has that file.
+
+    Returns a subtitle object the existing fallback translates, or None. Never changes the video.
+    """
+    from utilities.video_analyzer import embedded_subs_reader
+
+    source_alpha3 = alpha3_from_alpha2(source_language)
+    tracks = embedded_subs_reader(path, os.path.getsize(path), use_cache=False)
+    track = next((item for item in tracks if item[0] == source_alpha3 and item[2]), None)
+    if track is None:
+        logging.info(f'BAZARR no embedded {source_language} text subtitle in {path}')
+        return None
+    track_id = track[1]
+    extracted = os.path.splitext(path)[0] + f'.{source_language}.extracted.srt'
+    completed = subprocess.run(
+        ['ffmpeg', '-nostdin', '-v', 'error', '-i', path, '-map', f'0:{track_id}',
+         '-c:s', 'srt', '-y', extracted],
+        capture_output=True, text=True, timeout=300)
+    if completed.returncode != 0 or not os.path.exists(extracted) or os.path.getsize(extracted) == 0:
+        logging.error(f'BAZARR failed to extract embedded {source_language} subtitle from {path}: '
+                      f'{completed.stderr.strip()}')
+        return None
+
+    class EmbeddedFallbackSubtitle:
+        def __init__(self):
+            self.language = Language(source_alpha3)
+            self.storage_path = extracted
+            self.matches = set()
+            self.mods = []
+            self.format = 'srt'
+
+    return EmbeddedFallbackSubtitle()
 
 
 @update_pools
@@ -117,6 +154,29 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
                                                                            hearing_impaired=hi_mode,
                                                                            use_original_format=original_format in (1, "1", "True", True),
                                                                            fallback_allowed=fallback_allowed)
+
+                        if (not (downloaded_subtitles and any(downloaded_subtitles.values())) and
+                                settings.translator.translate_fallback_enabled):
+                            downloaded_subtitles = download_best_subtitles(
+                                videos={video},
+                                languages={Language(alpha3_from_alpha2(settings.translator.translate_fallback_source_language))},
+                                pool_instance=pool,
+                                min_score=int(min_score),
+                                hearing_impaired=hi_mode,
+                                use_original_format=original_format in (1, "1", "True", True),
+                                fallback_allowed=fallback_allowed)
+                            if downloaded_subtitles and any(downloaded_subtitles.values()):
+                                logging.info(f'BAZARR translating fallback subtitle '
+                                             f'{settings.translator.translate_fallback_source_language} to '
+                                             f'{alpha2_from_alpha3(language.alpha3)}')
+                            else:
+                                embedded_source = _extract_embedded_fallback_source(
+                                    path, settings.translator.translate_fallback_source_language)
+                                if embedded_source:
+                                    downloaded_subtitles = {video: [embedded_source]}
+                                    logging.info(f'BAZARR translating embedded fallback subtitle '
+                                                 f'{settings.translator.translate_fallback_source_language} to '
+                                                 f'{alpha2_from_alpha3(language.alpha3)}')
                     except Exception as e:
                         logging.exception(f'BAZARR Error downloading Subtitles for this file {path}: {str(e)}')
                         return None
@@ -164,6 +224,39 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
                         else:
                             saved_any = True
                             for subtitle in saved_subtitles:
+                                if (settings.translator.translate_fallback_enabled and
+                                        alpha2_from_alpha3(subtitle.language.alpha3) ==
+                                        settings.translator.translate_fallback_source_language):
+                                    try:
+                                        fallback_source = subtitle.storage_path
+                                        translated_path = translate_subtitles_file(
+                                            video_path=path,
+                                            source_srt_file=fallback_source,
+                                            from_lang=settings.translator.translate_fallback_source_language,
+                                            to_lang=alpha2_from_alpha3(language.alpha3),
+                                            forced=language.forced,
+                                            hi=language.hi,
+                                            media_type='episode' if media_type == 'series' else 'movie',
+                                            sonarr_series_id=getattr(video, 'sonarrSeriesId', None),
+                                            sonarr_episode_id=getattr(video, 'sonarrEpisodeId', None),
+                                            radarr_id=getattr(video, 'radarrId', None),
+                                            metadata=None,
+                                            original_format=original_format in (1, "1", "True", True),
+                                            job_id=job_id)
+                                        from subtitles.indexer.series import store_subtitles
+                                        from subtitles.indexer.movies import store_subtitles_movie
+                                        if translated_path:
+                                            if media_type == 'series':
+                                                store_subtitles(getattr(video, 'sonarrEpisodeId', None))
+                                            else:
+                                                store_subtitles_movie(getattr(video, 'radarrId', None))
+                                    except Exception:
+                                        logging.exception('BAZARR failed translating fallback subtitle; '
+                                                          'keeping downloaded source subtitle')
+                                        continue
+                                    # The translated sidecar has the target-language filename and is indexed
+                                    # on the next scan. Never delete or overwrite the downloaded source.
+                                    continue
                                 if "hash" in subtitle.matches:
                                     # make matches set cleaner for history purpose when hash matches
                                     subtitle.matches = {match for match in subtitle.matches
