@@ -8,6 +8,7 @@ import pytest
 
 os.environ.setdefault("BAZARR_VERSION", "v0.0.0-test")
 os.environ.setdefault("SZ_USER_AGENT", "pytest")
+os.environ["NO_CLI"] = "true"
 
 # Reuse Bazarr's normal import bootstrap instead of maintaining a test-only
 # sys.path setup in parallel.
@@ -19,6 +20,7 @@ from sqlalchemy.orm import Session
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
+pytest_plugins = ("tests.bazarr.wanted_search_fixtures",)
 
 
 

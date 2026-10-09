@@ -1,7 +1,6 @@
 # coding=utf-8
 # fmt: off
 
-import ast
 import logging
 import operator
 
@@ -12,13 +11,15 @@ from subtitles.indexer.movies import store_subtitles_movie, list_missing_subtitl
 from radarr.history import history_log_movie
 from app.notifier import send_notifications_movie
 from app.get_providers import get_providers
-from app.database import (get_exclusion_clause, get_audio_profile_languages, TableMovies, database, update, select,
+from app.database import (get_exclusion_clause, get_audio_profile_languages, TableMovies, database, select,
                           get_subtitles)
 from app.event_handler import event_stream
 from app.jobs_queue import jobs_queue, JobCanceled
 from app.config import settings
 
-from ..adaptive_searching import is_search_active, updateFailedAttempts
+from ..adaptive_searching import is_search_active
+from ..serialization import parse_missing_subtitles, missing_subtitle_to_language_tuple
+from ..wanted_state import get_failed_attempt_pairs, record_failed_subtitle_attempts
 from ..download import generate_subtitles
 
 
@@ -31,12 +32,11 @@ def _wanted_movie(movie, providers_list, job_id=None):
 
     languages = []
     languages_to_stamp = []
+    attempts = get_failed_attempt_pairs('movie', movie.radarrId)
 
-    for language in ast.literal_eval(movie.missing_subtitles):
-        if is_search_active(desired_language=language, attempt_string=movie.failedAttempts):
-            hi_ = "True" if language.endswith(':hi') else "False"
-            forced_ = "True" if language.endswith(':forced') else "False"
-            languages.append((language.split(":")[0], hi_, forced_))
+    for language in parse_missing_subtitles(movie.missing_subtitles):
+        if is_search_active(desired_language=language, attempt_string=attempts):
+            languages.append(missing_subtitle_to_language_tuple(language))
             languages_to_stamp.append(language)
 
         else:
@@ -63,14 +63,7 @@ def _wanted_movie(movie, providers_list, job_id=None):
             event_stream(type='movie-wanted', action='delete', payload=movie.radarrId)
 
     if not found_any and providers_list:
-        for language in languages_to_stamp:
-            updated = updateFailedAttempts(
-                desired_language=language,
-                attempt_string=movie.failedAttempts)
-            database.execute(
-                update(TableMovies)
-                .values(failedAttempts=updated)
-                .where(TableMovies.radarrId == movie.radarrId))
+        record_failed_subtitle_attempts('movie', movie.radarrId, languages_to_stamp)
 
 
 def wanted_download_subtitles_movie(radarr_id, job_id=None):
@@ -79,7 +72,6 @@ def wanted_download_subtitles_movie(radarr_id, job_id=None):
                   TableMovies.radarrId,
                   TableMovies.audio_language,
                   TableMovies.sceneName,
-                  TableMovies.failedAttempts,
                   TableMovies.title,
                   TableMovies.profileId) \
         .where(TableMovies.radarrId == radarr_id)

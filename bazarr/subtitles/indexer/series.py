@@ -19,6 +19,7 @@ from utilities.video_analyzer import embedded_subs_reader
 from app.event_handler import event_stream
 from subtitles.indexer.utils import guess_external_subtitles, get_external_subtitles_path
 from subtitles.pool import get_language_equals
+from subtitles.wanted_state import store_missing_subtitles
 from app.jobs_queue import jobs_queue, JobCanceled
 
 gc.enable()
@@ -399,10 +400,10 @@ def list_missing_subtitles(no=None, epno=None, *args, **kwargs):  # job_id might
 
                 missing_subtitles_text = str(missing_subtitles_output_list)
 
-        database.execute(
-            update(TableEpisodes)
-            .values(missing_subtitles=missing_subtitles_text)
-            .where(TableEpisodes.sonarrEpisodeId == episode_subtitles.sonarrEpisodeId))
+        store_missing_subtitles(
+            TableEpisodes.__table__, 'sonarrEpisodeId', 'series', episode_subtitles.sonarrEpisodeId,
+            missing_subtitles_text,
+        )
 
         event_stream(type='episode', payload=episode_subtitles.sonarrEpisodeId)
         event_stream(type='episode-wanted', action='update', payload=episode_subtitles.sonarrEpisodeId)
