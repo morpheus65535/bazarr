@@ -740,6 +740,32 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
   },
   { key: "tvsubtitles", name: "TVSubtitles" },
   {
+    key: "unit3d",
+    name: "UNIT3D",
+    description:
+      "Subtitles for movies and episodes from a UNIT3D private tracker. Requires a UNIT3D version that provides the subtitle API.",
+    message:
+      "Use the API key shown on your UNIT3D account's API Keys settings page. Only subtitles approved by the tracker and available to your account are searched.",
+    inputs: [
+      {
+        type: "text",
+        key: "url",
+        name: "UNIT3D URL, e.g. https://tracker.example.com",
+      },
+      {
+        type: "password",
+        key: "api_key",
+        name: "API Key",
+      },
+      {
+        type: "switch",
+        key: "match_files",
+        name: "Match the exact release (sends the video file name and size to UNIT3D)",
+        defaultValue: true,
+      },
+    ],
+  },
+  {
     key: "whisperai",
     name: "Whisper",
     description: "AI Generated Subtitles powered by Whisper",
