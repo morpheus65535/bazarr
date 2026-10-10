@@ -613,7 +613,10 @@ def get_exclusion_clause(exclusion_type):
     elif exclusion_type == 'sports':
         tagsList = settings.sportarr.excluded_tags
         for tag in tagsList:
-            where_clause.append(~(TableSportsLeagues.tags.contains(f"\'{tag}\'")))
+            tag_label = repr(tag)
+            position = func.strpos(TableSportsLeagues.tags, tag_label) if postgresql else func.instr(
+                TableSportsLeagues.tags, tag_label)
+            where_clause.append(position == 0)
     else:
         tagsList = settings.radarr.excluded_tags
         for tag in tagsList:

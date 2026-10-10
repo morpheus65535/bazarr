@@ -1,6 +1,6 @@
 import { FunctionComponent } from "react";
 import { Text as MantineText } from "@mantine/core";
-import { useLanguages } from "@/apis/hooks";
+import { useLanguages, useSystemSettings } from "@/apis/hooks";
 import {
   Check,
   Chips,
@@ -22,6 +22,7 @@ import Table from "./table";
 
 const SettingsLanguagesView: FunctionComponent = () => {
   const { data: languages } = useLanguages();
+  const { data: settings } = useSystemSettings();
   const { data: undAudioLanguages } = useEnabledLanguages();
   const { data: undEmbeddedSubtitlesLanguages } = useEnabledLanguages();
   return (
@@ -169,6 +170,27 @@ const SettingsLanguagesView: FunctionComponent = () => {
             settingKey="settings-general-movie_default_profile"
           ></ProfileSelector>
         </CollapseBox>
+        {settings?.general.use_sportarr && (
+          <>
+            <Check
+              label="Leagues"
+              settingKey="settings-general-league_default_enabled"
+            ></Check>
+            <Message>
+              Applies to leagues added after this option is enabled.
+            </Message>
+            <CollapseBox
+              indent
+              settingKey="settings-general-league_default_enabled"
+            >
+              <ProfileSelector
+                label="Profile"
+                placeholder="Select a profile"
+                settingKey="settings-general-league_default_profile"
+              ></ProfileSelector>
+            </CollapseBox>
+          </>
+        )}
       </Section>
     </Layout>
   );

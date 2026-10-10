@@ -156,7 +156,7 @@ def update_one_league(league_id, action, league_data=None, tagsDict=None, langua
             delete(TableSportsLeagues)
             .where(TableSportsLeagues.sportarrLeagueId == int(league_id)))
 
-        event_stream(type='leagues', action='delete', payload=int(league_id))
+        event_stream(type='sports-league', action='delete', payload=int(league_id))
         return
 
     if settings.general.league_default_enabled is True:
@@ -206,7 +206,7 @@ def update_one_league(league_id, action, league_data=None, tagsDict=None, langua
             logging.error(f"BAZARR cannot update league {league['title']} because of {e}")
             return
 
-        event_stream(type='leagues', payload=int(league_id))
+        event_stream(type='sports-league', payload=int(league_id))
         logging.debug(f"BAZARR updated this league into the database: {league['path']}")
 
     elif action == 'updated' and not existing_league:
@@ -224,5 +224,5 @@ def update_one_league(league_id, action, league_data=None, tagsDict=None, langua
             logging.error(f"BAZARR cannot insert league {league['title']} because of {e}")
             return
 
-        event_stream(type='leagues', action='update', payload=int(league_id))
+        event_stream(type='sports-league', action='update', payload=int(league_id))
         logging.debug(f"BAZARR inserted this league into the database: {league['path']}")

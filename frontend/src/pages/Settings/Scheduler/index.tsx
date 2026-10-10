@@ -1,4 +1,5 @@
 import { FunctionComponent, useMemo } from "react";
+import { useSystemSettings } from "@/apis/hooks/system";
 import { SelectorOption } from "@/components";
 import {
   Check,
@@ -18,6 +19,7 @@ import {
 } from "./options";
 
 const SettingsSchedulerView: FunctionComponent = () => {
+  const { data: settings } = useSystemSettings();
   const timeOptions = useMemo(() => {
     return Array(24)
       .fill(null)
@@ -29,7 +31,7 @@ const SettingsSchedulerView: FunctionComponent = () => {
 
   return (
     <Layout name="Scheduler">
-      <Section header="Sonarr/Radarr Sync">
+      <Section header="Media Sync">
         <Selector
           label="Sync with Sonarr"
           options={seriesSyncOptions}
@@ -84,6 +86,13 @@ const SettingsSchedulerView: FunctionComponent = () => {
             monitored status back on in Radarr and Bazarr will sync any changes.
           </Message>
         </CollapseBox>
+        {settings?.general.use_sportarr && (
+          <Selector
+            label="Sync with Sportarr"
+            options={seriesSyncOptions}
+            settingKey="settings-sportarr-leagues_sync"
+          ></Selector>
+        )}
       </Section>
       <Section header="Disk Indexing">
         <Selector
@@ -158,6 +167,35 @@ const SettingsSchedulerView: FunctionComponent = () => {
           If disabled, Bazarr will use embedded subtitles parser to index movies
           file properties on each run. This will result in higher disk I/O.
         </Message>
+        {settings?.general.use_sportarr && (
+          <>
+            <Selector
+              label="Update All Sports Subtitles from Disk"
+              settingKey="settings-sportarr-full_update"
+              options={diskUpdateOptions}
+            ></Selector>
+            <CollapseBox
+              settingKey="settings-sportarr-full_update"
+              on={(value) => value === "Weekly"}
+            >
+              <Selector
+                label="Day of Week"
+                settingKey="settings-sportarr-full_update_day"
+                options={dayOptions}
+              ></Selector>
+            </CollapseBox>
+            <CollapseBox
+              settingKey="settings-sportarr-full_update"
+              on={(value) => value === "Daily" || value === "Weekly"}
+            >
+              <Selector
+                label="Time of Day"
+                settingKey="settings-sportarr-full_update_hour"
+                options={timeOptions}
+              ></Selector>
+            </CollapseBox>
+          </>
+        )}
       </Section>
       <Section header="Search and Upgrade Subtitles">
         <Selector

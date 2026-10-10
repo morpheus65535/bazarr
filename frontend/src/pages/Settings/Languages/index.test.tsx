@@ -43,8 +43,11 @@ const baseSettings = {
     remove_profile_tags: [],
     serie_default_enabled: false,
     movie_default_enabled: false,
+    league_default_enabled: false,
+    use_sportarr: false,
     serie_default_profile: null,
     movie_default_profile: null,
+    league_default_profile: null,
     language_equals: [] as string[],
   },
   languages: {
@@ -218,6 +221,37 @@ describe("SettingsLanguagesView", () => {
     });
 
     expect(profileSelectors).toHaveLength(2);
+  });
+
+  it("should save a default language profile for new Sportarr leagues", async () => {
+    const mutate = vitest.fn();
+
+    renderPage(
+      {
+        languages: baseLanguages,
+        profiles: baseProfiles,
+        settings: {
+          general: {
+            ...baseSettings.general,
+            use_sportarr: true,
+            league_default_enabled: true,
+          },
+        },
+      },
+      mutate,
+    );
+
+    expect(screen.getByText("Leagues")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("combobox", { name: "Profile" }));
+    fireEvent.click(
+      screen.getByRole("option", { hidden: true, name: "My Profile" }),
+    );
+    await userEvent.click(screen.getByRole("button", { name: /Save/ }));
+
+    expect(
+      mutate.mock.calls[0][0]["settings-general-league_default_profile"],
+    ).toBe(1);
   });
 
   it("should disable adding profiles when no languages are enabled", () => {

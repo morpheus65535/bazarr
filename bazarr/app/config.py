@@ -55,6 +55,10 @@ def validate_tags(tags):
     return all(re.match( r'^[a-z0-9_-]+$', item) for item in tags)
 
 
+def validate_sportarr_tags(tags):
+    return all(isinstance(tag, str) and tag and tag == tag.strip() for tag in tags)
+
+
 ONE_HUNDRED_YEARS_IN_MINUTES = 52560000
 ONE_HUNDRED_YEARS_IN_HOURS = 876000
 
@@ -253,7 +257,7 @@ validators = [
     Validator('sportarr.only_monitored', must_exist=True, default=False, is_type_of=bool),
     Validator('sportarr.leagues_sync', must_exist=True, default=60, is_type_of=int,
               is_in=[15, 60, 180, 360, 720, 1440, 10080, ONE_HUNDRED_YEARS_IN_MINUTES]),
-    Validator('sportarr.excluded_tags', must_exist=True, default=[], is_type_of=list, condition=validate_tags),
+    Validator('sportarr.excluded_tags', must_exist=True, default=[], is_type_of=list, condition=validate_sportarr_tags),
     # Sports is the closest thing a league has to a series type, so this is the
     # sports equivalent of excluded_series_types.
     Validator('sportarr.excluded_sports', must_exist=True, default=[], is_type_of=list),
@@ -628,6 +632,7 @@ if settings.radarr.movies_sync < 15:
 settings.general.base_url = base_url_slash_cleaner(uri=settings.general.base_url)
 settings.sonarr.base_url = base_url_slash_cleaner(uri=settings.sonarr.base_url)
 settings.radarr.base_url = base_url_slash_cleaner(uri=settings.radarr.base_url)
+settings.sportarr.base_url = base_url_slash_cleaner(uri=settings.sportarr.base_url)
 
 # increase delay between searches to reduce impact on providers
 if settings.general.wanted_search_frequency == 3:
@@ -771,7 +776,8 @@ def save_settings(settings_items):
         if key == 'settings-general-default_und_embedded_subtitles_lang':
             undefined_subtitles_track_default_changed = True
 
-        if key in ['settings-general-base_url', 'settings-sonarr-base_url', 'settings-radarr-base_url']:
+        if key in ['settings-general-base_url', 'settings-sonarr-base_url', 'settings-radarr-base_url',
+                   'settings-sportarr-base_url']:
             value = base_url_slash_cleaner(value)
 
         if key == 'settings-general-instance_name' and value == '':

@@ -28,7 +28,7 @@ const extractPath = (raw: string) => {
 };
 
 export type FileBrowserProps = Omit<AutocompleteProps, "data"> & {
-  type: "sonarr" | "radarr" | "bazarr";
+  type: "sonarr" | "radarr" | "sportarr" | "bazarr";
 };
 
 type FileTreeItem = {

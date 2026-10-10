@@ -10,18 +10,22 @@ import {
   moviesEnabledKey,
   pathMappingsKey,
   pathMappingsMovieKey,
+  pathMappingsSportsKey,
   seriesEnabledKey,
+  sportsEnabledKey,
 } from "@/pages/Settings/keys";
 import { useFormActions } from "@/pages/Settings/utilities/FormValues";
 import { useSettingValue } from "@/pages/Settings/utilities/hooks";
 import { useArrayAction } from "@/utilities";
 import { Message } from "./Message";
 
-type SupportType = "sonarr" | "radarr";
+type SupportType = "sonarr" | "radarr" | "sportarr";
 
 const getSupportKey = (type: SupportType) => {
   if (type === "sonarr") {
     return pathMappingsKey;
+  } else if (type === "sportarr") {
+    return pathMappingsSportsKey;
   } else {
     return pathMappingsMovieKey;
   }
@@ -30,6 +34,8 @@ const getSupportKey = (type: SupportType) => {
 const getEnabledKey = (type: SupportType) => {
   if (type === "sonarr") {
     return seriesEnabledKey;
+  } else if (type === "sportarr") {
+    return sportsEnabledKey;
   } else {
     return moviesEnabledKey;
   }
