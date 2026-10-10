@@ -18,6 +18,7 @@ from app.get_providers import get_providers
 from app.notifier import send_notifications, send_notifications_movie
 from radarr.history import history_log_movie
 from sonarr.history import history_log
+from subliminal_patch.score import MAX_SCORES
 from subtitles.indexer.movies import store_subtitles_movie
 from subtitles.indexer.series import store_subtitles
 from utilities.path_mappings import path_mappings
@@ -58,6 +59,7 @@ def upgrade_episodes_subtitles(job_id=None, wait_for_completion=False):
         'video_path': x.video_path,
         'sceneName': x.sceneName,
         'score': x.score,
+        'score_out_of': x.score_out_of,
         'sonarrEpisodeId': x.sonarrEpisodeId,
         'sonarrSeriesId': x.sonarrSeriesId,
         'subtitles_path': x.subtitles_path,
@@ -75,6 +77,7 @@ def upgrade_episodes_subtitles(job_id=None, wait_for_completion=False):
                TableHistory.video_path,
                TableEpisodes.sceneName,
                TableHistory.score,
+               TableHistory.score_out_of,
                TableHistory.sonarrEpisodeId,
                TableHistory.sonarrSeriesId,
                TableHistory.subtitles_path,
@@ -134,6 +137,11 @@ def upgrade_episodes_subtitles(job_id=None, wait_for_completion=False):
         else:
             audio_language = 'None'
 
+        minimum_score = max(
+            int(episode['score']),
+            int(round(settings.general.minimum_score * (episode['score_out_of'] or MAX_SCORES['episode']) / 100, 0))
+        )
+
         result = list(generate_subtitles(path_mappings.path_replace(episode['video_path']),
                                          [(language, is_hi, is_forced)],
                                          audio_language,
@@ -141,7 +149,7 @@ def upgrade_episodes_subtitles(job_id=None, wait_for_completion=False):
                                          episode['seriesTitle'],
                                          'series',
                                          episode['profileId'],
-                                         forced_minimum_score=int(episode['score']) + 1,
+                                         forced_minimum_score=minimum_score,
                                          is_upgrade=True,
                                          previous_subtitles_to_delete=path_mappings.path_replace(
                                              episode['subtitles_path']),
@@ -175,6 +183,7 @@ def upgrade_movies_subtitles(job_id=None, wait_for_completion=False):
         'video_path': x.video_path,
         'sceneName': x.sceneName,
         'score': x.score,
+        'score_out_of': x.score_out_of,
         'radarrId': x.radarrId,
         'path': x.path,
         'profileId': x.profileId,
@@ -188,6 +197,7 @@ def upgrade_movies_subtitles(job_id=None, wait_for_completion=False):
                TableHistoryMovie.video_path,
                TableMovies.sceneName,
                TableHistoryMovie.score,
+               TableHistoryMovie.score_out_of,
                TableHistoryMovie.radarrId,
                TableHistoryMovie.subtitles_path,
                TableMovies.path,
@@ -243,6 +253,11 @@ def upgrade_movies_subtitles(job_id=None, wait_for_completion=False):
         else:
             audio_language = 'None'
 
+        minimum_score = max(
+            int(movie['score']),
+            int(round(settings.general.minimum_score_movie * (movie['score_out_of'] or MAX_SCORES['movie']) / 100, 0))
+        )
+
         result = list(generate_subtitles(path_mappings.path_replace_movie(movie['video_path']),
                                          [(language, is_hi, is_forced)],
                                          audio_language,
@@ -250,7 +265,7 @@ def upgrade_movies_subtitles(job_id=None, wait_for_completion=False):
                                          movie['title'],
                                          'movie',
                                          movie['profileId'],
-                                         forced_minimum_score=int(movie['score']) + 1,
+                                         forced_minimum_score=minimum_score,
                                          is_upgrade=True,
                                          previous_subtitles_to_delete=path_mappings.path_replace_movie(
                                              movie['subtitles_path']),
