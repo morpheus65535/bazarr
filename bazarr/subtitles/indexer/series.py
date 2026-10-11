@@ -321,6 +321,11 @@ def list_missing_subtitles(no=None, epno=None, *args, **kwargs):  # job_id might
                                                            'forced': 'True' if lang_obj.forced else 'False',
                                                            'hi': 'True' if lang_obj.hi else 'False'})
 
+            # languages with a non-HI item in the profile. Built from every item, not one value per language,
+            # so a normal item and a non-HI item for the same language don't overwrite each other
+            non_hi_languages = {x['language'] for x in desired_subtitles_temp['items']
+                                if x['forced'] == 'False' and x['hi'] == HI_EXCLUDED} if desired_subtitles_temp else set()
+
             # check if cutoff is reached and skip any further check
             cutoff_met = False
             cutoff_temp_list = get_profile_cutoff(profile_id=episode_subtitles.profileId)
@@ -342,7 +347,8 @@ def list_missing_subtitles(no=None, epno=None, *args, **kwargs):  # job_id might
                     elif cutoff_language in expanded_actual_subtitles_list:
                         # Check against expanded actual subtitles (includes language equals)
                         cutoff_met = True
-                    elif (cutoff_temp['hi'] == 'False' and cutoff_language and
+                    elif (cutoff_temp['hi'] == 'False' and cutoff_temp['forced'] == 'False' and cutoff_language and
+                          cutoff_language['language'] not in non_hi_languages and
                           {'language': cutoff_language['language'],
                            'forced': 'False',
                            'hi': 'True'} in actual_subtitles_list):
@@ -367,10 +373,8 @@ def list_missing_subtitles(no=None, epno=None, *args, **kwargs):  # job_id might
                     if item not in actual_subtitles_list and item not in expanded_actual_subtitles_list:
                         missing_subtitles_list.append(item)
 
-                # get a dictionary of hi setting by language
-                hi_setting_by_language = {x['language']: x['hi'] for x in desired_subtitles_temp['items'] if x['forced'] == 'False'} if desired_subtitles_temp else {}
                 for item in actual_subtitles_list:
-                    if item['hi'] == 'True' and hi_setting_by_language.get(item['language']) != HI_EXCLUDED:
+                    if item['hi'] == 'True' and item['forced'] == 'False' and item['language'] not in non_hi_languages:
                         # remove missing that have hi subtitles for this language in existing (unless the language is set to exclude HI)
                         try:
                             missing_subtitles_list.remove({'language': item['language'],
@@ -378,7 +382,7 @@ def list_missing_subtitles(no=None, epno=None, *args, **kwargs):  # job_id might
                                                            'hi': 'False'})
                         except ValueError:
                             pass
-                    elif item['hi'] == 'False' and hi_setting_by_language.get(item['language']) == HI_EXCLUDED:
+                    elif item['hi'] == 'False' and item['forced'] == 'False' and item['language'] in non_hi_languages:
                         # remove explicitely excluded requested hi subtitles and existing hi subtitles
                         try:
                             missing_subtitles_list.remove({'language': item['language'],
