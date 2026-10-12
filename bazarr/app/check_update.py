@@ -106,7 +106,7 @@ def check_if_new_update():
             except ValueError:
                 new_version = True
             else:
-                new_version = True if semver.compare(release['name'].lstrip('v'), os.environ["BAZARR_VERSION"]) > 0 \
+                new_version = True if semver.Version.parse(release['name'].lstrip('v')).compare(os.environ["BAZARR_VERSION"]) > 0 \
                     else False
 
             # skip update process if latest release is v0.9.1.1 which is the latest pre-semver compatible release
