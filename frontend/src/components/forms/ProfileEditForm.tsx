@@ -401,6 +401,16 @@ const ProfileEditForm: FunctionComponent<Props> = ({
               <Text size="sm">
                 Download subtitle file without format conversion
               </Text>
+              <Switch
+                label="Auto Translate"
+                checked={form.values.autoTranslate ?? false}
+                {...form.getInputProps("autoTranslate")}
+              ></Switch>
+              <Text size="sm">
+                When no subtitles can be downloaded for a language of this
+                profile, translate an existing one (external or extracted from
+                the video) using the configured translator
+              </Text>
             </Stack>
           </Accordion.Item>
         </Accordion>

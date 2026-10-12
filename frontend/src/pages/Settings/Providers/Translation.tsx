@@ -1,4 +1,5 @@
 import { FunctionComponent } from "react";
+import { Text as MantineText } from "@mantine/core";
 import {
   Check,
   Chips,
@@ -85,6 +86,23 @@ const SettingsProvidersTranslationView: FunctionComponent = () => {
           label="Add translation info at the beginning"
           settingKey="settings-translator-translator_info"
         ></Check>
+        <Chips
+          label="Preferred auto-translation source languages"
+          settingKey="settings-translator-auto_translate_from"
+        ></Chips>
+        <Message>
+          Used when a languages profile has <em>Auto Translate</em> enabled and
+          a search finds no downloadable subtitles for one of its languages:
+          Bazarr translates an existing subtitle into it using the translator
+          above. Sources are picked from the languages listed here first (in
+          order, as 2-letter codes like{" "}
+          <MantineText fw={700} span>
+            en
+          </MantineText>
+          ), then from the media's audio languages, then from any other
+          available subtitle: external files first, embedded tracks (extracted
+          automatically) second.
+        </Message>
       </Section>
     </Layout>
   );
