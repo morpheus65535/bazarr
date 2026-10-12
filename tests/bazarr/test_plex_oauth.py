@@ -101,7 +101,9 @@ def test_token_manager_rejects_token_from_another_key():
 
 def test_token_manager_rejects_tampered_ciphertext():
     encrypted = TokenManager("key-a").encrypt("secret-token")
-    tampered = encrypted[:-1] + ("A" if encrypted[-1] != "A" else "B")
+    # Change the payload, not the signature: the last base64 character can carry unused bits,
+    # so editing it does not always change the signed bytes.
+    tampered = ("A" if encrypted[0] != "A" else "B") + encrypted[1:]
 
     with pytest.raises(InvalidTokenError):
         TokenManager("key-a").decrypt(tampered)
