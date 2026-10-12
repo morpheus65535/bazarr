@@ -29,7 +29,8 @@ def srt_file(tmp_path):
 
 # subtitles/contents
 
-def test_contents_parses_srt_file(api_client, api_key, srt_file):
+def test_contents_parses_srt_file(api_client, api_key, srt_file, indexed_subtitles):
+    indexed_subtitles(str(srt_file))
     response = api_client.get("/api/subtitles/contents", query_string={"subtitlePath": str(srt_file)},
                               headers={"X-API-KEY": api_key})
 
@@ -48,17 +49,19 @@ def test_contents_requires_subtitle_path(api_client, api_key):
     assert response.status_code == 400
 
 
-def test_contents_rejects_missing_file(api_client, api_key, tmp_path):
+def test_contents_rejects_missing_file(api_client, api_key, tmp_path, indexed_subtitles):
+    missing = indexed_subtitles(str(tmp_path / "missing.srt"))
     response = api_client.get("/api/subtitles/contents",
-                              query_string={"subtitlePath": str(tmp_path / "missing.srt")},
+                              query_string={"subtitlePath": missing},
                               headers={"X-API-KEY": api_key})
 
     assert response.status_code == 400
 
 
-def test_contents_rejects_binary_file(api_client, api_key, tmp_path):
+def test_contents_rejects_binary_file(api_client, api_key, tmp_path, indexed_subtitles):
     path = tmp_path / "binary.srt"
     path.write_bytes(bytes(range(256)) * 40)
+    indexed_subtitles(str(path))
 
     response = api_client.get("/api/subtitles/contents", query_string={"subtitlePath": str(path)},
                               headers={"X-API-KEY": api_key})
@@ -66,14 +69,24 @@ def test_contents_rejects_binary_file(api_client, api_key, tmp_path):
     assert response.status_code == 400
 
 
-def test_contents_rejects_unparseable_subtitle(api_client, api_key, tmp_path):
+def test_contents_rejects_unparseable_subtitle(api_client, api_key, tmp_path, indexed_subtitles):
     path = tmp_path / "broken.srt"
     path.write_text("this is not a subtitle file\n", encoding="utf-8")
+    indexed_subtitles(str(path))
 
     response = api_client.get("/api/subtitles/contents", query_string={"subtitlePath": str(path)},
                               headers={"X-API-KEY": api_key})
 
     assert response.status_code == 400
+
+
+def test_contents_refuses_unindexed_subtitle_file(api_client, api_key, srt_file, indexed_subtitles):
+    # A valid subtitle that Bazarr never indexed must not be read
+    response = api_client.get("/api/subtitles/contents", query_string={"subtitlePath": str(srt_file)},
+                              headers={"X-API-KEY": api_key})
+
+    assert response.status_code == 404
+    assert "Hello" not in response.get_data(as_text=True)
 
 
 def test_contents_refuses_non_subtitle_file(api_client, api_key, tmp_path):
@@ -87,9 +100,10 @@ def test_contents_refuses_non_subtitle_file(api_client, api_key, tmp_path):
     assert "not-a-subtitle" not in response.get_data(as_text=True)
 
 
-def test_contents_accepts_uppercase_subtitle_extension(api_client, api_key, tmp_path):
+def test_contents_accepts_uppercase_subtitle_extension(api_client, api_key, tmp_path, indexed_subtitles):
     path = tmp_path / "SHOW.EN.SRT"
     path.write_text(SRT_CONTENT, encoding="utf-8")
+    indexed_subtitles(str(path))
 
     response = api_client.get("/api/subtitles/contents", query_string={"subtitlePath": str(path)},
                               headers={"X-API-KEY": api_key})

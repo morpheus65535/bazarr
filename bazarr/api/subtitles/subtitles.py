@@ -6,7 +6,8 @@ import logging
 
 from flask_restx import Resource, Namespace, reqparse, fields, marshal
 
-from app.database import TableShows, TableEpisodes, TableMovies, database, select, get_subtitles
+from app.database import (TableShows, TableEpisodes, TableMovies, database, select, get_subtitles,
+                          is_indexed_subtitle_path)
 from utilities.path_mappings import path_mappings
 from utilities.video_analyzer import subtitles_sync_references
 from subtitles.tools.translate.main import translate_subtitles_file, extract_and_translate_embedded
@@ -135,6 +136,9 @@ class Subtitles(Resource):
 
         subtitles_id = args.get('subtitles_id')
 
+        if subtitles_path and not is_indexed_subtitle_path(subtitles_path):
+            return 'Subtitles file is not indexed by Bazarr', 404
+
         if action not in ('extract', 'translate'):
             if subtitles_path and not os.path.exists(subtitles_path):
                 return 'Subtitles file not found. Path mapping issue?', 500
@@ -170,6 +174,12 @@ class Subtitles(Resource):
                 return 'Movie not found', 404
 
             video_path = path_mappings.path_replace_movie(metadata.path)
+
+        reference = args.get('reference')
+        # A reference is either an audio track (a:N), the video itself, or a subtitles file that sync reads
+        if action == 'sync' and reference and reference not in empty_values and not reference.startswith('a:') \
+                and reference != video_path and not is_indexed_subtitle_path(reference):
+            return 'Reference subtitles file is not indexed by Bazarr', 404
 
         if action == 'sync':
             try:

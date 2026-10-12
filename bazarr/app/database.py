@@ -724,6 +724,20 @@ def fix_code3_languages_in_languages_profiles():
             list_missing_subtitles_movies()
 
 
+def is_indexed_subtitle_path(subtitles_path) -> bool:
+    """
+    Return True only if the path exactly matches a subtitles file Bazarr has indexed for an episode or a movie.
+    Used to keep API endpoints from reading or modifying arbitrary files on disk.
+    """
+    if not subtitles_path:
+        return False
+
+    for table in (TableEpisodesSubtitles, TableMoviesSubtitles):
+        if database.execute(select(func.count()).select_from(table).where(table.path == subtitles_path)).scalar():
+            return True
+    return False
+
+
 def get_subtitles(sonarr_episode_id: int = None, radarr_id: int = None) -> List[dict]:
     """
     Retrieves a list of subtitles based on the provided episode or movie identifiers.

@@ -20,6 +20,28 @@ def api_key():
 
 
 @pytest.fixture
+def indexed_subtitles(memory_session, monkeypatch):
+    """Point is_indexed_subtitle_path at the in-memory session. Call the returned function to index a path."""
+    import app.database as app_database
+    from app.database import TableEpisodes, TableEpisodesSubtitles, TableShows
+
+    monkeypatch.setattr(app_database, "database", memory_session)
+    memory_session.add(TableShows(path="/tv/show", sonarrSeriesId=1, title="Show"))
+    memory_session.commit()  # the episode references the series, so it must be flushed first
+    memory_session.add(TableEpisodes(sonarrEpisodeId=1, sonarrSeriesId=1, path="/tv/show/ep.mkv", season=1,
+                                     episode=1, title="Pilot"))
+    memory_session.commit()
+
+    def index(path):
+        memory_session.add(TableEpisodesSubtitles(language="en", hi=False, forced=False, path=path,
+                                                  sonarrEpisodeId=1, sonarrSeriesId=1))
+        memory_session.commit()
+        return path
+
+    return index
+
+
+@pytest.fixture
 def memory_session():
     """SQLAlchemy session on a fresh in-memory SQLite database with the application schema."""
     from sqlalchemy import create_engine
