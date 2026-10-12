@@ -114,7 +114,8 @@ def authenticate(actual_method):
         if 'X-API-KEY' in request.headers:
             apikey_header = request.headers['X-API-KEY']
 
-        if apikey_settings in [apikey_get, apikey_post, apikey_header]:
+        # An unset configured key must never match a request without a key
+        if apikey_settings and apikey_settings in [apikey_get, apikey_post, apikey_header]:
             return actual_method(*args, **kwargs)
 
         return abort(401)

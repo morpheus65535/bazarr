@@ -12,6 +12,9 @@ from subtitles.indexer.utils import detect_encoding
 
 api_ns_subtitle_contents = Namespace('Subtitle Contents', description='Retrieve contents of subtitle file')
 
+# Same formats Bazarr can translate; only these files are read from disk
+SUBTITLE_EXTENSIONS = ('.srt', '.ass', '.ssa', '.vtt')
+
 
 def times_dict_from_ms(ms):
     total_seconds = ms // 1000
@@ -80,6 +83,9 @@ class SubtitleNameContents(Resource):
 
         args = self.get_request_parser.parse_args()
         path = args.get('subtitlePath')
+
+        if not path or not isinstance(path, str) or not path.casefold().endswith(SUBTITLE_EXTENSIONS):
+            return 'Not a subtitle file', 400
 
         # Detect subtitles file encoding
         encoding = detect_encoding(path)
