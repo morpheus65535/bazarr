@@ -78,8 +78,7 @@ def catch_all(path):
     # PWA Assets are returned from frontend root folder
     if path in pwa_assets or path.startswith('workbox-'):
         fullpath = os.path.normpath(os.path.join(frontend_build_path, path))
-        # Use startswith to prevent path traversal
-        if not fullpath.startswith(os.path.realpath(frontend_build_path) + os.sep):
+        if not Path(fullpath).is_relative_to(os.path.realpath(frontend_build_path)):
             return '', 404
         return send_file(fullpath)
 
@@ -213,7 +212,7 @@ def movies_images(url):
 @check_login
 def backup_download(filename):
     fullpath = os.path.normpath(os.path.join(settings.backup.folder, filename))
-    if not Path(fullpath).is_relative_to(settings.backup.folder):
+    if not Path(fullpath).is_relative_to(os.path.realpath(settings.backup.folder)):
         return '', 404
     else:
         return send_file(fullpath, max_age=0, as_attachment=True)
@@ -224,8 +223,7 @@ def swaggerui_static(filename):
     basepath = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'libs', 'flask_restx',
                             'static')
     fullpath = os.path.realpath(os.path.join(basepath, filename))
-    # Use startswith to prevent path traversal
-    if not fullpath.startswith(os.path.realpath(basepath) + os.sep):
+    if not Path(fullpath).is_relative_to(os.path.realpath(basepath)):
         return '', 404
     else:
         return send_file(fullpath)
