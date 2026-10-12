@@ -28,7 +28,7 @@ class EpisodesSubtitles(Resource):
     patch_request_parser.add_argument('hi', type=str, required=True, help='HI true/false as string')
 
     @authenticate
-    @api_ns_episodes_subtitles.doc(parser=patch_request_parser)
+    @api_ns_episodes_subtitles.expect(patch_request_parser)
     @api_ns_episodes_subtitles.response(204, 'Success')
     @api_ns_episodes_subtitles.response(401, 'Not Authenticated')
     @api_ns_episodes_subtitles.response(404, 'Episode not found')
@@ -55,7 +55,7 @@ class EpisodesSubtitles(Resource):
                                      help='Subtitles file as file upload object')
 
     @authenticate
-    @api_ns_episodes_subtitles.doc(parser=post_request_parser)
+    @api_ns_episodes_subtitles.expect(post_request_parser)
     @api_ns_episodes_subtitles.response(204, 'Success')
     @api_ns_episodes_subtitles.response(401, 'Not Authenticated')
     @api_ns_episodes_subtitles.response(404, 'Episode not found')
@@ -111,7 +111,7 @@ class EpisodesSubtitles(Resource):
     delete_request_parser.add_argument('path', type=str, required=True, help='Path of the subtitles file')
 
     @authenticate
-    @api_ns_episodes_subtitles.doc(parser=delete_request_parser)
+    @api_ns_episodes_subtitles.expect(delete_request_parser)
     @api_ns_episodes_subtitles.response(204, 'Success')
     @api_ns_episodes_subtitles.response(401, 'Not Authenticated')
     @api_ns_episodes_subtitles.response(404, 'Episode not found')

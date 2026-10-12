@@ -77,7 +77,7 @@ class SubtitleNameContents(Resource):
     @api_ns_subtitle_contents.response(200, 'Success')
     @api_ns_subtitle_contents.response(400, 'Invalid subtitle file encoding')
     @api_ns_subtitle_contents.response(401, 'Not Authenticated')
-    @api_ns_subtitle_contents.doc(parser=get_request_parser)
+    @api_ns_subtitle_contents.expect(get_request_parser)
     def get(self):
         """Retrieve subtitle file contents"""
 

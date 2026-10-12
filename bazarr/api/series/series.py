@@ -62,7 +62,7 @@ class Series(Resource):
     })
 
     @authenticate
-    @api_ns_series.doc(parser=get_request_parser)
+    @api_ns_series.expect(get_request_parser)
     @api_ns_series.response(200, 'Success')
     @api_ns_series.response(401, 'Not Authenticated')
     def get(self):
@@ -199,7 +199,7 @@ class Series(Resource):
                                      help='Languages profile(s) ID or "none"')
 
     @authenticate
-    @api_ns_series.doc(parser=post_request_parser)
+    @api_ns_series.expect(post_request_parser)
     @api_ns_series.response(204, 'Success')
     @api_ns_series.response(401, 'Not Authenticated')
     @api_ns_series.response(404, 'Languages profile not found')
@@ -248,7 +248,7 @@ class Series(Resource):
                                                                                '"search-missing", "search-wanted", "sync"]')
 
     @authenticate
-    @api_ns_series.doc(parser=patch_request_parser)
+    @api_ns_series.expect(patch_request_parser)
     @api_ns_series.response(204, 'Success')
     @api_ns_series.response(400, 'Unknown action')
     @api_ns_series.response(401, 'Not Authenticated')

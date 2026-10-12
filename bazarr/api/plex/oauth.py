@@ -242,7 +242,7 @@ class PlexPin(Resource):
     post_request_parser.add_argument('clientId', type=str, required=False, help='Client ID')
 
     @authenticate
-    @api_ns_plex.doc(parser=post_request_parser)
+    @api_ns_plex.expect(post_request_parser)
     def post(self):
         try:
             args = self.post_request_parser.parse_args()
@@ -748,7 +748,7 @@ class PlexLogout(Resource):
     post_request_parser = reqparse.RequestParser()
 
     @authenticate
-    @api_ns_plex.doc(parser=post_request_parser)
+    @api_ns_plex.expect(post_request_parser)
     def post(self):
         try:
             settings.plex.token = ""
@@ -781,7 +781,7 @@ class PlexEncryptApiKey(Resource):
     post_request_parser = reqparse.RequestParser()
 
     @authenticate
-    @api_ns_plex.doc(parser=post_request_parser)
+    @api_ns_plex.expect(post_request_parser)
     def post(self):
         try:
             if encrypt_api_key():
@@ -800,7 +800,7 @@ class PlexApiKey(Resource):
     post_request_parser.add_argument('apikey', type=str, required=True, help='API key')
 
     @authenticate
-    @api_ns_plex.doc(parser=post_request_parser)
+    @api_ns_plex.expect(post_request_parser)
     def post(self):
         try:
             args = self.post_request_parser.parse_args()
@@ -831,7 +831,7 @@ class PlexTestConnection(Resource):
     post_request_parser.add_argument('uri', type=str, required=True, help='Server URI')
 
     @authenticate
-    @api_ns_plex.doc(parser=post_request_parser)
+    @api_ns_plex.expect(post_request_parser)
     def post(self):
         args = self.post_request_parser.parse_args()
         uri = args.get('uri')
@@ -900,7 +900,7 @@ class PlexSelectServer(Resource):
     post_request_parser.add_argument('connections', type=list, location='json', required=False, help='All available connection URIs')
 
     @authenticate
-    @api_ns_plex.doc(parser=post_request_parser)
+    @api_ns_plex.expect(post_request_parser)
     def post(self):
         args = self.post_request_parser.parse_args()
         machine_identifier = args.get('machineIdentifier')
@@ -935,7 +935,7 @@ class PlexWebhookCreate(Resource):
     post_request_parser = reqparse.RequestParser()
 
     @authenticate
-    @api_ns_plex.doc(parser=post_request_parser)
+    @api_ns_plex.expect(post_request_parser)
     def post(self):
         try:
             decrypted_token = get_decrypted_token()
@@ -1118,7 +1118,7 @@ class PlexWebhookDelete(Resource):
     post_request_parser.add_argument('webhook_url', type=str, required=True, help='Webhook URL to delete')
 
     @authenticate
-    @api_ns_plex.doc(parser=post_request_parser)
+    @api_ns_plex.expect(post_request_parser)
     def post(self):
         try:
             args = self.post_request_parser.parse_args()
@@ -1162,7 +1162,7 @@ class PlexAutopulseConfig(Resource):
     get_request_parser = reqparse.RequestParser()
 
     @authenticate
-    @api_ns_plex.doc(parser=get_request_parser)
+    @api_ns_plex.expect(get_request_parser)
     def get(self):
         try:
             decrypted_token = get_decrypted_token()

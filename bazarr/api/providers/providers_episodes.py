@@ -41,7 +41,7 @@ class ProviderEpisodes(Resource):
     @api_ns_providers_episodes.response(401, 'Not Authenticated')
     @api_ns_providers_episodes.response(404, 'Episode not found')
     @api_ns_providers_episodes.response(500, 'Custom error messages')
-    @api_ns_providers_episodes.doc(parser=get_request_parser)
+    @api_ns_providers_episodes.expect(get_request_parser)
     def get(self):
         """Search manually for an episode subtitles"""
         args = self.get_request_parser.parse_args()
@@ -97,7 +97,7 @@ class ProviderEpisodes(Resource):
     post_request_parser.add_argument('subtitle', type=str, required=True, help='Subtitle ID as returned by GET')
 
     @authenticate
-    @api_ns_providers_episodes.doc(parser=post_request_parser)
+    @api_ns_providers_episodes.expect(post_request_parser)
     @api_ns_providers_episodes.response(204, 'Success')
     @api_ns_providers_episodes.response(401, 'Not Authenticated')
     @api_ns_providers_episodes.response(404, 'Episode not found')

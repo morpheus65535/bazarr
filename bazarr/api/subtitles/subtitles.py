@@ -66,7 +66,7 @@ class Subtitles(Resource):
     @authenticate
     @api_ns_subtitles.response(200, 'Success')
     @api_ns_subtitles.response(401, 'Not Authenticated')
-    @api_ns_subtitles.doc(parser=get_request_parser)
+    @api_ns_subtitles.expect(get_request_parser)
     def get(self):
         """Return available audio and embedded subtitles tracks with external subtitles. Used for manual subsync
         modal"""
@@ -111,7 +111,7 @@ class Subtitles(Resource):
                                       help='Subtitles database ID (required for the "extract" action)')
 
     @authenticate
-    @api_ns_subtitles.doc(parser=patch_request_parser)
+    @api_ns_subtitles.expect(patch_request_parser)
     @api_ns_subtitles.response(204, 'Success')
     @api_ns_subtitles.response(400, 'Subtitles ID is required for extraction')
     @api_ns_subtitles.response(401, 'Not Authenticated')
