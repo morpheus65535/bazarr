@@ -4,6 +4,7 @@ import os
 import requests
 import mimetypes
 
+from pathlib import Path
 from flask import (request, abort, render_template, Response, session, send_file, stream_with_context, Blueprint,
                    redirect)
 from functools import wraps
@@ -212,7 +213,7 @@ def movies_images(url):
 @check_login
 def backup_download(filename):
     fullpath = os.path.normpath(os.path.join(settings.backup.folder, filename))
-    if not fullpath.startswith(settings.backup.folder):
+    if not Path(fullpath).is_relative_to(settings.backup.folder):
         return '', 404
     else:
         return send_file(fullpath, max_age=0, as_attachment=True)
