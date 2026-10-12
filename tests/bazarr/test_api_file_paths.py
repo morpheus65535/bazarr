@@ -66,6 +66,16 @@ def test_contents_rejects_binary_file(api_client, api_key, tmp_path):
     assert response.status_code == 400
 
 
+def test_contents_rejects_unparseable_subtitle(api_client, api_key, tmp_path):
+    path = tmp_path / "broken.srt"
+    path.write_text("this is not a subtitle file\n", encoding="utf-8")
+
+    response = api_client.get("/api/subtitles/contents", query_string={"subtitlePath": str(path)},
+                              headers={"X-API-KEY": api_key})
+
+    assert response.status_code == 400
+
+
 def test_contents_refuses_non_subtitle_file(api_client, api_key, tmp_path):
     notes = tmp_path / "notes.txt"
     notes.write_text(SRT_CONTENT.replace("Hello", "not-a-subtitle"), encoding="utf-8")

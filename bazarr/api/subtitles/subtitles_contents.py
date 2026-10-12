@@ -1,5 +1,4 @@
 # coding=utf-8
-import logging
 import pysubs2
 import srt
 
@@ -99,6 +98,9 @@ class SubtitleNameContents(Resource):
         try:
             results = parse_srt_contents(file_content)
         except (srt.SRTParseError, srt.TimestampParseError):
-            results = parse_ssa_contents(file_content)
+            try:
+                results = parse_ssa_contents(file_content)
+            except pysubs2.exceptions.Pysubs2Error:
+                return 'Unable to parse subtitle file', 400
 
         return marshal(results, self.get_response_model, envelope='data')

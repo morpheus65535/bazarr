@@ -11,7 +11,7 @@ import pytest
 import requests
 
 from api.plex import oauth
-from api.plex.exceptions import InvalidTokenError, PlexConnectionError, PlexPinExpiredError, UnauthorizedError
+from api.plex.exceptions import InvalidTokenError, PlexConnectionError, UnauthorizedError
 from api.plex.security import TokenManager, pin_cache, sanitize_log_data, sanitize_server_url
 
 
@@ -313,10 +313,12 @@ def test_pin_check_without_state_still_authenticates(api_client, api_key, plex_s
     assert response.json["data"]["authenticated"] is True
 
 
-def test_pin_check_for_unknown_pin_makes_no_plex_call(api_client, api_key, plex_settings):
-    with mock.patch.object(oauth.requests, "get") as plex_get, pytest.raises(PlexPinExpiredError):
-        _check(api_client, api_key, "unknown")
+def test_pin_check_for_unknown_pin_returns_pin_expired(api_client, api_key, plex_settings):
+    with mock.patch.object(oauth.requests, "get") as plex_get:
+        response = _check(api_client, api_key, "unknown")
 
+    assert response.status_code == 410
+    assert response.json["code"] == "PIN_EXPIRED"
     plex_get.assert_not_called()
     assert plex_settings.settings.plex.token == ""
 
@@ -324,10 +326,10 @@ def test_pin_check_for_unknown_pin_makes_no_plex_call(api_client, api_key, plex_
 def test_pin_check_expired_on_plex_clears_pin(api_client, api_key, plex_settings, pins):
     pins.add("204")
 
-    with mock.patch.object(oauth.requests, "get", return_value=_response(status_code=404)), \
-            pytest.raises(PlexPinExpiredError):
-        _check(api_client, api_key, "204", state="good-state")
+    with mock.patch.object(oauth.requests, "get", return_value=_response(status_code=404)):
+        response = _check(api_client, api_key, "204", state="good-state")
 
+    assert response.status_code == 410
     assert pin_cache.get("204") is None
 
 

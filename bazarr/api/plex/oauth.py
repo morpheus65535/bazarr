@@ -403,6 +403,12 @@ class PlexPinCheck(Resource):
                 }
             }
 
+        except PlexAuthError as e:
+            return {
+                'error': e.message,
+                'code': e.error_code
+            }, e.status_code
+
         except requests.exceptions.RequestException as e:
             logger.error(f"Failed to check PIN: {type(e).__name__}")
             return {

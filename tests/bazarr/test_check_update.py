@@ -153,20 +153,34 @@ def test_unknown_branch_stops_before_contacting_github(env):
     env.download.assert_not_called()
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="On Python older than 3.10, check_if_new_update's stable branch calls next(...) without "
-           "assigning the result to `release`, and its generator only accepts releases older than 1.3.1. "
-           "A current stable release therefore raises StopIteration instead of being offered. Found while "
-           "writing these tests.",
-)
-def test_deprecated_python_offers_stable_release(env, monkeypatch):
+def test_deprecated_python_offers_newest_stable_below_1_3_1(env, monkeypatch):
     monkeypatch.setattr(cu, "deprecated_python_version", lambda: True)
+    releases = [_release("v1.5.0", link="new-link"), _release("v1.2.0", link="old-link")]
 
-    with _serve_releases([_release("v1.5.0", link="stable-link")]):
+    with _serve_releases(releases):
         cu.check_if_new_update()
 
-    env.download.assert_called_once_with(url="stable-link")
+    env.download.assert_called_once_with(url="old-link")
+
+
+def test_deprecated_python_offers_prerelease_below_1_3_1_on_development(env, monkeypatch):
+    env.settings.general["branch"] = "development"
+    monkeypatch.setattr(cu, "deprecated_python_version", lambda: True)
+    releases = [_release("v1.5.0", link="new-link"), _release("v1.2.1-beta", prerelease=True, link="beta-link")]
+
+    with _serve_releases(releases):
+        cu.check_if_new_update()
+
+    env.download.assert_called_once_with(url="beta-link")
+
+
+def test_deprecated_python_downloads_nothing_when_only_newer_releases(env, monkeypatch):
+    monkeypatch.setattr(cu, "deprecated_python_version", lambda: True)
+
+    with _serve_releases([_release("v1.5.0")]):
+        cu.check_if_new_update()
+
+    env.download.assert_not_called()
 
 
 # download_release
