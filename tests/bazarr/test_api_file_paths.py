@@ -9,6 +9,8 @@ from urllib.parse import parse_qs, urlsplit
 
 import pytest
 
+from utilities.path_mappings import path_mappings
+
 SRT_CONTENT = (
     "1\n"
     "00:00:01,000 --> 00:00:02,500\n"
@@ -78,6 +80,20 @@ def test_contents_rejects_unparseable_subtitle(api_client, api_key, tmp_path, in
                               headers={"X-API-KEY": api_key})
 
     assert response.status_code == 400
+
+
+def test_contents_finds_row_for_path_shown_in_ui(api_client, api_key, tmp_path, indexed_subtitles, monkeypatch):
+    # Sonarr sees /tv, Bazarr sees tmp_path. The index stores the Sonarr-side path.
+    monkeypatch.setattr(path_mappings, "path_mapping_series", [["/tv", str(tmp_path)]])
+    monkeypatch.setattr(path_mappings, "path_mapping_movies", [])
+    (tmp_path / "show.en.srt").write_text(SRT_CONTENT, encoding="utf-8")
+    indexed_subtitles("/tv/show.en.srt")
+    shown = path_mappings.path_replace("/tv/show.en.srt")  # the path get_subtitles returns to the UI
+
+    response = api_client.get("/api/subtitles/contents", query_string={"subtitlePath": shown},
+                              headers={"X-API-KEY": api_key})
+
+    assert response.status_code == 200
 
 
 def test_contents_refuses_unindexed_subtitle_file(api_client, api_key, srt_file, indexed_subtitles):

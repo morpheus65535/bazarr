@@ -27,7 +27,9 @@ def episode_lookup():
     database.execute.return_value.first.return_value = metadata
     with mock.patch("api.subtitles.subtitles.database", database), \
             mock.patch("api.subtitles.subtitles.path_mappings",
-                       mock.MagicMock(path_replace=lambda p: p, path_replace_movie=lambda p: p)), \
+                       mock.MagicMock(path_replace=lambda p: p, path_replace_movie=lambda p: p,
+                                      path_replace_reverse=lambda p: p,
+                                      path_replace_reverse_movie=lambda p: p)), \
             mock.patch("api.subtitles.subtitles.sync_subtitles") as sync:
         yield sync
 
@@ -67,6 +69,22 @@ def test_patch_accepts_indexed_subtitles_path(api_client, api_key, subtitle, ind
 
     assert response.status_code == 204
     assert episode_lookup.call_args.kwargs["srt_path"] == str(subtitle)
+
+
+def test_patch_accepts_indexed_path_sent_in_mapped_form(api_client, api_key, subtitle, indexed_subtitles,
+                                                        episode_lookup):
+    # The index stores the Sonarr-side path; the UI sends the local path that path mapping produces
+    indexed_subtitles("/sonarr/show.en.srt")
+    mapping = mock.MagicMock(
+        path_replace=lambda p: p, path_replace_movie=lambda p: p,
+        path_replace_reverse=lambda p: p.replace(str(subtitle.parent), "/sonarr"),
+        path_replace_reverse_movie=lambda p: p.replace(str(subtitle.parent), "/sonarr"),
+    )
+
+    with mock.patch("api.subtitles.subtitles.path_mappings", mapping):
+        response = _sync(api_client, api_key, subtitle)
+
+    assert response.status_code == 204
 
 
 @pytest.mark.parametrize("reference", ["a:0", "/tv/show/ep.mkv"])

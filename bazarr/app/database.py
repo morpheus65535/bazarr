@@ -724,17 +724,18 @@ def fix_code3_languages_in_languages_profiles():
             list_missing_subtitles_movies()
 
 
-def is_indexed_subtitle_path(subtitles_path) -> bool:
+def is_indexed_subtitle_path(*subtitles_paths) -> bool:
     """
-    Return True only if the path exactly matches a subtitles file Bazarr has indexed for an episode or a movie.
-    Used to keep API endpoints from reading or modifying arbitrary files on disk.
+    Return True only if one of the paths exactly matches a subtitles file Bazarr has indexed for an episode or a
+    movie. Callers pass the paths in the form stored in the database (after path mapping reversal), since that is
+    what the indexer writes. Used to keep API endpoints from reading or modifying arbitrary files on disk.
     """
-    if not subtitles_path:
-        return False
-
-    for table in (TableEpisodesSubtitles, TableMoviesSubtitles):
-        if database.execute(select(func.count()).select_from(table).where(table.path == subtitles_path)).scalar():
-            return True
+    for subtitles_path in subtitles_paths:
+        if not subtitles_path:
+            continue
+        for table in (TableEpisodesSubtitles, TableMoviesSubtitles):
+            if database.execute(select(func.count()).select_from(table).where(table.path == subtitles_path)).scalar():
+                return True
     return False
 
 

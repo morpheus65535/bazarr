@@ -8,6 +8,7 @@ from flask_restx import Resource, Namespace, reqparse, fields, marshal
 from app.database import is_indexed_subtitle_path
 from ..utils import authenticate
 from subtitles.indexer.utils import detect_encoding
+from utilities.path_mappings import path_mappings
 
 
 api_ns_subtitle_contents = Namespace('Subtitle Contents', description='Retrieve contents of subtitle file')
@@ -87,7 +88,9 @@ class SubtitleNameContents(Resource):
         if not path or not isinstance(path, str) or not path.casefold().endswith(SUBTITLE_EXTENSIONS):
             return 'Not a subtitle file', 400
 
-        if not is_indexed_subtitle_path(path):
+        # The UI sends the mapped (local) path, but the index stores the reversed (Sonarr/Radarr) path
+        if not is_indexed_subtitle_path(path_mappings.path_replace_reverse(path),
+                                        path_mappings.path_replace_reverse_movie(path)):
             return 'Subtitles file is not indexed by Bazarr', 404
 
         # Detect subtitles file encoding
