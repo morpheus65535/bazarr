@@ -42,7 +42,7 @@ class EpisodesWanted(Resource):
 
     @authenticate
     @api_ns_episodes_wanted.response(401, 'Not Authenticated')
-    @api_ns_episodes_wanted.doc(parser=get_request_parser)
+    @api_ns_episodes_wanted.expect(get_request_parser)
     def get(self):
         """List episodes wanted subtitles"""
         args = self.get_request_parser.parse_args()

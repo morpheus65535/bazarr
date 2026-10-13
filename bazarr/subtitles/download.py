@@ -78,7 +78,9 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
                     lang_alpha2 = alpha2_from_alpha3(language.alpha3)
                     hi_mode = "don't prefer"
                     for item in profile['items']:
-                        if item['language'] == lang_alpha2 and item['forced'] == ("True" if language.forced else "False"):
+                        if item['language'] == lang_alpha2 \
+                                and item['forced'] == ("True" if language.forced else "False") \
+                                and (item['hi'] == "True") == bool(language.hi):
                             if item['hi'] == "True":
                                 hi_mode = "force HI"
                             elif item['hi'] == HI_EXCLUDED:

@@ -34,7 +34,7 @@ class Badges(Resource):
 
     @authenticate
     @api_ns_badges.response(401, 'Not Authenticated')
-    @api_ns_badges.doc(parser=None)
+    @api_ns_badges.expect(None)
     def get(self):
         """Get badges count to update the UI"""
         episodes_conditions = [(TableEpisodes.missing_subtitles.is_not(None)),

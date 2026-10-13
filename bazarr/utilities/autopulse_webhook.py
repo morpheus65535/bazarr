@@ -209,6 +209,7 @@ def call_external_webhook(subtitle_path, media_path, language, media_type, actio
 
     try:
         # Use parent directory instead of specific file for better grouping
+        media_path = "" if media_path is None else media_path
         parent_dir = os.path.dirname(media_path)
         
         # Get webhook configuration
@@ -220,6 +221,11 @@ def call_external_webhook(subtitle_path, media_path, language, media_type, actio
             return
 
         # Prepare query parameters
+        # Note: 'path' is included even though it's redundant with 'media_path' for backward compatibility with Autopulse
+        action_type   = "" if action_type is None else action_type
+        language      = "" if language is None else language
+        media_type    = "" if media_type is None else media_type
+        subtitle_path = "" if subtitle_path is None else subtitle_path
         params = {'path': parent_dir, 'action_type': action_type, 'language': language, 'media_type': media_type, 'subtitle_path': subtitle_path, 'media_path': media_path}
         full_url = f"{webhook_url}?{urlencode(params)}"
         
@@ -426,14 +432,15 @@ def _compare_path_sets(bazarr_path, plex_paths, media_type):
 
 def _detect_mount_point_difference(bazarr_path, plex_path, media_type):
     """Detect mount point differences between two paths."""
-    bazarr_parts = bazarr_path.split('/')
-    plex_parts = plex_path.split('/')
-    
+    # Drop the empty segment produced by the leading slash so the tails compare correctly
+    bazarr_parts = [part for part in bazarr_path.split('/') if part]
+    plex_parts = [part for part in plex_path.split('/') if part]
+
     # Check if Bazarr has extra prefix (e.g., /mnt/media vs /media)
-    if (len(bazarr_parts) > len(plex_parts) and 
-        bazarr_parts[-len(plex_parts):] == plex_parts[-len(plex_parts):]):
-        
-        bazarr_prefix = '/'.join(bazarr_parts[:-len(plex_parts)])
+    if (len(bazarr_parts) > len(plex_parts) and
+        bazarr_parts[-len(plex_parts):] == plex_parts):
+
+        bazarr_prefix = '/' + '/'.join(bazarr_parts[:-len(plex_parts)])
         return {
             'detected': True,
             'suggestion': f"Detected mount point difference in {media_type} paths: Bazarr uses '{bazarr_prefix}' prefix not used by Plex. Path rewriting configured automatically.",
@@ -442,10 +449,10 @@ def _detect_mount_point_difference(bazarr_path, plex_path, media_type):
         }
     
     # Check if Plex has extra prefix (e.g., /data/media vs /media)
-    elif (len(plex_parts) > len(bazarr_parts) and 
-          plex_parts[-len(bazarr_parts):] == bazarr_parts[-len(bazarr_parts):]):
-        
-        plex_prefix = '/'.join(plex_parts[:-len(bazarr_parts)])
+    elif (len(plex_parts) > len(bazarr_parts) and
+          plex_parts[-len(bazarr_parts):] == bazarr_parts):
+
+        plex_prefix = '/' + '/'.join(plex_parts[:-len(bazarr_parts)])
         return {
             'detected': True,
             'suggestion': f"Detected mount point difference in {media_type} paths: Plex uses '{plex_prefix}' prefix not used by Bazarr. Path rewriting configured automatically.",
@@ -498,26 +505,24 @@ def _inject_rewrite_config(config_text, rewrite_config):
     in_plex_target = False
     
     for line in lines:
-        modified_lines.append(line)
-        
-        # Detect bazarr trigger section
-        if '[triggers.bazarr]' in line:
-            in_bazarr_trigger = True
-        elif line.startswith('[') and in_bazarr_trigger:
-            # Add rewrite config before closing the trigger section
+        # A new section header closes the current one, so the rewrite must be added before the header
+        if line.startswith('[') and in_bazarr_trigger:
             if rewrite_config['trigger_section']:
                 modified_lines.extend(rewrite_config['trigger_section'].strip().split('\n'))
             in_bazarr_trigger = False
-        
-        # Detect plex target section  
-        if '[targets.plex]' in line:
-            in_plex_target = True
-        elif line.startswith('[') and in_plex_target:
-            # Add rewrite config before closing the target section
+
+        if line.startswith('[') and in_plex_target:
             if rewrite_config['target_section']:
                 modified_lines.extend(rewrite_config['target_section'].strip().split('\n'))
             in_plex_target = False
-    
+
+        if '[triggers.bazarr]' in line:
+            in_bazarr_trigger = True
+        if '[targets.plex]' in line:
+            in_plex_target = True
+
+        modified_lines.append(line)
+
     # Handle case where we're still in a section at the end of file
     if in_bazarr_trigger and rewrite_config['trigger_section']:
         modified_lines.extend(rewrite_config['trigger_section'].strip().split('\n'))

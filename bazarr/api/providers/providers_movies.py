@@ -42,7 +42,7 @@ class ProviderMovies(Resource):
     @api_ns_providers_movies.response(401, 'Not Authenticated')
     @api_ns_providers_movies.response(404, 'Movie not found')
     @api_ns_providers_movies.response(500, 'Custom error messages')
-    @api_ns_providers_movies.doc(parser=get_request_parser)
+    @api_ns_providers_movies.expect(get_request_parser)
     def get(self):
         """Search manually for a movie subtitles"""
         args = self.get_request_parser.parse_args()
@@ -95,7 +95,7 @@ class ProviderMovies(Resource):
     post_request_parser.add_argument('subtitle', type=str, required=True, help='Subtitle ID as returned by GET')
 
     @authenticate
-    @api_ns_providers_movies.doc(parser=post_request_parser)
+    @api_ns_providers_movies.expect(post_request_parser)
     @api_ns_providers_movies.response(204, 'Success')
     @api_ns_providers_movies.response(401, 'Not Authenticated')
     @api_ns_providers_movies.response(404, 'Movie not found')

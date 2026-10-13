@@ -31,7 +31,7 @@ class SystemJobs(Resource):
                                     choices=['pending', 'running', 'failed', 'canceled', 'completed'])
 
     @authenticate
-    @api_ns_system_jobs.doc(parser=get_request_parser)
+    @api_ns_system_jobs.expect(get_request_parser)
     @api_ns_system_jobs.response(204, 'Success')
     @api_ns_system_jobs.response(401, 'Not Authenticated')
     def get(self):
@@ -48,7 +48,7 @@ class SystemJobs(Resource):
                                      help='Action to perform from ["force_start", "move_top", "move_bottom", "cancel"]')
 
     @authenticate
-    @api_ns_system_jobs.doc(parser=post_request_parser)
+    @api_ns_system_jobs.expect(post_request_parser)
     @api_ns_system_jobs.response(204, 'Success')
     @api_ns_system_jobs.response(401, 'Not Authenticated')
     def post(self):
@@ -71,7 +71,7 @@ class SystemJobs(Resource):
                                       choices=['pending', 'failed', 'canceled', 'completed'])
 
     @authenticate
-    @api_ns_system_jobs.doc(parser=patch_request_parser)
+    @api_ns_system_jobs.expect(patch_request_parser)
     @api_ns_system_jobs.response(204, 'Success')
     @api_ns_system_jobs.response(400, 'Jobs queue name not provided')
     @api_ns_system_jobs.response(401, 'Not Authenticated')
@@ -89,7 +89,7 @@ class SystemJobs(Resource):
     delete_request_parser.add_argument('id', type=int, required=True, help='Job ID to delete from queue')
 
     @authenticate
-    @api_ns_system_jobs.doc(parser=delete_request_parser)
+    @api_ns_system_jobs.expect(delete_request_parser)
     @api_ns_system_jobs.response(204, 'Success')
     @api_ns_system_jobs.response(400, 'Job ID not provided')
     @api_ns_system_jobs.response(401, 'Not Authenticated')

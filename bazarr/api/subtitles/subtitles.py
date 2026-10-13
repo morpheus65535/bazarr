@@ -6,7 +6,8 @@ import logging
 
 from flask_restx import Resource, Namespace, reqparse, fields, marshal
 
-from app.database import TableShows, TableEpisodes, TableMovies, database, select, get_subtitles
+from app.database import (TableShows, TableEpisodes, TableMovies, database, select, get_subtitles,
+                          is_indexed_subtitle_path)
 from utilities.path_mappings import path_mappings
 from utilities.video_analyzer import subtitles_sync_references
 from subtitles.tools.translate.main import translate_subtitles_file, extract_and_translate_embedded
@@ -66,7 +67,7 @@ class Subtitles(Resource):
     @authenticate
     @api_ns_subtitles.response(200, 'Success')
     @api_ns_subtitles.response(401, 'Not Authenticated')
-    @api_ns_subtitles.doc(parser=get_request_parser)
+    @api_ns_subtitles.expect(get_request_parser)
     def get(self):
         """Return available audio and embedded subtitles tracks with external subtitles. Used for manual subsync
         modal"""
@@ -111,7 +112,7 @@ class Subtitles(Resource):
                                       help='Subtitles database ID (required for the "extract" action)')
 
     @authenticate
-    @api_ns_subtitles.doc(parser=patch_request_parser)
+    @api_ns_subtitles.expect(patch_request_parser)
     @api_ns_subtitles.response(204, 'Success')
     @api_ns_subtitles.response(400, 'Subtitles ID is required for extraction')
     @api_ns_subtitles.response(401, 'Not Authenticated')
@@ -134,6 +135,10 @@ class Subtitles(Resource):
         hi = True if args.get('hi') == 'True' else False
 
         subtitles_id = args.get('subtitles_id')
+
+        if subtitles_path and not is_indexed_subtitle_path(path_mappings.path_replace_reverse(subtitles_path),
+                                                           path_mappings.path_replace_reverse_movie(subtitles_path)):
+            return 'Subtitles file is not indexed by Bazarr', 404
 
         if action not in ('extract', 'translate'):
             if subtitles_path and not os.path.exists(subtitles_path):
@@ -170,6 +175,13 @@ class Subtitles(Resource):
                 return 'Movie not found', 404
 
             video_path = path_mappings.path_replace_movie(metadata.path)
+
+        reference = args.get('reference')
+        # A reference is either an audio track (a:N), the video itself, or a subtitles file that sync reads
+        if action == 'sync' and reference and reference not in empty_values and not reference.startswith('a:') \
+                and reference != video_path and not is_indexed_subtitle_path(
+                    path_mappings.path_replace_reverse(reference), path_mappings.path_replace_reverse_movie(reference)):
+            return 'Reference subtitles file is not indexed by Bazarr', 404
 
         if action == 'sync':
             try:

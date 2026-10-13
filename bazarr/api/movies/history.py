@@ -54,7 +54,7 @@ class MoviesHistory(Resource):
 
     @authenticate
     @api_ns_movies_history.response(401, 'Not Authenticated')
-    @api_ns_movies_history.doc(parser=get_request_parser)
+    @api_ns_movies_history.expect(get_request_parser)
     def get(self):
         """List movies history events"""
         args = self.get_request_parser.parse_args()
