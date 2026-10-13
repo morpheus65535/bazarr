@@ -11,7 +11,7 @@ const autoStartDelayMs = 600;
 
 /**
  * Renders the first-run tour and decides when to launch it automatically.
- * A fresh install starts it once; completion is persisted on the backend.
+ * A fresh install (config.yaml not yet written) starts it once.
  */
 const OnboardingTour: FunctionComponent = () => {
   const { isTourOpen, tourSession, startTour, finishTour } = useOnboarding();
@@ -28,7 +28,6 @@ const OnboardingTour: FunctionComponent = () => {
   const isRadarrConfigured = Boolean(
     radarr && settings?.radarr?.ip && settings?.radarr?.apikey,
   );
-  const hasCompleted = settings?.general?.onboarding_completed ?? false;
   const hasEvaluatedAutoStart = useRef(false);
 
   // Steps whose target lives in a hidden section are dropped when their library
@@ -87,13 +86,13 @@ const OnboardingTour: FunctionComponent = () => {
       return () => window.clearTimeout(forcedTimer);
     }
 
-    if (hasCompleted || Environment.isConfigured) {
+    if (Environment.isConfigured) {
       return;
     }
 
     const timer = window.setTimeout(startTour, autoStartDelayMs);
     return () => window.clearTimeout(timer);
-  }, [settings, hasCompleted, startTour]);
+  }, [settings, startTour]);
 
   return (
     <Tour

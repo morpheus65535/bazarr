@@ -5,6 +5,21 @@ import OnboardingProvider from "@/contexts/OnboardingProvider";
 import { customRender, screen } from "@/tests";
 import OnboardingTour from "./OnboardingTour";
 
+const environment = vi.hoisted(() => ({ isConfigured: false }));
+
+vi.mock("@/utilities", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/utilities")>();
+  return {
+    ...actual,
+    Environment: {
+      ...actual.Environment,
+      get isConfigured() {
+        return environment.isConfigured;
+      },
+    },
+  };
+});
+
 vi.mock("@/apis/hooks", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/apis/hooks")>();
   return {
@@ -30,9 +45,8 @@ const advanceAutoStart = async () => {
 
 describe("OnboardingTour", () => {
   beforeEach(() => {
-    mockedUseSystemSettings.mockReturnValue({
-      data: { general: { onboarding_completed: false } },
-    });
+    environment.isConfigured = false;
+    mockedUseSystemSettings.mockReturnValue({ data: { general: {} } });
   });
 
   afterEach(() => {
@@ -48,10 +62,8 @@ describe("OnboardingTour", () => {
     expect(screen.getByTestId("onboarding-tour-title")).toBeInTheDocument();
   });
 
-  it("does not auto-start when onboarding was already completed", async () => {
-    mockedUseSystemSettings.mockReturnValue({
-      data: { general: { onboarding_completed: true } },
-    });
+  it("does not auto-start on an already configured install", async () => {
+    environment.isConfigured = true;
     vi.useFakeTimers();
     renderTour();
 

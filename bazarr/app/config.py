@@ -527,7 +527,7 @@ elif not os.path.exists(config_yaml_file):
         os.makedirs(os.path.dirname(config_yaml_file))
     open(config_yaml_file, mode='w').close()
 
-if os.path.exists(config_yaml_file):
+if os.path.exists(config_yaml_file) and os.path.getsize(config_yaml_file) > 0:
     os.environ['BAZARR_CONFIGURED'] = '1'
 
 settings = Dynaconf(
