@@ -8,7 +8,7 @@ from datetime import datetime
 from functools import reduce
 
 from app.config import settings
-from app.database import TableMovies, TableLanguagesProfiles, database, insert, update, delete, select, get_exclusion_clause
+from app.database import TableMovies, TableLanguagesProfiles, database, insert, update, select, get_exclusion_clause
 from app.event_handler import event_stream
 from app.jobs_queue import jobs_queue, JobCanceled
 from app.notifier import send_notifications_movie
@@ -18,6 +18,8 @@ from subtitles.indexer.movies import store_subtitles_movie
 from utilities.helper import bool_map
 from utilities.path_mappings import path_mappings
 from subtitles.adaptive_searching import is_search_active
+from subtitles.serialization import parse_missing_subtitles
+from subtitles.wanted_state import get_failed_attempt_pairs, delete_media_and_wanted_search_state
 
 from sqlalchemy.exc import IntegrityError
 from .parser import movieParser
@@ -163,7 +165,7 @@ def update_movies(job_id=None, wait_for_completion=False):
             movies_deleted = []
             if len(movies_to_delete):
                 try:
-                    database.execute(delete(TableMovies).where(TableMovies.radarrId.in_(movies_to_delete)))
+                    delete_media_and_wanted_search_state('movie', TableMovies, 'radarrId', movies_to_delete)
                 except IntegrityError as e:
                     logging.error(f"BAZARR cannot delete movies because of {e}")
                 else:
@@ -249,9 +251,7 @@ def update_one_movie(movie_id, action, defer_search=False, is_signalr=False):
     if action == 'deleted':
         if existing_movie:
             try:
-                database.execute(
-                    delete(TableMovies)
-                    .where(TableMovies.radarrId == movie_id))
+                delete_media_and_wanted_search_state('movie', TableMovies, 'radarrId', movie_id)
             except IntegrityError as e:
                 logging.error(f"BAZARR cannot delete movie {path_mappings.path_replace_movie(existing_movie.path)} "
                               f"because of {e}")
@@ -299,9 +299,7 @@ def update_one_movie(movie_id, action, defer_search=False, is_signalr=False):
     # Remove movie from DB
     if not movie and existing_movie:
         try:
-            database.execute(
-                delete(TableMovies)
-                .where(TableMovies.radarrId == movie_id))
+            delete_media_and_wanted_search_state('movie', TableMovies, 'radarrId', movie_id)
         except IntegrityError as e:
             logging.error(f"BAZARR cannot delete movie {path_mappings.path_replace_movie(existing_movie.path)} because "
                           f"of {e}")
@@ -401,12 +399,13 @@ def _is_there_missing_subtitles(radarr_id: int) -> bool:
         return False
     movies_conditions += get_exclusion_clause('movie')
     missing_movies = database.execute(
-        select(TableMovies.missing_subtitles, TableMovies.failedAttempts)
+        select(TableMovies.radarrId, TableMovies.missing_subtitles)
         .select_from(TableMovies)
         .where(reduce(operator.and_, movies_conditions))) \
         .all()
     for missing_movie in missing_movies:
-        for language in missing_movie.missing_subtitles:
-            if is_search_active(desired_language=language, attempt_string=missing_movie.failedAttempts):
+        attempts = get_failed_attempt_pairs('movie', missing_movie.radarrId)
+        for language in parse_missing_subtitles(missing_movie.missing_subtitles):
+            if is_search_active(desired_language=language, attempt_string=attempts):
                 return True
     return False
