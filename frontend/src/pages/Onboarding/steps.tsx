@@ -25,9 +25,7 @@ const hardlinksUrl =
 const saveTarget = '[data-onboarding="settings-save"]';
 
 /**
- * The first-run tour. Every step maps to a section of the official setup guide
- * so the wording matches what users read on the wiki. The settings steps are
- * interactive: the page stays usable and the tour only guides and highlights.
+ * The first-run tour; each step maps to a section of the official setup guide.
  */
 export const onboardingSteps: TourStep[] = [
   {

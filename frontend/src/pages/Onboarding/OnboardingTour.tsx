@@ -11,9 +11,7 @@ const autoStartDelayMs = 600;
 
 /**
  * Renders the first-run tour and decides when to launch it automatically.
- *
- * A fresh install (no config.yaml) that has not completed the tour starts it
- * once; completion is persisted on the backend so it never nags again.
+ * A fresh install starts it once; completion is persisted on the backend.
  */
 const OnboardingTour: FunctionComponent = () => {
   const { isTourOpen, tourSession, startTour, finishTour } = useOnboarding();
@@ -84,7 +82,7 @@ const OnboardingTour: FunctionComponent = () => {
 
     // Development switch to keep the tour visible for testing. Set
     // VITE_FORCE_ONBOARDING=true in .env.local and restart the dev server.
-    if (Environment.forceOnboarding) {
+    if (Environment.isOnboardingForced) {
       const forcedTimer = window.setTimeout(startTour, autoStartDelayMs);
       return () => window.clearTimeout(forcedTimer);
     }

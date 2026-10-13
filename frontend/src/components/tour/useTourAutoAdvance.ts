@@ -13,8 +13,7 @@ const saveAdvanceDelayMs = 100;
 const presentPollIntervalMs = 300;
 
 /**
- * Drives the tour forward without a Next button: each step advances when the
- * user performs its action, and fulfilled/optional steps move on their own.
+ * Advances each step when its action completes, so no Next button is needed.
  */
 export const useTourAutoAdvance = ({
   isOpened,

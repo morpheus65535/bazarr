@@ -4,6 +4,7 @@ import { ResolvedRects, ResolvedSpotlight, TourRect } from "./types";
 
 const targetTimeoutMs = 4000;
 const targetPollIntervalMs = 50;
+const rectPollIntervalMs = 120;
 const headerClearancePx = 8;
 
 const noGroups: HTMLElement[][] = [];
@@ -19,8 +20,6 @@ const getHeaderHeight = (): number => {
   return header?.getBoundingClientRect().height ?? 0;
 };
 
-// Keeps every target clear of the fixed header and the bottom edge; without
-// this a top target like Save can end up highlighted behind the top bar.
 const keepTargetsVisible = (elements: HTMLElement[]): void => {
   const union = getUnionRect(elements);
   if (union === null) {
@@ -86,8 +85,6 @@ export const useTourSpotlight = ({
       }
       const primaryGroup = collectElements(targets[0]);
       if (primaryGroup.length > 0) {
-        // Resolve as soon as the anchor target exists; extra targets are
-        // spotlighted when present (e.g. the checkbox column in table view).
         const groups = targets.map(collectElements);
         keepTargetsVisible(groups.flat());
         setSpotlight({ stepIndex, groups });
@@ -111,15 +108,15 @@ export const useTourSpotlight = ({
       ? spotlight.groups
       : noGroups;
 
-  // A per-frame loop (state only when the rects change) catches layout shifts
-  // that scroll/resize events miss, e.g. the bulk bar re-rendering.
+  // Poll instead of a per-frame loop: layout shifts are caught within a frame
+  // budget while idle cost stays negligible on low-end hardware.
   useEffect(() => {
     if (groups.length === 0) {
       return;
     }
 
-    const frameState = { handle: 0 };
-    const tick = () => {
+    const state = { handle: 0 };
+    const update = () => {
       const rects = getUnionRects(groups);
       setResolvedRects((previous) => {
         const isUnchanged =
@@ -131,11 +128,11 @@ export const useTourSpotlight = ({
         }
         return { stepIndex, rects };
       });
-      frameState.handle = window.requestAnimationFrame(tick);
+      state.handle = window.setTimeout(update, rectPollIntervalMs);
     };
 
-    frameState.handle = window.requestAnimationFrame(tick);
-    return () => window.cancelAnimationFrame(frameState.handle);
+    state.handle = window.setTimeout(update, 0);
+    return () => window.clearTimeout(state.handle);
   }, [groups, stepIndex]);
 
   return { primaryElements: groups[0] ?? noElements, resolvedRects };
