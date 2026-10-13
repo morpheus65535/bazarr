@@ -9,7 +9,7 @@ class FakeSubSyncer:
 
 
 def test_sync_subtitles_reads_default_settings_at_runtime(monkeypatch):
-    monkeypatch.setattr(sync_module, "SubSyncer", FakeSubSyncer)
+    monkeypatch.setattr(sync_module, "_create_subsyncer", FakeSubSyncer)
     monkeypatch.setattr(sync_module.jobs_queue, "update_job_name", lambda **kwargs: None)
     monkeypatch.setattr(sync_module.gc, "collect", lambda: None)
     monkeypatch.setattr(sync_module.settings.subsync, "use_subsync", True)
@@ -38,7 +38,7 @@ def test_sync_subtitles_reads_default_settings_at_runtime(monkeypatch):
 
 
 def test_sync_subtitles_preserves_explicit_sync_options(monkeypatch):
-    monkeypatch.setattr(sync_module, "SubSyncer", FakeSubSyncer)
+    monkeypatch.setattr(sync_module, "_create_subsyncer", FakeSubSyncer)
     monkeypatch.setattr(sync_module.jobs_queue, "update_job_name", lambda **kwargs: None)
     monkeypatch.setattr(sync_module.gc, "collect", lambda: None)
     monkeypatch.setattr(sync_module.settings.subsync, "use_subsync", True)
