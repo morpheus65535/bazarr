@@ -146,8 +146,4 @@ def upgrade():
 
 
 def downgrade():
-    bind = op.get_bind()
-    if table_exists(bind, 'table_failed_subtitle_attempts'):
-        if index_exists(bind, 'table_failed_subtitle_attempts', 'ix_failed_subtitle_attempts_media'):
-            op.drop_index('ix_failed_subtitle_attempts_media', table_name='table_failed_subtitle_attempts')
-        op.drop_table('table_failed_subtitle_attempts')
+    pass
