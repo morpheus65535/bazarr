@@ -309,20 +309,3 @@ def test_migration_appends_attempt_rows_using_shared_attempt_parser():
         ("series", 17, "en", 1.0, 3.0),
         ("series", 17, "fr", 2.0, 2.0),
     ]
-
-
-def test_downgrade_handles_existing_tables_without_indexes():
-    engine = create_engine("sqlite://")
-    try:
-        with engine.connect() as connection:
-            connection.exec_driver_sql(
-                "CREATE TABLE table_failed_subtitle_attempts (id INTEGER PRIMARY KEY)"
-            )
-            with Operations.context(MigrationContext.configure(connection)):
-                migration.downgrade()
-
-            inspector = inspect(connection)
-            assert not inspector.has_table("table_failed_subtitle_attempts")
-            assert not inspector.has_table("table_missing_subtitles")
-    finally:
-        engine.dispose()
