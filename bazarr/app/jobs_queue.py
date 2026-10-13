@@ -10,10 +10,11 @@ from time import sleep
 from datetime import datetime, timezone
 from collections import deque
 from typing import Union
-from threading import Thread, Lock, RLock
+from threading import Thread, Lock, RLock, Event
 
 from app.event_handler import event_stream
 from app.config import settings
+from app.database import database
 
 bazarr_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
@@ -55,9 +56,15 @@ class Job:
     :type progress_message: str
     :ivar job_returned_value: Value returned by the job function, initialized to None.
     :type job_returned_value: Any
+    :ivar is_cancellable: Indicates whether the job is cancellable, defaults to False.
+    :type is_cancellable: bool
+    :ivar duration: Indicates how long the job was executed in seconds, initialized to 0.
+    :type duration: int
+    :ivar cancel_event: Event to cancel this job, initialized to None.
+    :type cancel_event: Event
     """
     def __init__(self, job_id: int, job_name: str, module: str, func: str, args: list = None, kwargs: dict = None,
-                 is_progress: bool = False, is_signalr: bool = False, progress_max: int = 0, job_returned_value=None,):
+                 is_progress: bool = False, is_signalr: bool = False, progress_max: int = 0, job_returned_value=None, is_cancellable: bool = False,):
         self.job_id = job_id
         self.job_name = job_name
         self.module = module
@@ -72,6 +79,9 @@ class Job:
         self.progress_max = progress_max
         self.progress_message = ""
         self.job_returned_value = job_returned_value
+        self.is_cancellable = is_cancellable
+        self.cancel_event = Event()
+        self.duration = 0
 
     def __eq__(self, other):
         """
@@ -81,13 +91,17 @@ class Job:
         return self.job_id == other.job_id
 
 
+class JobCanceled(Exception):
+    pass
+
+
 class JobsQueue:
     """
     Manages a queue of jobs, tracks their states, and processes them.
 
     This class is designed to handle a queue of jobs, enabling submission, tracking,
     and execution of tasks. Jobs are categorized into different queues (`pending`,
-    `running`, `failed`, and `completed`) based on their current status. It provides
+    `running`, `failed`, `canceled`, and `completed`) based on their current status. It provides
     methods to add, list, remove, and consume jobs in a controlled manner.
 
     :ivar jobs_pending_queue: Queue containing jobs that are pending execution.
@@ -97,6 +111,9 @@ class JobsQueue:
     :ivar jobs_failed_queue: Queue containing jobs that failed during execution. It maintains a
         maximum size of 10 entries.
     :type jobs_failed_queue: deque
+    :ivar jobs_canceled_queue: Queue containing jobs that were canceled. It maintains a
+        maximum size of 10 entries.
+    :type jobs_canceled_queue: deque
     :ivar jobs_completed_queue: Queue containing jobs that were executed successfully. It maintains
         a maximum size of 10 entries.
     :type jobs_completed_queue: deque
@@ -107,6 +124,7 @@ class JobsQueue:
         self.jobs_pending_queue = deque()
         self.jobs_running_queue = deque()
         self.jobs_failed_queue = deque(maxlen=10)
+        self.jobs_canceled_queue = deque(maxlen=10)
         self.jobs_completed_queue = deque(maxlen=10)
         self.current_job_id = 0
         
@@ -116,7 +134,7 @@ class JobsQueue:
         self._import_lock = Lock()  # Lock for module imports
 
     def feed_jobs_pending_queue(self, job_name, module, func, args: list = None, kwargs: dict = None,
-                                is_progress=False, is_signalr=False, progress_max: int = 0,):
+                                is_progress=False, is_signalr=False, progress_max: int = 0, is_cancellable=False,):
         """
         Adds a new job to the pending jobs queue with specified details and triggers an event
         to notify about the queue update. Each job is uniquely identified by a job ID,
@@ -139,6 +157,8 @@ class JobsQueue:
         :type is_signalr: bool
         :param progress_max: Maximum value of the job's progress, initialized to 0.
         :type progress_max: int
+        :param is_cancellable: Indicates whether the job is cancelable, defaults to False.
+        :type is_cancellable: bool
         :return: The unique job ID assigned to the newly queued job.
         :rtype: int | bool
         """
@@ -164,7 +184,8 @@ class JobsQueue:
                     kwargs=kwargs,
                     is_progress=is_progress,
                     is_signalr=is_signalr,
-                    progress_max=progress_max,)
+                    progress_max=progress_max,
+                    is_cancellable=is_cancellable,)
             )
 
         logging.debug(f"Task {job_name} ({new_job_id}) added to queue")
@@ -184,13 +205,13 @@ class JobsQueue:
         :param job_id: Optional; The unique ID of the job to filter the results.
         :type job_id: int
         :param status: Optional; The status of jobs to filter the results. Expected
-            values are 'pending', 'running', 'failed', or 'completed'.
+            values are 'pending', 'running', 'failed', 'canceled', or 'completed'.
         :type status: str
         :return: A list of dictionaries with job details that match the given filters.
             If no matches are found, an empty list is returned.
         :rtype: list[dict]
         """
-        queues = self.jobs_pending_queue + self.jobs_running_queue + self.jobs_failed_queue + self.jobs_completed_queue
+        queues = self.jobs_pending_queue + self.jobs_running_queue + self.jobs_failed_queue + self.jobs_canceled_queue + self.jobs_completed_queue
         if status:
             try:
                 queues = self.__dict__[f'jobs_{status}_queue']
@@ -229,8 +250,8 @@ class JobsQueue:
         :return: A boolean indicating whether the job name was successfully updated (True) or the job
                  was not found in any of the queues (False).
         """
-        queues = self.jobs_pending_queue + self.jobs_running_queue + self.jobs_failed_queue + self.jobs_completed_queue
-        
+        queues = self.jobs_pending_queue + self.jobs_running_queue + self.jobs_failed_queue + self.jobs_canceled_queue + self.jobs_completed_queue
+
         for job in queues:
             if job.job_id == job_id:
                 job.job_name = new_job_name
@@ -340,7 +361,7 @@ class JobsQueue:
                 return True
         return False
 
-    def add_job_from_function(self, job_name: str, is_progress: bool, progress_max: int = 0,
+    def add_job_from_function(self, job_name: str, is_progress: bool, progress_max: int = 0, is_cancellable: bool = False,
                               wait_for_completion: bool = False) -> int | bool:
         """
         Adds a job to the pending queue using the details of the calling function. The job is then executed.
@@ -351,6 +372,8 @@ class JobsQueue:
         :type is_progress: bool
         :param progress_max: Maximum progress value for the job, default is 0.
         :type progress_max: int
+        :param is_cancellable: Flag indicating whether the job should be canceled.
+        :type is_cancellable: bool
         :param wait_for_completion: Flag indicating whether to wait for the job to complete before returning.
         :type wait_for_completion: bool
         :return: ID of the added job.
@@ -386,7 +409,8 @@ class JobsQueue:
 
         # Feed the job to the pending queue
         job_id = self.feed_jobs_pending_queue(job_name=job_name, module=parent_function_path, func=parent_function_name,
-                                              kwargs=arguments, is_progress=is_progress, progress_max=progress_max)
+                                              kwargs=arguments, is_progress=is_progress, progress_max=progress_max,
+                                              is_cancellable=is_cancellable)
 
         if not job_id:
             return False
@@ -487,20 +511,62 @@ class JobsQueue:
     def empty_jobs_queue(self, queue_name: str):
         """
         Empties the jobs queue for a specified queue name if it exists among the predefined
-        queue categories ('pending', 'failed', 'completed'). Clears all elements within the
+        queue categories ('pending', 'failed', 'canceled', 'completed'). Clears all elements within the
         specified queue and indicates success or failure for the operation.
 
-        :param queue_name: The name of the queue to be emptied ('pending', 'failed', or 'completed').
+        :param queue_name: The name of the queue to be emptied ('pending', 'failed', 'canceled', or 'completed').
         :type queue_name: str
 
         :return: A boolean value indicating whether the specified queue was successfully emptied.
         :rtype: bool
         """
-        if queue_name in ['pending', 'failed', 'completed']:
+        if queue_name in ['pending', 'failed', 'canceled', 'completed']:
             logging.debug(f"Emptying jobs queue for {queue_name} jobs")
             getattr(self, f'jobs_{queue_name}_queue').clear()
             return True
         return False
+
+    def cancel_running_job(self, job_id: int) -> bool:
+        """
+        Cancels a currently running job by its identifier.
+
+        Searches for the job in the running queue and, if found, sets its
+        cancellation event, removes it from the running queue, and moves it to
+        the completed queue. The method handles potential removal errors and
+        logs appropriate messages during the cancellation process.
+
+        :param job_id: The unique identifier of the job to be canceled.
+        :type: int
+
+        :return: A boolean value indicating whether the job was successfully canceled.
+        :rtype: bool
+
+        :raises JobCanceled: If the job was canceled by a user
+        """
+        for job in self.jobs_running_queue:
+            if job.job_id == job_id:
+                job.cancel_event.set()
+                logging.debug(f"Cancellation requested for job {job.job_name} ({job.job_id})")
+        return False
+
+    def get_job(self, job_id: int) -> Job | None:
+        """
+        Retrieves a job from the running queue by its ID.
+
+        Searches through the jobs currently in the running queue to find a job
+        matching the specified job ID. Returns the first matching job found, or
+        None if no job with the given ID exists in the queue.
+
+        :param job_id: The unique identifier of the job to retrieve.
+        :type: int
+
+        :return: The job object if found in the running queue, None otherwise.
+        :rtype: Job | None
+        """
+        for job in self.jobs_running_queue:
+            if job.job_id == job_id:
+                return job
+        return None
 
     def consume_jobs_pending_queue(self):
         """
@@ -578,26 +644,32 @@ class JobsQueue:
                 module = importlib.import_module(job.module)
             
             job.job_returned_value = getattr(module, job.func)(*job.args, **job.kwargs)
+        except JobCanceled:
+            logging.debug(f"Job {job.job_name} ({job.job_id}) canceled by user")
+            job.status = 'canceled'
+            self.jobs_running_queue.remove(job)
+            self.jobs_canceled_queue.append(job)
+            return True
         except Exception as e:
             logging.exception(f"Exception raised while running function: {e}")
             job.status = 'failed'
-            job.last_run_time = datetime.now(timezone.utc).isoformat()
             self.jobs_running_queue.remove(job)
             self.jobs_failed_queue.append(job)
             return False
         else:
             job.status = 'completed'
-            job.last_run_time = datetime.now(timezone.utc).isoformat()
             self.jobs_running_queue.remove(job)
             self.jobs_completed_queue.append(job)
             return True
         finally:
+            database.remove()  # close this specific thread scoped_session to prevent connection exhaustion on PostgreSQL
+            job.duration = (datetime.now(timezone.utc) - datetime.fromisoformat(job.last_run_time)).total_seconds()
             try:
                 # Send a complete event payload with status and progress_value
                 # progress_value being None forces frontend to fetch a full job payload
                 payload = {
                     "job_id": job.job_id,
-                    "status": job.status,  # 'completed' or 'failed'
+                    "status": job.status,  # 'completed', 'canceled' or 'failed'
                     "progress_value": None  # Trigger frontend API call to update the whole job payload
                 }
                 event_stream(type='jobs', action='update', payload=payload)

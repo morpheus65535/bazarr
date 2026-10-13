@@ -150,11 +150,12 @@ class SubSyncer:
 
             if no_fix_framerate:
                 unparsed_args.append('--no-fix-framerate')
-            else:
-                # Enable quality checks to reject implausible alignments when framerate-fixing is active
-                unparsed_args.extend(['--skip-sync-on-low-quality', '--min-score', str(quality_min_score),
-                                     '--quality-max-offset-seconds', str(quality_max_offset_seconds),
-                                     '--max-framerate-deviation', str(quality_max_framerate_deviation)])
+
+            # Always enable quality checks to reject implausible alignments. The score and offset checks apply
+            # regardless of framerate-fixing; the framerate deviation check is a no-op when it is disabled.
+            unparsed_args.extend(['--skip-sync-on-low-quality', '--min-score', str(quality_min_score),
+                                  '--quality-max-offset-seconds', str(quality_max_offset_seconds),
+                                  '--max-framerate-deviation', str(quality_max_framerate_deviation)])
 
             if gss:
                 unparsed_args.append('--gss')
@@ -216,7 +217,13 @@ class SubSyncer:
         else:
             if settings.subsync.debug:
                 return result
-            if os.path.isfile(self.srtout):
+            if not result.get('sync_was_successful'):
+                # ffsubsync rejected the alignment (low quality or anti-correlated score): keep the original subtitles
+                if os.path.isfile(self.srtout):
+                    os.remove(self.srtout)
+                logging.warning(f'BAZARR subtitles synchronization was rejected, original subtitles left untouched: '
+                                f'{self.srtin}')
+            elif os.path.isfile(self.srtout):
                 if not settings.subsync.debug:
                     os.remove(self.srtin)
                     os.rename(self.srtout, self.srtin)

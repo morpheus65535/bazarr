@@ -3,6 +3,8 @@
 import requests
 import logging
 
+from urllib.parse import urlencode
+
 from app.config import settings
 from sonarr.info import url_api_sonarr
 from constants import HEADERS
@@ -11,8 +13,13 @@ from constants import HEADERS
 def browse_sonarr_filesystem(path='#'):
     if path == '#':
         path = ''
-    url_sonarr_api_filesystem = (f"{url_api_sonarr()}filesystem?path={path}&allowFoldersWithoutTrailingSlashes=true&"
-                                 f"includeFiles=false&apikey={settings.sonarr.apikey}")
+    query = urlencode({
+        'path': path,
+        'allowFoldersWithoutTrailingSlashes': 'true',
+        'includeFiles': 'false',
+        'apikey': settings.sonarr.apikey,
+    })
+    url_sonarr_api_filesystem = f"{url_api_sonarr()}filesystem?{query}"
     try:
         r = requests.get(url_sonarr_api_filesystem, timeout=int(settings.sonarr.http_timeout), verify=False,
                          headers=HEADERS)

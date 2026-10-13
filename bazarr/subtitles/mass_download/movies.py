@@ -46,13 +46,14 @@ def movies_download_subtitles(no, job_id=None, job_sub_function=False):
         .where(reduce(operator.and_, conditions))
     movie = database.execute(stmt).first()
 
-    previously_indexed_subtitles = get_subtitles(radarr_id=movie.radarrId)
-
     if not movie:
         logging.debug(f"BAZARR no movie with that radarrId can be found in database: {no}")
         jobs_queue.update_job_progress(job_id=job_id, progress_message="Movie not found in database.")
         return
-    elif not len(previously_indexed_subtitles) or \
+
+    previously_indexed_subtitles = get_subtitles(radarr_id=movie.radarrId)
+
+    if not len(previously_indexed_subtitles) or \
             any([not x['embedded_track_id'] for x in previously_indexed_subtitles if not x['path']]):
         # subtitles indexing for this movie might be incomplete, we'll do it again
         store_subtitles_movie(no)

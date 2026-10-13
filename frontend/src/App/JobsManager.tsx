@@ -39,6 +39,21 @@ import { useModals } from "@/modules/modals";
 import { notification } from "@/modules/task/notification";
 import classes from "./JobsManager.module.css";
 
+const formatDuration = (seconds: number | null | undefined): string => {
+  if (seconds === null || seconds === undefined) return "";
+
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = Math.round(seconds % 60);
+
+  const parts: string[] = [];
+  if (hours > 0) parts.push(`${hours}h`);
+  if (minutes > 0) parts.push(`${minutes}m`);
+  if (secs > 0 || parts.length === 0) parts.push(`${secs}s`);
+
+  return parts.join(" ");
+};
+
 interface JobsManagerProps {
   opened: boolean;
   onClose: () => void;
@@ -85,7 +100,7 @@ const JobsManager: FunctionComponent<JobsManagerProps> = ({
       });
       showNotification(
         notification.success(
-          "Job Cancelled",
+          "Job Canceled",
           "The job has been removed from the queue",
         ),
       );
@@ -133,6 +148,7 @@ const JobsManager: FunctionComponent<JobsManagerProps> = ({
         move_top: "Moved to top",
         move_bottom: "Moved to bottom",
         force_start: "Force started",
+        cancel: "Cancellation requested",
       };
       const label = actionLabels[variables.action] || "Action completed";
       showNotification(notification.success("Job Updated", label));
@@ -162,6 +178,8 @@ const JobsManager: FunctionComponent<JobsManagerProps> = ({
   >({
     running: false,
     pending: false,
+    failed: false,
+    canceled: false,
     completed: false,
   });
 
@@ -176,6 +194,7 @@ const JobsManager: FunctionComponent<JobsManagerProps> = ({
     running: "info",
     pending: "warning",
     failed: "danger",
+    canceled: "gray",
     completed: "success",
     unknown: "secondary",
   };
@@ -224,6 +243,7 @@ const JobsManager: FunctionComponent<JobsManagerProps> = ({
                   "pending",
                   "failed",
                   "completed",
+                  "canceled",
                   "unknown",
                 ];
 
@@ -602,14 +622,119 @@ const JobsManager: FunctionComponent<JobsManagerProps> = ({
                                               </Menu.Item>
                                             </Menu.Dropdown>
                                           </Menu>
+                                        ) : status === "running" ? (
+                                          <Stack gap={2} align="flex-end">
+                                            <TimeAgo
+                                              key={`job-timestamp-${job?.job_id}`}
+                                              date={
+                                                job?.last_run_time || new Date()
+                                              }
+                                              minPeriod={5}
+                                            />
+                                            {job.is_cancellable && (
+                                              <Menu
+                                                position="bottom-end"
+                                                withArrow
+                                                opened={
+                                                  openMenus[
+                                                    `job-${job?.job_id}`
+                                                  ] || false
+                                                }
+                                                onChange={(opened) =>
+                                                  setOpenMenus((prev) => ({
+                                                    ...prev,
+                                                    [`job-${job?.job_id}`]:
+                                                      opened,
+                                                  }))
+                                                }
+                                              >
+                                                <Menu.Target>
+                                                  <ActionIcon
+                                                    variant="subtle"
+                                                    color="secondary"
+                                                    size="sm"
+                                                  >
+                                                    <FontAwesomeIcon
+                                                      icon={faEllipsis}
+                                                    />
+                                                  </ActionIcon>
+                                                </Menu.Target>
+                                                <Menu.Dropdown>
+                                                  <Menu.Item
+                                                    leftSection={
+                                                      <FontAwesomeIcon
+                                                        icon={faXmark}
+                                                        color="var(--mantine-color-danger-6)"
+                                                      />
+                                                    }
+                                                    onClick={() =>
+                                                      handleMenuAction(
+                                                        job?.job_id || 0,
+                                                        () =>
+                                                          modals.openConfirmModal(
+                                                            {
+                                                              title:
+                                                                "Cancel Job",
+                                                              children: (
+                                                                <Text size="sm">
+                                                                  Are you sure
+                                                                  you want to
+                                                                  cancel this
+                                                                  running job?
+                                                                </Text>
+                                                              ),
+                                                              labels: {
+                                                                confirm:
+                                                                  "Cancel",
+                                                                cancel:
+                                                                  "Keep Running",
+                                                              },
+                                                              confirmProps: {
+                                                                color: "danger",
+                                                              },
+                                                              onConfirm: () =>
+                                                                job?.job_id &&
+                                                                debouncedActionOnJobs(
+                                                                  {
+                                                                    id: job.job_id,
+                                                                    action:
+                                                                      "cancel",
+                                                                  },
+                                                                ),
+                                                            },
+                                                          ),
+                                                        `job-${job?.job_id}`,
+                                                      )
+                                                    }
+                                                  >
+                                                    Cancel
+                                                  </Menu.Item>
+                                                </Menu.Dropdown>
+                                              </Menu>
+                                            )}
+                                          </Stack>
                                         ) : (
-                                          <TimeAgo
-                                            key={`job-timestamp-${job?.job_id}`}
-                                            date={
-                                              job?.last_run_time || new Date()
-                                            }
-                                            minPeriod={5}
-                                          />
+                                          <Stack gap={2} align="flex-end">
+                                            <TimeAgo
+                                              key={`job-timestamp-${job?.job_id}`}
+                                              date={
+                                                job?.last_run_time || new Date()
+                                              }
+                                              minPeriod={5}
+                                            />
+                                            {[
+                                              "completed",
+                                              "canceled",
+                                              "failed",
+                                            ].includes(status) &&
+                                              job?.duration !== null &&
+                                              job?.duration !== undefined && (
+                                                <Text size="xs" c="dimmed">
+                                                  Duration:{" "}
+                                                  {formatDuration(job.duration)}
+                                                </Text>
+                                              )}
+                                          </Stack>
                                         )}
                                       </Group>
                                     </Group>

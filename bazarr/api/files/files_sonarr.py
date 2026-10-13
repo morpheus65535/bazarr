@@ -23,7 +23,7 @@ class BrowseSonarrFS(Resource):
 
     @authenticate
     @api_ns_files_sonarr.response(401, 'Not Authenticated')
-    @api_ns_files_sonarr.doc(parser=get_request_parser)
+    @api_ns_files_sonarr.expect(get_request_parser)
     def get(self):
         """List Sonarr file system content"""
         args = self.get_request_parser.parse_args()

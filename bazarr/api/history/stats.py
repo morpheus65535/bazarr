@@ -42,7 +42,7 @@ class HistoryStats(Resource):
 
     @authenticate
     @api_ns_history_stats.response(401, 'Not Authenticated')
-    @api_ns_history_stats.doc(parser=get_request_parser)
+    @api_ns_history_stats.expect(get_request_parser)
     def get(self):
         """Get history statistics"""
         args = self.get_request_parser.parse_args()

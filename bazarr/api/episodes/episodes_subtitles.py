@@ -7,15 +7,11 @@ from flask_restx import Resource, Namespace, reqparse
 from subliminal_patch.core import SUBTITLE_EXTENSIONS
 from werkzeug.datastructures import FileStorage
 
-from app.database import TableShows, TableEpisodes, get_profile_id, database, select
+from app.database import TableEpisodes, database, select, TableEpisodesSubtitles
 from utilities.path_mappings import path_mappings
 from subtitles.upload import manual_upload_subtitle
 from subtitles.mass_download.series import episode_download_specific_subtitles
-from subtitles.download import generate_subtitles
 from subtitles.tools.delete import delete_subtitles
-from app.jobs_queue import jobs_queue
-from app.event_handler import event_stream
-from app.config import settings
 
 from ..utils import authenticate
 
@@ -32,7 +28,7 @@ class EpisodesSubtitles(Resource):
     patch_request_parser.add_argument('hi', type=str, required=True, help='HI true/false as string')
 
     @authenticate
-    @api_ns_episodes_subtitles.doc(parser=patch_request_parser)
+    @api_ns_episodes_subtitles.expect(patch_request_parser)
     @api_ns_episodes_subtitles.response(204, 'Success')
     @api_ns_episodes_subtitles.response(401, 'Not Authenticated')
     @api_ns_episodes_subtitles.response(404, 'Episode not found')
@@ -59,7 +55,7 @@ class EpisodesSubtitles(Resource):
                                      help='Subtitles file as file upload object')
 
     @authenticate
-    @api_ns_episodes_subtitles.doc(parser=post_request_parser)
+    @api_ns_episodes_subtitles.expect(post_request_parser)
     @api_ns_episodes_subtitles.response(204, 'Success')
     @api_ns_episodes_subtitles.response(401, 'Not Authenticated')
     @api_ns_episodes_subtitles.response(404, 'Episode not found')
@@ -115,7 +111,7 @@ class EpisodesSubtitles(Resource):
     delete_request_parser.add_argument('path', type=str, required=True, help='Path of the subtitles file')
 
     @authenticate
-    @api_ns_episodes_subtitles.doc(parser=delete_request_parser)
+    @api_ns_episodes_subtitles.expect(delete_request_parser)
     @api_ns_episodes_subtitles.response(204, 'Success')
     @api_ns_episodes_subtitles.response(401, 'Not Authenticated')
     @api_ns_episodes_subtitles.response(404, 'Episode not found')
@@ -142,14 +138,22 @@ class EpisodesSubtitles(Resource):
 
         subtitlesPath = path_mappings.path_replace_reverse(subtitlesPath)
 
-        if delete_subtitles(media_type='series',
-                            language=language,
-                            forced=forced,
-                            hi=hi,
-                            media_path=episodePath,
-                            subtitles_path=subtitlesPath,
-                            sonarr_series_id=sonarrSeriesId,
-                            sonarr_episode_id=sonarrEpisodeId):
-            return '', 204
-        else:
-            return 'Subtitles file not found or permission issue.', 500
+        subtitles_path_found = database.execute(
+            select(TableEpisodesSubtitles)
+            .where(TableEpisodesSubtitles.path == subtitlesPath)
+            .where(TableEpisodesSubtitles.sonarrSeriesId == sonarrSeriesId)
+            .where(TableEpisodesSubtitles.sonarrEpisodeId == sonarrEpisodeId)
+        ).first()
+
+        if subtitles_path_found:
+            if delete_subtitles(media_type='series',
+                                language=language,
+                                forced=forced,
+                                hi=hi,
+                                media_path=episodePath,
+                                subtitles_path=subtitlesPath,
+                                sonarr_series_id=sonarrSeriesId,
+                                sonarr_episode_id=sonarrEpisodeId):
+                return '', 204
+
+        return 'Subtitles file not found or permission issue.', 500

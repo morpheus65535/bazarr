@@ -64,7 +64,7 @@ class NapiProjektProvider(Provider):
     """NapiProjekt Provider."""
     languages = {Language.fromalpha2(l) for l in ['pl']}
     required_hash = 'napiprojekt'
-    server_url = 'http://napiprojekt.pl/unit_napisy/dl.php'
+    server_url = 'https://napiprojekt.pl/unit_napisy/dl.php'
     subtitle_class = NapiProjektSubtitle
 
     def __init__(self, only_authors=None, only_real_names=None):

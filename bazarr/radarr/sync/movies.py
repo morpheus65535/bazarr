@@ -10,12 +10,11 @@ from functools import reduce
 from app.config import settings
 from app.database import TableMovies, TableLanguagesProfiles, database, insert, update, delete, select, get_exclusion_clause
 from app.event_handler import event_stream
-from app.jobs_queue import jobs_queue
+from app.jobs_queue import jobs_queue, JobCanceled
 from app.notifier import send_notifications_movie
 from constants import MINIMUM_VIDEO_SIZE
 from radarr.rootfolder import check_radarr_rootfolder
 from subtitles.indexer.movies import store_subtitles_movie
-from subtitles.mass_download import movies_download_subtitles
 from utilities.helper import bool_map
 from utilities.path_mappings import path_mappings
 from subtitles.adaptive_searching import is_search_active
@@ -104,8 +103,10 @@ def add_movie(added_movie):
 def update_movies(job_id=None, wait_for_completion=False):
     if not job_id:
         jobs_queue.add_job_from_function("Syncing movies with Radarr", is_progress=True,
-                                         wait_for_completion=wait_for_completion)
+                                         wait_for_completion=wait_for_completion, is_cancellable=True)
         return
+    else:
+        job = jobs_queue.get_job(job_id=job_id)
 
     check_radarr_rootfolder()
     logging.debug('BAZARR Starting movie sync from Radarr.')
@@ -179,6 +180,9 @@ def update_movies(job_id=None, wait_for_completion=False):
             movies_added = []
             movies_updated = []
             for i, movie in enumerate(movies, start=1):
+                if job.cancel_event.is_set():
+                    raise JobCanceled
+
                 jobs_queue.update_job_progress(job_id=job_id, progress_value=i, progress_message=movie['title'])
                 # Only movies that Radarr says have files downloaded will be kept up to date in the DB
                 if movie['hasFile'] is True:

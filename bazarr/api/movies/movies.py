@@ -57,7 +57,7 @@ class Movies(Resource):
     })
 
     @authenticate
-    @api_ns_movies.doc(parser=get_request_parser)
+    @api_ns_movies.expect(get_request_parser)
     @api_ns_movies.response(200, 'Success')
     @api_ns_movies.response(401, 'Not Authenticated')
     def get(self):
@@ -161,7 +161,7 @@ class Movies(Resource):
                                      help='Languages profile(s) ID or "none"')
 
     @authenticate
-    @api_ns_movies.doc(parser=post_request_parser)
+    @api_ns_movies.expect(post_request_parser)
     @api_ns_movies.response(204, 'Success')
     @api_ns_movies.response(401, 'Not Authenticated')
     @api_ns_movies.response(404, 'Languages profile not found')
@@ -202,7 +202,7 @@ class Movies(Resource):
                                                                                '"search-missing", "search-wanted", "sync"]')
 
     @authenticate
-    @api_ns_movies.doc(parser=patch_request_parser)
+    @api_ns_movies.expect(patch_request_parser)
     @api_ns_movies.response(204, 'Success')
     @api_ns_movies.response(400, 'Unknown action')
     @api_ns_movies.response(401, 'Not Authenticated')

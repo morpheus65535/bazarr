@@ -242,7 +242,7 @@ class PlexPin(Resource):
     post_request_parser.add_argument('clientId', type=str, required=False, help='Client ID')
 
     @authenticate
-    @api_ns_plex.doc(parser=post_request_parser)
+    @api_ns_plex.expect(post_request_parser)
     def post(self):
         try:
             args = self.post_request_parser.parse_args()
@@ -325,6 +325,10 @@ class PlexPinCheck(Resource):
                 stored_state = cached_pin.get('state_token')
                 if not stored_state or not get_token_manager().validate_state_token(state_param, stored_state):
                     logger.warning(f"CSRF state validation failed for PIN {pin_id}")
+                    return {
+                        'error': 'Invalid OAuth state',
+                        'code': 'CSRF_STATE_MISMATCH'
+                    }, 403
 
             headers = {
                 'Accept': 'application/json',
@@ -398,6 +402,12 @@ class PlexPinCheck(Resource):
                     'code': pin_data.get('code')
                 }
             }
+
+        except PlexAuthError as e:
+            return {
+                'error': e.message,
+                'code': e.error_code
+            }, e.status_code
 
         except requests.exceptions.RequestException as e:
             logger.error(f"Failed to check PIN: {type(e).__name__}")
@@ -744,7 +754,7 @@ class PlexLogout(Resource):
     post_request_parser = reqparse.RequestParser()
 
     @authenticate
-    @api_ns_plex.doc(parser=post_request_parser)
+    @api_ns_plex.expect(post_request_parser)
     def post(self):
         try:
             settings.plex.token = ""
@@ -777,7 +787,7 @@ class PlexEncryptApiKey(Resource):
     post_request_parser = reqparse.RequestParser()
 
     @authenticate
-    @api_ns_plex.doc(parser=post_request_parser)
+    @api_ns_plex.expect(post_request_parser)
     def post(self):
         try:
             if encrypt_api_key():
@@ -796,7 +806,7 @@ class PlexApiKey(Resource):
     post_request_parser.add_argument('apikey', type=str, required=True, help='API key')
 
     @authenticate
-    @api_ns_plex.doc(parser=post_request_parser)
+    @api_ns_plex.expect(post_request_parser)
     def post(self):
         try:
             args = self.post_request_parser.parse_args()
@@ -827,7 +837,7 @@ class PlexTestConnection(Resource):
     post_request_parser.add_argument('uri', type=str, required=True, help='Server URI')
 
     @authenticate
-    @api_ns_plex.doc(parser=post_request_parser)
+    @api_ns_plex.expect(post_request_parser)
     def post(self):
         args = self.post_request_parser.parse_args()
         uri = args.get('uri')
@@ -896,7 +906,7 @@ class PlexSelectServer(Resource):
     post_request_parser.add_argument('connections', type=list, location='json', required=False, help='All available connection URIs')
 
     @authenticate
-    @api_ns_plex.doc(parser=post_request_parser)
+    @api_ns_plex.expect(post_request_parser)
     def post(self):
         args = self.post_request_parser.parse_args()
         machine_identifier = args.get('machineIdentifier')
@@ -931,7 +941,7 @@ class PlexWebhookCreate(Resource):
     post_request_parser = reqparse.RequestParser()
 
     @authenticate
-    @api_ns_plex.doc(parser=post_request_parser)
+    @api_ns_plex.expect(post_request_parser)
     def post(self):
         try:
             decrypted_token = get_decrypted_token()
@@ -1114,7 +1124,7 @@ class PlexWebhookDelete(Resource):
     post_request_parser.add_argument('webhook_url', type=str, required=True, help='Webhook URL to delete')
 
     @authenticate
-    @api_ns_plex.doc(parser=post_request_parser)
+    @api_ns_plex.expect(post_request_parser)
     def post(self):
         try:
             args = self.post_request_parser.parse_args()
@@ -1158,7 +1168,7 @@ class PlexAutopulseConfig(Resource):
     get_request_parser = reqparse.RequestParser()
 
     @authenticate
-    @api_ns_plex.doc(parser=get_request_parser)
+    @api_ns_plex.expect(get_request_parser)
     def get(self):
         try:
             decrypted_token = get_decrypted_token()

@@ -19,7 +19,7 @@ from utilities.video_analyzer import embedded_subs_reader
 from app.event_handler import event_stream
 from subtitles.indexer.utils import guess_external_subtitles, get_external_subtitles_path
 from subtitles.pool import get_language_equals
-from app.jobs_queue import jobs_queue
+from app.jobs_queue import jobs_queue, JobCanceled
 
 gc.enable()
 
@@ -285,7 +285,12 @@ def list_missing_subtitles_movies(no=None, *args, **kwargs):  # job_id might be 
             actual_subtitles_lang_set = set()
             for sub in actual_subtitles_list:
                 try:
-                    lang_obj = core.Language.fromietf(sub['language'])
+                    # Check for custom alpha2 codes first
+                    custom = CustomLanguage.from_value(sub['language'], "alpha2")
+                    if custom:
+                        lang_obj = custom.subzero_language()
+                    else:
+                        lang_obj = core.Language.fromietf(sub['language'])
                     lang_obj.forced = sub['forced'] == 'True'
                     lang_obj.hi = sub['hi'] == 'True'
                     actual_subtitles_lang_set.add(lang_obj)
@@ -306,6 +311,11 @@ def list_missing_subtitles_movies(no=None, *args, **kwargs):  # job_id might be 
                     expanded_actual_subtitles_list.append({'language': custom.alpha2 if custom else lang_obj.alpha2,
                                                            'forced': 'True' if lang_obj.forced else 'False',
                                                            'hi': 'True' if lang_obj.hi else 'False'})
+
+            # languages with a non-HI item in the profile. Built from every item, not one value per language,
+            # so a normal item and a non-HI item for the same language don't overwrite each other
+            non_hi_languages = {x['language'] for x in desired_subtitles_temp['items']
+                                if x['forced'] == 'False' and x['hi'] == HI_EXCLUDED} if desired_subtitles_temp else set()
 
             # check if cutoff is reached and skip any further check
             cutoff_met = False
@@ -328,11 +338,18 @@ def list_missing_subtitles_movies(no=None, *args, **kwargs):  # job_id might be 
                     elif cutoff_language in expanded_actual_subtitles_list:
                         # Check against expanded actual subtitles (includes language equals)
                         cutoff_met = True
-                    elif (cutoff_temp['hi'] == 'False' and cutoff_language and
+                    elif (cutoff_temp['hi'] == 'False' and cutoff_temp['forced'] == 'False' and cutoff_language and
+                          cutoff_language['language'] not in non_hi_languages and
                           {'language': cutoff_language['language'],
                            'forced': 'False',
                            'hi': 'True'} in actual_subtitles_list):
                         # HI is considered as good as normal only if the language isn't set to exclude HI
+                        cutoff_met = True
+                    elif (cutoff_temp['hi'] == HI_EXCLUDED and
+                          {'language': cutoff_language['language'],
+                           'forced': cutoff_language['forced'],
+                           'hi': 'False'} in actual_subtitles_list):
+                        # Cutoff is met by non-HI subtitles when HI subtitles are excluded in languages profile
                         cutoff_met = True
 
             if cutoff_met:
@@ -345,18 +362,16 @@ def list_missing_subtitles_movies(no=None, *args, **kwargs):  # job_id might be 
                     if item not in actual_subtitles_list and item not in expanded_actual_subtitles_list:
                         missing_subtitles_list.append(item)
 
-                # get a dictionary of hi setting by language
-                hi_setting_by_language = {x['language']: x['hi'] for x in desired_subtitles_temp['items'] if x['forced'] == 'False'} if desired_subtitles_temp else {}
                 for item in actual_subtitles_list:
-                    if item['hi'] == 'True' and hi_setting_by_language.get(item['language']) != HI_EXCLUDED:
-                        # remove missing that have forced or hi subtitles for this language in existing (unless the language is set to exclude HI)
+                    if item['hi'] == 'True' and item['forced'] == 'False' and item['language'] not in non_hi_languages:
+                        # remove missing that have hi subtitles for this language in existing (unless the language is set to exclude HI)
                         try:
                             missing_subtitles_list.remove({'language': item['language'],
                                                            'forced': 'False',
                                                            'hi': 'False'})
                         except ValueError:
                             pass
-                    elif item['hi'] == 'False' and hi_setting_by_language.get(item['language']) == HI_EXCLUDED:
+                    elif item['hi'] == 'False' and item['forced'] == 'False' and item['language'] in non_hi_languages:
                         # remove explicitely excluded requested hi subtitles and existing hi subtitles
                         try:
                             missing_subtitles_list.remove({'language': item['language'],
@@ -390,8 +405,10 @@ def list_missing_subtitles_movies(no=None, *args, **kwargs):  # job_id might be 
 def movies_full_scan_subtitles(job_id=None, use_cache=None, wait_for_completion=False):
     if not job_id:
         jobs_queue.add_job_from_function("Indexing all existing movies subtitles", is_progress=True,
-                                         wait_for_completion=wait_for_completion)
+                                         wait_for_completion=wait_for_completion, is_cancellable=True)
         return
+    else:
+        job = jobs_queue.get_job(job_id=job_id)
 
     if use_cache is None:
         use_cache = settings.radarr.use_ffprobe_cache
@@ -404,6 +421,9 @@ def movies_full_scan_subtitles(job_id=None, use_cache=None, wait_for_completion=
 
     jobs_queue.update_job_progress(job_id=job_id, progress_max=len(movies), progress_message='Indexing')
     for i, movie in enumerate(movies, start=1):
+        if job.cancel_event.is_set():
+            raise JobCanceled
+
         jobs_queue.update_job_progress(job_id=job_id, progress_value=i, progress_message=movie.title)
         store_subtitles_movie(movie.radarrId, use_cache=use_cache)
 

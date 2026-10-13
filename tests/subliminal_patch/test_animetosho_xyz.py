@@ -55,6 +55,23 @@ def anime_episodes():
             resolution="1080p",
             video_codec="H.264",
         ),
+        # The AnoZu release reported in #3612. AnimeTosho appends the Japanese title to the torrent
+        # name after a pipe, which guessit parses as the release group instead of the real "AnoZu".
+        "anozu_s04e16": Episode(
+            "Re.ZERO.Starting.Life.in.Another.World.2016.S04E16.1080p.CR.WEB-DL.DUAL.DDP2.0.H.264-AnoZu.mkv",
+            "Re: ZERO -Starting Life in Another World-",
+            4,
+            16,
+            year=2016,
+            original_series=False,
+            source="Web",
+            series_anidb_id=19242,
+            series_anidb_episode_id=315621,
+            series_tvdb_id=305089,
+            release_group="AnoZu",
+            resolution="1080p",
+            video_codec="H.264",
+        ),
     }
 
 
@@ -102,6 +119,55 @@ def _nested_response(*sub_infos):
                     for idx, info in enumerate(sub_infos, start=1)
                 ],
             }
+        ],
+    }
+
+
+def _anozu_s04e16_response(*sub_infos):
+    """The release reported in #3612: its torrent name carries the Japanese title after a pipe,
+    which guessit parses as the release group, while the file name holds the real "AnoZu"."""
+    return {
+        "id": 691630,
+        "torrent_name": "[AnoZu] Re: ZERO, Starting Life in Another World S04E16 1080p CR WEB-DL "
+                        "Dual-Audio DDP 2.0 H.264 | Re:Zero kara Hajimeru Isekai Seikatsu 4th Season",
+        "attachments": [
+            {
+                "id": idx,
+                "type": "subtitle",
+                "url": f"https://storage.animetosho.xyz/releases/691630/subtitles/track{idx}.ass.xz",
+                "info": info,
+            }
+            for idx, info in enumerate(sub_infos, start=1)
+        ],
+        "files": [
+            {
+                "id": 1404449,
+                "filename": "Re.ZERO.Starting.Life.in.Another.World.2016.S04E16.1080p.CR.WEB-DL."
+                            "DUAL.DDP2.0.H.264-AnoZu.mkv",
+            }
+        ],
+    }
+
+
+def _subsplease_batch_response(*sub_infos):
+    """A batch whose torrent name ("... (01-10) [Batch]") parses "Batch" as the release group while
+    the primary file name carries the real "[SubsPlease]" group."""
+    return {
+        "id": 612661,
+        "torrent_name": "[SubsPlease] Sousou no Frieren S2 (01-10) (1080p) [Batch]",
+        "primary_file_id": 4338,
+        "attachments": [
+            {
+                "id": idx,
+                "type": "subtitle",
+                "url": f"https://storage.animetosho.xyz/releases/612661/subtitles/track{idx}.ass.xz",
+                "info": info,
+            }
+            for idx, info in enumerate(sub_infos, start=1)
+        ],
+        "files": [
+            {"id": 4338, "filename": "[SubsPlease] Sousou no Frieren S2 - 01v2 (1080p) [4149A222].mkv"},
+            {"id": 4339, "filename": "[SubsPlease] Sousou no Frieren S2 - 02v2 (1080p) [B1C1DECE].mkv"},
         ],
     }
 
@@ -299,6 +365,73 @@ def test_nested_attachments_are_found(anime_episodes, requests_mock, data):
         == "https://storage.animetosho.xyz/attachments/0029a/81a.xz"
     assert by_language[(Language("por", forced=True), True)].download_link \
         == "https://storage.animetosho.xyz/attachments/002a1/975.xz"
+
+
+def test_file_name_is_used_to_match_release_metadata(anime_episodes, requests_mock):
+    """#3612: guessit parsed the Japanese title appended to the torrent name as the release group,
+    so the exact AnoZu match only scored 250/360 and was never downloaded."""
+    item = anime_episodes["anozu_s04e16"]
+
+    _mock_feed(
+        requests_mock,
+        _anozu_s04e16_response({"language": "English", "language_code": "eng", "forced": False}),
+        eid=315621,
+        entry_id=691630,
+        title="[AnoZu] Re: ZERO, Starting Life in Another World S04E16 1080p CR WEB-DL Dual-Audio "
+              "DDP 2.0 H.264 | Re:Zero kara Hajimeru Isekai Seikatsu 4th Season",
+    )
+
+    with AnimeToshoXYZProvider() as provider:
+        subtitles = provider.list_subtitles(item, languages={Language("eng")})
+
+    assert len(subtitles) == 1
+    assert {"release_group", "year"}.issubset(subtitles[0].get_matches(item))
+
+
+def test_batch_primary_file_name_is_used_to_match_the_release_group(requests_mock):
+    """A batch torrent name parses "Batch" as the release group; the real group only exists in its
+    primary file name."""
+    item = Episode(
+        "[SubsPlease] Sousou no Frieren S2 - 01v2 (1080p) [4149A222].mkv",
+        "Frieren: Beyond Journey's End",
+        2,
+        1,
+        source="Web",
+        series_anidb_episode_id=306529,
+        release_group="SubsPlease",
+        resolution="1080p",
+        video_codec="H.264",
+    )
+
+    _mock_feed(
+        requests_mock,
+        _subsplease_batch_response({"language": "English", "language_code": "eng", "forced": False}),
+        eid=306529,
+        entry_id=612661,
+        title="[SubsPlease] Sousou no Frieren S2 (01-10) (1080p) [Batch]",
+    )
+
+    with AnimeToshoXYZProvider() as provider:
+        subtitles = provider.list_subtitles(item, languages={Language("eng")})
+
+    assert len(subtitles) == 1
+    assert "release_group" in subtitles[0].get_matches(item)
+
+
+def test_torrent_name_is_used_to_match_when_no_file_is_listed(anime_episodes, requests_mock):
+    """Releases with no file entry have to keep being matched through the torrent name."""
+    item = anime_episodes["crowned_s01e08"]
+
+    response = _top_level_response({"language": "English", "language_code": "eng", "forced": False})
+    response["files"] = []
+
+    _mock_feed(requests_mock, response, eid=313249, entry_id=622245, title=_RELEASE_NAME)
+
+    with AnimeToshoXYZProvider() as provider:
+        subtitles = provider.list_subtitles(item, languages={Language("eng")})
+
+    assert len(subtitles) == 1
+    assert "release_group" in subtitles[0].get_matches(item)
 
 
 def test_forced_track_is_not_offered_as_a_normal_subtitle(anime_episodes, requests_mock, data):

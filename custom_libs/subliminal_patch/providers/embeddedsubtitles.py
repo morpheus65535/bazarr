@@ -2,10 +2,12 @@
 
 import functools
 import hashlib
+import json
 import logging
 import os
 import re
 import shutil
+import subprocess
 import tempfile
 from typing import List
 
@@ -110,6 +112,7 @@ class EmbeddedSubtitlesProvider(Provider):
         timeout=600,
         unknown_as_fallback=False,
         fallback_lang="en",
+        mediainfo_path=None,
     ):
         self._included_codecs = set(included_codecs or _ALLOWED_CODECS)
 
@@ -125,6 +128,7 @@ class EmbeddedSubtitlesProvider(Provider):
         self._fallback_lang = fallback_lang
         self._cached_paths = {}
         self._timeout = int(timeout)
+        self._mediainfo_path = mediainfo_path
 
         container.FFPROBE_PATH = ffprobe_path or container.FFPROBE_PATH
         container.FFMPEG_PATH = ffmpeg_path or container.FFMPEG_PATH
@@ -159,6 +163,9 @@ class EmbeddedSubtitlesProvider(Provider):
 
             self._blacklist.add(path)
             streams = []
+
+        if self._mediainfo_path:
+            _enrich_languages_with_mediainfo(streams, path, self._mediainfo_path)
 
         _rebuild_langs(streams)
 
@@ -246,7 +253,7 @@ class EmbeddedSubtitlesProvider(Provider):
                 self._cache_dir,
                 timeout=self._timeout,
                 fallback_to_convert=True,
-                basename_callback=_basename_callback,
+                basename_callback=_make_unique_basename_callback(),
                 progress_callback=lambda d: logger.debug("Progress: %s", d),
             )
             # Add the extracted paths to the containter path key
@@ -337,6 +344,83 @@ def _rebuild_langs(streams):
         stream.language = Language.rebuild(language, **kwargs)
 
         logger.debug("Rebuild language: %r", stream.language)
+
+
+def _mediainfo_languages_by_stream_order(path, mediainfo_path):
+    """Map stream order (== ffmpeg absolute index) to the BCP-47 language
+    mediainfo reports for each text track, including region/script sub-tags
+    (e.g. pt-BR) that ffprobe frequently omits."""
+    try:
+        output = subprocess.run(
+            [mediainfo_path, "--Output=JSON", path],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        ).stdout
+    except (subprocess.CalledProcessError, OSError) as error:
+        logger.warning("mediainfo failed to analyze %s: %s", path, error)
+        return {}
+
+    try:
+        data = json.loads(output or b"{}")
+        tracks = data["media"]["track"]
+    except (ValueError, KeyError, TypeError) as error:
+        logger.warning("Could not parse mediainfo output for %s: %s", path, error)
+        return {}
+
+    languages = {}
+    for track in tracks:
+        if track.get("@type") != "Text":
+            continue
+        stream_order = track.get("StreamOrder")
+        language = track.get("Language")
+        if stream_order is None or not language:
+            continue
+        try:
+            languages[int(stream_order)] = language
+        except (TypeError, ValueError):
+            continue
+
+    return languages
+
+
+def _enrich_languages_with_mediainfo(streams, path, mediainfo_path):
+    """Refine each stream language with mediainfo, only when it adds
+    region/script detail to the same base language ffprobe already found, so a
+    mismatch never downgrades or replaces the ffprobe-detected language."""
+    if not streams:
+        return
+
+    languages = _mediainfo_languages_by_stream_order(path, mediainfo_path)
+    if not languages:
+        return
+
+    for stream in streams:
+        mediainfo_lang = languages.get(stream.index)
+        if not mediainfo_lang:
+            continue
+
+        try:
+            refined = Language.fromietf(mediainfo_lang)
+        except Exception:
+            logger.debug("mediainfo language %r not recognized", mediainfo_lang)
+            continue
+
+        current = stream.language
+        if refined.alpha3 != current.alpha3:
+            continue
+        if refined.country == current.country and refined.script == current.script:
+            continue
+        if current.country is not None and refined.country is None:
+            continue
+
+        logger.debug(
+            "mediainfo refined stream %s language: %r -> %r",
+            stream.index,
+            current,
+            refined,
+        )
+        stream.language = refined
 
 
 def _get_chinese_language_from_tags(stream):
@@ -430,3 +514,30 @@ def _format_duration(duration):
 def _basename_callback(path: str):
     path, ext = os.path.splitext(path)
     return hashlib.md5(path.encode()).hexdigest() + ext
+
+
+def _make_unique_basename_callback():
+    """Build a stateful basename callback that guarantees a unique output file
+    per subtitle stream.
+
+    fese derives the extraction filename from the container path plus the
+    stream's language/disposition suffix. When a container has more than one
+    track sharing the same language *and* disposition (e.g. two Portuguese
+    tracks, one pt-BR and one pt), those tracks collapse to the same filename
+    and ffmpeg overwrites one with the other -- so every colliding index ends
+    up mapped to a single extracted file. Since the callback is invoked once
+    per stream, in stream order, we disambiguate repeated basenames by
+    appending a counter, keeping each stream's extraction distinct.
+    """
+    seen = {}
+
+    def callback(path: str):
+        base = _basename_callback(path)
+        count = seen.get(base, 0)
+        seen[base] = count + 1
+        if count == 0:
+            return base
+        root, ext = os.path.splitext(base)
+        return f"{root}.{count:02}{ext}"
+
+    return callback

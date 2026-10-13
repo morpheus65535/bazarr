@@ -217,6 +217,16 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
         name: "Fallback language",
         defaultValue: "en",
       },
+      {
+        type: "switch",
+        key: "use_mediainfo",
+        name: "Use mediainfo for language detection (detects region variants such as pt-BR that ffprobe may miss; requires the mediainfo binary)",
+      },
+      {
+        type: "switch",
+        key: "prefer_embedded",
+        name: "Prefer embedded subtitles (search embedded tracks first and skip other providers for any language they satisfy)",
+      },
     ],
     message:
       "Warning for cloud users: this provider needs to read the entire file in order to extract subtitles.",
@@ -378,7 +388,14 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
   {
     key: "napiprojekt",
     description: "Polish Subtitles Provider",
+    message:
+      "Hash-only search is a temporary workaround for catalogue search failures. It searches only for subtitles matching your video file's fingerprint and may return fewer results. Subtitles visible on the NapiProjekt website may not appear in Bazarr. Author filters are ignored while enabled.",
     inputs: [
+      {
+        type: "switch",
+        key: "hash_only",
+        name: "Hash-only search",
+      },
       {
         type: "switch",
         key: "only_authors",

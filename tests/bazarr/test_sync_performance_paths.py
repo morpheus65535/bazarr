@@ -80,6 +80,14 @@ def test_update_series_runs_one_explicit_episode_sync(monkeypatch):
         def execute(self, statement):
             return _Result(all_value=[])
 
+    class _MockEvent:
+        def is_set(self):
+            return False
+
+    class _MockJob:
+        def __init__(self):
+            self.cancel_event = _MockEvent()
+
     monkeypatch.setattr(series_sync, "database", _Database())
     monkeypatch.setattr(
         series_sync,
@@ -107,6 +115,7 @@ def test_update_series_runs_one_explicit_episode_sync(monkeypatch):
             add_job_from_function=lambda *args, **kwargs: None,
             update_job_progress=lambda *args, **kwargs: None,
             update_job_name=lambda *args, **kwargs: None,
+            get_job=lambda *args, **kwargs: _MockJob(),
         ),
     )
 
@@ -129,6 +138,14 @@ def test_update_series_returns_early_when_sonarr_api_returns_none(monkeypatch):
         def execute(self, statement):
             execute_calls.append(statement)
             return _Result(all_value=[])
+
+    class _MockEvent:
+        def is_set(self):
+            return False
+
+    class _MockJob:
+        def __init__(self):
+            self.cancel_event = _MockEvent()
 
     monkeypatch.setattr(series_sync, "database", _Database())
     monkeypatch.setattr(
@@ -171,6 +188,7 @@ def test_update_series_returns_early_when_sonarr_api_returns_none(monkeypatch):
             update_job_name=lambda *args, **kwargs: job_name_updates.append(
                 (args, kwargs)
             ),
+            get_job=lambda *args, **kwargs: _MockJob(),
         ),
     )
 
@@ -274,6 +292,14 @@ def test_update_movies_compares_against_matching_radarr_id(monkeypatch):
         def execute(self, statement):
             return _Result(all_value=movie_rows)
 
+    class _MockEvent:
+        def is_set(self):
+            return False
+
+    class _MockJob:
+        def __init__(self):
+            self.cancel_event = _MockEvent()
+
     def _movie_parser(movie, **kwargs):
         return {
             "radarrId": movie["id"],
@@ -304,6 +330,7 @@ def test_update_movies_compares_against_matching_radarr_id(monkeypatch):
             add_job_from_function=lambda *args, **kwargs: None,
             update_job_progress=lambda *args, **kwargs: None,
             update_job_name=lambda *args, **kwargs: None,
+            get_job=lambda *args, **kwargs: _MockJob(),
         ),
     )
     monkeypatch.setattr(

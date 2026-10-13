@@ -1,16 +1,20 @@
 # coding=utf-8
-import logging
 import pysubs2
 import srt
 
 from datetime import timedelta
 from flask_restx import Resource, Namespace, reqparse, fields, marshal
 
+from app.database import is_indexed_subtitle_path
 from ..utils import authenticate
 from subtitles.indexer.utils import detect_encoding
+from utilities.path_mappings import path_mappings
 
 
 api_ns_subtitle_contents = Namespace('Subtitle Contents', description='Retrieve contents of subtitle file')
+
+# Same formats Bazarr can translate; only these files are read from disk
+SUBTITLE_EXTENSIONS = ('.srt', '.ass', '.ssa', '.vtt')
 
 
 def times_dict_from_ms(ms):
@@ -74,12 +78,20 @@ class SubtitleNameContents(Resource):
     @api_ns_subtitle_contents.response(200, 'Success')
     @api_ns_subtitle_contents.response(400, 'Invalid subtitle file encoding')
     @api_ns_subtitle_contents.response(401, 'Not Authenticated')
-    @api_ns_subtitle_contents.doc(parser=get_request_parser)
+    @api_ns_subtitle_contents.expect(get_request_parser)
     def get(self):
         """Retrieve subtitle file contents"""
 
         args = self.get_request_parser.parse_args()
         path = args.get('subtitlePath')
+
+        if not path or not isinstance(path, str) or not path.casefold().endswith(SUBTITLE_EXTENSIONS):
+            return 'Not a subtitle file', 400
+
+        # The UI sends the mapped (local) path, but the index stores the reversed (Sonarr/Radarr) path
+        if not is_indexed_subtitle_path(path_mappings.path_replace_reverse(path),
+                                        path_mappings.path_replace_reverse_movie(path)):
+            return 'Subtitles file is not indexed by Bazarr', 404
 
         # Detect subtitles file encoding
         encoding = detect_encoding(path)
@@ -93,6 +105,9 @@ class SubtitleNameContents(Resource):
         try:
             results = parse_srt_contents(file_content)
         except (srt.SRTParseError, srt.TimestampParseError):
-            results = parse_ssa_contents(file_content)
+            try:
+                results = parse_ssa_contents(file_content)
+            except pysubs2.exceptions.Pysubs2Error:
+                return 'Unable to parse subtitle file', 400
 
         return marshal(results, self.get_response_model, envelope='data')

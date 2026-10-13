@@ -15,7 +15,7 @@ from app.notifier import send_notifications
 from app.get_providers import get_providers
 from app.database import (get_exclusion_clause, get_audio_profile_languages, TableShows, TableEpisodes, database,
                           select, get_profile_id, get_subtitles)
-from app.jobs_queue import jobs_queue
+from app.jobs_queue import jobs_queue, JobCanceled
 from app.event_handler import event_stream
 from app.config import settings
 
@@ -25,8 +25,10 @@ from ..download import generate_subtitles
 def series_download_subtitles(no, job_id=None, job_sub_function=False):
     if not job_sub_function and not job_id:
         jobs_queue.add_job_from_function(f"""Downloading missing subtitles for {database.scalar(
-            select(TableShows.title).where(TableShows.sonarrSeriesId == no)) or 'Unknown Series'}""", is_progress=True)
+            select(TableShows.title).where(TableShows.sonarrSeriesId == no)) or 'Unknown Series'}""", is_progress=True, is_cancellable=True)
         return
+    else:
+        job = jobs_queue.get_job(job_id=job_id)
 
     series_row = database.execute(
         select(TableShows.path,
@@ -60,6 +62,9 @@ def series_download_subtitles(no, job_id=None, job_sub_function=False):
 
         jobs_queue.update_job_progress(job_id=job_id, progress_max=count_episodes_details)
         for i, episode in enumerate(episodes_details, start=1):
+            if job.cancel_event.is_set():
+                raise JobCanceled
+
             jobs_queue.update_job_progress(job_id=job_id, progress_value=i,
                                            progress_message=f'{episode.title} - S{episode.season:02d}E'
                                                             f'{episode.episode:02d} - {episode.episodeTitle}')
@@ -84,7 +89,7 @@ def series_download_subtitles(no, job_id=None, job_sub_function=False):
 def episode_download_subtitles(no, job_id=None, job_sub_function=False, providers_list=None, fallback_allowed=False):
     if not job_sub_function and not job_id:
         jobs_queue.add_job_from_function(f"""Downloading missing subtitles for {database.scalar(
-            select(TableShows.title).where(TableShows.sonarrSeriesId == no)) or 'Unknown Series'}""", is_progress=True)
+            select(TableShows.title).join(TableEpisodes).where(TableEpisodes.sonarrEpisodeId == no)) or 'Unknown Series'}""", is_progress=True)
         return
 
     conditions = [(TableEpisodes.sonarrEpisodeId == no)]
@@ -108,13 +113,14 @@ def episode_download_subtitles(no, job_id=None, job_sub_function=False, provider
         .where(reduce(operator.and_, conditions))
     episode = database.execute(stmt).first()
 
-    previously_indexed_subtitles = get_subtitles(sonarr_episode_id=episode.sonarrEpisodeId)
-
     if not episode:
-        logging.debug("BAZARR no episode with that sonarrEpisodeId can be found in database:", str(no))
+        logging.debug(f"BAZARR no episode with that sonarrEpisodeId can be found in database: {no}")
         jobs_queue.update_job_progress(job_id=job_id, progress_message="Episode not found in database.")
         return
-    elif not len(previously_indexed_subtitles) or \
+
+    previously_indexed_subtitles = get_subtitles(sonarr_episode_id=episode.sonarrEpisodeId)
+
+    if not len(previously_indexed_subtitles) or \
             any([not x['embedded_track_id'] for x in previously_indexed_subtitles if not x['path']]):
         # subtitles indexing for this episode might be incomplete, we'll do it again
         store_subtitles(episode.sonarrEpisodeId)

@@ -43,6 +43,7 @@ const seriesFilterConfig = {
     profile: true,
     audio: true,
     tags: true,
+    ended: true,
   },
 };
 

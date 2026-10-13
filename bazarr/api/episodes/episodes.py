@@ -37,7 +37,7 @@ class Episodes(Resource):
     })
 
     @authenticate
-    @api_ns_episodes.doc(parser=get_request_parser)
+    @api_ns_episodes.expect(get_request_parser)
     @api_ns_episodes.response(200, 'Success')
     @api_ns_episodes.response(401, 'Not Authenticated')
     @api_ns_episodes.response(404, 'Series or Episode ID not provided')

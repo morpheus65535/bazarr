@@ -9,15 +9,13 @@ import shlex
 from locale import getpreferredencoding
 
 
-def postprocessing(command, path):
+def postprocessing(args, path):
     try:
         encoding = getpreferredencoding()
         if os.name == 'nt':
             from ctypes import windll
             code_page = windll.kernel32.GetConsoleOutputCP()
             encoding = f"cp{code_page}"
-
-        args = shlex.split(command, posix=False if os.name == 'nt' else True)
 
         # Use shell=False to avoid CWE-78 OS command injection via shell metacharacters.
         process = subprocess.Popen(args, shell=False, stdout=subprocess.PIPE,

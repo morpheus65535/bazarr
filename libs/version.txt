@@ -1,7 +1,7 @@
 # Bazarr dependencies
 alembic==1.18.4
 aniso8601==10.0.1
-apprise==1.11.0
+apprise==1.11.0, <2.0.0
 apscheduler==4.0.0a6
 attrs==26.1.0
 blinker==1.9.0
