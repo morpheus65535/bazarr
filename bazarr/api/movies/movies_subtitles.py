@@ -13,7 +13,7 @@ from subtitles.upload import manual_upload_subtitle
 from subtitles.mass_download.movies import movie_download_specific_subtitles
 from subtitles.tools.delete import delete_subtitles
 
-from ..utils import authenticate
+from ..utils import authenticate, normalize_flag_token
 
 api_ns_movies_subtitles = Namespace('Movies Subtitles', description='Download, upload or delete movies subtitles')
 
@@ -38,8 +38,8 @@ class MoviesSubtitles(Resource):
         args = self.patch_request_parser.parse_args()
 
         movie_download_specific_subtitles(radarr_id=args.get('radarrid'), language=args.get('language'),
-                                          hi=args.get('hi').capitalize(),
-                                          forced=args.get('forced').capitalize(), job_id=None)
+                                          hi=normalize_flag_token(args.get('hi')),
+                                          forced=normalize_flag_token(args.get('forced')), job_id=None)
 
         return '', 204
 
