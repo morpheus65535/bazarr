@@ -312,7 +312,7 @@ def is_search_active(desired_language, attempt_string, adaptive_search_policy=No
 
     @param desired_language: 2 letters language to search for in attempts
     @type desired_language: str
-    @param attempt_string: string representation of a list of lists from database column failedAttempts
+    @param attempt_string: serialized attempt history
     @type attempt_string: str
 
     @return: return True if it's time to search again and False if not
@@ -399,7 +399,7 @@ def updateFailedAttempts(desired_language, attempt_string):
 
     @param desired_language: 2 letters language to search for in attempts
     @type desired_language: str
-    @param attempt_string: string representation of a list of lists from database column failedAttempts
+    @param attempt_string: serialized attempt history
     @type attempt_string: str
 
     @return: return a string representation of a list of lists like [str(language_code), str(attempts)]
