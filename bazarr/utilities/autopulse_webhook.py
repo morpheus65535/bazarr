@@ -5,11 +5,32 @@ import os
 import requests
 from urllib.parse import urlencode
 from retry.api import retry
+from typing import TypedDict
 
 from app.config import settings
 
 
-def generate_autopulse_config(decrypted_token=None):
+class AutopulseTemplate(TypedDict, total=False):
+    config: str
+    version: str
+
+
+class AutopulseConfig(TypedDict):
+    config_yaml: str
+    server_name: str
+    rewrite_detected: bool
+    rewrite_suggestion: str | None
+    template_info: str
+
+
+class RewriteConfig(TypedDict):
+    detected: bool
+    suggestion: str
+    trigger_section: str
+    target_section: str
+
+
+def generate_autopulse_config(decrypted_token: str | None = None) -> AutopulseConfig | None:
     """
     Generate complete Autopulse configuration for Plex integration by requesting
     a configuration template from Autopulse and adding Plex-specific details.
@@ -53,7 +74,7 @@ def generate_autopulse_config(decrypted_token=None):
         return None
 
 
-def _get_autopulse_template():
+def _get_autopulse_template() -> AutopulseTemplate | None:
     """
     Request configuration template from Autopulse API.
     Returns None if the API call fails or Autopulse is not available.
@@ -107,7 +128,7 @@ def _get_autopulse_template():
         return None
 
 
-def _get_autopulse_template_url():
+def _get_autopulse_template_url() -> str | None:
     """Get the Autopulse template API URL."""
     webhook_url = _get_webhook_url()
     if not webhook_url:
@@ -129,7 +150,8 @@ def _get_autopulse_template_url():
         return None
 
 
-def _generate_config_from_template(template_data, server_url, decrypted_token, server_name):
+def _generate_config_from_template(template_data: AutopulseTemplate, server_url: str,
+                                   decrypted_token: str, server_name: str) -> AutopulseConfig | None:
     """
     Generate configuration by replacing placeholders in the Autopulse template with Plex-specific details.
     """
@@ -198,7 +220,8 @@ def _generate_config_from_template(template_data, server_url, decrypted_token, s
         return None
 
 
-def call_external_webhook(subtitle_path, media_path, language, media_type, action_type):
+def call_external_webhook(subtitle_path: str | None, media_path: str | None, language: str | None,
+                          media_type: str | None, action_type: str | None) -> None:
     """
     Call external webhook after subtitle download and delete.
     Supports generic webhooks and Autopulse integration.
@@ -207,7 +230,7 @@ def call_external_webhook(subtitle_path, media_path, language, media_type, actio
     if not settings.general.use_external_webhook:
         return
 
-    params = {}
+    params: dict[str, str] = {}
     try:
         # Use parent directory instead of specific file for better grouping
         media_path = "" if media_path is None else media_path
@@ -253,7 +276,7 @@ def call_external_webhook(subtitle_path, media_path, language, media_type, actio
 
 
 @retry(exceptions=(requests.exceptions.RequestException,), tries=3, delay=1, backoff=2, jitter=(0, 1))
-def _make_webhook_request(url, auth, headers):
+def _make_webhook_request(url: str, auth: tuple[str, str] | None, headers: dict[str, str]) -> requests.Response:
     """Make webhook request with retry logic for network issues."""
     return requests.get(
         url,
@@ -265,7 +288,9 @@ def _make_webhook_request(url, auth, headers):
 
 
 @retry(exceptions=(requests.exceptions.RequestException,), tries=3, delay=1, backoff=2, jitter=(0, 1))
-def _make_autopulse_request(url, params=None, auth=None, headers=None):
+def _make_autopulse_request(url: str, params: dict[str, str] | None = None,
+                            auth: tuple[str, str] | None = None,
+                            headers: dict[str, str] | None = None) -> requests.Response:
     """Make Autopulse API request with retry logic for network issues."""
     return requests.get(
         url,
@@ -277,7 +302,7 @@ def _make_autopulse_request(url, params=None, auth=None, headers=None):
     )
 
 
-def test_external_webhook_connection():
+def test_external_webhook_connection() -> tuple[bool, str]:
     """
     Test connection to external webhook.
     Returns (success: bool, message: str)
@@ -337,7 +362,7 @@ def test_external_webhook_connection():
         return False, f"External webhook connection error: {str(e)}"
 
 
-def _get_webhook_url():
+def _get_webhook_url() -> str | None:
     """Get the webhook URL from external webhook configuration."""
     if settings.general.use_external_webhook:
         webhook_url = settings.general.external_webhook_url.strip()
@@ -351,7 +376,7 @@ def _get_webhook_url():
     return None
 
 
-def _get_webhook_auth():
+def _get_webhook_auth() -> tuple[str, str] | None:
     """Get authentication for the external webhook."""
     if settings.general.use_external_webhook:
         username = settings.general.external_webhook_username.strip()
@@ -363,7 +388,7 @@ def _get_webhook_auth():
     return None
 
 
-def _detect_path_rewrite():
+def _detect_path_rewrite() -> RewriteConfig:
     """Detect if path rewriting is needed between Bazarr and Plex."""
     try:
         # Step 1: Try smart detection (compare actual Bazarr vs Plex paths)
@@ -380,7 +405,7 @@ def _detect_path_rewrite():
         return _empty_rewrite_config()
 
 
-def _detect_smart_path_differences():
+def _detect_smart_path_differences() -> RewriteConfig:
     """Compare actual Bazarr vs Plex paths to detect mount point differences."""
     try:
         # Get Bazarr paths
@@ -412,7 +437,7 @@ def _detect_smart_path_differences():
         return _empty_rewrite_config()
 
 
-def _compare_path_sets(bazarr_path, plex_paths, media_type):
+def _compare_path_sets(bazarr_path: str, plex_paths: list[str], media_type: str) -> RewriteConfig:
     """Compare a Bazarr path against Plex paths to detect differences."""
     bazarr_normalized = os.path.normpath(bazarr_path.rstrip('/'))
     
@@ -431,7 +456,7 @@ def _compare_path_sets(bazarr_path, plex_paths, media_type):
     return _empty_rewrite_config()
 
 
-def _detect_mount_point_difference(bazarr_path, plex_path, media_type):
+def _detect_mount_point_difference(bazarr_path: str, plex_path: str, media_type: str) -> RewriteConfig:
     """Detect mount point differences between two paths."""
     # Drop the empty segment produced by the leading slash so the tails compare correctly
     bazarr_parts = [part for part in bazarr_path.split('/') if part]
@@ -464,7 +489,7 @@ def _detect_mount_point_difference(bazarr_path, plex_path, media_type):
     return _empty_rewrite_config()
 
 
-def _detect_common_patterns():
+def _detect_common_patterns() -> RewriteConfig:
     """Check for common Docker mount patterns when smart detection fails."""
     movie_path = settings.general.get('movie_path', '')
     series_path = settings.general.get('series_path', '')
@@ -488,7 +513,7 @@ def _detect_common_patterns():
     return _empty_rewrite_config()
 
 
-def _empty_rewrite_config():
+def _empty_rewrite_config() -> RewriteConfig:
     """Return empty rewrite configuration."""
     return {
         'detected': False,
@@ -498,7 +523,7 @@ def _empty_rewrite_config():
     }
 
 
-def _inject_rewrite_config(config_text, rewrite_config):
+def _inject_rewrite_config(config_text: str, rewrite_config: RewriteConfig) -> str:
     """Inject rewrite configuration into appropriate TOML sections."""
     lines = config_text.split('\n')
     modified_lines = []

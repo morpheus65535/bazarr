@@ -4,14 +4,16 @@ import os
 import logging
 import datetime
 import glob
+from typing import cast
 
 from subliminal import region as subliminal_cache_region
+from subzero.cache_backends.file import SZFileBackend
 
 from app.get_args import args
 from app.jobs_queue import jobs_queue
 
 
-def cache_maintenance(job_id=None, wait_for_completion=False):
+def cache_maintenance(job_id: int | None = None, wait_for_completion: bool = False) -> None:
     if not job_id:
         jobs_queue.add_job_from_function("Performing Cache Maintenance", is_progress=False,
                                          wait_for_completion=wait_for_completion)
@@ -23,7 +25,7 @@ def cache_maintenance(job_id=None, wait_for_completion=False):
     logging.debug("BAZARR Running cache maintenance")
     now = datetime.datetime.now()
 
-    def remove_expired(path, expiry):
+    def remove_expired(path: str, expiry: int) -> None:
         mtime = datetime.datetime.fromtimestamp(os.path.getmtime(path))
         if mtime + datetime.timedelta(days=expiry) < now:
             try:
@@ -32,7 +34,7 @@ def cache_maintenance(job_id=None, wait_for_completion=False):
                 logging.debug("Couldn't remove cache file: %s", os.path.basename(path))
 
     # main cache
-    for fn in subliminal_cache_region.backend.all_filenames:
+    for fn in cast(SZFileBackend, subliminal_cache_region.backend).all_filenames:
         remove_expired(fn, main_cache_validity)
 
     # archive cache

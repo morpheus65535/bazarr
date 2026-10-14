@@ -1,6 +1,7 @@
 # coding=utf-8
 
 import json
+from typing import TypedDict
 
 from sqlalchemy import func
 
@@ -14,7 +15,12 @@ from sonarr.rootfolder import check_sonarr_rootfolder
 from radarr.rootfolder import check_radarr_rootfolder
 
 
-def check_health(job_id=None, wait_for_completion=False):
+class HealthIssue(TypedDict):
+    object: str | None
+    issue: str | None
+
+
+def check_health(job_id: int | None = None, wait_for_completion: bool = False) -> None:
     if not job_id:
         jobs_queue.add_job_from_function("Checking Health", is_progress=False, wait_for_completion=wait_for_completion)
         return
@@ -31,9 +37,9 @@ def check_health(job_id=None, wait_for_completion=False):
     jobs_queue.update_job_name(job_id=job_id, new_job_name="Checked Health")
 
 
-def get_health_issues():
+def get_health_issues() -> list[HealthIssue]:
     # this function must return a list of dictionaries consisting of to keys: object and issue
-    health_issues = []
+    health_issues: list[HealthIssue] = []
 
     # get Sonarr rootfolder issues
     if settings.general.use_sonarr:
@@ -87,7 +93,7 @@ def get_health_issues():
     if languages_profiles_count == 0:
         health_issues.append({'object': 'Missing languages profile',
                               'issue': 'You must create at least one languages profile and assign it to your content.'})
-    elif languages_profiles_count > 0 and ((settings.general.use_sonarr and series_with_profile == 0 and default_series_profile_empty) or
+    elif languages_profiles_count is not None and languages_profiles_count > 0 and ((settings.general.use_sonarr and series_with_profile == 0 and default_series_profile_empty) or
                                            (settings.general.use_radarr and movies_with_profile == 0 and default_movies_profile_empty)):
         health_issues.append({'object': 'No assigned languages profile',
                               'issue': 'Although you have created at least one languages profile, you must assign it '

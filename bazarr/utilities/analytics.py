@@ -13,18 +13,18 @@ from sonarr.info import get_sonarr_info
 
 
 class EventTracker:
-    def __init__(self):
+    tracker: GtagMP
+
+    def __init__(self) -> None:
         self.bazarr_version = os.environ["BAZARR_VERSION"].lstrip('v')
         self.os_version = platform.python_version()
         self.sonarr_version = get_sonarr_info.version()
         self.radarr_version = get_radarr_info.version()
         self.python_version = platform.platform()
 
-        self.tracker = None
-
         self.start_tracker()
 
-    def start_tracker(self):
+    def start_tracker(self) -> None:
         self.tracker = GtagMP(api_secret="qHRaseheRsic6-h2I_rIAA", measurement_id="G-3820T18GE3", client_id="temp")
 
         if not os.path.isfile(os.path.normpath(os.path.join(args.config_dir, 'config', 'analytics_visitor_id.txt'))):
@@ -47,7 +47,7 @@ class EventTracker:
 
         self.tracker.store.save()
 
-    def track_subtitles(self, provider, action, language):
+    def track_subtitles(self, provider: str, action: str, language: str) -> None:
         if not settings.analytics.enabled:
             return
 
@@ -64,7 +64,7 @@ class EventTracker:
         else:
             self.tracker.store.save()
 
-    def track_throttling(self, provider, exception_name, exception_info):
+    def track_throttling(self, provider: str, exception_name: str, exception_info: str) -> None:
         if not settings.analytics.enabled:
             return
 

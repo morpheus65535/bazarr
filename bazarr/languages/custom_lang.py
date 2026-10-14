@@ -2,7 +2,7 @@
 
 import logging
 import os
-from typing import Protocol, runtime_checkable
+from typing import Protocol, TypedDict, runtime_checkable
 
 from babelfish import Country, Script
 
@@ -27,6 +27,11 @@ class LanguageInfo(Alpha3LanguageInfo, Protocol):
 
     @property
     def script(self) -> Script | str | None: ...
+
+
+class DetectedLanguage(TypedDict, total=False):
+    language: Alpha3LanguageInfo | str | None
+    name: str
 
 
 class CustomLanguage:
@@ -112,14 +117,14 @@ class CustomLanguage:
 
         return to_return
 
-    def ffprobe_found(self, detected_language: dict) -> bool:
+    def ffprobe_found(self, detected_language: DetectedLanguage) -> bool:
         name = detected_language.get("name", "").lower()
         if not name:
             return False
 
         return any(ext in name for ext in self._possible_matches)
 
-    def language_found(self, language: Language):
+    def language_found(self, language: LanguageInfo):
         if str(language.country) == self.iso:
             return True
 
@@ -153,7 +158,7 @@ class Portuguese(CustomLanguage):
     def subzero_language(self):
         return Language(self.official_alpha3)
 
-    def language_found(self, language: Language):
+    def language_found(self, language: LanguageInfo):
         return str(language.alpha3) == self.alpha3
 
 

@@ -2,9 +2,20 @@
 
 import os
 import string
+from typing import TypedDict
 
 
-def browse_bazarr_filesystem(path='#'):
+class DirectoryEntry(TypedDict):
+    name: str
+    path: str
+
+
+class BrowseFilesystemResult(TypedDict):
+    directories: list[DirectoryEntry]
+    parent: str
+
+
+def browse_bazarr_filesystem(path: str = '#') -> BrowseFilesystemResult:
     if path == '#' or path == '/' or path == '':
         if os.name == 'nt':
             dir_list = []
@@ -18,21 +29,19 @@ def browse_bazarr_filesystem(path='#'):
     else:
         dir_list = [f for f in os.listdir(path) if os.path.isdir(os.path.join(path, f))]
 
-    data = []
+    data: list[DirectoryEntry] = []
     for item in dir_list:
         full_path = os.path.join(path, item, '')
-        item = {
+        entry: DirectoryEntry = {
             "name": item,
             "path": full_path
         }
-        data.append(item)
+        data.append(entry)
 
     parent = os.path.dirname(path)
 
-    result = {'directories': sorted(data, key=lambda i: i['name'])}
-    if path == '#':
-        result.update({'parent': '#'})
-    else:
-        result.update({'parent': parent})
-
+    result: BrowseFilesystemResult = {
+        'directories': sorted(data, key=lambda i: i['name']),
+        'parent': '#' if path == '#' else parent,
+    }
     return result
