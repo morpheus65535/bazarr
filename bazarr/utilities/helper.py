@@ -53,6 +53,8 @@ def get_target_folder(file_path):
         else:
             fld = None
 
+        if fld is None:
+            return None
         fld = force_unicode(fld)
 
         if not os.path.isdir(fld):
@@ -74,13 +76,14 @@ def force_unicode(s):
     :param s: string
     :return: unicode string
     """
-    if not isinstance(s, str):
+    if isinstance(s, str):
+        return s
+
+    try:
+        return s.decode("utf-8")
+    except UnicodeDecodeError:
+        encoding = detect(s).get('encoding') or 'utf-8'
         try:
-            s = s.decode("utf-8")
+            return s.decode(encoding)
         except UnicodeDecodeError:
-            t = detect(s)['encoding']
-            try:
-                s = s.decode(t)
-            except UnicodeDecodeError:
-                s = UnicodeDammit(s).unicode_markup
-    return s
+            return UnicodeDammit(s).unicode_markup or s.decode(encoding, errors='replace')

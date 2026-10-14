@@ -207,6 +207,7 @@ def call_external_webhook(subtitle_path, media_path, language, media_type, actio
     if not settings.general.use_external_webhook:
         return
 
+    params = {}
     try:
         # Use parent directory instead of specific file for better grouping
         media_path = "" if media_path is None else media_path

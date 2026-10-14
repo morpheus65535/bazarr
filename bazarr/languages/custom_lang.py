@@ -2,6 +2,9 @@
 
 import logging
 import os
+from typing import Protocol, runtime_checkable
+
+from babelfish import Country, Script
 
 from subzero.language import Language
 
@@ -9,6 +12,21 @@ from app.database import database, insert, update
 from sqlalchemy.exc import IntegrityError
 
 logger = logging.getLogger(__name__)
+
+
+@runtime_checkable
+class Alpha3LanguageInfo(Protocol):
+    @property
+    def alpha3(self) -> str: ...
+
+
+@runtime_checkable
+class LanguageInfo(Alpha3LanguageInfo, Protocol):
+    @property
+    def country(self) -> Country | str | None: ...
+
+    @property
+    def script(self) -> Script | str | None: ...
 
 
 class CustomLanguage:

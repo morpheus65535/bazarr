@@ -5,7 +5,7 @@ import pickle
 
 from app.config import settings
 from app.database import TableEpisodes, TableMovies, database, update, select, get_subtitles
-from languages.custom_lang import CustomLanguage
+from languages.custom_lang import Alpha3LanguageInfo, CustomLanguage, LanguageInfo
 from languages.get_languages import language_from_alpha3, alpha3_from_alpha2
 from utilities.path_mappings import path_mappings
 
@@ -13,8 +13,8 @@ from knowit.api import know, KnowitException
 
 
 def _handle_alpha3(detected_language: dict):
-    language = detected_language["language"]
-    if hasattr(language, "alpha3"):
+    language = detected_language.get("language")
+    if isinstance(language, Alpha3LanguageInfo):
         alpha3 = language.alpha3
     elif isinstance(language, str) and language_from_alpha3(language) is not None:
         alpha3 = language
@@ -25,7 +25,7 @@ def _handle_alpha3(detected_language: dict):
     if not custom:
         return alpha3
 
-    found = custom.language_found(detected_language["language"])
+    found = isinstance(language, LanguageInfo) and custom.language_found(language)
     if not found:
         found = custom.ffprobe_found(detected_language)
 

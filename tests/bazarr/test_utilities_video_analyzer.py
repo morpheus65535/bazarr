@@ -234,6 +234,10 @@ def mediainfo_data(mocker, video_file):
         "knowit.providers.mediainfo.MediaInfoCTypesExecutor._execute",
         return_value=M_INFO,
     )
+    mocker.patch(
+        "knowit.providers.mediainfo.MediaInfoCliExecutor._execute",
+        return_value=M_INFO,
+    )
     try:
         data = video_analyzer.know(
             video_path=video_file,
@@ -310,8 +314,13 @@ def test_embedded_audio_reader(mocker, mediainfo_data, video_file):
     assert {"pob", "por"} == set(result)
 
 
-def test_handle_alpha3_accepts_string_language():
-    assert video_analyzer._handle_alpha3({"language": "jpn"}) == "jpn"
+@pytest.mark.parametrize("track, expected", [
+    ({"language": "jpn"}, "jpn"),
+    ({"language": "por"}, "por"),
+    ({"language": "por", "name": "Brazilian Portuguese"}, "pob"),
+])
+def test_handle_alpha3_accepts_string_language(track, expected):
+    assert video_analyzer._handle_alpha3(track) == expected
 
 
 def test_embedded_audio_reader_accepts_string_language(mocker, video_file):
