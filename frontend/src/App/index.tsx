@@ -15,6 +15,7 @@ import NavbarProvider from "@/contexts/Navbar";
 import OnlineProvider from "@/contexts/Online";
 import { notification } from "@/modules/task";
 import CriticalError from "@/pages/errors/CriticalError";
+import OnboardingTour from "@/pages/Onboarding/OnboardingTour";
 import { RouterNames } from "@/Router/RouterNames";
 import { Environment } from "@/utilities";
 import AppHeader from "./Header";
@@ -86,6 +87,7 @@ const App: FunctionComponent = () => {
           </AppShell>
           <ScrollRestoration></ScrollRestoration>
           <AppSpotlight></AppSpotlight>
+          <OnboardingTour></OnboardingTour>
         </OnlineProvider>
       </NavbarProvider>
     </ErrorBoundary>

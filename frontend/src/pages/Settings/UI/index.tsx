@@ -1,4 +1,8 @@
 import { FunctionComponent } from "react";
+import { Button } from "@mantine/core";
+import { faGraduationCap } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useOnboarding } from "@/contexts/Onboarding";
 import {
   Layout,
   Message,
@@ -13,8 +17,26 @@ import {
 } from "./options";
 
 const SettingsUIView: FunctionComponent = () => {
+  const { startTour } = useOnboarding();
+
   return (
     <Layout name="UI">
+      <Section header="Onboarding">
+        <Message>
+          Replay the guided tour that walks through connecting Sonarr and
+          Radarr, choosing subtitle languages and providers, and applying a
+          language profile to your library.
+        </Message>
+        <Button
+          type="button"
+          variant="light"
+          leftSection={<FontAwesomeIcon icon={faGraduationCap} />}
+          onClick={startTour}
+          w="fit-content"
+        >
+          Restart guided setup
+        </Button>
+      </Section>
       <Section header="List View">
         <Selector
           label="Page Size"

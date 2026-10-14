@@ -97,6 +97,10 @@ export const useSettingsMutation = (options?: { silent?: boolean }) => {
         queryKey: [QueryKeys.Plex, "libraries"],
       });
 
+      // Lets the onboarding tour advance only after the backend confirms the
+      // save, rather than on the button click.
+      window.dispatchEvent(new Event("bazarr-settings-saved"));
+
       if (!silent) {
         showNotification(
           notification.info("Settings saved", "Your changes have been saved"),

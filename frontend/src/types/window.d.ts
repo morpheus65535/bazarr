@@ -13,6 +13,7 @@ declare global {
     "app-auth-changed": CustomEvent<{ authenticated: boolean }>;
     "app-critical-error": CustomEvent<{ message: string }>;
     "app-online-status": CustomEvent<{ online: boolean }>;
+    "bazarr-settings-saved": Event;
   }
 }
 
@@ -21,4 +22,5 @@ export interface BazarrServer {
   apiKey?: string;
   canUpdate: boolean;
   hasUpdate: boolean;
+  isConfigured: boolean;
 }
