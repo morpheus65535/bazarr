@@ -21,7 +21,7 @@ from app.event_handler import event_stream
 from ..download import generate_subtitles
 
 
-def movies_download_subtitles(no, job_id=None, job_sub_function=False):
+def movies_download_subtitles(no, job_id=None, job_sub_function=False, fallback_allowed=False):
     if not job_sub_function and not job_id:
         jobs_queue.add_job_from_function(f"""Downloading missing subtitles for """
                                          f"""{database.scalar(select(TableMovies.title)
@@ -104,7 +104,8 @@ def movies_download_subtitles(no, job_id=None, job_sub_function=False):
                                              'movie',
                                              movie.profileId,
                                              check_if_still_required=True,
-                                             job_id=job_id):
+                                             job_id=job_id,
+                                             fallback_allowed=fallback_allowed):
                 if result:
                     store_subtitles_movie(no)
                     history_log_movie(1, no, result)
