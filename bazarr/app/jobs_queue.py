@@ -239,7 +239,7 @@ class JobsQueue:
         else:
             return "Unknown job"
 
-    def update_job_name(self, job_id: int, new_job_name: str) -> bool:
+    def update_job_name(self, job_id: int | None, new_job_name: str) -> bool:
         """
         Updates the name of a job present in one of the job queues. The job is searched by its unique
         identifier (`job_id`) in all available queues, and if found, the job's name is updated to
@@ -279,8 +279,8 @@ class JobsQueue:
         else:
             return None
 
-    def update_job_progress(self, job_id: int, progress_value: Union[int, str, None] = None,
-                            progress_max: Union[int, None] = None, progress_message: str = ""):
+    def update_job_progress(self, job_id: int | None, progress_value: Union[int, str, None] = None,
+                            progress_max: Union[int, None] = None, progress_message: str = "") -> bool:
         """
         Updates the progress value and message for a specific job within the running jobs queue. The function
         iterates through a queue of running jobs, identifies the matching job by its ID, and updates its progress
@@ -549,7 +549,7 @@ class JobsQueue:
                 logging.debug(f"Cancellation requested for job {job.job_name} ({job.job_id})")
         return False
 
-    def get_job(self, job_id: int) -> Job | None:
+    def get_job(self, job_id: int | None) -> Job | None:
         """
         Retrieves a job from the running queue by its ID.
 

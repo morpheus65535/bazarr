@@ -1,5 +1,6 @@
 # coding=utf-8
 
+from sqlalchemy import Table
 
 from datetime import datetime
 from contextlib import contextmanager
@@ -204,12 +205,12 @@ def _wanted_state_transaction():
 
 
 def store_missing_subtitles(
-    table,
-    id_column_name,
-    media_type,
-    media_id,
-    missing_subtitles,
-):
+    table: Table,
+    id_column_name: str,
+    media_type: str,
+    media_id: int,
+    missing_subtitles: str | list[str] | None,
+) -> None:
     """Save missing languages and mark their calculation complete in one transaction."""
     id_column = table.c[id_column_name]
     rows = get_missing_subtitle_rows(media_type, media_id, missing_subtitles)
@@ -253,7 +254,7 @@ def get_missing_languages(media_type, media_id):
     return []
 
 
-def missing_subtitles_need_calculation(calculated):
+def missing_subtitles_need_calculation(calculated: bool) -> bool:
     return not calculated
 
 

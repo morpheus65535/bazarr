@@ -9,6 +9,7 @@ import signal
 from collections import defaultdict
 
 from dogpile.cache import make_region
+from flask import Flask
 from datetime import datetime
 from typing import List
 
@@ -454,7 +455,7 @@ def create_db_revision(app):
         db.engine.dispose()
 
 
-def migrate_db(app):
+def migrate_db(app: Flask) -> None:
     logging.debug("Upgrading database schema")
     app.config["SQLALCHEMY_DATABASE_URI"] = url
     db = SQLAlchemy(app, metadata=metadata)

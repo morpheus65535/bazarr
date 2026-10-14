@@ -103,8 +103,8 @@ def series_download_subtitles(no, job_id=None, job_sub_function=False):
     jobs_queue.update_job_name(job_id=job_id, new_job_name=f"Downloaded missing subtitles for {series_row.title}")
 
 
-def episode_download_subtitles(no, job_id = None, job_sub_function = False, providers_list = None, fallback_allowed = False,
-                               missing_languages = None):
+def episode_download_subtitles(no: int | None, job_id: int | None = None, job_sub_function: bool = False, providers_list: list[str] | None = None, fallback_allowed: bool = False,
+                               missing_languages: list[str] | None = None) -> None:
     if not job_sub_function and not job_id:
         jobs_queue.add_job_from_function(f"""Downloading missing subtitles for {database.scalar(
             select(TableShows.title).join(TableEpisodes).where(TableEpisodes.sonarrEpisodeId == no)) or 'Unknown Series'}""", is_progress=True)

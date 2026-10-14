@@ -1,3 +1,5 @@
+from sqlalchemy.engine import Engine
+
 import importlib
 from concurrent.futures import ThreadPoolExecutor
 from threading import Barrier
@@ -22,14 +24,14 @@ from app import database as db
 migration = importlib.import_module("migrations.versions.e6cbb0f6f9b1_")
 
 
-def add_legacy_retry_columns(engine):
+def add_legacy_retry_columns(engine: Engine) -> None:
     add_legacy_missing_columns(engine)
     with engine.begin() as connection:
         for table in ('table_movies', 'table_episodes'):
             connection.exec_driver_sql(f'ALTER TABLE {table} ADD COLUMN "failedAttempts" TEXT')
 
 
-def add_legacy_missing_columns(engine):
+def add_legacy_missing_columns(engine: Engine) -> None:
     with engine.begin() as connection:
         for table in ('table_movies', 'table_episodes'):
             connection.exec_driver_sql(f'ALTER TABLE {table} DROP COLUMN missing_subtitles_calculated')
@@ -41,7 +43,7 @@ def add_legacy_missing_columns(engine):
             }
 
 
-def legacy_media_table(model, engine):
+def legacy_media_table(model: type[db.TableMovies] | type[db.TableEpisodes], engine: Engine) -> Table:
     return Table(model.__tablename__, MetaData(), autoload_with=engine)
 
 
@@ -86,7 +88,7 @@ def migration_engine(tmp_path):
                 connection.exec_driver_sql(f'DROP SCHEMA "{schema}" CASCADE')
 
 
-def test_fresh_installation_and_restart(monkeypatch, migration_engine):
+def test_fresh_installation_and_restart(monkeypatch: pytest.MonkeyPatch, migration_engine: Engine) -> None:
     engine = migration_engine
     db.metadata.drop_all(engine)
     with Session(engine) as session:
@@ -112,9 +114,9 @@ def test_fresh_installation_and_restart(monkeypatch, migration_engine):
 
 
 def test_failed_backfill_rolls_back_and_can_be_retried(
-    monkeypatch,
-    migration_engine,
-):
+    monkeypatch: pytest.MonkeyPatch,
+    migration_engine: Engine,
+) -> None:
     engine = migration_engine
     with Session(engine) as session:
         monkeypatch.setattr(db, 'engine', engine)
@@ -156,10 +158,10 @@ def test_failed_backfill_rolls_back_and_can_be_retried(
 
 @pytest.mark.parametrize('precreated_tables', [False, True])
 def test_normal_startup_upgrades_development_database(
-    monkeypatch,
-    migration_engine,
-    precreated_tables,
-):
+    monkeypatch: pytest.MonkeyPatch,
+    migration_engine: Engine,
+    precreated_tables: bool,
+) -> None:
     engine = migration_engine
     if not precreated_tables:
         db.TableFailedSubtitleAttempts.__table__.drop(engine)

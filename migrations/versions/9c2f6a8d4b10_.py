@@ -14,7 +14,7 @@ branch_labels = None
 depends_on = None
 
 
-def upgrade():
+def upgrade() -> None:
     bind = op.get_bind()
     for table_name in ('table_episodes', 'table_movies'):
         columns = {column['name'] for column in sa.inspect(bind).get_columns(table_name)}

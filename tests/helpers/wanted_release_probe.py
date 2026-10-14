@@ -53,7 +53,7 @@ def profile(languages):
                        for index, language in enumerate(languages, start=1)])
 
 
-def seed(count):
+def seed(count: int) -> None:
     db.metadata.create_all(db.engine)
     for name in ('TableMissingSubtitles', 'TableFailedSubtitleAttempts'):
         if hasattr(db, name):

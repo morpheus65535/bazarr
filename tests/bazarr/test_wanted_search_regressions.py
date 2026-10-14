@@ -1,5 +1,8 @@
 """Exercise the runtime ORM and autocommit engine, rather than table proxies."""
-from sqlalchemy.engine import Connection
+from collections.abc import Mapping, Sequence
+from typing import TypeAlias
+from sqlalchemy.engine.interfaces import DBAPICursor, ExecutionContext
+from sqlalchemy.engine import Engine, Connection
 
 import sqlite3
 from concurrent.futures import ThreadPoolExecutor
@@ -20,6 +23,10 @@ import subtitles.indexer.series as episode_indexer
 import subtitles.wanted_state as state
 
 
+SqlValue: TypeAlias = str | int | float | bytes | None
+SqlParameters: TypeAlias = Mapping[str, SqlValue] | Sequence[SqlValue]
+
+
 @pytest.fixture
 def runtime_database(monkeypatch, tmp_path):
     engine = create_engine(f'sqlite:///{tmp_path / "runtime.sqlite"}', isolation_level='AUTOCOMMIT')
@@ -34,7 +41,7 @@ def runtime_database(monkeypatch, tmp_path):
     engine.dispose()
 
 
-def seed_media(session, media_type, missing = '[]'):
+def seed_media(session: Session, media_type: str, missing: str | None = '[]') -> tuple[type[db.TableMovies] | type[db.TableEpisodes], str]:
     session.execute(insert(db.TableLanguagesProfiles).values(profileId=1, name='English', items='[]'))
     if media_type == 'movie':
         table, id_column = db.TableMovies, 'radarrId'
@@ -122,23 +129,23 @@ def test_bulk_database_queries_and_retry_upserts_respect_legacy_sqlite_limit(
 
 @pytest.mark.parametrize('media_type', ['movie', 'series'])
 def test_missing_state_failure_preserves_calculation_state(
-    runtime_database,
-    monkeypatch,
-    media_type,
-):
+    runtime_database: tuple[Engine, Session],
+    monkeypatch: pytest.MonkeyPatch,
+    media_type: str,
+) -> None:
     engine, session = runtime_database
     table, _ = seed_media(session, media_type, None)
     state.refresh_wanted_search_state(media_type, 7, "['fr']", failed_attempts="[['fr', 10]]")
     recalculate, events = configure_indexer(monkeypatch, media_type)
 
     def fail_insert(
-        connection,
-        cursor,
-        statement,
-        parameters,
-        context,
-        executemany,
-    ):
+        connection: Connection,
+        cursor: DBAPICursor,
+        statement: str,
+        parameters: SqlParameters | Sequence[SqlParameters],
+        context: ExecutionContext,
+        executemany: bool,
+    ) -> None:
         if statement.startswith('INSERT INTO table_missing_subtitles'):
             raise sqlite3.OperationalError('interrupted normalized insert')
 
@@ -160,11 +167,11 @@ def test_missing_state_failure_preserves_calculation_state(
 @pytest.mark.parametrize('media_type', ['movie', 'series'])
 @pytest.mark.parametrize('stale_languages', [[], ['fr']])
 def test_completed_calculation_repairs_normalized_state(
-    runtime_database,
-    monkeypatch,
-    media_type,
-    stale_languages,
-):
+    runtime_database: tuple[Engine, Session],
+    monkeypatch: pytest.MonkeyPatch,
+    media_type: str,
+    stale_languages: list[str],
+) -> None:
     _, session = runtime_database
     seed_media(session, media_type, "['en']")
     state.refresh_wanted_search_state(media_type, 7, stale_languages)
@@ -174,9 +181,9 @@ def test_completed_calculation_repairs_normalized_state(
 
 
 def test_concurrent_missing_refreshes_keep_representations_consistent(
-    runtime_database,
-    monkeypatch,
-):
+    runtime_database: tuple[Engine, Session],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     engine, session = runtime_database
     seed_media(session, 'movie')
     thread_sessions = scoped_session(sessionmaker(bind=engine))
@@ -467,10 +474,10 @@ def series_deletion_state(runtime_database):
     'table_shows', 'table_missing_subtitles', 'table_failed_subtitle_attempts',
 ])
 def test_series_deletion_failure_preserves_media_and_search_state(
-    series_deletion_state,
-    monkeypatch,
-    failed_table,
-):
+    series_deletion_state: tuple[Engine, Session],
+    monkeypatch: pytest.MonkeyPatch,
+    failed_table: str,
+) -> None:
     engine, session = series_deletion_state
     events = []
     monkeypatch.setattr(sonarr, 'event_stream', lambda **kwargs: events.append(kwargs))

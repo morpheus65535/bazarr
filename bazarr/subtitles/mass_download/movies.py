@@ -24,7 +24,7 @@ from ..serialization import missing_subtitle_to_language_tuple
 from ..wanted_state import get_missing_languages, missing_subtitles_need_calculation
 
 
-def movies_download_subtitles(no, job_id = None, job_sub_function = False):
+def movies_download_subtitles(no: int | None, job_id: int | None = None, job_sub_function: bool = False) -> None:
     if not job_sub_function and not job_id:
         jobs_queue.add_job_from_function(f"""Downloading missing subtitles for """
                                          f"""{database.scalar(select(TableMovies.title)

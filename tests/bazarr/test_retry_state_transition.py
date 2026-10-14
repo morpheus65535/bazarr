@@ -1,3 +1,6 @@
+from typing import Callable
+from types import ModuleType
+
 import importlib
 from datetime import datetime, timedelta
 from types import SimpleNamespace
@@ -10,8 +13,8 @@ from subtitles import adaptive_searching, wanted_state
 
 @pytest.mark.parametrize('kind', ['movies', 'series'])
 def test_wanted_search_uses_normalized_retries_and_missing_languages(
-    kind, row_factory, wanted_module, monkeypatch,
-):
+    kind: str, row_factory: Callable[..., SimpleNamespace], wanted_module: ModuleType, monkeypatch: pytest.MonkeyPatch,
+) -> None:
     now = datetime.now()
     row = row_factory(
         missing_languages=['en', 'fr:hi:forced'],

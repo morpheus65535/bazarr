@@ -1,5 +1,8 @@
 # coding=utf-8
 
+from typing import cast
+
+from api.utils import JsonObject
 
 from flask_restx import Resource, Namespace, reqparse, fields, marshal
 from app.database import TableMissingSubtitles, TableMovies, database, update, select, func, get_subtitles_map
@@ -60,7 +63,7 @@ class Movies(Resource):
     @api_ns_movies.expect(get_request_parser)
     @api_ns_movies.response(200, 'Success')
     @api_ns_movies.response(401, 'Not Authenticated')
-    def get(self):
+    def get(self) -> JsonObject:
         """List movies metadata for specific movies"""
         args = self.get_request_parser.parse_args()
         start = args.get('start')
@@ -154,7 +157,7 @@ class Movies(Resource):
 
         count = database.execute(count_stmt).scalar()
 
-        return marshal({'data': results, 'total': count}, self.get_response_model)
+        return cast(JsonObject, marshal({'data': results, 'total': count}, self.get_response_model))
 
     post_request_parser = reqparse.RequestParser()
     post_request_parser.add_argument('radarrid', type=int, action='append', required=False, default=[],

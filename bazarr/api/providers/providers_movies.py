@@ -1,5 +1,8 @@
 # coding=utf-8
 
+from typing import cast
+
+from api.utils import JsonObject
 
 import os
 
@@ -45,7 +48,7 @@ class ProviderMovies(Resource):
     @api_ns_providers_movies.response(404, 'Movie not found')
     @api_ns_providers_movies.response(500, 'Custom error messages')
     @api_ns_providers_movies.expect(get_request_parser)
-    def get(self):
+    def get(self) -> JsonObject | tuple[str, int]:
         """Search manually for a movie subtitles"""
         args = self.get_request_parser.parse_args()
         radarrId = args.get('radarrid')
@@ -90,7 +93,7 @@ class ProviderMovies(Resource):
         data = manual_search(moviePath, profileId, providers_list, sceneName, title, 'movie')
         if isinstance(data, str):
             return data, 500
-        return marshal(data, self.get_response_model, envelope='data')
+        return cast(JsonObject, marshal(data, self.get_response_model, envelope='data'))
 
     post_request_parser = reqparse.RequestParser()
     post_request_parser.add_argument('radarrid', type=int, required=True, help='Movie ID')

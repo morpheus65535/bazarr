@@ -1,6 +1,5 @@
 # coding=utf-8
 
-
 import gc
 import os
 import logging
@@ -245,11 +244,10 @@ def store_subtitles(sonarr_episode_id, use_cache=True):
 
 
 def list_missing_subtitles(
-    no = None,
-    epno = None,
-    *args,
-    **kwargs,
-):  #job_id might be provided but isn't used for now
+    no: int | None = None,
+    epno: int | None = None,
+    job_id: int | None = None,
+) -> None:
     stmt = select(TableShows.sonarrSeriesId,
                   TableEpisodes.sonarrEpisodeId,
                   TableShows.profileId,

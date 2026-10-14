@@ -1,3 +1,7 @@
+from typing import Callable
+from types import SimpleNamespace
+from sqlalchemy.orm import Session
+
 import importlib
 
 import pytest
@@ -44,12 +48,12 @@ def _wanted_state_for(transactional_session, wanted_search_tables, media_type, m
 
 
 def test_movie_missing_recalculation_updates_normalized_wanted_rows(
-    bind_wanted_database,
-    monkeypatch,
-    movie_row_factory,
-    transactional_session,
-    wanted_search_tables,
-):
+    bind_wanted_database: Callable[..., None],
+    monkeypatch: pytest.MonkeyPatch,
+    movie_row_factory: Callable[..., SimpleNamespace],
+    transactional_session: Session,
+    wanted_search_tables: SimpleNamespace,
+) -> None:
     module = _bind_indexer_module(bind_wanted_database, "subtitles.indexer.movies", "movies", monkeypatch)
     movie = movie_row_factory(missing_languages=[], failed_attempts=[("en", 10)])
 
@@ -66,12 +70,12 @@ def test_movie_missing_recalculation_updates_normalized_wanted_rows(
 
 
 def test_episode_missing_recalculation_updates_normalized_wanted_rows(
-    bind_wanted_database,
-    monkeypatch,
-    episode_row_factory,
-    transactional_session,
-    wanted_search_tables,
-):
+    bind_wanted_database: Callable[..., None],
+    monkeypatch: pytest.MonkeyPatch,
+    episode_row_factory: Callable[..., SimpleNamespace],
+    transactional_session: Session,
+    wanted_search_tables: SimpleNamespace,
+) -> None:
     module = _bind_indexer_module(bind_wanted_database, "subtitles.indexer.series", "series", monkeypatch)
     episode = episode_row_factory(missing_languages=[], failed_attempts=[("en", 10)])
 

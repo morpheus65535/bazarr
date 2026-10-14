@@ -1,6 +1,7 @@
 # coding=utf-8
 # fmt: off
 
+from typing import cast
 
 import logging
 import operator
@@ -23,7 +24,7 @@ from app.event_handler import event_stream
 from app.jobs_queue import jobs_queue, JobCanceled
 from app.config import settings
 
-from ..adaptive_searching import get_adaptive_search_policy
+from ..adaptive_searching import AdaptiveSearchPolicy, get_adaptive_search_policy
 from ..download import generate_subtitles
 from ..language_utils import has_unindexed_external_subtitle, resolve_audio_language
 from subtitles.wanted_state import (
@@ -35,7 +36,7 @@ from subtitles.wanted_state import (
     record_failed_subtitle_attempts,
     record_failed_subtitle_attempts_map,
 )
-from .utils import get_language_search_items
+from .utils import WantedMovie, get_language_search_items
 
 
 _WANTED_MOVIE_DETAILS_SELECT = select(TableMovies.path,
@@ -96,7 +97,7 @@ def _count_searchable_due_movies(adaptive_search_policy, exclusion_clause):
     return database.execute(statement).scalar() or 0
 
 
-def _movie_needs_wanted_lookup_refresh(movie):
+def _movie_needs_wanted_lookup_refresh(movie: WantedMovie) -> bool:
     return (
         not movie.missing_subtitles_calculated or
         not getattr(movie, "has_indexed_subtitles", True) or
@@ -191,15 +192,15 @@ def _wanted_movie(movie, providers_list, due_languages=None, job_id=None, adapti
 
 
 def wanted_download_subtitles_movie(
-    radarr_id,
-    job_id = None,
-    providers_list = None,
-    movie = None,
-    due_languages = None,
-    adaptive_search_policy = None,
-    fallback_allowed = None,
-    defer_failed_attempts = False,
-):
+    radarr_id: int,
+    job_id: int | None = None,
+    providers_list: list[str] | None = None,
+    movie: WantedMovie | None = None,
+    due_languages: list[str] | None = None,
+    adaptive_search_policy: AdaptiveSearchPolicy | None = None,
+    fallback_allowed: bool | None = None,
+    defer_failed_attempts: bool = False,
+) -> list[str] | None:
     stmt_params = {"wanted_radarr_id": radarr_id}
 
     if movie is not None and due_languages is not None and not _movie_needs_wanted_lookup_refresh(movie):
@@ -222,7 +223,7 @@ def wanted_download_subtitles_movie(
         return
 
     if movie is None:
-        movie = database.execute(_WANTED_MOVIE_DETAILS_STMT, stmt_params).first()
+        movie = cast(WantedMovie | None, database.execute(_WANTED_MOVIE_DETAILS_STMT, stmt_params).first())
 
     if not movie:
         logging.debug(f"BAZARR no movie with that radarrId can be found in database: {radarr_id}")
@@ -233,7 +234,7 @@ def wanted_download_subtitles_movie(
         if not previously_indexed_subtitles or has_unindexed_external_subtitle(previously_indexed_subtitles):
             # subtitles indexing for this movie might be incomplete, we'll do it again
             store_subtitles_movie(radarr_id)
-            movie = database.execute(_WANTED_MOVIE_DETAILS_STMT, stmt_params).first()
+            movie = cast(WantedMovie | None, database.execute(_WANTED_MOVIE_DETAILS_STMT, stmt_params).first())
             if not movie:
                 logging.debug(f"BAZARR no movie with that radarrId can be found in database after subtitles refresh: {radarr_id}")
                 return
@@ -243,7 +244,7 @@ def wanted_download_subtitles_movie(
             list_missing_subtitles_movies(no=radarr_id)
             rebuilt_wanted_state = True
         if rebuilt_wanted_state:
-            movie = database.execute(_WANTED_MOVIE_DETAILS_STMT, stmt_params).first()
+            movie = cast(WantedMovie | None, database.execute(_WANTED_MOVIE_DETAILS_STMT, stmt_params).first())
             if not movie:
                 logging.debug(f"BAZARR no movie with that radarrId can be found in database after missing-subtitles refresh: {radarr_id}")
                 return

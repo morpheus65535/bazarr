@@ -1,3 +1,6 @@
+from typing import Iterator
+from sqlalchemy.engine import Engine
+
 import importlib
 
 import pytest
@@ -19,7 +22,7 @@ migration = importlib.import_module('migrations.versions.f1d8a9c2b347_')
 
 
 @pytest.fixture
-def missing_upgrade(monkeypatch, migration_engine):
+def missing_upgrade(monkeypatch: pytest.MonkeyPatch, migration_engine: Engine) -> Iterator[tuple[Engine, Session]]:
     engine = migration_engine
     add_legacy_missing_columns(engine)
     with Session(engine) as session:
@@ -49,8 +52,8 @@ def missing_upgrade(monkeypatch, migration_engine):
 
 @pytest.mark.parametrize('precreated_table', [False, True])
 def test_missing_cutover_imports_intervening_writes_and_preserves_retry_history(
-    missing_upgrade, precreated_table,
-):
+    missing_upgrade: tuple[Engine, Session], precreated_table: bool,
+) -> None:
     engine, session = missing_upgrade
     if not precreated_table:
         db.TableMissingSubtitles.__table__.drop(engine)
@@ -102,10 +105,10 @@ def test_missing_cutover_imports_intervening_writes_and_preserves_retry_history(
     ("['de', None, 'de']", ['de']), ("['en', 'fr:hi', 'en']", ['en', 'fr:hi']),
 ])
 def test_missing_migration_handles_legacy_values(
-    missing_upgrade,
-    value,
-    expected,
-):
+    missing_upgrade: tuple[Engine, Session],
+    value: str | None,
+    expected: list[str],
+) -> None:
     engine, session = missing_upgrade
     for model in (db.TableMovies, db.TableEpisodes):
         session.execute(db.update(legacy_media_table(model, engine)).values(missing_subtitles=value))
@@ -140,7 +143,7 @@ def test_failed_missing_backfill_rolls_back_and_can_be_retried(missing_upgrade):
     assert session.execute(db.select(db.TableMissingSubtitles.language)).scalars().all() == ['en', 'en']
 
 
-def test_missing_revision_follows_retry_cutover(migration_engine):
+def test_missing_revision_follows_retry_cutover(migration_engine: Engine) -> None:
     with migration_engine.connect() as connection, Operations.context(MigrationContext.configure(connection)):
         scripts = ScriptDirectory('migrations')
         assert scripts.get_heads() == [current_head(migration_engine)]

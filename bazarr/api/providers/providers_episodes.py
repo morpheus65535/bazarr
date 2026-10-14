@@ -1,5 +1,8 @@
 # coding=utf-8
 
+from typing import cast
+
+from api.utils import JsonObject
 
 import os
 
@@ -44,7 +47,7 @@ class ProviderEpisodes(Resource):
     @api_ns_providers_episodes.response(404, 'Episode not found')
     @api_ns_providers_episodes.response(500, 'Custom error messages')
     @api_ns_providers_episodes.expect(get_request_parser)
-    def get(self):
+    def get(self) -> JsonObject | tuple[str, int]:
         """Search manually for an episode subtitles"""
         args = self.get_request_parser.parse_args()
         sonarrEpisodeId = args.get('episodeid')
@@ -91,7 +94,7 @@ class ProviderEpisodes(Resource):
         data = manual_search(episodePath, profileId, providers_list, sceneName, title, 'series')
         if isinstance(data, str):
             return data, 500
-        return marshal(data, self.get_response_model, envelope='data')
+        return cast(JsonObject, marshal(data, self.get_response_model, envelope='data'))
 
     post_request_parser = reqparse.RequestParser()
     post_request_parser.add_argument('seriesid', type=int, required=True, help='Series ID')
