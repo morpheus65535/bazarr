@@ -1,5 +1,6 @@
 # coding=utf-8
 
+
 import gc
 import os
 import logging
@@ -239,11 +240,14 @@ def store_subtitles_movie(radarr_id, use_cache=True):
     logging.debug(f'BAZARR ended subtitles indexing for this file: {mapped_path}')
 
 
-def list_missing_subtitles_movies(no=None, *args, **kwargs):  # job_id might be provided but isn't used for now
+def list_missing_subtitles_movies(
+    no = None,
+    *args,
+    **kwargs,
+):  #job_id might be provided but isn't used for now
     stmt = select(TableMovies.radarrId,
                   TableMovies.profileId,
-                  TableMovies.audio_language,
-                  TableMovies.missing_subtitles)
+                  TableMovies.audio_language)
 
     if no:
         movies_subtitles = database.execute(stmt.where(TableMovies.radarrId == no))

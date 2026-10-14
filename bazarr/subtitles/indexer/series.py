@@ -1,5 +1,6 @@
 # coding=utf-8
 
+
 import gc
 import os
 import logging
@@ -243,12 +244,16 @@ def store_subtitles(sonarr_episode_id, use_cache=True):
     logging.debug(f'BAZARR ended subtitles indexing for this file: {mapped_path}')
 
 
-def list_missing_subtitles(no=None, epno=None, *args, **kwargs):  # job_id might be provided but isn't used for now
+def list_missing_subtitles(
+    no = None,
+    epno = None,
+    *args,
+    **kwargs,
+):  #job_id might be provided but isn't used for now
     stmt = select(TableShows.sonarrSeriesId,
                   TableEpisodes.sonarrEpisodeId,
                   TableShows.profileId,
-                  TableEpisodes.audio_language,
-                  TableEpisodes.missing_subtitles) \
+                  TableEpisodes.audio_language) \
         .select_from(TableEpisodes) \
         .join(TableShows)
 

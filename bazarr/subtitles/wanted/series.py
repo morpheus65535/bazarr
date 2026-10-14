@@ -1,6 +1,7 @@
 # coding=utf-8
 # fmt: off
 
+
 import logging
 import operator
 import time
@@ -39,7 +40,7 @@ from .utils import get_language_search_items
 
 
 _WANTED_EPISODE_DETAILS_SELECT = select(TableEpisodes.path,
-                                        TableEpisodes.missing_subtitles,
+                                        TableEpisodes.missing_subtitles_calculated,
                                         TableEpisodes.sonarrEpisodeId,
                                         TableEpisodes.sonarrSeriesId,
                                         TableEpisodes.audio_language,
@@ -82,7 +83,7 @@ def _count_searchable_due_episodes(adaptive_search_policy, exclusion_clause):
 
 def _episode_needs_wanted_lookup_refresh(episode):
     return (
-        episode.missing_subtitles is None or
+        not episode.missing_subtitles_calculated or
         not getattr(episode, "has_indexed_subtitles", True) or
         getattr(episode, "has_incomplete_embedded_subtitles", False)
     )
@@ -176,13 +177,13 @@ def _wanted_episode(episode, providers_list, due_languages=None, job_id=None, ad
 
 def wanted_download_subtitles(
     sonarr_episode_id,
-    job_id=None,
-    providers_list=None,
-    episode_details=None,
-    due_languages=None,
-    adaptive_search_policy=None,
-    fallback_allowed=None,
-    defer_failed_attempts=False,
+    job_id = None,
+    providers_list = None,
+    episode_details = None,
+    due_languages = None,
+    adaptive_search_policy = None,
+    fallback_allowed = None,
+    defer_failed_attempts = False,
 ):
     stmt_params = {"wanted_sonarr_episode_id": sonarr_episode_id}
 
@@ -222,7 +223,7 @@ def wanted_download_subtitles(
                 logging.debug(f"BAZARR no episode with that sonarrId can be found in database after subtitles refresh: {sonarr_episode_id}")
                 return
             rebuilt_wanted_state = True
-        if episode_details.missing_subtitles is None:
+        if not episode_details.missing_subtitles_calculated:
             # missing subtitles calculation for this episode is incomplete, we'll do it again
             list_missing_subtitles(epno=sonarr_episode_id)
             rebuilt_wanted_state = True

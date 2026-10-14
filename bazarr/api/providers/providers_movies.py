@@ -1,5 +1,6 @@
 # coding=utf-8
 
+
 import os
 
 from flask_restx import Resource, Namespace, reqparse, fields, marshal
@@ -52,7 +53,7 @@ class ProviderMovies(Resource):
                       TableMovies.path,
                       TableMovies.sceneName,
                       TableMovies.profileId,
-                      TableMovies.missing_subtitles) \
+                      TableMovies.missing_subtitles_calculated) \
             .where(TableMovies.radarrId == radarrId)
         movieInfo = database.execute(stmt).first()
 
@@ -66,7 +67,7 @@ class ProviderMovies(Resource):
             movieInfo = database.execute(stmt).first()
             if not movieInfo:
                 return 'Movie not found', 404
-        elif movieInfo.missing_subtitles is None:
+        elif not movieInfo.missing_subtitles_calculated:
             # missing subtitles calculation for this movie is incomplete, we'll do it again
             list_missing_subtitles_movies(no=radarrId)
             movieInfo = database.execute(stmt).first()

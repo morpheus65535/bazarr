@@ -56,12 +56,12 @@ def test_movie_missing_recalculation_updates_normalized_wanted_rows(
     module.list_missing_subtitles_movies(no=movie.radarrId)
 
     missing_subtitles = transactional_session.execute(
-        select(wanted_search_tables.movie.c.missing_subtitles)
+        select(wanted_search_tables.movie.c.missing_subtitles_calculated)
         .where(wanted_search_tables.movie.c.radarrId == movie.radarrId)
     ).scalar_one()
     wanted_state = _wanted_state_for(transactional_session, wanted_search_tables, "movie", movie.radarrId)
 
-    assert missing_subtitles == "['en']"
+    assert missing_subtitles is True
     assert wanted_state == {"missing": ["en"], "failed": ["en"]}
 
 
@@ -78,12 +78,12 @@ def test_episode_missing_recalculation_updates_normalized_wanted_rows(
     module.list_missing_subtitles(epno=episode.sonarrEpisodeId)
 
     missing_subtitles = transactional_session.execute(
-        select(wanted_search_tables.episode.c.missing_subtitles)
+        select(wanted_search_tables.episode.c.missing_subtitles_calculated)
         .where(wanted_search_tables.episode.c.sonarrEpisodeId == episode.sonarrEpisodeId)
     ).scalar_one()
     wanted_state = _wanted_state_for(transactional_session, wanted_search_tables, "series", episode.sonarrEpisodeId)
 
-    assert missing_subtitles == "['en']"
+    assert missing_subtitles is True
     assert wanted_state == {"missing": ["en"], "failed": ["en"]}
 
 

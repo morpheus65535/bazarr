@@ -1,6 +1,7 @@
 # coding=utf-8
 # fmt: off
 
+
 import logging
 import operator
 import time
@@ -38,7 +39,7 @@ from .utils import get_language_search_items
 
 
 _WANTED_MOVIE_DETAILS_SELECT = select(TableMovies.path,
-                                      TableMovies.missing_subtitles,
+                                      TableMovies.missing_subtitles_calculated,
                                       TableMovies.radarrId,
                                       TableMovies.audio_language,
                                       TableMovies.sceneName,
@@ -63,7 +64,7 @@ _DUE_MOVIE_DETAILS_BATCH_SIZE = 300
 
 _WANTED_MOVIES_SELECT = select(TableMovies.radarrId,
                               TableMovies.audio_language,
-                              TableMovies.missing_subtitles,
+                              TableMovies.missing_subtitles_calculated,
                               TableMovies.path,
                               TableMovies.profileId,
                               TableMovies.sceneName,
@@ -97,7 +98,7 @@ def _count_searchable_due_movies(adaptive_search_policy, exclusion_clause):
 
 def _movie_needs_wanted_lookup_refresh(movie):
     return (
-        movie.missing_subtitles is None or
+        not movie.missing_subtitles_calculated or
         not getattr(movie, "has_indexed_subtitles", True) or
         getattr(movie, "has_incomplete_embedded_subtitles", False)
     )
@@ -191,13 +192,13 @@ def _wanted_movie(movie, providers_list, due_languages=None, job_id=None, adapti
 
 def wanted_download_subtitles_movie(
     radarr_id,
-    job_id=None,
-    providers_list=None,
-    movie=None,
-    due_languages=None,
-    adaptive_search_policy=None,
-    fallback_allowed=None,
-    defer_failed_attempts=False,
+    job_id = None,
+    providers_list = None,
+    movie = None,
+    due_languages = None,
+    adaptive_search_policy = None,
+    fallback_allowed = None,
+    defer_failed_attempts = False,
 ):
     stmt_params = {"wanted_radarr_id": radarr_id}
 
@@ -237,7 +238,7 @@ def wanted_download_subtitles_movie(
                 logging.debug(f"BAZARR no movie with that radarrId can be found in database after subtitles refresh: {radarr_id}")
                 return
             rebuilt_wanted_state = True
-        if movie.missing_subtitles is None:
+        if not movie.missing_subtitles_calculated:
             # missing subtitles calculation for this movie is incomplete, we'll do it again
             list_missing_subtitles_movies(no=radarr_id)
             rebuilt_wanted_state = True
