@@ -18,7 +18,7 @@ from utilities.helper import check_credentials
 from utilities.central import get_log_file_path
 
 from .config import settings, base_url
-from .database import database, System
+from .database import database, System, select
 from .get_args import args
 
 frontend_build_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'frontend', 'build')
@@ -95,12 +95,12 @@ def catch_all(path):
             auth = False
 
     try:
-        updated = database.scalar(System.updated)
+        updated = database.scalar(select(System.updated))
     except Exception:
         updated = '0'
 
     try:
-        configured = database.scalar(System.configured)
+        configured = database.scalar(select(System.configured))
     except Exception:
         configured = '0'
 
