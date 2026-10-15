@@ -1,3 +1,5 @@
+from sqlalchemy.engine import Engine
+
 import importlib
 from concurrent.futures import ThreadPoolExecutor
 from threading import Barrier
@@ -12,6 +14,7 @@ from sqlalchemy import create_engine
 from sqlalchemy import inspect
 from sqlalchemy.orm import Session, scoped_session, sessionmaker
 from sqlalchemy import event
+from sqlalchemy import MetaData, Table
 from subtitles import wanted_state
 from flask import Flask
 
@@ -21,10 +24,27 @@ from app import database as db
 migration = importlib.import_module("migrations.versions.e6cbb0f6f9b1_")
 
 
-def add_legacy_retry_columns(engine):
+def add_legacy_retry_columns(engine: Engine) -> None:
+    add_legacy_missing_columns(engine)
     with engine.begin() as connection:
         for table in ('table_movies', 'table_episodes'):
             connection.exec_driver_sql(f'ALTER TABLE {table} ADD COLUMN "failedAttempts" TEXT')
+
+
+def add_legacy_missing_columns(engine: Engine) -> None:
+    with engine.begin() as connection:
+        for table in ('table_movies', 'table_episodes'):
+            connection.exec_driver_sql(f'ALTER TABLE {table} DROP COLUMN missing_subtitles_calculated')
+            connection.exec_driver_sql(f'ALTER TABLE {table} ADD COLUMN missing_subtitles TEXT')
+            index_name = f'ix_{table.removeprefix("table_")}_missing_subtitles'
+            connection.exec_driver_sql(f'CREATE INDEX {index_name} ON {table} (missing_subtitles)')
+            assert 'missing_subtitles_calculated' not in {
+                column['name'] for column in inspect(connection).get_columns(table)
+            }
+
+
+def legacy_media_table(model: type[db.TableMovies] | type[db.TableEpisodes], engine: Engine) -> Table:
+    return Table(model.__tablename__, MetaData(), autoload_with=engine)
 
 
 def current_head(engine):
@@ -68,7 +88,7 @@ def migration_engine(tmp_path):
                 connection.exec_driver_sql(f'DROP SCHEMA "{schema}" CASCADE')
 
 
-def test_fresh_installation_and_restart(monkeypatch, migration_engine):
+def test_fresh_installation_and_restart(monkeypatch: pytest.MonkeyPatch, migration_engine: Engine) -> None:
     engine = migration_engine
     db.metadata.drop_all(engine)
     with Session(engine) as session:
@@ -76,6 +96,10 @@ def test_fresh_installation_and_restart(monkeypatch, migration_engine):
         monkeypatch.setattr(db, 'url', engine.url)
         monkeypatch.setattr(db, 'database', session)
         db.init_db()
+        for table in ('table_movies', 'table_episodes'):
+            assert 'missing_subtitles' not in {
+                column['name'] for column in inspect(engine).get_columns(table)
+            }
         db.migrate_db(Flask(__name__))
         assert session.execute(db.text('SELECT version_num FROM alembic_version')).scalar_one() == current_head(engine)
         for model in (db.TableFailedSubtitleAttempts,):
@@ -83,9 +107,16 @@ def test_fresh_installation_and_restart(monkeypatch, migration_engine):
         session.commit()
         db.migrate_db(Flask(__name__))
         assert session.execute(db.select(db.func.count()).select_from(db.System)).scalar_one() == 1
+        for table in ('table_movies', 'table_episodes'):
+            columns = {column['name'] for column in inspect(engine).get_columns(table)}
+            assert 'missing_subtitles' not in columns
+            assert 'missing_subtitles_calculated' in columns
 
 
-def test_failed_backfill_rolls_back_and_can_be_retried(monkeypatch, migration_engine):
+def test_failed_backfill_rolls_back_and_can_be_retried(
+    monkeypatch: pytest.MonkeyPatch,
+    migration_engine: Engine,
+) -> None:
     engine = migration_engine
     with Session(engine) as session:
         monkeypatch.setattr(db, 'engine', engine)
@@ -94,7 +125,7 @@ def test_failed_backfill_rolls_back_and_can_be_retried(monkeypatch, migration_en
         session.execute(db.text('CREATE TABLE alembic_version (version_num VARCHAR(32) PRIMARY KEY)'))
         session.execute(db.text("INSERT INTO alembic_version VALUES ('537e9b4d10e3')"))
         add_legacy_retry_columns(engine)
-        session.execute(db.insert(db.TableMovies).values(
+        session.execute(db.insert(legacy_media_table(db.TableMovies, engine)).values(
             radarrId=7, path='/movie.mkv', title='Movie', tmdbId='7',
             missing_subtitles="['en']",
         ))
@@ -126,7 +157,11 @@ def test_failed_backfill_rolls_back_and_can_be_retried(monkeypatch, migration_en
 
 
 @pytest.mark.parametrize('precreated_tables', [False, True])
-def test_normal_startup_upgrades_development_database(monkeypatch, migration_engine, precreated_tables):
+def test_normal_startup_upgrades_development_database(
+    monkeypatch: pytest.MonkeyPatch,
+    migration_engine: Engine,
+    precreated_tables: bool,
+) -> None:
     engine = migration_engine
     if not precreated_tables:
         db.TableFailedSubtitleAttempts.__table__.drop(engine)
@@ -148,13 +183,13 @@ def test_normal_startup_upgrades_development_database(monkeypatch, migration_eng
         ]
         session.execute(db.insert(db.TableShows).values(sonarrSeriesId=3, title='Series', path='/series'))
         for index, (missing, failed) in enumerate(payloads, start=7):
-            session.execute(db.insert(db.TableMovies).values(
+            session.execute(db.insert(legacy_media_table(db.TableMovies, engine)).values(
                 radarrId=index, path=f'/movie-{index}.mkv', title='Movie', tmdbId=str(index),
                 missing_subtitles=missing,
             ))
             session.execute(db.text('UPDATE table_movies SET "failedAttempts" = :value WHERE "radarrId" = :id'),
                             {'value': failed, 'id': index})
-            session.execute(db.insert(db.TableEpisodes).values(
+            session.execute(db.insert(legacy_media_table(db.TableEpisodes, engine)).values(
                 sonarrEpisodeId=index, sonarrSeriesId=3, path=f'/series/episode-{index}.mkv',
                 title='Episode', season=1, episode=index, missing_subtitles=missing,
             ))
@@ -202,11 +237,11 @@ def test_normal_startup_upgrades_development_database(monkeypatch, migration_eng
             db.TableFailedSubtitleAttempts.language, db.TableFailedSubtitleAttempts.initial_attempt_at,
             db.TableFailedSubtitleAttempts.latest_attempt_at,
         ).order_by(db.TableFailedSubtitleAttempts.id)).all() == saved_attempts
-        # Missing-language data is unchanged by the retry migration.
+        # The full upgrade preserves whether missing languages had been calculated.
         for model, id_column in [(db.TableMovies, db.TableMovies.radarrId),
                                  (db.TableEpisodes, db.TableEpisodes.sonarrEpisodeId)]:
-            assert session.execute(db.select(model.missing_subtitles).order_by(id_column)).scalars().all() == [
-                missing for missing, _ in payloads
+            assert session.execute(db.select(model.missing_subtitles_calculated).order_by(id_column)).scalars().all() == [
+                missing is not None for missing, _ in payloads
             ]
         inspector = inspect(engine)
         assert 'failedAttempts' not in {column['name'] for column in inspector.get_columns('table_movies')}

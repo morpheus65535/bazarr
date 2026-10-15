@@ -1,9 +1,11 @@
 # coding=utf-8
 
-from flask_restx import Resource, Namespace, reqparse, fields, marshal
-from sqlalchemy import or_
+from typing import cast
 
-from app.database import TableMovies, database, update, select, func, get_subtitles_map
+from api.utils import JsonObject
+
+from flask_restx import Resource, Namespace, reqparse, fields, marshal
+from app.database import TableMissingSubtitles, TableMovies, database, update, select, func, get_subtitles_map
 from radarr.sync.movies import update_one_movie
 from subtitles.indexer.movies import list_missing_subtitles_movies, movies_scan_subtitles
 from app.event_handler import event_stream
@@ -61,7 +63,7 @@ class Movies(Resource):
     @api_ns_movies.expect(get_request_parser)
     @api_ns_movies.response(200, 'Success')
     @api_ns_movies.response(401, 'Not Authenticated')
-    def get(self):
+    def get(self) -> JsonObject:
         """List movies metadata for specific movies"""
         args = self.get_request_parser.parse_args()
         start = args.get('start')
@@ -101,12 +103,11 @@ class Movies(Resource):
         if profile_id is not None:
             where_clauses.append(profile_filter_clause(TableMovies.profileId, profile_id))
         if missing is not None:
-            if missing == 'true':
-                where_clauses.append(TableMovies.missing_subtitles.is_not(None))
-                where_clauses.append(TableMovies.missing_subtitles != '[]')
-            else:
-                where_clauses.append(or_(TableMovies.missing_subtitles.is_(None),
-                                         TableMovies.missing_subtitles == '[]'))
+            has_missing = select(TableMissingSubtitles.id).where(
+                TableMissingSubtitles.media_type == 'movie',
+                TableMissingSubtitles.media_id == TableMovies.radarrId,
+            ).exists()
+            where_clauses.append(has_missing if missing == 'true' else ~has_missing)
         if audio_language is not None:
             where_clauses.append(audio_language_filter_clause(TableMovies.audio_language, audio_language))
         if tags:
@@ -156,7 +157,7 @@ class Movies(Resource):
 
         count = database.execute(count_stmt).scalar()
 
-        return marshal({'data': results, 'total': count}, self.get_response_model)
+        return cast(JsonObject, marshal({'data': results, 'total': count}, self.get_response_model))
 
     post_request_parser = reqparse.RequestParser()
     post_request_parser.add_argument('radarrid', type=int, action='append', required=False, default=[],

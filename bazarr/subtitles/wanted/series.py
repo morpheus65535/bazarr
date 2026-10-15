@@ -1,6 +1,8 @@
 # coding=utf-8
 # fmt: off
 
+from typing import cast
+
 import logging
 import operator
 import time
@@ -23,7 +25,7 @@ from app.event_handler import event_stream
 from app.jobs_queue import jobs_queue, JobCanceled
 from app.config import settings
 
-from ..adaptive_searching import get_adaptive_search_policy
+from ..adaptive_searching import AdaptiveSearchPolicy, get_adaptive_search_policy
 from ..download import generate_subtitles
 from ..language_utils import format_episode_part, has_unindexed_external_subtitle, resolve_audio_language
 from subtitles.wanted_state import (
@@ -35,11 +37,11 @@ from subtitles.wanted_state import (
     record_failed_subtitle_attempts,
     record_failed_subtitle_attempts_map,
 )
-from .utils import get_language_search_items
+from .utils import WantedEpisode, get_language_search_items
 
 
 _WANTED_EPISODE_DETAILS_SELECT = select(TableEpisodes.path,
-                                        TableEpisodes.missing_subtitles,
+                                        TableEpisodes.missing_subtitles_calculated,
                                         TableEpisodes.sonarrEpisodeId,
                                         TableEpisodes.sonarrSeriesId,
                                         TableEpisodes.audio_language,
@@ -80,9 +82,9 @@ def _count_searchable_due_episodes(adaptive_search_policy, exclusion_clause):
     return database.execute(statement).scalar() or 0
 
 
-def _episode_needs_wanted_lookup_refresh(episode):
+def _episode_needs_wanted_lookup_refresh(episode: WantedEpisode) -> bool:
     return (
-        episode.missing_subtitles is None or
+        not episode.missing_subtitles_calculated or
         not getattr(episode, "has_indexed_subtitles", True) or
         getattr(episode, "has_incomplete_embedded_subtitles", False)
     )
@@ -175,15 +177,15 @@ def _wanted_episode(episode, providers_list, due_languages=None, job_id=None, ad
 
 
 def wanted_download_subtitles(
-    sonarr_episode_id,
-    job_id=None,
-    providers_list=None,
-    episode_details=None,
-    due_languages=None,
-    adaptive_search_policy=None,
-    fallback_allowed=None,
-    defer_failed_attempts=False,
-):
+    sonarr_episode_id: int,
+    job_id: int | None = None,
+    providers_list: list[str] | None = None,
+    episode_details: WantedEpisode | None = None,
+    due_languages: list[str] | None = None,
+    adaptive_search_policy: AdaptiveSearchPolicy | None = None,
+    fallback_allowed: bool | None = None,
+    defer_failed_attempts: bool = False,
+) -> list[str] | None:
     stmt_params = {"wanted_sonarr_episode_id": sonarr_episode_id}
 
     if episode_details is not None and due_languages is not None and not _episode_needs_wanted_lookup_refresh(episode_details):
@@ -206,7 +208,7 @@ def wanted_download_subtitles(
         return
 
     if episode_details is None:
-        episode_details = database.execute(_WANTED_EPISODE_DETAILS_STMT, stmt_params).first()
+        episode_details = cast(WantedEpisode | None, database.execute(_WANTED_EPISODE_DETAILS_STMT, stmt_params).first())
 
     if not episode_details:
         logging.debug(f"BAZARR no episode with that sonarrId can be found in database: {sonarr_episode_id}")
@@ -217,17 +219,17 @@ def wanted_download_subtitles(
         if not previously_indexed_subtitles or has_unindexed_external_subtitle(previously_indexed_subtitles):
             # subtitles indexing for this episode might be incomplete, we'll do it again
             store_subtitles(sonarr_episode_id)
-            episode_details = database.execute(_WANTED_EPISODE_DETAILS_STMT, stmt_params).first()
+            episode_details = cast(WantedEpisode | None, database.execute(_WANTED_EPISODE_DETAILS_STMT, stmt_params).first())
             if not episode_details:
                 logging.debug(f"BAZARR no episode with that sonarrId can be found in database after subtitles refresh: {sonarr_episode_id}")
                 return
             rebuilt_wanted_state = True
-        if episode_details.missing_subtitles is None:
+        if not episode_details.missing_subtitles_calculated:
             # missing subtitles calculation for this episode is incomplete, we'll do it again
             list_missing_subtitles(epno=sonarr_episode_id)
             rebuilt_wanted_state = True
         if rebuilt_wanted_state:
-            episode_details = database.execute(_WANTED_EPISODE_DETAILS_STMT, stmt_params).first()
+            episode_details = cast(WantedEpisode | None, database.execute(_WANTED_EPISODE_DETAILS_STMT, stmt_params).first())
             if not episode_details:
                 logging.debug(f"BAZARR no episode with that sonarrId can be found in database after missing-subtitles refresh: {sonarr_episode_id}")
                 return

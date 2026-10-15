@@ -1,3 +1,7 @@
+from typing import Callable
+from types import SimpleNamespace
+from sqlalchemy.orm import Session
+
 import importlib
 
 import pytest
@@ -44,46 +48,46 @@ def _wanted_state_for(transactional_session, wanted_search_tables, media_type, m
 
 
 def test_movie_missing_recalculation_updates_normalized_wanted_rows(
-    bind_wanted_database,
-    monkeypatch,
-    movie_row_factory,
-    transactional_session,
-    wanted_search_tables,
-):
+    bind_wanted_database: Callable[..., None],
+    monkeypatch: pytest.MonkeyPatch,
+    movie_row_factory: Callable[..., SimpleNamespace],
+    transactional_session: Session,
+    wanted_search_tables: SimpleNamespace,
+) -> None:
     module = _bind_indexer_module(bind_wanted_database, "subtitles.indexer.movies", "movies", monkeypatch)
     movie = movie_row_factory(missing_languages=[], failed_attempts=[("en", 10)])
 
     module.list_missing_subtitles_movies(no=movie.radarrId)
 
     missing_subtitles = transactional_session.execute(
-        select(wanted_search_tables.movie.c.missing_subtitles)
+        select(wanted_search_tables.movie.c.missing_subtitles_calculated)
         .where(wanted_search_tables.movie.c.radarrId == movie.radarrId)
     ).scalar_one()
     wanted_state = _wanted_state_for(transactional_session, wanted_search_tables, "movie", movie.radarrId)
 
-    assert missing_subtitles == "['en']"
+    assert missing_subtitles is True
     assert wanted_state == {"missing": ["en"], "failed": ["en"]}
 
 
 def test_episode_missing_recalculation_updates_normalized_wanted_rows(
-    bind_wanted_database,
-    monkeypatch,
-    episode_row_factory,
-    transactional_session,
-    wanted_search_tables,
-):
+    bind_wanted_database: Callable[..., None],
+    monkeypatch: pytest.MonkeyPatch,
+    episode_row_factory: Callable[..., SimpleNamespace],
+    transactional_session: Session,
+    wanted_search_tables: SimpleNamespace,
+) -> None:
     module = _bind_indexer_module(bind_wanted_database, "subtitles.indexer.series", "series", monkeypatch)
     episode = episode_row_factory(missing_languages=[], failed_attempts=[("en", 10)])
 
     module.list_missing_subtitles(epno=episode.sonarrEpisodeId)
 
     missing_subtitles = transactional_session.execute(
-        select(wanted_search_tables.episode.c.missing_subtitles)
+        select(wanted_search_tables.episode.c.missing_subtitles_calculated)
         .where(wanted_search_tables.episode.c.sonarrEpisodeId == episode.sonarrEpisodeId)
     ).scalar_one()
     wanted_state = _wanted_state_for(transactional_session, wanted_search_tables, "series", episode.sonarrEpisodeId)
 
-    assert missing_subtitles == "['en']"
+    assert missing_subtitles is True
     assert wanted_state == {"missing": ["en"], "failed": ["en"]}
 
 

@@ -1,6 +1,7 @@
 # coding=utf-8
 # fmt: off
 
+
 import logging
 import operator
 import os
@@ -20,10 +21,10 @@ from app.event_handler import event_stream
 from ..download import generate_subtitles
 from ..language_utils import has_unindexed_external_subtitle, resolve_audio_language
 from ..serialization import missing_subtitle_to_language_tuple
-from ..wanted_state import get_missing_languages, legacy_missing_cache_needs_rebuild
+from ..wanted_state import get_missing_languages, missing_subtitles_need_calculation
 
 
-def movies_download_subtitles(no, job_id=None, job_sub_function=False):
+def movies_download_subtitles(no: int | None, job_id: int | None = None, job_sub_function: bool = False) -> None:
     if not job_sub_function and not job_id:
         jobs_queue.add_job_from_function(f"""Downloading missing subtitles for """
                                          f"""{database.scalar(select(TableMovies.title)
@@ -36,7 +37,7 @@ def movies_download_subtitles(no, job_id=None, job_sub_function=False):
     conditions = [(TableMovies.radarrId == no)]
     conditions += get_exclusion_clause('movie')
     stmt = select(TableMovies.path,
-                  TableMovies.missing_subtitles,
+                  TableMovies.missing_subtitles_calculated,
                   TableMovies.audio_language,
                   TableMovies.radarrId,
                   TableMovies.sceneName,
@@ -62,7 +63,7 @@ def movies_download_subtitles(no, job_id=None, job_sub_function=False):
             logging.debug(f"BAZARR no movie with that radarrId can be found in database after subtitles refresh: {no}")
             jobs_queue.update_job_progress(job_id=job_id, progress_message="Movie not found in database.")
             return
-    if legacy_missing_cache_needs_rebuild(movie.missing_subtitles):
+    if missing_subtitles_need_calculation(movie.missing_subtitles_calculated):
         # missing subtitles calculation for this movie is incomplete, we'll do it again
         list_missing_subtitles_movies(no=no)
         movie = database.execute(stmt).first()
