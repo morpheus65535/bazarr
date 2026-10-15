@@ -94,17 +94,8 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
             return
         series_id = episode_metadata.sonarrSeriesId
         episode_id = episode_metadata.sonarrEpisodeId
-
-        if sync_checker(subtitle) is True:
-            from .sync import sync_subtitles
-            sync_subtitles(video_path=path, srt_path=downloaded_path,
-                           forced=language_forced,
-                           hi=language_hi,
-                           srt_lang=downloaded_language_code2,
-                           percent_score=percent_score,
-                           sonarr_series_id=episode_metadata.sonarrSeriesId,
-                           sonarr_episode_id=episode_metadata.sonarrEpisodeId,
-                           job_id=job_id)
+        sync_ids = {'sonarr_series_id': episode_metadata.sonarrSeriesId,
+                    'sonarr_episode_id': episode_metadata.sonarrEpisodeId}
     else:
         movie_metadata = database.execute(
             select(TableMovies.radarrId, TableMovies.imdbId, TableMovies.tmdbId)
@@ -114,18 +105,12 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
             return
         series_id = ""
         episode_id = movie_metadata.radarrId
+        sync_ids = {'radarr_id': movie_metadata.radarrId}
 
-        if sync_checker(subtitle) is True:
-            from .sync import sync_subtitles
-            sync_subtitles(video_path=path, srt_path=downloaded_path,
-                           forced=language_forced,
-                           hi=language_hi,
-                           srt_lang=downloaded_language_code2,
-                           percent_score=percent_score,
-                           radarr_id=movie_metadata.radarrId,
-                           job_id=job_id)
+    def _postprocess():
+        if use_postprocessing is not True:
+            return
 
-    if use_postprocessing is True:
         args = pp_replace(postprocessing_cmd, path, downloaded_path, downloaded_language, downloaded_language_code2,
                              downloaded_language_code3, audio_language, audio_language_code2, audio_language_code3,
                              percent_score, subtitle_id, downloaded_provider, uploader, release_info, series_id,
@@ -145,6 +130,20 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
         else:
             logging.debug(f"BAZARR post-processing skipped because subtitles score isn't below this "
                           f"threshold value: {pp_threshold}%")
+
+    if settings.subsync.use_subsync and sync_checker(subtitle) is True:
+        # Sync runs in its own job so this one isn't blocked and many syncs can run in parallel (up to
+        # subsync.concurrent_syncs). Post-processing must see the synced file, so it runs at the end of the sync job.
+        from .sync import sync_subtitles
+        sync_subtitles(video_path=path, srt_path=downloaded_path,
+                       forced=language_forced,
+                       hi=language_hi,
+                       srt_lang=downloaded_language_code2,
+                       percent_score=percent_score,
+                       callback=_postprocess,
+                       **sync_ids)
+    else:
+        _postprocess()
 
     if media_type == 'series':
         reversed_path = path_mappings.path_replace_reverse(path)

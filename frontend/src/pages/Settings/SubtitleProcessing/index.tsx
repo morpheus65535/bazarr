@@ -1,5 +1,7 @@
 import React, { FunctionComponent } from "react";
 import { Code, Space, Table, Text as MantineText } from "@mantine/core";
+import { range } from "lodash";
+import { useSystemStatus } from "@/apis/hooks";
 import {
   Check,
   CollapseBox,
@@ -126,6 +128,8 @@ const commandOptionElements: React.JSX.Element[] = commandOptions.map(
 );
 
 const SettingsSubtitleProcessingView: FunctionComponent = () => {
+  const { data: status } = useSystemStatus();
+
   return (
     <Layout name="Subtitle Processing">
       <Section
@@ -265,6 +269,20 @@ const SettingsSubtitleProcessingView: FunctionComponent = () => {
         <Message>
           Enable automatic audio synchronization after downloading subtitles for
           series and movies based on selections below.
+        </Message>
+        <Selector
+          label="Concurrent Syncs"
+          options={range(1, (status?.cpu_cores ?? 3) + 1).map((opt) => ({
+            label: `${opt.toString()} ${opt === 1 ? "sync" : "syncs"}`,
+            value: opt,
+          }))}
+          settingKey="settings-subsync-concurrent_syncs"
+        />
+        <Message>
+          Maximum number of subtitles synchronizations (automatic or manual)
+          running at the same time. Each one runs in its own process and uses
+          one CPU core. Synchronizations also count toward the Concurrent Jobs
+          limit in General settings.
         </Message>
         <CollapseBox settingKey="settings-subsync-use_subsync">
           <Message>

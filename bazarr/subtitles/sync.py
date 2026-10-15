@@ -2,7 +2,6 @@
 # fmt: off
 
 import logging
-import gc
 
 from app.config import settings
 from app.jobs_queue import jobs_queue
@@ -37,6 +36,28 @@ def sync_subtitles(video_path,
 
     jobs_queue.update_job_name(job_id=job_id, new_job_name=f"Syncing {srt_path}")
 
+    try:
+        return _sync_subtitles(video_path=video_path, srt_path=srt_path, srt_lang=srt_lang, forced=forced, hi=hi,
+                               percent_score=percent_score, sonarr_series_id=sonarr_series_id,
+                               sonarr_episode_id=sonarr_episode_id, radarr_id=radarr_id, job_id=job_id,
+                               max_offset_seconds=max_offset_seconds, gss=gss, no_fix_framerate=no_fix_framerate,
+                               reference=reference, force_sync=force_sync, quality_min_score=quality_min_score,
+                               quality_max_offset_seconds=quality_max_offset_seconds,
+                               quality_max_framerate_deviation=quality_max_framerate_deviation)
+    finally:
+        # always run the callback (ex: post-processing) once the sync job is done, even if the sync was skipped
+        # or failed, so it isn't lost now that sync runs in its own job
+        if callback and callable(callback):
+            try:
+                callback()
+            except Exception:
+                logging.exception(f'BAZARR an exception occurs while running the post-sync callback for this '
+                                  f'subtitle file: {srt_path}')
+
+
+def _sync_subtitles(video_path, srt_path, srt_lang, forced, hi, percent_score, sonarr_series_id, sonarr_episode_id,
+                    radarr_id, job_id, max_offset_seconds, gss, no_fix_framerate, reference, force_sync,
+                    quality_min_score, quality_max_offset_seconds, quality_max_framerate_deviation):
     if forced:
         logging.debug('BAZARR cannot sync forced subtitles. Skipping sync routine.')
     else:
@@ -96,8 +117,6 @@ def sync_subtitles(video_path,
             }
             try:
                 subsync.sync(**sync_kwargs)
-                if callback and callable(callback):
-                    callback()
             except Exception:
                 logging.exception(f'BAZARR an unhandled exception occurs during the synchronization process for this '
                                   f'subtitle file: {srt_path}')
@@ -108,8 +127,6 @@ def sync_subtitles(video_path,
                 if job_id:
                     jobs_queue.update_job_progress(job_id=job_id, progress_value="max")
                     jobs_queue.update_job_name(job_id=job_id, new_job_name=f"Synced {srt_path}")
-                del subsync
-                gc.collect()
         else:
             logging.debug(f"BAZARR subsync skipped because subtitles score isn't below this "
                           f"threshold value: {subsync_threshold}%")
