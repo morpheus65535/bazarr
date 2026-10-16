@@ -91,8 +91,8 @@ describe("ItemOverview", () => {
     customRender(<ItemOverview item={createMinimalItem({ profileId: 2 })} />);
 
     expect(await screen.findByText("Series Rule")).toBeInTheDocument();
-    expect(screen.getByText("AND")).toBeInTheDocument();
-    expect(screen.getByText("OR")).toBeInTheDocument();
+    expect(screen.getByText("All of")).toBeInTheDocument();
+    expect(screen.getByText("Any of")).toBeInTheDocument();
     expect(screen.getByText("de")).toBeInTheDocument();
   });
 
@@ -119,9 +119,7 @@ describe("ItemOverview", () => {
 
     expect(await screen.findByText("Basic Rule")).toBeInTheDocument();
     expect(screen.getByText("fr:HI")).toBeInTheDocument();
-    const cutoffBadge = screen.getByTitle(
-      "Ignore others if this one is available",
-    );
+    const cutoffBadge = screen.getByTitle("Stops searching once this is found");
     expect(cutoffBadge).toHaveTextContent("fr:HI");
   });
 });

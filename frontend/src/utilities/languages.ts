@@ -55,3 +55,17 @@ export const useLanguageFromCode3 = (code3: string) => {
 export const normalizeAudioLanguage = (name: string) => {
   return name === "Chinese Simplified" ? "Chinese" : name;
 };
+
+export type LanguageNameResolver = (code: string) => string;
+
+// Builds a code-to-name lookup once, falling back to the stored code for
+// languages that are no longer available.
+export const createLanguageNameResolver = (
+  languages: readonly Language.Info[],
+): LanguageNameResolver => {
+  const namesByCode = new Map(
+    languages.map((language) => [language.code2, language.name]),
+  );
+
+  return (code) => namesByCode.get(code) ?? code;
+};
