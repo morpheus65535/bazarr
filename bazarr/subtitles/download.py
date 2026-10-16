@@ -218,7 +218,8 @@ def _blacklist_unusable_subtitles(video, subtitles, media_type, language, failed
 
 
 def _get_language_obj(languages, language_items_by_object=None):
-    language_set = set()
+    # A list, not a set: searches follow the order of the input, which is the profile priority
+    language_set = []
 
     if not isinstance(languages, (set, list)):
         languages = [languages]
@@ -237,7 +238,8 @@ def _get_language_obj(languages, language_items_by_object=None):
         if hi_item == "True":
             lang_obj = Language.rebuild(lang_obj, hi=True)
 
-        language_set.add(lang_obj)
+        if lang_obj not in language_set:
+            language_set.append(lang_obj)
         if language_items_by_object is not None:
             language_items_by_object[lang_obj] = language_item
 
