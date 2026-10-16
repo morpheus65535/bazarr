@@ -25,8 +25,11 @@ import { useModals, withModal } from "@/modules/modals";
 import { useSelectorOptions } from "@/utilities";
 import { LOG } from "@/utilities/console";
 import FormUtils from "@/utilities/form";
-import { anyCutoff } from "./ProfileEditForm";
-import { inclusionOptions, subtitlesTypeOptions } from "./profileOptions";
+import {
+  anyCutoff,
+  inclusionOptions,
+  subtitlesTypeOptions,
+} from "./profileOptions";
 import styles from "./ProfileEditForm.module.scss";
 
 type Group = Language.EnhancedGroup;
@@ -467,6 +470,14 @@ const EnhancedProfileEditForm: FunctionComponent<Props> = ({
         >
           <Accordion.Item value="Groups">
             <Stack>
+              <Text size="sm">
+                Groups are listed in priority order, the first group being the
+                most important. Inside a group, AND means every language is
+                needed and OR means any one of them is enough. Groups do not
+                depend on each other. Bazarr searches for the languages that are
+                still missing, and for an OR group it stops at the first
+                language it finds.
+              </Text>
               {form.values.groups.map((group, index) => (
                 <GroupEditor
                   key={group.id}
@@ -503,7 +514,8 @@ const EnhancedProfileEditForm: FunctionComponent<Props> = ({
               <Text size="sm">
                 Once the cutoff group is satisfied, languages from lower groups
                 are not searched. Any group means any satisfied group meets the
-                cutoff.
+                cutoff. Without a cutoff, languages from every group are always
+                searched.
               </Text>
             </Stack>
           </Accordion.Item>

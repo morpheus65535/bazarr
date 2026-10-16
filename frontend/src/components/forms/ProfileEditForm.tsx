@@ -19,10 +19,12 @@ import { useModals, withModal } from "@/modules/modals";
 import { useArrayAction, useSelectorOptions } from "@/utilities";
 import { LOG } from "@/utilities/console";
 import FormUtils from "@/utilities/form";
-import { inclusionOptions, subtitlesTypeOptions } from "./profileOptions";
+import {
+  anyCutoff,
+  inclusionOptions,
+  subtitlesTypeOptions,
+} from "./profileOptions";
 import styles from "./ProfileEditForm.module.scss";
-
-export const anyCutoff = 65535;
 
 const defaultCutoffOptions: SelectorOption<Language.ProfileItem>[] = [
   {

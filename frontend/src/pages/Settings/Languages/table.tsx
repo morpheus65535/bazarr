@@ -1,13 +1,11 @@
-import { Fragment, FunctionComponent, useCallback, useMemo } from "react";
-import { Badge, Button, Group, Text } from "@mantine/core";
+import { FunctionComponent, useCallback, useMemo } from "react";
+import { Badge, Button, Group } from "@mantine/core";
 import { faTrash, faWrench } from "@fortawesome/free-solid-svg-icons";
 import { cloneDeep, includes, maxBy } from "lodash";
 import { Action } from "@/components";
+import LanguageProfileRules from "@/components/bazarr/LanguageProfileRules";
 import { EnhancedProfileEditModal } from "@/components/forms/EnhancedProfileEditForm";
-import {
-  anyCutoff,
-  ProfileEditModal,
-} from "@/components/forms/ProfileEditForm";
+import { ProfileEditModal } from "@/components/forms/ProfileEditForm";
 import { AppColumnDef as ColumnDef } from "@/components/tables/features";
 import SimpleTable from "@/components/tables/SimpleTable";
 import { useModals } from "@/modules/modals";
@@ -100,26 +98,9 @@ const Table: FunctionComponent = () => {
       {
         header: "Languages",
         accessorKey: "items",
-        cell: ({
-          row: {
-            original: { items, cutoff, profileType, groups },
-          },
-        }) => {
-          if (profileType === "enhanced" && groups) {
-            return <GroupsExpression groups={groups} cutoff={cutoff} />;
-          }
-
-          return (
-            <Group gap="xs" wrap="nowrap">
-              {items.map((v, i) => {
-                const isCutoff = v.id === cutoff || cutoff === anyCutoff;
-                return (
-                  <ItemBadge key={i} cutoff={isCutoff} item={v}></ItemBadge>
-                );
-              })}
-            </Group>
-          );
-        },
+        cell: ({ row: { original: profile } }) => (
+          <LanguageProfileRules profile={profile}></LanguageProfileRules>
+        ),
       },
       {
         header: "Must contain",
@@ -302,84 +283,6 @@ const Table: FunctionComponent = () => {
         {canAdd ? "Add New Enhanced Profile" : "No Enabled Languages"}
       </Button>
     </>
-  );
-};
-
-interface ItemProps {
-  item: Language.ProfileItem;
-  cutoff: boolean;
-}
-
-const ItemBadge: FunctionComponent<ItemProps> = ({ cutoff, item }) => {
-  const text = useMemo(() => {
-    const result =
-      item.language +
-      (item.hi === "True"
-        ? ":HI"
-        : item.forced === "True"
-          ? ":Forced"
-          : item.hi === "Excluded"
-            ? ":Non-HI"
-            : "");
-    return result;
-  }, [item.hi, item.forced, item.language]);
-  return (
-    <Badge
-      title={cutoff ? "Ignore others if this one is available" : undefined}
-      color={cutoff ? "brand" : "secondary"}
-    >
-      {text}
-    </Badge>
-  );
-};
-
-interface GroupsProps {
-  groups: Language.EnhancedGroup[];
-  cutoff: number | null;
-}
-
-// Renders an enhanced profile as an expression, for example (en AND fr) > de. The cutoff group is highlighted.
-const GroupsExpression: FunctionComponent<GroupsProps> = ({
-  groups,
-  cutoff,
-}) => {
-  return (
-    <Group gap="xs" wrap="nowrap">
-      {groups.map((group, groupIndex) => {
-        const isCutoff = group.id === cutoff || cutoff === anyCutoff;
-        const parenthesized = group.items.length > 1;
-
-        return (
-          <Fragment key={group.id}>
-            {groupIndex > 0 && (
-              <Text span c="dimmed">
-                &gt;
-              </Text>
-            )}
-            {parenthesized && (
-              <Text span c="dimmed">
-                (
-              </Text>
-            )}
-            {group.items.map((item, itemIndex) => (
-              <Fragment key={item.id}>
-                {itemIndex > 0 && (
-                  <Text span size="sm" c="dimmed">
-                    {group.operator}
-                  </Text>
-                )}
-                <ItemBadge cutoff={isCutoff} item={item}></ItemBadge>
-              </Fragment>
-            ))}
-            {parenthesized && (
-              <Text span c="dimmed">
-                )
-              </Text>
-            )}
-          </Fragment>
-        );
-      })}
-    </Group>
   );
 };
 
