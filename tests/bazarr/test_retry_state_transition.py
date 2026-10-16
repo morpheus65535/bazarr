@@ -86,11 +86,13 @@ def test_sync_checks_normalized_retry_windows(kind, row_factory, bind_wanted_dat
     module = importlib.import_module('radarr.sync.movies' if kind == 'movies' else 'sonarr.sync.episodes')
     bind_wanted_database(module, kind)
     monkeypatch.setattr(module, 'get_exclusion_clause', lambda *args: [])
-    monkeypatch.setattr(adaptive_searching, 'get_adaptive_search_policy', lambda: {
+    policy = {
         'delay': timedelta(days=21), 'delta': timedelta(days=7),
         'initial_search_cutoff': (now - timedelta(days=21)).timestamp(),
         'latest_search_cutoff': (now - timedelta(days=7)).timestamp(),
-    })
+    }
+    monkeypatch.setattr(adaptive_searching, 'get_adaptive_search_policy', lambda: policy)
+    monkeypatch.setattr(wanted_state, 'get_adaptive_search_policy', lambda: policy)
     kwargs = {'radarr_id': row.radarrId} if kind == 'movies' else {'episode_id': row.sonarrEpisodeId}
     assert module._is_there_missing_subtitles(**kwargs) is False
     media_type = 'movie' if kind == 'movies' else 'series'
@@ -124,11 +126,13 @@ def test_indexer_updates_normalized_missing_languages_before_sync_checks(
     sync = importlib.import_module('radarr.sync.movies' if kind == 'movies' else 'sonarr.sync.episodes')
     bind_wanted_database(sync, kind)
     monkeypatch.setattr(sync, 'get_exclusion_clause', lambda *args: [])
-    monkeypatch.setattr(adaptive_searching, 'get_adaptive_search_policy', lambda: {
+    policy = {
         'delay': timedelta(days=21), 'delta': timedelta(days=7),
         'initial_search_cutoff': (now - timedelta(days=21)).timestamp(),
         'latest_search_cutoff': (now - timedelta(days=7)).timestamp(),
-    })
+    }
+    monkeypatch.setattr(adaptive_searching, 'get_adaptive_search_policy', lambda: policy)
+    monkeypatch.setattr(wanted_state, 'get_adaptive_search_policy', lambda: policy)
     kwargs = {'radarr_id': media_id} if kind == 'movies' else {'episode_id': media_id}
     assert sync._is_there_missing_subtitles(**kwargs) is False
 
