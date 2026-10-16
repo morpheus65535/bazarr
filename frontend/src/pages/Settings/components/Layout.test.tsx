@@ -1,4 +1,5 @@
 import { ReactNode } from "react";
+import { act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Mock, vi, vitest } from "vitest";
 import { useSettingsMutation, useSystemSettings } from "@/apis/hooks";
@@ -124,7 +125,9 @@ const renderEditorLayout = (props: {
 
 const succeedMutation = (mutate: Mock) => {
   const options = mutate.mock.calls[0][1] as { onSuccess?: () => void };
-  options.onSuccess?.();
+  act(() => {
+    options.onSuccess?.();
+  });
 };
 
 describe("Settings Layout", () => {
