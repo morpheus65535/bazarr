@@ -1,5 +1,7 @@
 # coding=utf-8
 
+from sqlalchemy import Table
+
 from datetime import datetime
 from contextlib import contextmanager
 
@@ -100,7 +102,8 @@ def record_failed_subtitle_attempts(media_type, media_id, languages):
     record_failed_subtitle_attempts_map(media_type, {media_id: languages})
 
 
-def record_failed_subtitle_attempts_map(media_type, languages_by_media_id):
+def record_failed_subtitle_attempts_map(media_type, languages_by_media_id, attempted_at_by_media_id=None):
+    attempted_at_by_media_id = attempted_at_by_media_id or {}
     normalized_languages = {}
     for media_id, languages in languages_by_media_id.items():
         if not languages:
@@ -135,14 +138,16 @@ def record_failed_subtitle_attempts_map(media_type, languages_by_media_id):
                     "media_type": media_type,
                     "media_id": media_id,
                     "language": language,
-                    "initial_attempt_at": current_timestamp,
-                    "latest_attempt_at": current_timestamp,
+                    "initial_attempt_at": attempted_at_by_media_id.get(media_id, current_timestamp),
+                    "latest_attempt_at": attempted_at_by_media_id.get(media_id, current_timestamp),
                 }
                 for media_id in media_ids_to_update
                 for language in normalized_languages[media_id]
             ]
             initial_timestamp = TableFailedSubtitleAttempts.initial_attempt_at
             latest_timestamp = TableFailedSubtitleAttempts.latest_attempt_at
+            incoming_timestamp = insert(TableFailedSubtitleAttempts).excluded.latest_attempt_at
+            incoming_initial_timestamp = insert(TableFailedSubtitleAttempts).excluded.initial_attempt_at
             for row_chunk in _iter_chunks(rows, FAILED_ATTEMPT_UPSERT_BATCH_SIZE):
                 statement = insert(TableFailedSubtitleAttempts).values(row_chunk)
                 connection.execute(
@@ -150,11 +155,11 @@ def record_failed_subtitle_attempts_map(media_type, languages_by_media_id):
                         index_elements=["media_type", "media_id", "language"],
                         set_={
                             "initial_attempt_at": case(
-                                (initial_timestamp > current_timestamp, current_timestamp),
+                                (initial_timestamp > incoming_initial_timestamp, incoming_initial_timestamp),
                                 else_=initial_timestamp,
                             ),
                             "latest_attempt_at": case(
-                                (latest_timestamp < current_timestamp, current_timestamp),
+                                (latest_timestamp < incoming_timestamp, incoming_timestamp),
                                 else_=latest_timestamp,
                             ),
                         },
@@ -199,19 +204,25 @@ def _wanted_state_transaction():
             yield connection
 
 
-def store_missing_subtitles(table, id_column_name, media_type, media_id, missing_subtitles):
-    """Save both representations atomically, repairing stale normalized rows too."""
+def store_missing_subtitles(
+    table: Table,
+    id_column_name: str,
+    media_type: str,
+    media_id: int,
+    missing_subtitles: str | list[str] | None,
+) -> None:
+    """Save missing languages and mark their calculation complete in one transaction."""
     id_column = table.c[id_column_name]
     rows = get_missing_subtitle_rows(media_type, media_id, missing_subtitles)
     with _wanted_state_transaction() as connection:
         media = connection.execute(
-            select(table.c.missing_subtitles).where(id_column == media_id).with_for_update()
+            select(table.c.missing_subtitles_calculated).where(id_column == media_id).with_for_update()
         ).first()
         if media is None:
             return
-        if media.missing_subtitles != missing_subtitles:
+        if not media.missing_subtitles_calculated:
             connection.execute(
-                table.update().where(id_column == media_id).values(missing_subtitles=missing_subtitles)
+                table.update().where(id_column == media_id).values(missing_subtitles_calculated=True)
             )
 
         missing_filter = (
@@ -243,8 +254,8 @@ def get_missing_languages(media_type, media_id):
     return []
 
 
-def legacy_missing_cache_needs_rebuild(missing_subtitles):
-    return missing_subtitles is None
+def missing_subtitles_need_calculation(calculated: bool) -> bool:
+    return not calculated
 
 
 def get_missing_languages_map(media_type, media_ids):
@@ -400,7 +411,8 @@ def count_due_missing_media(media_type, adaptive_search_policy=None):
     ).scalar() or 0
 
 
-def iter_due_missing_languages_maps(media_type, adaptive_search_policy=None, batch_size=None):
+def iter_due_missing_languages_maps(media_type, adaptive_search_policy=None, batch_size=None,
+                                   eligible_media_ids=None):
     if batch_size is None:
         batch_size = WANTED_STATE_QUERY_BATCH_SIZE
     if batch_size < 1:
@@ -409,6 +421,8 @@ def iter_due_missing_languages_maps(media_type, adaptive_search_policy=None, bat
         adaptive_search_policy = get_adaptive_search_policy()
 
     statement = due_missing_languages_statement(media_type, adaptive_search_policy)
+    if eligible_media_ids is not None:
+        statement = statement.where(TableMissingSubtitles.media_id.in_(eligible_media_ids))
     last_media_id = None
     while True:
         # Keyset pagination bounds ORM buffering and tolerates searches deleting
@@ -423,11 +437,12 @@ def iter_due_missing_languages_maps(media_type, adaptive_search_policy=None, bat
         if not media_ids:
             return
         due_languages = {}
-        for row in database.execute(
-            statement.where(TableMissingSubtitles.media_id.in_(media_ids))
-            .order_by(TableMissingSubtitles.media_id, TableMissingSubtitles.id)
-        ):
-            due_languages.setdefault(row.media_id, []).append(row.language)
+        for media_id_chunk in _iter_chunks(media_ids, WANTED_STATE_ID_QUERY_BATCH_SIZE):
+            for row in database.execute(
+                statement.where(TableMissingSubtitles.media_id.in_(media_id_chunk))
+                .order_by(TableMissingSubtitles.media_id, TableMissingSubtitles.id)
+            ):
+                due_languages.setdefault(row.media_id, []).append(row.language)
         last_media_id = media_ids[-1]
         yield due_languages
 

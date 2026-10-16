@@ -8,9 +8,23 @@ from datetime import datetime, timedelta
 from functools import lru_cache
 from math import isfinite
 from time import monotonic
+from typing import TypedDict
 
 from app.config import settings
 from subtitles.language_utils import parse_language_token
+
+
+class AdaptiveSearchPolicy(TypedDict):
+    delay: timedelta
+    delta: timedelta
+    initial_search_cutoff: float
+    latest_search_cutoff: float
+
+
+class ConfiguredAdaptiveSearchPolicy(AdaptiveSearchPolicy):
+    delay_label: str
+    delta_label: str
+    now: datetime
 
 
 _ADAPTIVE_POLICY_CACHE_TTL = 1.0
@@ -165,7 +179,7 @@ def _get_cached_policy_components(adaptive_searching_enabled, adaptive_searching
     return extended_search_delay, extended_search_delta
 
 
-def get_adaptive_search_policy():
+def get_adaptive_search_policy() -> ConfiguredAdaptiveSearchPolicy | None:
     settings_key = (
         settings.general.adaptive_searching,
         settings.general.adaptive_searching_delay,

@@ -5,8 +5,9 @@ import operator
 from flask_restx import Resource, Namespace, reqparse, fields, marshal
 from functools import reduce
 
-from app.database import get_exclusion_clause, TableMovies, database, select, func
+from app.database import get_exclusion_clause, TableMovies, TableMissingSubtitles, database, select, func, get_subtitles_map
 from api.swaggerui import subtitles_language_model
+from subtitles.wanted_state import get_missing_languages_map
 
 from api.utils import authenticate, postprocess
 
@@ -45,8 +46,10 @@ class MoviesWanted(Resource):
         args = self.get_request_parser.parse_args()
         radarrid = args.get("radarrid[]")
 
-        wanted_conditions = [(TableMovies.missing_subtitles.is_not(None)),
-                             (TableMovies.missing_subtitles != '[]')]
+        wanted_conditions = [select(TableMissingSubtitles.id)
+                             .where(TableMissingSubtitles.media_type == 'movie')
+                             .where(TableMissingSubtitles.media_id == TableMovies.radarrId)
+                             .exists()]
         if len(radarrid) > 0:
             wanted_conditions.append((TableMovies.radarrId.in_(radarrid)))
             start = 0
@@ -59,7 +62,6 @@ class MoviesWanted(Resource):
         wanted_condition = reduce(operator.and_, wanted_conditions)
 
         stmt = select(TableMovies.title,
-                      TableMovies.missing_subtitles,
                       TableMovies.radarrId,
                       TableMovies.sceneName,
                       TableMovies.tags) \
@@ -67,13 +69,17 @@ class MoviesWanted(Resource):
         if length > 0:
             stmt = stmt.order_by(TableMovies.radarrId.desc()).limit(length).offset(start)
 
+        movies = database.execute(stmt).all()
+        missing_languages = get_missing_languages_map('movie', [x.radarrId for x in movies])
+        subtitles_map = get_subtitles_map('movie', [x.radarrId for x in movies])
+
         results = [postprocess({
             'title': x.title,
-            'missing_subtitles': x.missing_subtitles,
+            'missing_subtitles': missing_languages[x.radarrId],
             'radarrId': x.radarrId,
             'sceneName': x.sceneName,
             'tags': x.tags,
-        }) for x in database.execute(stmt).all()]
+        }, subtitles=subtitles_map.get(x.radarrId, [])) for x in movies]
 
         count = database.execute(
             select(func.count())

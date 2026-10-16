@@ -1,3 +1,6 @@
+from typing import Iterator
+from sqlalchemy.engine import Engine
+
 import importlib
 
 import pytest
@@ -10,15 +13,18 @@ from sqlalchemy.orm import Session
 
 from app import database as db
 from subtitles import wanted_state
-from tests.bazarr.test_wanted_search_migration import migration_engine
+from tests.bazarr.test_wanted_search_migration import (
+    migration_engine, add_legacy_missing_columns, legacy_media_table, current_head,
+)
 
 
 migration = importlib.import_module('migrations.versions.f1d8a9c2b347_')
 
 
 @pytest.fixture
-def missing_upgrade(monkeypatch, migration_engine):
+def missing_upgrade(monkeypatch: pytest.MonkeyPatch, migration_engine: Engine) -> Iterator[tuple[Engine, Session]]:
     engine = migration_engine
+    add_legacy_missing_columns(engine)
     with Session(engine) as session:
         monkeypatch.setattr(db, 'engine', engine)
         monkeypatch.setattr(db, 'url', engine.url)
@@ -27,11 +33,11 @@ def missing_upgrade(monkeypatch, migration_engine):
         session.execute(db.text('CREATE TABLE alembic_version (version_num VARCHAR(32) PRIMARY KEY)'))
         session.execute(db.text("INSERT INTO alembic_version VALUES ('e6cbb0f6f9b1')"))
         session.execute(db.insert(db.TableShows).values(sonarrSeriesId=3, title='Series', path='/series'))
-        session.execute(db.insert(db.TableMovies).values(
+        session.execute(db.insert(legacy_media_table(db.TableMovies, engine)).values(
             radarrId=7, path='/movie.mkv', title='Movie', tmdbId='7',
             missing_subtitles="['en']",
         ))
-        session.execute(db.insert(db.TableEpisodes).values(
+        session.execute(db.insert(legacy_media_table(db.TableEpisodes, engine)).values(
             sonarrEpisodeId=17, sonarrSeriesId=3, path='/series/e.mkv', title='Episode', season=1, episode=1,
             missing_subtitles="['en']",
         ))
@@ -46,8 +52,8 @@ def missing_upgrade(monkeypatch, migration_engine):
 
 @pytest.mark.parametrize('precreated_table', [False, True])
 def test_missing_cutover_imports_intervening_writes_and_preserves_retry_history(
-    missing_upgrade, precreated_table,
-):
+    missing_upgrade: tuple[Engine, Session], precreated_table: bool,
+) -> None:
     engine, session = missing_upgrade
     if not precreated_table:
         db.TableMissingSubtitles.__table__.drop(engine)
@@ -55,13 +61,13 @@ def test_missing_cutover_imports_intervening_writes_and_preserves_retry_history(
         session.execute(db.insert(db.TableMissingSubtitles).values(media_type='movie', media_id=7, language='stale'))
     # Simulate an indexer update while the application runs on the retry-only PR.
     for model in (db.TableMovies, db.TableEpisodes):
-        session.execute(db.update(model).values(missing_subtitles="['fr:hi:forced', 'fr', 'FR:FORCED:HI']"))
+        session.execute(db.update(legacy_media_table(model, engine)).values(missing_subtitles="['fr:hi:forced', 'fr', 'FR:FORCED:HI']"))
     session.commit()
     if precreated_table:
         db.init_db()
     app = Flask(__name__)
     db.migrate_db(app)
-    assert session.execute(db.text('SELECT version_num FROM alembic_version')).scalar_one() == migration.revision
+    assert session.execute(db.text('SELECT version_num FROM alembic_version')).scalar_one() == current_head(engine)
     assert session.execute(db.select(db.TableMissingSubtitles.media_type, db.TableMissingSubtitles.media_id,
                                     db.TableMissingSubtitles.language).order_by(
         db.TableMissingSubtitles.media_type, db.TableMissingSubtitles.language)).all() == [
@@ -76,13 +82,18 @@ def test_missing_cutover_imports_intervening_writes_and_preserves_retry_history(
         item['name'] for item in inspector.get_unique_constraints('table_missing_subtitles')
     }
     assert 'ix_missing_subtitles_media' in {item['name'] for item in inspector.get_indexes('table_missing_subtitles')}
+    movie_unique_columns = {
+        tuple(item['column_names']) for item in inspector.get_unique_constraints('table_movies')
+    }
+    assert ('path',) in movie_unique_columns
+    assert ('tmdbId',) in movie_unique_columns
 
     # The writer cutover belongs to the same release as this migration.
     for kind, media_id, model, id_column in [('movie', 7, db.TableMovies, 'radarrId'),
                                           ('series', 17, db.TableEpisodes, 'sonarrEpisodeId')]:
         wanted_state.store_missing_subtitles(model.__table__, id_column, kind, media_id, "['it']")
         assert wanted_state.get_missing_languages(kind, media_id) == ['it']
-        assert session.execute(db.select(model.missing_subtitles)).scalar_one() == "['it']"
+        assert session.execute(db.select(model.missing_subtitles_calculated)).scalar_one() is True
     restart_app = Flask(__name__)
     db.migrate_db(restart_app)
     assert session.execute(db.select(db.TableMissingSubtitles.language)).scalars().all() == ['it', 'it']
@@ -93,13 +104,20 @@ def test_missing_cutover_imports_intervening_writes_and_preserves_retry_history(
     (None, []), ('', []), ('[]', []), ('malformed', []),
     ("['de', None, 'de']", ['de']), ("['en', 'fr:hi', 'en']", ['en', 'fr:hi']),
 ])
-def test_missing_migration_handles_legacy_values(missing_upgrade, value, expected):
-    _, session = missing_upgrade
+def test_missing_migration_handles_legacy_values(
+    missing_upgrade: tuple[Engine, Session],
+    value: str | None,
+    expected: list[str],
+) -> None:
+    engine, session = missing_upgrade
     for model in (db.TableMovies, db.TableEpisodes):
-        session.execute(db.update(model).values(missing_subtitles=value))
+        session.execute(db.update(legacy_media_table(model, engine)).values(missing_subtitles=value))
     db.migrate_db(Flask(__name__))
     for kind, media_id in [('movie', 7), ('series', 17)]:
         assert wanted_state.get_missing_languages(kind, media_id) == expected
+        model = db.TableMovies if kind == 'movie' else db.TableEpisodes
+        assert session.execute(db.select(model.missing_subtitles_calculated)).scalar_one() is (value is not None)
+        assert 'missing_subtitles' not in {column['name'] for column in inspect(engine).get_columns(model.__tablename__)}
 
 
 def test_failed_missing_backfill_rolls_back_and_can_be_retried(missing_upgrade):
@@ -125,12 +143,12 @@ def test_failed_missing_backfill_rolls_back_and_can_be_retried(missing_upgrade):
     assert session.execute(db.select(db.TableMissingSubtitles.language)).scalars().all() == ['en', 'en']
 
 
-def test_missing_revision_follows_retry_cutover(migration_engine):
+def test_missing_revision_follows_retry_cutover(migration_engine: Engine) -> None:
     with migration_engine.connect() as connection, Operations.context(MigrationContext.configure(connection)):
         scripts = ScriptDirectory('migrations')
-        assert scripts.get_heads() == [migration.revision]
+        assert scripts.get_heads() == [current_head(migration_engine)]
         assert [step.revision.revision for step in scripts._upgrade_revs('head', '537e9b4d10e3')] == [
-            'e6cbb0f6f9b1', migration.revision,
+            'e6cbb0f6f9b1', migration.revision, '9c2f6a8d4b10',
         ]
 
 

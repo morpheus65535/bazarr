@@ -3,8 +3,8 @@
 import ast
 
 from functools import wraps
+from typing import TypeAlias
 from flask import request, abort
-from operator import itemgetter
 
 from languages.custom_lang import CustomLanguage
 from sqlalchemy import or_, and_
@@ -17,7 +17,11 @@ from app.database import (get_audio_profile_languages, get_desired_languages, ge
                           TableShows, select)
 from subtitles.pool import get_language_equals
 from utilities.helper import bool_map
+from subtitles.serialization import parse_missing_subtitles
 from utilities.path_mappings import path_mappings
+
+JsonValue: TypeAlias = str | int | float | bool | None | list['JsonValue'] | dict[str, 'JsonValue']
+JsonObject: TypeAlias = dict[str, JsonValue]
 
 None_Keys = ['null', 'undefined', '', None]
 
@@ -102,6 +106,14 @@ def apply_sort(stmt, sort_columns, default_column, sort_by, sort_order):
     # values fall back to the default column.
     sort_column = sort_columns.get(sort_by, default_column)
     return stmt.order_by(sort_column.asc() if sort_order == 'asc' else sort_column.desc())
+def normalize_flag_token(value):
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized == "true":
+            return "True"
+        if normalized == "false":
+            return "False"
+    return "False"
 
 
 def authenticate(actual_method):
@@ -123,7 +135,7 @@ def authenticate(actual_method):
     return wrapper
 
 
-def postprocess(item):
+def postprocess(item, subtitles=None):
     # Remove ffprobe_cache
     if item.get('radarrId'):
         path_replace = path_mappings.path_replace_movie
@@ -172,8 +184,11 @@ def postprocess(item):
         item['alternativeTitles'] = []
 
     # Add subtitles
-    item['subtitles'] = get_subtitles(sonarr_episode_id=item.get('sonarrEpisodeId'),
-                                      radarr_id=item.get('radarrId'))
+    if subtitles is None:
+        item['subtitles'] = get_subtitles(sonarr_episode_id=item.get('sonarrEpisodeId'),
+                                          radarr_id=item.get('radarrId'))
+    else:
+        item['subtitles'] = subtitles
 
     if settings.general.embedded_subs_show_desired:
         if item.get('profileId'):
@@ -206,15 +221,16 @@ def postprocess(item):
 
             # Filter subtitles: keep if code2 is in expanded desired languages or if it has a path (external)
             item['subtitles'] = [x for x in item['subtitles']
-                                 if x['code2'] in expanded_desired_lang_codes or x['path']]
+                                 if isinstance(x, dict) and
+                                 (x.get('code2') in expanded_desired_lang_codes or x.get('path'))]
         else:
-            item['subtitles'] = [x for x in item['subtitles'] if x['path']]
+            item['subtitles'] = [x for x in item['subtitles'] if isinstance(x, dict) and x.get('path')]
 
-    item['subtitles'] = sorted(item['subtitles'], key=itemgetter('name', 'forced'))
+    item['subtitles'] = sorted(item['subtitles'], key=lambda x: (x.get('name', ''), x.get('forced', False)))
 
     # Parse missing subtitles
     if item.get('missing_subtitles'):
-        item['missing_subtitles'] = ast.literal_eval(item['missing_subtitles'])
+        item['missing_subtitles'] = parse_missing_subtitles(item['missing_subtitles'])
         for i, subs in enumerate(item['missing_subtitles']):
             language = subs.split(':')
             item['missing_subtitles'][i] = {"name": language_from_alpha2(language[0]),

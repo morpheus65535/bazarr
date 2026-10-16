@@ -9,6 +9,7 @@ import signal
 from collections import defaultdict
 
 from dogpile.cache import make_region
+from flask import Flask
 from datetime import datetime
 from typing import List
 
@@ -16,7 +17,7 @@ from sqlalchemy import create_engine, inspect, DateTime, Float, ForeignKey, Inte
     BigInteger, Boolean, Index
 # importing here to be indirectly imported in other modules later
 from sqlalchemy import update, delete, select, func, UniqueConstraint  # noqa W0611
-from sqlalchemy.orm import scoped_session, sessionmaker, mapped_column, close_all_sessions, declarative_base
+from sqlalchemy.orm import scoped_session, sessionmaker, mapped_column, close_all_sessions, declarative_base, Mapped
 from sqlalchemy.pool import NullPool
 from alembic.migration import MigrationContext
 
@@ -28,6 +29,8 @@ from utilities.text_list import parse_text_list_or_default
 from utilities.path_mappings import path_mappings
 
 logger = logging.getLogger(__name__)
+
+SUBTITLE_MAP_QUERY_BATCH_SIZE = 900
 
 POSTGRES_ENABLED_ENV = os.getenv("POSTGRES_ENABLED")
 if POSTGRES_ENABLED_ENV:
@@ -169,7 +172,8 @@ class TableEpisodes(Base):
     ffprobe_cache = mapped_column(LargeBinary)
     file_size = mapped_column(BigInteger)
     format = mapped_column(Text)
-    missing_subtitles = mapped_column(Text)
+    missing_subtitles_calculated: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False,
+                                                           server_default=text('false'))
     monitored = mapped_column(Text)
     path = mapped_column(Text, nullable=False)
     resolution = mapped_column(Text)
@@ -275,7 +279,8 @@ class TableMovies(Base):
     file_size = mapped_column(BigInteger)
     format = mapped_column(Text)
     imdbId = mapped_column(Text)
-    missing_subtitles = mapped_column(Text)
+    missing_subtitles_calculated: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False,
+                                                           server_default=text('false'))
     monitored = mapped_column(Text)
     movie_file_id = mapped_column(Integer)
     originalLanguage = mapped_column(Text)
@@ -450,7 +455,7 @@ def create_db_revision(app):
         db.engine.dispose()
 
 
-def migrate_db(app):
+def migrate_db(app: Flask) -> None:
     logging.debug("Upgrading database schema")
     app.config["SQLALCHEMY_DATABASE_URI"] = url
     db = SQLAlchemy(app, metadata=metadata)
@@ -841,31 +846,40 @@ def get_subtitles_map(media_type: str, media_ids: list[int]) -> dict[int, List[d
 
     subtitles_by_media_id = defaultdict(list)
     if media_type == "series":
-        rows = database.execute(
-            select(TableEpisodesSubtitles.sonarrEpisodeId,
-                   TableEpisodesSubtitles.path,
-                   TableEpisodesSubtitles.language,
-                   TableEpisodesSubtitles.forced,
-                   TableEpisodesSubtitles.hi,
-                   TableEpisodesSubtitles.size,
-                   TableEpisodesSubtitles.embedded_track_id,
-                   TableEpisodesSubtitles.id)
-            .where(TableEpisodesSubtitles.sonarrEpisodeId.in_(media_ids))
-        ).all()
-        for row in rows:
-            subtitles_by_media_id[row.sonarrEpisodeId].append(_subtitle_payload(row, path_mappings.path_replace))
+        media_id_column = TableEpisodesSubtitles.sonarrEpisodeId
+        subtitle_columns = (
+            media_id_column,
+            TableEpisodesSubtitles.path,
+            TableEpisodesSubtitles.language,
+            TableEpisodesSubtitles.forced,
+            TableEpisodesSubtitles.hi,
+            TableEpisodesSubtitles.size,
+            TableEpisodesSubtitles.embedded_track_id,
+            TableEpisodesSubtitles.id,
+        )
+        replace_path = path_mappings.path_replace
     elif media_type == "movie":
+        media_id_column = TableMoviesSubtitles.radarrId
+        subtitle_columns = (
+            media_id_column,
+            TableMoviesSubtitles.path,
+            TableMoviesSubtitles.language,
+            TableMoviesSubtitles.forced,
+            TableMoviesSubtitles.hi,
+            TableMoviesSubtitles.size,
+            TableMoviesSubtitles.embedded_track_id,
+            TableMoviesSubtitles.id,
+        )
+        replace_path = path_mappings.path_replace_movie
+    else:
+        return {}
+
+    # Keep bulk list endpoints compatible with SQLite's historical variable limit.
+    for index in range(0, len(media_ids), SUBTITLE_MAP_QUERY_BATCH_SIZE):
+        media_id_chunk = media_ids[index:index + SUBTITLE_MAP_QUERY_BATCH_SIZE]
         rows = database.execute(
-            select(TableMoviesSubtitles.radarrId,
-                   TableMoviesSubtitles.path,
-                   TableMoviesSubtitles.language,
-                   TableMoviesSubtitles.forced,
-                   TableMoviesSubtitles.hi,
-                   TableMoviesSubtitles.size,
-                   TableMoviesSubtitles.embedded_track_id,
-                   TableMoviesSubtitles.id)
-            .where(TableMoviesSubtitles.radarrId.in_(media_ids))
+            select(*subtitle_columns).where(media_id_column.in_(media_id_chunk))
         ).all()
         for row in rows:
-            subtitles_by_media_id[row.radarrId].append(_subtitle_payload(row, path_mappings.path_replace_movie))
+            subtitles_by_media_id[row[0]].append(_subtitle_payload(row, replace_path))
     return {media_id: _sort_subtitles(subtitles) for media_id, subtitles in subtitles_by_media_id.items()}

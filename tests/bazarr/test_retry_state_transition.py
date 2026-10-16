@@ -1,17 +1,20 @@
+from typing import Callable
+from types import ModuleType
+
 import importlib
 from datetime import datetime, timedelta
 from types import SimpleNamespace
 
 import pytest
-from sqlalchemy import delete, event, insert, select
+from sqlalchemy import event, insert, select
 
 from subtitles import adaptive_searching, wanted_state
 
 
 @pytest.mark.parametrize('kind', ['movies', 'series'])
-def test_wanted_search_uses_normalized_retries_with_legacy_missing_languages(
-    kind, row_factory, wanted_module, transactional_session, wanted_search_tables, monkeypatch,
-):
+def test_wanted_search_uses_normalized_retries_and_missing_languages(
+    kind: str, row_factory: Callable[..., SimpleNamespace], wanted_module: ModuleType, monkeypatch: pytest.MonkeyPatch,
+) -> None:
     now = datetime.now()
     row = row_factory(
         missing_languages=['en', 'fr:hi:forced'],
@@ -22,8 +25,6 @@ def test_wanted_search_uses_normalized_retries_with_legacy_missing_languages(
         if kind == 'movies' else
         ('series', row.sonarrEpisodeId, wanted_module._wanted_episode)
     )
-    # The missing-language mirror deliberately disagrees with normalized state.
-    transactional_session.execute(delete(wanted_search_tables.missing_subtitles))
     monkeypatch.setattr(adaptive_searching, 'get_adaptive_search_policy', lambda: {
         'delay': timedelta(days=21), 'delta': timedelta(days=7),
         'initial_search_cutoff': (now - timedelta(days=21)).timestamp(),
@@ -41,7 +42,7 @@ def test_wanted_search_uses_normalized_retries_with_legacy_missing_languages(
 
 
 @pytest.mark.parametrize('kind', ['movies', 'series'])
-@pytest.mark.parametrize('outcome', ['failed', 'success', 'no_providers', 'exception'])
+@pytest.mark.parametrize('outcome', ['failed', 'success', 'partial_success', 'no_providers', 'exception'])
 def test_wanted_search_records_all_failed_languages_only_after_a_completed_failed_search(
     kind, outcome, row_factory, wanted_module, monkeypatch,
 ):
@@ -59,7 +60,10 @@ def test_wanted_search_records_all_failed_languages_only_after_a_completed_faile
     def generate(*args, **kwargs):
         if outcome == 'exception':
             raise RuntimeError('search interrupted')
-        if outcome == 'success':
+        if outcome in {'success', 'partial_success'}:
+            wanted_state.refresh_wanted_search_state(
+                media_type, media_id, ['fr'] if outcome == 'partial_success' else [],
+            )
             yield SimpleNamespace(message='downloaded')
 
     monkeypatch.setattr(wanted_module, 'generate_subtitles', generate)
@@ -69,7 +73,8 @@ def test_wanted_search_records_all_failed_languages_only_after_a_completed_faile
     else:
         search(row, [] if outcome == 'no_providers' else ['provider'])
     attempts = wanted_state.get_failed_attempt_pairs(media_type, media_id)
-    assert {language for language, _ in attempts} == ({'en', 'fr'} if outcome == 'failed' else set())
+    expected = {'failed': {'en', 'fr'}, 'partial_success': {'fr'}}.get(outcome, set())
+    assert {language for language, _ in attempts} == expected
 
 
 @pytest.mark.parametrize('kind', ['movies', 'series'])
