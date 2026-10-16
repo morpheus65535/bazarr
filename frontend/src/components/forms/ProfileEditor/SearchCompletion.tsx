@@ -93,7 +93,6 @@ const SearchCompletion: FunctionComponent<SearchCompletionProps> = ({
       </Text>
       {notice && (
         <Alert
-          color="info"
           variant="light"
           role="status"
           aria-live="polite"

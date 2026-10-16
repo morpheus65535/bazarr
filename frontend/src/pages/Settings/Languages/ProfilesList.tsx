@@ -80,7 +80,7 @@ const ProfilesList: FunctionComponent<ProfilesListProps> = ({
   return (
     <Stack gap="md">
       {isSaveRequired && (
-        <Alert color="info" variant="light" role="status">
+        <Alert variant="light" role="status">
           You have unsaved profile changes. Click Save to apply them.
         </Alert>
       )}
