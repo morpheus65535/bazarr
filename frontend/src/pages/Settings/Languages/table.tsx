@@ -1,5 +1,5 @@
-import { FunctionComponent, useCallback, useMemo } from "react";
-import { Badge, Button, Group } from "@mantine/core";
+import { Fragment, FunctionComponent, useCallback, useMemo } from "react";
+import { Badge, Button, Group, Text } from "@mantine/core";
 import { faTrash, faWrench } from "@fortawesome/free-solid-svg-icons";
 import { cloneDeep, includes, maxBy } from "lodash";
 import { Action } from "@/components";
@@ -41,12 +41,23 @@ const Table: FunctionComponent = () => {
   const submitProfiles = useCallback(
     (list: Language.Profile[]) => {
       setValue(list, languageProfileKey, ((value: Language.Profile[]) => {
-        const raw: Language.RawProfile[] = value.map((profile) => ({
-          ...profile,
-          items: profile.items.map(
-            (item) => snakeCaseKeys(item) as unknown as Language.RawProfileItem,
-          ),
-        }));
+        const raw: Language.RawProfileSubmission[] = value.map(
+          ({ groups, ...profile }) => ({
+            ...profile,
+            // Enhanced profiles keep their groups. Their flat items are derived and must not be saved.
+            items:
+              profile.profileType === "enhanced" && groups
+                ? {
+                    groups: snakeCaseKeys(
+                      groups,
+                    ) as unknown as Language.RawEnhancedGroup[],
+                  }
+                : profile.items.map(
+                    (item) =>
+                      snakeCaseKeys(item) as unknown as Language.RawProfileItem,
+                  ),
+          }),
+        );
 
         return JSON.stringify(raw);
       }) as HookType);
@@ -90,9 +101,13 @@ const Table: FunctionComponent = () => {
         accessorKey: "items",
         cell: ({
           row: {
-            original: { items, cutoff },
+            original: { items, cutoff, profileType, groups },
           },
         }) => {
+          if (profileType === "enhanced" && groups) {
+            return <GroupsExpression groups={groups} cutoff={cutoff} />;
+          }
+
           return (
             <Group gap="xs" wrap="nowrap">
               {items.map((v, i) => {
@@ -159,54 +174,57 @@ const Table: FunctionComponent = () => {
           const profile = row.original;
           return (
             <Group gap="xs" wrap="nowrap">
-              <Action
-                label="Edit Profile"
-                icon={faWrench}
-                c="secondary"
-                onClick={() => {
-                  const lastId = maxBy(profile.items, "id")?.id || 0;
+              {/* Enhanced profiles are read-only until the enhanced editor is available. */}
+              {profile.profileType !== "enhanced" && (
+                <Action
+                  label="Edit Profile"
+                  icon={faWrench}
+                  c="secondary"
+                  onClick={() => {
+                    const lastId = maxBy(profile.items, "id")?.id || 0;
 
-                  // We once had an issue on the past where there were duplicated
-                  // item ids that needs to become unique upon editing.
-                  const sanitizedProfile = {
-                    ...cloneDeep(profile),
-                    items: profile.items.reduce(
-                      (acc, value) => {
-                        const { ids, duplicatedIds, items } = acc;
+                    // We once had an issue on the past where there were duplicated
+                    // item ids that needs to become unique upon editing.
+                    const sanitizedProfile = {
+                      ...cloneDeep(profile),
+                      items: profile.items.reduce(
+                        (acc, value) => {
+                          const { ids, duplicatedIds, items } = acc;
 
-                        // We once had an issue on the past where there were duplicated
-                        // item ids that needs to become unique upon editing.
-                        if (includes(ids, value.id)) {
-                          duplicatedIds.push(value.id);
-                          items.push({
-                            ...value,
-                            id: lastId + duplicatedIds.length,
-                          });
+                          // We once had an issue on the past where there were duplicated
+                          // item ids that needs to become unique upon editing.
+                          if (includes(ids, value.id)) {
+                            duplicatedIds.push(value.id);
+                            items.push({
+                              ...value,
+                              id: lastId + duplicatedIds.length,
+                            });
+
+                            return acc;
+                          }
+
+                          ids.push(value.id);
+                          items.push(value);
 
                           return acc;
-                        }
+                        },
+                        {
+                          ids: [] as number[],
+                          duplicatedIds: [] as number[],
+                          items: [] as typeof profile.items,
+                        },
+                      ).items,
+                      tag: profile.tag || undefined,
+                    };
 
-                        ids.push(value.id);
-                        items.push(value);
-
-                        return acc;
-                      },
-                      {
-                        ids: [] as number[],
-                        duplicatedIds: [] as number[],
-                        items: [] as typeof profile.items,
-                      },
-                    ).items,
-                    tag: profile.tag || undefined,
-                  };
-
-                  modals.openContextModal(ProfileEditModal, {
-                    languages,
-                    profile: sanitizedProfile,
-                    onComplete: updateProfile,
-                  });
-                }}
-              ></Action>
+                    modals.openContextModal(ProfileEditModal, {
+                      languages,
+                      profile: sanitizedProfile,
+                      onComplete: updateProfile,
+                    });
+                  }}
+                ></Action>
+              )}
               <Action
                 label="Remove"
                 icon={faTrash}
@@ -279,6 +297,56 @@ const ItemBadge: FunctionComponent<ItemProps> = ({ cutoff, item }) => {
     >
       {text}
     </Badge>
+  );
+};
+
+interface GroupsProps {
+  groups: Language.EnhancedGroup[];
+  cutoff: number | null;
+}
+
+// Renders an enhanced profile as an expression, for example (en AND fr) > de. The cutoff group is highlighted.
+const GroupsExpression: FunctionComponent<GroupsProps> = ({
+  groups,
+  cutoff,
+}) => {
+  return (
+    <Group gap="xs" wrap="nowrap">
+      {groups.map((group, groupIndex) => {
+        const isCutoff = group.id === cutoff || cutoff === anyCutoff;
+        const parenthesized = group.items.length > 1;
+
+        return (
+          <Fragment key={group.id}>
+            {groupIndex > 0 && (
+              <Text span c="dimmed">
+                &gt;
+              </Text>
+            )}
+            {parenthesized && (
+              <Text span c="dimmed">
+                (
+              </Text>
+            )}
+            {group.items.map((item, itemIndex) => (
+              <Fragment key={item.id}>
+                {itemIndex > 0 && (
+                  <Text span size="sm" c="dimmed">
+                    {group.operator}
+                  </Text>
+                )}
+                <ItemBadge cutoff={isCutoff} item={item}></ItemBadge>
+              </Fragment>
+            ))}
+            {parenthesized && (
+              <Text span c="dimmed">
+                )
+              </Text>
+            )}
+          </Fragment>
+        );
+      })}
+    </Group>
   );
 };
 

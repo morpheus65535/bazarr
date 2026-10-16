@@ -324,4 +324,190 @@ describe("SettingsLanguageProfilesView", () => {
       "bad_tag123",
     ]);
   });
+
+  it("should render an enhanced profile as an expression without an edit action", () => {
+    renderPage({
+      languages: baseLanguages,
+      profiles: [enhancedProfile],
+    });
+
+    expect(screen.getByText("Enhanced Profile")).toBeInTheDocument();
+    expect(screen.getByText("AND")).toBeInTheDocument();
+    expect(screen.getByText("OR")).toBeInTheDocument();
+    expect(screen.getByText(">")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Edit Profile" }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Remove" })).toBeInTheDocument();
+  });
+
+  it("should save enhanced groups unchanged when another profile is removed", async () => {
+    const mutate = vitest.fn();
+
+    renderPage(
+      {
+        languages: baseLanguages,
+        profiles: [baseProfiles[0], enhancedProfile],
+      },
+      mutate,
+    );
+
+    await userEvent.click(screen.getAllByRole("button", { name: "Remove" })[0]);
+    await userEvent.click(screen.getByRole("button", { name: /Save/ }));
+
+    expect(mutate).toHaveBeenCalled();
+
+    const submitted = mutate.mock.calls[0][0] as Record<string, string>;
+    const saved = JSON.parse(submitted["languages-profiles"]) as Record<
+      string,
+      unknown
+    >[];
+
+    expect(saved).toHaveLength(1);
+    expect(saved[0]).not.toHaveProperty("groups");
+    expect(saved[0]).toMatchObject({
+      profileId: 2,
+      profileType: "enhanced",
+      cutoff: 2,
+    });
+    expect(saved[0].items).toEqual({
+      groups: [
+        {
+          id: 1,
+          operator: "AND",
+          items: [
+            {
+              id: 1,
+              language: "en",
+              audio_exclude: "False",
+              audio_only_include: "False",
+              hi: "False",
+              forced: "False",
+            },
+            {
+              id: 2,
+              language: "fr",
+              audio_exclude: "False",
+              audio_only_include: "False",
+              hi: "False",
+              forced: "False",
+            },
+          ],
+        },
+        {
+          id: 2,
+          operator: "OR",
+          items: [
+            {
+              id: 3,
+              language: "de",
+              audio_exclude: "False",
+              audio_only_include: "False",
+              hi: "False",
+              forced: "False",
+            },
+            {
+              id: 4,
+              language: "it",
+              audio_exclude: "False",
+              audio_only_include: "False",
+              hi: "False",
+              forced: "False",
+            },
+          ],
+        },
+      ],
+    });
+  });
 });
+
+const enhancedProfile: Language.Profile = {
+  profileId: 2,
+  name: "Enhanced Profile",
+  tag: undefined,
+  profileType: "enhanced",
+  items: [
+    {
+      id: 1,
+      language: "en",
+      audioExclude: "False",
+      audioOnlyInclude: "False",
+      hi: "False",
+      forced: "False",
+    },
+    {
+      id: 2,
+      language: "fr",
+      audioExclude: "False",
+      audioOnlyInclude: "False",
+      hi: "False",
+      forced: "False",
+    },
+    {
+      id: 3,
+      language: "de",
+      audioExclude: "False",
+      audioOnlyInclude: "False",
+      hi: "False",
+      forced: "False",
+    },
+    {
+      id: 4,
+      language: "it",
+      audioExclude: "False",
+      audioOnlyInclude: "False",
+      hi: "False",
+      forced: "False",
+    },
+  ],
+  groups: [
+    {
+      id: 1,
+      operator: "AND",
+      items: [
+        {
+          id: 1,
+          language: "en",
+          audioExclude: "False",
+          audioOnlyInclude: "False",
+          hi: "False",
+          forced: "False",
+        },
+        {
+          id: 2,
+          language: "fr",
+          audioExclude: "False",
+          audioOnlyInclude: "False",
+          hi: "False",
+          forced: "False",
+        },
+      ],
+    },
+    {
+      id: 2,
+      operator: "OR",
+      items: [
+        {
+          id: 3,
+          language: "de",
+          audioExclude: "False",
+          audioOnlyInclude: "False",
+          hi: "False",
+          forced: "False",
+        },
+        {
+          id: 4,
+          language: "it",
+          audioExclude: "False",
+          audioOnlyInclude: "False",
+          hi: "False",
+          forced: "False",
+        },
+      ],
+    },
+  ],
+  cutoff: 2,
+  mustContain: [],
+  mustNotContain: [],
+  originalFormat: false,
+};
