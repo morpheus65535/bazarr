@@ -1,12 +1,10 @@
 # coding=utf-8
 
-import json
-
 from sqlalchemy import func
 
 from app.config import settings
 from app.database import (TableShowsRootfolder, TableMoviesRootfolder, TableLanguagesProfiles, database, select,
-                          TableShows, TableMovies)
+                          TableShows, TableMovies, parse_profile_items)
 from app.event_handler import event_stream
 from app.jobs_queue import jobs_queue
 from utilities.path_mappings import path_mappings
@@ -61,13 +59,15 @@ def get_health_issues():
 
     # get languages profiles duplicate ids issues when there's a cutoff set
     languages_profiles = database.execute(
-        select(TableLanguagesProfiles.items, TableLanguagesProfiles.name, TableLanguagesProfiles.cutoff)).all()
+        select(TableLanguagesProfiles.items, TableLanguagesProfiles.name, TableLanguagesProfiles.cutoff,
+               TableLanguagesProfiles.profileType)).all()
     for languages_profile in languages_profiles:
         if not languages_profile.cutoff:
             # ignore profiles that don't have a cutoff set
             continue
         languages_profile_ids = []
-        for items in json.loads(languages_profile.items):
+        profile_items, _ = parse_profile_items(languages_profile.profileType, languages_profile.items)
+        for items in profile_items:
             if items['id'] in languages_profile_ids:
                 health_issues.append({'object': languages_profile.name,
                                       'issue': 'This languages profile has duplicate IDs. You need to edit this profile'
