@@ -29,7 +29,7 @@ def test_fallback_allowed_is_queued_with_the_job(module, func, fallback_allowed,
 
 @pytest.mark.parametrize("fallback_allowed", [True, False])
 def test_movies_download_subtitles_passes_fallback_allowed(fallback_allowed, monkeypatch):
-    movie = SimpleNamespace(path="/movies/m.mkv", missing_subtitles="['en']", audio_language="English",
+    movie = SimpleNamespace(path="/movies/m.mkv", missing_subtitles_calculated=True, audio_language="English",
                             radarrId=1, sceneName=None, title="Movie", year=2026, tags="[]",
                             monitored="True", profileId=1)
     db = mock.MagicMock()
@@ -40,6 +40,7 @@ def test_movies_download_subtitles_passes_fallback_allowed(fallback_allowed, mon
     monkeypatch.setattr(movies, "jobs_queue", mock.MagicMock())
     monkeypatch.setattr(movies, "get_subtitles", lambda **kwargs: [{"path": "/movies/m.en.srt"}])
     monkeypatch.setattr(movies, "get_audio_profile_languages", lambda _: [{"name": "English"}])
+    monkeypatch.setattr(movies, "get_missing_languages", lambda *args: ["en"])
     monkeypatch.setattr(movies, "get_providers", lambda: ["whisperai"])
     monkeypatch.setattr(movies, "generate_subtitles", generate)
     monkeypatch.setattr(movies.os.path, "exists", lambda _: True)
