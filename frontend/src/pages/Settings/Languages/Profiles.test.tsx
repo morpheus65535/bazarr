@@ -325,7 +325,7 @@ describe("SettingsLanguageProfilesView", () => {
     ]);
   });
 
-  it("should render an enhanced profile as an expression without an edit action", () => {
+  it("should render an enhanced profile as an expression with an edit action", () => {
     renderPage({
       languages: baseLanguages,
       profiles: [enhancedProfile],
@@ -336,8 +336,8 @@ describe("SettingsLanguageProfilesView", () => {
     expect(screen.getByText("OR")).toBeInTheDocument();
     expect(screen.getByText(">")).toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: "Edit Profile" }),
-    ).not.toBeInTheDocument();
+      screen.getByRole("button", { name: "Edit Profile" }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Remove" })).toBeInTheDocument();
   });
 
@@ -418,6 +418,106 @@ describe("SettingsLanguageProfilesView", () => {
         },
       ],
     });
+  });
+  it("should add an enhanced profile with a group from the modal", async () => {
+    renderPage({
+      languages: baseLanguages,
+    });
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Add New Enhanced Profile" }),
+    );
+
+    const modal = await screen.findByRole("dialog");
+    const modalScope = within(modal);
+
+    fireEvent.change(modalScope.getByRole("textbox", { name: "Name" }), {
+      target: { value: "Series Rule" },
+    });
+    await userEvent.click(
+      modalScope.getByRole("button", { name: "Add Group" }),
+    );
+
+    expect(modalScope.getByText("Group 1")).toBeInTheDocument();
+
+    await userEvent.click(modalScope.getByRole("button", { name: "Confirm" }));
+
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+    );
+
+    expect(screen.getByText("Series Rule")).toBeInTheDocument();
+    expect(screen.getByText("en")).toBeInTheDocument();
+  });
+
+  it("should block confirming an enhanced profile without any group", async () => {
+    renderPage({
+      languages: baseLanguages,
+    });
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Add New Enhanced Profile" }),
+    );
+
+    const modal = await screen.findByRole("dialog");
+    const modalScope = within(modal);
+
+    fireEvent.change(modalScope.getByRole("textbox", { name: "Name" }), {
+      target: { value: "Series Rule" },
+    });
+    await userEvent.click(modalScope.getByRole("button", { name: "Confirm" }));
+
+    expect(
+      await modalScope.findByText(/Add at least one group/),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+  });
+
+  it("should block a language repeated with the same subtitle type in a group", async () => {
+    renderPage({
+      languages: baseLanguages,
+    });
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Add New Enhanced Profile" }),
+    );
+
+    const modal = await screen.findByRole("dialog");
+    const modalScope = within(modal);
+
+    fireEvent.change(modalScope.getByRole("textbox", { name: "Name" }), {
+      target: { value: "Series Rule" },
+    });
+    await userEvent.click(
+      modalScope.getByRole("button", { name: "Add Group" }),
+    );
+    // The new language defaults to the first enabled language, which is the same as the group's first item.
+    await userEvent.click(
+      modalScope.getByRole("button", { name: "Add Language" }),
+    );
+    await userEvent.click(modalScope.getByRole("button", { name: "Confirm" }));
+
+    expect(
+      await modalScope.findByText(/cannot repeat with the same subtitle type/),
+    ).toBeInTheDocument();
+  });
+
+  it("should open an existing enhanced profile with its groups", async () => {
+    renderPage({
+      languages: baseLanguages,
+      profiles: [enhancedProfile],
+    });
+
+    await userEvent.click(screen.getByRole("button", { name: "Edit Profile" }));
+
+    const modal = await screen.findByRole("dialog");
+    const modalScope = within(modal);
+
+    expect(modalScope.getByRole("textbox", { name: "Name" })).toHaveValue(
+      "Enhanced Profile",
+    );
+    expect(modalScope.getByText("Group 1")).toBeInTheDocument();
+    expect(modalScope.getByText("Group 2")).toBeInTheDocument();
   });
 });
 

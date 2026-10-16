@@ -3,6 +3,7 @@ import { Badge, Button, Group, Text } from "@mantine/core";
 import { faTrash, faWrench } from "@fortawesome/free-solid-svg-icons";
 import { cloneDeep, includes, maxBy } from "lodash";
 import { Action } from "@/components";
+import { EnhancedProfileEditModal } from "@/components/forms/EnhancedProfileEditForm";
 import {
   anyCutoff,
   ProfileEditModal,
@@ -174,57 +175,63 @@ const Table: FunctionComponent = () => {
           const profile = row.original;
           return (
             <Group gap="xs" wrap="nowrap">
-              {/* Enhanced profiles are read-only until the enhanced editor is available. */}
-              {profile.profileType !== "enhanced" && (
-                <Action
-                  label="Edit Profile"
-                  icon={faWrench}
-                  c="secondary"
-                  onClick={() => {
-                    const lastId = maxBy(profile.items, "id")?.id || 0;
-
-                    // We once had an issue on the past where there were duplicated
-                    // item ids that needs to become unique upon editing.
-                    const sanitizedProfile = {
-                      ...cloneDeep(profile),
-                      items: profile.items.reduce(
-                        (acc, value) => {
-                          const { ids, duplicatedIds, items } = acc;
-
-                          // We once had an issue on the past where there were duplicated
-                          // item ids that needs to become unique upon editing.
-                          if (includes(ids, value.id)) {
-                            duplicatedIds.push(value.id);
-                            items.push({
-                              ...value,
-                              id: lastId + duplicatedIds.length,
-                            });
-
-                            return acc;
-                          }
-
-                          ids.push(value.id);
-                          items.push(value);
-
-                          return acc;
-                        },
-                        {
-                          ids: [] as number[],
-                          duplicatedIds: [] as number[],
-                          items: [] as typeof profile.items,
-                        },
-                      ).items,
-                      tag: profile.tag || undefined,
-                    };
-
-                    modals.openContextModal(ProfileEditModal, {
+              <Action
+                label="Edit Profile"
+                icon={faWrench}
+                c="secondary"
+                onClick={() => {
+                  if (profile.profileType === "enhanced") {
+                    modals.openContextModal(EnhancedProfileEditModal, {
                       languages,
-                      profile: sanitizedProfile,
+                      profile: cloneDeep(profile),
                       onComplete: updateProfile,
                     });
-                  }}
-                ></Action>
-              )}
+                    return;
+                  }
+
+                  const lastId = maxBy(profile.items, "id")?.id || 0;
+
+                  // We once had an issue on the past where there were duplicated
+                  // item ids that needs to become unique upon editing.
+                  const sanitizedProfile = {
+                    ...cloneDeep(profile),
+                    items: profile.items.reduce(
+                      (acc, value) => {
+                        const { ids, duplicatedIds, items } = acc;
+
+                        // We once had an issue on the past where there were duplicated
+                        // item ids that needs to become unique upon editing.
+                        if (includes(ids, value.id)) {
+                          duplicatedIds.push(value.id);
+                          items.push({
+                            ...value,
+                            id: lastId + duplicatedIds.length,
+                          });
+
+                          return acc;
+                        }
+
+                        ids.push(value.id);
+                        items.push(value);
+
+                        return acc;
+                      },
+                      {
+                        ids: [] as number[],
+                        duplicatedIds: [] as number[],
+                        items: [] as typeof profile.items,
+                      },
+                    ).items,
+                    tag: profile.tag || undefined,
+                  };
+
+                  modals.openContextModal(ProfileEditModal, {
+                    languages,
+                    profile: sanitizedProfile,
+                    onComplete: updateProfile,
+                  });
+                }}
+              ></Action>
               <Action
                 label="Remove"
                 icon={faTrash}
@@ -267,6 +274,32 @@ const Table: FunctionComponent = () => {
         }}
       >
         {canAdd ? "Add New Profile" : "No Enabled Languages"}
+      </Button>
+      <Button
+        fullWidth
+        variant="light"
+        disabled={!canAdd}
+        onClick={() => {
+          const profile: Language.Profile = {
+            profileId: nextProfileId,
+            name: "",
+            tag: undefined,
+            profileType: "enhanced",
+            items: [],
+            groups: [],
+            cutoff: null,
+            mustContain: [],
+            mustNotContain: [],
+            originalFormat: false,
+          };
+          modals.openContextModal(EnhancedProfileEditModal, {
+            languages,
+            profile,
+            onComplete: updateProfile,
+          });
+        }}
+      >
+        {canAdd ? "Add New Enhanced Profile" : "No Enabled Languages"}
       </Button>
     </>
   );
