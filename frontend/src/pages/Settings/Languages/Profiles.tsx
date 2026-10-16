@@ -1,6 +1,13 @@
-import { FunctionComponent } from "react";
+import {
+  FunctionComponent,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { Text as MantineText } from "@mantine/core";
 import { useLanguages } from "@/apis/hooks";
+import ProfileEditor from "@/components/forms/ProfileEditor";
 import {
   Check,
   Chips,
@@ -9,22 +16,122 @@ import {
   Message,
   Section,
 } from "@/pages/Settings/components";
-import { enabledLanguageKey } from "@/pages/Settings/keys";
+import { enabledLanguageKey, languageProfileKey } from "@/pages/Settings/keys";
+import { useStagedValues } from "@/pages/Settings/utilities/FormValues";
 import { LanguageSelector, ProfileSelector } from "./components";
-import Table from "./table";
+import {
+  createEnhancedProfile,
+  prepareProfileForEditing,
+} from "./profileModel";
+import ProfilesList from "./ProfilesList";
 import { useLatestEnabledLanguages } from "./useLatestLanguages";
+import { useProfileActions } from "./useProfileActions";
+
+interface EditorSession {
+  profile: Language.Profile;
+  isCreating: boolean;
+}
 
 const SettingsLanguageProfilesView: FunctionComponent = () => {
+  const [session, setSession] = useState<EditorSession | null>(null);
+  const [isDraftDirty, setDraftDirty] = useState(false);
+
+  const openEditor = useCallback(
+    (profile: Language.Profile, isCreating: boolean) => {
+      setSession({ profile, isCreating });
+      setDraftDirty(false);
+    },
+    [],
+  );
+
+  const closeEditor = useCallback(() => {
+    setSession(null);
+    setDraftDirty(false);
+  }, []);
+
   return (
-    <Layout name="Languages">
-      <ProfilesSections></ProfilesSections>
+    <Layout
+      name="Languages"
+      isEditorActive={session !== null}
+      isDraftDirty={isDraftDirty}
+    >
+      <ProfilesSections
+        session={session}
+        onOpen={openEditor}
+        onClose={closeEditor}
+        onDraftDirtyChange={setDraftDirty}
+      ></ProfilesSections>
     </Layout>
   );
 };
 
-const ProfilesSections: FunctionComponent = () => {
+interface ProfilesSectionsProps {
+  session: EditorSession | null;
+  onOpen: (profile: Language.Profile, isCreating: boolean) => void;
+  onClose: () => void;
+  onDraftDirtyChange: (isDirty: boolean) => void;
+}
+
+const ProfilesSections: FunctionComponent<ProfilesSectionsProps> = ({
+  onClose,
+  onDraftDirtyChange,
+  onOpen,
+  session,
+}) => {
   const { data: languages } = useLanguages();
   const enabledLanguages = useLatestEnabledLanguages() ?? [];
+  const stagedValues = useStagedValues();
+  const { profiles, updateProfile, removeProfile, createProfileId } =
+    useProfileActions();
+
+  const returnFocusRef = useRef<string | null>(null);
+  const firstEnabledLanguage = enabledLanguages[0]?.code2;
+  const isSaveRequired = languageProfileKey in stagedValues;
+
+  const openCreate = useCallback(() => {
+    returnFocusRef.current = "profile-create-action";
+    onOpen(createEnhancedProfile(createProfileId, firstEnabledLanguage), true);
+  }, [createProfileId, firstEnabledLanguage, onOpen]);
+
+  const openEdit = useCallback(
+    (profile: Language.Profile) => {
+      returnFocusRef.current = `profile-edit-${profile.profileId}`;
+      onOpen(prepareProfileForEditing(profile), false);
+    },
+    [onOpen],
+  );
+
+  const handleApply = useCallback(
+    (profile: Language.Profile) => {
+      updateProfile(profile);
+      onClose();
+    },
+    [onClose, updateProfile],
+  );
+
+  // Return focus to the control that opened the editor once the list is back.
+  useEffect(() => {
+    if (session !== null || returnFocusRef.current === null) {
+      return;
+    }
+
+    document.getElementById(returnFocusRef.current)?.focus();
+    returnFocusRef.current = null;
+  }, [session]);
+
+  if (session) {
+    return (
+      <ProfileEditor
+        key={session.profile.profileId}
+        profile={session.profile}
+        languages={enabledLanguages}
+        isCreating={session.isCreating}
+        onApply={handleApply}
+        onCancel={onClose}
+        onDirtyChange={onDraftDirtyChange}
+      ></ProfileEditor>
+    );
+  }
 
   return (
     <>
@@ -43,7 +150,15 @@ const ProfilesSections: FunctionComponent = () => {
             ></LanguageSelector>
           </>
         ) : (
-          <Table></Table>
+          <ProfilesList
+            profiles={profiles}
+            languages={enabledLanguages}
+            canCreate
+            isSaveRequired={isSaveRequired}
+            onCreate={openCreate}
+            onEdit={openEdit}
+            onRemove={removeProfile}
+          ></ProfilesList>
         )}
       </Section>
       <Section
