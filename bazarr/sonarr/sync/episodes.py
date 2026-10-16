@@ -149,12 +149,13 @@ def sync_episodes(series_id, defer_search=False, is_signalr=False):
 
     if len(episodes_to_delete):
         try:
-            delete_media_and_wanted_search_state('series', TableEpisodes, 'sonarrEpisodeId', episodes_to_delete)
+            deleted_episode_ids = delete_media_and_wanted_search_state(
+                'series', TableEpisodes, 'sonarrEpisodeId', episodes_to_delete,
+            )
         except IntegrityError as e:
             logging.error(f"BAZARR cannot delete episodes because of {e}")
         else:
-
-            for removed_episode in episodes_to_delete:
+            for removed_episode in deleted_episode_ids:
                 event_stream(type='episode', action='delete', payload=removed_episode)
 
     # Insert new episodes in DB
@@ -279,14 +280,16 @@ def sync_one_episode(episode_id, defer_search=False, is_signalr=False):
     # Remove episode from DB
     if not episode and existing_episode:
         try:
-            delete_media_and_wanted_search_state('series', TableEpisodes, 'sonarrEpisodeId', episode_id)
+            deleted_episode_ids = delete_media_and_wanted_search_state(
+                'series', TableEpisodes, 'sonarrEpisodeId', [episode_id],
+            )
         except IntegrityError as e:
             logging.error(f"BAZARR cannot delete episode {existing_episode.path} because of {e}")
         else:
-
-            event_stream(type='episode', action='delete', payload=int(episode_id))
-            logging.debug(
-                f'BAZARR deleted this episode from the database:{path_mappings.path_replace(existing_episode.path)}')
+            if deleted_episode_ids:
+                event_stream(type='episode', action='delete', payload=int(episode_id))
+                logging.debug(
+                    f'BAZARR deleted this episode from the database:{path_mappings.path_replace(existing_episode.path)}')
         return
 
     # Update existing episodes in DB

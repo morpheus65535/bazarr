@@ -5,6 +5,7 @@ then --phase stage --stage N after checking out each successive PR. Providers
 are replaced with a deterministic failed search; storage and runtime callers
 are the application's real implementations.
 """
+
 import argparse
 import importlib
 import json
@@ -16,7 +17,7 @@ import sys
 import time
 from threading import Event
 from unittest.mock import Mock, patch
-from sqlalchemy import inspect
+from sqlalchemy import inspect, MetaData, Table
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--config', type=Path, required=True)
@@ -52,7 +53,7 @@ def profile(languages):
                        for index, language in enumerate(languages, start=1)])
 
 
-def seed(count):
+def seed(count: int) -> None:
     db.metadata.create_all(db.engine)
     for name in ('TableMissingSubtitles', 'TableFailedSubtitleAttempts'):
         if hasattr(db, name):
@@ -60,8 +61,19 @@ def seed(count):
     db.database.execute(db.text('CREATE TABLE alembic_version (version_num VARCHAR(32) PRIMARY KEY)'))
     db.database.execute(db.text("INSERT INTO alembic_version VALUES ('537e9b4d10e3')"))
     for table in ('table_movies', 'table_episodes'):
+        columns = {column['name'] for column in inspect(db.engine).get_columns(table)}
+        if 'missing_subtitles_calculated' in columns:
+            db.database.execute(db.text(f'ALTER TABLE {table} DROP COLUMN missing_subtitles_calculated'))
         if 'failedAttempts' not in {column['name'] for column in inspect(db.engine).get_columns(table)}:
             db.database.execute(db.text(f'ALTER TABLE {table} ADD COLUMN "failedAttempts" TEXT'))
+        if 'missing_subtitles' not in {column['name'] for column in inspect(db.engine).get_columns(table)}:
+            db.database.execute(db.text(f'ALTER TABLE {table} ADD COLUMN missing_subtitles TEXT'))
+        assert 'missing_subtitles_calculated' not in {
+            column['name'] for column in inspect(db.engine).get_columns(table)
+        }
+    legacy_metadata = MetaData()
+    legacy_movies = Table('table_movies', legacy_metadata, autoload_with=db.engine)
+    legacy_episodes = Table('table_episodes', legacy_metadata, autoload_with=db.engine)
     db.database.execute(db.insert(db.TableLanguagesProfiles).values(
         profileId=11, name='Probe', items=profile(['en', 'fr']), mustContain='[]', mustNotContain='[]',
     ))
@@ -71,18 +83,22 @@ def seed(count):
     legacy = "[['en', 100], ['en', 200], ['fr:hi:forced', 110], ['FR:FORCED:HI', 210], ['de', 120], ['de', 220]]"
     for start in range(0, count, 1000):
         indices = range(start, min(count, start + 1000))
-        db.database.execute(db.insert(db.TableMovies), [
+        db.database.execute(db.insert(legacy_movies), [
             {'radarrId': index + 7, 'path': f'/probe/movie-{index}.mkv', 'title': 'Movie', 'tmdbId': str(index + 7),
-             'profileId': 11, 'audio_language': "['English']", 'monitored': 'True', 'tags': '[]',
-             'missing_subtitles': "['en', 'fr:hi:forced', 'FR:FORCED:HI', 'de']"}
+             'profileId': 11, 'audio_language': "['English']", 'monitored': 'True', 'tags': '[]'}
             for index in indices
         ])
-        db.database.execute(db.insert(db.TableEpisodes), [
+        db.database.execute(db.insert(legacy_episodes), [
             {'sonarrEpisodeId': index + 17, 'sonarrSeriesId': 3, 'path': f'/probe/series/e-{index}.mkv',
              'title': 'Episode', 'season': 1, 'episode': index + 1, 'audio_language': "['English']",
-             'monitored': 'True', 'missing_subtitles': "['en', 'fr:hi:forced', 'FR:FORCED:HI', 'de']"}
+             'monitored': 'True'}
             for index in indices
         ])
+        for table, id_column, offset in [('table_movies', 'radarrId', 7), ('table_episodes', 'sonarrEpisodeId', 17)]:
+            db.database.execute(db.text(
+                f'UPDATE {table} SET missing_subtitles = :value WHERE "{id_column}" >= :start AND "{id_column}" < :end'
+            ), {'value': "['en', 'fr:hi:forced', 'FR:FORCED:HI', 'de']", 'start': start + offset,
+                'end': min(count, start + 1000) + offset})
         db.database.execute(db.text('UPDATE table_movies SET "failedAttempts" = :value WHERE "radarrId" >= :start AND "radarrId" < :end'),
                             {'value': legacy, 'start': start + 7, 'end': min(count, start + 1000) + 7})
         db.database.execute(db.text('UPDATE table_episodes SET "failedAttempts" = :value WHERE "sonarrEpisodeId" >= :start AND "sonarrEpisodeId" < :end'),

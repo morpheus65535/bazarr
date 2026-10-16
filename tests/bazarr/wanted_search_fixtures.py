@@ -1,3 +1,8 @@
+from typing import Callable, Iterator, TypedDict, TypeAlias
+from typing_extensions import Unpack
+from types import ModuleType
+from sqlalchemy.orm import Session
+
 import importlib
 import os
 from itertools import count
@@ -22,13 +27,47 @@ from sqlalchemy import update
 os.environ.setdefault("SZ_USER_AGENT", "pytest")
 
 
+FailedAttempts: TypeAlias = str | list[tuple[str, int | float]] | list[list[str | int | float]] | None
+
+
+class MediaFixtureValues(TypedDict, total=False):
+    id: int
+    path: str | None
+    missing_subtitles_calculated: bool
+    audio_language: str
+    sceneName: str | None
+    title: str
+    profileId: int
+    monitored: bool
+    has_indexed_subtitles: bool
+    has_incomplete_embedded_subtitles: bool
+    missing_languages: list[str] | str | None
+    failed_attempts: FailedAttempts
+
+
+class MovieFixtureValues(MediaFixtureValues, total=False):
+    radarrId: int
+    year: int
+    imdbId: str | None
+    tmdbId: int | None
+    tags: str
+
+
+class EpisodeFixtureValues(MediaFixtureValues, total=False):
+    sonarrEpisodeId: int
+    sonarrSeriesId: int
+    season: int | str | None
+    episode: int | str | None
+    episodeTitle: str
+
+
 _metadata = MetaData()
 _movie_rows = Table(
     "table_movies",
     _metadata,
     Column("id", Integer, primary_key=True),
     Column("path", String, nullable=True),
-    Column("missing_subtitles", String, nullable=True),
+    Column("missing_subtitles_calculated", Boolean, nullable=False, default=False),
     Column("radarrId", Integer, nullable=False),
     Column("audio_language", String, nullable=False),
     Column("sceneName", String, nullable=True),
@@ -47,7 +86,7 @@ _episode_rows = Table(
     _metadata,
     Column("id", Integer, primary_key=True),
     Column("path", String, nullable=True),
-    Column("missing_subtitles", String, nullable=True),
+    Column("missing_subtitles_calculated", Boolean, nullable=False, default=False),
     Column("sonarrEpisodeId", Integer, nullable=False),
     Column("sonarrSeriesId", Integer, ForeignKey("table_shows.sonarrSeriesId"), nullable=False),
     Column("audio_language", String, nullable=False),
@@ -190,10 +229,10 @@ def _seed_wanted_state(media_type, media_id, missing_languages, failed_attempts)
     )
 
 
-def _bind_movie_selects(module):
+def _bind_movie_selects(module: ModuleType) -> None:
     details_select = select(
         module.TableMovies.path,
-        module.TableMovies.missing_subtitles,
+        module.TableMovies.missing_subtitles_calculated,
         module.TableMovies.radarrId,
         module.TableMovies.audio_language,
         module.TableMovies.sceneName,
@@ -212,14 +251,14 @@ def _bind_movie_selects(module):
         .exists()
         .label("has_incomplete_embedded_subtitles"),
     )
-    module._WANTED_MOVIE_DETAILS_SELECT = details_select
-    module._WANTED_MOVIE_DETAILS_STMT = details_select.where(
+    setattr(module, '_WANTED_MOVIE_DETAILS_SELECT', details_select)
+    setattr(module, '_WANTED_MOVIE_DETAILS_STMT', details_select.where(
         module.TableMovies.radarrId == module.bindparam("wanted_radarr_id")
-    )
-    module._WANTED_MOVIES_SELECT = select(
+    ))
+    setattr(module, '_WANTED_MOVIES_SELECT', select(
         module.TableMovies.radarrId,
         module.TableMovies.audio_language,
-        module.TableMovies.missing_subtitles,
+        module.TableMovies.missing_subtitles_calculated,
         module.TableMovies.path,
         module.TableMovies.profileId,
         module.TableMovies.sceneName,
@@ -238,14 +277,14 @@ def _bind_movie_selects(module):
         .limit(1)
         .exists()
         .label("has_incomplete_embedded_subtitles"),
-    )
+    ))
 
 
-def _bind_episode_selects(module):
+def _bind_episode_selects(module: ModuleType) -> None:
     details_select = (
         select(
             module.TableEpisodes.path,
-            module.TableEpisodes.missing_subtitles,
+            module.TableEpisodes.missing_subtitles_calculated,
             module.TableEpisodes.sonarrEpisodeId,
             module.TableEpisodes.sonarrSeriesId,
             module.TableEpisodes.audio_language,
@@ -271,10 +310,10 @@ def _bind_episode_selects(module):
         .select_from(module.TableEpisodes)
         .join(module.TableShows)
     )
-    module._WANTED_EPISODE_DETAILS_SELECT = details_select
-    module._WANTED_EPISODE_DETAILS_STMT = details_select.where(
+    setattr(module, '_WANTED_EPISODE_DETAILS_SELECT', details_select)
+    setattr(module, '_WANTED_EPISODE_DETAILS_STMT', details_select.where(
         module.TableEpisodes.sonarrEpisodeId == module.bindparam("wanted_sonarr_episode_id")
-    )
+    ))
 
 
 def _infer_kind(request):
@@ -371,16 +410,20 @@ def bind_wanted_state(transactional_session, wanted_search_schema, monkeypatch):
 
 
 @pytest.fixture
-def movie_row_factory(transactional_session, bind_wanted_state, wanted_row_ids):
+def movie_row_factory(
+    transactional_session: Session,
+    bind_wanted_state: None,
+    wanted_row_ids: Iterator[int],
+) -> Callable[..., SimpleNamespace]:
     del bind_wanted_state
 
-    def factory(**overrides):
+    def factory(**overrides: Unpack[MovieFixtureValues]) -> SimpleNamespace:
         missing_languages = overrides.pop("missing_languages", ["en", "fr:forced"])
         failed_attempts = overrides.pop("failed_attempts", [("en", 10), ("fr:forced", 10)])
-        values = {
+        values: MovieFixtureValues = {
             "id": next(wanted_row_ids),
             "path": "/movies/movie.mkv",
-            "missing_subtitles": _serialize_missing_languages(missing_languages),
+            "missing_subtitles_calculated": missing_languages is not None,
             "radarrId": 7,
             "audio_language": "['eng']",
             "sceneName": "Scene",
@@ -399,7 +442,7 @@ def movie_row_factory(transactional_session, bind_wanted_state, wanted_row_ids):
         _seed_wanted_state(
             "movie",
             values["radarrId"],
-            values.get("missing_subtitles"),
+            _serialize_missing_languages(missing_languages),
             failed_attempts,
         )
         return row
@@ -430,17 +473,21 @@ def show_row_factory(transactional_session, wanted_search_schema, wanted_row_ids
 
 
 @pytest.fixture
-def episode_row_factory(transactional_session, bind_wanted_state, wanted_row_ids):
+def episode_row_factory(
+    transactional_session: Session,
+    bind_wanted_state: None,
+    wanted_row_ids: Iterator[int],
+) -> Callable[..., SimpleNamespace]:
     del bind_wanted_state
 
-    def factory(**overrides):
+    def factory(**overrides: Unpack[EpisodeFixtureValues]) -> SimpleNamespace:
         episode_title = overrides.pop("episodeTitle", "Pilot")
         missing_languages = overrides.pop("missing_languages", ["en", "fr:hi"])
         failed_attempts = overrides.pop("failed_attempts", [("en", 10), ("fr:hi", 10)])
-        values = {
+        values: EpisodeFixtureValues = {
             "id": next(wanted_row_ids),
             "path": "/series/e01.mkv",
-            "missing_subtitles": _serialize_missing_languages(missing_languages),
+            "missing_subtitles_calculated": missing_languages is not None,
             "sonarrEpisodeId": 17,
             "sonarrSeriesId": 3,
             "audio_language": "['eng']",
@@ -481,7 +528,7 @@ def episode_row_factory(transactional_session, bind_wanted_state, wanted_row_ids
         _seed_wanted_state(
             "series",
             values["sonarrEpisodeId"],
-            values.get("missing_subtitles"),
+            _serialize_missing_languages(missing_languages),
             failed_attempts,
         )
         return row

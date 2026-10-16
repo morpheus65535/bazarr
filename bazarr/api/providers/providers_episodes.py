@@ -1,5 +1,9 @@
 # coding=utf-8
 
+from typing import cast
+
+from api.utils import JsonObject
+
 import os
 
 from flask_restx import Resource, Namespace, reqparse, fields, marshal
@@ -9,8 +13,9 @@ from utilities.path_mappings import path_mappings
 from app.get_providers import get_providers
 from subtitles.manual import manual_search, episode_manually_download_specific_subtitle
 from subtitles.indexer.series import store_subtitles, list_missing_subtitles
+from subtitles.language_utils import has_unindexed_external_subtitle
 
-from ..utils import authenticate
+from ..utils import authenticate, normalize_flag_token
 
 api_ns_providers_episodes = Namespace('Providers Episodes', description='List and download episodes subtitles manually')
 
@@ -42,7 +47,7 @@ class ProviderEpisodes(Resource):
     @api_ns_providers_episodes.response(404, 'Episode not found')
     @api_ns_providers_episodes.response(500, 'Custom error messages')
     @api_ns_providers_episodes.expect(get_request_parser)
-    def get(self):
+    def get(self) -> JsonObject | tuple[str, int]:
         """Search manually for an episode subtitles"""
         args = self.get_request_parser.parse_args()
         sonarrEpisodeId = args.get('episodeid')
@@ -50,33 +55,38 @@ class ProviderEpisodes(Resource):
                       TableEpisodes.sceneName,
                       TableShows.title,
                       TableShows.profileId,
-                      TableEpisodes.missing_subtitles) \
+                      TableEpisodes.missing_subtitles_calculated) \
             .select_from(TableEpisodes) \
             .join(TableShows) \
             .where(TableEpisodes.sonarrEpisodeId == sonarrEpisodeId)
         episodeInfo = database.execute(stmt).first()
 
-        previously_indexed_subtitles = get_subtitles(sonarr_episode_id=sonarrEpisodeId)
+        previously_indexed_subtitles = get_subtitles(sonarr_episode_id=sonarrEpisodeId) or []
 
         if not episodeInfo:
             return 'Episode not found', 404
-        elif not len(previously_indexed_subtitles) or \
-                any([not x['embedded_track_id'] for x in previously_indexed_subtitles if not x['path']]):
+        elif not len(previously_indexed_subtitles) or has_unindexed_external_subtitle(previously_indexed_subtitles):
             # subtitles indexing for this episode might be incomplete, we'll do it again
             store_subtitles(sonarrEpisodeId)
             episodeInfo = database.execute(stmt).first()
-        elif episodeInfo.missing_subtitles is None:
+            if not episodeInfo:
+                return 'Episode not found', 404
+        elif not episodeInfo.missing_subtitles_calculated:
             # missing subtitles calculation for this episode is incomplete, we'll do it again
             list_missing_subtitles(epno=sonarrEpisodeId)
             episodeInfo = database.execute(stmt).first()
+            if not episodeInfo:
+                return 'Episode not found', 404
 
         title = episodeInfo.title
+        if not episodeInfo.path:
+            return 'Episode file not found. Path mapping issue?', 500
         episodePath = path_mappings.path_replace(episodeInfo.path)
 
         if not os.path.exists(episodePath):
             return 'Episode file not found. Path mapping issue?', 500
 
-        sceneName = episodeInfo.sceneName or "None"
+        sceneName = episodeInfo.sceneName
         profileId = episodeInfo.profileId
 
         providers_list = get_providers()
@@ -84,7 +94,7 @@ class ProviderEpisodes(Resource):
         data = manual_search(episodePath, profileId, providers_list, sceneName, title, 'series')
         if isinstance(data, str):
             return data, 500
-        return marshal(data, self.get_response_model, envelope='data')
+        return cast(JsonObject, marshal(data, self.get_response_model, envelope='data'))
 
     post_request_parser = reqparse.RequestParser()
     post_request_parser.add_argument('seriesid', type=int, required=True, help='Series ID')
@@ -108,9 +118,9 @@ class ProviderEpisodes(Resource):
 
         episode_manually_download_specific_subtitle(sonarr_series_id=args.get('seriesid'),
                                                     sonarr_episode_id=args.get('episodeid'),
-                                                    hi=args.get('hi').capitalize(),
-                                                    forced=args.get('forced').capitalize(),
-                                                    use_original_format=args.get('original_format').capitalize(),
+                                                    hi=normalize_flag_token(args.get('hi')),
+                                                    forced=normalize_flag_token(args.get('forced')),
+                                                    use_original_format=normalize_flag_token(args.get('original_format')),
                                                     selected_provider=args.get('provider'),
                                                     subtitle=args.get('subtitle'),
                                                     job_id=None)
