@@ -1,6 +1,6 @@
 import { Dispatch } from "react";
 import { difference, differenceWith } from "lodash";
-import { isEpisode, isMovie, isSeries } from "./validate";
+import { isEpisode, isMovie, isSeries, isSportsLeague } from "./validate";
 
 export const toggleState = (
   dispatch: Dispatch<boolean>,
@@ -16,6 +16,8 @@ export const GetItemId = <T extends object>(item: T): number | undefined => {
     return item.radarrId;
   } else if (isEpisode(item)) {
     return item.sonarrEpisodeId;
+  } else if (isSportsLeague(item)) {
+    return item.sportarrLeagueId;
   } else if (isSeries(item)) {
     return item.sonarrSeriesId;
   } else {
