@@ -48,6 +48,12 @@ def test_get_providers_auth_karagarga():
     assert item["f_password"] is not None
 
 
+def test_get_providers_auth_unit3d():
+    item = get_providers.get_providers_auth()["unit3d"]
+    assert isinstance(item["url"], str)
+    assert isinstance(item["api_key"], str)
+
+
 @pytest.fixture(autouse=True)
 def _restore_language_equals():
     """Tests below mutate the process-wide settings object; restore it afterwards."""
