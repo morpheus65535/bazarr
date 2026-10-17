@@ -1,4 +1,7 @@
 import { FunctionComponent } from "react";
+import { Button } from "@mantine/core";
+import { notifications } from "@mantine/notifications";
+import { useOpenAICompatibleTranslatorTestMutation } from "@/apis/hooks";
 import {
   Check,
   Chips,
@@ -11,7 +14,62 @@ import {
   Slider,
   Text,
 } from "@/pages/Settings/components";
+import { useSettingValue } from "@/pages/Settings/utilities/hooks";
 import { translatorOption } from "./options";
+
+const OpenAICompatibleTestButton: FunctionComponent = () => {
+  const testTranslator = useOpenAICompatibleTranslatorTestMutation();
+  const baseUrl = useSettingValue<string>(
+    "settings-translator-openai_base_url",
+  );
+  const model = useSettingValue<string>("settings-translator-openai_model");
+  const apiKey = useSettingValue<string>("settings-translator-openai_api_key");
+  const timeout = useSettingValue<number>("settings-translator-openai_timeout");
+
+  const testConnection = async () => {
+    if (!baseUrl?.trim() || !model?.trim()) {
+      return;
+    }
+
+    try {
+      const result = await testTranslator.mutateAsync({
+        baseUrl,
+        model,
+        apiKey: apiKey ?? "",
+        timeout: timeout ?? 180,
+      });
+      notifications.show({
+        title: result.success ? "Connection successful" : "Connection failed",
+        message: result.message,
+        color: result.success ? "success" : "danger",
+      });
+    } catch {
+      notifications.show({
+        title: "Connection test failed",
+        message: "Could not test the OpenAI-compatible endpoint",
+        color: "danger",
+      });
+    }
+  };
+
+  return (
+    <>
+      <Button
+        type="button"
+        disabled={!baseUrl?.trim() || !model?.trim()}
+        loading={testTranslator.isPending}
+        onClick={testConnection}
+      >
+        Test Connection
+      </Button>
+      <Message>
+        Use the OpenAI API root (for example, http://127.0.0.1:11434/v1). A bare
+        host is also treated as the /v1 API root. The test sends one English-to-
+        French translation using the current values without saving them.
+      </Message>
+    </>
+  );
+};
 
 const SettingsProvidersTranslationView: FunctionComponent = () => {
   return (
@@ -85,18 +143,44 @@ const SettingsProvidersTranslationView: FunctionComponent = () => {
           settingKey="settings-translator-translator_type"
           on={(val) => val === "openai_compatible"}
         >
-          <Text label="OpenAI-compatible API base URL" settingKey="settings-translator-openai_base_url" />
+          <Text
+            label="OpenAI-compatible API base URL"
+            settingKey="settings-translator-openai_base_url"
+            placeholder="http://127.0.0.1:11434/v1"
+          />
           <Text label="Model" settingKey="settings-translator-openai_model" />
-          <Text label="API key (optional)" settingKey="settings-translator-openai_api_key" />
-          <Number label="Batch size" settingKey="settings-translator-openai_batch_size" min={1} />
-          <Number label="Request timeout (seconds)" settingKey="settings-translator-openai_timeout" min={1} />
+          <Text
+            label="API key (optional)"
+            settingKey="settings-translator-openai_api_key"
+          />
+          <Number
+            label="Batch size"
+            settingKey="settings-translator-openai_batch_size"
+            min={1}
+          />
+          <Number
+            label="Request timeout (seconds)"
+            settingKey="settings-translator-openai_timeout"
+            min={1}
+          />
+          <OpenAICompatibleTestButton />
         </CollapseBox>
-        <Check label="When the requested language is unavailable, download and translate a fallback subtitle"
-          settingKey="settings-translator-translate_fallback_enabled" />
-        <CollapseBox settingKey="settings-translator-translate_fallback_enabled" on={(val) => val === true}>
-          <Text label="Fallback source language (ISO 639-1)"
-            settingKey="settings-translator-translate_fallback_source_language" />
-          <Message>Default: en. Translation uses the selected translator and writes a separate target-language subtitle.</Message>
+        <Check
+          label="When the requested language is unavailable, download and translate a fallback subtitle"
+          settingKey="settings-translator-translate_fallback_enabled"
+        />
+        <CollapseBox
+          settingKey="settings-translator-translate_fallback_enabled"
+          on={(val) => val === true}
+        >
+          <Text
+            label="Fallback source language (ISO 639-1)"
+            settingKey="settings-translator-translate_fallback_source_language"
+          />
+          <Message>
+            Default: en. Translation uses the selected translator and writes a
+            separate target-language subtitle.
+          </Message>
         </CollapseBox>
         <Check
           label="Add translation info at the beginning"
