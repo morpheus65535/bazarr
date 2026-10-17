@@ -90,6 +90,39 @@ const renderLayoutModal = (
   };
 };
 
+const Submitter = () => {
+  const { setValue } = useFormActions();
+  return (
+    <>
+      <button
+        type="button"
+        data-testid="stage-button"
+        onClick={() => setValue("staged-value", "settings-general-theme")}
+      >
+        Stage
+      </button>
+      <button type="submit" data-testid="submit-button">
+        Submit
+      </button>
+    </>
+  );
+};
+
+const renderEditorLayout = (props: {
+  isEditorActive?: boolean;
+  isDraftDirty?: boolean;
+}) => {
+  const mutate = setupMocks();
+  return {
+    mutate,
+    ...customRender(
+      <Layout name="Test" {...props}>
+        <Submitter />
+      </Layout>,
+    ),
+  };
+};
+
 const succeedMutation = (mutate: Mock) => {
   const options = mutate.mock.calls[0][1] as { onSuccess?: () => void };
   act(() => {
@@ -249,6 +282,40 @@ describe("Settings Layout", () => {
       },
       expect.objectContaining({ onSuccess: expect.any(Function) }),
     );
+  });
+});
+
+describe("Settings Layout with an active editor", () => {
+  beforeEach(() => {
+    vitest.clearAllMocks();
+  });
+
+  it("disables Save and Discard while an editor is active", () => {
+    renderEditorLayout({ isEditorActive: true });
+
+    expect(screen.getByRole("button", { name: /Save/ })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /Discard/ })).toBeDisabled();
+  });
+
+  it("does not submit staged settings while an editor is active", async () => {
+    const { mutate } = renderEditorLayout({ isEditorActive: true });
+
+    await userEvent.click(screen.getByTestId("stage-button"));
+    await userEvent.click(screen.getByTestId("submit-button"));
+
+    expect(mutate).not.toHaveBeenCalled();
+  });
+
+  it("keeps the default behaviour when the editor props are absent", async () => {
+    const { mutate } = renderEditorLayout({});
+
+    await userEvent.click(screen.getByTestId("stage-button"));
+
+    expect(screen.getByRole("button", { name: /Save/ })).toBeEnabled();
+
+    await userEvent.click(screen.getByTestId("submit-button"));
+
+    expect(mutate).toHaveBeenCalled();
   });
 });
 

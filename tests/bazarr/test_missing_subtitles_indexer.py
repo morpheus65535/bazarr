@@ -192,20 +192,25 @@ class _FakeDatabase:
         self.missing = ast.literal_eval(missing_subtitles)
 
 
-def _missing(monkeypatch, indexer, profile, subtitles):
+def _missing(monkeypatch, indexer, profile, subtitles, audio_language='[]', use_embedded_subs=True):
     """Run the indexer for one media item and return the sorted missing list it stored."""
     if indexer is series_indexer:
-        row = SimpleNamespace(sonarrSeriesId=1, sonarrEpisodeId=1, profileId=1, audio_language='[]')
+        row = SimpleNamespace(sonarrSeriesId=1, sonarrEpisodeId=1, profileId=1, audio_language=audio_language)
         run = indexer.list_missing_subtitles
     else:
-        row = SimpleNamespace(radarrId=1, profileId=1, audio_language='[]')
+        row = SimpleNamespace(radarrId=1, profileId=1, audio_language=audio_language)
         run = indexer.list_missing_subtitles_movies
 
     fake_database = _FakeDatabase(row)
     monkeypatch.setattr(app_database, 'update_profile_id_list', lambda: [profile])
     monkeypatch.setattr(indexer, 'database', fake_database)
     monkeypatch.setattr(indexer, 'store_missing_subtitles', fake_database.store_missing_subtitles)
-    monkeypatch.setattr(indexer, 'settings', SimpleNamespace(general=SimpleNamespace(use_embedded_subs=True)))
+    monkeypatch.setattr(indexer, 'get_audio_profile_languages',
+                        lambda audio: [{'name': 'English', 'code2': 'en', 'code3': 'eng'}]
+                        if audio == "['en']"
+                        else [{'name': 'Polish', 'code2': 'pl', 'code3': 'pol'}] if audio == "['pl']" else [])
+    monkeypatch.setattr(indexer, 'settings',
+                        SimpleNamespace(general=SimpleNamespace(use_embedded_subs=use_embedded_subs)))
     monkeypatch.setattr(indexer, 'get_subtitles', lambda *args, **kwargs: [dict(x) for x in subtitles])
     monkeypatch.setattr(indexer, 'get_language_equals', lambda: [])
     monkeypatch.setattr(indexer, 'event_stream', lambda **kwargs: None)
@@ -350,3 +355,45 @@ def test_issue_3647_reproduction(monkeypatch, indexer):
     ])
 
     assert _missing(monkeypatch, indexer, profile, ACTUAL['normal']) == sorted(['en:hi', 'pl'])
+
+
+# Audio-track options on basic profile items. The audio track is English ("['en']") or Polish ("['pl']").
+
+def _audio_item(item_id, language='en', audio_exclude='False', audio_only_include='False'):
+    return {'id': item_id, 'language': language, 'forced': 'False', 'hi': 'False',
+            'audio_exclude': audio_exclude, 'audio_only_include': audio_only_include}
+
+
+AUDIO_CASES = [
+    # (item, audio track, expected missing)
+    pytest.param(_audio_item(1, audio_exclude='True'), "['en']", [], id='exclude-when-audio-matches'),
+    pytest.param(_audio_item(1, audio_exclude='True'), "['pl']", ['en'], id='exclude-when-audio-differs'),
+    pytest.param(_audio_item(1, audio_only_include='True'), "['en']", ['en'], id='only-include-when-audio-matches'),
+    pytest.param(_audio_item(1, audio_only_include='True'), "['pl']", [], id='only-include-when-audio-differs'),
+]
+
+
+@pytest.mark.parametrize('indexer', INDEXERS)
+@pytest.mark.parametrize('item, audio_language, expected', AUDIO_CASES)
+def test_audio_option_on_profile_item(monkeypatch, indexer, item, audio_language, expected):
+    profile = _profile([item])
+
+    assert _missing(monkeypatch, indexer, profile, [], audio_language=audio_language) == sorted(expected)
+
+
+@pytest.mark.parametrize('indexer', INDEXERS)
+@pytest.mark.parametrize('audio_language, expected', [("['en']", []), ("['pl']", ['en'])],
+                         ids=['audio-matches', 'audio-differs'])
+def test_audio_exclude_item_meets_cutoff_only_when_audio_matches(monkeypatch, indexer, audio_language, expected):
+    profile = _profile([_audio_item(1, audio_exclude='True')], cutoff=1)
+
+    assert _missing(monkeypatch, indexer, profile, [], audio_language=audio_language) == sorted(expected)
+
+
+@pytest.mark.parametrize('indexer', INDEXERS)
+def test_embedded_subtitles_without_path_are_ignored_when_embedded_disabled(monkeypatch, indexer):
+    profile = _profile([_profile_item(1, 'normal')])
+    no_path = [{'path': None, 'code2': 'en', 'forced': False, 'hi': False}]
+
+    assert _missing(monkeypatch, indexer, profile, no_path, use_embedded_subs=False) == ['en']
+    assert _missing(monkeypatch, indexer, profile, no_path, use_embedded_subs=True) == []
