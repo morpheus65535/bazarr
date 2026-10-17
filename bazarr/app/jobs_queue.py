@@ -90,6 +90,14 @@ class Job:
         """
         return self.job_id == other.job_id
 
+    @property
+    def is_sync(self) -> bool:
+        """
+        Indicates whether this job is a subtitles synchronization job. Those are limited separately by the
+        subsync.concurrent_syncs setting because they are CPU intensive.
+        """
+        return self.func == 'sync_subtitles' and self.module.endswith('subtitles.sync')
+
 
 class JobCanceled(Exception):
     pass
@@ -580,23 +588,41 @@ class JobsQueue:
         """
         while True:
             try:
-                if self.jobs_pending_queue:
-                    with self._queue_lock:
-                        can_run_job = (len(self.jobs_running_queue) < settings.general.concurrent_jobs
-                                       and len(self.jobs_pending_queue) > 0)
-
-                    if can_run_job:
-                        job_thread = Thread(target=self._run_job)
-                        job_thread.daemon = True
-                        job_thread.start()
-                    else:
-                        sleep(0.5)
+                job = self._reserve_next_runnable_job() if self.jobs_pending_queue else None
+                if job:
+                    job_thread = Thread(target=self._run_job, kwargs={'job_instance': job, 'reserved': True})
+                    job_thread.daemon = True
+                    job_thread.start()
                 else:
                     sleep(0.5)
             except (KeyboardInterrupt, SystemExit):
                 break
 
-    def _run_job(self, job_instance=None) -> bool:
+    def _reserve_next_runnable_job(self):
+        """
+        Picks the first pending job allowed to run given the concurrent jobs limit and the concurrent syncs limit,
+        then moves it to the running queue. Doing both under the same lock prevents starting more jobs than allowed.
+
+        :return: The reserved job, or None if no job can be started right now.
+        :rtype: Job | None
+        """
+        with self._queue_lock:
+            if len(self.jobs_running_queue) >= settings.general.concurrent_jobs:
+                return None
+
+            running_syncs = sum(1 for job in self.jobs_running_queue if job.is_sync)
+            can_run_sync = running_syncs < settings.subsync.concurrent_syncs
+
+            for job in self.jobs_pending_queue:
+                if job.is_sync and not can_run_sync:
+                    continue
+                self.jobs_pending_queue.remove(job)
+                job.status = 'running'
+                self.jobs_running_queue.append(job)
+                return job
+            return None
+
+    def _run_job(self, job_instance=None, reserved=False) -> bool:
         """
         Handles the execution of a job from the pending jobs queue or an explicitly provided
         job instance. Manages job state transitions including updating job status, generating
@@ -605,12 +631,16 @@ class JobsQueue:
         :param job_instance: Optional; Specific job instance to execute. If not provided,
             a job will be dequeued from the pending jobs queue.
         :type job_instance: Optional[Job]
+        :param reserved: True if job_instance has already been moved from the pending queue to the running queue.
+        :type reserved: bool
         :return: A boolean indicating the success or failure of the job execution. Returns
             True if the job was successfully completed, otherwise False.
         :rtype: bool
         """
         with self._queue_lock:
-            if job_instance:
+            if job_instance and reserved:
+                job = job_instance
+            elif job_instance:
                 job = job_instance
                 self.jobs_pending_queue.remove(job)
             else:
@@ -626,7 +656,9 @@ class JobsQueue:
             job.last_run_time = datetime.now(timezone.utc).isoformat()
             if 'job_id' not in job.kwargs or not job.kwargs['job_id']:
                 job.kwargs['job_id'] = job.job_id
-            self.jobs_running_queue.append(job)
+            if not reserved:
+                with self._queue_lock:
+                    self.jobs_running_queue.append(job)
 
             # sending event to update the status of progress jobs
             payload = {"job_id": job.job_id, "status": job.status}

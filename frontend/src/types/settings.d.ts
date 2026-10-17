@@ -136,6 +136,7 @@ declare namespace Settings {
     quality_min_score: number;
     quality_max_offset_seconds: number;
     quality_max_framerate_deviation: number;
+    concurrent_syncs: number;
   }
 
   interface Analytic {

@@ -1,10 +1,13 @@
 # coding=utf-8
 
+import json
 import logging
 import os
+import subprocess
+import sys
 
-from ffsubsync import ProgressInfo
-from ffsubsync.ffsubsync import run, make_parser
+from threading import Thread
+
 from utilities.binaries import get_binary
 from radarr.history import history_log_movie
 from sonarr.history import history_log
@@ -16,6 +19,8 @@ from app.config import settings
 from app.database import TableMovies, TableShows, database, select
 from app.get_args import args
 from app.jobs_queue import jobs_queue
+
+WORKER_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'subsync_worker.py')
 
 
 class SubSyncer:
@@ -97,13 +102,75 @@ class SubSyncer:
                      f"falling back")
         return None
 
-    def _on_progress(self, info: ProgressInfo) -> None:
-        # info.processed_seconds / info.total_seconds (total may be None);
-        # info.fraction is a 0.0-1.0 ratio (None if the total is unknown).
-        if info.total_seconds is not None:
+    def _on_progress(self, processed_seconds, total_seconds) -> None:
+        # total_seconds is None when ffprobe couldn't determine the reference duration
+        if total_seconds is not None:
             jobs_queue.update_job_progress(job_id=self.job_id,
-                                           progress_value=info.processed_seconds,
-                                           progress_max=info.total_seconds)
+                                           progress_value=processed_seconds,
+                                           progress_max=total_seconds)
+
+    @staticmethod
+    def _forward_worker_logs(stream):
+        for line in stream:
+            line = line.rstrip('\n')
+            if not line:
+                continue
+            try:
+                record = json.loads(line)
+                logging.getLogger(record['name']).log(record['levelno'], record['msg'])
+            except (ValueError, KeyError, TypeError):
+                logging.debug(f'BAZARR subsync worker: {line}')
+
+    def _run_in_subprocess(self, unparsed_args):
+        """Run ffsubsync in a separate process (see subsync_worker.py) so it doesn't hold this process GIL and
+        starve the web server. Returns the ffsubsync result dict."""
+        popen_kwargs = {}
+        if sys.platform == 'win32':
+            popen_kwargs['creationflags'] = subprocess.CREATE_NO_WINDOW | subprocess.BELOW_NORMAL_PRIORITY_CLASS
+
+        process = subprocess.Popen([sys.executable, WORKER_PATH],
+                                   stdin=subprocess.PIPE,
+                                   stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE,
+                                   text=True,
+                                   encoding='utf-8',
+                                   errors='replace',
+                                   **popen_kwargs)
+
+        stderr_thread = Thread(target=self._forward_worker_logs, args=(process.stderr,), daemon=True)
+        stderr_thread.start()
+
+        result = None
+        error = None
+        try:
+            process.stdin.write(json.dumps({
+                'args': unparsed_args,
+                'log_level': logging.getLogger('ffsubsync.ffsubsync').getEffectiveLevel(),
+            }))
+            process.stdin.close()
+
+            for line in process.stdout:
+                try:
+                    message = json.loads(line)
+                except ValueError:
+                    logging.debug(f'BAZARR subsync worker: {line.rstrip()}')
+                    continue
+                message_type = message.get('type')
+                if message_type == 'progress':
+                    self._on_progress(message.get('processed'), message.get('total'))
+                elif message_type == 'result':
+                    result = message.get('result')
+                elif message_type == 'error':
+                    error = message.get('message')
+        finally:
+            returncode = process.wait()
+            stderr_thread.join(timeout=5)
+
+        if error:
+            raise RuntimeError(f'ffsubsync worker failed: {error}')
+        if result is None:
+            raise RuntimeError(f'ffsubsync worker exited with code {returncode} without returning a result')
+        return result
 
     def sync(self, video_path, srt_path, srt_lang, hi, forced,
              max_offset_seconds, no_fix_framerate, gss, reference=None, sonarr_series_id=None, sonarr_episode_id=None,
@@ -200,14 +267,13 @@ class SubSyncer:
             if settings.subsync.debug:
                 unparsed_args.append('--make-test-case')
 
-            parser = make_parser()
-            self.args = parser.parse_args(args=unparsed_args)
+            self.args = unparsed_args
 
             if os.path.isfile(self.srtout):
                 os.remove(self.srtout)
                 logging.debug('BAZARR deleted the previous subtitles synchronization attempt file.')
 
-            self.sync_result = run(self.args, progress_handler=self._on_progress)
+            self.sync_result = self._run_in_subprocess(unparsed_args)
 
             result = self.sync_result
         except Exception:
