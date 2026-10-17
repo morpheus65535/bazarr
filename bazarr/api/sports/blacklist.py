@@ -4,7 +4,8 @@ import pretty
 
 from flask_restx import Resource, Namespace, reqparse, fields, marshal
 
-from app.database import TableSportsEvents, TableSportsLeagues, TableBlacklistSports, database, select
+from app.database import (TableSportsEvents, TableSportsEventsSubtitles, TableSportsLeagues,
+                          TableBlacklistSports, database, select)
 from subtitles.tools.delete import delete_subtitles
 from sportarr.blacklist import blacklist_log_sports, blacklist_delete_all_sports, blacklist_delete_sports
 from utilities.path_mappings import path_mappings
@@ -103,14 +104,23 @@ class SportsBlacklist(Resource):
 
         eventInfo = database.execute(
             select(TableSportsEvents.path)
-            .where(TableSportsEvents.id == sports_event_id)) \
+            .where(TableSportsEvents.id == sports_event_id)
+            .where(TableSportsEvents.sportarrLeagueId == sportarr_league_id)) \
             .first()
 
         if not eventInfo:
             return 'Sports event not found', 404
 
         media_path = eventInfo.path
-        subtitles_path = args.get('subtitles_path')
+        subtitles_path = path_mappings.path_replace_reverse_sports(args.get('subtitles_path'))
+        indexed_subtitle = database.execute(
+            select(TableSportsEventsSubtitles.id)
+            .where(TableSportsEventsSubtitles.sportsEventId == sports_event_id)
+            .where(TableSportsEventsSubtitles.sportarrLeagueId == sportarr_league_id)
+            .where(TableSportsEventsSubtitles.path == subtitles_path)) \
+            .first()
+        if not indexed_subtitle:
+            return 'Subtitle not found for sports event', 404
 
         blacklist_log_sports(sportarr_league_id=sportarr_league_id,
                              sports_event_id=sports_event_id,

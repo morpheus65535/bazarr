@@ -13,7 +13,6 @@ import {
 } from "@/apis/hooks";
 import { useInstanceName } from "@/apis/hooks/site";
 import { Action } from "@/components";
-import { AudioList } from "@/components/bazarr";
 import LanguageProfileName from "@/components/bazarr/LanguageProfile";
 import { ItemEditModal } from "@/components/forms/ItemEditForm";
 import { AppColumnDef as ColumnDef } from "@/components/tables/features";
@@ -33,7 +32,6 @@ const sportsFilterConfig = {
     monitored: true,
     missing: true,
     profile: true,
-    audio: true,
     tags: true,
   },
 };
@@ -64,17 +62,6 @@ const SportsView: FunctionComponent = () => {
         // Sport is the closest a league has to a series type.
         header: "Sport",
         accessorKey: "sport",
-      },
-      {
-        header: "Audio",
-        accessorKey: "audioLanguage",
-        cell: ({
-          row: {
-            original: { audioLanguage },
-          },
-        }) => {
-          return <AudioList audios={audioLanguage}></AudioList>;
-        },
       },
       {
         header: "Languages Profile",

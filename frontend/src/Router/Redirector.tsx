@@ -20,8 +20,7 @@ const Redirector: FunctionComponent = () => {
       } else if (useRadarr) {
         navigate("/movies");
       } else if (useSportarr) {
-        // A Sportarr only install has no series or movies library to land on.
-        navigate("/wanted/sports");
+        navigate("/sports");
       } else {
         navigate("/settings/general");
       }
