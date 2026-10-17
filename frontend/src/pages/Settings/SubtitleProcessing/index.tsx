@@ -168,6 +168,24 @@ const SettingsSubtitleProcessingView: FunctionComponent = () => {
               Whisper from the previous setting also apply to this one.
             </Message>
           </CollapseBox>
+          <Check
+            label="Use Whisper as Fallback for Searches Triggered by Imports"
+            settingKey="settings-general-use_whisper_fallback_on_import"
+          ></Check>
+          <CollapseBox
+            settingKey={"settings-general-use_whisper_fallback_on_import"}
+          >
+            <Message>
+              When enabled, Bazarr will also use Whisper fallback for the
+              subtitle search triggered by the Sonarr or Radarr webhook when a
+              file is imported. Searches queued by the SignalR sync are not
+              affected. Other providers often have nothing yet right after a
+              release, so Whisper may be used where waiting a few hours would
+              have found a human-made subtitle. All of the warnings about
+              overloading Whisper from the previous settings also apply to this
+              one.
+            </Message>
+          </CollapseBox>
         </CollapseBox>
       </Section>
 
