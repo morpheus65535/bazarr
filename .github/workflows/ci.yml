@@ -11,6 +11,7 @@ on:
       - bazarr.py
       - requirements.txt
       - dev-requirements.txt
+      - pyproject.toml
       - .github/workflows/ci.yml
   pull_request:
     branches: [development]
@@ -100,6 +101,10 @@ jobs:
 
       - name: Install test dependencies
         run: pip install -r dev-requirements.txt
+
+      - name: Check utility types
+        if: matrix.python-version == '3.14'
+        run: basedpyright
 
       - name: Install media binaries
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg mediainfo

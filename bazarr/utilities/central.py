@@ -10,31 +10,31 @@ from pathlib import Path
 from literals import ENV_BAZARR_ROOT_DIR, DIR_LOG, ENV_STOPFILE, ENV_RESTARTFILE, EXIT_NORMAL, FILE_LOG
 
 
-def get_bazarr_dir(sub_dir):
+def get_bazarr_dir(sub_dir: str) -> str:
     path = os.path.join(os.environ[ENV_BAZARR_ROOT_DIR], sub_dir)
     return path
 
 
-def make_bazarr_dir(sub_dir):
+def make_bazarr_dir(sub_dir: str) -> None:
     path = get_bazarr_dir(sub_dir)
     if not os.path.exists(path):
         os.mkdir(path)
 
 
-def get_log_file_path():
+def get_log_file_path() -> str:
     path = os.path.join(get_bazarr_dir(DIR_LOG), FILE_LOG)
     return path
 
 
-def get_stop_file_path():
+def get_stop_file_path() -> str:
     return os.environ[ENV_STOPFILE]
 
 
-def get_restart_file_path():
+def get_restart_file_path() -> str:
     return os.environ[ENV_RESTARTFILE]
 
 
-def stop_bazarr(status_code=EXIT_NORMAL):
+def stop_bazarr(status_code: int = EXIT_NORMAL) -> None:
     try:
         with open(get_stop_file_path(), 'w', encoding='UTF-8') as file:
             # write out status code for final exit
@@ -46,7 +46,7 @@ def stop_bazarr(status_code=EXIT_NORMAL):
     os._exit(status_code)  # Don't raise SystemExit here since it's catch by waitress and it prevents proper exit
 
 
-def restart_bazarr():
+def restart_bazarr() -> None:
     try:
         Path(get_restart_file_path()).touch()
     except Exception as e:

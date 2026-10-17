@@ -8,9 +8,12 @@ import logging
 from app.config import settings
 
 
-def pp_replace(pp_command, episode, subtitles, language, language_code2, language_code3, episode_language,
-               episode_language_code2, episode_language_code3, score, subtitle_id, provider, uploader,
-               release_info, series_id, episode_id):
+def pp_replace(pp_command: str, episode: str, subtitles: str, language: str | None, language_code2: str | None,
+               language_code3: str | None, episode_language: str | None, episode_language_code2: str | None,
+               episode_language_code3: str | None, score: float, subtitle_id: object, provider: str,
+               uploader: str | None, release_info: object, series_id: int | str | None,
+               episode_id: int | str | None) -> list[str]:
+    # Provider IDs and release details are opaque values used only for string substitution.
     values_matches = {
         '{{directory}}': os.path.dirname(episode),
         '{{episode}}': episode,
@@ -48,7 +51,7 @@ def pp_replace(pp_command, episode, subtitles, language, language_code2, languag
     return pp_args
 
 
-def set_chmod(subtitles_path):
+def set_chmod(subtitles_path: str) -> None:
     # apply chmod if required
     chmod = int(settings.general.chmod, 8) if not sys.platform.startswith(
         'win') and settings.general.chmod_enabled else None

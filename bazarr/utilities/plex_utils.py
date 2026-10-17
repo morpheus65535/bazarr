@@ -5,7 +5,7 @@ import requests
 from app.config import settings
 
 
-def get_plex_libraries_with_paths():
+def get_plex_libraries_with_paths() -> dict[str, list[str]]:
     """
     Get Plex library sections with their location paths.
     Returns a dictionary with movie_paths and series_paths arrays.
@@ -66,7 +66,7 @@ def get_plex_libraries_with_paths():
         return {'movie_paths': [], 'series_paths': []}
 
 
-def _get_library_locations(server_url, section_key, token):
+def _get_library_locations(server_url: str, section_key: str, token: str) -> list[str]:
     """Get the locations for a specific Plex library section."""
     try:
         response = requests.get(

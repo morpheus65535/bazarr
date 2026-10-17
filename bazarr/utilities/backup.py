@@ -9,6 +9,7 @@ import re
 from datetime import datetime, timedelta, timezone
 from zipfile import ZipFile, BadZipFile, ZIP_DEFLATED
 from glob import glob
+from typing import Literal, overload
 
 from app.get_args import args
 from app.config import settings
@@ -19,7 +20,7 @@ from utilities.central import restart_bazarr
 _BACKUP_FILENAME_RE = re.compile(r'^bazarr_backup_v[\w.\-]+\.zip$')
 
 
-def _validate_backup_filename(filename):
+def _validate_backup_filename(filename: str | None) -> str | None:
     """Return a safe filename if `filename` is a plain backup file name, else None."""
     if not filename:
         return None
@@ -31,7 +32,7 @@ def _validate_backup_filename(filename):
     return safe_name
 
 
-def _safe_extract(zip_obj, dest_path):
+def _safe_extract(zip_obj: ZipFile, dest_path: str) -> None:
     """Extract a ZIP archive while rejecting entries that escape `dest_path`."""
     dest_real = os.path.realpath(dest_path)
     for member in zip_obj.namelist():
@@ -41,7 +42,7 @@ def _safe_extract(zip_obj, dest_path):
     zip_obj.extractall(path=dest_path)
 
 
-def get_backup_path():
+def get_backup_path() -> str:
     backup_dir = settings.backup.folder
     if not os.path.isdir(backup_dir):
         os.makedirs(backup_dir)
@@ -49,7 +50,7 @@ def get_backup_path():
     return backup_dir
 
 
-def get_restore_path():
+def get_restore_path() -> str:
     restore_dir = os.path.join(args.config_dir, 'restore')
     if not os.path.isdir(restore_dir):
         os.makedirs(restore_dir)
@@ -57,7 +58,15 @@ def get_restore_path():
     return restore_dir
 
 
-def get_backup_files(fullpath=True):
+@overload
+def get_backup_files(fullpath: Literal[True] = True) -> list[str]: ...
+
+
+@overload
+def get_backup_files(fullpath: Literal[False]) -> list[dict[str, str]]: ...
+
+
+def get_backup_files(fullpath: bool = True) -> list[str] | list[dict[str, str]]:
     backup_file_pattern = os.path.join(get_backup_path(), 'bazarr_backup_v*.zip')
     file_list = glob(backup_file_pattern)
     file_list.sort(key=os.path.getmtime, reverse=True)
@@ -72,7 +81,7 @@ def get_backup_files(fullpath=True):
         } for x in file_list]
 
 
-def backup_to_zip(job_id=None, wait_for_completion=False):
+def backup_to_zip(job_id: int | None = None, wait_for_completion: bool = False) -> None:
     if not job_id:
         jobs_queue.add_job_from_function("Backing up Database and Configuration File", is_progress=False,
                                          wait_for_completion=wait_for_completion)
@@ -122,7 +131,7 @@ def backup_to_zip(job_id=None, wait_for_completion=False):
     event_stream(type='backup')
 
 
-def restore_from_backup():
+def restore_from_backup() -> None:
     if os.path.isfile(os.path.join(get_restore_path(), 'config.yaml')):
         restore_config_path = os.path.join(get_restore_path(), 'config.yaml')
         dest_config_path = os.path.join(args.config_dir, 'config', 'config.yaml')
@@ -186,13 +195,13 @@ def restore_from_backup():
         logging.exception(f'Unable to delete {dest_config_path}')
 
 
-def prepare_restore(filename):
-    filename = _validate_backup_filename(filename)
-    if filename is None:
+def prepare_restore(filename: str) -> bool:
+    safe_filename = _validate_backup_filename(filename)
+    if safe_filename is None:
         logging.error('Invalid backup filename refused for restore.')
         return False
-    src_zip_file_path = os.path.join(get_backup_path(), filename)
-    dest_zip_file_path = os.path.join(get_restore_path(), filename)
+    src_zip_file_path = os.path.join(get_backup_path(), safe_filename)
+    dest_zip_file_path = os.path.join(get_restore_path(), safe_filename)
     success = False
     try:
         shutil.copy(src_zip_file_path, dest_zip_file_path)
@@ -222,7 +231,7 @@ def prepare_restore(filename):
     return success
 
 
-def backup_rotation():
+def backup_rotation() -> None:
     backup_retention = settings.backup.retention
     try:
         int(backup_retention)
@@ -244,12 +253,12 @@ def backup_rotation():
     logging.debug('Finished cleaning up old backup files')
 
 
-def delete_backup_file(filename):
-    filename = _validate_backup_filename(filename)
-    if filename is None:
+def delete_backup_file(filename: str) -> bool:
+    safe_filename = _validate_backup_filename(filename)
+    if safe_filename is None:
         logging.error('Invalid backup filename refused for deletion.')
         return False
-    backup_file_path = os.path.join(get_backup_path(), filename)
+    backup_file_path = os.path.join(get_backup_path(), safe_filename)
     try:
         os.remove(backup_file_path)
         return True
@@ -258,7 +267,7 @@ def delete_backup_file(filename):
     return False
 
 
-def sizeof_fmt(num, suffix="B"):
+def sizeof_fmt(num: float, suffix: str = "B") -> str:
     for unit in ["", "K", "M", "G", "T", "P", "E", "Z"]:
         if abs(num) < 1000.0:
             return f"{num:3.1f} {unit}{suffix}"

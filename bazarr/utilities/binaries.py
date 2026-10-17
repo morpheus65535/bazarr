@@ -7,6 +7,7 @@ import requests
 import json
 import hashlib
 import stat
+from typing import TypedDict
 
 from whichcraft import which
 from dogpile.cache import make_region
@@ -18,8 +19,17 @@ class BinaryNotFound(Exception):
     pass
 
 
+class BinaryDescriptor(TypedDict):
+    system: str
+    machine: str
+    directory: str
+    name: str
+    checksum: str
+    url: str
+
+
 @region.cache_on_arguments()
-def md5(fname):
+def md5(fname: str) -> str:
     hash_md5 = hashlib.md5()
     with open(fname, "rb") as f:
         for chunk in iter(lambda: f.read(4096), b""):
@@ -28,7 +38,7 @@ def md5(fname):
 
 
 @region.cache_on_arguments()
-def get_binaries_from_json():
+def get_binaries_from_json() -> list[BinaryDescriptor]:
     try:
         binaries_json_file = os.path.realpath(os.path.join(os.path.dirname(__file__), 'binaries.json'))
         with open(binaries_json_file) as json_file:
@@ -40,7 +50,7 @@ def get_binaries_from_json():
         return binaries_json
 
 
-def get_binary(name):
+def get_binary(name: str) -> str:
     installed_exe = which(name)
 
     if installed_exe and os.path.isfile(installed_exe):

@@ -4,6 +4,7 @@ import os
 import logging
 import hashlib
 import hmac
+from flask import Request
 
 from charset_normalizer import detect
 from bs4 import UnicodeDammit
@@ -14,7 +15,7 @@ from app.config import settings
 bool_map = {"True": True, "False": False, "true": True, "false": False}
 
 
-def check_credentials(user, pw, request, log_success=True):
+def check_credentials(user: str, pw: str, request: Request, log_success: bool = True) -> bool:
     forwarded_for_ip_addr = request.environ.get('HTTP_X_FORWARDED_FOR')
     real_ip_addr = request.environ.get('HTTP_X_REAL_IP')
     ip_addr = forwarded_for_ip_addr or real_ip_addr or request.remote_addr
@@ -30,13 +31,13 @@ def check_credentials(user, pw, request, log_success=True):
         return False
 
 
-def get_subtitle_destination_folder():
+def get_subtitle_destination_folder() -> str | None:
     fld_custom = str(settings.general.subfolder_custom).strip() if (settings.general.subfolder_custom and
                                                                     settings.general.subfolder != 'current') else None
     return fld_custom
 
 
-def get_target_folder(file_path):
+def get_target_folder(file_path: str) -> str | None:
     subfolder = settings.general.subfolder
     fld_custom = str(settings.general.subfolder_custom).strip() \
         if settings.general.subfolder_custom else None
@@ -53,6 +54,8 @@ def get_target_folder(file_path):
         else:
             fld = None
 
+        if fld is None:
+            return None
         fld = force_unicode(fld)
 
         if not os.path.isdir(fld):
@@ -67,20 +70,21 @@ def get_target_folder(file_path):
     return fld
 
 
-def force_unicode(s):
+def force_unicode(s: str | bytes) -> str:
     """
     Ensure a string is unicode, not encoded; used for enforcing file paths to be unicode upon saving a subtitle,
     to prevent encoding issues when saving a subtitle to a non-ascii path.
     :param s: string
     :return: unicode string
     """
-    if not isinstance(s, str):
+    if isinstance(s, str):
+        return s
+
+    try:
+        return s.decode("utf-8")
+    except UnicodeDecodeError:
+        encoding = detect(s).get('encoding') or 'utf-8'
         try:
-            s = s.decode("utf-8")
+            return s.decode(encoding)
         except UnicodeDecodeError:
-            t = detect(s)['encoding']
-            try:
-                s = s.decode(t)
-            except UnicodeDecodeError:
-                s = UnicodeDammit(s).unicode_markup
-    return s
+            return UnicodeDammit(s).unicode_markup or s.decode(encoding, errors='replace')
