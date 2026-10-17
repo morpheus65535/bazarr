@@ -455,6 +455,18 @@ class TableSportsEvents(Base):
     # cannot be the key. The file id cannot either, because Sportarr issues a
     # new one when a quality upgrade replaces the file, and the row would be
     # deleted and rebuilt on every upgrade, losing its subtitle history.
+    #
+    # The season and the episode stay out of the key on purpose. Sportarr
+    # renumbers events often. A renumbered event keeps its key, so the sync
+    # updates the row in place and the subtitles and the history survive.
+    #
+    # One weakness is known. The part number is positional inside a segment
+    # set, and the set follows the event type. Prelims is part 1 on a fight
+    # night and part 2 on a full card. An event that changes type moves its
+    # files to new keys, and each file is rebuilt as a new row. Keying on the
+    # external id and the part name avoids this, because the name holds where
+    # the number moves. That costs a migration, and only a multi-part combat
+    # sports event can hit it, so it waits until an install reports it.
     __table_args__ = (
         UniqueConstraint('sportarrEventId', 'partNumber', name='uc_sports_event_part'),
         # Indexes live on the model, not only in the migration. init_db()
@@ -752,7 +764,7 @@ def get_audio_profile_languages(audio_languages_list_str):
     return audio_languages
 
 
-def get_profile_id(series_id=None, episode_id=None, movie_id=None):
+def get_profile_id(series_id=None, episode_id=None, movie_id=None, league_id=None, sports_event_id=None):
     if series_id:
         data = database.execute(
             select(TableShows.profileId)
@@ -766,6 +778,24 @@ def get_profile_id(series_id=None, episode_id=None, movie_id=None):
             .select_from(TableShows)
             .join(TableEpisodes)
             .where(TableEpisodes.sonarrEpisodeId == episode_id)) \
+            .first()
+        if data:
+            return data.profileId
+
+    elif league_id:
+        data = database.execute(
+            select(TableSportsLeagues.profileId)
+            .where(TableSportsLeagues.sportarrLeagueId == league_id))\
+            .first()
+        if data:
+            return data.profileId
+
+    elif sports_event_id:
+        data = database.execute(
+            select(TableSportsLeagues.profileId)
+            .select_from(TableSportsLeagues)
+            .join(TableSportsEvents)
+            .where(TableSportsEvents.id == sports_event_id))\
             .first()
         if data:
             return data.profileId

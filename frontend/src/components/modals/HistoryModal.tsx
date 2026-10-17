@@ -7,6 +7,8 @@ import {
   useEpisodeHistory,
   useMovieAddBlacklist,
   useMovieHistory,
+  useSportsAddBlacklist,
+  useSportsHistory,
 } from "@/apis/hooks";
 import MutateAction from "@/components/async/MutateAction";
 import QueryOverlay from "@/components/async/QueryOverlay";
@@ -324,5 +326,167 @@ const EpisodeHistoryView: FunctionComponent<EpisodeHistoryViewProps> = ({
 export const EpisodeHistoryModal = withModal(
   EpisodeHistoryView,
   "episode-history",
+  { size: "xl" },
+);
+
+interface SportsEventHistoryViewProps {
+  event: Item.SportsEvent;
+}
+
+const SportsEventHistoryView: FunctionComponent<
+  SportsEventHistoryViewProps
+> = ({ event }) => {
+  const history = useSportsHistory(event.sportsEventId);
+
+  const { data } = history;
+
+  const addSportsEventToBlacklist = useSportsAddBlacklist();
+
+  const columns = useMemo<ColumnDef<History.SportsEvent>[]>(
+    () => [
+      {
+        id: "action",
+        cell: ({
+          row: {
+            original: { action },
+          },
+        }) => (
+          <Center>
+            <HistoryIcon action={action}></HistoryIcon>
+          </Center>
+        ),
+      },
+      {
+        header: "Language",
+        accessorKey: "language",
+        cell: ({
+          row: {
+            original: { language },
+          },
+        }) => {
+          if (language) {
+            return (
+              <Badge>
+                <Language.Text value={language} long></Language.Text>
+              </Badge>
+            );
+          } else {
+            return null;
+          }
+        },
+      },
+      {
+        header: "Provider",
+        accessorKey: "provider",
+      },
+      {
+        header: "Score",
+        accessorKey: "score",
+      },
+      {
+        id: "matches",
+        cell: (row) => {
+          const { matches, dontMatches: dont } = row.row.original;
+          if (matches.length || dont.length) {
+            return (
+              <StateIcon
+                matches={matches}
+                dont={dont}
+                isHistory={true}
+              ></StateIcon>
+            );
+          } else {
+            return null;
+          }
+        },
+      },
+      {
+        header: "Date",
+        accessorKey: "timestamp",
+        cell: ({
+          row: {
+            original: { timestamp, parsedTimestamp },
+          },
+        }) => {
+          return (
+            <TextPopover text={parsedTimestamp}>
+              <Text>{timestamp}</Text>
+            </TextPopover>
+          );
+        },
+      },
+      {
+        id: "description",
+        cell: ({
+          row: {
+            original: { description },
+          },
+        }) => {
+          return (
+            <TextPopover text={description}>
+              <FontAwesomeIcon size="sm" icon={faInfoCircle}></FontAwesomeIcon>
+            </TextPopover>
+          );
+        },
+      },
+      {
+        // Actions
+        id: "blacklisted",
+        cell: ({
+          row: {
+            original: {
+              blacklisted,
+              sportsEventId,
+              sportarrLeagueId,
+              provider,
+              subsId,
+              language,
+              subtitlesPath,
+            },
+          },
+        }) => {
+          if (subsId && provider && language) {
+            return (
+              <MutateAction
+                label="Add to Blacklist"
+                disabled={blacklisted}
+                icon={faFileExcel}
+                mutation={addSportsEventToBlacklist}
+                args={() => ({
+                  leagueId: sportarrLeagueId,
+                  eventId: sportsEventId,
+                  form: {
+                    provider,
+                    subsId,
+                    subtitlesPath,
+                    language: language.code2,
+                  },
+                })}
+              ></MutateAction>
+            );
+          } else {
+            return null;
+          }
+        },
+      },
+    ],
+    [addSportsEventToBlacklist],
+  );
+
+  return (
+    <QueryOverlay result={history}>
+      <PageTable
+        autoScroll={false}
+        tableStyles={{ emptyText: "No history found", placeholder: 5 }}
+        columns={columns}
+        data={data ?? []}
+      ></PageTable>
+    </QueryOverlay>
+  );
+};
+
+export const SportsEventHistoryModal = withModal(
+  SportsEventHistoryView,
+  "sports-event-history",
   { size: "xl" },
 );

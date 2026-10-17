@@ -6,6 +6,7 @@ from .history import api_ns_sports_history
 from .tags import api_ns_sports_tags
 from .wanted import api_ns_sports_wanted
 from .blacklist import api_ns_sports_blacklist
+from .sports_subtitles import api_ns_sports_subtitles
 
 
 api_ns_list_sports = [
@@ -13,6 +14,7 @@ api_ns_list_sports = [
     api_ns_sports_events,
     api_ns_sports_history,
     api_ns_sports_leagues,
+    api_ns_sports_subtitles,
     api_ns_sports_tags,
     api_ns_sports_wanted,
 ]

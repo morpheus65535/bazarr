@@ -236,6 +236,7 @@ declare namespace Item {
     TitleType &
     MonitoredType &
     SportsEventIdType &
+    RawSubtitleType &
     RawMissingSubtitleType &
     SceneNameType &
     RawAudioLanguageType & {
