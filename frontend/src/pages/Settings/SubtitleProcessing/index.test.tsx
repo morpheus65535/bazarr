@@ -21,6 +21,7 @@ const baseSettings = {
     theme: "auto",
     use_whisper_fallback: true,
     use_whisper_fallback_series: true,
+    use_whisper_fallback_on_import: true,
     use_postprocessing: true,
     use_postprocessing_threshold: true,
     use_postprocessing_threshold_movie: true,
@@ -80,6 +81,11 @@ describe("SettingsSubtitleProcessingView", () => {
 
     expect(
       screen.getByText(/Use Whisper as Fallback for Single Series Searches/i),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        /Use Whisper as Fallback for Searches Triggered by Imports/i,
+      ),
     ).toBeInTheDocument();
 
     // The post-processing command field lives in a collapsed section.
