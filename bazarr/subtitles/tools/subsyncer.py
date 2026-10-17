@@ -6,7 +6,7 @@ import os
 import subprocess
 import sys
 
-from threading import Thread
+from threading import Event, Thread
 
 from utilities.binaries import get_binary
 from radarr.history import history_log_movie
@@ -18,7 +18,7 @@ from utilities.video_analyzer import subtitles_sync_references
 from app.config import settings
 from app.database import TableMovies, TableShows, database, select
 from app.get_args import args
-from app.jobs_queue import jobs_queue
+from app.jobs_queue import jobs_queue, JobCanceled
 
 WORKER_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'subsync_worker.py')
 
@@ -121,9 +121,18 @@ class SubSyncer:
             except (ValueError, KeyError, TypeError):
                 logging.debug(f'BAZARR subsync worker: {line}')
 
+    @staticmethod
+    def _kill_on_cancel(process, cancel_event, done_event):
+        while not done_event.is_set():
+            if cancel_event.wait(timeout=0.5):
+                logging.debug(f'BAZARR killing subsync worker process {process.pid} because the job was canceled')
+                process.kill()
+                return
+
     def _run_in_subprocess(self, unparsed_args):
         """Run ffsubsync in a separate process (see subsync_worker.py) so it doesn't hold this process GIL and
-        starve the web server. Returns the ffsubsync result dict."""
+        starve the web server. Returns the ffsubsync result dict. Raises JobCanceled if the job is canceled, which kills
+        the worker process."""
         popen_kwargs = {}
         if sys.platform == 'win32':
             popen_kwargs['creationflags'] = subprocess.CREATE_NO_WINDOW | subprocess.BELOW_NORMAL_PRIORITY_CLASS
@@ -140,14 +149,24 @@ class SubSyncer:
         stderr_thread = Thread(target=self._forward_worker_logs, args=(process.stderr,), daemon=True)
         stderr_thread.start()
 
+        job = jobs_queue.get_job(self.job_id)
+        cancel_event = job.cancel_event if job else Event()
+        done_event = Event()
+        cancel_thread = Thread(target=self._kill_on_cancel, args=(process, cancel_event, done_event), daemon=True)
+        cancel_thread.start()
+
         result = None
         error = None
         try:
-            process.stdin.write(json.dumps({
-                'args': unparsed_args,
-                'log_level': logging.getLogger('ffsubsync.ffsubsync').getEffectiveLevel(),
-            }))
-            process.stdin.close()
+            try:
+                process.stdin.write(json.dumps({
+                    'args': unparsed_args,
+                    'log_level': logging.getLogger('ffsubsync.ffsubsync').getEffectiveLevel(),
+                }))
+                process.stdin.close()
+            except BrokenPipeError:
+                # the worker died before reading its arguments (ex: killed by a cancel), handled below
+                pass
 
             for line in process.stdout:
                 try:
@@ -164,8 +183,12 @@ class SubSyncer:
                     error = message.get('message')
         finally:
             returncode = process.wait()
+            done_event.set()
+            cancel_thread.join(timeout=5)
             stderr_thread.join(timeout=5)
 
+        if cancel_event.is_set():
+            raise JobCanceled
         if error:
             raise RuntimeError(f'ffsubsync worker failed: {error}')
         if result is None:
@@ -276,6 +299,11 @@ class SubSyncer:
             self.sync_result = self._run_in_subprocess(unparsed_args)
 
             result = self.sync_result
+        except JobCanceled:
+            # the worker was killed: drop its partial output and keep the original subtitles
+            if os.path.isfile(self.srtout):
+                os.remove(self.srtout)
+            raise
         except Exception:
             logging.exception(
                 f'BAZARR an exception occurs during the synchronization process for this subtitle file: {self.srtin}')

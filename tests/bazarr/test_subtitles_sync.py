@@ -1,3 +1,5 @@
+import pytest
+
 from subtitles import sync as sync_module
 
 
@@ -217,7 +219,7 @@ def test_sync_subtitles_without_job_id_queues_a_job_and_defers_callback(monkeypa
     _patch_common(monkeypatch)
     queued = []
     monkeypatch.setattr(sync_module.jobs_queue, "add_job_from_function",
-                        lambda job_name, is_progress: queued.append(job_name))
+                        lambda job_name, is_progress, is_cancellable: queued.append((job_name, is_cancellable)))
     calls = []
 
     result = sync_module.sync_subtitles(
@@ -232,6 +234,65 @@ def test_sync_subtitles_without_job_id_queues_a_job_and_defers_callback(monkeypa
     )
 
     assert result is False
-    assert queued == ["Syncing /media/movie.en.srt"]
+    assert queued == [("Syncing /media/movie.en.srt", True)]
     assert FakeSubSyncer.calls == []
     assert calls == []
+
+
+def test_sync_subtitles_runs_callback_when_sync_disabled(monkeypatch):
+    _patch_common(monkeypatch)
+    monkeypatch.setattr(sync_module.settings.subsync, "use_subsync", False)
+    queued = []
+    monkeypatch.setattr(sync_module.jobs_queue, "add_job_from_function", lambda **kwargs: queued.append(kwargs))
+    calls = []
+
+    result = sync_module.sync_subtitles(
+        video_path="/media/movie.mkv",
+        srt_path="/media/movie.en.srt",
+        srt_lang="en",
+        forced=False,
+        hi=False,
+        percent_score=100,
+        radarr_id=1,
+        callback=lambda: calls.append(True),
+    )
+
+    assert result is False
+    assert queued == []
+    assert calls == [True]
+
+
+class CanceledSubSyncer:
+    def sync(self, **kwargs):
+        raise sync_module.JobCanceled
+
+
+def test_sync_subtitles_propagates_cancel_and_runs_callback(monkeypatch):
+    _patch_common(monkeypatch, subsyncer=CanceledSubSyncer)
+    monkeypatch.setattr(sync_module.settings.subsync, "use_subsync_movie_threshold", False)
+    calls = []
+
+    with pytest.raises(sync_module.JobCanceled):
+        _sync_with_callback(lambda: calls.append(True))
+    # the downloaded subtitles are still there (unsynced), so post-processing and notifications still happen
+    assert calls == [True]
+
+
+def test_subsyncer_removes_partial_output_when_canceled(monkeypatch, tmp_path):
+    srt = tmp_path / "episode.en.srt"
+    srt.write_text("original")
+    subsyncer, captured = _patch_subsyncer(monkeypatch, None)
+    from subtitles.tools import subsyncer as subsyncer_module
+
+    def canceled_run_in_subprocess(self, unparsed_args):
+        (tmp_path / "episode.en.synced.srt").write_text("partial")
+        raise subsyncer_module.JobCanceled
+
+    monkeypatch.setattr(subsyncer_module.SubSyncer, "_run_in_subprocess", canceled_run_in_subprocess)
+
+    with pytest.raises(subsyncer_module.JobCanceled):
+        _sync(subsyncer, srt)
+
+    assert srt.read_text() == "original"
+    assert not (tmp_path / "episode.en.synced.srt").exists()
+    assert "history" not in captured

@@ -80,3 +80,105 @@ def test_run_reserved_job_does_not_duplicate_running_entry(queue, monkeypatch):
     assert calls == [1]
     assert len(queue.jobs_running_queue) == 0
     assert queue.jobs_completed_queue[-1].job_id == job_id
+
+
+def _cancel(queue, job_id, new_name=None):
+    job = next(job for job in queue.jobs_pending_queue if job.job_id == job_id)
+    queue.jobs_pending_queue.remove(job)
+    job.kwargs["job_id"] = job.job_id
+    job.status = "canceled"
+    if new_name:
+        job.job_name = new_name
+    queue.jobs_canceled_queue.append(job)
+    return job
+
+
+def test_rerun_canceled_job_queues_a_fresh_copy(queue):
+    job_id = _add_sync(queue, "a.srt")
+    canceled = _cancel(queue, job_id, new_name="Sync canceled a.srt")
+
+    new_job_id = queue.rerun_canceled_job(job_id)
+
+    assert new_job_id and new_job_id != job_id
+    assert list(queue.jobs_canceled_queue) == []
+    (new_job,) = queue.jobs_pending_queue
+    assert new_job.job_name == "Syncing a.srt"
+    assert new_job.kwargs == {"srt_path": "a.srt"}
+    assert new_job.status == "pending"
+    assert (new_job.module, new_job.func, new_job.is_progress) == (canceled.module, canceled.func, True)
+
+
+def test_rerun_ignores_jobs_that_are_not_canceled(queue):
+    job_id = _add_sync(queue, "a.srt")
+
+    assert queue.rerun_canceled_job(job_id) is False
+    assert queue.rerun_canceled_job(12345) is False
+    assert len(queue.jobs_pending_queue) == 1
+
+
+def test_rerun_keeps_canceled_job_when_identical_job_already_queued(queue):
+    job_id = _add_sync(queue, "a.srt")
+    _cancel(queue, job_id)
+    _add_sync(queue, "a.srt")
+
+    assert queue.rerun_canceled_job(job_id) is False
+    assert len(queue.jobs_canceled_queue) == 1
+    assert len(queue.jobs_pending_queue) == 1
+
+
+def _run_threads_inline(monkeypatch):
+    class InlineThread:
+        def __init__(self, target, daemon=None):
+            self.target = target
+
+        def start(self):
+            self.target()
+
+    monkeypatch.setattr(jobs_queue_module, "Thread", InlineThread)
+
+
+def _add_sync_with_callback(queue, srt_path, calls):
+    return queue.feed_jobs_pending_queue(job_name=f"Syncing {srt_path}", module="bazarr.subtitles.sync",
+                                         func="sync_subtitles",
+                                         kwargs={"srt_path": srt_path, "callback": lambda: calls.append(srt_path)},
+                                         is_progress=True)
+
+
+def test_removing_pending_job_runs_its_callback(queue, monkeypatch):
+    _run_threads_inline(monkeypatch)
+    calls = []
+    job_id = _add_sync_with_callback(queue, "a.srt", calls)
+    _add_sync_with_callback(queue, "b.srt", calls)
+
+    assert queue.remove_job_from_pending_queue(job_id) is True
+    assert calls == ["a.srt"]
+    assert len(queue.jobs_pending_queue) == 1
+
+
+def test_emptying_pending_queue_runs_callbacks(queue, monkeypatch):
+    _run_threads_inline(monkeypatch)
+    calls = []
+    _add_sync_with_callback(queue, "a.srt", calls)
+    _add_other(queue, "series")
+
+    def failing_callback():
+        raise RuntimeError("boom")
+
+    queue.feed_jobs_pending_queue(job_name="failing", module="bazarr.subtitles.sync", func="sync_subtitles",
+                                  kwargs={"srt_path": "c.srt", "callback": failing_callback})
+    _add_sync_with_callback(queue, "b.srt", calls)
+
+    assert queue.empty_jobs_queue("pending") is True
+    # a failing callback doesn't prevent the next ones from running
+    assert calls == ["a.srt", "b.srt"]
+    assert list(queue.jobs_pending_queue) == []
+
+
+def test_emptying_other_queues_does_not_run_callbacks(queue, monkeypatch):
+    _run_threads_inline(monkeypatch)
+    calls = []
+    job_id = _add_sync_with_callback(queue, "a.srt", calls)
+    _cancel(queue, job_id)
+
+    assert queue.empty_jobs_queue("canceled") is True
+    assert calls == []

@@ -21,6 +21,7 @@ import {
   faChevronUp,
   faEllipsis,
   faPlay,
+  faRotateRight,
   faTowerBroadcast,
   faTurnDown,
   faTurnUp,
@@ -149,6 +150,7 @@ const JobsManager: FunctionComponent<JobsManagerProps> = ({
         move_bottom: "Moved to bottom",
         force_start: "Force started",
         cancel: "Cancellation requested",
+        rerun: "Queued again",
       };
       const label = actionLabels[variables.action] || "Action completed";
       showNotification(notification.success("Job Updated", label));
@@ -476,7 +478,15 @@ const JobsManager: FunctionComponent<JobsManagerProps> = ({
                                       wrap="nowrap"
                                     >
                                       <Tooltip label={`Job ID: ${job?.job_id}`}>
-                                        <Text fw={500} size="sm">
+                                        <Text
+                                          fw={500}
+                                          size="sm"
+                                          style={{
+                                            flex: 1,
+                                            minWidth: 0,
+                                            overflowWrap: "anywhere",
+                                          }}
+                                        >
                                           {job?.job_name}
                                         </Text>
                                       </Tooltip>
@@ -734,6 +744,61 @@ const JobsManager: FunctionComponent<JobsManagerProps> = ({
                                                   {formatDuration(job.duration)}
                                                 </Text>
                                               )}
+                                            {status === "canceled" && (
+                                              <Menu
+                                                position="bottom-end"
+                                                withArrow
+                                                opened={
+                                                  openMenus[
+                                                    `job-${job?.job_id}`
+                                                  ] || false
+                                                }
+                                                onChange={(opened) =>
+                                                  setOpenMenus((prev) => ({
+                                                    ...prev,
+                                                    [`job-${job?.job_id}`]:
+                                                      opened,
+                                                  }))
+                                                }
+                                              >
+                                                <Menu.Target>
+                                                  <ActionIcon
+                                                    variant="subtle"
+                                                    color="secondary"
+                                                    size="sm"
+                                                  >
+                                                    <FontAwesomeIcon
+                                                      icon={faEllipsis}
+                                                    />
+                                                  </ActionIcon>
+                                                </Menu.Target>
+                                                <Menu.Dropdown>
+                                                  <Menu.Item
+                                                    leftSection={
+                                                      <FontAwesomeIcon
+                                                        icon={faRotateRight}
+                                                      />
+                                                    }
+                                                    onClick={() =>
+                                                      handleMenuAction(
+                                                        job?.job_id || 0,
+                                                        () =>
+                                                          job?.job_id &&
+                                                          debouncedActionOnJobs(
+                                                            {
+                                                              id: job.job_id,
+                                                              action: "rerun",
+                                                            },
+                                                          ),
+                                                        `job-${job?.job_id}`,
+                                                      )
+                                                    }
+                                                  >
+                                                    Rerun
+                                                  </Menu.Item>
+                                                </Menu.Dropdown>
+                                              </Menu>
+                                            )}
                                           </Stack>
                                         )}
                                       </Group>

@@ -45,14 +45,15 @@ class SystemJobs(Resource):
     post_request_parser = reqparse.RequestParser()
     post_request_parser.add_argument('id', type=int, required=True, help='Job ID act onto')
     post_request_parser.add_argument('action', type=str, required=True,
-                                     help='Action to perform from ["force_start", "move_top", "move_bottom", "cancel"]')
+                                     help='Action to perform from ["force_start", "move_top", "move_bottom", "cancel", '
+                                          '"rerun"]')
 
     @authenticate
     @api_ns_system_jobs.expect(post_request_parser)
     @api_ns_system_jobs.response(204, 'Success')
     @api_ns_system_jobs.response(401, 'Not Authenticated')
     def post(self):
-        """Force start, move to top / bottom of the queue or cancel a specific job"""
+        """Force start, move to top / bottom of the queue, cancel or rerun a canceled job"""
         args = self.post_request_parser.parse_args()
         job_id = args.get('id')
         action = args.get('action')
@@ -64,6 +65,8 @@ class SystemJobs(Resource):
             jobs_queue.move_job_in_pending_queue(job_id=job_id, move_destination="bottom")
         elif action == "cancel":
             jobs_queue.cancel_running_job(job_id=job_id)
+        elif action == "rerun":
+            jobs_queue.rerun_canceled_job(job_id=job_id)
         return '', 204
 
     patch_request_parser = reqparse.RequestParser()

@@ -1,4 +1,6 @@
 import textwrap
+import time
+from threading import Event, Timer
 
 import pytest
 
@@ -67,3 +69,24 @@ def test_real_worker_loads_ffsubsync_and_reports_bad_arguments(progress_calls):
     # runs the actual worker: it must be able to import ffsubsync from libs on its own
     with pytest.raises(RuntimeError, match="arguments parsing failed"):
         SubSyncer()._run_in_subprocess(["--this-option-does-not-exist"])
+
+
+def test_run_in_subprocess_kills_worker_when_job_canceled(tmp_path, monkeypatch, progress_calls):
+    monkeypatch.setattr(subsyncer_module, "WORKER_PATH", _fake_worker(tmp_path, """
+        import time
+        emit({"type": "progress", "processed": 1.0, "total": 10.0})
+        time.sleep(60)
+        emit({"type": "result", "result": {}})
+    """))
+    cancel_event = Event()
+    job = type("FakeJob", (), {"cancel_event": cancel_event})()
+    monkeypatch.setattr(subsyncer_module.jobs_queue, "get_job", lambda job_id: job if job_id == 7 else None)
+    syncer = SubSyncer()
+    syncer.job_id = 7
+
+    Timer(1, cancel_event.set).start()
+    started = time.monotonic()
+    with pytest.raises(subsyncer_module.JobCanceled):
+        syncer._run_in_subprocess([])
+
+    assert time.monotonic() - started < 10
