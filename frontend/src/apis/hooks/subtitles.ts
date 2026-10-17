@@ -88,6 +88,51 @@ export const useEpisodeSubtitleModification = () => {
   return { download, remove, upload };
 };
 
+export const useSportsSubtitleModification = () => {
+  const client = useQueryClient();
+
+  interface Param<T> {
+    leagueId: number;
+    eventId: number;
+    form: T;
+  }
+
+  const invalidate = (leagueId: number) => {
+    void client.invalidateQueries({
+      queryKey: [QueryKeys.SportsLeagues, leagueId],
+    });
+  };
+
+  const download = useMutation({
+    mutationKey: [QueryKeys.Subtitles, QueryKeys.SportsEvents],
+
+    mutationFn: (param: Param<FormType.Subtitle>) =>
+      api.sports.downloadSubtitles(param.leagueId, param.eventId, param.form),
+
+    onSuccess: (_, param) => invalidate(param.leagueId),
+  });
+
+  const remove = useMutation({
+    mutationKey: [QueryKeys.Subtitles, QueryKeys.SportsEvents],
+
+    mutationFn: (param: Param<FormType.DeleteSubtitle>) =>
+      api.sports.deleteSubtitles(param.leagueId, param.eventId, param.form),
+
+    onSuccess: (_, param) => invalidate(param.leagueId),
+  });
+
+  const upload = useMutation({
+    mutationKey: [QueryKeys.Subtitles, QueryKeys.SportsEvents],
+
+    mutationFn: (param: Param<FormType.UploadSubtitle>) =>
+      api.sports.uploadSubtitles(param.leagueId, param.eventId, param.form),
+
+    onSuccess: (_, { leagueId }) => invalidate(leagueId),
+  });
+
+  return { download, remove, upload };
+};
+
 export const useMovieSubtitleModification = () => {
   const client = useQueryClient();
 

@@ -1,7 +1,7 @@
 from datetime import datetime
 from importlib import import_module
 from pathlib import Path
-from types import ModuleType
+from types import ModuleType, SimpleNamespace
 from uuid import uuid4
 import sys
 
@@ -79,3 +79,25 @@ def test_sports_leagues_list_filters_sorts_and_counts(monkeypatch):
         database.execute(delete(TableSportsEvents).where(TableSportsEvents.sportarrLeagueId.in_(ids)))
         database.execute(delete(TableSportsLeagues).where(TableSportsLeagues.sportarrLeagueId.in_(ids)))
         database.commit()
+
+
+def test_single_league_sync_updates_events(monkeypatch):
+    api_path = Path(__file__).resolve().parents[2] / 'bazarr' / 'api'
+    api_package = ModuleType('api')
+    api_package.__path__ = [str(api_path)]
+    sports_package = ModuleType('api.sports')
+    sports_package.__path__ = [str(api_path / 'sports')]
+    monkeypatch.setitem(sys.modules, 'api', api_package)
+    monkeypatch.setitem(sys.modules, 'api.sports', sports_package)
+    module = import_module('api.sports.leagues')
+
+    calls = []
+    monkeypatch.setattr(module, 'update_one_league',
+                        lambda league_id, action: calls.append(('league', league_id, action)))
+    monkeypatch.setattr(module, 'sync_events',
+                        lambda league_id: calls.append(('events', league_id)))
+    monkeypatch.setattr(module.SportsLeagues, 'patch_request_parser',
+                        SimpleNamespace(parse_args=lambda: {'leagueid': 12, 'action': 'sync'}))
+
+    assert module.SportsLeagues.patch.__wrapped__(module.SportsLeagues()) == ('', 204)
+    assert calls == [('league', 12, 'updated'), ('events', 12)]
