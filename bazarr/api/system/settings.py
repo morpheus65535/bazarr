@@ -152,3 +152,43 @@ class SystemWebhookTest(Resource):
                     'message': f'Failed to test webhook: {str(e)}'
                 }
             }, 400
+
+
+@api_ns_system_settings.route('system/translator/test')
+class SystemTranslatorTest(Resource):
+    @authenticate
+    def post(self):
+        """Test an OpenAI-compatible translator using the submitted, unsaved settings."""
+        base_url = (request.form.get('base_url') or '').strip()
+        model = (request.form.get('model') or '').strip()
+        api_key = request.form.get('api_key') or ''
+        try:
+            timeout = int(request.form.get('timeout') or 30)
+        except (TypeError, ValueError):
+            return {'data': {'success': False, 'message': 'Timeout must be a positive number of seconds'}}
+
+        if timeout < 1:
+            return {'data': {'success': False, 'message': 'Timeout must be a positive number of seconds'}}
+        if not base_url or not model:
+            return {'data': {'success': False, 'message': 'Enter an API base URL and model before testing'}}
+
+        try:
+            from subtitles.tools.translate.services.openai_compatible_translator import \
+                test_openai_compatible_connection
+
+            translation = test_openai_compatible_connection(
+                base_url=base_url,
+                model=model,
+                api_key=api_key,
+                timeout=timeout)
+        except (RuntimeError, ValueError) as error:
+            return {'data': {'success': False, 'message': str(error)}}
+        except Exception:
+            return {'data': {'success': False, 'message': 'The connection test failed unexpectedly'}}
+
+        return {
+            'data': {
+                'success': True,
+                'message': f'Connection successful. Test translation: {translation}',
+            }
+        }

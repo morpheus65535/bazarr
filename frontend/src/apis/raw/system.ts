@@ -147,6 +147,23 @@ class SystemApi extends BaseApi {
     return response.data;
   }
 
+  async testOpenAICompatibleTranslator(data: {
+    baseUrl: string;
+    model: string;
+    apiKey: string;
+    timeout: number;
+  }) {
+    const response = await this.post<
+      DataWrapper<{ success: boolean; message: string }>
+    >("/translator/test", {
+      base_url: data.baseUrl,
+      model: data.model,
+      api_key: data.apiKey,
+      timeout: data.timeout,
+    });
+    return response.data.data;
+  }
+
   async search(query: string) {
     const response = await this.get<ItemSearchResult[]>("/searches", { query });
     return response;
