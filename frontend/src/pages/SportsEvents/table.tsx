@@ -140,7 +140,11 @@ const Table = forwardRef<TableInstance<Item.SportsEvent> | null, Props>(
               original: { broadcastDate },
             },
           }) => {
-            return <Text className="table-no-wrap">{broadcastDate ?? ""}</Text>;
+            return (
+              <Text className="table-no-wrap">
+                {broadcastDate?.slice(0, 10) ?? ""}
+              </Text>
+            );
           },
         },
         {

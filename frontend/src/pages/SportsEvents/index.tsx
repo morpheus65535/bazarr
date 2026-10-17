@@ -51,7 +51,7 @@ const SportsEventsView: FunctionComponent = () => {
     () => [
       {
         icon: faHdd,
-        text: `${league?.episodeFileCount} files`,
+        text: `${league?.episodeFileCount} ${league?.episodeFileCount === 1 ? "file" : "files"}`,
       },
       {
         icon: faTriangleExclamation,
