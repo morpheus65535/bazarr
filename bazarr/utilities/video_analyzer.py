@@ -65,6 +65,28 @@ EmbeddedSubtitle = list[str | int | bool | None]
 
 
 def _handle_alpha3(detected_language: DetectedLanguage) -> str | None:
+    """
+    Resolve the ISO 639-2 (alpha-3) language code for a detected embedded
+    language, taking custom language definitions into account.
+
+    The language entry of the detected language is inspected first: if it is
+    an ``Alpha3LanguageInfo`` instance its alpha-3 code is used directly, and
+    if it is a plain string that maps to a known alpha-3 language it is
+    accepted as is. Otherwise no alpha-3 code is assumed. The resulting code
+    is then matched against the registered custom languages by their official
+    alpha-3 code. When a custom language matches and it can be confirmed
+    either through the language info itself or through the ffprobe metadata
+    of the detected language, the custom language's own alpha-3 code is
+    returned instead of the official one. In all other cases the originally
+    resolved alpha-3 code is returned.
+
+    :param detected_language: Mapping describing a language detected in an
+        embedded media stream, including the language entry and any
+        ffprobe-derived metadata.
+    :return: The alpha-3 code of the matched custom language if one is
+        found, otherwise the alpha-3 code resolved from the detected
+        language, or ``None`` if no valid alpha-3 code could be determined.
+    """
     language = detected_language.get("language")
     if isinstance(language, Alpha3LanguageInfo):
         alpha3 = language.alpha3
@@ -90,6 +112,31 @@ def _handle_alpha3(detected_language: DetectedLanguage) -> str | None:
 
 def embedded_subs_reader(file: str, file_size: int, episode_file_id: int | None = None,
                          movie_file_id: int | None = None, use_cache: bool = True) -> list[EmbeddedSubtitle]:
+    """
+    Read embedded subtitle tracks from a video file's metadata.
+
+    Parses the video metadata (via ffprobe or mediainfo, optionally using
+    the cache) and extracts the embedded subtitle tracks found in it.
+    Commentary tracks are skipped, and tracks without a defined language
+    are assigned the configured default language for undefined embedded
+    subtitles when one is set; otherwise they are ignored. Each resulting
+    entry describes a single subtitle track with its track identifier,
+    language, forced flag, hearing impaired flag and codec.
+
+    :param file: Path to the video file whose metadata should be parsed.
+    :param file_size: Size of the video file in bytes, used for cache
+        validation.
+    :param episode_file_id: Identifier of the episode file in the
+        database, if the video belongs to a series.
+    :param movie_file_id: Identifier of the movie file in the database,
+        if the video is a movie.
+    :param use_cache: Whether cached metadata may be used instead of
+        re-parsing the file.
+    :return: List of embedded subtitle entries, each containing the track
+        id, language, forced flag, hearing impaired flag and codec. An
+        empty list is returned when no metadata or no subtitle tracks
+        are available.
+    """
     data = parse_video_metadata(file, file_size, episode_file_id, movie_file_id, use_cache=use_cache)
     und_default_language = alpha3_from_alpha2(settings.general.default_und_embedded_subtitles_lang)
 
@@ -135,6 +182,31 @@ def embedded_subs_reader(file: str, file_size: int, episode_file_id: int | None 
 
 def embedded_audio_reader(file: str, file_size: int, episode_file_id: int | None = None,
                           movie_file_id: int | None = None, use_cache: bool = True) -> list[str | None]:
+    """
+    Read the audio track languages embedded in a video file.
+
+    The function retrieves the video metadata (using cached data when
+    allowed), picks the first available metadata provider that exposes
+    audio stream information (``ffprobe`` is preferred over ``mediainfo``),
+    and then converts every detected audio track language into a language
+    name. Tracks without a ``language`` key are represented by ``None``,
+    tracks whose language value is ``None`` or cannot be converted to an
+    alpha3 code are skipped, and duplicate languages are reported only
+    once. An empty list is returned when no metadata could be obtained.
+
+    :param file: Path to the video file whose audio tracks should be
+        inspected.
+    :param file_size: Size of the video file in bytes, used for metadata
+        caching and validation.
+    :param episode_file_id: Identifier of the episode file in the
+        database, if the file belongs to a series episode.
+    :param movie_file_id: Identifier of the movie file in the database,
+        if the file belongs to a movie.
+    :param use_cache: Whether previously cached metadata may be reused
+        instead of probing the file again.
+    :return: List of detected audio track languages, where ``None``
+        denotes a track without any language information.
+    """
     data = parse_video_metadata(file, file_size, episode_file_id, movie_file_id, use_cache=use_cache)
 
     audio_list: list[str | None] = []
@@ -172,6 +244,34 @@ def embedded_audio_reader(file: str, file_size: int, episode_file_id: int | None
 
 def subtitles_sync_references(subtitles_path: str, sonarr_episode_id: int | None = None,
                               radarr_movie_id: int | None = None) -> SyncReferences:
+    """
+    Collect reference tracks that can be used to synchronize a subtitles file.
+
+    Looks up the media file associated with the given Sonarr episode or Radarr
+    movie in the database, maps its path to the local filesystem and reads its
+    cached video metadata (from ffprobe or mediainfo, in that order of
+    preference). From that metadata it builds a list of audio tracks and a list
+    of embedded text-based subtitles tracks (bitmap-based subtitles such as
+    DVD or PGS are skipped, as are tracks whose language cannot be resolved).
+    It then adds the external subtitles files known for the media item,
+    excluding the subtitles file that is itself going to be synced. If no
+    identifier is provided, the media item cannot be found, the path cannot
+    be mapped or no metadata is available, empty lists are returned for every
+    category.
+
+    :param subtitles_path: Path of the subtitles file that is going to be
+        synced; it is excluded from the external subtitles references.
+    :param sonarr_episode_id: Sonarr identifier of the episode the subtitles
+        belong to. Takes precedence over ``radarr_movie_id`` when both are
+        given.
+    :param radarr_movie_id: Radarr identifier of the movie the subtitles
+        belong to. Only used when ``sonarr_episode_id`` is not provided.
+    :return: A mapping with the keys ``audio_tracks``,
+        ``embedded_subtitles_tracks`` and ``external_subtitles_tracks``, each
+        holding a list of dictionaries describing the corresponding reference
+        tracks (stream selector or path, name, language and, for subtitles,
+        forced and hearing-impaired flags).
+    """
     references_dict: SyncReferences = {'audio_tracks': [], 'embedded_subtitles_tracks': [], 'external_subtitles_tracks': []}
     data = None
 
@@ -276,14 +376,14 @@ def subtitles_sync_references(subtitles_path: str, sonarr_episode_id: int | None
         else:
             for subtitles in parsed_subtitles:
                 if subtitles['path'] and subtitles['path'] != subtitles_path:
-                    references_dict['external_subtitles_tracks'].append({
+                    references_dict['external_subtitles_tracks'].append(cast(ExternalSubtitleReference, {
                         'name': os.path.basename(subtitles['path']),
                         'path': path_mappings.path_replace(subtitles['path']) if sonarr_episode_id else
                         path_mappings.path_replace_reverse_movie(subtitles['path']),
                         'language': subtitles['name'],
                         'forced': subtitles['forced'],
                         'hearing_impaired': subtitles['hi'],
-                    })
+                    }))
                 else:
                     # excluding subtitles that is going to be synced from the external subtitles list
                     continue
@@ -294,22 +394,35 @@ def subtitles_sync_references(subtitles_path: str, sonarr_episode_id: int | None
 def parse_video_metadata(file: str, file_size: int, episode_file_id: int | None = None,
                          movie_file_id: int | None = None, use_cache: bool = True) -> VideoMetadata | None:
     """
-    This function return the video file properties as parsed by knowit using ffprobe or mediainfo using the cached
-    value by default.
+    Parse the metadata of a video file using the configured embedded
+    subtitles parser (ffprobe or mediainfo).
 
-    @type file: string
-    @param file: Properly mapped path of a video file
-    @type file_size: int
-    @param file_size: File size in bytes of the video file
-    @type episode_file_id: int or None
-    @param episode_file_id: episode ID of the video file from Sonarr (or None if it's a movie)
-    @type movie_file_id: int or None
-    @param movie_file_id: movie ID of the video file from Radarr (or None if it's an episode)
-    @type use_cache: bool
-    @param use_cache:
+    When caching is enabled, the function first looks up a previously
+    pickled metadata entry stored in the database for the given episode or
+    movie file. The cached value is reused only if its file size and file
+    id match the provided ones and it contains data for the currently
+    selected parser. Otherwise, the file is analyzed again.
 
-    @rtype: dict or None
-    @return: return a dictionary including the video file properties as parsed by ffprobe or mediainfo
+    If STRM support is enabled and the given file is a ``.strm`` file, its
+    content is read and used as the actual video path (typically a stream
+    URL). Local paths that do not exist are reported and skipped.
+
+    The analysis is delegated to the ``knowit`` library with the
+    appropriate provider. On success, the resulting metadata is pickled
+    and written back to the database as the new cache value for the
+    corresponding episode or movie file.
+
+    :param file: Path to the video file (or ``.strm`` file) to analyze.
+    :param file_size: Size of the video file in bytes, used to validate
+        the cache.
+    :param episode_file_id: Identifier of the episode file in the
+        database, if the video belongs to an episode.
+    :param movie_file_id: Identifier of the movie file in the database,
+        if the video belongs to a movie.
+    :param use_cache: Whether to try to reuse the cached metadata stored
+        in the database before analyzing the file.
+    :return: The parsed video metadata, or ``None`` if the file cannot be
+        found, cannot be analyzed, or no parser binary is available.
     """
 
     # Define default data keys value

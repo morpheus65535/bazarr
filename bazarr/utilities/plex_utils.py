@@ -7,10 +7,22 @@ from app.config import settings
 
 def get_plex_libraries_with_paths() -> dict[str, list[str]]:
     """
-    Get Plex library sections with their location paths.
-    Returns a dictionary with movie_paths and series_paths arrays.
-    
-    This utility requires OAuth authentication and is used for Autopulse integration.
+    Retrieve the filesystem paths of all Plex movie and TV show libraries.
+
+    This function queries the configured Plex server for its library
+    sections and collects the root folder locations of every section whose
+    type is either ``movie`` or ``show``. It only operates when Plex is
+    configured to use OAuth authentication, since it relies on the
+    decrypted OAuth token and the stored server URL to perform the request.
+    If authentication is not OAuth-based, credentials are missing, the
+    server responds with a non-successful status, the response payload is
+    malformed, or any other error occurs, empty path lists are returned
+    instead of raising. Failures are logged at debug level.
+
+    :return: A dictionary with two keys, ``movie_paths`` and
+        ``series_paths``, each mapping to a list of library root folder
+        paths discovered on the Plex server. Both lists are empty when the
+        paths cannot be retrieved.
     """
     try:
         # Only works with OAuth authentication
@@ -67,7 +79,26 @@ def get_plex_libraries_with_paths() -> dict[str, list[str]]:
 
 
 def _get_library_locations(server_url: str, section_key: str, token: str) -> list[str]:
-    """Get the locations for a specific Plex library section."""
+    """
+    Retrieve the filesystem locations configured for a Plex library section.
+
+    Queries the Plex server API endpoint for the given library section and
+    extracts the paths of all configured locations from the returned
+    ``MediaContainer`` payload. The request is performed without TLS
+    certificate verification and with a short timeout. If the request fails,
+    the server responds with a non-200 status code, the response structure
+    is unexpected, or any other error occurs, an empty list is returned and
+    the failure is logged at debug level rather than propagated.
+
+    :param server_url: Base URL of the Plex server, including scheme and
+        port, without a trailing slash.
+    :param section_key: Identifier of the library section whose locations
+        should be retrieved.
+    :param token: Plex authentication token sent via the ``X-Plex-Token``
+        header.
+    :return: List of filesystem paths configured for the library section.
+        Empty paths are omitted; an empty list is returned on any failure.
+    """
     try:
         response = requests.get(
             f"{server_url}/library/sections/{section_key}",

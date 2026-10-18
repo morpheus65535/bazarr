@@ -32,12 +32,28 @@ class RewriteConfig(TypedDict):
 
 def generate_autopulse_config(decrypted_token: str | None = None) -> AutopulseConfig | None:
     """
-    Generate complete Autopulse configuration for Plex integration by requesting
-    a configuration template from Autopulse and adding Plex-specific details.
-    
-    This function uses the new Autopulse /api/config-template endpoint with the
-    'bazarr' trigger type for improved integration. The response contains a 
-    complete configuration with placeholders that are replaced with actual values.
+    Generate an Autopulse configuration for the configured Plex server.
+
+    This function builds a Plex-specific Autopulse configuration based on the
+    current application settings. It only proceeds when Plex is configured to
+    use the OAuth authentication method; any other authentication method causes
+    the function to return early without producing a configuration. If no
+    decrypted token is supplied, the token is retrieved from the Plex OAuth
+    subsystem. A configuration template is then fetched from the running
+    Autopulse instance and populated with the Plex server URL, server name and
+    access token.
+
+    All failures are handled internally: missing OAuth credentials, a missing
+    Plex server URL, an unavailable Autopulse template API, or any unexpected
+    exception are logged and result in no configuration being returned.
+
+    :param decrypted_token: An already decrypted Plex OAuth access token to use
+        when building the configuration. When omitted or empty, the token is
+        obtained from the Plex OAuth subsystem.
+    :return: The generated Autopulse configuration, or ``None`` if Plex is not
+        using OAuth authentication, required Plex settings or credentials are
+        missing, the Autopulse template could not be retrieved, or an error
+        occurred during generation.
     """
     try:
         # Get Plex configuration - OAuth required for this feature
@@ -76,8 +92,26 @@ def generate_autopulse_config(decrypted_token: str | None = None) -> AutopulseCo
 
 def _get_autopulse_template() -> AutopulseTemplate | None:
     """
-    Request configuration template from Autopulse API.
-    Returns None if the API call fails or Autopulse is not available.
+    Retrieve the Autopulse configuration template from the configured
+    external webhook endpoint.
+
+    The template URL and authentication credentials are resolved from the
+    external webhook settings. If no URL is configured, the request is
+    skipped. The request is issued with parameters selecting the dedicated
+    Bazarr trigger type, the Plex target and the SQLite database, together
+    with a user agent derived from the ``SZ_USER_AGENT`` environment
+    variable (falling back to ``Bazarr``).
+
+    Unsuccessful HTTP responses are logged with hints about possible
+    misconfiguration (authentication failures, bad requests or other
+    status codes) and no template is returned. Network-level failures and
+    unexpected errors are caught and logged as well, so this function
+    never propagates exceptions to the caller.
+
+    :return: The parsed JSON configuration template when the request
+        succeeds with a 200 status code, otherwise ``None`` (no URL
+        configured, non-successful HTTP status, request failure or
+        unexpected error).
     """
     try:
         # Get Autopulse URL from external webhook settings
@@ -129,7 +163,21 @@ def _get_autopulse_template() -> AutopulseTemplate | None:
 
 
 def _get_autopulse_template_url() -> str | None:
-    """Get the Autopulse template API URL."""
+    """
+    Derive the autopulse configuration template API URL from the configured
+    webhook URL.
+
+    The configured webhook URL is retrieved and transformed into the URL of the
+    configuration template endpoint. When the webhook URL contains a trigger
+    path segment, everything from that segment onward is discarded and replaced
+    with the API path. Otherwise, the webhook URL is treated as a base URL and
+    the API path is appended after stripping any trailing slashes. Any failure
+    during the transformation is silently handled.
+
+    :return: The configuration template API URL, or ``None`` if no webhook URL
+        is configured or the URL could not be transformed.
+
+    """
     webhook_url = _get_webhook_url()
     if not webhook_url:
         return None
@@ -153,7 +201,38 @@ def _get_autopulse_template_url() -> str | None:
 def _generate_config_from_template(template_data: AutopulseTemplate, server_url: str,
                                    decrypted_token: str, server_name: str) -> AutopulseConfig | None:
     """
-    Generate configuration by replacing placeholders in the Autopulse template with Plex-specific details.
+    Generate a complete Autopulse configuration from a dynamic template.
+
+    Builds a ready-to-use Autopulse configuration by taking the base
+    configuration contained in the provided template and substituting its
+    placeholders (``{url}``, ``{token}``, ``{username}`` and ``{password}``)
+    with the given server URL, decrypted token and the configured webhook
+    authentication credentials. When no webhook authentication is
+    configured, the credential placeholders are replaced with empty
+    strings. Autopulse defaults are then overridden with Bazarr-optimized
+    values (refresh enabled, analyze disabled). Path rewriting needs are
+    detected automatically and, when found, the corresponding rewrite
+    section is injected into the configuration. Finally, a header comment
+    containing the server name, template version, trigger type and path
+    rewriting status is prepended, along with a trailing usage hint.
+
+    Any failure during generation is logged and results in ``None`` being
+    returned instead of an exception being propagated.
+
+    :param template_data: Template response containing at least a
+        ``config`` field with the base configuration and an optional
+        ``version`` field describing the template version.
+    :param server_url: URL of the server to substitute for the ``{url}``
+        placeholder in the template.
+    :param decrypted_token: Plain-text token to substitute for the
+        ``{token}`` placeholder in the template.
+    :param server_name: Human-readable server name included in the
+        generated configuration header and in the returned result.
+    :return: A mapping containing the generated configuration text, the
+        server name, whether path rewriting was detected, an optional path
+        rewrite suggestion and a template information message; ``None`` if
+        the template is missing its configuration field or if any error
+        occurs during generation.
     """
     try:
         # Get the base configuration from template response
@@ -223,8 +302,35 @@ def _generate_config_from_template(template_data: AutopulseTemplate, server_url:
 def call_external_webhook(subtitle_path: str | None, media_path: str | None, language: str | None,
                           media_type: str | None, action_type: str | None) -> None:
     """
-    Call external webhook after subtitle download and delete.
-    Supports generic webhooks and Autopulse integration.
+    Notify an externally configured webhook about a subtitle-related event.
+
+    The call is skipped entirely when the external webhook feature is disabled
+    in the general settings or when no webhook URL has been configured. All
+    ``None`` arguments are normalised to empty strings before being sent. The
+    parent directory of ``media_path`` is used as the grouping ``path`` query
+    parameter, and all values are passed as URL-encoded query parameters of a
+    GET request. The ``path`` parameter duplicates the directory of
+    ``media_path`` for backward compatibility with Autopulse.
+
+    Authentication credentials and the webhook URL are read from the
+    application settings, and the request is retried on transient network
+    issues. The HTTP response status is inspected and the outcome is reported
+    through logging: success is logged at info level, authentication failures
+    (401), bad requests (400) and any other non-200 statuses are logged as
+    warnings, and request or unexpected errors are logged as errors. No
+    exception is propagated to the caller.
+
+    :param subtitle_path: Filesystem path of the subtitle file affected by the
+        event, or ``None`` if not applicable.
+    :param media_path: Filesystem path of the media file the subtitle belongs
+        to, or ``None`` if not applicable.
+    :param language: Language identifier of the subtitle, or ``None`` if not
+        applicable.
+    :param media_type: Kind of media involved (for example a movie or an
+        episode), or ``None`` if not applicable.
+    :param action_type: Kind of action that triggered the webhook, or ``None``
+        if not applicable.
+    :return: This function does not return a value.
     """
     # Check if external webhook is enabled
     if not settings.general.use_external_webhook:
@@ -277,7 +383,24 @@ def call_external_webhook(subtitle_path: str | None, media_path: str | None, lan
 
 @retry(exceptions=(requests.exceptions.RequestException,), tries=3, delay=1, backoff=2, jitter=(0, 1))
 def _make_webhook_request(url: str, auth: tuple[str, str] | None, headers: dict[str, str]) -> requests.Response:
-    """Make webhook request with retry logic for network issues."""
+    """
+    Perform an HTTP GET request to the given webhook URL with automatic retries.
+
+    The request is issued with a 30-second timeout and TLS certificate
+    verification enabled. If a ``requests.exceptions.RequestException``
+    occurs, the call is retried up to three times with an exponentially
+    increasing delay (starting at one second, doubling on each attempt)
+    plus a random jitter of up to one second.
+
+    :param url: The webhook endpoint to send the GET request to.
+    :param auth: Optional ``(username, password)`` pair used for HTTP
+        basic authentication, or ``None`` to send the request
+        unauthenticated.
+    :param headers: Additional HTTP headers to include in the request.
+    :return: The HTTP response returned by the webhook endpoint.
+    :raises requests.exceptions.RequestException: If the request fails on
+        every retry attempt.
+    """
     return requests.get(
         url,
         auth=auth,
@@ -291,7 +414,29 @@ def _make_webhook_request(url: str, auth: tuple[str, str] | None, headers: dict[
 def _make_autopulse_request(url: str, params: dict[str, str] | None = None,
                             auth: tuple[str, str] | None = None,
                             headers: dict[str, str] | None = None) -> requests.Response:
-    """Make Autopulse API request with retry logic for network issues."""
+    """
+    Perform an HTTP GET request against an Autopulse endpoint with automatic
+    retries.
+
+    The request is sent with a fixed timeout of 10 seconds and TLS certificate
+    verification enabled. If the request fails with a
+    ``requests.exceptions.RequestException``, it is retried up to three times
+    using an exponential backoff strategy (initial delay of 1 second, doubled on
+    each attempt) with a random jitter of up to 1 second added between retries.
+    The response object is returned as-is; no status code validation is
+    performed, so callers are responsible for checking the response status.
+
+    :param url: Fully qualified URL of the Autopulse endpoint to query.
+    :param params: Optional query string parameters to append to the request
+        URL. Defaults to ``None``.
+    :param auth: Optional ``(username, password)`` pair used for HTTP basic
+        authentication. Defaults to ``None``.
+    :param headers: Optional HTTP headers to include in the request. Defaults
+        to ``None``.
+    :return: The HTTP response returned by the Autopulse endpoint.
+    :raises requests.exceptions.RequestException: If the request still fails
+        after all retry attempts have been exhausted.
+    """
     return requests.get(
         url,
         params=params,
@@ -304,8 +449,30 @@ def _make_autopulse_request(url: str, params: dict[str, str] | None = None,
 
 def test_external_webhook_connection() -> tuple[bool, str]:
     """
-    Test connection to external webhook.
-    Returns (success: bool, message: str)
+    Test connectivity to the configured external webhook endpoint.
+
+    Reads the webhook URL and optional authentication credentials from the
+    application settings and performs an HTTP GET request against the
+    endpoint to verify that it is reachable and accepts the supplied
+    credentials. When the configured URL appears to target an Autopulse
+    trigger (contains a ``/triggers/`` path segment), the request is sent
+    to the service's ``/stats`` endpoint instead of the trigger URL itself,
+    so that no trigger is actually fired during the test.
+
+    The request uses a 10 second timeout, enforces TLS certificate
+    verification and sends a ``User-Agent`` header taken from the
+    ``SZ_USER_AGENT`` environment variable, falling back to ``Bazarr``.
+    Debug information about the test is written to the application log.
+
+    All failure conditions, including a missing configuration, HTTP error
+    statuses and network-level problems such as refused connections, DNS
+    resolution failures and timeouts, are translated into human-readable
+    messages intended to be displayed to the user. No exception is
+    propagated to the caller.
+
+    :return: A tuple whose first element indicates whether the connection
+        test succeeded and whose second element is a descriptive message
+        explaining the outcome or the reason for failure.
     """
     try:
         webhook_url = _get_webhook_url()
@@ -363,7 +530,18 @@ def test_external_webhook_connection() -> tuple[bool, str]:
 
 
 def _get_webhook_url() -> str | None:
-    """Get the webhook URL from external webhook configuration."""
+    """
+    Retrieve the configured external webhook URL from the application
+    settings. The URL is only resolved when the external webhook feature is
+    enabled in the general settings. The configured value is stripped of
+    surrounding whitespace and validated to ensure it uses the ``http://`` or
+    ``https://`` scheme; an invalid scheme is logged as a warning and treated
+    as if no URL were configured.
+
+    :return: The validated external webhook URL, or ``None`` if the external
+        webhook feature is disabled, the URL is empty, or the URL does not
+        start with a supported scheme.
+    """
     if settings.general.use_external_webhook:
         webhook_url = settings.general.external_webhook_url.strip()
         if webhook_url:
@@ -377,7 +555,20 @@ def _get_webhook_url() -> str | None:
 
 
 def _get_webhook_auth() -> tuple[str, str] | None:
-    """Get authentication for the external webhook."""
+    """
+    Build the HTTP basic authentication credentials used for external
+    webhook requests.
+
+    The credentials are only produced when the use of an external webhook
+    is enabled in the general settings and both the configured username and
+    password are non-empty after stripping surrounding whitespace. In all
+    other cases no credentials are provided, which signals that webhook
+    requests should be sent without authentication.
+
+    :return: A ``(username, password)`` pair suitable for HTTP basic
+        authentication, or ``None`` if the external webhook is disabled or
+        either credential is missing.
+    """
     if settings.general.use_external_webhook:
         username = settings.general.external_webhook_username.strip()
         password = settings.general.external_webhook_password.strip()
@@ -389,7 +580,20 @@ def _get_webhook_auth() -> tuple[str, str] | None:
 
 
 def _detect_path_rewrite() -> RewriteConfig:
-    """Detect if path rewriting is needed between Bazarr and Plex."""
+    """
+    Detect path rewrite configuration between Bazarr and Plex.
+
+    Attempts to determine how Bazarr paths should be rewritten to
+    match Plex paths. Smart detection, which compares actual Bazarr
+    and Plex paths, is tried first. If no differences are detected,
+    detection falls back to matching common known path patterns.
+    Any failure during detection is logged at debug level and an
+    empty rewrite configuration is returned instead of propagating
+    the error.
+
+    :return: The detected rewrite configuration, or an empty rewrite
+        configuration when detection fails or nothing is detected.
+    """
     try:
         # Step 1: Try smart detection (compare actual Bazarr vs Plex paths)
         smart_result = _detect_smart_path_differences()
@@ -406,7 +610,23 @@ def _detect_path_rewrite() -> RewriteConfig:
 
 
 def _detect_smart_path_differences() -> RewriteConfig:
-    """Compare actual Bazarr vs Plex paths to detect mount point differences."""
+    """
+    Detect path differences between Bazarr and Plex library configurations
+    and derive a path rewrite configuration.
+
+    Reads the configured Bazarr movie and series root paths, retrieves the
+    library paths registered in Plex, and compares the two sets. Movie paths
+    are compared first; if a difference is detected, the resulting rewrite
+    configuration is returned immediately. Otherwise, series paths are
+    compared in the same way. When no difference is found, or when any
+    error occurs during detection (for example, Plex being unreachable), an
+    empty rewrite configuration is returned and the failure is logged at
+    debug level so that the caller can proceed without path rewriting.
+
+    :return: The detected rewrite configuration describing how Bazarr paths
+        map to Plex paths, or an empty rewrite configuration if no
+        difference could be detected or detection failed.
+    """
     try:
         # Get Bazarr paths
         movie_path = settings.general.get('movie_path', '')
@@ -438,7 +658,28 @@ def _detect_smart_path_differences() -> RewriteConfig:
 
 
 def _compare_path_sets(bazarr_path: str, plex_paths: list[str], media_type: str) -> RewriteConfig:
-    """Compare a Bazarr path against Plex paths to detect differences."""
+    """
+    Compare a Bazarr media path against a collection of Plex library paths
+    in order to detect a mount point mismatch that would require a path
+    rewrite rule.
+
+    The Bazarr path and each Plex path are normalized (trailing slashes
+    removed and platform-specific normalization applied) before comparison.
+    Plex paths that are identical to the Bazarr path are skipped, since no
+    rewrite is needed for them. For every remaining Plex path, a mount point
+    difference check is performed; the first detected rewrite configuration
+    is returned immediately. If no difference is found for any of the given
+    Plex paths, an empty rewrite configuration is returned.
+
+    :param bazarr_path: Root path used by Bazarr for the media library.
+    :param plex_paths: Root paths reported by Plex for the corresponding
+        library sections.
+    :param media_type: Kind of media the paths belong to (for example
+        series or movies), passed through to the mount point detection.
+    :return: Rewrite configuration describing the detected mount point
+        difference, or an empty configuration when the paths are
+        equivalent or no difference could be detected.
+    """
     bazarr_normalized = os.path.normpath(bazarr_path.rstrip('/'))
     
     for plex_path in plex_paths:
@@ -457,7 +698,30 @@ def _compare_path_sets(bazarr_path: str, plex_paths: list[str], media_type: str)
 
 
 def _detect_mount_point_difference(bazarr_path: str, plex_path: str, media_type: str) -> RewriteConfig:
-    """Detect mount point differences between two paths."""
+    """
+    Compare a Bazarr media path with the corresponding Plex media path and
+    determine whether one of them carries an additional mount point prefix
+    that the other lacks.
+
+    Both paths are split into their non-empty segments and compared from the
+    tail. If the Bazarr path ends with the full Plex path, the leading extra
+    segments of the Bazarr path are treated as a Bazarr-only prefix. If the
+    Plex path ends with the full Bazarr path, the leading extra segments of the
+    Plex path are treated as a Plex-only prefix. In either case a rewrite
+    configuration is produced describing the detected difference, a
+    human-readable suggestion mentioning the media type, and the TOML snippets
+    needed to translate paths in both directions (trigger side and target
+    side). When neither path is a suffix of the other, or when both paths are
+    identical, an empty rewrite configuration is returned.
+
+    :param bazarr_path: Absolute media path as seen by Bazarr.
+    :param plex_path: Absolute media path as seen by Plex.
+    :param media_type: Label of the media category (for example movies or
+        series) used to contextualize the generated suggestion message.
+    :return: A rewrite configuration mapping with the keys ``detected``,
+        ``suggestion``, ``trigger_section`` and ``target_section``; the empty
+        configuration is returned when no mount point difference is found.
+    """
     # Drop the empty segment produced by the leading slash so the tails compare correctly
     bazarr_parts = [part for part in bazarr_path.split('/') if part]
     plex_parts = [part for part in plex_path.split('/') if part]
@@ -490,7 +754,25 @@ def _detect_mount_point_difference(bazarr_path: str, plex_path: str, media_type:
 
 
 def _detect_common_patterns() -> RewriteConfig:
-    """Check for common Docker mount patterns when smart detection fails."""
+    """
+    Detect common path prefix patterns in the configured Bazarr movie and
+    series paths and derive a matching path rewrite configuration.
+
+    The function inspects the ``movie_path`` and ``series_path`` values from
+    the general settings and checks them against a predefined list of common
+    mount-point prefixes (``/mnt``, ``/data`` and ``/media``). When one of
+    these prefixes is found in either path, a rewrite configuration is built
+    that maps the Bazarr-side prefix to the corresponding Plex-side prefix for
+    the trigger section, and the reverse mapping for the target section. The
+    first matching pattern wins; if no pattern matches, an empty rewrite
+    configuration is returned instead.
+
+    :return: A rewrite configuration describing whether a pattern was
+        detected, a human-readable suggestion message, and the rewrite
+        snippets for the trigger and target sections. If no known pattern is
+        found, an empty rewrite configuration is returned.
+    :rtype: RewriteConfig
+    """
     movie_path = settings.general.get('movie_path', '')
     series_path = settings.general.get('series_path', '')
     
@@ -514,7 +796,19 @@ def _detect_common_patterns() -> RewriteConfig:
 
 
 def _empty_rewrite_config() -> RewriteConfig:
-    """Return empty rewrite configuration."""
+    """
+    Create an empty rewrite configuration with default values.
+
+    Builds a ``RewriteConfig`` dictionary in which no rewrite has been
+    detected, the suggestion is an empty string, and both the trigger
+    section and the target section are empty strings. This serves as a
+    neutral baseline that can later be populated when a rewrite is
+    actually detected.
+
+    :return: A rewrite configuration populated with default
+        (empty / not detected) values.
+
+    """
     return {
         'detected': False,
         'suggestion': "",
@@ -524,7 +818,31 @@ def _empty_rewrite_config() -> RewriteConfig:
 
 
 def _inject_rewrite_config(config_text: str, rewrite_config: RewriteConfig) -> str:
-    """Inject rewrite configuration into appropriate TOML sections."""
+    """
+    Inject rewrite configuration snippets into an INI/TOML-style
+    configuration text.
+
+    The function scans the configuration line by line and tracks whether
+    the current position is inside the ``[triggers.bazarr]`` or the
+    ``[targets.plex]`` section. When the end of one of these sections is
+    reached (either because a new section header begins or because the end
+    of the text is reached), the corresponding snippet from the rewrite
+    configuration is appended to that section. Snippets are stripped of
+    surrounding whitespace and split into individual lines before being
+    inserted. Empty or missing snippets are ignored and leave the
+    corresponding section unchanged. All other lines are preserved as-is
+    and in their original order.
+
+    :param config_text: Full text of the configuration file whose
+        ``[triggers.bazarr]`` and ``[targets.plex]`` sections should be
+        extended.
+    :param rewrite_config: Mapping providing the snippets to inject; the
+        ``trigger_section`` entry is appended to the ``[triggers.bazarr]``
+        section and the ``target_section`` entry is appended to the
+        ``[targets.plex]`` section.
+    :return: The modified configuration text with the rewrite snippets
+        inserted at the end of their respective sections.
+    """
     lines = config_text.split('\n')
     modified_lines = []
     in_bazarr_trigger = False

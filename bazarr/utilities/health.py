@@ -21,6 +21,23 @@ class HealthIssue(TypedDict):
 
 
 def check_health(job_id: int | None = None, wait_for_completion: bool = False) -> None:
+    """
+    Perform a health check of the configured media management integrations.
+
+    When no ``job_id`` is provided, the health check is scheduled as a new job
+    in the jobs queue rather than executed directly. Otherwise, the root
+    folders of Sonarr and Radarr are verified (if the respective integration
+    is enabled), a badge refresh event is emitted to the event stream, backup
+    rotation is triggered, and the job name is updated to reflect completion.
+
+    :param job_id: Identifier of the job under which this health check is
+        executed. If omitted or falsy, the check is enqueued as a new job
+        and the function returns immediately.
+    :param wait_for_completion: Whether the caller should block until the
+        enqueued health check job has completed. Only relevant when
+        ``job_id`` is not provided.
+    :return: None
+    """
     if not job_id:
         jobs_queue.add_job_from_function("Checking Health", is_progress=False, wait_for_completion=wait_for_completion)
         return
@@ -38,6 +55,36 @@ def check_health(job_id: int | None = None, wait_for_completion: bool = False) -
 
 
 def get_health_issues() -> list[HealthIssue]:
+    """
+    Collect and return a list of health issues detected in the current
+    configuration and database state.
+
+    The function performs several checks and aggregates any problems found
+    into a single list. Each entry in the resulting list is a dictionary
+    with two keys: ``object`` (the item affected by the issue) and
+    ``issue`` (a human-readable description of the problem).
+
+    The following checks are performed:
+
+    - When Sonarr integration is enabled, every series root folder flagged
+      as not accessible is reported, with its path translated through the
+      configured path mappings.
+    - When Radarr integration is enabled, every movie root folder flagged
+      as not accessible is reported, with its path translated through the
+      configured movie path mappings.
+    - Every languages profile that has a cutoff defined is inspected for
+      duplicate language IDs among its items; profiles without a cutoff are
+      ignored.
+    - The existence of at least one languages profile is verified. If none
+      exists, an issue is reported. If profiles exist but no series or
+      movies are assigned to one, and the corresponding default profile
+      setting is enabled yet left empty, an issue is reported as well.
+
+    :return: A list of health issue dictionaries, each containing an
+        ``object`` key identifying the affected item and an ``issue`` key
+        describing the problem. The list is empty when no issues are
+        detected.
+    """
     # this function must return a list of dictionaries consisting of to keys: object and issue
     health_issues: list[HealthIssue] = []
 
