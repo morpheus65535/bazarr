@@ -3,4 +3,5 @@ include = ["bazarr/utilities"]
 pythonVersion = "3.10"
 pythonPlatform = "All"
 extraPaths = ["bazarr", "custom_libs", "libs"]
+stubPath = "typings"
 typeCheckingMode = "standard"
