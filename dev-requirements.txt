@@ -8,3 +8,4 @@ pytest-vcr
 pytest-mock
 requests-mock
 setuptools<81
+basedpyright
