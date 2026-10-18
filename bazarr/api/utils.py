@@ -19,6 +19,7 @@ from subtitles.pool import get_language_equals
 from utilities.helper import bool_map
 from subtitles.serialization import parse_missing_subtitles
 from utilities.path_mappings import path_mappings
+from utilities.text_list import parse_text_list_or_default
 
 JsonValue: TypeAlias = str | int | float | bool | None | list['JsonValue'] | dict[str, 'JsonValue']
 JsonObject: TypeAlias = dict[str, JsonValue]
@@ -135,6 +136,22 @@ def authenticate(actual_method):
     return wrapper
 
 
+def get_series_audio_languages(series_ids: list[int]) -> dict[int, list[str | None]]:
+    languages: dict[int, set[str | None]] = {series_id: set() for series_id in series_ids}
+    parsed_values: dict[str | None, list[str | None]] = {}
+    for offset in range(0, len(series_ids), 900):
+        rows = database.execute(
+            select(TableEpisodes.sonarrSeriesId, TableEpisodes.audio_language)
+            .where(TableEpisodes.sonarrSeriesId.in_(series_ids[offset:offset + 900]))
+            .distinct()
+        )
+        for series_id, value in rows:
+            if value not in parsed_values:
+                parsed_values[value] = parse_text_list_or_default(value)
+            languages[series_id].update(parsed_values[value])
+    return {series_id: list(names) for series_id, names in languages.items()}
+
+
 def postprocess(item, subtitles=None):
     # Remove ffprobe_cache
     if item.get('radarrId'):
@@ -147,28 +164,8 @@ def postprocess(item, subtitles=None):
     # Parse audio language
     if item.get('audio_language'):
         if item.get('sonarrSeriesId') and not item.get('sonarrEpisodeId') and item['audio_language'] == '[]':
-            # if, for a series, audio_language is empty, we need to get the audio_language from the episodes
-            episodes_audio_languages = database.execute(
-                select(TableEpisodes.audio_language)
-                .where(TableEpisodes.sonarrSeriesId == item['sonarrSeriesId'])
-            ).scalars()
-
-            # then parse the audio_languages for all episodes
-            audio_languages_ast_list_of_lists = []
-            for audio_languages in episodes_audio_languages:
-                try:
-                    audio_languages_ast_list_of_lists.append(ast.literal_eval(audio_languages))
-                except ValueError:
-                    continue
-
-            # then flatten the list of lists as a set of unique audio languages
-            audio_languages_flattened_set = set([item for sublist in audio_languages_ast_list_of_lists for item in sublist])
-
-            # then convert the set to a string
-            audio_languages_str = str(list(audio_languages_flattened_set))
-
-            # to pass it to get_audio_profile_languages that will return a list of audio languages dicts
-            item['audio_language'] = get_audio_profile_languages(audio_languages_str)
+            languages = get_series_audio_languages([item['sonarrSeriesId']])
+            item['audio_language'] = get_audio_profile_languages(languages[item['sonarrSeriesId']])
         else:
             # in other cases, we can directly pass the audio_language string to get_audio_profile_languages
             item['audio_language'] = get_audio_profile_languages(item['audio_language'])
