@@ -32,6 +32,9 @@ logger = logging.getLogger(__name__)
 
 SUBTITLE_MAP_QUERY_BATCH_SIZE = 900
 
+PROFILE_TYPE_BASIC = 'basic'
+PROFILE_TYPE_ENHANCED = 'enhanced'
+
 POSTGRES_ENABLED_ENV = os.getenv("POSTGRES_ENABLED")
 if POSTGRES_ENABLED_ENV:
     postgresql = POSTGRES_ENABLED_ENV.lower() == 'true'
@@ -265,6 +268,8 @@ class TableLanguagesProfiles(Base):
     mustContain = mapped_column(Text)
     mustNotContain = mapped_column(Text)
     tag = mapped_column(Text)
+    profileType = mapped_column(Text, nullable=False, default=PROFILE_TYPE_BASIC,
+                                server_default=text(f"'{PROFILE_TYPE_BASIC}'"))
 
 
 class TableMovies(Base):
@@ -512,28 +517,51 @@ def get_exclusion_clause(exclusion_type):
     return where_clause
 
 
+def parse_profile_items(profile_type, raw_items):
+    """
+    Return (items, groups) for a languages profile row.
+
+    Basic profiles store a flat list of items and groups is None. Enhanced profiles store
+    {"groups": [...]}. For those, items is the flat list of every item across all groups, so
+    consumers that only need the wanted languages keep working, and groups keeps the structure.
+    """
+    data = json.loads(raw_items)
+    if profile_type == PROFILE_TYPE_ENHANCED and isinstance(data, dict):
+        groups = data.get('groups') or []
+        items = [item for group in groups for item in (group.get('items') or [])]
+        return items, groups
+    return data, None
+
+
 @region.cache_on_arguments()
 def update_profile_id_list():
-    return [{
-        'profileId': x.profileId,
-        'name': x.name,
-        'cutoff': x.cutoff,
-        'items': json.loads(x.items),
-        'mustContain': ast.literal_eval(x.mustContain) if x.mustContain else [],
-        'mustNotContain': ast.literal_eval(x.mustNotContain) if x.mustNotContain else [],
-        'originalFormat': x.originalFormat,
-        'tag': x.tag,
-    } for x in database.execute(
-        select(TableLanguagesProfiles.profileId,
-               TableLanguagesProfiles.name,
-               TableLanguagesProfiles.cutoff,
-               TableLanguagesProfiles.items,
-               TableLanguagesProfiles.mustContain,
-               TableLanguagesProfiles.mustNotContain,
-               TableLanguagesProfiles.originalFormat,
-               TableLanguagesProfiles.tag))
-        .all()
-    ]
+    profiles = []
+    for x in database.execute(
+            select(TableLanguagesProfiles.profileId,
+                   TableLanguagesProfiles.name,
+                   TableLanguagesProfiles.cutoff,
+                   TableLanguagesProfiles.items,
+                   TableLanguagesProfiles.mustContain,
+                   TableLanguagesProfiles.mustNotContain,
+                   TableLanguagesProfiles.originalFormat,
+                   TableLanguagesProfiles.tag,
+                   TableLanguagesProfiles.profileType)).all():
+        items, groups = parse_profile_items(x.profileType, x.items)
+        profile = {
+            'profileId': x.profileId,
+            'name': x.name,
+            'cutoff': x.cutoff,
+            'profileType': x.profileType,
+            'items': items,
+            'mustContain': ast.literal_eval(x.mustContain) if x.mustContain else [],
+            'mustNotContain': ast.literal_eval(x.mustNotContain) if x.mustNotContain else [],
+            'originalFormat': x.originalFormat,
+            'tag': x.tag,
+        }
+        if groups is not None:
+            profile['groups'] = groups
+        profiles.append(profile)
+    return profiles
 
 
 def get_profiles_list(profile_id=None):
@@ -575,6 +603,11 @@ def get_profile_cutoff(profile_id):
         items = [item for item in items if isinstance(item, dict)]
         if cutoff == 65535:
             return items or None
+        if profile.get('groups') is not None:
+            # Enhanced profiles: the cutoff is a group id, so the cutoff items are all items of that group.
+            group = next((group for group in profile['groups'] if group.get('id') == cutoff), None)
+            group_items = [item for item in ((group or {}).get('items') or []) if isinstance(item, dict)]
+            return group_items or None
         return next(([item] for item in items if item.get('id') == cutoff), None)
     return None
 
@@ -651,7 +684,7 @@ def upgrade_languages_profile_values():
                 TableLanguagesProfiles.mustNotContain,
                 TableLanguagesProfiles.originalFormat,
                 TableLanguagesProfiles.tag)
-            ))\
+            .where(TableLanguagesProfiles.profileType == PROFILE_TYPE_BASIC)))\
             .all():
         items = json.loads(languages_profile.items)
         for language in items:
@@ -674,7 +707,8 @@ def upgrade_languages_profile_values():
 
 def fix_languages_profiles_with_duplicate_ids():
     languages_profiles = database.execute(
-        select(TableLanguagesProfiles.profileId, TableLanguagesProfiles.items, TableLanguagesProfiles.cutoff)).all()
+        select(TableLanguagesProfiles.profileId, TableLanguagesProfiles.items, TableLanguagesProfiles.cutoff)
+        .where(TableLanguagesProfiles.profileType == PROFILE_TYPE_BASIC)).all()
     for languages_profile in languages_profiles:
         if languages_profile.cutoff:
             # ignore profiles that have a cutoff set
@@ -728,7 +762,8 @@ def fix_code3_languages_in_languages_profiles():
 
     update_missing_subtitles_required = False
     languages_profiles = database.execute(
-        select(TableLanguagesProfiles.profileId, TableLanguagesProfiles.items, TableLanguagesProfiles.name)).all()
+        select(TableLanguagesProfiles.profileId, TableLanguagesProfiles.items, TableLanguagesProfiles.name)
+        .where(TableLanguagesProfiles.profileType == PROFILE_TYPE_BASIC)).all()
     for languages_profile in languages_profiles:
         update_database_required = False
         languages_profile_items = json.loads(languages_profile.items)

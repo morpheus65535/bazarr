@@ -1,0 +1,28 @@
+.entry {
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+
+  &:hover {
+    border-color: var(--mantine-color-brand-4);
+    box-shadow: var(--mantine-shadow-sm);
+  }
+
+  &:focus-within {
+    border-color: var(--mantine-color-brand-5);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}
+
+.emptyState {
+  border-style: dashed;
+}
+
+.restrictions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--mantine-spacing-xs);
+}
