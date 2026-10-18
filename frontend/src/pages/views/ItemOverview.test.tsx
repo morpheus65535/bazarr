@@ -1,4 +1,4 @@
-import { http, HttpResponse } from "msw";
+import { http, HttpResponse } from "msw/http";
 import { describe, it } from "vitest";
 import { customRender, screen } from "@/tests";
 import server from "@/tests/mocks/node";

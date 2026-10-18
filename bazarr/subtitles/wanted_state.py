@@ -1,5 +1,7 @@
 # coding=utf-8
 
+from sqlalchemy import Table
+
 from datetime import datetime
 from contextlib import contextmanager
 
@@ -202,19 +204,25 @@ def _wanted_state_transaction():
             yield connection
 
 
-def store_missing_subtitles(table, id_column_name, media_type, media_id, missing_subtitles):
-    """Save both representations atomically, repairing stale normalized rows too."""
+def store_missing_subtitles(
+    table: Table,
+    id_column_name: str,
+    media_type: str,
+    media_id: int,
+    missing_subtitles: str | list[str] | None,
+) -> None:
+    """Save missing languages and mark their calculation complete in one transaction."""
     id_column = table.c[id_column_name]
     rows = get_missing_subtitle_rows(media_type, media_id, missing_subtitles)
     with _wanted_state_transaction() as connection:
         media = connection.execute(
-            select(table.c.missing_subtitles).where(id_column == media_id).with_for_update()
+            select(table.c.missing_subtitles_calculated).where(id_column == media_id).with_for_update()
         ).first()
         if media is None:
             return
-        if media.missing_subtitles != missing_subtitles:
+        if not media.missing_subtitles_calculated:
             connection.execute(
-                table.update().where(id_column == media_id).values(missing_subtitles=missing_subtitles)
+                table.update().where(id_column == media_id).values(missing_subtitles_calculated=True)
             )
 
         missing_filter = (
@@ -246,8 +254,8 @@ def get_missing_languages(media_type, media_id):
     return []
 
 
-def legacy_missing_cache_needs_rebuild(missing_subtitles):
-    return missing_subtitles is None
+def missing_subtitles_need_calculation(calculated: bool) -> bool:
+    return not calculated
 
 
 def get_missing_languages_map(media_type, media_ids):

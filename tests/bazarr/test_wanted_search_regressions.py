@@ -1,4 +1,9 @@
 """Exercise the runtime ORM and autocommit engine, rather than table proxies."""
+from collections.abc import Mapping, Sequence
+from typing import TypeAlias
+from sqlalchemy.engine.interfaces import DBAPICursor, ExecutionContext
+from sqlalchemy.engine import Engine, Connection
+
 import sqlite3
 from concurrent.futures import ThreadPoolExecutor
 from threading import Event
@@ -18,6 +23,10 @@ import subtitles.indexer.series as episode_indexer
 import subtitles.wanted_state as state
 
 
+SqlValue: TypeAlias = str | int | float | bytes | None
+SqlParameters: TypeAlias = Mapping[str, SqlValue] | Sequence[SqlValue]
+
+
 @pytest.fixture
 def runtime_database(monkeypatch, tmp_path):
     engine = create_engine(f'sqlite:///{tmp_path / "runtime.sqlite"}', isolation_level='AUTOCOMMIT')
@@ -32,12 +41,12 @@ def runtime_database(monkeypatch, tmp_path):
     engine.dispose()
 
 
-def seed_media(session, media_type, missing='[]'):
+def seed_media(session: Session, media_type: str, missing: str | None = '[]') -> tuple[type[db.TableMovies] | type[db.TableEpisodes], str]:
     session.execute(insert(db.TableLanguagesProfiles).values(profileId=1, name='English', items='[]'))
     if media_type == 'movie':
         table, id_column = db.TableMovies, 'radarrId'
         session.execute(insert(table).values(
-            radarrId=7, profileId=1, missing_subtitles=missing, audio_language='[]',
+            radarrId=7, profileId=1, missing_subtitles_calculated=missing is not None, audio_language='[]',
             path='/movie.mkv', title='Movie', tmdbId='7',
         ))
     else:
@@ -46,7 +55,7 @@ def seed_media(session, media_type, missing='[]'):
         session.execute(insert(table).values(
             sonarrEpisodeId=7, sonarrSeriesId=7, path='/series/episode.mkv', title='Episode',
             season=1, episode=1,
-            missing_subtitles=missing, audio_language='[]',
+            missing_subtitles_calculated=missing is not None, audio_language='[]',
         ))
     return table, id_column
 
@@ -119,13 +128,24 @@ def test_bulk_database_queries_and_retry_upserts_respect_legacy_sqlite_limit(
 
 
 @pytest.mark.parametrize('media_type', ['movie', 'series'])
-def test_missing_state_failure_rolls_back_both_representations(runtime_database, monkeypatch, media_type):
+def test_missing_state_failure_preserves_calculation_state(
+    runtime_database: tuple[Engine, Session],
+    monkeypatch: pytest.MonkeyPatch,
+    media_type: str,
+) -> None:
     engine, session = runtime_database
-    table, _ = seed_media(session, media_type, "['fr']")
+    table, _ = seed_media(session, media_type, None)
     state.refresh_wanted_search_state(media_type, 7, "['fr']", failed_attempts="[['fr', 10]]")
     recalculate, events = configure_indexer(monkeypatch, media_type)
 
-    def fail_insert(connection, cursor, statement, parameters, context, executemany):
+    def fail_insert(
+        connection: Connection,
+        cursor: DBAPICursor,
+        statement: str,
+        parameters: SqlParameters | Sequence[SqlParameters],
+        context: ExecutionContext,
+        executemany: bool,
+    ) -> None:
         if statement.startswith('INSERT INTO table_missing_subtitles'):
             raise sqlite3.OperationalError('interrupted normalized insert')
 
@@ -135,18 +155,23 @@ def test_missing_state_failure_rolls_back_both_representations(runtime_database,
             recalculate()
     finally:
         event.remove(engine, 'before_cursor_execute', fail_insert)
-    assert session.execute(select(table.missing_subtitles)).scalar_one() == "['fr']"
+    assert session.execute(select(table.missing_subtitles_calculated)).scalar_one() is False
     assert state.get_missing_languages(media_type, 7) == ['fr']
     assert events == []
     recalculate()
-    assert session.execute(select(table.missing_subtitles)).scalar_one() == "['en']"
+    assert session.execute(select(table.missing_subtitles_calculated)).scalar_one() is True
     assert state.get_missing_languages(media_type, 7) == ['en']
     assert state.get_failed_attempt_pairs(media_type, 7) == [['fr', 10.0]]
 
 
 @pytest.mark.parametrize('media_type', ['movie', 'series'])
 @pytest.mark.parametrize('stale_languages', [[], ['fr']])
-def test_unchanged_legacy_value_repairs_normalized_state(runtime_database, monkeypatch, media_type, stale_languages):
+def test_completed_calculation_repairs_normalized_state(
+    runtime_database: tuple[Engine, Session],
+    monkeypatch: pytest.MonkeyPatch,
+    media_type: str,
+    stale_languages: list[str],
+) -> None:
     _, session = runtime_database
     seed_media(session, media_type, "['en']")
     state.refresh_wanted_search_state(media_type, 7, stale_languages)
@@ -155,7 +180,10 @@ def test_unchanged_legacy_value_repairs_normalized_state(runtime_database, monke
     assert state.get_missing_languages(media_type, 7) == ['en']
 
 
-def test_concurrent_missing_refreshes_keep_representations_consistent(runtime_database, monkeypatch):
+def test_concurrent_missing_refreshes_keep_representations_consistent(
+    runtime_database: tuple[Engine, Session],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     engine, session = runtime_database
     seed_media(session, 'movie')
     thread_sessions = scoped_session(sessionmaker(bind=engine))
@@ -186,7 +214,7 @@ def test_concurrent_missing_refreshes_keep_representations_consistent(runtime_da
             second.result(timeout=10)
     finally:
         event.remove(engine, 'before_cursor_execute', interleave)
-    assert session.execute(select(db.TableMovies.missing_subtitles)).scalar_one() == "['fr']"
+    assert session.execute(select(db.TableMovies.missing_subtitles_calculated)).scalar_one() is True
     assert state.get_missing_languages('movie', 7) == ['fr']
 
 
@@ -445,7 +473,11 @@ def series_deletion_state(runtime_database):
 @pytest.mark.parametrize('failed_table', [
     'table_shows', 'table_missing_subtitles', 'table_failed_subtitle_attempts',
 ])
-def test_series_deletion_failure_preserves_media_and_search_state(series_deletion_state, monkeypatch, failed_table):
+def test_series_deletion_failure_preserves_media_and_search_state(
+    series_deletion_state: tuple[Engine, Session],
+    monkeypatch: pytest.MonkeyPatch,
+    failed_table: str,
+) -> None:
     engine, session = series_deletion_state
     events = []
     monkeypatch.setattr(sonarr, 'event_stream', lambda **kwargs: events.append(kwargs))
@@ -462,7 +494,7 @@ def test_series_deletion_failure_preserves_media_and_search_state(series_deletio
         event.remove(engine, 'before_cursor_execute', fail_delete)
 
     assert session.execute(select(db.TableShows.sonarrSeriesId)).scalars().all() == [7]
-    assert session.execute(select(db.TableEpisodes.missing_subtitles)).scalars().all() == ["['en']"]
+    assert session.execute(select(db.TableEpisodes.missing_subtitles_calculated)).scalars().all() == [True]
     assert state.get_missing_languages('series', 7) == ['en']
     assert session.execute(select(db.TableFailedSubtitleAttempts.language)).scalars().all() == ['en']
     assert events == []

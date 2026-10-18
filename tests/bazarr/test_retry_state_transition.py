@@ -1,30 +1,30 @@
+from typing import Callable
+from types import ModuleType
+
 import importlib
 from datetime import datetime, timedelta
 from types import SimpleNamespace
 
 import pytest
-from sqlalchemy import event, insert, select, update
+from sqlalchemy import event, insert, select
 
 from subtitles import adaptive_searching, wanted_state
 
 
 @pytest.mark.parametrize('kind', ['movies', 'series'])
 def test_wanted_search_uses_normalized_retries_and_missing_languages(
-    kind, row_factory, wanted_module, transactional_session, wanted_search_tables, monkeypatch,
-):
+    kind: str, row_factory: Callable[..., SimpleNamespace], wanted_module: ModuleType, monkeypatch: pytest.MonkeyPatch,
+) -> None:
     now = datetime.now()
     row = row_factory(
         missing_languages=['en', 'fr:hi:forced'],
         failed_attempts=[['en', (now - timedelta(days=30)).timestamp()], ['en', now.timestamp()]],
     )
-    media_type, media_id, table, search = (
-        ('movie', row.radarrId, wanted_search_tables.movie, wanted_module._wanted_movie)
+    media_type, media_id, search = (
+        ('movie', row.radarrId, wanted_module._wanted_movie)
         if kind == 'movies' else
-        ('series', row.sonarrEpisodeId, wanted_search_tables.episode, wanted_module._wanted_episode)
+        ('series', row.sonarrEpisodeId, wanted_module._wanted_episode)
     )
-    # The missing-language mirror deliberately disagrees with normalized state.
-    transactional_session.execute(update(table).values(missing_subtitles='malformed legacy value'))
-    row.missing_subtitles = 'malformed legacy value'
     monkeypatch.setattr(adaptive_searching, 'get_adaptive_search_policy', lambda: {
         'delay': timedelta(days=21), 'delta': timedelta(days=7),
         'initial_search_cutoff': (now - timedelta(days=21)).timestamp(),

@@ -108,7 +108,7 @@ def _backfill_media_state_sqlite(bind, media_type, id_column, table_name):
         _insert_missing_subtitles_cursor(write_cursor, buffered_rows)
 
 
-def upgrade():
+def upgrade() -> None:
     bind = op.get_context().bind
     if not table_exists(bind, 'table_missing_subtitles'):
         op.create_table(
@@ -123,6 +123,9 @@ def upgrade():
     backfill = _backfill_media_state_sqlite if bind.dialect.name == 'sqlite' else _backfill_media_state
     for media_type, id_column, table_name in [('series', 'sonarrEpisodeId', 'table_episodes'),
                                              ('movie', 'radarrId', 'table_movies')]:
+        if not any(column['name'] == 'missing_subtitles'
+                   for column in sa.inspect(bind).get_columns(table_name)):
+            continue
         bind.execute(sa.delete(MISSING_SUBTITLES_TABLE).where(MISSING_SUBTITLES_TABLE.c.media_type == media_type))
         backfill(bind, media_type, id_column, table_name)
     if not index_exists(bind, 'table_missing_subtitles', 'ix_missing_subtitles_media'):

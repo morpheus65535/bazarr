@@ -3,6 +3,7 @@
 import ast
 
 from functools import wraps
+from typing import TypeAlias
 from flask import request, abort
 
 from languages.custom_lang import CustomLanguage
@@ -18,6 +19,9 @@ from subtitles.pool import get_language_equals
 from utilities.helper import bool_map
 from subtitles.serialization import parse_missing_subtitles
 from utilities.path_mappings import path_mappings
+
+JsonValue: TypeAlias = str | int | float | bool | None | list['JsonValue'] | dict[str, 'JsonValue']
+JsonObject: TypeAlias = dict[str, JsonValue]
 
 None_Keys = ['null', 'undefined', '', None]
 

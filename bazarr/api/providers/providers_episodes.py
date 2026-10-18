@@ -1,5 +1,9 @@
 # coding=utf-8
 
+from typing import cast
+
+from api.utils import JsonObject
+
 import os
 
 from flask_restx import Resource, Namespace, reqparse, fields, marshal
@@ -43,7 +47,7 @@ class ProviderEpisodes(Resource):
     @api_ns_providers_episodes.response(404, 'Episode not found')
     @api_ns_providers_episodes.response(500, 'Custom error messages')
     @api_ns_providers_episodes.expect(get_request_parser)
-    def get(self):
+    def get(self) -> JsonObject | tuple[str, int]:
         """Search manually for an episode subtitles"""
         args = self.get_request_parser.parse_args()
         sonarrEpisodeId = args.get('episodeid')
@@ -51,7 +55,7 @@ class ProviderEpisodes(Resource):
                       TableEpisodes.sceneName,
                       TableShows.title,
                       TableShows.profileId,
-                      TableEpisodes.missing_subtitles) \
+                      TableEpisodes.missing_subtitles_calculated) \
             .select_from(TableEpisodes) \
             .join(TableShows) \
             .where(TableEpisodes.sonarrEpisodeId == sonarrEpisodeId)
@@ -67,7 +71,7 @@ class ProviderEpisodes(Resource):
             episodeInfo = database.execute(stmt).first()
             if not episodeInfo:
                 return 'Episode not found', 404
-        elif episodeInfo.missing_subtitles is None:
+        elif not episodeInfo.missing_subtitles_calculated:
             # missing subtitles calculation for this episode is incomplete, we'll do it again
             list_missing_subtitles(epno=sonarrEpisodeId)
             episodeInfo = database.execute(stmt).first()
@@ -90,7 +94,7 @@ class ProviderEpisodes(Resource):
         data = manual_search(episodePath, profileId, providers_list, sceneName, title, 'series')
         if isinstance(data, str):
             return data, 500
-        return marshal(data, self.get_response_model, envelope='data')
+        return cast(JsonObject, marshal(data, self.get_response_model, envelope='data'))
 
     post_request_parser = reqparse.RequestParser()
     post_request_parser.add_argument('seriesid', type=int, required=True, help='Series ID')

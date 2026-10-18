@@ -1,3 +1,5 @@
+from types import ModuleType
+
 from functools import partial
 from types import SimpleNamespace
 
@@ -145,10 +147,10 @@ def test_movies_download_subtitles_refreshes_missing_state_before_search(
     assert generated[0][0][1] == [("en", "False", "False")]
 
 
-def test_mass_download_uses_legacy_missing_cache_helper(mass_download_module):
+def test_mass_download_distinguishes_incomplete_missing_calculation(mass_download_module: ModuleType) -> None:
     module = mass_download_module
-    assert module.legacy_missing_cache_needs_rebuild(None) is True
-    assert module.legacy_missing_cache_needs_rebuild("[]") is False
+    assert module.missing_subtitles_need_calculation(False) is True
+    assert module.missing_subtitles_need_calculation(True) is False
 
 
 def test_movies_download_subtitles_reports_throttled_when_no_providers(

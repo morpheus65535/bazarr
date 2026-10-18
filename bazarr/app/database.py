@@ -9,6 +9,7 @@ import signal
 from collections import defaultdict
 
 from dogpile.cache import make_region
+from flask import Flask
 from datetime import datetime
 from typing import List
 
@@ -16,7 +17,7 @@ from sqlalchemy import create_engine, inspect, DateTime, Float, ForeignKey, Inte
     BigInteger, Boolean, Index
 # importing here to be indirectly imported in other modules later
 from sqlalchemy import update, delete, select, func, UniqueConstraint  # noqa W0611
-from sqlalchemy.orm import scoped_session, sessionmaker, mapped_column, close_all_sessions, declarative_base
+from sqlalchemy.orm import scoped_session, sessionmaker, mapped_column, close_all_sessions, declarative_base, Mapped
 from sqlalchemy.pool import NullPool
 from alembic.migration import MigrationContext
 
@@ -171,7 +172,8 @@ class TableEpisodes(Base):
     ffprobe_cache = mapped_column(LargeBinary)
     file_size = mapped_column(BigInteger)
     format = mapped_column(Text)
-    missing_subtitles = mapped_column(Text)
+    missing_subtitles_calculated: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False,
+                                                           server_default=text('false'))
     monitored = mapped_column(Text)
     path = mapped_column(Text, nullable=False)
     resolution = mapped_column(Text)
@@ -277,7 +279,8 @@ class TableMovies(Base):
     file_size = mapped_column(BigInteger)
     format = mapped_column(Text)
     imdbId = mapped_column(Text)
-    missing_subtitles = mapped_column(Text)
+    missing_subtitles_calculated: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False,
+                                                           server_default=text('false'))
     monitored = mapped_column(Text)
     movie_file_id = mapped_column(Integer)
     originalLanguage = mapped_column(Text)
@@ -452,7 +455,7 @@ def create_db_revision(app):
         db.engine.dispose()
 
 
-def migrate_db(app):
+def migrate_db(app: Flask) -> None:
     logging.debug("Upgrading database schema")
     app.config["SQLALCHEMY_DATABASE_URI"] = url
     db = SQLAlchemy(app, metadata=metadata)
