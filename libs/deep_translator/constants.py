@@ -7,6 +7,8 @@ LIBRE_ENV_VAR = "LIBRE_API_KEY"
 MSFT_ENV_VAR = "MICROSOFT_API_KEY"
 QCRI_ENV_VAR = "QCRI_API_KEY"
 YANDEX_ENV_VAR = "YANDEX_API_KEY"
+TENCENT_SECRET_ID_ENV_VAR = "TENCENT_SECRET_ID"
+TENCENT_SECRET_KEY_ENV_VAR = "TENCENT_SECRET_KEY"
 BAIDU_APPID_ENV_VAR = "BAIDU_APPID"
 BAIDU_APPKEY_ENV_VAR = "BAIDU_APPKEY"
 
@@ -25,6 +27,7 @@ BASE_URLS = {
     "PAPAGO_API": "https://openapi.naver.com/v1/papago/n2mt",
     "LIBRE": "https://libretranslate.com/",
     "LIBRE_FREE": "https://libretranslate.de/",
+    "TENENT": "https://tmt.tencentcloudapi.com",
     "BAIDU": "https://fanyi-api.baidu.com/api/trans/vip/translate",
 }
 
@@ -559,8 +562,10 @@ DEEPL_LANGUAGE_TO_CODE = {
     "indonesian": "id",
     "italian": "it",
     "japanese": "ja",
+    "korean": "ko",
     "lithuanian": "lt",
     "latvian": "lv",
+    "Norwegian": "no",
     "dutch": "nl",
     "polish": "pl",
     "portuguese": "pt",
@@ -607,6 +612,26 @@ LIBRE_LANGUAGES_TO_CODES = {
     "Spanish": "es",
     "Turkish": "tr",
     "Vietnamese": "vi",
+}
+
+TENCENT_LANGUAGE_TO_CODE = {
+    "arabic": "ar",
+    "chinese (simplified)": "zh",
+    "chinese (traditional)": "zh-TW",
+    "english": "en",
+    "french": "fr",
+    "german": "de",
+    "hindi": "hi",
+    "indonesian": "id",
+    "japanese": "ja",
+    "korean": "ko",
+    "malay": "ms",
+    "portuguese": "pt",
+    "russian": "ru",
+    "spanish": "es",
+    "thai": "th",
+    "turkish": "tr",
+    "vietnamese": "vi",
 }
 
 BAIDU_LANGUAGE_TO_CODE = {

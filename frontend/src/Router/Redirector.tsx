@@ -23,7 +23,7 @@ const Redirector: FunctionComponent = () => {
         // A Sportarr only install has no series or movies library to land on.
         navigate("/wanted/sports");
       } else {
-        navigate("/settings/general");
+        navigate("/settings/application/general");
       }
     }
   }, [data, navigate]);

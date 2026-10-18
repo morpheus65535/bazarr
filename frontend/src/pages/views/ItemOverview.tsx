@@ -21,19 +21,17 @@ import {
 import {
   faBookmark,
   faClone,
-  faLanguage,
   faMusic,
   faStream,
   faTags,
   IconDefinition,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Language } from "@/components/bazarr";
+import LanguageProfileRules from "@/components/bazarr/LanguageProfileRules";
 import { BuildKey } from "@/utilities";
 import {
   normalizeAudioLanguage,
   useLanguageProfileBy,
-  useProfileItemsToLanguages,
 } from "@/utilities/languages";
 
 interface Props {
@@ -104,7 +102,6 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
   );
 
   const profile = useLanguageProfileBy(item?.profileId);
-  const profileItems = useProfileItemsToLanguages(profile);
 
   const languageBadges = useMemo(() => {
     const badges: (React.JSX.Element | null)[] = [];
@@ -121,20 +118,15 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
       );
 
       badges.push(
-        ...profileItems.map((v, idx) => (
-          <ItemBadge
-            key={BuildKey(idx, "lang", v.code2)}
-            icon={faLanguage}
-            title="Language"
-          >
-            <Language.Text long value={v}></Language.Text>
-          </ItemBadge>
-        )),
+        <LanguageProfileRules
+          key="language-profile-rules"
+          profile={profile}
+        ></LanguageProfileRules>,
       );
     }
 
     return badges;
-  }, [profile, profileItems]);
+  }, [profile]);
 
   const content = (
     <Grid
@@ -171,10 +163,13 @@ const ItemOverview: FunctionComponent<Props> = (props) => {
             <Title my={0}>
               <Text inherit c="white">
                 <Box component="span" mr={12}>
-                  <FontAwesomeIcon
-                    title={item?.monitored ? "monitored" : "unmonitored"}
-                    icon={item?.monitored ? faBookmark : farBookmark}
-                  ></FontAwesomeIcon>
+                  <Tooltip
+                    label={item?.monitored ? "Monitored" : "Unmonitored"}
+                  >
+                    <FontAwesomeIcon
+                      icon={item?.monitored ? faBookmark : farBookmark}
+                    ></FontAwesomeIcon>
+                  </Tooltip>
                 </Box>
                 {item?.title}
               </Text>

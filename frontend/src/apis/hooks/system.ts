@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { QueryKeys } from "@/apis/queries/keys";
 import api from "@/apis/raw";
 import { notification } from "@/modules/task";
+import { RouterNames } from "@/Router/RouterNames";
 import { Environment } from "@/utilities";
 import { setAuthenticated } from "@/utilities/event";
 
@@ -105,6 +106,10 @@ export const useSettingsMutation = (options?: { silent?: boolean }) => {
       void client.invalidateQueries({
         queryKey: [QueryKeys.Plex, "libraries"],
       });
+
+      // Lets the onboarding tour advance only after the backend confirms the
+      // save, rather than on the button click.
+      window.dispatchEvent(new Event("bazarr-settings-saved"));
 
       if (!silent) {
         showNotification(
@@ -297,8 +302,21 @@ export const useSystem = () => {
       api.system.login(param.username, param.password),
 
     onSuccess: () => {
-      // TODO: Hard-coded value
-      window.location.replace(Environment.baseUrl);
+      const params = new URLSearchParams(window.location.search);
+      const returnTo = params.get("returnTo");
+      const safeReturnTo =
+        returnTo &&
+        returnTo.startsWith("/") &&
+        !returnTo.startsWith("//") &&
+        returnTo !== RouterNames.Auth
+          ? returnTo
+          : undefined;
+
+      const redirectUrl = safeReturnTo
+        ? `${Environment.baseUrl}${safeReturnTo}`
+        : Environment.baseUrl;
+
+      window.location.replace(redirectUrl);
     },
   });
 
@@ -327,6 +345,7 @@ export const useSystem = () => {
       restart,
       login,
       isMutating: isLoggingOut || isShuttingDown || isRestarting || isLoggingIn,
+      isLoggingIn,
     }),
     [
       isLoggingIn,

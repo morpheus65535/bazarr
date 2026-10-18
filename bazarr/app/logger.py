@@ -17,13 +17,17 @@ logger = logging.getLogger()
 
 
 class FileHandlerFormatter(logging.Formatter):
-    """Formatter that removes apikey from logs."""
+    """Formatter that masks the tail of any apikey in logs."""
     # Matches `apikey=`, `api_key=` and `apiKey=`, url-encoded or not, and keys
     # containing '-', '_' or '.'. The old pattern required the literal `apikey`
     # and value chars [a-zA-Z0-9], so a provider using `api_key=` — or a key
     # like `subdl_Cq…-5IU…` — was written to the log verbatim. These logs are
     # routinely pasted into public issue reports.
-    APIKEY_RE = re.compile(r'api[-_]?key(?:=|%3D)([\w.\-]+)', re.IGNORECASE)
+    SECRET_NAME_RE = (r'(?:x[-_])?(?:api[-_]?key|access[-_]?token|auth[-_]?token|'
+                      r'plex[-_]?token|token)')
+    APIKEY_RE = re.compile(rf'\b{SECRET_NAME_RE}["\']?\s*(?:=|%3D|:)\s*(["\']?)'
+                           r'([^&\s,;"\'}\])]*)', re.IGNORECASE)
+    APIKEY_MASK = 'xxxxxxxx'
     IPv4_RE = re.compile(r'\b(?<!Failed\sauthentication\sfrom\s)(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.)'
                          r'{3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\b')
     PLEX_URL_RE = re.compile(r'(?:https?://)?[0-9\-]+\.[a-f0-9]+\.plex\.direct(?::\d+)?')
@@ -36,9 +40,16 @@ class FileHandlerFormatter(logging.Formatter):
         return repr(result)  # or format into one line however you want to
 
     def formatApikey(self, s):
-        # Keep the parameter name the caller used so the log still reads
-        # naturally; only the value is removed.
-        return re.sub(self.APIKEY_RE, lambda m: f'{m.group(0)[:m.start(1) - m.start(0)]}(removed)', s)
+        # Keep the parameter name and the leading part of the key so a log still
+        # says which key was in play; only the last characters are masked.
+        def mask(match):
+            value = match.group(2)
+            if not value:
+                return match.group(0)
+            prefix = match.group(0)[:match.start(2) - match.start(0)]
+            return f'{prefix}{value[:-len(self.APIKEY_MASK)]}{self.APIKEY_MASK}'
+
+        return re.sub(self.APIKEY_RE, mask, s)
 
     def formatIPv4(self, s):
         return re.sub(self.IPv4_RE, '***.***.***.***', s)

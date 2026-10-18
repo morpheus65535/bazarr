@@ -144,11 +144,9 @@ describe("SubtitleToolsMenu", () => {
     const user = userEvent.setup();
 
     await user.click(screen.getByText("Open"));
-    await screen.findByRole("menuitem", { name: "Delete..." });
+    await screen.findByText("Delete...");
 
-    expect(
-      screen.queryByRole("menuitem", { name: "Extract" }),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText("Extract")).not.toBeInTheDocument();
   });
 
   it("enables the extract action for embedded subtitles", async () => {
@@ -156,12 +154,9 @@ describe("SubtitleToolsMenu", () => {
     const user = userEvent.setup();
 
     await user.click(screen.getByText("Open"));
+    const extractButton = await screen.findByText("Extract");
 
-    expect(
-      await screen.findByRole("menuitem", {
-        name: "Extract",
-      }),
-    ).toBeEnabled();
+    expect(extractButton).toBeEnabled();
   });
 
   it("hides external tools and unsupported actions for embedded subtitles", async () => {
@@ -169,12 +164,9 @@ describe("SubtitleToolsMenu", () => {
     const user = userEvent.setup();
 
     await user.click(screen.getByText("Open"));
-    // The Extract action is the only item and confirms the menu is open.
-    await screen.findByRole("menuitem", { name: "Extract" });
+    await screen.findByText("Extract");
 
-    expect(
-      screen.queryByRole("menuitem", { name: "Remove HI Tags" }),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText("Remove HI Tags")).not.toBeInTheDocument();
     expect(screen.queryByText("Search")).not.toBeInTheDocument();
     expect(screen.queryByText("Delete...")).not.toBeInTheDocument();
   });
@@ -184,11 +176,8 @@ describe("SubtitleToolsMenu", () => {
     const user = userEvent.setup();
 
     await user.click(screen.getByText("Open"));
-    await user.click(
-      await screen.findByRole("menuitem", {
-        name: "Extract",
-      }),
-    );
+    await screen.findByText("Extract");
+    await user.click(screen.getByText("Extract"));
 
     expect(mockTaskCreate).toHaveBeenCalledTimes(1);
     expect(mockTaskCreate).toHaveBeenCalledWith(

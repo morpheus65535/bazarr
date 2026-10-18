@@ -332,8 +332,9 @@ class SubsourceProvider(ProviderRetryMixin, Provider, ProviderSubtitleArchiveMix
                     season, episode = self._get_season_episode_from_release_info(item['releaseInfo'])
                     if season == video.season and (not episode or episode == video.episode):
                         subtitle = SubsourceSubtitle(
-                            language=Language.fromietf(language_converters['subsource'].reverse(item['language']
-                                                                                                .capitalize())[0]),
+                            language=Language.fromietf(
+                                '-'.join(filter(None, language_converters['subsource'].reverse(
+                                    item['language'].capitalize())))),
                             forced=is_forced,
                             hearing_impaired=is_hi,
                             page_link=page_link,
@@ -348,10 +349,10 @@ class SubsourceProvider(ProviderRetryMixin, Provider, ProviderSubtitleArchiveMix
                     else:
                         continue
                 else:
-
                     subtitle = SubsourceSubtitle(
-                        language=Language.fromietf(language_converters['subsource'].reverse(item['language']
-                                                                                            .capitalize())[0]),
+                        language=Language.fromietf(
+                            '-'.join(filter(None, language_converters['subsource'].reverse(
+                                item['language'].capitalize())))),
                         forced=is_forced,
                         hearing_impaired=is_hi,
                         page_link=page_link,

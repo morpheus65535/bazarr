@@ -64,9 +64,24 @@ class SubdlConverter(LanguageReverseConverter):
             "TR": ("tur", None, None),  # Turkish
             "UK": ("ukr", None, None),  # Ukrainian
             "UR": ("urd", None, None),  # Urdu
+            "HY": ("hye", None, None),  # Armenian
+            "KK": ("kaz", None, None),  # Kazakh
+            "KY": ("kir", None, None),  # Kyrgyz
+            "KM": ("khm", None, None),  # Khmer
+            "KN": ("kan", None, None),  # Kannada
+            "MN": ("mon", None, None),  # Mongolian
+            "EU": ("eus", None, None),  # Basque
+            "GL": ("glg", None, None),  # Galician
+            "GA": ("gle", None, None),  # Irish
+            "JV": ("jav", None, None),  # Javanese
+            "SU": ("sun", None, None),  # Sundanese
             # custom languages
             "BR_PT": ("por", "BR", None),  # Brazilian Portuguese
-            "ZH_BG": ("zho", None, "Hant"),  # Big 5 code
+            # Traditional Chinese ("Big 5"). Keyed on zho-TW because that is
+            # the identity bazarr's own Chinese Traditional language carries;
+            # keyed on script Hant it was unreachable from every profile and
+            # the entire Traditional catalogue was invisible to bazarr.
+            "ZH_BG": ("zho", "TW", None),
             # unsupported language in Bazarr
             # "BG_EN": "Bulgarian_English",
             # "NL_EN": "Dutch_English",

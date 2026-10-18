@@ -131,9 +131,9 @@ const NotificationForm: FunctionComponent<Props> = ({
               modals.closeAll();
             }}
           >
-            Remove
+            Disable
           </Button>
-          <Button type="submit">Save</Button>
+          <Button type="submit">Confirm</Button>
         </Group>
       </Stack>
     </form>

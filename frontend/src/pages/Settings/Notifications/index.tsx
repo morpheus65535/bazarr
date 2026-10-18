@@ -25,9 +25,9 @@ const SettingsNotificationsView: FunctionComponent = () => {
           , the core of the Bazarr notification system.
         </Text>
         <Text>
-          Please follow instructions on his{" "}
+          Please use the URL Builder on his{" "}
           <Anchor
-            href="https://github.com/caronc/apprise/wiki"
+            href="https://appriseit.com/url-builder/"
             target="_blank"
             rel="noopener noreferrer"
           >

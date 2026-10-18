@@ -22,7 +22,10 @@ vitest.mock("@/components/tables/SimpleTable", async () => {
   const SimpleTableMock = (props: SimpleTableMockProps) => {
     const { data, onRowSelectionChanged } = props;
     const onRowSelectionChangedRef = React.useRef(onRowSelectionChanged);
-    onRowSelectionChangedRef.current = onRowSelectionChanged;
+
+    React.useEffect(() => {
+      onRowSelectionChangedRef.current = onRowSelectionChanged;
+    });
 
     React.useEffect(() => {
       if (data.length > 0 && onRowSelectionChangedRef.current) {

@@ -103,6 +103,13 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     requiredIntegration: "anidb",
   },
   {
+    key: "tsukihime",
+    name: "TsukiHime",
+    description:
+      "Anime subtitle tracks extracted from the releases indexed by TsukiHime.",
+    requiredIntegration: "anidb",
+  },
+  {
     key: "animesubinfo",
     name: "AnimeSub.info",
     description: "Polish Anime Subtitles Provider",
@@ -209,6 +216,16 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
         key: "fallback_lang",
         name: "Fallback language",
         defaultValue: "en",
+      },
+      {
+        type: "switch",
+        key: "use_mediainfo",
+        name: "Use mediainfo for language detection (detects region variants such as pt-BR that ffprobe may miss; requires the mediainfo binary)",
+      },
+      {
+        type: "switch",
+        key: "prefer_embedded",
+        name: "Prefer embedded subtitles (search embedded tracks first and skip other providers for any language they satisfy)",
       },
     ],
     message:
@@ -371,7 +388,14 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
   {
     key: "napiprojekt",
     description: "Polish Subtitles Provider",
+    message:
+      "Hash-only search is a temporary workaround for catalogue search failures. It searches only for subtitles matching your video file's fingerprint and may return fewer results. Subtitles visible on the NapiProjekt website may not appear in Bazarr. Author filters are ignored while enabled.",
     inputs: [
+      {
+        type: "switch",
+        key: "hash_only",
+        name: "Hash-only search",
+      },
       {
         type: "switch",
         key: "only_authors",
@@ -468,7 +492,7 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
       {
         type: "switch",
         key: "ai_translate",
-        name: "AI-translate missing languages (requires SubDL Plus or Pro)",
+        name: "AI-translate missing languages (requires SubDL Plus or Pro; also includes AI-translated subtitles in results)",
         defaultValue: false,
       },
       {
@@ -536,6 +560,33 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
         type: "text",
         key: "base_url",
         name: "Base URL",
+      },
+    ],
+  },
+  {
+    key: "subsdump",
+    name: "SubsDump",
+    description:
+      "Connect Bazarr to a self-hosted SubsDump instance for fast subtitle search and downloads from your local Subscene archive.",
+    message: (
+      <Anchor
+        href="https://github.com/D3lphi3r/SubsDump"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        SubsDump project
+      </Anchor>
+    ),
+    inputs: [
+      {
+        type: "text",
+        key: "base_url",
+        name: "Base URL",
+      },
+      {
+        type: "password",
+        key: "api_key",
+        name: "API Key (optional)",
       },
     ],
   },
@@ -609,6 +660,18 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
         type: "text",
         key: "api_key",
         name: "API Key",
+      },
+    ],
+  },
+  {
+    key: "subtitlecat",
+    name: "Subtitle Cat",
+    description: "Multi-language Subtitles Provider",
+    inputs: [
+      {
+        type: "switch",
+        key: "include_machine_translated",
+        name: "Include subtitles machine translated by SubtitleCat in search results",
       },
     ],
   },

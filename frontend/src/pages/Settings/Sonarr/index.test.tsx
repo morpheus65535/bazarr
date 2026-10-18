@@ -144,6 +144,7 @@ describe("SettingsSonarrView", () => {
       expect.objectContaining({
         "settings-sonarr-base_url": "/newbase",
       }),
+      expect.objectContaining({ onSuccess: expect.any(Function) }),
     );
   });
 });

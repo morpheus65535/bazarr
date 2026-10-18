@@ -1,5 +1,4 @@
-import { http } from "msw";
-import { HttpResponse } from "msw";
+import { http, HttpResponse } from "msw/http";
 import { beforeEach, describe, it } from "vitest";
 import { customRender } from "@/tests";
 import server from "@/tests/mocks/node";
@@ -12,6 +11,9 @@ describe("Movies page", () => {
         return HttpResponse.json({
           data: [],
         });
+      }),
+      http.get("/api/movies/tags", () => {
+        return HttpResponse.json([]);
       }),
     );
   });

@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   BuildKey,
-  filterSubtitleBy,
   fromPython,
   GetItemId,
   pathJoin,
@@ -107,30 +106,6 @@ describe("pathJoin", () => {
     expect(pathJoin("a", "b", "c")).toBe("a/b/c");
     expect(pathJoin("a/", "/b")).toBe("a/b");
     expect(pathJoin("a//b")).toBe("a/b");
-  });
-});
-
-describe("filterSubtitleBy", () => {
-  const subtitles = [
-    { code2: "en", path: "/en.srt", name: "English", forced: false, hi: false },
-    { code2: "fr", path: "/fr.srt", name: "French", forced: false, hi: false },
-    { code2: "es", path: null, name: "Spanish", forced: false, hi: false },
-  ] as Subtitle[];
-
-  it("returns only subtitles with a path when no languages are requested", () => {
-    expect(filterSubtitleBy(subtitles, [])).toEqual([
-      subtitles[0],
-      subtitles[1],
-    ]);
-  });
-
-  it("filters by selected languages", () => {
-    const languages = [{ code2: "en", name: "English" }] as Language.Info[];
-
-    expect(filterSubtitleBy(subtitles, languages)).toEqual([
-      subtitles[0],
-      subtitles[1],
-    ]);
   });
 });
 

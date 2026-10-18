@@ -31,11 +31,20 @@ declare namespace Language {
     audio_exclude: PythonBoolean;
     audio_only_include: PythonBoolean;
     forced: PythonBoolean;
-    hi: PythonBoolean;
+    hi: HiPreference;
     language: CodeType;
   }
 
   type ProfileItem = CamelCaseKeys<RawProfileItem>;
+
+  type ProfileType = "basic" | "enhanced";
+
+  // Enhanced profiles: groups in priority order. The cutoff is a group id, 65535 (any group) or null.
+  interface RawEnhancedGroup {
+    id: number;
+    operator: "AND" | "OR";
+    items: RawProfileItem[];
+  }
 
   interface RawProfile {
     name: string;
@@ -46,9 +55,19 @@ declare namespace Language {
     mustNotContain: string[];
     originalFormat: boolean | null;
     tag: string | undefined;
+    // Absent on profiles saved before profile types existed, which are basic.
+    profileType?: ProfileType;
+    // Only on enhanced profiles. For those, items is the flat list of every group's items.
+    groups?: RawEnhancedGroup[];
+  }
+
+  // What the settings endpoint receives. Enhanced profiles send their groups instead of a flat item list.
+  interface RawProfileSubmission extends Omit<RawProfile, "items"> {
+    items: RawProfileItem[] | { groups: RawEnhancedGroup[] };
   }
 
   type Profile = CamelCaseKeys<RawProfile>;
+  type EnhancedGroup = CamelCaseKeys<RawEnhancedGroup>;
 }
 
 interface RawSubtitle {
@@ -370,6 +389,7 @@ declare namespace Parameter {
     profileId?: number;
     audioLanguage?: string;
     tags?: string[];
+    ended?: boolean;
   }
 
   interface ListQuery extends Range {

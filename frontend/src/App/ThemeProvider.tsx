@@ -12,6 +12,7 @@ import {
 } from "@mantine/core";
 import ThemeLoader from "@/App/ThemeLoader";
 import "@mantine/core/styles.layer.css";
+import "@mantine/dropzone/styles.layer.css";
 import "@mantine/notifications/styles.layer.css";
 import "@mantine/spotlight/styles.layer.css";
 import styleVars from "@/assets/_variables.module.scss";

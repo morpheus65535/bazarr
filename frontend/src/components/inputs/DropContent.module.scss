@@ -2,3 +2,12 @@
   pointer-events: none;
   min-height: 220px;
 }
+
+// Applied to Dropzone.FullScreen's "inner" part so this content centers
+// within the full-page overlay.
+.dropzoneInner {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

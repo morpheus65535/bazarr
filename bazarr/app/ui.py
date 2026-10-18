@@ -4,6 +4,7 @@ import os
 import requests
 import mimetypes
 
+from pathlib import Path
 from flask import (request, abort, render_template, Response, session, send_file, stream_with_context, Blueprint,
                    redirect)
 from functools import wraps
@@ -17,7 +18,7 @@ from utilities.helper import check_credentials
 from utilities.central import get_log_file_path
 
 from .config import settings, base_url
-from .database import database, System
+from .database import database, System, select
 from .get_args import args
 
 frontend_build_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'frontend', 'build')
@@ -76,7 +77,10 @@ def catch_all(path):
 
     # PWA Assets are returned from frontend root folder
     if path in pwa_assets or path.startswith('workbox-'):
-        return send_file(os.path.join(frontend_build_path, path))
+        fullpath = os.path.normpath(os.path.join(frontend_build_path, path))
+        if not Path(fullpath).is_relative_to(os.path.realpath(frontend_build_path)):
+            return '', 404
+        return send_file(fullpath)
 
     auth = True
     if settings.auth.type == 'basic':
@@ -91,12 +95,12 @@ def catch_all(path):
             auth = False
 
     try:
-        updated = database.scalar(System.updated)
+        updated = database.scalar(select(System.updated))
     except Exception:
         updated = '0'
 
     try:
-        configured = database.scalar(System.configured)
+        configured = database.scalar(select(System.configured))
     except Exception:
         configured = '0'
 
@@ -208,7 +212,7 @@ def movies_images(url):
 @check_login
 def backup_download(filename):
     fullpath = os.path.normpath(os.path.join(settings.backup.folder, filename))
-    if not fullpath.startswith(settings.backup.folder):
+    if not Path(fullpath).is_relative_to(os.path.realpath(settings.backup.folder)):
         return '', 404
     else:
         return send_file(fullpath, max_age=0, as_attachment=True)
@@ -219,8 +223,7 @@ def swaggerui_static(filename):
     basepath = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'libs', 'flask_restx',
                             'static')
     fullpath = os.path.realpath(os.path.join(basepath, filename))
-    # Use startswith to prevent path traversal
-    if not fullpath.startswith(os.path.realpath(basepath) + os.sep):
+    if not Path(fullpath).is_relative_to(os.path.realpath(basepath)):
         return '', 404
     else:
         return send_file(fullpath)
