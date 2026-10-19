@@ -8,7 +8,6 @@ from subliminal_patch import core, search_external_subtitles
 from sqlalchemy import not_, tuple_
 
 from languages.custom_lang import CustomLanguage
-from constants import HI_EXCLUDED
 from app.database import get_profiles_list, get_profile_cutoff, TableEpisodes, TableShows, TableEpisodesSubtitles, \
     get_audio_profile_languages, database, update, select, get_subtitles, insert, delete
 from languages.get_languages import alpha2_from_alpha3, get_language_set
@@ -19,6 +18,8 @@ from utilities.video_analyzer import embedded_subs_reader
 from app.event_handler import event_stream
 from subtitles.indexer.utils import guess_external_subtitles, get_external_subtitles_path
 from subtitles.pool import get_language_equals
+from subtitles.indexer.profile_requirements import calculate_missing_subtitles, \
+    calculate_enhanced_missing_subtitles
 from subtitles.wanted_state import store_missing_subtitles
 from app.jobs_queue import jobs_queue, JobCanceled
 
@@ -281,165 +282,25 @@ def list_missing_subtitles(
 
             # get desired subtitles
             desired_subtitles_temp = get_profiles_list(profile_id=episode_subtitles.profileId)
-            desired_subtitles_list = []
-            if desired_subtitles_temp and isinstance(desired_subtitles_temp, dict):
-                items = desired_subtitles_temp.get('items', [])
-                if not isinstance(items, (list, tuple)):
-                    items = []
-                for language in items:
-                    if not isinstance(language, dict):
-                        continue
-                    language_code = language.get('language')
-                    if not isinstance(language_code, str) or not language_code:
-                        continue
-                    if language.get('audio_exclude') == "True":
-                        if matches_audio(language):
-                            continue
-                    if language.get('audio_only_include') == "True":
-                        if not matches_audio(language):
-                            continue
-                    desired_subtitles_list.append({'language': language_code,
-                                                   'forced': str(language.get('forced', False)),
-                                                   'hi': str(language.get('hi', False))})
+            profile_items = desired_subtitles_temp.get('items', []) if isinstance(desired_subtitles_temp, dict) else []
+            if not isinstance(profile_items, (list, tuple)):
+                profile_items = []
 
             # get existing subtitles
-            actual_subtitles_list = []
             actual_subtitles_temp = get_subtitles(sonarr_episode_id=episode_subtitles.sonarrEpisodeId) or []
             if not use_embedded_subs:
                 actual_subtitles_temp = [x for x in actual_subtitles_temp if isinstance(x, dict) and x.get('path')]
 
-            for subtitles in actual_subtitles_temp:
-                if not isinstance(subtitles, dict):
-                    continue
-                language_code = subtitles.get('code2')
-                if not isinstance(language_code, str) or not language_code:
-                    continue
-                actual_subtitles_list.append({'language': language_code,
-                                              'forced': str(subtitles.get('forced', False)),
-                                              'hi': str(subtitles.get('hi', False))})
-
-            # Expand actual subtitles with language equals
-            # Convert code2 languages to Language objects for expansion
-            actual_subtitles_lang_set = set()
-            for sub in actual_subtitles_list:
-                try:
-                    # Check for custom alpha2 codes first
-                    custom = CustomLanguage.from_value(sub['language'], "alpha2")
-                    if custom:
-                        lang_obj = custom.subzero_language()
-                    else:
-                        lang_obj = core.Language.fromietf(sub['language'])
-                    lang_obj.forced = sub['forced'] == 'True'
-                    lang_obj.hi = sub['hi'] == 'True'
-                    actual_subtitles_lang_set.add(lang_obj)
-                except Exception:
-                    # If language parsing fails, add as-is
-                    actual_subtitles_lang_set.add(sub['language'])
-
-            # Use lang_equals to expand the actual subtitles set
-            expanded_actual_lang_set = lang_equals.check_set(actual_subtitles_lang_set)
-
-            # Convert expanded languages back to code2 format for comparison
-            expanded_actual_subtitles_list = []
-            for lang_obj in expanded_actual_lang_set:
-                if isinstance(lang_obj, core.Language):
-                    # check if lang_obj is a custom language
-                    custom = CustomLanguage.from_value(lang_obj, "language")
-                    # append the language to the list with the proper alpha2 code depending on whether it's custom or not
-                    expanded_actual_subtitles_list.append({'language': custom.alpha2 if custom else lang_obj.alpha2,
-                                                           'forced': 'True' if lang_obj.forced else 'False',
-                                                           'hi': 'True' if lang_obj.hi else 'False'})
-
-            # languages with a non-HI item in the profile. Built from every item, not one value per language,
-            # so a normal item and a non-HI item for the same language don't overwrite each other
-            profile_items = desired_subtitles_temp.get('items', []) if isinstance(desired_subtitles_temp, dict) else []
-            if not isinstance(profile_items, (list, tuple)):
-                profile_items = []
-            non_hi_languages = {item['language'] for item in profile_items
-                                if isinstance(item, dict) and isinstance(item.get('language'), str)
-                                and str(item.get('forced', False)) == 'False' and item.get('hi') == HI_EXCLUDED}
-
-            # check if cutoff is reached and skip any further check
-            cutoff_met = False
-            cutoff_temp_list = get_profile_cutoff(profile_id=episode_subtitles.profileId)
-
-            if cutoff_temp_list:
-                for cutoff_temp in cutoff_temp_list:
-                    if not isinstance(cutoff_temp, dict):
-                        continue
-                    cutoff_code = cutoff_temp.get('language')
-                    if not isinstance(cutoff_code, str) or not cutoff_code:
-                        continue
-                    cutoff_language = {'language': cutoff_code,
-                                       'forced': cutoff_temp.get('forced', 'False'),
-                                       'hi': cutoff_temp.get('hi', 'False')}
-                    if cutoff_temp.get('audio_only_include') == 'True' and not matches_audio(cutoff_temp):
-                        # We don't want subs in this language unless it matches
-                        # the audio. Don't use it to meet the cutoff.
-                        continue
-                    elif cutoff_temp.get('audio_exclude') == 'True' and matches_audio(cutoff_temp):
-                        # The cutoff is met through one of the audio tracks.
-                        cutoff_met = True
-                    elif cutoff_language in actual_subtitles_list:
-                        cutoff_met = True
-                    elif cutoff_language in expanded_actual_subtitles_list:
-                        # Check against expanded actual subtitles (includes language equals)
-                        cutoff_met = True
-                    elif (cutoff_language['hi'] == 'False' and cutoff_language['forced'] == 'False' and cutoff_language and
-                          cutoff_language['language'] not in non_hi_languages and
-                          {'language': cutoff_language['language'],
-                           'forced': 'False',
-                           'hi': 'True'} in actual_subtitles_list):
-                        # HI is considered as good as normal only if the language isn't set to exclude HI
-                        cutoff_met = True
-                    elif (cutoff_language['hi'] == HI_EXCLUDED and
-                          {'language': cutoff_language['language'],
-                           'forced': cutoff_language['forced'],
-                           'hi': 'False'} in actual_subtitles_list):
-                        # Cutoff is met by non-HI subtitles when HI subtitles are excluded in languages profile
-                        cutoff_met = True
-
-            if cutoff_met:
-                missing_subtitles_text = str([])
+            profile_groups = desired_subtitles_temp.get('groups') if isinstance(desired_subtitles_temp, dict) else None
+            if profile_groups is not None:
+                missing_subtitles_list = calculate_enhanced_missing_subtitles(
+                    profile_groups, desired_subtitles_temp.get('cutoff'), actual_subtitles_temp, matches_audio,
+                    lang_equals)
             else:
-                # if cutoff isn't met or None, we continue
-
-                # get difference between desired and existing subtitles
-                missing_subtitles_list = []
-                for item in desired_subtitles_list:
-                    # Check against both actual and expanded actual subtitles
-                    if item not in actual_subtitles_list and item not in expanded_actual_subtitles_list:
-                        missing_subtitles_list.append(item)
-
-                for item in actual_subtitles_list:
-                    if item['hi'] == 'True' and item['forced'] == 'False' and item['language'] not in non_hi_languages:
-                        # remove missing that have hi subtitles for this language in existing (unless the language is set to exclude HI)
-                        try:
-                            missing_subtitles_list.remove({'language': item['language'],
-                                                           'forced': 'False',
-                                                           'hi': 'False'})
-                        except ValueError:
-                            pass
-                    elif item['hi'] == 'False' and item['forced'] == 'False' and item['language'] in non_hi_languages:
-                        # remove explicitely excluded requested hi subtitles and existing hi subtitles
-                        try:
-                            missing_subtitles_list.remove({'language': item['language'],
-                                                           'forced': 'False',
-                                                           'hi': HI_EXCLUDED})
-                        except ValueError:
-                            pass
-
-                # make the missing languages list looks like expected
-                missing_subtitles_output_list = []
-                for item in missing_subtitles_list:
-                    lang = item['language']
-                    if item['forced'] == 'True':
-                        lang += ':forced'
-                    elif item['hi'] == 'True':
-                        lang += ':hi'
-                    missing_subtitles_output_list.append(lang)
-
-                missing_subtitles_text = str(missing_subtitles_output_list)
+                missing_subtitles_list = calculate_missing_subtitles(
+                    profile_items, get_profile_cutoff(profile_id=episode_subtitles.profileId), actual_subtitles_temp,
+                    matches_audio, lang_equals)
+            missing_subtitles_text = str(missing_subtitles_list)
 
         store_missing_subtitles(
             TableEpisodes.__table__, 'sonarrEpisodeId', 'series', episode_subtitles.sonarrEpisodeId,

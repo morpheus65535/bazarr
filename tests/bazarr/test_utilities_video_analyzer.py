@@ -234,6 +234,10 @@ def mediainfo_data(mocker, video_file):
         "knowit.providers.mediainfo.MediaInfoCTypesExecutor._execute",
         return_value=M_INFO,
     )
+    mocker.patch(
+        "knowit.providers.mediainfo.MediaInfoCliExecutor._execute",
+        return_value=M_INFO,
+    )
     try:
         data = video_analyzer.know(
             video_path=video_file,
@@ -310,8 +314,66 @@ def test_embedded_audio_reader(mocker, mediainfo_data, video_file):
     assert {"pob", "por"} == set(result)
 
 
-def test_handle_alpha3_accepts_string_language():
-    assert video_analyzer._handle_alpha3({"language": "jpn"}) == "jpn"
+@pytest.mark.parametrize("track, expected", [
+    ({"language": "jpn"}, "jpn"),
+    ({"language": "por"}, "por"),
+    ({"language": "por", "name": "Brazilian Portuguese"}, "pob"),
+])
+def test_handle_alpha3_accepts_string_language(track, expected):
+    assert video_analyzer._handle_alpha3(track) == expected
+
+
+def test_handle_alpha3_accepts_alpha3_only_language():
+    class Alpha3OnlyLanguage:
+        alpha3 = "eng"
+
+    assert video_analyzer._handle_alpha3({"language": Alpha3OnlyLanguage()}) == "eng"
+
+
+def test_subtitles_sync_references_uses_movie_subtitles_when_episode_id_is_zero(mocker):
+    from types import SimpleNamespace
+
+    media_data = SimpleNamespace(path="/movies/film.mkv", file_size=100, movie_file_id=17)
+    execute = mocker.patch(
+        "bazarr.utilities.video_analyzer.database.execute",
+        return_value=SimpleNamespace(first=lambda: media_data),
+    )
+    mocker.patch(
+        "bazarr.utilities.video_analyzer.path_mappings.path_replace_movie",
+        return_value="/movies/film.mkv",
+    )
+    mocker.patch(
+        "bazarr.utilities.video_analyzer.path_mappings.path_replace_reverse_movie",
+        side_effect=lambda path: path,
+    )
+    parse_metadata = mocker.patch(
+        "bazarr.utilities.video_analyzer.parse_video_metadata",
+        return_value={"ffprobe": {"audio": []}},
+    )
+    get_subtitles = mocker.patch(
+        "bazarr.utilities.video_analyzer.get_subtitles",
+        return_value=[{
+            "path": "/movies/film.en.srt",
+            "name": "English",
+            "forced": False,
+            "hi": False,
+        }],
+    )
+
+    result = video_analyzer.subtitles_sync_references(
+        "/movies/film.fr.srt", sonarr_episode_id=0, radarr_movie_id=42
+    )
+
+    execute.assert_called_once()
+    parse_metadata.assert_called_once()
+    get_subtitles.assert_called_once_with(radarr_id=42)
+    assert result["external_subtitles_tracks"] == [{
+        "name": "film.en.srt",
+        "path": "/movies/film.en.srt",
+        "language": "English",
+        "forced": False,
+        "hearing_impaired": False,
+    }]
 
 
 def test_embedded_audio_reader_accepts_string_language(mocker, video_file):

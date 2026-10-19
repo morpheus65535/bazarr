@@ -297,6 +297,11 @@ class WhisperAISubtitle(Subtitle):
         return self.matches
 
 
+# Largest audio delay we are willing to apply. Real sync offsets are a few seconds at most;
+# anything larger is almost certainly a timestamp problem and would make ffmpeg emit that
+# much silence into a buffer held entirely in memory.
+MAX_AUDIO_DELAY_MS = 30_000
+
 class WhisperAIProvider(Provider):
     '''Whisper AI Provider.'''
 
@@ -345,17 +350,17 @@ class WhisperAIProvider(Provider):
 
     def get_audio_delay(self, path, audio_stream_language=None):
         """
-        Detects audio delay for the specific language track by inspecting the 
-        first packet's Presentation Timestamp (PTS).
+        Detects audio delay for the specific language track by inspecting the
+        first packet's Presentation Timestamp (PTS), relative to the container start time.
         """
         try:
             # Command: Get Stream Metadata and Packet Data (30s scan)
             cmd = [
                 self.ffprobe_path,
                 '-v', 'error',
-                '-select_streams', 'a', 
+                '-select_streams', 'a',
                 '-read_intervals', '%+30',
-                '-show_entries', 'stream=index:stream_tags=language:packet=stream_index,pts_time',
+                '-show_entries', 'format=start_time:stream=index:stream_tags=language:packet=stream_index,pts_time',
                 '-of', 'json',
                 path
             ]
@@ -374,7 +379,16 @@ class WhisperAIProvider(Provider):
             data = json.loads(res.stdout)
             streams = data.get('streams', [])
             packets = data.get('packets', [])
-            
+
+            # PTS values are absolute on the container timeline, which can start far from zero
+            # (MPEG-TS broadcast captures often start at tens of thousands of seconds). ffmpeg
+            # rebases input timestamps to the container start, so that is the reference point.
+            try:
+                container_start = float(data.get('format', {}).get('start_time', 0))
+            except (TypeError, ValueError):
+                # ffprobe prints 'N/A' when the start time is unknown
+                container_start = 0.0
+
             if not streams:
                 return 0
 
@@ -409,9 +423,13 @@ class WhisperAIProvider(Provider):
                     if pts is None or pts == 'N/A':
                         return 0
                     
-                    # Convert seconds to ms
-                    delay_ms = int(float(pts) * 1000)
-                    
+                    # Convert seconds to ms, relative to the container start
+                    delay_ms = int((float(pts) - container_start) * 1000)
+
+                    if abs(delay_ms) > MAX_AUDIO_DELAY_MS:
+                        logger.warning(f"{log_prefix}: Ignoring implausible audio delay of {delay_ms}ms on Stream Index {target_index}.")
+                        return 0
+
                     if delay_ms != 0:
                         logger.debug(f"{log_prefix}: Detected audio delay of {delay_ms}ms on Stream Index {target_index}.")
                     
