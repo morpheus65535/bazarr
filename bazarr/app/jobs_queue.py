@@ -67,8 +67,6 @@ class Job:
                  is_progress: bool = False, is_signalr: bool = False, progress_max: int = 0, job_returned_value=None, is_cancellable: bool = False,):
         self.job_id = job_id
         self.job_name = job_name
-        # job_name can be changed while the job runs, keep the initial one to rerun the job
-        self.initial_job_name = job_name
         self.module = module
         self.func = func
         self.args = args
@@ -79,7 +77,6 @@ class Job:
         self.is_signalr = is_signalr
         self.progress_value = 0
         self.progress_max = progress_max
-        self.initial_progress_max = progress_max
         self.progress_message = ""
         self.job_returned_value = job_returned_value
         self.is_cancellable = is_cancellable
@@ -595,37 +592,6 @@ class JobsQueue:
                 job.cancel_event.set()
                 logging.debug(f"Cancellation requested for job {job.job_name} ({job.job_id})")
         return False
-
-    def rerun_canceled_job(self, job_id: int) -> int | bool:
-        """
-        Queues a new job running the same function with the same arguments as a canceled job, then removes the
-        canceled job from the canceled queue.
-
-        :param job_id: The unique identifier of the canceled job to rerun.
-        :type job_id: int
-
-        :return: ID of the new pending job, or False if the job isn't canceled or an identical job is already queued.
-        :rtype: int | bool
-        """
-        with self._queue_lock:
-            job = next((job for job in self.jobs_canceled_queue if job.job_id == job_id), None)
-            if not job:
-                return False
-
-            # the new job gets its own job_id when it runs
-            kwargs = {key: value for key, value in job.kwargs.items() if key != 'job_id'}
-            new_job_id = self.feed_jobs_pending_queue(job_name=job.initial_job_name, module=job.module,
-                                                      func=job.func, args=list(job.args), kwargs=kwargs,
-                                                      is_progress=job.is_progress,
-                                                      progress_max=job.initial_progress_max,
-                                                      is_cancellable=job.is_cancellable)
-            if not new_job_id:
-                return False
-            self.jobs_canceled_queue.remove(job)
-
-        logging.debug(f"Canceled job {job.job_name} ({job_id}) queued again as job {new_job_id}")
-        event_stream(type='jobs', action='delete', payload={"job_id": job_id})
-        return new_job_id
 
     def get_job(self, job_id: int | None) -> Job | None:
         """
