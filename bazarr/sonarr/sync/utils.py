@@ -148,8 +148,7 @@ def get_episodes_from_sonarr_api(apikey_sonarr: str, series_id: int | None = Non
         with r:
             if r.status_code != 200:
                 return None
-            result = EPISODE_DECODER.decode_complete_response(r)
-            return result
+            return EPISODE_DECODER.decode_complete_response(r)
 
 
 def get_episodesFiles_from_sonarr_api(apikey_sonarr: str, series_id: int | None = None, episode_file_id: int | None = None) -> EpisodeFile | list[EpisodeFile] | None:
@@ -183,8 +182,7 @@ def get_episodesFiles_from_sonarr_api(apikey_sonarr: str, series_id: int | None 
         with r:
             if r.status_code != 200:
                 return None
-            result = EPISODEFILE_DECODER.decode_complete_response(r)
-            return result
+            return EPISODEFILE_DECODER.decode_complete_response(r)
 
 
 def get_history_from_sonarr_api(apikey_sonarr, episode_id):

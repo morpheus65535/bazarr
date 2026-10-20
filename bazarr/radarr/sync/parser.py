@@ -27,10 +27,9 @@ def get_matching_profile(tags, language_profiles):
 
 
 def movieParser(movie: Movie, action: str, tags_dict: list[ArrTag], language_profiles,
-                movie_default_profile: int | None, audio_profiles) -> MovieValues | None:
+                movie_default_profile: int | None, audio_profiles) -> MovieValues:
     file = movie.movieFile
-    if file is None:
-        return None
+    assert file is not None
     legacy = get_radarr_info.is_legacy()
     images = movie.images or []
     poster = ''

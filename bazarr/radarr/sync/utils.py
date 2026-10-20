@@ -105,8 +105,7 @@ def get_movies_from_radarr_api(apikey_radarr: str, radarr_id: int | None = None)
         with r:
             if r.status_code != 200:
                 return None
-            result = MOVIE_DECODER.decode_response(r)
-            return result
+            return MOVIE_DECODER.decode_response(r)
 
 
 def get_history_from_radarr_api(apikey_radarr, movie_id):

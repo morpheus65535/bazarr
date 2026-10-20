@@ -312,8 +312,7 @@ def sync_one_episode(episode_id, defer_search=False, is_signalr=False):
                     f'BAZARR deleted this episode from the database:{path_mappings.path_replace(existing_episode.path)}')
         return
 
-    if episode is None:
-        return
+    assert episode is not None
 
     # Update existing episodes in DB
     if existing_episode:

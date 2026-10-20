@@ -241,7 +241,7 @@ def update_movies(job_id=None, wait_for_completion=False):
                         files_missing += 1
                     continue
                 movie_id = movie.id
-                if type(movie_id) is not int or movie_id <= 0:
+                if movie_id <= 0:
                     continue
                 jobs_queue.update_job_progress(job_id=job_id, progress_value=i, progress_message=movie.title)
                 # Only movies that Radarr says have files downloaded will be kept up to date in the DB
@@ -266,8 +266,6 @@ def update_movies(job_id=None, wait_for_completion=False):
                                                            language_profiles=language_profiles,
                                                            movie_default_profile=movie_default_profile,
                                                            audio_profiles=audio_profiles)
-                                if parsed_movie is None:
-                                    continue
                                 if not parsed_movie.items() <= current_movies_in_db[movie_id].items():
                                     update_movie(parsed_movie)
                                     movies_updated.append(parsed_movie['title'])
@@ -277,8 +275,6 @@ def update_movies(job_id=None, wait_for_completion=False):
                                                            language_profiles=language_profiles,
                                                            movie_default_profile=movie_default_profile,
                                                            audio_profiles=audio_profiles)
-                                if parsed_movie is None:
-                                    continue
                                 add_movie(parsed_movie)
                                 movies_added.append(parsed_movie['title'])
                         else:
@@ -385,8 +381,7 @@ def update_one_movie(movie_id, action, defer_search=False, is_signalr=False):
                     f'BAZARR deleted this movie from the database:{path_mappings.path_replace_movie(existing_movie.path)}')
         return
 
-    if movie is None:
-        return
+    assert movie is not None
 
     # Update existing movie in DB
     if existing_movie:
