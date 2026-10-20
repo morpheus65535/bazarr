@@ -25,7 +25,7 @@ from app.jobs_queue import jobs_queue
 from app.notifier import send_notifications
 from subtitles.wanted_state import delete_media_and_wanted_search_state, get_due_missing_languages_map
 
-from .parser import episodeParser
+from .parser import episodeParser, get_episode_file_size
 from .utils import get_episodes_from_sonarr_api, get_episodesFiles_from_sonarr_api
 
 FEATURE_PREFIX = "SYNC_EPISODES "
@@ -34,16 +34,6 @@ FEATURE_PREFIX = "SYNC_EPISODES "
 def trace(message):
     if settings.general.debug:
         logging.debug(FEATURE_PREFIX + message)
-
-
-def check_actual_file_size(original_episode_path):
-    try:
-        bazarr_file_size = \
-            os.path.getsize(path_mappings.path_replace(original_episode_path))
-    except OSError:
-        bazarr_file_size = 0
-
-    return bazarr_file_size > MINIMUM_VIDEO_SIZE
 
 
 def _validated_episodes(episodes: list[Episode], *, series_id: int | None = None) -> list[Episode] | None:
@@ -142,15 +132,16 @@ def sync_episodes(series_id: int | None, defer_search: bool = False, is_signalr:
                         skipped_count += 1
                         continue
 
-                if (episode.episodeFile.size > MINIMUM_VIDEO_SIZE or
-                        check_actual_file_size(episode.episodeFile.path) or
+                file_size = get_episode_file_size(episode.episodeFile)
+                if (file_size > MINIMUM_VIDEO_SIZE or
                         (settings.general.enable_strm_support and episode.episodeFile.path.lower().endswith('.strm'))):
                     # Add episodes in sonarr to current episode list
                     current_episodes_sonarr.append(episode.id)
 
                     # Parse episode data
                     parsed_episode = episodeParser(
-                        episode, parse_embedded_audio_track=parse_embedded_audio_track, audio_languages=audio_languages)
+                        episode, parse_embedded_audio_track=parse_embedded_audio_track,
+                        audio_languages=audio_languages, file_size=file_size)
                     if parsed_episode is None:
                         continue
                     if episode.id in current_episodes_in_db_row_as_dict:

@@ -39,7 +39,7 @@ def get_language_profiles():
         select(TableLanguagesProfiles.profileId, TableLanguagesProfiles.name, TableLanguagesProfiles.tag)).all()
 
 
-def get_movie_file_size_from_db(movie_path):
+def get_movie_file_size_from_db(movie_path: str) -> int:
     try:
         bazarr_file_size = os.path.getsize(path_mappings.path_replace_movie(movie_path))
     except OSError:
@@ -47,13 +47,20 @@ def get_movie_file_size_from_db(movie_path):
     return bazarr_file_size
 
 
-def _has_usable_movie_file(movie: Movie | IncompleteMovie) -> bool | None:
+def _has_usable_movie_file(movie: Movie | IncompleteMovie,
+                          *, file_sizes: dict[str, int] | None = None) -> bool | None:
     if movie.hasFile is False:
         return False
     file = movie.movieFile
     if movie.hasFile is None or file is None:
         return None
-    if int(file.size) > MINIMUM_VIDEO_SIZE or get_movie_file_size_from_db(file.path) > MINIMUM_VIDEO_SIZE:
+    if int(file.size) > MINIMUM_VIDEO_SIZE:
+        return True
+    if file_sizes is None:
+        file_sizes = {}
+    if file.path not in file_sizes:
+        file_sizes[file.path] = get_movie_file_size_from_db(file.path)
+    if file_sizes[file.path] > MINIMUM_VIDEO_SIZE:
         return True
     general_settings = settings.general
     return bool(general_settings.enable_strm_support and file.path.lower().endswith('.strm'))
@@ -164,9 +171,11 @@ def update_movies(job_id: int | None = None, wait_for_completion: bool = False) 
             identifiers = [movie.id for movie in movies]
             complete_movie_list = (all(identifier is not None and identifier > 0 for identifier in identifiers)
                                    and len(set(identifiers)) == len(identifiers))
+            file_sizes: dict[str, int] = {}
             current_movies_radarr = [
                 identifier for movie, identifier in zip(movies, identifiers)
-                if identifier is not None and identifier > 0 and _has_usable_movie_file(movie) is not False
+                if identifier is not None and identifier > 0
+                and _has_usable_movie_file(movie, file_sizes=file_sizes) is not False
             ]
 
             # Remove movies from DB that either no longer exist in Radarr or exist and Radarr says do not have a movie file
@@ -219,7 +228,7 @@ def update_movies(job_id: int | None = None, wait_for_completion: bool = False) 
                             skipped_count += 1
                             continue
 
-                        if _has_usable_movie_file(movie):
+                        if _has_usable_movie_file(movie, file_sizes=file_sizes):
                             # Add/update movies from Radarr that have a movie file to current movies list
                             trace(f"{i}: (Processing) {movie.title}")
                             parsed_movie = movieParser(movie, action='update' if previous is not None else 'insert',

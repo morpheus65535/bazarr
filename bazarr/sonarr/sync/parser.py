@@ -14,7 +14,7 @@ from utilities.video_analyzer import embedded_audio_reader
 from sonarr.info import get_sonarr_info
 from sonarr.series_snapshot import Series, SeriesValues
 from utilities.arr_types import ArrTag
-from sonarr.episode_snapshot import Episode, EpisodeValues
+from sonarr.episode_snapshot import Episode, EpisodeFile, EpisodeValues
 
 from .converter import SonarrFormatVideoCodec, SonarrFormatAudioCodec
 
@@ -122,18 +122,24 @@ def profile_id_to_language(id_, profiles):
     return profiles_to_return
 
 
+def get_episode_file_size(file: EpisodeFile) -> int:
+    if file.size > MINIMUM_VIDEO_SIZE:
+        return file.size
+    try:
+        return os.path.getsize(path_mappings.path_replace(file.path))
+    except OSError:
+        return 0
+
+
 def episodeParser(episode: Episode, parse_embedded_audio_track: bool | None = None,
-                  *, audio_languages: dict[int, str | None] | None = None) -> EpisodeValues | None:
+                  *, audio_languages: dict[int, str | None] | None = None,
+                  file_size: int | None = None) -> EpisodeValues | None:
     general_settings = settings.general
     file = episode.episodeFile
     if not episode.hasFile or file is None:
         return None
-    file_size = file.size
-    if file_size <= MINIMUM_VIDEO_SIZE:
-        try:
-            file_size = os.path.getsize(path_mappings.path_replace(file.path))
-        except OSError:
-            file_size = 0
+    if file_size is None:
+        file_size = get_episode_file_size(file)
     if not (file_size > MINIMUM_VIDEO_SIZE or
             (general_settings.enable_strm_support and file.path.lower().endswith('.strm'))):
         return None

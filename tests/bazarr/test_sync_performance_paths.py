@@ -399,7 +399,7 @@ def test_episode_parser_rejection_skips_writes_and_keeps_existing_id(
             return _Result(all_value=[(row,)] if existing and len(reads) == 1 else [])
 
     def reject(record: Episode, *, parse_embedded_audio_track: bool,
-               audio_languages: dict[int, str | None]) -> None:
+               audio_languages: dict[int, str | None], file_size: int) -> None:
         parsed.append(record)
         return None
 
