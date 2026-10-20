@@ -4,7 +4,7 @@ import logging
 import os
 import operator
 
-from radarr.movie_snapshot import IncompleteMovie, Movie
+from radarr.movie_snapshot import IncompleteMovie, Movie, MovieValues
 
 from datetime import datetime
 from functools import reduce
@@ -61,23 +61,22 @@ def _has_usable_movie_file(movie: Movie | IncompleteMovie) -> bool | None:
 
 
 # Update movies in DB
-def update_movie(updated_movie):
+def update_movie(previous_file: tuple[int | None, str | None], updated_movie: MovieValues) -> bool:
     try:
-        previous_movie_data = database.execute(
-            select(TableMovies.movie_file_id, TableMovies.path)
-            .where(TableMovies.radarrId == updated_movie['radarrId'])
-        ).first()
-
         previous_movie_id = updated_movie['radarrId']
-        previous_movie_file_id = previous_movie_data.movie_file_id if previous_movie_data else None
-        previous_movie_path = previous_movie_data.path if previous_movie_data else None
+        previous_movie_file_id, previous_movie_path = previous_file
 
         updated_movie['updated_at_timestamp'] = datetime.now()
-        database.execute(
+        result = database.connection().execute(
             update(TableMovies).values(updated_movie)
-            .where(TableMovies.radarrId == updated_movie['radarrId']))
+            .where(TableMovies.radarrId == updated_movie['radarrId'],
+                   TableMovies.movie_file_id.is_not_distinct_from(previous_movie_file_id),
+                   TableMovies.path.is_not_distinct_from(previous_movie_path)))
+        if result.rowcount == 0:
+            return False
     except IntegrityError as e:
         logging.error(f"BAZARR cannot update movie {updated_movie['path']} because of {e}")
+        return False
     else:
         if (previous_movie_file_id != updated_movie['movie_file_id'] or
                 previous_movie_path != updated_movie['path']):
@@ -89,17 +88,7 @@ def update_movie(updated_movie):
                           f'and movie_file_id unchanged')
 
         event_stream(type='movie', action='update', payload=previous_movie_id)
-
-
-def get_movie_monitored_status(movie_id):
-    existing_movie_monitored = database.execute(
-        select(TableMovies.monitored)
-        .where(TableMovies.radarrId == str(movie_id)))\
-        .first()
-    if existing_movie_monitored is None:
         return True
-    else:
-        return bool_map[existing_movie_monitored[0]]
 
 
 # Insert new movies in DB
@@ -116,13 +105,15 @@ def add_movie(added_movie):
         event_stream(type='movie', action='update', payload=int(added_movie['radarrId']))
 
 
-def update_movies(job_id=None, wait_for_completion=False):
+def update_movies(job_id: int | None = None, wait_for_completion: bool = False) -> None:
     if not job_id:
         jobs_queue.add_job_from_function("Syncing movies with Radarr", is_progress=True,
                                          wait_for_completion=wait_for_completion, is_cancellable=True)
         return
     else:
         job = jobs_queue.get_job(job_id=job_id)
+        if job is None:
+            return
 
     check_radarr_rootfolder()
     logging.debug('BAZARR Starting movie sync from Radarr.')
@@ -200,8 +191,7 @@ def update_movies(job_id=None, wait_for_completion=False):
             # Add new movies and update movies that Radarr says have media files
             # Any new movies added to Radarr that don't have media files yet will not be added to DB
             sync_monitored = settings.radarr.sync_only_monitored_movies
-            if sync_monitored:
-                skipped_count = 0
+            skipped_count = 0
             files_missing = 0
             movies_added = []
             movies_updated = []
@@ -222,28 +212,26 @@ def update_movies(job_id=None, wait_for_completion=False):
                 if movie.hasFile is True:
                     movie_file = movie.movieFile
                     if movie_file is not None:
-                        if sync_monitored:
-                            if get_movie_monitored_status(movie_id) != movie.monitored:
-                                # monitored status is not the same as our DB
-                                trace(f"{i}: (Monitor Status Mismatch) {movie.title}")
-                            elif not movie.monitored:
-                                trace(f"{i}: (Skipped Unmonitored) {movie.title}")
-                                skipped_count += 1
-                                continue
+                        previous = current_movies_in_db.get(movie_id)
+                        if (sync_monitored and not movie.monitored and previous is not None
+                                and not bool_map[previous['monitored']]):
+                            trace(f"{i}: (Skipped Unmonitored) {movie.title}")
+                            skipped_count += 1
+                            continue
 
                         if _has_usable_movie_file(movie):
                             # Add/update movies from Radarr that have a movie file to current movies list
                             trace(f"{i}: (Processing) {movie.title}")
-                            exists = movie_id in current_movies_id_db
-                            parsed_movie = movieParser(movie, action='update' if exists else 'insert',
+                            parsed_movie = movieParser(movie, action='update' if previous is not None else 'insert',
                                                        tags_dict=tagsDict,
                                                        language_profiles=language_profiles,
                                                        movie_default_profile=movie_default_profile,
                                                        audio_profiles=audio_profiles)
-                            if exists:
-                                if not parsed_movie.items() <= current_movies_in_db[movie_id].items():
-                                    update_movie(parsed_movie)
-                                    movies_updated.append(parsed_movie['title'])
+                            if previous is not None:
+                                if not parsed_movie.items() <= previous.items():
+                                    if update_movie((previous['movie_file_id'], previous['path']), parsed_movie):
+                                        previous.update(parsed_movie)
+                                        movies_updated.append(parsed_movie['title'])
                             else:
                                 add_movie(parsed_movie)
                                 movies_added.append(parsed_movie['title'])

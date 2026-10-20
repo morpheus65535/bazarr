@@ -122,7 +122,8 @@ def profile_id_to_language(id_, profiles):
     return profiles_to_return
 
 
-def episodeParser(episode: Episode, parse_embedded_audio_track: bool | None = None) -> EpisodeValues | None:
+def episodeParser(episode: Episode, parse_embedded_audio_track: bool | None = None,
+                  *, audio_languages: dict[int, str | None] | None = None) -> EpisodeValues | None:
     general_settings = settings.general
     file = episode.episodeFile
     if not episode.hasFile or file is None:
@@ -151,8 +152,12 @@ def episodeParser(episode: Episode, parse_embedded_audio_track: bool | None = No
             audio_language = [audio_language_from_name(language.name) for language in languages]
         else:
             series_id = episode.seriesId
-            audio_language = database.execute(select(TableShows.audio_language)
-                                               .where(TableShows.sonarrSeriesId == series_id)).scalar()
+            if audio_languages is None:
+                audio_languages = {}
+            if series_id not in audio_languages:
+                audio_languages[series_id] = database.execute(select(TableShows.audio_language)
+                                                              .where(TableShows.sonarrSeriesId == series_id)).scalar()
+            audio_language = audio_languages[series_id]
     media_info = file.mediaInfo
     video_codec = SonarrFormatVideoCodec(media_info.videoCodec) if media_info else None
     audio_codec = SonarrFormatAudioCodec(media_info.audioCodec) if media_info else None

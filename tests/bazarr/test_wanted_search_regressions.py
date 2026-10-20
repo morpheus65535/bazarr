@@ -343,7 +343,7 @@ def test_malformed_movie_file_preserves_library_and_history(runtime_database, mo
     seed_media(session, 'movie')
     session.execute(insert(db.TableHistoryMovie).values(radarrId=7, action=1, description='Saved history'))
     configure_sync(monkeypatch, radarr, [{'id': 7, 'hasFile': True, 'movieFile': movie_file}])
-    radarr.update_movies(job_id='test')
+    radarr.update_movies(job_id=1)
     assert session.execute(select(db.TableMovies.radarrId)).scalars().all() == [7]
     assert session.execute(select(db.TableHistoryMovie.description)).scalars().all() == ['Saved history']
 
@@ -355,7 +355,7 @@ def test_unidentified_entries_disable_deletion_sweep(runtime_database, monkeypat
     table, id_column = seed_media(session, media_type)
     module = radarr if media_type == 'movie' else sonarr
     configure_sync(monkeypatch, module, [bad_entry])
-    (module.update_movies if media_type == 'movie' else module.update_series)(job_id='test')
+    (module.update_movies if media_type == 'movie' else module.update_series)(job_id=1)
     assert session.execute(select(getattr(table, id_column))).scalars().all() == [7]
 
 
@@ -371,7 +371,7 @@ def test_incomplete_sync_still_processes_identifiable_entries(runtime_database, 
     if media_type == 'movie':
         monkeypatch.setattr(radarr, 'movieParser', lambda movie, **kwargs: {'radarrId': movie.id, 'title': movie.title})
         monkeypatch.setattr(radarr, 'add_movie', lambda movie: processed.append(movie['radarrId']))
-        radarr.update_movies(job_id='test')
+        radarr.update_movies(job_id=1)
     else:
         monkeypatch.setattr(sonarr, 'update_one_series', lambda series_id, **kwargs: processed.append(series_id))
         monkeypatch.setattr(sonarr, 'sync_episodes', lambda **kwargs: None)
@@ -392,7 +392,7 @@ def test_explicit_unusable_movie_removes_history_and_wanted_state(runtime_databa
     configure_sync(monkeypatch, radarr, [payload])
     monkeypatch.setattr(radarr, 'get_movie_file_size_from_db', lambda path: 0)
     monkeypatch.setattr(radarr.settings.general, 'enable_strm_support', False)
-    radarr.update_movies(job_id='test')
+    radarr.update_movies(job_id=1)
     assert session.execute(select(db.TableMovies.radarrId)).scalars().all() == []
     assert session.execute(select(db.TableHistoryMovie.id)).scalars().all() == []
     assert state.get_missing_languages('movie', 7) == []
@@ -406,7 +406,7 @@ def test_valid_empty_response_removes_media_and_normalized_state(runtime_databas
     state.refresh_wanted_search_state(media_type, 7, "['en']", "[['en', 10]]")
     module = radarr if media_type == 'movie' else sonarr
     configure_sync(monkeypatch, module, [])
-    (module.update_movies if media_type == 'movie' else module.update_series)(job_id='test')
+    (module.update_movies if media_type == 'movie' else module.update_series)(job_id=1)
     assert session.execute(select(getattr(table, id_column))).scalars().all() == []
     assert state.get_missing_languages(media_type, 7) == []
     assert state.get_failed_attempt_pairs(media_type, 7) == []

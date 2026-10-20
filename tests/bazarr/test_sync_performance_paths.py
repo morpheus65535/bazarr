@@ -288,8 +288,8 @@ def test_update_movies_compares_against_matching_radarr_id(monkeypatch):
     from radarr.sync import movies as movies_sync
 
     movie_rows = [
-        (_model(radarrId=1, title="Movie 1", path="/movies/one.mkv"),),
-        (_model(radarrId=2, title="Old Movie 2", path="/movies/two.mkv"),),
+        (_model(radarrId=1, title="Movie 1", path="/movies/one.mkv", movie_file_id=101, monitored="True"),),
+        (_model(radarrId=2, title="Old Movie 2", path="/movies/two.mkv", movie_file_id=102, monitored="True"),),
     ]
     updated_movies = []
 
@@ -310,6 +310,8 @@ def test_update_movies_compares_against_matching_radarr_id(monkeypatch):
             "radarrId": movie.id,
             "title": movie.title,
             "path": movie.movieFile.path,
+            "movie_file_id": movie.movieFile.id,
+            "monitored": str(movie.monitored),
         }
 
     monkeypatch.setattr(movies_sync, "database", _Database())
@@ -326,7 +328,7 @@ def test_update_movies_compares_against_matching_radarr_id(monkeypatch):
     monkeypatch.setattr(movies_sync, "get_tags", lambda: {})
     monkeypatch.setattr(movies_sync, "get_language_profiles", lambda: [])
     monkeypatch.setattr(movies_sync, "movieParser", _movie_parser)
-    monkeypatch.setattr(movies_sync, "update_movie", lambda movie: updated_movies.append(movie))
+    monkeypatch.setattr(movies_sync, "update_movie", lambda previous_file, movie: updated_movies.append(movie) or True)
     monkeypatch.setattr(movies_sync, "event_stream", lambda **kwargs: None)
     monkeypatch.setattr(
         movies_sync,
@@ -347,9 +349,10 @@ def test_update_movies_compares_against_matching_radarr_id(monkeypatch):
         ],
     )
 
-    movies_sync.update_movies(job_id="job")
+    movies_sync.update_movies(job_id=1)
 
-    assert updated_movies == [{"radarrId": 2, "title": "New Movie 2", "path": "/movies/two.mkv"}]
+    assert updated_movies == [{"radarrId": 2, "title": "New Movie 2", "path": "/movies/two.mkv",
+                               "movie_file_id": 102, "monitored": "True"}]
 
 
 def test_get_providers_expired_throttle_cleanup_is_idempotent(monkeypatch):
@@ -395,7 +398,8 @@ def test_episode_parser_rejection_skips_writes_and_keeps_existing_id(
             reads.append(statement)
             return _Result(all_value=[(row,)] if existing and len(reads) == 1 else [])
 
-    def reject(record: Episode, *, parse_embedded_audio_track: bool) -> None:
+    def reject(record: Episode, *, parse_embedded_audio_track: bool,
+               audio_languages: dict[int, str | None]) -> None:
         parsed.append(record)
         return None
 
