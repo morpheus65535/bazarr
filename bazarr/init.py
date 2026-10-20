@@ -77,7 +77,7 @@ if not args.no_update:
     try:
         if os.name == 'nt':
             import win32api, win32con  # noqa E401
-        import lxml, numpy, webrtcvad, setuptools, PIL  # noqa E401
+        import lxml, numpy, webrtcvad, setuptools, PIL, msgspec  # noqa E401
     except ImportError:
         try:
             import pip  # noqa W0611

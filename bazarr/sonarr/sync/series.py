@@ -3,6 +3,8 @@
 import logging
 import gc
 
+from sonarr.series_snapshot import Series
+
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime
 
@@ -93,33 +95,33 @@ def update_series(job_id=None, wait_for_completion=False):
             if job.cancel_event.is_set():
                 raise JobCanceled
 
-            if not isinstance(show, dict) or type(show.get('id')) is not int or show['id'] <= 0:
+            if not isinstance(show, Series) or show.id <= 0 or show.id in current_shows_sonarr:
                 complete_series_list = False
                 skipped_count += 1
                 continue
-            show_id = show.get('id')
-            jobs_queue.update_job_progress(job_id=job_id, progress_value=i, progress_message=show.get('title', 'Unknown'))
+            show_id = show.id
+            jobs_queue.update_job_progress(job_id=job_id, progress_value=i, progress_message=show.title)
 
             if settings.sonarr.sync_only_monitored_series:
                 try:
-                    monitored_status_db = bool_map[series_monitored.get(show.get('id'))]
+                    monitored_status_db = bool_map[series_monitored.get(show.id)]
                 except (KeyError, TypeError):
                     monitored_status_db = None
                 if monitored_status_db is None:
                     # not in db, need to add
                     pass
-                elif monitored_status_db != show.get('monitored'):
+                elif monitored_status_db != show.monitored:
                     # monitored status changed and we don't know about it until now
-                    trace(f"{i}: (Monitor Status Mismatch) {show.get('title', 'Unknown')}")
+                    trace(f"{i}: (Monitor Status Mismatch) {show.title}")
                     # pass
-                elif not show.get('monitored'):
+                elif not show.monitored:
                     # Add unmonitored series in sonarr to current series list, otherwise it will be deleted from db
-                    trace(f"{i}: (Skipped Unmonitored) {show.get('title', 'Unknown')}")
+                    trace(f"{i}: (Skipped Unmonitored) {show.title}")
                     current_shows_sonarr.append(show_id)
                     skipped_count += 1
                     continue
 
-            trace(f"{i}: (Processing) {show.get('title', 'Unknown')}")
+            trace(f"{i}: (Processing) {show.title}")
 
             # Add shows in Sonarr to current shows list
             current_shows_sonarr.append(show_id)
@@ -192,7 +194,8 @@ def update_one_series(series_id, action, is_signalr=False, sync_episodes_after_u
             logging.exception(f'BAZARR cannot get series with ID {series_id} from Sonarr API.')
             return
 
-    if not series_data:
+    if (not isinstance(series_data, list) or len(series_data) != 1
+            or not isinstance(series_data[0], Series) or series_data[0].id != int(series_id)):
         return
 
     if action == 'updated' and existing_series:

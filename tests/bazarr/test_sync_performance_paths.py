@@ -1,3 +1,4 @@
+from tests.helpers.arr_fixtures import episode_record, movie_payload, series_payload, series_record, stub_arr_api
 # -*- coding: utf-8 -*-
 import datetime
 
@@ -55,7 +56,7 @@ def test_update_one_series_fetches_and_inserts_for_standalone_call(monkeypatch):
     monkeypatch.setattr(series_sync, "get_profile_list", lambda: [])
     monkeypatch.setattr(series_sync, "get_tags", lambda: {})
     monkeypatch.setattr(series_sync, "get_language_profiles", lambda: [])
-    monkeypatch.setattr(series_sync, "get_series_from_sonarr_api", lambda **kwargs: [{"id": 123}])
+    stub_arr_api(monkeypatch, series_sync, "get_series_from_sonarr_api", lambda **kwargs: [series_payload()])
     monkeypatch.setattr(
         series_sync,
         "seriesParser",
@@ -98,7 +99,7 @@ def test_update_series_runs_one_explicit_episode_sync(monkeypatch):
         ),
     )
     monkeypatch.setattr(series_sync, "check_sonarr_rootfolder", lambda: None)
-    monkeypatch.setattr(series_sync, "get_series_from_sonarr_api", lambda **kwargs: [{"id": 123, "title": "Series"}])
+    stub_arr_api(monkeypatch, series_sync, "get_series_from_sonarr_api", lambda **kwargs: [series_payload()])
     monkeypatch.setattr(series_sync, "get_profile_list", lambda: [])
     monkeypatch.setattr(series_sync, "get_tags", lambda: {})
     monkeypatch.setattr(series_sync, "get_language_profiles", lambda: [])
@@ -161,8 +162,8 @@ def test_update_series_returns_early_when_sonarr_api_returns_none(monkeypatch):
     )
     monkeypatch.setattr(series_sync, "check_sonarr_rootfolder", lambda: None)
     # The API helper swallows ConnectionError/Timeout errors and returns None.
-    monkeypatch.setattr(
-        series_sync,
+    stub_arr_api(
+        monkeypatch, series_sync,
         "get_series_from_sonarr_api",
         lambda **kwargs: None,
     )
@@ -234,7 +235,7 @@ def test_unchanged_series_skips_update_but_manual_call_syncs_episodes(monkeypatc
     series_sync.update_one_series(
         123,
         action="updated",
-        series_data=[{"id": 123}],
+        series_data=[series_record(series_payload())],
         sync_episodes_after_update=True,
     )
 
@@ -254,7 +255,7 @@ def test_episode_parser_uses_reported_size_before_filesystem_stat(monkeypatch):
     monkeypatch.setattr(parser, "audio_language_from_name", lambda name: name)
 
     parsed = parser.episodeParser(
-        {
+        episode_record({
             "hasFile": True,
             "seriesId": 123,
             "id": 456,
@@ -270,7 +271,7 @@ def test_episode_parser_uses_reported_size_before_filesystem_stat(monkeypatch):
                 "mediaInfo": {},
                 "quality": {"quality": {"name": "HDTV-1080p"}},
             },
-        },
+        }),
         parse_embedded_audio_track=False,
     )
 
@@ -302,9 +303,9 @@ def test_update_movies_compares_against_matching_radarr_id(monkeypatch):
 
     def _movie_parser(movie, **kwargs):
         return {
-            "radarrId": movie["id"],
-            "title": movie["title"],
-            "path": movie["movieFile"]["path"],
+            "radarrId": movie.id,
+            "title": movie.title,
+            "path": movie.movieFile.path,
         }
 
     monkeypatch.setattr(movies_sync, "database", _Database())
@@ -333,24 +334,12 @@ def test_update_movies_compares_against_matching_radarr_id(monkeypatch):
             get_job=lambda *args, **kwargs: _MockJob(),
         ),
     )
-    monkeypatch.setattr(
-        movies_sync,
+    stub_arr_api(
+        monkeypatch, movies_sync,
         "get_movies_from_radarr_api",
         lambda apikey_radarr: [
-            {
-                "id": 1,
-                "title": "Movie 1",
-                "hasFile": True,
-                "monitored": True,
-                "movieFile": {"id": 101, "path": "/movies/one.mkv", "size": MINIMUM_VIDEO_SIZE + 1},
-            },
-            {
-                "id": 2,
-                "title": "New Movie 2",
-                "hasFile": True,
-                "monitored": True,
-                "movieFile": {"id": 102, "path": "/movies/two.mkv", "size": MINIMUM_VIDEO_SIZE + 1},
-            },
+            movie_payload(movie_id=1, title='Movie 1', path='/movies/one.mkv', file_id=101, size=MINIMUM_VIDEO_SIZE + 1),
+            movie_payload(movie_id=2, title='New Movie 2', path='/movies/two.mkv', file_id=102, size=MINIMUM_VIDEO_SIZE + 1),
         ],
     )
 

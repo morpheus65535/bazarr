@@ -4,6 +4,9 @@ import os
 import logging
 import operator
 import semver
+import msgspec
+
+from sonarr.episode_snapshot import Episode, EpisodeFile, complete_episode_snapshot
 
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime
@@ -53,6 +56,36 @@ def check_actual_file_size(original_episode_path):
     return bazarr_file_size > MINIMUM_VIDEO_SIZE
 
 
+def _validated_episodes(episodes: list[Episode], *, series_id: int | None = None) -> list[Episode] | None:
+    if series_id is not None and any(episode.seriesId != series_id for episode in episodes):
+        return None
+    separate = False
+    if not get_sonarr_info.is_legacy():
+        version = get_sonarr_info.semver()
+        if version is None:
+            return None
+        separate = version < semver.Version(4, 0, 9, '2421')
+    files: list[EpisodeFile] | None = None
+    if separate:
+        if series_id is not None:
+            result = get_episodesFiles_from_sonarr_api(apikey_sonarr=settings.sonarr.apikey, series_id=series_id)
+            if not isinstance(result, list):
+                return None
+            files = result
+        elif episodes and episodes[0].hasFile:
+            file_id = episodes[0].episodeFileId
+            if file_id is msgspec.UNSET:
+                return None
+            file = get_episodesFiles_from_sonarr_api(apikey_sonarr=settings.sonarr.apikey, episode_file_id=file_id)
+            if not isinstance(file, EpisodeFile):
+                return None
+            files = [file]
+        else:
+            files = []
+    snapshot = complete_episode_snapshot(episodes, files, separate_files=separate)
+    return snapshot.episodes if snapshot is not None else None
+
+
 def sync_episodes(series_id, defer_search=False, is_signalr=False):
     logging.debug(f'BAZARR Starting episodes sync from Sonarr for series ID {series_id}.')
     apikey_sonarr = settings.sonarr.apikey
@@ -76,22 +109,11 @@ def sync_episodes(series_id, defer_search=False, is_signalr=False):
     # Get episodes data for a series from Sonarr
     episodes = get_episodes_from_sonarr_api(apikey_sonarr=apikey_sonarr, series_id=series_id)
     if episodes:
-        if get_sonarr_info.is_legacy():
-            # We skip this for legacy versions of Sonarr since it already have episodeFile structure included
-            pass
-        elif get_sonarr_info.semver() >= semver.Version(*(4, 0, 9, 2421)):
-            # We skip this if the episodes already contain an episodeFile structure (added with Sonarr v4.0.9.2421)
-            pass
-        else:
-            # For Sonarr v3 or greater but lower than 4.0.9.2421, we need to update episodes to integrate the
-            # episodeFile API endpoint results
-            episodeFiles = get_episodesFiles_from_sonarr_api(apikey_sonarr=apikey_sonarr, series_id=series_id)
-            if episodeFiles:
-                for episode in episodes:
-                    if episodeFiles and episode['hasFile']:
-                        item = [x for x in episodeFiles if x['id'] == episode['episodeFileId']]
-                        if item:
-                            episode['episodeFile'] = item[0]
+        if not isinstance(episodes, list):
+            return
+        episodes = _validated_episodes(episodes, series_id=series_id)
+        if episodes is None:
+            return
 
         sync_monitored = settings.sonarr.sync_only_monitored_series and settings.sonarr.sync_only_monitored_episodes
         if sync_monitored:
@@ -99,37 +121,39 @@ def sync_episodes(series_id, defer_search=False, is_signalr=False):
             skipped_count = 0
 
         for episode in episodes:
-            if 'hasFile' in episode and episode['hasFile'] and 'episodeFile' in episode:
+            if episode.hasFile and episode.episodeFile is not None:
                 if sync_monitored:
                     try:
-                        monitored_status_db = bool_map[episodes_monitored[episode['episodeFileId']]]
+                        monitored_status_db = bool_map[episodes_monitored[episode.episodeFile.id]]
                     except KeyError:
                         monitored_status_db = None
 
                     if monitored_status_db is None:
                         # not in db, might need to add, if we have a file on disk
                         pass
-                    elif monitored_status_db != episode['monitored']:
+                    elif monitored_status_db != episode.monitored:
                         # monitored status changed and we don't know about it until now
-                        trace(f"(Monitor Status Mismatch) {episode['title']}")
+                        trace(f"(Monitor Status Mismatch) {episode.title}")
                         # pass
-                    elif not episode['monitored']:
+                    elif not episode.monitored:
                         # Add unmonitored episode in sonarr to current episode list, otherwise it will be deleted from db
-                        current_episodes_sonarr.append(episode['id'])
+                        current_episodes_sonarr.append(episode.id)
                         skipped_count += 1
                         continue
 
-                if (episode['episodeFile']['size'] > MINIMUM_VIDEO_SIZE or
-                        check_actual_file_size(episode['episodeFile']['path']) or
-                        (settings.general.enable_strm_support and episode['episodeFile']['path'].lower().endswith('.strm'))):
+                if (episode.episodeFile.size > MINIMUM_VIDEO_SIZE or
+                        check_actual_file_size(episode.episodeFile.path) or
+                        (settings.general.enable_strm_support and episode.episodeFile.path.lower().endswith('.strm'))):
                     # Add episodes in sonarr to current episode list
-                    current_episodes_sonarr.append(episode['id'])
+                    current_episodes_sonarr.append(episode.id)
 
                     # Parse episode data
-                    if episode['id'] in current_episodes_in_db_row_as_dict:
+                    if episode.id in current_episodes_in_db_row_as_dict:
                         parsed_episode = episodeParser(
                             episode, parse_embedded_audio_track=parse_embedded_audio_track)
-                        if not set(parsed_episode.items()).issubset(set(current_episodes_in_db_row_as_dict[episode['id']].items())):
+                        if parsed_episode is None:
+                            continue
+                        if not set(parsed_episode.items()).issubset(set(current_episodes_in_db_row_as_dict[episode.id].items())):
                             episodes_to_update.append(parsed_episode)
                     else:
                         episodes_to_add.append(
@@ -259,16 +283,12 @@ def sync_one_episode(episode_id, defer_search=False, is_signalr=False):
         # Get episode data from sonarr api
         episode = None
         episode_data = get_episodes_from_sonarr_api(apikey_sonarr=apikey_sonarr, episode_id=episode_id)
-        if not episode_data:
+        if not isinstance(episode_data, Episode) or episode_data.id != episode_id:
             return
-
-        else:
-            # For Sonarr v3, we need to update episodes to integrate the episodeFile API endpoint results
-            if not get_sonarr_info.is_legacy() and existing_episode and episode_data['hasFile']:
-                episode_data['episodeFile'] = \
-                    get_episodesFiles_from_sonarr_api(apikey_sonarr=apikey_sonarr,
-                                                      episode_file_id=episode_data['episodeFileId'])
-            episode = episodeParser(episode_data)
+        completed = _validated_episodes([episode_data])
+        if completed is None:
+            return
+        episode = episodeParser(completed[0])
     except Exception:
         logging.exception('BAZARR cannot get episode returned by SignalR feed from Sonarr API.')
         return
@@ -292,8 +312,11 @@ def sync_one_episode(episode_id, defer_search=False, is_signalr=False):
                     f'BAZARR deleted this episode from the database:{path_mappings.path_replace(existing_episode.path)}')
         return
 
+    if episode is None:
+        return
+
     # Update existing episodes in DB
-    elif episode and existing_episode:
+    if existing_episode:
         try:
             episode['updated_at_timestamp'] = datetime.now()
             database.execute(

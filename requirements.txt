@@ -4,3 +4,4 @@ numpy>=1.12.0,<2.4.0  # prevent segfault on hold hardware caused by new CPU requ
 webrtcvad-wheels>=2.0.10
 Pillow>=9.0.0 --only-binary=Pillow
 pywin32; platform_system == "Windows"
+msgspec>=0.21.1

@@ -6,6 +6,13 @@ import logging
 from app.config import settings
 from sonarr.info import get_sonarr_info, url_api_sonarr
 from constants import HEADERS
+from utilities.arr_decoding import ArrRecordDecoder, InvalidArrRecord
+from sonarr.series_snapshot import Series
+from sonarr.episode_snapshot import Episode, EpisodeFile
+
+SERIES_DECODER = ArrRecordDecoder(Series)
+EPISODE_DECODER = ArrRecordDecoder(Episode)
+EPISODEFILE_DECODER = ArrRecordDecoder(EpisodeFile)
 
 
 def get_profile_list():
@@ -77,7 +84,7 @@ def get_tags():
         return tagsDict.json()
 
 
-def get_series_from_sonarr_api(apikey_sonarr, sonarr_series_id=None):
+def get_series_from_sonarr_api(apikey_sonarr: str, sonarr_series_id: int | None = None) -> list[Series | InvalidArrRecord] | None:
     url_sonarr_api_series = (f"{url_api_sonarr()}series/{sonarr_series_id if sonarr_series_id else ''}?"
                              f"apikey={apikey_sonarr}")
     try:
@@ -101,17 +108,16 @@ def get_series_from_sonarr_api(apikey_sonarr, sonarr_series_id=None):
         logging.exception(f"Exception raised while getting series from Sonarr API: {e}")
         return
     else:
-        if r.status_code == 200:
-            result = r.json()
-            if isinstance(result, dict):
+        with r:
+            if r.status_code != 200:
+                return None
+            result = SERIES_DECODER.decode_response(r)
+            if isinstance(result, (Series, InvalidArrRecord)):
                 return [result]
-            else:
-                return r.json()
-        else:
-            return
+            return result
 
 
-def get_episodes_from_sonarr_api(apikey_sonarr, series_id=None, episode_id=None):
+def get_episodes_from_sonarr_api(apikey_sonarr: str, series_id: int | None = None, episode_id: int | None = None) -> Episode | list[Episode] | None:
     if series_id:
         url_sonarr_api_episode = (f"{url_api_sonarr()}episode?seriesId={series_id}&includeEpisodeFile=true&"
                                   f"apikey={apikey_sonarr}")
@@ -139,13 +145,14 @@ def get_episodes_from_sonarr_api(apikey_sonarr, series_id=None, episode_id=None)
         logging.exception(f"Exception raised while getting episodes from Sonarr API: {e}")
         return
     else:
-        if r.status_code == 200:
-            return r.json()
-        else:
-            return
+        with r:
+            if r.status_code != 200:
+                return None
+            result = EPISODE_DECODER.decode_complete_response(r)
+            return result
 
 
-def get_episodesFiles_from_sonarr_api(apikey_sonarr, series_id=None, episode_file_id=None):
+def get_episodesFiles_from_sonarr_api(apikey_sonarr: str, series_id: int | None = None, episode_file_id: int | None = None) -> EpisodeFile | list[EpisodeFile] | None:
     if series_id:
         url_sonarr_api_episodeFiles = f"{url_api_sonarr()}episodeFile?seriesId={series_id}&apikey={apikey_sonarr}"
     elif episode_file_id:
@@ -173,10 +180,11 @@ def get_episodesFiles_from_sonarr_api(apikey_sonarr, series_id=None, episode_fil
         logging.exception(f"Exception raised while getting episodes from Sonarr API: {e}")
         return
     else:
-        if r.status_code == 200:
-            return r.json()
-        else:
-            return
+        with r:
+            if r.status_code != 200:
+                return None
+            result = EPISODEFILE_DECODER.decode_complete_response(r)
+            return result
 
 
 def get_history_from_sonarr_api(apikey_sonarr, episode_id):

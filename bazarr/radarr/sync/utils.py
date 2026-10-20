@@ -6,6 +6,10 @@ import logging
 from app.config import settings
 from radarr.info import get_radarr_info, url_api_radarr
 from constants import HEADERS
+from utilities.arr_decoding import ArrRecordDecoder, InvalidArrRecord
+from radarr.movie_snapshot import Movie
+
+MOVIE_DECODER = ArrRecordDecoder(Movie)
 
 
 def get_profile_list():
@@ -74,7 +78,7 @@ def get_tags():
             return []
 
 
-def get_movies_from_radarr_api(apikey_radarr, radarr_id=None):
+def get_movies_from_radarr_api(apikey_radarr: str, radarr_id: int | None = None) -> Movie | list[Movie | InvalidArrRecord] | InvalidArrRecord | None:
     url_radarr_api_movies = f'{url_api_radarr()}movie{f"/{radarr_id}" if radarr_id else ""}?apikey={apikey_radarr}'
 
     try:
@@ -98,10 +102,11 @@ def get_movies_from_radarr_api(apikey_radarr, radarr_id=None):
         logging.exception(f"Exception raised while getting movies from Radarr API: {e}")
         return
     else:
-        if r.status_code == 200:
-            return r.json()
-        else:
-            return
+        with r:
+            if r.status_code != 200:
+                return None
+            result = MOVIE_DECODER.decode_response(r)
+            return result
 
 
 def get_history_from_radarr_api(apikey_radarr, movie_id):
