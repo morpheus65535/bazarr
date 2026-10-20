@@ -17,6 +17,7 @@ from sonarr.series_snapshot import Series, SeriesValues
 from sonarr.sync import parser
 from sonarr.sync.utils import SERIES_DECODER
 from utilities.json_types import JsonValue
+from utilities.arr_sync_lookups import ArrSyncLookups
 from subtitles.refiners import database as refiner
 
 migration = importlib.import_module('migrations.versions.ca7df64674ee_')
@@ -53,8 +54,8 @@ TMDB_IDS = sorted(
 
 
 def _parse_series(show: Series) -> SeriesValues:
-    return parser.seriesParser(show, action='update', tags_dict=[], language_profiles=[],
-                               serie_default_profile=None, audio_profiles=[])
+    return parser.seriesParser(show, action='update', lookups=ArrSyncLookups([], [], []),
+                               serie_default_profile=None)
 
 
 @pytest.mark.parametrize('tmdb_id', [None, *TMDB_IDS])

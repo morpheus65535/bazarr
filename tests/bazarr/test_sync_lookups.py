@@ -16,6 +16,7 @@ from radarr.sync import movies, parser as movie_parser
 from radarr.sync.utils import MOVIE_DECODER
 from sonarr.episode_snapshot import Episode
 from sonarr.sync import episodes, parser as episode_parser
+from utilities.arr_sync_lookups import ArrSyncLookups
 from tests.helpers.arr_fixtures import episode_payload, episode_record, movie_payload
 
 
@@ -64,7 +65,7 @@ def configure_movies(monkeypatch: pytest.MonkeyPatch, session: Session, count: i
         record = MOVIE_DECODER.complete_from_value(movie_payload(
             movie_id=identifier, path=f'/movies/{identifier}.mkv', file_id=identifier + 1000))
         assert isinstance(record, Movie)
-        values = movie_parser.movieParser(record, 'insert', [], [], None, [])
+        values = movie_parser.movieParser(record, 'insert', ArrSyncLookups([], [], []), None)
         session.add(TableMovies(**values))
         record.title = f'Changed {identifier}'
         records.append(record)

@@ -123,7 +123,7 @@ def test_update_series_runs_one_explicit_episode_sync(monkeypatch):
         ),
     )
 
-    series_sync.update_series(job_id="job")
+    series_sync.update_series(job_id=1)
 
     assert episode_sync_calls == [123]
     assert len(update_calls) == 1
@@ -196,12 +196,12 @@ def test_update_series_returns_early_when_sonarr_api_returns_none(monkeypatch):
         ),
     )
 
-    series_sync.update_series(job_id="job")
+    series_sync.update_series(job_id=1)
 
     assert execute_calls == []
     assert episode_sync_calls == []
     assert update_one_series_calls == []
-    assert job_name_updates == [((), {"job_id": "job", "new_job_name": "Synced series with Sonarr"})]
+    assert job_name_updates == [((), {"job_id": 1, "new_job_name": "Synced series with Sonarr"})]
 
 
 def test_unchanged_series_skips_update_but_manual_call_syncs_episodes(monkeypatch):

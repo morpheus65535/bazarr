@@ -377,7 +377,7 @@ def test_sonarr_series_sync_returns_for_malformed_payload(monkeypatch, sync_job)
     )
     monkeypatch.setattr(sonarr_series.gc, "collect", lambda: None)
 
-    sonarr_series.update_series(job_id="job")
+    sonarr_series.update_series(job_id=1)
 
     assert names == ["Synced series with Sonarr"]
 
@@ -420,7 +420,7 @@ def test_sonarr_series_sync_processes_valid_entries_in_mixed_payload(monkeypatch
     )
     monkeypatch.setattr(sonarr_series.gc, "collect", lambda: None)
 
-    sonarr_series.update_series(job_id="job")
+    sonarr_series.update_series(job_id=1)
 
     assert progress[0]["progress_max"] == 3
     assert processed == [1]

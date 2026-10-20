@@ -3,6 +3,7 @@
 import logging
 import os
 import operator
+from collections.abc import Sequence
 
 from radarr.movie_snapshot import IncompleteMovie, Movie, MovieValues
 
@@ -19,6 +20,7 @@ from constants import MINIMUM_VIDEO_SIZE
 from radarr.rootfolder import check_radarr_rootfolder
 from subtitles.indexer.movies import store_subtitles_movie
 from utilities.helper import bool_map
+from utilities.arr_sync_lookups import ArrSyncLookups
 from utilities.path_mappings import path_mappings
 from subtitles.wanted_state import delete_media_and_wanted_search_state, get_due_missing_languages_for_media
 
@@ -34,9 +36,9 @@ def trace(message):
         logging.debug(FEATURE_PREFIX + message)
 
 
-def get_language_profiles():
+def get_language_profiles() -> Sequence[tuple[int, str, str | None]]:
     return database.execute(
-        select(TableLanguagesProfiles.profileId, TableLanguagesProfiles.name, TableLanguagesProfiles.tag)).all()
+        select(TableLanguagesProfiles.profileId, TableLanguagesProfiles.name, TableLanguagesProfiles.tag)).tuples().all()
 
 
 def get_movie_file_size_from_db(movie_path: str) -> int:
@@ -155,6 +157,7 @@ def update_movies(job_id: int | None = None, wait_for_completion: bool = False) 
             audio_profiles = get_profile_list()
             tagsDict = get_tags()
             language_profiles = get_language_profiles()
+            lookups = ArrSyncLookups(tagsDict, language_profiles, audio_profiles)
 
             movies_count = len(movies)
             jobs_queue.update_job_progress(job_id=job_id, progress_max=movies_count)
@@ -232,10 +235,8 @@ def update_movies(job_id: int | None = None, wait_for_completion: bool = False) 
                             # Add/update movies from Radarr that have a movie file to current movies list
                             trace(f"{i}: (Processing) {movie.title}")
                             parsed_movie = movieParser(movie, action='update' if previous is not None else 'insert',
-                                                       tags_dict=tagsDict,
-                                                       language_profiles=language_profiles,
-                                                       movie_default_profile=movie_default_profile,
-                                                       audio_profiles=audio_profiles)
+                                                       lookups=lookups,
+                                                       movie_default_profile=movie_default_profile)
                             if previous is not None:
                                 if not parsed_movie.items() <= previous.items():
                                     if update_movie((previous['movie_file_id'], previous['path']), parsed_movie):
@@ -268,7 +269,7 @@ def update_movies(job_id: int | None = None, wait_for_completion: bool = False) 
     jobs_queue.update_job_name(job_id=job_id, new_job_name="Synced movies with Radarr")
 
 
-def update_one_movie(movie_id, action, defer_search=False, is_signalr=False):
+def update_one_movie(movie_id: int, action: str, defer_search: bool = False, is_signalr: bool = False) -> None:
     logging.debug(f'BAZARR syncing this specific movie from Radarr: {movie_id}')
 
     # Check if there's a row in the database for this movie ID
@@ -307,6 +308,7 @@ def update_one_movie(movie_id, action, defer_search=False, is_signalr=False):
     audio_profiles = get_profile_list()
     tagsDict = get_tags()
     language_profiles = get_language_profiles()
+    lookups = ArrSyncLookups(tagsDict, language_profiles, audio_profiles)
 
     try:
         # Get movie data from radarr api
@@ -319,8 +321,7 @@ def update_one_movie(movie_id, action, defer_search=False, is_signalr=False):
             return
         if usable and isinstance(movie_data, Movie) and action == 'updated':
             movie = movieParser(movie_data, action='update' if existing_movie else 'insert',
-                                tags_dict=tagsDict, language_profiles=language_profiles,
-                                movie_default_profile=movie_default_profile, audio_profiles=audio_profiles)
+                                lookups=lookups, movie_default_profile=movie_default_profile)
     except Exception:
         logging.exception('BAZARR cannot get movie returned by SignalR feed from Radarr API.')
         return

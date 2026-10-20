@@ -13,23 +13,14 @@ from utilities.path_mappings import path_mappings
 from utilities.video_analyzer import embedded_audio_reader
 from sonarr.info import get_sonarr_info
 from sonarr.series_snapshot import Series, SeriesValues
-from utilities.arr_types import ArrTag
+from utilities.arr_sync_lookups import ArrSyncLookups
 from sonarr.episode_snapshot import Episode, EpisodeFile, EpisodeValues
 
 from .converter import SonarrFormatVideoCodec, SonarrFormatAudioCodec
 
 
-def get_matching_profile(tags, language_profiles):
-    matching_profile = None
-    if len(tags) > 0:
-        for profileId, name, tag in language_profiles:
-            if tag in tags:
-                matching_profile = profileId
-                break
-    return matching_profile
-
-
-def seriesParser(show: Series, action: str, tags_dict: list[ArrTag], language_profiles, serie_default_profile: int | None, audio_profiles) -> SeriesValues:
+def seriesParser(show: Series, action: str, lookups: ArrSyncLookups,
+                 serie_default_profile: int | None) -> SeriesValues:
     """Return TableShows column values for a Sonarr series."""
     overview = show.overview
     poster = ''
@@ -48,7 +39,7 @@ def seriesParser(show: Series, action: str, tags_dict: list[ArrTag], language_pr
     else:
         alternate_titles = []
 
-    tags = [d['label'] for d in tags_dict if d['id'] in show.tags]
+    tags = lookups.tags(show.tags)
 
     imdbId = show.imdbId
 
@@ -70,10 +61,10 @@ def seriesParser(show: Series, action: str, tags_dict: list[ArrTag], language_pr
     general_settings = settings.general
     if not general_settings.parse_embedded_audio_track:
         if get_sonarr_info.is_legacy():
-            audio_language = profile_id_to_language(show.qualityProfileId, audio_profiles)
+            audio_language = lookups.audio_languages(show.qualityProfileId)
         else:
             if show.languageProfileId is not None:
-                audio_language = profile_id_to_language(show.languageProfileId, audio_profiles)
+                audio_language = lookups.audio_languages(show.languageProfileId)
             else:
                 audio_language = []
 
@@ -103,7 +94,7 @@ def seriesParser(show: Series, action: str, tags_dict: list[ArrTag], language_pr
         parsed_series['profileId'] = serie_default_profile
     
     if general_settings.serie_tag_enabled:
-        tag_profile = get_matching_profile(tags, language_profiles)
+        tag_profile = lookups.matching_profile(tags)
         if tag_profile:
             parsed_series['profileId'] = tag_profile
         remove_profile_tags_list = general_settings.remove_profile_tags
@@ -112,14 +103,6 @@ def seriesParser(show: Series, action: str, tags_dict: list[ArrTag], language_pr
                 parsed_series['profileId'] = None
 
     return parsed_series
-
-
-def profile_id_to_language(id_, profiles):
-    profiles_to_return = []
-    for profile in profiles:
-        if id_ == profile[0]:
-            profiles_to_return.append(profile[1])
-    return profiles_to_return
 
 
 def get_episode_file_size(file: EpisodeFile) -> int:

@@ -6,25 +6,15 @@ from app.config import settings
 from languages.get_languages import audio_language_from_name
 from radarr.info import get_radarr_info
 from radarr.movie_snapshot import Movie, MovieValues
-from utilities.arr_types import ArrTag
+from utilities.arr_sync_lookups import ArrSyncLookups
 from utilities.video_analyzer import embedded_audio_reader
 from utilities.path_mappings import path_mappings
 
 from .converter import RadarrFormatAudioCodec, RadarrFormatVideoCodec
 
 
-def get_matching_profile(tags, language_profiles):
-    matching_profile = None
-    if len(tags) > 0:
-        for profileId, name, tag in language_profiles:
-            if tag in tags:
-                matching_profile = profileId
-                break
-    return matching_profile
-
-
-def movieParser(movie: Movie, action: str, tags_dict: list[ArrTag], language_profiles,
-                movie_default_profile: int | None, audio_profiles) -> MovieValues:
+def movieParser(movie: Movie, action: str, lookups: ArrSyncLookups,
+                movie_default_profile: int | None) -> MovieValues:
     file = movie.movieFile
     assert file is not None
     legacy = get_radarr_info.is_legacy()
@@ -61,10 +51,10 @@ def movieParser(movie: Movie, action: str, tags_dict: list[ArrTag], language_pro
         audio_languages = media.audioLanguages if media else None
         audio_language = [language.strip() for language in audio_languages.split('/')] if audio_languages is not None else []
         if not audio_language:
-            audio_language = profile_id_to_language(movie.qualityProfileId, audio_profiles)
+            audio_language = lookups.audio_languages(movie.qualityProfileId)
     else:
         audio_language = [audio_language_from_name(language.name) for language in file.languages or []]
-    tags = [tag['label'] for tag in tags_dict if tag['id'] in movie.tags]
+    tags = lookups.tags(movie.tags)
     original = movie.originalLanguage
     parsed: MovieValues = {'radarrId': movie.id,
                           'title': movie.title,
@@ -91,17 +81,9 @@ def movieParser(movie: Movie, action: str, tags_dict: list[ArrTag], language_pro
     if action == 'insert':
         parsed['profileId'] = movie_default_profile
     if general_settings.movie_tag_enabled:
-        tag_profile = get_matching_profile(tags, language_profiles)
+        tag_profile = lookups.matching_profile(tags)
         if tag_profile:
             parsed['profileId'] = tag_profile
         if set(tags) & set(general_settings.remove_profile_tags):
             parsed['profileId'] = None
     return parsed
-
-
-def profile_id_to_language(id, profiles):
-    profiles_to_return = []
-    for profile in profiles:
-        if id == profile[0]:
-            profiles_to_return.append(profile[1])
-    return profiles_to_return
