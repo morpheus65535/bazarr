@@ -7,10 +7,9 @@ from languages.get_languages import audio_language_from_name
 from radarr.info import get_radarr_info
 from radarr.movie_snapshot import Movie, MovieValues
 from utilities.arr_sync_lookups import ArrSyncLookups
+from utilities.media_codecs import radarr_audio_codec, radarr_video_codec
 from utilities.video_analyzer import embedded_audio_reader
 from utilities.path_mappings import path_mappings
-
-from .converter import RadarrFormatAudioCodec, RadarrFormatVideoCodec
 
 
 def movieParser(movie: Movie, action: str, lookups: ArrSyncLookups,
@@ -35,11 +34,11 @@ def movieParser(movie: Movie, action: str, lookups: ArrSyncLookups,
         resolution = f'{quality_resolution}p' if quality_resolution is not None else None
     media = file.mediaInfo
     if media:
-        video_codec = RadarrFormatVideoCodec((media.videoFormat if legacy else media.videoCodec),
-                                             media.videoCodecID, media.videoCodecLibrary)
-        audio_codec = RadarrFormatAudioCodec((media.audioFormat if legacy else media.audioCodec),
-                                             media.audioCodecID, media.audioProfile,
-                                             media.audioAdditionalFeatures)
+        video_codec = radarr_video_codec(
+            media.videoFormat if legacy else media.videoCodec, media.videoCodecID, media.videoCodecLibrary)
+        audio_codec = radarr_audio_codec(
+            media.audioFormat if legacy else media.audioCodec, media.audioCodecID, media.audioProfile,
+            media.audioAdditionalFeatures)
     else:
         video_codec = audio_codec = None
     general_settings = settings.general
