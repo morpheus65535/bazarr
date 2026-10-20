@@ -30,7 +30,7 @@
     "dompurify": "^3.4.15",
     "fast-uri": "^4.1.0",
     "flatted": "^3.4.2",
-    "follow-redirects": "^1.16.0",
+    "follow-redirects": "^1.16.1",
     "picomatch": "^4.0.5",
     "postcss": "^8.5.19",
     "react": "^19.3.0",
