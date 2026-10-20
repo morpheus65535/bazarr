@@ -6,10 +6,10 @@ import logging
 from app.config import settings
 from radarr.info import get_radarr_info, url_api_radarr
 from constants import HEADERS
-from utilities.arr_decoding import ArrRecordDecoder, InvalidArrRecord
-from radarr.movie_snapshot import Movie
+from utilities.arr_decoding import ArrRecordDecoder
+from radarr.movie_snapshot import IncompleteMovie, Movie
 
-MOVIE_DECODER = ArrRecordDecoder(Movie)
+MOVIE_DECODER = ArrRecordDecoder(Movie, IncompleteMovie.from_value)
 
 
 def get_profile_list():
@@ -78,7 +78,7 @@ def get_tags():
             return []
 
 
-def get_movies_from_radarr_api(apikey_radarr: str, radarr_id: int | None = None) -> Movie | list[Movie | InvalidArrRecord] | InvalidArrRecord | None:
+def get_movies_from_radarr_api(apikey_radarr: str, radarr_id: int | None = None) -> Movie | list[Movie | IncompleteMovie] | IncompleteMovie | None:
     url_radarr_api_movies = f'{url_api_radarr()}movie{f"/{radarr_id}" if radarr_id else ""}?apikey={apikey_radarr}'
 
     try:

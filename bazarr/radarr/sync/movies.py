@@ -4,8 +4,7 @@ import logging
 import os
 import operator
 
-from radarr.movie_snapshot import Movie, movie_file_size
-from utilities.arr_decoding import InvalidArrRecord
+from radarr.movie_snapshot import IncompleteMovie, Movie
 
 from datetime import datetime
 from functools import reduce
@@ -48,41 +47,16 @@ def get_movie_file_size_from_db(movie_path):
     return bazarr_file_size
 
 
-def _movie_id(movie: Movie | InvalidArrRecord) -> int | None:
-    if isinstance(movie, Movie):
-        return movie.id
-    value = movie.value
-    identifier = value.get('id') if isinstance(value, dict) else None
-    return identifier if type(identifier) is int else None
-
-
-def _has_usable_movie_file(movie: Movie | InvalidArrRecord) -> bool | None:
-    if isinstance(movie, Movie):
-        if not movie.hasFile:
-            return False
-        file = movie.movieFile
-        if file is None:
-            return None
-        path, file_id, size = file.path, file.id, movie_file_size(file.size)
-    else:
-        # An invalid row can still explicitly say its file is absent. Preserve
-        # that signal without treating malformed metadata as a missing movie.
-        value = movie.value
-        if not isinstance(value, dict) or not isinstance(value.get('hasFile'), bool):
-            return None
-        if not value['hasFile']:
-            return False
-        raw_file = value.get('movieFile')
-        if not isinstance(raw_file, dict):
-            return None
-        path, file_id = raw_file.get('path'), raw_file.get('id')
-        size = movie_file_size(raw_file.get('size'))
-    if not isinstance(path, str) or not path.strip() or type(file_id) is not int or file_id <= 0 or size is None:
+def _has_usable_movie_file(movie: Movie | IncompleteMovie) -> bool | None:
+    if movie.hasFile is False:
+        return False
+    file = movie.movieFile
+    if movie.hasFile is None or file is None:
         return None
-    if size > MINIMUM_VIDEO_SIZE or get_movie_file_size_from_db(path) > MINIMUM_VIDEO_SIZE:
+    if int(file.size) > MINIMUM_VIDEO_SIZE or get_movie_file_size_from_db(file.path) > MINIMUM_VIDEO_SIZE:
         return True
     general_settings = settings.general
-    return bool(general_settings.enable_strm_support and path.lower().endswith('.strm'))
+    return bool(general_settings.enable_strm_support and file.path.lower().endswith('.strm'))
 
 
 
@@ -196,7 +170,7 @@ def update_movies(job_id=None, wait_for_completion=False):
             }
             current_movies_id_db = set(current_movies_in_db)
 
-            identifiers = [_movie_id(movie) for movie in movies]
+            identifiers = [movie.id for movie in movies]
             complete_movie_list = (all(identifier is not None and identifier > 0 for identifier in identifiers)
                                    and len(set(identifiers)) == len(identifiers))
             current_movies_radarr = [
@@ -236,7 +210,7 @@ def update_movies(job_id=None, wait_for_completion=False):
                     raise JobCanceled
 
                 if not isinstance(movie, Movie):
-                    identifier = _movie_id(movie)
+                    identifier = movie.id
                     if identifier is not None and identifier > 0:
                         files_missing += 1
                     continue
@@ -345,10 +319,10 @@ def update_one_movie(movie_id, action, defer_search=False, is_signalr=False):
         # Get movie data from radarr api
         movie = None
         movie_data = get_movies_from_radarr_api(apikey_radarr=settings.radarr.apikey, radarr_id=movie_id)
-        if not isinstance(movie_data, (Movie, InvalidArrRecord)) or _movie_id(movie_data) != int(movie_id):
+        if not isinstance(movie_data, (Movie, IncompleteMovie)) or movie_data.id != int(movie_id):
             return
         usable = _has_usable_movie_file(movie_data)
-        if usable is None:
+        if usable is None or (usable and isinstance(movie_data, IncompleteMovie)):
             return
         if usable and isinstance(movie_data, Movie):
             if action == 'updated' and existing_movie:

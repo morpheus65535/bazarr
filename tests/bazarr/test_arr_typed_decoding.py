@@ -7,7 +7,7 @@ import msgspec
 import pytest
 import requests
 
-from radarr.movie_snapshot import Movie, MovieFile
+from radarr.movie_snapshot import FileState, IncompleteMovie, Movie, MovieFile
 from sonarr.episode_snapshot import Episode, EpisodeFile
 from sonarr.series_snapshot import Series
 from sonarr.sync.utils import EPISODE_DECODER, EPISODEFILE_DECODER, SERIES_DECODER
@@ -68,9 +68,37 @@ def test_partial_catalogue_preserves_valid_records_and_invalid_row_positions(kin
     result = decoder.decode(json.dumps([payload, {'id': 12}, payload]))
     assert isinstance(result, list)
     assert isinstance(result[0], record_type)
-    assert result[1] == InvalidArrRecord({'id': 12})
+    assert result[1] == (IncompleteMovie(12, None, None) if kind == 'movie' else InvalidArrRecord({'id': 12}))
     assert isinstance(result[2], record_type)
     assert not hasattr(result[0], 'unused')
+
+
+@pytest.mark.parametrize(('payload', 'expected'), [
+    ({'id': 7, 'hasFile': False, 'movieFile': 'invalid'}, IncompleteMovie(7, False, None)),
+    ({'id': True, 'hasFile': False}, IncompleteMovie(None, False, None)),
+    ({'id': 7, 'hasFile': 'false'}, IncompleteMovie(7, None, None)),
+    ({'id': 7, 'hasFile': True, 'movieFile': {'id': 10, 'path': '/movie.mkv', 'size': '123'}},
+     IncompleteMovie(7, True, FileState(10, '/movie.mkv', 123))),
+    ({'id': 7, 'movieFile': {'id': 10, 'path': '/movie.mkv', 'size': 123}},
+     IncompleteMovie(7, None, FileState(10, '/movie.mkv', 123))),
+])
+def test_incomplete_movie_recovers_independent_reconciliation_facts(payload: JsonValue,
+                                                                  expected: IncompleteMovie) -> None:
+    result = MOVIE_DECODER.decode(json.dumps(payload))
+    assert result == expected
+    assert not hasattr(result, 'value')
+
+
+@pytest.mark.parametrize(('field', 'value'), [
+    ('id', True), ('id', 0), ('id', -1), ('path', ''), ('path', '  '), ('path', None),
+    ('size', False), ('size', 'invalid'), ('size', float('inf')), ('size', float('nan')),
+])
+def test_invalid_movie_file_preserves_identity_without_claiming_file_absence(field: str, value: JsonValue) -> None:
+    payload = movie_payload(movie_id=7)
+    file = payload['movieFile']
+    assert isinstance(file, dict)
+    file[field] = value
+    assert MOVIE_DECODER.decode(json.dumps(payload)) == IncompleteMovie(7, True, None)
 
 
 @pytest.mark.parametrize('payload', [[episode_payload(), {'id': 12}], [None], {}, {'error': 'unavailable'}])

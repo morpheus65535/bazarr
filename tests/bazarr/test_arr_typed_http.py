@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from radarr.movie_snapshot import Movie
+from radarr.movie_snapshot import IncompleteMovie, Movie
 from radarr.sync import utils as radarr
 from sonarr.episode_snapshot import Episode, EpisodeFile, complete_episode_snapshot
 from sonarr.series_snapshot import Series
@@ -54,7 +54,7 @@ def test_partial_response_preserves_invalid_row_marker(kind: str, monkeypatch: p
     result = decoder('key')
     assert isinstance(result, list)
     assert isinstance(result[0], (Series, Movie))
-    assert result[1] == InvalidArrRecord({'id': 99})
+    assert result[1] == (IncompleteMovie(99, None, None) if kind == 'movies' else InvalidArrRecord({'id': 99}))
 
 
 @pytest.mark.parametrize('encoding', ['latin-1', 'utf-16', 'utf-32', None, 'unknown-codec'])

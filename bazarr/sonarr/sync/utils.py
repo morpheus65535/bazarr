@@ -10,9 +10,9 @@ from utilities.arr_decoding import ArrRecordDecoder, InvalidArrRecord
 from sonarr.series_snapshot import Series
 from sonarr.episode_snapshot import Episode, EpisodeFile
 
-SERIES_DECODER = ArrRecordDecoder(Series)
-EPISODE_DECODER = ArrRecordDecoder(Episode)
-EPISODEFILE_DECODER = ArrRecordDecoder(EpisodeFile)
+SERIES_DECODER = ArrRecordDecoder(Series, InvalidArrRecord)
+EPISODE_DECODER = ArrRecordDecoder(Episode, InvalidArrRecord)
+EPISODEFILE_DECODER = ArrRecordDecoder(EpisodeFile, InvalidArrRecord)
 
 
 def get_profile_list():

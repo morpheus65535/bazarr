@@ -1,6 +1,7 @@
 # coding=utf-8
 
 from datetime import datetime
+from dataclasses import dataclass
 from typing import TypedDict
 from typing_extensions import NotRequired
 
@@ -33,6 +34,8 @@ class MovieFile(msgspec.Struct, kw_only=True):
     mediaInfo: MovieMediaInfo | None = None
 
     def __post_init__(self) -> None:
+        if self.id <= 0 or not self.path.strip():
+            raise ValueError('Invalid movie file identity')
         if movie_file_size(self.size) is None:
             raise ValueError('Invalid movie file size')
 
@@ -66,6 +69,35 @@ class Movie(msgspec.Struct, kw_only=True):
     imdbId: str | None = None
     originalLanguage: MovieLanguage | None = None
     qualityProfileId: int | msgspec.UnsetType = msgspec.UNSET
+
+
+@dataclass(frozen=True, slots=True)
+class FileState:
+    id: int
+    path: str
+    size: int
+
+
+@dataclass(frozen=True, slots=True)
+class IncompleteMovie:
+    id: int | None
+    hasFile: bool | None
+    movieFile: FileState | None
+
+    @classmethod
+    def from_value(cls, value: JsonValue) -> 'IncompleteMovie':
+        if not isinstance(value, dict):
+            return cls(None, None, None)
+        identifier, has_file = value.get('id'), value.get('hasFile')
+        raw_file = value.get('movieFile')
+        file = None
+        if isinstance(raw_file, dict):
+            file_id, path = raw_file.get('id'), raw_file.get('path')
+            size = movie_file_size(raw_file.get('size'))
+            if type(file_id) is int and file_id > 0 and isinstance(path, str) and path.strip() and size is not None:
+                file = FileState(file_id, path, size)
+        return cls(identifier if type(identifier) is int else None,
+                   has_file if isinstance(has_file, bool) else None, file)
 
 
 class MovieValues(TypedDict):
