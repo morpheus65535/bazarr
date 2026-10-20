@@ -250,10 +250,12 @@ def sync_episodes(series_id: int | None, defer_search: bool = False, is_signalr:
                 f'BAZARR searching for missing subtitles is deferred until scheduled task execution for this series: '
                 f'{series_data.title} ({series_data.year})')
         else:
+            due_episode_ids = (_get_due_missing_episode_ids(series_id=series_id)
+                               if episodes_updated or episodes_to_add else set())
             for episode in episodes_updated + episodes_to_add:
                 episode_title = (f'{series_data.title} - S{episode["season"]:02d}E{episode["episode"]:02d} '
                                  f'- {episode["title"]}')
-                if _is_there_missing_subtitles(episode_id=episode['sonarrEpisodeId']):
+                if episode['sonarrEpisodeId'] in due_episode_ids:
                     if os.path.exists(path_mappings.path_replace(episode['path'])):
                         logging.debug(f'BAZARR downloading missing subtitles for this episode: {episode_title}')
                         jobs_queue.feed_jobs_pending_queue(job_name=f'Downloading missing subtitles for '
@@ -394,28 +396,15 @@ def sync_one_episode(episode_id, defer_search=False, is_signalr=False):
                           f': {episode_full_title}')
 
 
-def _is_there_missing_subtitles(series_id: int = None, episode_id: int = None) -> bool:
-    """
-    Determines whether there are missing subtitles for a given series or episode.
+def _is_there_missing_subtitles(series_id: int | None = None, episode_id: int | None = None) -> bool:
+    return bool(_get_due_missing_episode_ids(series_id=series_id, episode_id=episode_id))
 
-    This function checks if there are missing subtitles based on the given
-    series ID or episode ID. If both `series_id` and `episode_id` are provided,
-    or if neither is provided, the function returns False. Otherwise, it evaluates
-    the specified conditions to determine if subtitles are missing for the
-    requested series or episode.
 
-    :param series_id: The ID of the series to check for missing subtitles.
-        Optional, defaults to None.
-    :param episode_id: The ID of the episode to check for missing subtitles.
-        Optional, defaults to None.
-    :return: Boolean indicating whether there are missing subtitles (`True`)
-        or not (`False`).
-    :rtype: bool
-    """
+def _get_due_missing_episode_ids(series_id: int | None = None, episode_id: int | None = None) -> set[int]:
     episodes_conditions = [(TableMissingSubtitles.media_type == 'series'),
                            (TableMissingSubtitles.media_id == TableEpisodes.sonarrEpisodeId)]
     if all([series_id, episode_id]) or not any([series_id, episode_id]):
-        return False
+        return set()
     elif series_id:
         episodes_conditions.append(TableEpisodes.sonarrSeriesId == series_id)
     elif episode_id:
@@ -432,8 +421,5 @@ def _is_there_missing_subtitles(series_id: int = None, episode_id: int = None) -
         'series',
         list(dict.fromkeys(missing_episode.sonarrEpisodeId for missing_episode in missing_episodes)),
     )
-    for missing_episode in missing_episodes:
-        due_languages = due_languages_by_episode.get(missing_episode.sonarrEpisodeId, [])
-        if missing_episode.language in due_languages:
-            return True
-    return False
+    return {episode.sonarrEpisodeId for episode in missing_episodes
+            if episode.language in due_languages_by_episode.get(episode.sonarrEpisodeId, [])}
