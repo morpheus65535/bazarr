@@ -1,6 +1,7 @@
 import json
 
 import pytest
+import msgspec
 
 from radarr.movie_snapshot import IncompleteMovie, Movie
 from radarr.sync import utils as radarr
@@ -9,8 +10,7 @@ from sonarr.series_snapshot import Series
 from sonarr.sync import episodes as episode_sync
 from sonarr.sync import utils as sonarr
 from tests.bazarr.test_arr_typed_decoding import make_response
-from tests.helpers.arr_fixtures import episode_payload, episode_record, movie_payload, series_payload
-from utilities.arr_decoding import InvalidArrRecord
+from tests.helpers.arr_fixtures import episode_payload, episode_record, movie_payload, series_payload, stub_arr_api
 
 
 @pytest.mark.parametrize('kind', ['series', 'episodes', 'files', 'movies'])
@@ -54,7 +54,7 @@ def test_partial_response_preserves_invalid_row_marker(kind: str, monkeypatch: p
     result = decoder('key')
     assert isinstance(result, list)
     assert isinstance(result[0], (Series, Movie))
-    assert result[1] == (IncompleteMovie(99, None, None) if kind == 'movies' else InvalidArrRecord({'id': 99}))
+    assert result[1] == (IncompleteMovie(99, None, None) if kind == 'movies' else None)
 
 
 @pytest.mark.parametrize('encoding', ['latin-1', 'utf-16', 'utf-32', None, 'unknown-codec'])
@@ -84,7 +84,7 @@ def test_complete_episode_response_requires_all_file_joins(missing: bool) -> Non
     result = complete_episode_snapshot([episode], [] if missing else [file], separate_files=True)
     assert (result is None) == missing
     if result is not None:
-        assert result.episodes[0].episodeFile is file
+        assert result[0].episodeFile is file
 
 
 def test_duplicate_episode_ids_abort_reconciliation() -> None:
@@ -98,7 +98,44 @@ def test_duplicate_episode_file_ids_abort_reconciliation() -> None:
     assert complete_episode_snapshot([episode], [episode.episodeFile, episode.episodeFile], separate_files=True) is None
 
 
-def test_wrong_series_response_aborts_before_version_lookup(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_wrong_series_response_aborts_before_version_lookup(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture,
+) -> None:
     episode = episode_record(episode_payload(series_id=7))
     monkeypatch.setattr(episode_sync.get_sonarr_info, 'is_legacy', lambda: pytest.fail('Wrong identity must abort'))
     assert episode_sync._validated_episodes([episode], series_id=8) is None
+    assert 'series 8: response contains another series' in caplog.text
+
+
+@pytest.mark.parametrize(('reason', 'message'), [
+    ('version', 'series 7: Sonarr version is unavailable'),
+    ('files', 'series 7: invalid episode-file response'),
+    ('file_id', 'episode 101: episodeFileId is missing'),
+    ('file', 'episode 101: invalid response for file 11'),
+    ('snapshot', 'series 7: incomplete or duplicate episode-file metadata'),
+])
+def test_rejected_episode_snapshot_logs_context(
+    reason: str, message: str, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture,
+) -> None:
+    episode = episode_record(episode_payload())
+    series_id = None if reason in ('file_id', 'file') else 7
+    monkeypatch.setattr(episode_sync.get_sonarr_info, 'is_legacy', lambda: False)
+    version = None if reason == 'version' else episode_sync.semver.Version(4, 1 if reason == 'snapshot' else 0, 0)
+    monkeypatch.setattr(episode_sync.get_sonarr_info, 'semver', lambda: version)
+    monkeypatch.setattr(episode_sync, 'get_episodesFiles_from_sonarr_api', lambda **kwargs: None)
+    if reason == 'file_id':
+        episode.episodeFileId = msgspec.UNSET
+    elif reason == 'snapshot':
+        episode.episodeFile = None
+
+    assert episode_sync._validated_episodes([episode], series_id=series_id) is None
+    assert message in caplog.text
+
+
+def test_series_fixture_wraps_single_record_like_http(monkeypatch: pytest.MonkeyPatch) -> None:
+    stub_arr_api(monkeypatch, sonarr, 'get_series_from_sonarr_api', lambda *args: series_payload())
+    records = sonarr.get_series_from_sonarr_api('key', 123)
+    assert isinstance(records, list)
+    assert len(records) == 1
+    assert isinstance(records[0], Series)
+    assert records[0].id == 123

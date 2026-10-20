@@ -1,6 +1,9 @@
-from tests.helpers.arr_fixtures import episode_record, movie_payload, series_payload, series_record, stub_arr_api
+from tests.helpers.arr_fixtures import episode_payload, episode_record, movie_payload, series_payload, series_record, stub_arr_api
 # -*- coding: utf-8 -*-
 import datetime
+
+from sqlalchemy.sql import Executable
+from sonarr.episode_snapshot import Episode
 
 from types import SimpleNamespace
 
@@ -275,6 +278,7 @@ def test_episode_parser_uses_reported_size_before_filesystem_stat(monkeypatch):
         parse_embedded_audio_track=False,
     )
 
+    assert parsed is not None
     assert parsed["sonarrEpisodeId"] == 456
     assert parsed["file_size"] == MINIMUM_VIDEO_SIZE + 1
 
@@ -372,3 +376,41 @@ def test_get_providers_expired_throttle_cleanup_is_idempotent(monkeypatch):
     monkeypatch.setattr(providers, "set_throttled_providers", lambda data: None)
 
     assert providers.get_providers() == [provider]
+
+
+@pytest.mark.parametrize('existing', [False, True])
+def test_episode_parser_rejection_skips_writes_and_keeps_existing_id(
+    existing: bool, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from sonarr.sync import episodes as episode_sync
+
+    reads: list[Executable] = []
+    parsed: list[Episode] = []
+    episode = episode_record(episode_payload())
+    row = SimpleNamespace(sonarrEpisodeId=episode.id, to_dict=lambda: {'sonarrEpisodeId': episode.id})
+
+    class Database:
+        def execute(self, statement: Executable) -> _Result:
+            assert str(statement).startswith('SELECT')
+            reads.append(statement)
+            return _Result(all_value=[(row,)] if existing and len(reads) == 1 else [])
+
+    def reject(record: Episode, *, parse_embedded_audio_track: bool) -> None:
+        parsed.append(record)
+        return None
+
+    monkeypatch.setattr(episode_sync, 'database', Database())
+    monkeypatch.setattr(episode_sync, 'settings', SimpleNamespace(
+        sonarr=SimpleNamespace(apikey='key', sync_only_monitored_series=False),
+        general=SimpleNamespace(parse_embedded_audio_track=False),
+    ))
+    monkeypatch.setattr(episode_sync, 'get_episodes_from_sonarr_api', lambda **kwargs: [episode])
+    monkeypatch.setattr(episode_sync, '_validated_episodes', lambda records, **kwargs: records)
+    monkeypatch.setattr(episode_sync, 'episodeParser', reject)
+    monkeypatch.setattr(episode_sync, 'delete_media_and_wanted_search_state',
+                        lambda *args: pytest.fail('A rejected parse must not delete an existing episode'))
+
+    episode_sync.sync_episodes(7)
+
+    assert parsed == [episode]
+    assert len(reads) == 2

@@ -234,21 +234,17 @@ def update_movies(job_id=None, wait_for_completion=False):
                         if _has_usable_movie_file(movie):
                             # Add/update movies from Radarr that have a movie file to current movies list
                             trace(f"{i}: (Processing) {movie.title}")
-                            if movie_id in current_movies_id_db:
-                                parsed_movie = movieParser(movie, action='update',
-                                                           tags_dict=tagsDict,
-                                                           language_profiles=language_profiles,
-                                                           movie_default_profile=movie_default_profile,
-                                                           audio_profiles=audio_profiles)
+                            exists = movie_id in current_movies_id_db
+                            parsed_movie = movieParser(movie, action='update' if exists else 'insert',
+                                                       tags_dict=tagsDict,
+                                                       language_profiles=language_profiles,
+                                                       movie_default_profile=movie_default_profile,
+                                                       audio_profiles=audio_profiles)
+                            if exists:
                                 if not parsed_movie.items() <= current_movies_in_db[movie_id].items():
                                     update_movie(parsed_movie)
                                     movies_updated.append(parsed_movie['title'])
                             else:
-                                parsed_movie = movieParser(movie, action='insert',
-                                                           tags_dict=tagsDict,
-                                                           language_profiles=language_profiles,
-                                                           movie_default_profile=movie_default_profile,
-                                                           audio_profiles=audio_profiles)
                                 add_movie(parsed_movie)
                                 movies_added.append(parsed_movie['title'])
                         else:
@@ -324,13 +320,10 @@ def update_one_movie(movie_id, action, defer_search=False, is_signalr=False):
         usable = _has_usable_movie_file(movie_data)
         if usable is None or (usable and isinstance(movie_data, IncompleteMovie)):
             return
-        if usable and isinstance(movie_data, Movie):
-            if action == 'updated' and existing_movie:
-                movie = movieParser(movie_data, action='update', tags_dict=tagsDict, language_profiles=language_profiles,
-                                    movie_default_profile=movie_default_profile, audio_profiles=audio_profiles)
-            elif action == 'updated' and not existing_movie:
-                movie = movieParser(movie_data, action='insert', tags_dict=tagsDict, language_profiles=language_profiles,
-                                    movie_default_profile=movie_default_profile, audio_profiles=audio_profiles)
+        if usable and isinstance(movie_data, Movie) and action == 'updated':
+            movie = movieParser(movie_data, action='update' if existing_movie else 'insert',
+                                tags_dict=tagsDict, language_profiles=language_profiles,
+                                movie_default_profile=movie_default_profile, audio_profiles=audio_profiles)
     except Exception:
         logging.exception('BAZARR cannot get movie returned by SignalR feed from Radarr API.')
         return

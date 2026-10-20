@@ -1,6 +1,5 @@
 # coding=utf-8
 
-from dataclasses import dataclass
 from datetime import datetime
 from typing import Annotated, TypedDict
 from typing_extensions import NotRequired
@@ -66,13 +65,8 @@ class EpisodeValues(TypedDict):
     updated_at_timestamp: NotRequired[datetime]
 
 
-@dataclass(frozen=True)
-class EpisodeSnapshot:
-    episodes: list[Episode]
-
-
 def complete_episode_snapshot(episodes: list[Episode], episode_files: list[EpisodeFile] | None = None,
-                              *, separate_files: bool = False) -> EpisodeSnapshot | None:
+                              *, separate_files: bool = False) -> list[Episode] | None:
     files_by_id: dict[int, EpisodeFile] = {}
     if separate_files:
         if episode_files is None:
@@ -101,4 +95,4 @@ def complete_episode_snapshot(episodes: list[Episode], episode_files: list[Episo
                 if file_id is msgspec.UNSET:
                     return None
                 episode.episodeFile = files_by_id[file_id]
-    return EpisodeSnapshot(episodes)
+    return episodes

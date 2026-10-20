@@ -6,13 +6,13 @@ import logging
 from app.config import settings
 from sonarr.info import get_sonarr_info, url_api_sonarr
 from constants import HEADERS
-from utilities.arr_decoding import ArrRecordDecoder, InvalidArrRecord
+from utilities.arr_decoding import ArrRecordDecoder, CompleteResult
 from sonarr.series_snapshot import Series
 from sonarr.episode_snapshot import Episode, EpisodeFile
 
-SERIES_DECODER = ArrRecordDecoder(Series, InvalidArrRecord)
-EPISODE_DECODER = ArrRecordDecoder(Episode, InvalidArrRecord)
-EPISODEFILE_DECODER = ArrRecordDecoder(EpisodeFile, InvalidArrRecord)
+SERIES_DECODER = ArrRecordDecoder(Series, lambda _: None)
+EPISODE_DECODER = ArrRecordDecoder(Episode, lambda _: None)
+EPISODEFILE_DECODER = ArrRecordDecoder(EpisodeFile, lambda _: None)
 
 
 def get_profile_list():
@@ -84,7 +84,7 @@ def get_tags():
         return tagsDict.json()
 
 
-def get_series_from_sonarr_api(apikey_sonarr: str, sonarr_series_id: int | None = None) -> list[Series | InvalidArrRecord] | None:
+def get_series_from_sonarr_api(apikey_sonarr: str, sonarr_series_id: int | None = None) -> list[Series | None] | None:
     url_sonarr_api_series = (f"{url_api_sonarr()}series/{sonarr_series_id if sonarr_series_id else ''}?"
                              f"apikey={apikey_sonarr}")
     try:
@@ -112,12 +112,12 @@ def get_series_from_sonarr_api(apikey_sonarr: str, sonarr_series_id: int | None 
             if r.status_code != 200:
                 return None
             result = SERIES_DECODER.decode_response(r)
-            if isinstance(result, (Series, InvalidArrRecord)):
+            if isinstance(result, Series):
                 return [result]
             return result
 
 
-def get_episodes_from_sonarr_api(apikey_sonarr: str, series_id: int | None = None, episode_id: int | None = None) -> Episode | list[Episode] | None:
+def get_episodes_from_sonarr_api(apikey_sonarr: str, series_id: int | None = None, episode_id: int | None = None) -> CompleteResult[Episode]:
     if series_id:
         url_sonarr_api_episode = (f"{url_api_sonarr()}episode?seriesId={series_id}&includeEpisodeFile=true&"
                                   f"apikey={apikey_sonarr}")
@@ -151,7 +151,7 @@ def get_episodes_from_sonarr_api(apikey_sonarr: str, series_id: int | None = Non
             return EPISODE_DECODER.decode_complete_response(r)
 
 
-def get_episodesFiles_from_sonarr_api(apikey_sonarr: str, series_id: int | None = None, episode_file_id: int | None = None) -> EpisodeFile | list[EpisodeFile] | None:
+def get_episodesFiles_from_sonarr_api(apikey_sonarr: str, series_id: int | None = None, episode_file_id: int | None = None) -> CompleteResult[EpisodeFile]:
     if series_id:
         url_sonarr_api_episodeFiles = f"{url_api_sonarr()}episodeFile?seriesId={series_id}&apikey={apikey_sonarr}"
     elif episode_file_id:

@@ -13,7 +13,6 @@ from sonarr.series_snapshot import Series
 from sonarr.sync.utils import EPISODE_DECODER, EPISODEFILE_DECODER, SERIES_DECODER
 from radarr.sync.utils import MOVIE_DECODER
 from tests.helpers.arr_fixtures import episode_payload, movie_payload, series_payload
-from utilities.arr_decoding import InvalidArrRecord
 from utilities.json_types import JsonValue
 
 
@@ -37,7 +36,8 @@ def test_json_decodes_directly_into_records(kind: str, many: bool, compressed: b
         payload, decoder, record_type = movie_payload(), MOVIE_DECODER, Movie
     else:
         payload, decoder, record_type = series_payload(), SERIES_DECODER, Series
-    payload['unused'] = {'large': ['ignored metadata'] * 100}
+    unused: dict[str, JsonValue] = {'large': list[JsonValue](['ignored metadata'] * 100)}
+    payload['unused'] = unused
     body = json.dumps([payload] if many else payload).encode()
     with make_response(body, compressed=compressed) as response:
         result = decoder.decode_response(response)
@@ -64,11 +64,12 @@ def test_empty_catalogue_and_failed_fetch_remain_distinct(kind: str) -> None:
 def test_partial_catalogue_preserves_valid_records_and_invalid_row_positions(kind: str) -> None:
     payload, decoder, record_type = ((movie_payload(), MOVIE_DECODER, Movie) if kind == 'movie'
                                       else (series_payload(), SERIES_DECODER, Series))
-    payload['unused'] = {'nested': ['unneeded metadata'] * 10}
+    unused: dict[str, JsonValue] = {'nested': list[JsonValue](['unneeded metadata'] * 10)}
+    payload['unused'] = unused
     result = decoder.decode(json.dumps([payload, {'id': 12}, payload]))
     assert isinstance(result, list)
     assert isinstance(result[0], record_type)
-    assert result[1] == (IncompleteMovie(12, None, None) if kind == 'movie' else InvalidArrRecord({'id': 12}))
+    assert result[1] == (IncompleteMovie(12, None, None) if kind == 'movie' else None)
     assert isinstance(result[2], record_type)
     assert not hasattr(result[0], 'unused')
 

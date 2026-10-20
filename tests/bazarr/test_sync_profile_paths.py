@@ -351,7 +351,7 @@ def test_radarr_movie_sync_processes_valid_entries_in_mixed_payload(monkeypatch,
     assert names == ["Synced movies with Radarr"]
 
 
-def test_sonarr_series_sync_returns_for_non_list_payload(monkeypatch, sync_job):
+def test_sonarr_series_sync_returns_for_malformed_payload(monkeypatch, sync_job):
     names = []
 
     monkeypatch.setattr(sonarr_series, "check_sonarr_rootfolder", lambda: None)

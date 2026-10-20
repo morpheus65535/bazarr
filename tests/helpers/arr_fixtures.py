@@ -8,7 +8,6 @@ import pytest
 from sonarr.episode_snapshot import Episode
 from sonarr.series_snapshot import Series
 from radarr.movie_snapshot import IncompleteMovie
-from utilities.arr_decoding import InvalidArrRecord
 from utilities.json_types import JsonValue
 
 
@@ -52,10 +51,10 @@ def stub_arr_api(monkeypatch: pytest.MonkeyPatch, module: ModuleType, name: str,
 
     @wraps(fetch)
     def response(*args: Params.args, **kwargs: Params.kwargs) -> (
-        msgspec.Struct | IncompleteMovie | InvalidArrRecord |
-        Sequence[msgspec.Struct | IncompleteMovie | InvalidArrRecord] | None
+        msgspec.Struct | IncompleteMovie | Sequence[msgspec.Struct | IncompleteMovie | None] | None
     ):
-        return decode(fetch(*args, **kwargs))
+        result = decode(fetch(*args, **kwargs))
+        return [result] if name == 'get_series_from_sonarr_api' and isinstance(result, Series) else result
 
     monkeypatch.setattr(module, name, response)
 

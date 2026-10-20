@@ -58,11 +58,14 @@ def check_actual_file_size(original_episode_path):
 
 def _validated_episodes(episodes: list[Episode], *, series_id: int | None = None) -> list[Episode] | None:
     if series_id is not None and any(episode.seriesId != series_id for episode in episodes):
+        logging.warning('BAZARR Skipping episode sync for series %s: response contains another series.', series_id)
         return None
+    source_series_id = episodes[0].seriesId if episodes else series_id
     separate = False
     if not get_sonarr_info.is_legacy():
         version = get_sonarr_info.semver()
         if version is None:
+            logging.warning('BAZARR Skipping episode sync for series %s: Sonarr version is unavailable.', source_series_id)
             return None
         separate = version < semver.Version(4, 0, 9, '2421')
     files: list[EpisodeFile] | None = None
@@ -70,20 +73,26 @@ def _validated_episodes(episodes: list[Episode], *, series_id: int | None = None
         if series_id is not None:
             result = get_episodesFiles_from_sonarr_api(apikey_sonarr=settings.sonarr.apikey, series_id=series_id)
             if not isinstance(result, list):
+                logging.warning('BAZARR Skipping episode sync for series %s: invalid episode-file response.', series_id)
                 return None
             files = result
         elif episodes and episodes[0].hasFile:
             file_id = episodes[0].episodeFileId
             if file_id is msgspec.UNSET:
+                logging.warning('BAZARR Skipping episode %s: episodeFileId is missing.', episodes[0].id)
                 return None
             file = get_episodesFiles_from_sonarr_api(apikey_sonarr=settings.sonarr.apikey, episode_file_id=file_id)
             if not isinstance(file, EpisodeFile):
+                logging.warning('BAZARR Skipping episode %s: invalid response for file %s.', episodes[0].id, file_id)
                 return None
             files = [file]
         else:
             files = []
-    snapshot = complete_episode_snapshot(episodes, files, separate_files=separate)
-    return snapshot.episodes if snapshot is not None else None
+    completed = complete_episode_snapshot(episodes, files, separate_files=separate)
+    if completed is None:
+        logging.warning('BAZARR Skipping episode sync for series %s: incomplete or duplicate episode-file metadata.',
+                        source_series_id)
+    return completed
 
 
 def sync_episodes(series_id, defer_search=False, is_signalr=False):
@@ -148,17 +157,15 @@ def sync_episodes(series_id, defer_search=False, is_signalr=False):
                     current_episodes_sonarr.append(episode.id)
 
                     # Parse episode data
+                    parsed_episode = episodeParser(
+                        episode, parse_embedded_audio_track=parse_embedded_audio_track)
+                    if parsed_episode is None:
+                        continue
                     if episode.id in current_episodes_in_db_row_as_dict:
-                        parsed_episode = episodeParser(
-                            episode, parse_embedded_audio_track=parse_embedded_audio_track)
-                        if parsed_episode is None:
-                            continue
                         if not set(parsed_episode.items()).issubset(set(current_episodes_in_db_row_as_dict[episode.id].items())):
                             episodes_to_update.append(parsed_episode)
                     else:
-                        episodes_to_add.append(
-                            episodeParser(
-                                episode, parse_embedded_audio_track=parse_embedded_audio_track))
+                        episodes_to_add.append(parsed_episode)
     else:
         return
 
