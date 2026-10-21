@@ -1,6 +1,0 @@
-from typing_extensions import TypeIs
-
-from . import Struct
-
-def is_struct(obj: object) -> TypeIs[Struct]: ...
-def is_struct_type(tp: object) -> TypeIs[type[Struct]]: ...
