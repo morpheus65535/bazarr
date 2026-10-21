@@ -67,7 +67,7 @@ At the request of some users, here is a way to show appreciation for the efforts
 - BetaSeries
 - BSplayer
 - Embedded Subtitles
-- Gestdown.info
+- Subvault.tv (formerly Gestdown.info)
 - GreekSubs
 - GreekSubtitles
 - HDBits.org
