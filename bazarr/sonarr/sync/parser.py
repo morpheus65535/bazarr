@@ -26,6 +26,17 @@ def get_matching_profile(tags, language_profiles):
 
 
 def seriesParser(show, action, tags_dict, language_profiles, serie_default_profile, audio_profiles):
+    """Convert a Sonarr series payload into the column values of ``TableShows``.
+
+    :param dict show: series payload returned by the Sonarr API.
+    :param str action: ``'insert'`` also assigns the default language profile.
+    :param list tags_dict: Sonarr tag definitions as returned by the API.
+    :param list language_profiles: language profiles as ``(profileId, name, tag)`` tuples.
+    :param int serie_default_profile: profile ID assigned to new series.
+    :param list audio_profiles: audio profiles as ``(profileId, name)`` tuples.
+    :return: column name to value mapping, ready for insert or update.
+    :rtype: dict
+    """
     overview = show['overview'] if 'overview' in show else ''
     poster = ''
     fanart = ''
@@ -46,6 +57,8 @@ def seriesParser(show, action, tags_dict, language_profiles, serie_default_profi
     tags = [d['label'] for d in tags_dict if d['id'] in show['tags']]
 
     imdbId = show['imdbId'] if 'imdbId' in show else None
+
+    tmdbId = int(show['tmdbId']) if show.get('tmdbId') else None
 
     ended = 'True' if 'ended' in show and show['ended'] else 'False'
 
@@ -78,6 +91,7 @@ def seriesParser(show, action, tags_dict, language_profiles, serie_default_profi
         'tags': str(tags),
         'seriesType': show['seriesType'],
         'imdbId': imdbId,
+        'tmdbId': tmdbId,
         'monitored': str(bool(show['monitored'])),
         'ended': ended,
         'lastAired': lastAired,

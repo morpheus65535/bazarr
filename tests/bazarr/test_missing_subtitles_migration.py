@@ -148,7 +148,7 @@ def test_missing_revision_follows_retry_cutover(migration_engine: Engine) -> Non
         scripts = ScriptDirectory('migrations')
         assert scripts.get_heads() == [current_head(migration_engine)]
         assert [step.revision.revision for step in scripts._upgrade_revs('head', '537e9b4d10e3')] == [
-            'e6cbb0f6f9b1', migration.revision, '9c2f6a8d4b10', 'a4c7e1f29b03',
+            'e6cbb0f6f9b1', migration.revision, '9c2f6a8d4b10', 'a4c7e1f29b03', 'ca7df64674ee',
         ]
 
 
