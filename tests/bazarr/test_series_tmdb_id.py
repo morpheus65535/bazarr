@@ -1,6 +1,7 @@
 import importlib
 from unittest import mock
 
+import msgspec
 import pytest
 from alembic.migration import MigrationContext
 from alembic.operations import Operations
@@ -11,6 +12,7 @@ from sqlalchemy.orm import Session
 from subliminal import Episode
 
 from app.database import TableEpisodes, TableShows
+from sonarr.series_snapshot import Series
 from sonarr.sync import parser
 from subtitles.refiners import database as refiner
 
@@ -27,6 +29,10 @@ def _series_payload(**overrides: object) -> dict:
     return payload
 
 
+def _series(**overrides: object) -> Series:
+    return msgspec.convert(_series_payload(**overrides), Series)
+
+
 @pytest.fixture
 def sonarr_info() -> mock.Mock:
     info = mock.Mock()
@@ -37,19 +43,18 @@ def sonarr_info() -> mock.Mock:
 
 @pytest.mark.parametrize('payload_tmdb_id, expected', [
     (603, 603),
-    ('603', 603),
     (0, None),
     (None, None),
 ])
-def test_series_parser_reads_tmdb_id(sonarr_info: mock.Mock, payload_tmdb_id: object, expected: int | None) -> None:
-    parsed = parser.seriesParser(_series_payload(tmdbId=payload_tmdb_id), action='update', tags_dict=[],
+def test_series_parser_reads_tmdb_id(sonarr_info: mock.Mock, payload_tmdb_id: int | None, expected: int | None) -> None:
+    parsed = parser.seriesParser(_series(tmdbId=payload_tmdb_id), action='update', tags_dict=[],
                                  language_profiles=[], serie_default_profile=None, audio_profiles=[])
 
     assert parsed['tmdbId'] == expected
 
 
 def test_series_parser_without_tmdb_id_key(sonarr_info: mock.Mock) -> None:
-    parsed = parser.seriesParser(_series_payload(), action='update', tags_dict=[],
+    parsed = parser.seriesParser(_series(), action='update', tags_dict=[],
                                  language_profiles=[], serie_default_profile=None, audio_profiles=[])
 
     assert parsed['tmdbId'] is None

@@ -90,7 +90,7 @@ def seriesParser(show: Series, action: str, tags_dict: list[ArrTag], language_pr
 
     imdbId = show.imdbId
 
-    tmdbId = show.tmdbId
+    tmdbId = show.tmdbId or None
 
     ended = 'True' if show.ended else 'False'
 
