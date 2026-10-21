@@ -16,10 +16,10 @@ from subzero.language import Language
 
 logger = logging.getLogger(__name__)
 
-_BASE_URL = "https://api.gestdown.info"
+_BASE_URL = "https://api.subvault.tv"
 
 
-class GestdownSubtitle(Subtitle):
+class SubvaultSubtitle(Subtitle):
     provider_name = "gestdown"
     hash_verifiable = False
     hearing_impaired_verifiable = True
@@ -91,7 +91,7 @@ def _retry_on_423(method):
     return retry
 
 
-class GestdownProvider(Provider):
+class SubvaultProvider(Provider):
     provider_name = "gestdown"
 
     video_types = (Episode,)
@@ -142,7 +142,7 @@ class GestdownProvider(Provider):
             if not subtitle_dict["completed"]:
                 continue
 
-            sub = GestdownSubtitle(language, subtitle_dict, tvdbid_matching)
+            sub = SubvaultSubtitle(language, subtitle_dict, tvdbid_matching)
             logger.debug("Found subtitle: %s", sub)
             yield sub
 
@@ -190,7 +190,7 @@ class GestdownProvider(Provider):
 
         return subtitles
 
-    def download_subtitle(self, subtitle: GestdownSubtitle):
+    def download_subtitle(self, subtitle: SubvaultSubtitle):
         response = self._session.get(subtitle.page_link, allow_redirects=True)
         response.raise_for_status()
         subtitle.content = response.content
