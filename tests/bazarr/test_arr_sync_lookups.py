@@ -22,6 +22,15 @@ def test_tag_order_and_duplicate_catalogue_entries_are_preserved() -> None:
     assert lookups.tags([]) == []
 
 
+@pytest.mark.parametrize('invalid_tag', [{'id': 2}, {'id': [2], 'label': 'invalid'}])
+def test_unusable_catalogue_tags_do_not_block_other_media(invalid_tag: dict[str, JsonValue]) -> None:
+    tags: list[ArrTag | dict[str, JsonValue]] = [{'id': 1, 'label': 'valid'}, invalid_tag]
+    lookups = ArrSyncLookups(tags, [], [])
+
+    assert lookups.tags([]) == []
+    assert lookups.tags([1]) == ['valid']
+
+
 def test_profile_priority_uses_profile_order() -> None:
     profiles = [(7, 'Preferred', 'a'), (9, 'Other', 'b'), (10, 'Duplicate', 'a'), (11, 'No tag', None)]
     lookups = ArrSyncLookups([], profiles, [])

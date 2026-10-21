@@ -11,11 +11,14 @@ from utilities.json_types import JsonValue
 class ArrSyncLookups:
     """Index the tag and profile lists fetched for one sync."""
 
-    def __init__(self, tags: Iterable[ArrTag], language_profiles: Iterable[tuple[int, str, str | None]],
+    def __init__(self, tags: Iterable[ArrTag | dict[str, JsonValue]],
+                 language_profiles: Iterable[tuple[int, str, str | None]],
                  audio_profiles: Iterable[Sequence[JsonValue]] | None) -> None:
         self._tags: dict[int, list[tuple[int, str]]] = {}
         for position, tag in enumerate(tags):
-            self._tags.setdefault(tag['id'], []).append((position, tag['label']))
+            identifier, label = tag.get('id'), tag.get('label')
+            if isinstance(identifier, int) and isinstance(label, str):
+                self._tags.setdefault(identifier, []).append((position, label))
         self._profiles: dict[str, tuple[int, int]] = {}
         for position, (profile_id, name, tag) in enumerate(language_profiles):
             if tag is not None:
