@@ -2,6 +2,7 @@
 from datetime import timedelta
 import logging
 import numbers
+from typing import List, Union
 
 from ffsubsync.generic_subtitles import GenericSubtitle, GenericSubtitlesFile, SubsMixin
 from ffsubsync.sklearn_shim import TransformerMixin
@@ -20,6 +21,38 @@ class SubtitleShifter(SubsMixin, TransformerMixin):
 
     def fit(self, subs: GenericSubtitlesFile, *_):
         self.subs_ = subs.offset(self.td_seconds)
+        return self
+
+    def transform(self, *_):
+        return self.subs_
+
+
+class VariableSubtitleShifter(SubsMixin, TransformerMixin):
+    """Shift each cue by its own offset (alass-style piecewise alignment).
+
+    ``offsets_seconds`` must be parallel to the input cues -- one offset per cue,
+    in the same order. This is the per-cue analogue of :class:`SubtitleShifter`
+    (which applies a single offset to the whole file).
+    """
+
+    def __init__(self, offsets_seconds: List[Union[float, timedelta]]):
+        super(SubsMixin, self).__init__()
+        self.offsets = [
+            off if isinstance(off, timedelta) else timedelta(seconds=off)
+            for off in offsets_seconds
+        ]
+
+    def fit(self, subs: GenericSubtitlesFile, *_):
+        if len(self.offsets) != len(subs):
+            raise ValueError(
+                "expected one offset per cue (got %d offsets for %d cues)"
+                % (len(self.offsets), len(subs))
+            )
+        shifted = [
+            GenericSubtitle(sub.start + td, sub.end + td, sub.inner)
+            for sub, td in zip(subs, self.offsets)
+        ]
+        self.subs_ = subs.clone_props_for_subs(shifted)
         return self
 
     def transform(self, *_):

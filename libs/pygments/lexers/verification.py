@@ -20,7 +20,7 @@ class BoogieLexer(RegexLexer):
     For Boogie source code.
     """
     name = 'Boogie'
-    url = 'https://boogie-docs.readthedocs.io/en/latest/'
+    url = 'https://github.com/boogie-org/boogie/blob/master/Source/Core/BoogiePL.atg'
     aliases = ['boogie']
     filenames = ['*.bpl']
     version_added = '2.1'
@@ -36,13 +36,16 @@ class BoogieLexer(RegexLexer):
             (r'/\*', Comment.Multiline, 'comment'),
 
             (words((
-                'axiom', 'break', 'call', 'ensures', 'else', 'exists', 'function',
-                'forall', 'if', 'invariant', 'modifies', 'procedure',  'requires',
-                'then', 'var', 'while'),
+                'action', 'assert', 'asserts', 'assume', 'async', 'atomic',
+                'axiom', 'break', 'call', 'else', 'ensures', 'exists',
+                'false', 'forall', 'free', 'function', 'goto', 'havoc', 'if',
+                'implementation', 'invariant', 'lambda', 'left', 'measure', 'modifies',
+                'old', 'preserves', 'procedure', 'public', 'requires', 'return', 'returns',
+                'right', 'then', 'true', 'type', 'unique', 'var', 'while', 'yield'),
              suffix=r'\b'), Keyword),
             (words(('const',), suffix=r'\b'), Keyword.Reserved),
 
-            (words(('bool', 'int', 'ref'), suffix=r'\b'), Keyword.Type),
+            (words(('bool', 'int', 'real', 'ref'), suffix=r'\b'), Keyword.Type),
             include('numbers'),
             (r"(>=|<=|:=|!=|==>|&&|\|\||[+/\-=>*<\[\]])", Operator),
             (r'\{.*?\}', Generic.Emph), #triggers

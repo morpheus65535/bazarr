@@ -91,22 +91,8 @@ class RefreshTokenGrant(GrantTypeBase):
 
         # Because refresh tokens are typically long-lasting credentials used to
         # request additional access tokens, the refresh token is bound to the
-        # client to which it was issued.  If the client type is confidential or
-        # the client was issued client credentials (or assigned other
-        # authentication requirements), the client MUST authenticate with the
-        # authorization server as described in Section 3.2.1.
-        # https://tools.ietf.org/html/rfc6749#section-3.2.1
-        if self.request_validator.client_authentication_required(request):
-            log.debug('Authenticating client, %r.', request)
-            if not self.request_validator.authenticate_client(request):
-                log.debug('Invalid client (%r), denying access.', request)
-                raise errors.InvalidClientError(request=request)
-            # Ensure that request.client_id is set.
-            if request.client_id is None and request.client is not None:
-                request.client_id = request.client.client_id
-        elif not self.request_validator.authenticate_client_id(request.client_id, request):
-            log.debug('Client authentication failed, %r.', request)
-            raise errors.InvalidClientError(request=request)
+        # client to which it was issued
+        self.validate_client_authentication(request)
 
         # Ensure client is authorized use of this grant type
         self.validate_grant_type(request)

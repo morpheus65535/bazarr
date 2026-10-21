@@ -27,6 +27,11 @@ from ._types import (
     VersionPart,
 )
 
+try:
+    from fast_semver_rs_backend import parse_parts as _native_parse_parts
+except ImportError:  # optional backend is deliberately absent on the default path
+    _native_parse_parts = None
+
 # These types are required here because of circular imports
 Comparable = Union["Version", Dict[str, VersionPart], Collection[VersionPart], str]
 Comparator = Callable[["Version", Comparable], bool]
@@ -40,8 +45,9 @@ def _comparator(operator: Comparator) -> Comparator:
 
     @wraps(operator)
     def wrapper(self: "Version", other: Comparable) -> bool:
+        cls = type(self)
         comparable_types = (
-            type(self),
+            cls,
             dict,
             tuple,
             list,
@@ -49,6 +55,14 @@ def _comparator(operator: Comparator) -> Comparator:
         )
         if not isinstance(other, comparable_types):
             return NotImplemented
+        if isinstance(other, (dict, tuple, list)):
+            # A collection that cannot construct a comparable version is
+            # not a valid comparison operand.  Return NotImplemented
+            # instead of leaking conversion errors from __init__.
+            try:
+                other = cls(**other) if isinstance(other, dict) else cls(*other)
+            except (TypeError, ValueError):
+                return NotImplemented
         return operator(self, other)
 
     return wrapper
@@ -77,8 +91,10 @@ class Version:
     #: The names of the different parts of a version
     NAMES: ClassVar[Tuple[str, ...]] = tuple([item[1:] for item in __slots__])
 
-    #: Regex for number in a prerelease
+    #: Regex for number in a build
     _LAST_NUMBER: ClassVar[Pattern[str]] = re.compile(r"(?:[^\d]*(\d+)[^\d]*)+")
+    #: Regex for number in a prerelease
+    _LAST_PRERELEASE: ClassVar[Pattern[str]] = re.compile(r"^(.*\.)?(\d+)$")
     #: Regex template for a semver version
     _REGEX_TEMPLATE: ClassVar[
         str
@@ -101,17 +117,17 @@ class Version:
                 [0-9a-zA-Z-]+
                 (?:\.[0-9a-zA-Z-]+)*
             ))?
-            $
+            \Z
         """
     #: Regex for a semver version
     _REGEX: ClassVar[Pattern[str]] = re.compile(
         _REGEX_TEMPLATE.format(opt_patch="", opt_minor=""),
-        re.VERBOSE,
+        re.VERBOSE | re.ASCII,
     )
     #: Regex for a semver version that might be shorter
     _REGEX_OPTIONAL_MINOR_AND_PATCH: ClassVar[Pattern[str]] = re.compile(
         _REGEX_TEMPLATE.format(opt_patch="?", opt_minor="?"),
-        re.VERBOSE,
+        re.VERBOSE | re.ASCII,
     )
 
     def __init__(
@@ -246,6 +262,23 @@ class Version:
         yield from self.to_tuple()
 
     @staticmethod
+    def _increment_prerelease(string: str) -> str:
+        """
+        Check if the last part of a dot-separated string is numeric. If yes,
+        increase them. Else, add '.0'
+
+        :param string: the prerelease version to increment
+        :return: the incremented string
+        """
+        match = Version._LAST_PRERELEASE.search(string)
+        if match:
+            next_ = str(int(match.group(2)) + 1)
+            string = match.group(1) + next_ if match.group(1) else next_
+        else:
+            string += ".0"
+        return string
+
+    @staticmethod
     def _increment_string(string: str) -> str:
         """
         Look for the last sequence of number(s) in a string and increment.
@@ -270,7 +303,7 @@ class Version:
 
         :return: new object with the raised major part
 
-        >>> ver = semver.parse("3.4.5")
+        >>> ver = semver.Version.parse("3.4.5")
         >>> ver.bump_major()
         Version(major=4, minor=0, patch=0, prerelease=None, build=None)
         """
@@ -284,7 +317,7 @@ class Version:
 
         :return: new object with the raised minor part
 
-        >>> ver = semver.parse("3.4.5")
+        >>> ver = semver.Version.parse("3.4.5")
         >>> ver.bump_minor()
         Version(major=3, minor=5, patch=0, prerelease=None, build=None)
         """
@@ -298,42 +331,59 @@ class Version:
 
         :return: new object with the raised patch part
 
-        >>> ver = semver.parse("3.4.5")
+        >>> ver = semver.Version.parse("3.4.5")
         >>> ver.bump_patch()
         Version(major=3, minor=4, patch=6, prerelease=None, build=None)
         """
         cls = type(self)
         return cls(self._major, self._minor, self._patch + 1)
 
-    def bump_prerelease(self, token: Optional[str] = "rc") -> "Version":
+    def bump_prerelease(
+        self,
+        token: Optional[str] = "rc",
+        bump_when_empty: Optional[bool] = False
+    ) -> "Version":
         """
         Raise the prerelease part of the version, return a new object but leave
         self untouched.
+
+        .. versionchanged:: 3.1.0
+           Parameter `bump_when_empty` added. When set to true, bumps the patch version
+           when called with a version that has no prerelease segment, so the return
+           value will be considered a newer version.
+
+           Adds `.0` to the prerelease if the last part of the dot-separated
+           prerelease is not a number.
 
         :param token: defaults to ``'rc'``
         :return: new :class:`Version` object with the raised prerelease part.
             The original object is not modified.
 
-        >>> ver = semver.parse("3.4.5")
+        >>> ver = semver.Version.parse("3.4.5")
         >>> ver.bump_prerelease().prerelease
-        'rc.2'
+        'rc.1'
         >>> ver.bump_prerelease('').prerelease
         '1'
         >>> ver.bump_prerelease(None).prerelease
         'rc.1'
+        >>> str(ver.bump_prerelease(bump_when_empty=True))
+        '3.4.6-rc.1'
         """
         cls = type(self)
+        patch = self._patch
         if self._prerelease is not None:
-            prerelease = self._prerelease
-        elif token == "":
-            prerelease = "0"
-        elif token is None:
-            prerelease = "rc.0"
+            prerelease = cls._increment_prerelease(self._prerelease)
         else:
-            prerelease = str(token) + ".0"
+            if bump_when_empty:
+                patch += 1
+            if token == "":
+                prerelease = "1"
+            elif token is None:
+                prerelease = "rc.1"
+            else:
+                prerelease = str(token) + ".1"
 
-        prerelease = cls._increment_string(prerelease)
-        return cls(self._major, self._minor, self._patch, prerelease)
+        return cls(self._major, self._minor, patch, prerelease)
 
     def bump_build(self, token: Optional[str] = "build") -> "Version":
         """
@@ -344,10 +394,12 @@ class Version:
         :return: new :class:`Version` object with the raised build part.
             The original object is not modified.
 
-        >>> ver = semver.parse("3.4.5-rc.1+build.9")
+        >>> ver = semver.Version.parse("3.4.5-rc.1+build.9")
         >>> ver.bump_build()
         Version(major=3, minor=4, patch=5, prerelease='rc.1', \
 build='build.10')
+        >>> str(semver.Version.parse("3.4.5-rc.1+alpha").bump_build())
+        '3.4.5-rc.1+alpha.0'
         """
         cls = type(self)
         if self._build is not None:
@@ -359,19 +411,12 @@ build='build.10')
         else:
             build = str(token) + ".0"
 
-        # self._build or (token or "build") + ".0"
         build = cls._increment_string(build)
-        if self._build is not None:
-            build = self._build
-        elif token == "":
-            build = "0"
-        elif token is None:
-            build = "build.0"
-        else:
-            build = str(token) + ".0"
-
-        # self._build or (token or "build") + ".0"
-        build = cls._increment_string(build)
+        if build == self._build:
+            # _increment_string leaves a build without any digits
+            # unchanged. Raise it nevertheless by appending ".0",
+            # analogous to _increment_prerelease (see :gh:`460`).
+            build += ".0"
         return cls(self._major, self._minor, self._patch, self._prerelease, build)
 
     def compare(self, other: Comparable) -> int:
@@ -432,7 +477,7 @@ build='build.10')
         "prerelease" part. It gives you the next patch version of the
         prerelease, for example:
 
-        >>> str(semver.parse("0.1.4").next_version("prerelease"))
+        >>> str(semver.Version.parse("0.1.4").next_version("prerelease"))
         '0.1.5-rc.1'
 
         :param part: One of "major", "minor", "patch", or "prerelease"
@@ -447,7 +492,7 @@ build='build.10')
                 f"Invalid part. Expected one of {validparts}, but got {part!r}"
             )
         version = self
-        if (version.prerelease or version.build) and (
+        if version.prerelease and (
             part == "patch"
             or (part == "minor" and version.patch == 0)
             or (part == "major" and version.minor == version.patch == 0)
@@ -457,10 +502,12 @@ build='build.10')
         # Only check the main parts:
         if part in cls.NAMES[:3]:
             return getattr(version, "bump_" + part)()
-
-        if not version.prerelease:
-            version = version.bump_patch()
-        return version.bump_prerelease(prerelease_token)
+        else:
+            if version.prerelease is not None and prerelease_token:
+                current_token = version.prerelease.split(".")[0]
+                if current_token != prerelease_token:
+                    return version.replace(prerelease=f"{prerelease_token}.1", build=None)
+            return version.bump_prerelease(prerelease_token, bump_when_empty=True)
 
     @_comparator
     def __eq__(self, other: Comparable) -> bool:  # type: ignore
@@ -635,6 +682,14 @@ prerelease='pre.2', build='build.4')
             version = version.decode("UTF-8")
         elif not isinstance(version, String.__args__):  # type: ignore
             raise TypeError("not expecting type '%s'" % type(version))
+
+        if _native_parse_parts is not None and not optional_minor_and_patch:  # pragma: no cover
+            try:
+                return cls(*_native_parse_parts(version))
+            except ValueError:
+                # The backend uses bounded Rust integers. Falling through keeps
+                # Python's arbitrary-size integer and exact error contracts.
+                pass
 
         if optional_minor_and_patch:
             match = cls._REGEX_OPTIONAL_MINOR_AND_PATCH.match(version)

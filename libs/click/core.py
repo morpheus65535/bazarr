@@ -42,16 +42,22 @@ from .termui import prompt
 from .termui import style
 from .utils import _detect_program_name
 from .utils import _expand_args
+from .utils import _make_default_short_help
+from .utils import _PacifyFlushWrapper
 from .utils import echo
-from .utils import make_default_short_help
 from .utils import make_str
-from .utils import PacifyFlushWrapper
 
 if t.TYPE_CHECKING:
+    from typing_extensions import Self
+
     from .shell_completion import CompletionItem
 
 F = t.TypeVar("F", bound="t.Callable[..., t.Any]")
 V = t.TypeVar("V")
+
+# Reserved storage name of the automatic help option. No user parameter is
+# expected to claim it.
+_HELP_OPTION_STORAGE_NAME = "_click_default_help"
 
 
 def _complete_visible_commands(
@@ -117,7 +123,7 @@ def batch(iterable: cabc.Iterable[V], batch_size: int) -> list[tuple[V, ...]]:
 @contextmanager
 def augment_usage_errors(
     ctx: Context, param: Parameter | None = None
-) -> cabc.Iterator[None]:
+) -> cabc.Generator[None]:
     """Context manager that attaches extra information to exceptions."""
     try:
         yield
@@ -303,6 +309,34 @@ class Context:
     #: .. versionadded:: 8.0
     formatter_class: type[HelpFormatter] = HelpFormatter
 
+    parent: Context | None
+    command: Command
+    info_name: str | None
+    params: dict[str, t.Any]
+    args: list[str]
+    _protected_args: list[str]
+    _opt_prefixes: set[str]
+    obj: t.Any
+    _meta: dict[str, t.Any]
+    default_map: cabc.MutableMapping[str, t.Any] | None
+    invoked_subcommand: str | None
+    terminal_width: int | None
+    max_content_width: int | None
+    allow_extra_args: bool
+    allow_interspersed_args: bool
+    ignore_unknown_options: bool
+    help_option_names: list[str]
+    token_normalize_func: t.Callable[[str], str] | None
+    resilient_parsing: bool
+    auto_envvar_prefix: str | None
+    color: bool | None
+    show_default: bool | None
+    _close_callbacks: list[t.Callable[[], t.Any]]
+    _depth: int
+    _parameter_source: dict[str, ParameterSource]
+    _param_default_explicit: dict[str, bool]
+    _exit_stack: ExitStack
+
     def __init__(
         self,
         command: Command,
@@ -330,23 +364,23 @@ class Context:
         self.info_name = info_name
         #: Map of parameter names to their parsed values. Parameters
         #: with ``expose_value=False`` are not stored.
-        self.params: dict[str, t.Any] = {}
+        self.params = {}
         #: the leftover arguments.
-        self.args: list[str] = []
+        self.args = []
         #: protected arguments.  These are arguments that are prepended
         #: to `args` when certain parsing scenarios are encountered but
         #: must be never propagated to another arguments.  This is used
         #: to implement nested parsing.
-        self._protected_args: list[str] = []
+        self._protected_args = []
         #: the collected prefixes of the command's options.
-        self._opt_prefixes: set[str] = set(parent._opt_prefixes) if parent else set()
+        self._opt_prefixes = set(parent._opt_prefixes) if parent else set()
 
         if obj is None and parent is not None:
             obj = parent.obj
 
         #: the user object stored.
-        self.obj: t.Any = obj
-        self._meta: dict[str, t.Any] = getattr(parent, "meta", {})
+        self.obj = obj
+        self._meta = getattr(parent, "meta", {})
 
         #: A dictionary (-like object) with defaults for parameters.
         if (
@@ -357,7 +391,7 @@ class Context:
         ):
             default_map = parent.default_map.get(info_name)
 
-        self.default_map: cabc.MutableMapping[str, t.Any] | None = default_map
+        self.default_map = default_map
 
         #: This flag indicates if a subcommand is going to be executed. A
         #: group callback can use this information to figure out if it's
@@ -369,20 +403,20 @@ class Context:
         #: any commands are executed.  It is however not possible to
         #: figure out which ones.  If you require this knowledge you
         #: should use a :func:`result_callback`.
-        self.invoked_subcommand: str | None = None
+        self.invoked_subcommand = None
 
         if terminal_width is None and parent is not None:
             terminal_width = parent.terminal_width
 
         #: The width of the terminal (None is autodetection).
-        self.terminal_width: int | None = terminal_width
+        self.terminal_width = terminal_width
 
         if max_content_width is None and parent is not None:
             max_content_width = parent.max_content_width
 
         #: The maximum width of formatted content (None implies a sensible
         #: default which is 80 for most things).
-        self.max_content_width: int | None = max_content_width
+        self.max_content_width = max_content_width
 
         if allow_extra_args is None:
             allow_extra_args = command.allow_extra_args
@@ -400,7 +434,7 @@ class Context:
         #: options or not.
         #:
         #: .. versionadded:: 3.0
-        self.allow_interspersed_args: bool = allow_interspersed_args
+        self.allow_interspersed_args = allow_interspersed_args
 
         if ignore_unknown_options is None:
             ignore_unknown_options = command.ignore_unknown_options
@@ -413,7 +447,7 @@ class Context:
         #: forward all arguments.
         #:
         #: .. versionadded:: 4.0
-        self.ignore_unknown_options: bool = ignore_unknown_options
+        self.ignore_unknown_options = ignore_unknown_options
 
         if help_option_names is None:
             if parent is not None:
@@ -422,19 +456,19 @@ class Context:
                 help_option_names = ["--help"]
 
         #: The names for the help options.
-        self.help_option_names: list[str] = help_option_names
+        self.help_option_names = help_option_names
 
         if token_normalize_func is None and parent is not None:
             token_normalize_func = parent.token_normalize_func
 
         #: An optional normalization function for tokens.  This is
         #: options, choices, commands etc.
-        self.token_normalize_func: t.Callable[[str], str] | None = token_normalize_func
+        self.token_normalize_func = token_normalize_func
 
         #: Indicates if resilient parsing is enabled.  In that case Click
         #: will do its best to not cause any failures and default values
         #: will be ignored. Useful for completion.
-        self.resilient_parsing: bool = resilient_parsing
+        self.resilient_parsing = resilient_parsing
 
         # If there is no envvar prefix yet, but the parent has one and
         # the command on this level has a name, we can expand the envvar
@@ -454,29 +488,29 @@ class Context:
         if auto_envvar_prefix is not None:
             auto_envvar_prefix = auto_envvar_prefix.replace("-", "_")
 
-        self.auto_envvar_prefix: str | None = auto_envvar_prefix
+        self.auto_envvar_prefix = auto_envvar_prefix
 
         if color is None and parent is not None:
             color = parent.color
 
         #: Controls if styling output is wanted or not.
-        self.color: bool | None = color
+        self.color = color
 
         if show_default is None and parent is not None:
             show_default = parent.show_default
 
         #: Show option default values when formatting help text.
-        self.show_default: bool | None = show_default
+        self.show_default = show_default
 
-        self._close_callbacks: list[t.Callable[[], t.Any]] = []
+        self._close_callbacks = []
         self._depth = 0
-        self._parameter_source: dict[str, ParameterSource] = {}
+        self._parameter_source = {}
         # Tracks whether the option that currently owns each parameter slot in
         # :attr:`params` had its ``default`` set explicitly by the user. Used
         # to tie-break feature-switch groups where multiple options share a
         # parameter name and both fall back to their default value.
         # Refs: https://github.com/pallets/click/issues/3403
-        self._param_default_explicit: dict[str, bool] = {}
+        self._param_default_explicit = {}
         self._exit_stack = ExitStack()
 
     @property
@@ -512,7 +546,7 @@ class Context:
             "auto_envvar_prefix": self.auto_envvar_prefix,
         }
 
-    def __enter__(self) -> Context:
+    def __enter__(self) -> Self:
         self._depth += 1
         push_context(self)
         return self
@@ -532,7 +566,7 @@ class Context:
         return exit_result
 
     @contextmanager
-    def scope(self, cleanup: bool = True) -> cabc.Iterator[Context]:
+    def scope(self, cleanup: bool = True) -> cabc.Generator[Context]:
         """This helper method can be used with the context object to promote
         it to the current thread local (see :func:`get_current_context`).
         The default behavior of this is to invoke the cleanup functions which
@@ -872,9 +906,8 @@ class Context:
         else:
             ctx = self
 
-        with augment_usage_errors(self):
-            with ctx:
-                return callback(*args, **kwargs)
+        with augment_usage_errors(self), ctx:
+            return callback(*args, **kwargs)
 
     def forward(self, cmd: Command, /, *args: t.Any, **kwargs: t.Any) -> t.Any:
         """Similar to :meth:`invoke` but fills in default keyword
@@ -985,6 +1018,20 @@ class Command:
     #: the default for the :attr:`Context.ignore_unknown_options` flag.
     ignore_unknown_options = False
 
+    name: str | None
+    context_settings: cabc.MutableMapping[str, t.Any]
+    callback: t.Callable[..., t.Any] | None
+    params: list[Parameter]
+    help: str | None
+    epilog: str | None
+    options_metavar: str | None
+    short_help: str | None
+    add_help_option: bool
+    _help_option: Option | None
+    no_args_is_help: bool
+    hidden: bool
+    deprecated: bool | str
+
     def __init__(
         self,
         name: str | None,
@@ -1010,7 +1057,7 @@ class Command:
             context_settings = {}
 
         #: an optional dictionary with defaults passed to the context.
-        self.context_settings: cabc.MutableMapping[str, t.Any] = context_settings
+        self.context_settings = context_settings
 
         #: the callback to execute when the command fires.  This might be
         #: `None` in which case nothing happens.
@@ -1018,7 +1065,7 @@ class Command:
         #: the list of parameters for this command in the order they
         #: should show up in the help page and execute.  Eager parameters
         #: will automatically be handled before non eager ones.
-        self.params: list[Parameter] = params or []
+        self.params = params or []
         self.help = help
         self.epilog = epilog
         self.options_metavar = options_metavar
@@ -1075,6 +1122,37 @@ class Command:
                     stacklevel=3,
                 )
 
+            # Options may deliberately share a storage name to compete for
+            # the same value (feature switches), but an argument sharing a
+            # name silently overwrites the other parameter's value.
+            names_counter = Counter(param.name for param in params)
+            duplicate_names = (
+                name for name, count in names_counter.items() if count > 1
+            )
+
+            for duplicate_name in duplicate_names:
+                sharers = [param for param in params if param.name == duplicate_name]
+
+                if help_option in sharers:
+                    warnings.warn(
+                        (
+                            f"The name {duplicate_name!r} is reserved for the "
+                            "automatic help option. Give the parameter a "
+                            "different name."
+                        ),
+                        stacklevel=3,
+                    )
+                elif any(isinstance(param, Argument) for param in sharers):
+                    warnings.warn(
+                        (
+                            f"The name {duplicate_name!r} is used by an argument "
+                            "and another parameter. They will overwrite each "
+                            "other's value during parsing. Give each parameter "
+                            "a unique name."
+                        ),
+                        stacklevel=3,
+                    )
+
         return params
 
     def format_usage(self, ctx: Context, formatter: HelpFormatter) -> None:
@@ -1097,17 +1175,29 @@ class Command:
         return rv
 
     def get_help_option_names(self, ctx: Context) -> list[str]:
-        """Returns the names for the help option."""
-        all_names = set(ctx.help_option_names)
+        """Returns the names for the help option.
+
+        Drops duplicates and names already reserved by another parameter. Order of
+        :attr:`Context.help_option_names` is preserved, so the result is stable.
+
+        .. versionchanged:: 8.5.0
+            Names keep their declaration order.
+        """
+        all_names = dict.fromkeys(ctx.help_option_names)
         for param in self.params:
-            all_names.difference_update(param.opts)
-            all_names.difference_update(param.secondary_opts)
+            for name in (*param.opts, *param.secondary_opts):
+                all_names.pop(name, None)
         return list(all_names)
 
     def get_help_option(self, ctx: Context) -> Option | None:
         """Returns the help option object.
 
         Skipped if :attr:`add_help_option` is ``False``.
+
+        .. versionchanged:: 8.5.0
+            The help option stores its value under the reserved name
+            ``_click_default_help``, so a parameter named ``help`` no
+            longer breaks parsing.
 
         .. versionchanged:: 8.1.8
             The help option is now cached to avoid creating it multiple times.
@@ -1125,8 +1215,10 @@ class Command:
             # Avoid circular import.
             from .decorators import help_option
 
-            # Apply help_option decorator and pop resulting option
-            help_option(*help_option_names)(self)
+            # The help option never exposes its value, so it uses a reserved
+            # storage name, keeping it clear of user parameters (like an
+            # argument named "help") that would otherwise clobber its value.
+            help_option(*help_option_names, _HELP_OPTION_STORAGE_NAME)(self)
             self._help_option = self.params.pop()  # type: ignore[assignment]
 
         return self._help_option
@@ -1154,7 +1246,7 @@ class Command:
         if self.short_help:
             text = inspect.cleandoc(self.short_help)
         elif self.help:
-            text = make_default_short_help(self.help, limit)
+            text = _make_default_short_help(self.help, limit)
         else:
             text = ""
 
@@ -1172,11 +1264,13 @@ class Command:
 
         -   :meth:`format_usage`
         -   :meth:`format_help_text`
+        -   :meth:`format_arguments`
         -   :meth:`format_options`
         -   :meth:`format_epilog`
         """
         self.format_usage(ctx, formatter)
         self.format_help_text(ctx, formatter)
+        self.format_arguments(ctx, formatter)
         self.format_options(ctx, formatter)
         self.format_epilog(ctx, formatter)
 
@@ -1189,7 +1283,8 @@ class Command:
             text = ""
 
         if self.deprecated:
-            text = f"{_(text)} {_format_deprecated_label(self.deprecated)}"
+            label = _format_deprecated_label(self.deprecated)
+            text = f"{_(text)} {label}" if text else label
 
         if text:
             formatter.write_paragraph()
@@ -1202,12 +1297,24 @@ class Command:
         opts = []
         for param in self.get_params(ctx):
             rv = param.get_help_record(ctx)
-            if rv is not None:
+            if rv is not None and not isinstance(param, Argument):
                 opts.append(rv)
 
         if opts:
             with formatter.section(_("Options")):
                 formatter.write_dl(opts)
+
+    def format_arguments(self, ctx: Context, formatter: HelpFormatter) -> None:
+        """Writes the arguments that have a help record into the formatter."""
+        args = []
+        for param in self.get_params(ctx):
+            rv = param.get_help_record(ctx)
+            if rv is not None and isinstance(param, Argument):
+                args.append(rv)
+
+        if args:
+            with formatter.section(_("Positional arguments")):
+                formatter.write_dl(args)
 
     def format_epilog(self, ctx: Context, formatter: HelpFormatter) -> None:
         """Writes the epilog into the formatter if it exists."""
@@ -1463,8 +1570,8 @@ class Command:
                 sys.exit(e.exit_code)
             except OSError as e:
                 if e.errno == errno.EPIPE:
-                    sys.stdout = t.cast(t.TextIO, PacifyFlushWrapper(sys.stdout))
-                    sys.stderr = t.cast(t.TextIO, PacifyFlushWrapper(sys.stderr))
+                    sys.stdout = t.cast(t.TextIO, _PacifyFlushWrapper(sys.stdout))
+                    sys.stderr = t.cast(t.TextIO, _PacifyFlushWrapper(sys.stderr))
                     sys.exit(1)
                 else:
                     raise
@@ -1589,8 +1696,14 @@ class Group(Command):
     #: custom groups.
     #:
     #: .. versionadded:: 8.0
-    group_class: type[Group] | type[type] | None = None
+    group_class: type[Group | type] | None = None
     # Literal[type] isn't valid, so use Type[type]
+
+    commands: cabc.MutableMapping[str, Command]
+    invoke_without_command: bool
+    subcommand_metavar: str
+    chain: bool
+    _result_callback: t.Callable[..., t.Any] | None
 
     def __init__(
         self,
@@ -1613,7 +1726,7 @@ class Group(Command):
             commands = {c.name: c for c in commands if c.name is not None}
 
         #: The registered subcommands by their exported names.
-        self.commands: cabc.MutableMapping[str, Command] = commands
+        self.commands = commands
 
         if no_args_is_help is None:
             no_args_is_help = not invoke_without_command
@@ -1622,8 +1735,15 @@ class Group(Command):
         self.invoke_without_command = invoke_without_command
 
         if subcommand_metavar is None:
+            # When the group can run without a subcommand, the leading command
+            # token is optional, so wrap it in brackets to reflect that.
             if chain:
-                subcommand_metavar = "COMMAND1 [ARGS]... [COMMAND2 [ARGS]...]..."
+                if invoke_without_command:
+                    subcommand_metavar = "[COMMAND1] [ARGS]... [COMMAND2 [ARGS]...]..."
+                else:
+                    subcommand_metavar = "COMMAND1 [ARGS]... [COMMAND2 [ARGS]...]..."
+            elif invoke_without_command:
+                subcommand_metavar = "[COMMAND] [ARGS]..."
             else:
                 subcommand_metavar = "COMMAND [ARGS]..."
 
@@ -2012,6 +2132,8 @@ class CommandCollection(Group):
         group, then each of its sources.
     """
 
+    sources: list[Group]
+
     def __init__(
         self,
         name: str | None = None,
@@ -2020,7 +2142,7 @@ class CommandCollection(Group):
     ) -> None:
         super().__init__(name, **kwargs)
         #: The list of registered groups.
-        self.sources: list[Group] = sources or []
+        self.sources = sources or []
 
     def add_source(self, group: Group) -> None:
         """Add a group as a source of commands."""
@@ -2052,7 +2174,7 @@ class CommandCollection(Group):
         return sorted(rv)
 
 
-def _check_iter(value: t.Any) -> cabc.Iterator[t.Any]:
+def _check_iter(value: cabc.Iterable[V]) -> cabc.Iterator[V]:
     """Check if the value is iterable but not a string. Raises a type
     error, or return an iterator over the value.
     """
@@ -2155,6 +2277,25 @@ class Parameter(ABC):
 
     param_type_name = "parameter"
 
+    name: str
+    opts: list[str]
+    secondary_opts: list[str]
+    # `Parameter.type` is annotated in `__init__` to avoid confusing mypy
+    required: bool
+    callback: t.Callable[[Context, Parameter, t.Any], t.Any] | None
+    nargs: int
+    multiple: bool
+    expose_value: bool
+    default: t.Any | t.Callable[[], t.Any] | None
+    _default_explicit: bool
+    is_eager: bool
+    metavar: str | None
+    envvar: str | cabc.Sequence[str] | None
+    _custom_shell_complete: (
+        t.Callable[[Context, Parameter, str], list[CompletionItem] | list[str]] | None
+    )
+    deprecated: bool | str
+
     def __init__(
         self,
         param_decls: cabc.Sequence[str] | None = None,
@@ -2184,9 +2325,6 @@ class Parameter(ABC):
         | None = None,
         deprecated: bool | str = False,
     ) -> None:
-        self.name: str
-        self.opts: list[str]
-        self.secondary_opts: list[str]
         self.name, self.opts, self.secondary_opts = self._parse_decls(
             param_decls or (), expose_value
         )
@@ -2205,13 +2343,13 @@ class Parameter(ABC):
         self.nargs = nargs
         self.multiple = multiple
         self.expose_value = expose_value
-        self.default: t.Any | t.Callable[[], t.Any] | None = default
+        self.default = default
         # Whether the user passed ``default`` explicitly to the constructor.
         # Captured before any auto-derived default (like ``False`` for boolean
         # flags in :class:`Option`) replaces the :data:`UNSET` sentinel, so it
         # remains ``False`` when the default was inferred rather than chosen.
         # Refs: https://github.com/pallets/click/issues/3403
-        self._default_explicit: bool = default is not UNSET
+        self._default_explicit = default is not UNSET
         self.is_eager = is_eager
         self.metavar = metavar
         self.envvar = envvar
@@ -2231,6 +2369,14 @@ class Parameter(ABC):
                     "is deprecated and still required. A deprecated "
                     f"{self.param_type_name} cannot be required."
                 )
+
+    @staticmethod
+    def _hide_unset(value: t.Any) -> t.Any:
+        """Present the internal :data:`UNSET` sentinel as ``None`` at a boundary that
+        exposes a parameter's value (introspection, prompts), keeping the sentinel an
+        implementation detail.
+        """
+        return None if value is UNSET else value
 
     def to_info_dict(self) -> dict[str, t.Any]:
         """Gather information that could be useful for a tool generating
@@ -2253,10 +2399,7 @@ class Parameter(ABC):
             "required": self.required,
             "nargs": self.nargs,
             "multiple": self.multiple,
-            # We explicitly hide the :attr:`UNSET` value to the user, as we choose to
-            # make it an implementation detail. And because ``to_info_dict`` has been
-            # designed for documentation purposes, we return ``None`` instead.
-            "default": self.default if self.default is not UNSET else None,
+            "default": self._hide_unset(self.default),
             "envvar": self.envvar,
         }
 
@@ -2786,6 +2929,25 @@ class Option(Parameter):
 
     param_type_name = "option"
 
+    prompt: str | None
+    confirmation_prompt: bool | str
+    prompt_required: bool
+    hide_input: bool
+    hidden: bool
+
+    _flag_needs_value: bool
+    is_flag: bool
+    flag_value: t.Any
+    type: types.ParamType[t.Any]
+    default: t.Any | t.Callable[[], t.Any] | None
+
+    count: bool
+    allow_from_autoenv: bool
+    help: str | None
+    show_default: bool | str | None
+    show_choices: bool
+    show_envvar: bool
+
     def __init__(
         self,
         param_decls: cabc.Sequence[str] | None = None,
@@ -2814,11 +2976,13 @@ class Option(Parameter):
             param_decls, type=type, multiple=multiple, deprecated=deprecated, **attrs
         )
 
+        # Phase 1: prompt-related attributes. ``_infer_flag_kind`` reads ``self.prompt``
+        # and ``self.prompt_required`` so this must run first.
         if prompt is True:
             if not self.name:
                 raise TypeError("'name' is required with 'prompt=True'.")
 
-            prompt_text: str | None = self.name.replace("_", " ").capitalize()
+            prompt_text = self.name.replace("_", " ").capitalize()
         elif prompt is False:
             prompt_text = None
         else:
@@ -2826,7 +2990,7 @@ class Option(Parameter):
 
         if deprecated:
             label = _format_deprecated_label(deprecated)
-            help = f"{help} {label}" if help is not None else label
+            help = f"{help} {label}" if help else label
 
         self.prompt = prompt_text
         self.confirmation_prompt = confirmation_prompt
@@ -2834,96 +2998,27 @@ class Option(Parameter):
         self.hide_input = hide_input
         self.hidden = hidden
 
-        # The _flag_needs_value property tells the parser that this option is a flag
-        # that cannot be used standalone and needs a value. With this information, the
-        # parser can determine whether to consider the next user-provided argument in
-        # the CLI as a value for this flag or as a new option.
-        # If prompt is enabled but not required, then it opens the possibility for the
-        # option to gets its value from the user.
-        self._flag_needs_value = self.prompt is not None and not self.prompt_required
-
-        # Auto-detect if this is a flag or not.
-        if is_flag is None:
-            # Implicitly a flag because flag_value was set.
-            if flag_value is not UNSET:
-                is_flag = True
-            # Not a flag, but when used as a flag it shows a prompt.
-            elif self._flag_needs_value:
-                is_flag = False
-            # Implicitly a flag because secondary options names were given.
-            elif self.secondary_opts:
-                is_flag = True
-
-        # The option is explicitly not a flag, but to determine whether or not it needs
-        # value, we need to check if `flag_value` or `default` was set. Either one is
-        # sufficient.
-        # Ref: https://github.com/pallets/click/issues/3084
-        elif is_flag is False and not self._flag_needs_value:
-            self._flag_needs_value = flag_value is not UNSET or self.default is UNSET
-
-        if is_flag:
-            # Set missing default for flags if not explicitly required or prompted.
-            if self.default is UNSET and not self.required and not self.prompt:
-                if multiple:
-                    self.default = ()
-
-            # Auto-detect the type of the flag based on the flag_value.
-            if type is None:
-                # A flag without a flag_value is a boolean flag.
-                if flag_value is UNSET:
-                    self.type: types.ParamType[t.Any] = types.BoolParamType()
-                # If the flag value is a boolean, use BoolParamType.
-                elif isinstance(flag_value, bool):
-                    self.type = types.BoolParamType()
-                # Otherwise, guess the type from the flag value.
-                else:
-                    guessed = types.convert_type(None, flag_value)
-                    if (
-                        isinstance(guessed, types.StringParamType)
-                        and not isinstance(flag_value, str)
-                        and flag_value is not None
-                    ):
-                        # The flag_value type couldn't be auto-detected
-                        # (not str, int, float, or bool). Since flag_value
-                        # is a programmer-provided Python object, not CLI
-                        # input, pass it through unchanged instead of
-                        # stringifying it.
-                        self.type = types.UNPROCESSED
-                    else:
-                        self.type = guessed
-
-        self.is_flag: bool = bool(is_flag)
-        self.is_bool_flag: bool = bool(
-            is_flag and isinstance(self.type, types.BoolParamType)
+        # Phase 2: flag-kind inference.
+        self.is_flag, self._flag_needs_value = self._infer_flag_kind(
+            is_flag, flag_value
         )
-        self.flag_value: t.Any = flag_value
 
-        # Set boolean flag default to False if unset and not required.
-        if self.is_bool_flag:
-            if self.default is UNSET and not self.required:
-                self.default = False
+        # Phase 3: type inference. Override the type set by :meth:`Parameter.__init__`
+        # when this option is a flag or a count.
+        self.type = self._pick_type(type, flag_value, count, self.is_flag)
 
-        # The alignment of default to the flag_value is resolved lazily in
-        # get_default() to prevent callable flag_values (like classes) from
-        # being instantiated. Refs:
-        # https://github.com/pallets/click/issues/3121
-        # https://github.com/pallets/click/issues/3024#issuecomment-3146199461
-        # https://github.com/pallets/click/pull/3030/commits/06847da
-
-        # Set the default flag_value if it is not set.
-        if self.flag_value is UNSET:
-            if self.is_flag:
-                self.flag_value = True
-            else:
-                self.flag_value = None
-
-        # Counting.
+        # Phase 4: store the raw ``flag_value`` and ``count`` settings.
+        # ``self.flag_value`` and ``self.default`` deliberately keep the :data:`UNSET`
+        # sentinel when the user didn't pass them. Auto-derived values are resolved
+        # lazily in :meth:`_resolve_lazy_default` and :attr:`flag_activation_value`.
+        # Keeping the raw values means ``is UNSET`` reliably answers "did the user pass
+        # this?": #3403 needs it for arbitration, and any future feature needing the
+        # same distinction can reuse it without reintroducing parallel "was it
+        # explicit?" tracking.
+        self.flag_value = flag_value
         self.count = count
-        if count:
-            if type is None:
-                self.type = types.IntRange(min=0)
-            if self.default is UNSET:
-                self.default = 0
+        if count and self.default is UNSET:
+            self.default = 0
 
         self.allow_from_autoenv = allow_from_autoenv
         self.help = help
@@ -2931,42 +3026,167 @@ class Option(Parameter):
         self.show_choices = show_choices
         self.show_envvar = show_envvar
 
-        if __debug__:
-            if deprecated and prompt:
-                raise ValueError("`deprecated` options cannot use `prompt`.")
+        # Phase 5: validate. Raises on illegal kwarg combinations.
+        self._validate(prompt, deprecated)
 
-            if self.nargs == -1:
-                raise TypeError("nargs=-1 is not supported for options.")
+    @property
+    def is_bool_flag(self) -> bool:
+        """``True`` when this option is a flag with a boolean type.
 
-            if not self.is_bool_flag and self.secondary_opts:
-                raise TypeError("Secondary flag is not valid for non-boolean flag.")
+        Derived from :attr:`is_flag` and :attr:`type`; computed on access so it cannot
+        drift if a subclass replaces :attr:`type` after construction.
+        """
+        return self.is_flag and isinstance(self.type, types.BoolParamType)
 
-            if self.is_bool_flag and self.hide_input and self.prompt is not None:
-                raise TypeError(
-                    "'prompt' with 'hide_input' is not valid for boolean flag."
-                )
+    @property
+    def flag_activation_value(self) -> t.Any:
+        """Value the function receives when this flag is activated on the command line.
 
-            if self.count:
-                if self.multiple:
-                    raise TypeError("'count' is not valid with 'multiple'.")
+        Resolves a missing :attr:`flag_value` to ``True`` for actual flag options and
+        ``None`` otherwise. Used by the parser bridge (:meth:`add_to_parser`) and the
+        runtime (:meth:`consume_value`) so :attr:`flag_value` can keep the :data:`UNSET`
+        sentinel for "did the user pass one?" introspection.
+        """
+        if self.flag_value is UNSET:
+            return True if self.is_flag else None
+        return self.flag_value
 
-                if self.is_flag:
-                    raise TypeError("'count' is not valid with 'is_flag'.")
+    def _infer_flag_kind(
+        self, is_flag: bool | None, flag_value: t.Any
+    ) -> tuple[bool, bool]:
+        """Resolve ``is_flag`` and the parser hint ``_flag_needs_value``.
+
+        Returns ``(is_flag, flag_needs_value)``, where ``_flag_needs_value`` tells the
+        parser this option is a flag that cannot be used standalone and needs a value.
+        The parser uses it to decide whether to treat the next CLI token as the flag's
+        value or as a new option. If ``prompt`` is enabled with
+        ``prompt_required=False``, it opens the door for an interactive value, hence the
+        initial condition. Ref: https://github.com/pallets/click/issues/3084
+        """
+        needs_value = self.prompt is not None and not self.prompt_required
+
+        if is_flag is None:
+            # Implicitly a flag because flag_value was set.
+            if flag_value is not UNSET:
+                return True, needs_value
+            # Not a flag, but when used as a flag it shows a prompt.
+            if needs_value:
+                return False, needs_value
+            # Implicitly a flag because secondary options names were given.
+            if self.secondary_opts:
+                return True, needs_value
+            return False, needs_value
+
+        if is_flag is False and not needs_value:
+            # Explicit ``is_flag=False`` with a flag-like value/default still makes the
+            # option flag-shaped to the parser.
+            needs_value = flag_value is not UNSET or self.default is UNSET
+
+        return bool(is_flag), needs_value
+
+    def _pick_type(
+        self,
+        type_arg: t.Any,
+        flag_value: t.Any,
+        count: bool,
+        is_flag: bool,
+    ) -> types.ParamType[t.Any]:
+        """Pick the final :class:`ParamType` for this option.
+
+        :meth:`Parameter.__init__` already stored ``self.type`` from the explicit
+        ``type`` argument or from ``default``. This method either returns that as-is, or
+        overrides it for flag and count options (which are inferred from ``flag_value``
+        rather than ``default``).
+        """
+        if type_arg is not None:
+            return self.type
+
+        if count:
+            return types.IntRange(min=0)
+
+        if not is_flag:
+            return self.type
+
+        # A flag without a flag_value is a boolean flag.
+        if flag_value is UNSET or isinstance(flag_value, bool):
+            return types.BoolParamType()
+
+        guessed: types.ParamType[t.Any] = types.convert_type(None, flag_value)
+        if (
+            isinstance(guessed, types.StringParamType)
+            and not isinstance(flag_value, str)
+            and flag_value is not None
+        ):
+            # The flag_value type couldn't be auto-detected (not str, int, float, or
+            # bool). Since flag_value is a programmer-provided Python object, not CLI
+            # input, pass it through unchanged instead of stringifying it.
+            return types.UNPROCESSED
+        return guessed
+
+    def _resolve_lazy_default(self, value: t.Any) -> t.Any:
+        """Apply lazy auto-derivations to a default-style value.
+
+        Shared between :meth:`get_default` (the runtime path) and :meth:`to_info_dict`
+        (the introspection path) so the two views cannot drift apart. Callables are
+        *not* invoked here: that is :meth:`get_default`'s responsibility. Rules:
+
+        * ``UNSET`` resolves to ``False`` for a non-required boolean flag, and to ``()``
+          for a non-required, non-prompted multi flag.
+        * ``True`` resolves to :attr:`flag_value` for a non-boolean flag (the "activate
+          this flag by default" shorthand). Boolean flags keep ``True`` as a literal.
+        """
+        if value is UNSET and self.is_flag:
+            if self.multiple and not self.required and not self.prompt:
+                return ()
+            if self.is_bool_flag and not self.required:
+                return False
+        if value is True and self.is_flag and not self.is_bool_flag:
+            # Use ``flag_activation_value`` so an unset ``flag_value`` resolves to
+            # ``True`` (the bool-flag activation value) rather than leaking the
+            # :data:`UNSET` sentinel.
+            return self.flag_activation_value
+        return value
+
+    def _validate(self, prompt: bool | str, deprecated: bool | str) -> None:
+        """Raise :class:`TypeError` / :class:`ValueError` on illegal kwarg combinations.
+
+        Called once, after every other attribute has been assigned, so each check can
+        read the final state.
+        """
+        if not __debug__:
+            return
+        if deprecated and prompt:
+            raise ValueError("`deprecated` options cannot use `prompt`.")
+        if self.nargs == -1:
+            raise TypeError("nargs=-1 is not supported for options.")
+        if not self.is_bool_flag and self.secondary_opts:
+            raise TypeError("Secondary flag is not valid for non-boolean flag.")
+        if self.is_bool_flag and self.hide_input and self.prompt is not None:
+            raise TypeError("'prompt' with 'hide_input' is not valid for boolean flag.")
+        if self.count:
+            if self.multiple:
+                raise TypeError("'count' is not valid with 'multiple'.")
+            if self.is_flag:
+                raise TypeError("'count' is not valid with 'is_flag'.")
 
     def to_info_dict(self) -> dict[str, t.Any]:
         """
+        .. versionchanged:: 8.5.0
+            ``default`` and ``flag_value`` reflect the auto-derived values (``False``
+            for unset boolean-flag defaults, ``True`` for unset boolean-flag activation
+            values, etc.) when no explicit value was passed, matching what the function
+            would receive at call time.
+
         .. versionchanged:: 8.3.0
             Returns ``None`` for the :attr:`flag_value` if it was not set.
         """
         info_dict = super().to_info_dict()
         info_dict.update(
+            default=self._hide_unset(self._resolve_lazy_default(self.default)),
             help=self.help,
             prompt=self.prompt,
             is_flag=self.is_flag,
-            # We explicitly hide the :attr:`UNSET` value to the user, as we choose to
-            # make it an implementation detail. And because ``to_info_dict`` has been
-            # designed for documentation purposes, we return ``None`` instead.
-            flag_value=self.flag_value if self.flag_value is not UNSET else None,
+            flag_value=self.flag_activation_value,
             count=self.count,
             hidden=self.hidden,
         )
@@ -2977,32 +3197,33 @@ class Option(Parameter):
     ) -> t.Any | t.Callable[[], t.Any] | None:
         """Return the default value for this option.
 
-        For non-boolean flag options, ``default=True`` is treated as a sentinel
-        meaning "activate this flag by default" and is resolved to
-        :attr:`flag_value`.  For example, with ``--upper/--lower`` feature
-        switches where ``flag_value="upper"`` and ``default=True``, the default
-        resolves to ``"upper"``.
+        Several auto-derived defaults are resolved lazily here rather than eagerly in
+        :meth:`__init__`. This keeps :attr:`default` raw at construction time, so
+        ``self.default is UNSET`` reliably answers "did the user pass a default?" for
+        feature-switch-group arbitration and for anything else that needs to distinguish
+        "absent" from a chosen value. The resolution rules live in
+        :meth:`_resolve_lazy_default`.
 
-        .. caution::
-            This substitution only applies to non-boolean flags
-            (:attr:`is_bool_flag` is ``False``). For boolean flags, ``True`` is
-            a legitimate Python value and ``default=True`` is returned as-is.
+        .. versionchanged:: 8.5.0
+            ``UNSET`` defaults for boolean and multi flags are now resolved here instead
+            of being coerced in :meth:`__init__`. Reading :attr:`default` directly
+            returns the user-supplied value (or ``UNSET`` if none was passed) rather
+            than the auto-derived one.
 
         .. versionchanged:: 8.3.3
-            ``default=True`` is no longer substituted with ``flag_value`` for
-            boolean flags, fixing negative boolean flags like
+            ``default=True`` is no longer substituted with ``flag_value`` for boolean
+            flags, fixing negative boolean flags like
             ``flag_value=False, default=True``.
         """
-        value = super().get_default(ctx, call=False)
-
-        # Resolve default=True to flag_value lazily (here instead of
-        # __init__) to prevent callable flag_values (like classes) from
-        # being instantiated by the callable check below.
-        if value is True and self.is_flag and not self.is_bool_flag:
-            value = self.flag_value
-        elif call and callable(value):
+        raw = super().get_default(ctx, call=False)
+        value = self._resolve_lazy_default(raw)
+        # Only invoke the value as a callable when the lazy resolver passed it through
+        # unchanged. If the resolver substituted ``True`` -> :attr:`flag_value`, the
+        # result is the programmer-supplied ``flag_value`` (often a class or enum),
+        # which must NOT be instantiated here. See
+        # https://github.com/pallets/click/issues/3121.
+        if value is raw and call and callable(value):
             value = value()
-
         return value
 
     def get_error_hint(self, ctx: Context | None) -> str:
@@ -3100,7 +3321,10 @@ class Option(Parameter):
                     opts=self.opts,
                     dest=self.name,
                     action=action,
-                    const=self.flag_value,
+                    # ``flag_activation_value`` resolves UNSET to the right parser-store
+                    # constant (``True`` for bool flags) so the raw :attr:`flag_value`
+                    # can keep the sentinel.
+                    const=self.flag_activation_value,
                 )
         else:
             parser.add_option(
@@ -3281,7 +3505,7 @@ class Option(Parameter):
             self.prompt,
             # Use ``None`` to inform the prompt() function to reiterate until a valid
             # value is provided by the user if we have no default.
-            default=None if default is UNSET else default,
+            default=self._hide_unset(default),
             type=self.type,
             hide_input=self.hide_input,
             show_choices=self.show_choices,
@@ -3337,13 +3561,19 @@ class Option(Parameter):
         # flag, its envvar value still needs to be analyzed to determine if the flag is
         # activated or not.
         if self.is_flag and not self.is_bool_flag:
-            # If the flag_value is set and match the envvar value, return it
-            # directly.
-            if self.flag_value is not UNSET and rv == self.flag_value:
+            # An exact match against ``flag_value`` (a non-bool flag always has one
+            # explicitly set) returns it directly. Otherwise the value is analyzed as a
+            # boolean: a truthy reading activates the flag and the function receives
+            # ``flag_value``; a falsy reading produces ``False``; an unrecognized
+            # reading falls through as ``None``. Folding the substitution here means
+            # :meth:`consume_value` no longer has to repeat it in a source-checked
+            # branch.
+            if rv == self.flag_value:
                 return self.flag_value
-            # Analyze the envvar value as a boolean to know if the flag is
-            # activated or not.
-            return types.BoolParamType.str_to_bool(rv)
+            parsed = types.BoolParamType.str_to_bool(rv)
+            if parsed is None:
+                return None
+            return self.flag_value if parsed else False
 
         # Split the envvar value if it is allowed to be repeated.
         value_depth = (self.nargs != 1) + bool(self.multiple)
@@ -3370,31 +3600,22 @@ class Option(Parameter):
         """
         value, source = super().consume_value(ctx, opts)
 
-        # The parser will emit a sentinel value if the option is allowed to as a flag
-        # without a value.
+        # The parser emits a sentinel when a flag is allowed to be used without a value.
+        # Resolve it to a prompt or to the activation value depending on the option's
+        # configuration.
         if value is FLAG_NEEDS_VALUE:
-            # If the option allows for a prompt, we start an interaction with the user.
+            # If the option allows for a prompt, start an interaction with the user.
             if self.prompt is not None and not ctx.resilient_parsing:
                 value = self.prompt_for_value(ctx)
                 source = ParameterSource.PROMPT
-            # Else the flag takes its flag_value as value.
+            # Else the flag takes its activation value (resolves UNSET).
             else:
-                value = self.flag_value
+                value = self.flag_activation_value
                 source = ParameterSource.COMMANDLINE
 
-        # A flag which is activated always returns the flag value, unless the value
-        # comes from the explicitly sets default.
-        elif (
-            self.is_flag
-            and value is True
-            and not self.is_bool_flag
-            and source < ParameterSource.DEFAULT_MAP
-        ):
-            value = self.flag_value
-
-        # Re-interpret a multiple option which has been sent as-is by the parser.
-        # Here we replace each occurrence of value-less flags (marked by the
-        # FLAG_NEEDS_VALUE sentinel) with the flag_value.
+        # Re-interpret a multiple option that the parser sent through as a list still
+        # containing the FLAG_NEEDS_VALUE sentinel, replacing each occurrence with the
+        # activation value.
         elif (
             self.multiple
             and value is not UNSET
@@ -3402,7 +3623,10 @@ class Option(Parameter):
             and source < ParameterSource.DEFAULT_MAP
             and any(v is FLAG_NEEDS_VALUE for v in value)
         ):
-            value = [self.flag_value if v is FLAG_NEEDS_VALUE else v for v in value]
+            value = [
+                self.flag_activation_value if v is FLAG_NEEDS_VALUE else v
+                for v in value
+            ]
             source = ParameterSource.COMMANDLINE
 
         # The value wasn't set, or used the param's default, prompt for one to the user
@@ -3442,6 +3666,11 @@ class Argument(Parameter):
     and are required by default.
 
     All parameters are passed onwards to the constructor of :class:`Parameter`.
+
+    :param help: the help string.
+
+    .. versionchanged:: 8.5.0
+        Added the ``help`` parameter.
     """
 
     param_type_name = "argument"
@@ -3450,6 +3679,7 @@ class Argument(Parameter):
         self,
         param_decls: cabc.Sequence[str],
         required: bool | None = None,
+        help: str | None = None,
         **attrs: t.Any,
     ) -> None:
         # Auto-detect the requirement status of the argument if not explicitly set.
@@ -3465,7 +3695,23 @@ class Argument(Parameter):
         if "multiple" in attrs:
             raise TypeError("__init__() got an unexpected keyword argument 'multiple'.")
 
+        deprecated = attrs.get("deprecated", False)
+
+        if help:
+            help = inspect.cleandoc(help)
+
+        if deprecated:
+            label = _format_deprecated_label(deprecated)
+            help = f"{help} {label}" if help else label
+
+        self.help = help
+
         super().__init__(param_decls, required=required, **attrs)
+
+    def to_info_dict(self) -> dict[str, t.Any]:
+        info_dict = super().to_info_dict()
+        info_dict.update(help=self.help)
+        return info_dict
 
     @property
     def human_readable_name(self) -> str:
@@ -3479,9 +3725,14 @@ class Argument(Parameter):
         var = self.type.get_metavar(param=self, ctx=ctx)
         if not var:
             var = self.name.upper()
+        # Types like ``Choice`` and ``DateTime`` already surround their metavar
+        # with square brackets to enumerate the allowed values. Reuse those
+        # outer brackets as the optional-argument indicator instead of wrapping
+        # the metavar in a second pair, which would produce ``[[a|b|c]]``.
+        already_bracketed = var.startswith("[") and var.endswith("]")
         if self.deprecated:
             var += "!"
-        if not self.required:
+        if not self.required and not already_bracketed:
             var = f"[{var}]"
         if self.nargs != 1:
             var += "..."
@@ -3508,6 +3759,12 @@ class Argument(Parameter):
 
     def get_usage_pieces(self, ctx: Context) -> list[str]:
         return [self.make_metavar(ctx)]
+
+    def get_help_record(self, ctx: Context) -> tuple[str, str] | None:
+        if self.help is None:
+            return None
+
+        return self.make_metavar(ctx), self.help
 
     def get_error_hint(self, ctx: Context | None) -> str:
         if ctx is not None:

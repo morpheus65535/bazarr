@@ -29,7 +29,7 @@ class CsoundLexer(RegexLexer):
     tokens = {
         'whitespace': [
             (r'[ \t]+', Whitespace),
-            (r'/[*](?:.|\n)*?[*]/', Comment.Multiline),
+            (r'/[*][\s\S]*?[*]/', Comment.Multiline),
             (r'(?:;|//).*$', Comment.Single),
             (r'(\\)(\n)', bygroups(Text, Whitespace))
         ],
@@ -303,7 +303,7 @@ class CsoundOrchestraLexer(CsoundLexer):
             include('whitespace and macro uses'),
 
             # https://github.com/csound/csound/search?q=XIDENT+path%3AEngine+filename%3Acsound_orc.lex
-            (r'0|[afijkKoOpPStV\[\]]+', Keyword.Type),
+            (r'0|[afijJkKoOpPStV\[\]]+', Keyword.Type),
 
             (r',', Punctuation),
             (r'\n', Whitespace, '#pop')
@@ -427,7 +427,7 @@ class CsoundDocumentLexer(RegexLexer):
     # be XML files.
     tokens = {
         'root': [
-            (r'/[*](.|\n)*?[*]/', Comment.Multiline),
+            (r'/[*][\s\S]*?[*]/', Comment.Multiline),
             (r'(?:;|//).*$', Comment.Single),
             (r'[^/;<]+|/(?!/)', Text),
 
@@ -441,15 +441,15 @@ class CsoundDocumentLexer(RegexLexer):
 
         'orchestra': [
             (r'<\s*/\s*CsInstruments\s*>', Name.Tag, '#pop'),
-            (r'(.|\n)+?(?=<\s*/\s*CsInstruments\s*>)', using(CsoundOrchestraLexer))
+            (r'([\s\S])+?(?=<\s*/\s*CsInstruments\s*>)', using(CsoundOrchestraLexer))
         ],
         'score': [
             (r'<\s*/\s*CsScore\s*>', Name.Tag, '#pop'),
-            (r'(.|\n)+?(?=<\s*/\s*CsScore\s*>)', using(CsoundScoreLexer))
+            (r'([\s\S])+?(?=<\s*/\s*CsScore\s*>)', using(CsoundScoreLexer))
         ],
         'HTML': [
             (r'<\s*/\s*[Hh][Tt][Mm][Ll]\s*>', Name.Tag, '#pop'),
-            (r'(.|\n)+?(?=<\s*/\s*[Hh][Tt][Mm][Ll]\s*>)', using(HtmlLexer))
+            (r'([\s\S])+?(?=<\s*/\s*[Hh][Tt][Mm][Ll]\s*>)', using(HtmlLexer))
         ],
 
         'tag': [

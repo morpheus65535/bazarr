@@ -27,13 +27,11 @@ class RevocationEndpoint(BaseEndpoint):
     valid_token_types = ('access_token', 'refresh_token')
     valid_request_methods = ('POST',)
 
-    def __init__(self, request_validator, supported_token_types=None,
-            enable_jsonp=False):
+    def __init__(self, request_validator, supported_token_types=None):
         BaseEndpoint.__init__(self)
         self.request_validator = request_validator
         self.supported_token_types = (
             supported_token_types or self.valid_token_types)
-        self.enable_jsonp = enable_jsonp
 
     @catch_errors_and_unavailability
     def create_revocation_response(self, uri, http_method='POST', body=None,
@@ -69,18 +67,13 @@ class RevocationEndpoint(BaseEndpoint):
         except OAuth2Error as e:
             log.debug('Client error during validation of %r. %r.', request, e)
             response_body = e.json
-            if self.enable_jsonp and request.callback:
-                response_body = '{}({});'.format(request.callback, response_body)
             resp_headers.update(e.headers)
             return resp_headers, response_body, e.status_code
 
         self.request_validator.revoke_token(request.token,
                                             request.token_type_hint, request)
 
-        response_body = ''
-        if self.enable_jsonp and request.callback:
-            response_body = request.callback + '();'
-        return {}, response_body, 200
+        return {}, '', 200
 
     def validate_revocation_request(self, request):
         """Ensure the request is valid.

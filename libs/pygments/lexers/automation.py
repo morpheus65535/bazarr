@@ -315,7 +315,7 @@ class AutoItLexer(RegexLexer):
     tokens = {
         'root': [
             (r';.*\n', Comment.Single),
-            (r'(#comments-start|#cs)(.|\n)*?(#comments-end|#ce)',
+            (r'(#comments-start|#cs)[\s\S]*?(#comments-end|#ce)',
              Comment.Multiline),
             (r'[\[\]{}(),;]', Punctuation),
             (r'(and|or|not)\b', Operator.Word),

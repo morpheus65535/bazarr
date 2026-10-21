@@ -1,10 +1,27 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """
 Define simple search patterns in bulk to perform advanced matching on any string.
 """
-#  pylint:disable=import-self
+
+from .key import Key
+from .processors import POST_PROCESS, PRE_PROCESS, ConflictSolver, PrivateRemover
 from .rebulk import Rebulk
-from .rules import Rule, CustomRule, AppendMatch, RemoveMatch, RenameMatch, AppendTags, RemoveTags
-from .processors import ConflictSolver, PrivateRemover, POST_PROCESS, PRE_PROCESS
-from .pattern import REGEX_ENABLED
+from .remodule import REGEX_ENABLED
+from .rules import AppendMatch, AppendTags, CustomRule, RemoveMatch, RemoveTags, RenameMatch, Rule
+
+__all__ = [
+    "POST_PROCESS",
+    "PRE_PROCESS",
+    "REGEX_ENABLED",
+    "AppendMatch",
+    "AppendTags",
+    "ConflictSolver",
+    "CustomRule",
+    "Key",
+    "PrivateRemover",
+    "Rebulk",
+    "RemoveMatch",
+    "RemoveTags",
+    "RenameMatch",
+    "Rule",
+]

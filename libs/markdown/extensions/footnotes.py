@@ -83,7 +83,19 @@ class FootnoteExtension(Extension):
         self.reset()
 
     def extendMarkdown(self, md):
-        """ Add pieces to Markdown. """
+        """ Register the processors.
+
+        | Class Instance                                                              | Registry                                                         | Name   | Priority |
+        | --------------------------------------------------------------------------- | ---------------------------------------------------------------- | ------ | :------: |
+        | [`FootnoteBlockProcessor`][markdown.extensions.footnotes.FootnoteBlockProcessor] | [`blockprocessors`][markdown.blockprocessors.build_block_parser] | `footnote` | `17` |
+        | [`FootnoteInlineProcessor`][markdown.extensions.footnotes.FootnoteInlineProcessor] | [`inlinepatterns`][markdown.inlinepatterns.build_inlinepatterns] | `footnote` | `175` |
+        | [`FootnoteTreeprocessor`][markdown.extensions.footnotes.FootnoteTreeprocessor] | [`treeprocessors`][markdown.treeprocessors.build_treeprocessors] | `footnote` | `50` |
+        | [`FootnoteReorderingProcessor`][markdown.extensions.footnotes.FootnoteReorderingProcessor] | [`treeprocessors`][markdown.treeprocessors.build_treeprocessors] | `footnote-reorder` | `19` |
+        | [`FootnotePostTreeprocessor`][markdown.extensions.footnotes.FootnotePostTreeprocessor] | [`treeprocessors`][markdown.treeprocessors.build_treeprocessors] | `footnote-duplicate` | `15` |
+        | [`FootnotePostprocessor`][markdown.extensions.footnotes.FootnotePostprocessor] | [`postprocessors`][markdown.postprocessors.build_postprocessors] | `footnote` | `25` |
+
+        """
+        # flake8: noqa: E501 88-95
         md.registerExtension(self)
         self.parser = md.parser
         self.md = md

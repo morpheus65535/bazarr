@@ -4,6 +4,7 @@ oauthlib.oauth2.rfc6749.grant_types
 """
 import base64
 import hashlib
+import hmac
 import json
 import logging
 
@@ -39,14 +40,15 @@ def code_challenge_method_s256(verifier, challenge):
         return s;
     }
 
-    In python urlsafe_b64encode is already replacing '+' and '/', but preserve
-    the trailing '='. So we have to remove it.
+    Python's urlsafe_b64encode() replaces '+' and '/', but preserves the
+    trailing '=', so we have to remove it.
 
     .. _`Section 4.3`: https://tools.ietf.org/html/rfc7636#section-4.3
     """
-    return base64.urlsafe_b64encode(
+    expected = base64.urlsafe_b64encode(
         hashlib.sha256(verifier.encode()).digest()
-    ).decode().rstrip('=') == challenge
+    ).decode().rstrip('=')
+    return hmac.compare_digest(expected, challenge)
 
 
 def code_challenge_method_plain(verifier, challenge):
@@ -58,7 +60,7 @@ def code_challenge_method_plain(verifier, challenge):
 
     .. _`Section 4.3`: https://tools.ietf.org/html/rfc7636#section-4.3
     """
-    return verifier == challenge
+    return hmac.compare_digest(verifier, challenge)
 
 
 class AuthorizationCodeGrant(GrantTypeBase):
@@ -452,28 +454,7 @@ class AuthorizationCodeGrant(GrantTypeBase):
                 raise errors.InvalidRequestError(description='Duplicate %s parameter.' % param,
                                                  request=request)
 
-        if self.request_validator.client_authentication_required(request):
-            # If the client type is confidential or the client was issued client
-            # credentials (or assigned other authentication requirements), the
-            # client MUST authenticate with the authorization server as described
-            # in Section 3.2.1.
-            # https://tools.ietf.org/html/rfc6749#section-3.2.1
-            if not self.request_validator.authenticate_client(request):
-                log.debug('Client authentication failed, %r.', request)
-                raise errors.InvalidClientError(request=request)
-        elif not self.request_validator.authenticate_client_id(request.client_id, request):
-            # REQUIRED, if the client is not authenticating with the
-            # authorization server as described in Section 3.2.1.
-            # https://tools.ietf.org/html/rfc6749#section-3.2.1
-            log.debug('Client authentication failed, %r.', request)
-            raise errors.InvalidClientError(request=request)
-
-        if not hasattr(request.client, 'client_id'):
-            raise NotImplementedError('Authenticate client must set the '
-                                      'request.client.client_id attribute '
-                                      'in authenticate_client.')
-
-        request.client_id = request.client_id or request.client.client_id
+        self.validate_client_authentication(request)
 
         # Ensure client is authorized use of this grant type
         self.validate_grant_type(request)

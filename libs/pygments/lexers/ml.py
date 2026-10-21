@@ -377,7 +377,7 @@ class OcamlLexer(RegexLexer):
         '!=', '#', '&', '&&', r'\(', r'\)', r'\*', r'\+', ',', '-',
         r'-\.', '->', r'\.', r'\.\.', ':', '::', ':=', ':>', ';', ';;', '<',
         '<-', '=', '>', '>]', r'>\}', r'\?', r'\?\?', r'\[', r'\[<', r'\[>',
-        r'\[\|', ']', '_', '`', r'\{', r'\{<', r'\|', r'\|]', r'\}', '~'
+        r'\[\|', ']', '_', '`', r'\{', r'\{<', r'\|', r'\|]', r'\}', '~',
     )
 
     operators = r'[!$%&*+\./:<=>?@^|~-]'
@@ -791,7 +791,7 @@ class ReasonLexer(RegexLexer):
         '!=', '#', '&', '&&', r'\(', r'\)', r'\*', r'\+', ',', '-',
         r'-\.', '=>', r'\.', r'\.\.', r'\.\.\.', ':', '::', ':=', ':>', ';', ';;', '<',
         '<-', '=', '>', '>]', r'>\}', r'\?', r'\?\?', r'\[', r'\[<', r'\[>',
-        r'\[\|', ']', '_', '`', r'\{', r'\{<', r'\|', r'\|\|', r'\|]', r'\}', '~'
+        r'\[\|', ']', '_', '`', r'\{', r'\{<', r'\|', r'\|\|', r'\|]', r'\}', '~',
     )
 
     operators = r'[!$%&*+\./:<=>?@^|~-]'
@@ -872,7 +872,7 @@ class FStarLexer(RegexLexer):
     version_added = '2.7'
 
     keywords = (
-        'abstract', 'attributes', 'noeq', 'unopteq', 'and'
+        'abstract', 'attributes', 'noeq', 'unopteq', 'and',
         'begin', 'by', 'default', 'effect', 'else', 'end', 'ensures',
         'exception', 'exists', 'false', 'forall', 'fun', 'function', 'if',
         'in', 'include', 'inline', 'inline_for_extraction', 'irreducible',
@@ -880,7 +880,7 @@ class FStarLexer(RegexLexer):
         'of', 'open', 'opaque', 'private', 'range_of', 'reifiable',
         'reify', 'reflectable', 'requires', 'set_range_of', 'sub_effect',
         'synth', 'then', 'total', 'true', 'try', 'type', 'unfold', 'unfoldable',
-        'val', 'when', 'with', 'not'
+        'val', 'when', 'with', 'not',
     )
     decl_keywords = ('let', 'rec')
     assume_keywords = ('assume', 'admit', 'assert', 'calc')
@@ -889,7 +889,7 @@ class FStarLexer(RegexLexer):
         r'&', r'\(', r'\)', r'\(\)', r',', r'~>', r'->', r'<-', r'<--', r'<==>',
         r'==>', r'\.', r'\?', r'\?\.', r'\.\[', r'\.\(', r'\.\(\|', r'\.\[\|',
         r'\{:pattern', r':', r'::', r':=', r';', r';;', r'=', r'%\[', r'!\{',
-        r'\[', r'\[@', r'\[\|', r'\|>', r'\]', r'\|\]', r'\{', r'\|', r'\}', r'\$'
+        r'\[', r'\[@', r'\[\|', r'\|>', r'\]', r'\|\]', r'\{', r'\|', r'\}', r'\$',
     )
 
     operators = r'[!$%&*+\./:<=>?@^|~-]'

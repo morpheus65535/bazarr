@@ -42,7 +42,7 @@ class FileStorage:
             if filename is not None:
                 filename = fsdecode(filename)
 
-            if filename and filename[0] == "<" and filename[-1] == ">":
+            if filename and filename.startswith("<") and filename.endswith(">"):
                 filename = None
         else:
             filename = fsdecode(filename)

@@ -320,7 +320,7 @@ class Client:
         return token_url, FORM_ENC_HEADERS, body
 
     def prepare_token_revocation_request(self, revocation_url, token,
-                                         token_type_hint="access_token", body='', callback=None, **kwargs):
+                                         token_type_hint="access_token", body='', **kwargs):
         """Prepare a token revocation request.
 
         :param revocation_url: Provider token revocation endpoint URL.
@@ -329,13 +329,8 @@ class Client:
             ``"refresh_token"``. This is optional and if you wish to not pass it you
             must provide ``token_type_hint=None``.
         :param body:
-        :param callback: A jsonp callback such as ``package.callback`` to be invoked
-            upon receiving the response. Not that it should not include a () suffix.
         :param kwargs: Additional parameters to included in the request.
         :returns: The prepared request tuple with (url, headers, body).
-
-        Note that JSONP request may use GET requests as the parameters will
-        be added to the request URL query as opposed to the request body.
 
         An example of a revocation request
 
@@ -348,21 +343,6 @@ class Client:
 
             token=45ghiukldjahdnhzdauz&token_type_hint=refresh_token
 
-        An example of a jsonp revocation request
-
-        .. code-block:: http
-
-            GET /revoke?token=agabcdefddddafdd&callback=package.myCallback HTTP/1.1
-            Host: server.example.com
-            Content-Type: application/x-www-form-urlencoded
-            Authorization: Basic czZCaGRSa3F0MzpnWDFmQmF0M2JW
-
-        and an error response
-
-        .. code-block:: javascript
-
-            package.myCallback({"error":"unsupported_token_type"});
-
         Note that these requests usually require client credentials, client_id in
         the case for public clients and provider specific authentication
         credentials for confidential clients.
@@ -370,8 +350,11 @@ class Client:
         if not is_secure_transport(revocation_url):
             raise InsecureTransportError()
 
+        if 'callback' in kwargs:
+            raise TypeError("prepare_token_revocation_request() got an unexpected keyword argument 'callback'")
+
         return prepare_token_revocation_request(revocation_url, token,
-                                                token_type_hint=token_type_hint, body=body, callback=callback,
+                                                token_type_hint=token_type_hint, body=body,
                                                 **kwargs)
 
     def parse_request_body_response(self, body, scope=None, **kwargs):

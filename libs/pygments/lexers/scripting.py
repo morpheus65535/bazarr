@@ -36,7 +36,7 @@ class LuaLexer(RegexLexer):
         (default: ``True``).
     `disabled_modules`
         If given, must be a list of module names whose function names
-        should not be highlighted. By default all modules are highlighted.
+        should not be highlighted. By default, all modules are highlighted.
 
         To get a list of allowed modules have a look into the
         `_lua_builtins` module:
@@ -91,7 +91,7 @@ class LuaLexer(RegexLexer):
 
             (r'::', Punctuation, 'label'),
             (r'\.{3}', Punctuation),
-            (r'[=<>|~&+\-*/%#^]+|\.\.', Operator),
+            (r'[+\-*%^&|#]|//?|>>|<<|\.\.|[=~<>]=?', Operator),
             (r'[\[\]{}().,:;]+', Punctuation),
             (r'(and|or|not)\b', Operator.Word),
 
@@ -100,14 +100,15 @@ class LuaLexer(RegexLexer):
                 'repeat', 'return', 'then', 'until', 'while'
             ], suffix=r'\b'), Keyword.Reserved),
             (r'goto\b', Keyword.Reserved, 'goto'),
-            (r'(local)\b', Keyword.Declaration),
+            (r'local\b', Keyword.Declaration),
             (r'(true|false|nil)\b', Keyword.Constant),
 
-            (r'(function)\b', Keyword.Reserved, 'funcname'),
+            (r'function\b', Keyword.Reserved, 'funcname'),
 
-            (words(all_lua_builtins(), suffix=r"\b"), Name.Builtin),
-            (fr'[A-Za-z_]\w*(?={_s_la}*[.:])', Name.Variable, 'varname'),
+            (words(all_lua_builtins(), suffix=r'\b'), Name.Builtin),
             (fr'[A-Za-z_]\w*(?={_s_la}*\()', Name.Function),
+            (fr'[A-Za-z_]\w*(?={_s_la}*[.:])', Name.Variable, 'varname'),
+            (fr'[A-Za-z_]\w*(?={_s_la}*<.+?>)', Name.Variable, 'varname'),
             (r'[A-Za-z_]\w*', Name.Variable),
 
             ("'", String.Single, combined('stringescape', 'sqs')),
@@ -118,6 +119,7 @@ class LuaLexer(RegexLexer):
             include('ws'),
             (r'\.\.', Operator, '#pop'),
             (r'[.:]', Punctuation),
+            (r'<', Punctuation, 'attribute'),
             (rf'{_name}(?={_s_la}*[.:])', Name.Property),
             (rf'{_name}(?={_s_la}*\()', Name.Function, '#pop'),
             (_name, Name.Property, '#pop'),
@@ -141,6 +143,12 @@ class LuaLexer(RegexLexer):
             include('ws'),
             (r'::', Punctuation, '#pop'),
             (_name, Name.Label),
+        ],
+
+        'attribute': [
+            include('ws'),
+            (r'>', Punctuation, '#pop:2'),
+            (_name, Name.Attribute),
         ],
 
         'stringescape': [

@@ -1,13 +1,19 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """
 Formatter functions to use in patterns.
 
 All those function have last argument as match.value (str).
 """
 
+from __future__ import annotations
 
-def formatters(*chained_formatters):
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+
+def formatters(*chained_formatters: Callable[[Any], Any]) -> Callable[[Any], Any]:
     """
     Chain formatter functions.
     :param chained_formatters:
@@ -16,7 +22,7 @@ def formatters(*chained_formatters):
     :rtype:
     """
 
-    def formatters_chain(input_string):  # pylint:disable=missing-docstring
+    def formatters_chain(input_string: Any) -> Any:
         for chained_formatter in chained_formatters:
             input_string = chained_formatter(input_string)
         return input_string
@@ -24,7 +30,7 @@ def formatters(*chained_formatters):
     return formatters_chain
 
 
-def default_formatter(input_string):
+def default_formatter(input_string: Any) -> Any:
     """
     Default formatter
     :param input_string:

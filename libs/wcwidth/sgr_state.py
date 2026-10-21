@@ -121,6 +121,22 @@ def _sgr_state_is_active(state: _SGRState) -> bool:
             or state.foreground is not None or state.background is not None)
 
 
+def _color_params_to_str(color: tuple[int, ...]) -> str:
+    """
+    Join color parameters, preserving the ITU T.416 colon form where it was used.
+
+    ``38:2:<colour space id>:R:G:B`` carries a colour space element that the legacy
+    ``38;2;R;G;B`` form has no slot for, so joining it with ``;`` would shift R, G and B
+    one position and leave a trailing parameter.
+
+    :param color: Color parameters as parsed by :func:`_parse_sgr_params`.
+    :returns: Parameter string for embedding in an SGR sequence.
+    """
+    if len(color) > 5 and color[1] == 2:
+        return ':'.join(str(p) for p in color)
+    return ';'.join(str(p) for p in color)
+
+
 def _sgr_state_to_sequence(state: _SGRState) -> str:
     """
     Generate minimal SGR sequence to restore this state from reset.
@@ -142,9 +158,9 @@ def _sgr_state_to_sequence(state: _SGRState) -> str:
 
     # Add color params (already formatted as tuples)
     if state.foreground is not None:
-        params.append(';'.join(str(p) for p in state.foreground))
+        params.append(_color_params_to_str(state.foreground))
     if state.background is not None:
-        params.append(';'.join(str(p) for p in state.background))
+        params.append(_color_params_to_str(state.background))
 
     return f'\x1b[{";".join(params)}m'
 

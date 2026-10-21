@@ -79,7 +79,6 @@ class FutharkLexer(RegexLexer):
             (r'"', String, 'string'),
             #  Special
             (r'\[[a-zA-Z_\d]*\]', Keyword.Type),
-            (r'\(\)', Name.Builtin),
         ],
         'character': [
             # Allows multi-chars, incorrectly.

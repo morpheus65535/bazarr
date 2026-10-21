@@ -33,8 +33,8 @@ class SpiceLexer(RegexLexer):
             (r'\\\n', Text),
             # comments
             (r'//(.*?)\n', Comment.Single),
-            (r'/(\\\n)?[*]{2}(.|\n)*?[*](\\\n)?/', String.Doc),
-            (r'/(\\\n)?[*](.|\n)*?[*](\\\n)?/', Comment.Multiline),
+            (r'/(\\\n)?[*]{2}[\s\S]*?[*](\\\n)?/', String.Doc),
+            (r'/(\\\n)?[*][\s\S]*?[*](\\\n)?/', Comment.Multiline),
             # keywords
             (r'(import|as)\b', Keyword.Namespace),
             (r'(f|p|type|struct|interface|enum|alias|operator)\b', Keyword.Declaration),

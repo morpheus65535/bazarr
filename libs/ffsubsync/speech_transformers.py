@@ -20,7 +20,10 @@ from ffsubsync.constants import (
     DEFAULT_MAX_SUBTITLE_SECONDS,
     DEFAULT_SCALE_FACTOR,
     DEFAULT_START_SECONDS,
+    DEFAULT_WHISPER_LANGUAGE,
+    DEFAULT_WHISPER_QUEUE,
     SAMPLE_RATE,
+    VAD_CHOICES,
     is_remote_url,
 )
 from ffsubsync.ffmpeg_utils import ffmpeg_bin_path, subprocess_args
@@ -250,6 +253,54 @@ _BITMAP_SUBTITLE_CODECS: frozenset = frozenset(
 )
 
 
+def _probe_embedded_subtitle_streams(
+    fname: str,
+    ffmpeg_path: Optional[str] = None,
+    gui_mode: bool = False,
+) -> Optional[List[str]]:
+    """Enumerate text-based subtitle streams in ``fname`` via ffprobe.
+
+    Returns a list of ffmpeg ``-map`` specifiers (e.g. ``["0:2", "0:3"]``)
+    so that every subtitle stream can be extracted in a single ffmpeg pass.
+    Bitmap subtitle codecs (PGS, VobSub, DVB, ...) are skipped because they
+    cannot be muxed to SRT and would otherwise abort the whole extraction.
+
+    Returns ``None`` when ffprobe is unavailable or fails, signaling the
+    caller to fall back to extracting streams one at a time.
+    """
+    ffprobe_args = [
+        ffmpeg_bin_path("ffprobe", gui_mode, ffmpeg_resources_path=ffmpeg_path),
+        "-loglevel",
+        "fatal",
+        "-select_streams",
+        "s",
+        "-show_entries",
+        "stream=index,codec_name",
+        "-of",
+        "csv=p=0",
+        fname,
+    ]
+    try:
+        process = subprocess.Popen(ffprobe_args, **subprocess_args(include_stdout=True))
+        output = process.communicate()[0]
+    except OSError as e:
+        logger.warning("ffprobe unavailable while enumerating subtitles: %s", e)
+        return None
+    if process.returncode != 0:
+        return None
+    streams: List[str] = []
+    for line in output.decode("utf-8", errors="replace").splitlines():
+        parts = line.strip().split(",")
+        if not parts or not parts[0].isdigit():
+            continue
+        index = parts[0]
+        codec_name = parts[1].strip().lower() if len(parts) > 1 else ""
+        if codec_name in _BITMAP_SUBTITLE_CODECS:
+            continue
+        streams.append("0:{}".format(index))
+    return streams or None
+
+
 _FUSION_STRATEGIES: Tuple[str, ...] = ("weighted", "intersection", "union")
 
 
@@ -351,51 +402,9 @@ class VideoSpeechTransformer(TransformerMixin):
         self.video_speech_results_: Optional[np.ndarray] = None
 
     def _probe_embedded_subtitle_streams(self, fname: str) -> Optional[List[str]]:
-        """Enumerate text-based subtitle streams in ``fname`` via ffprobe.
-
-        Returns a list of ffmpeg ``-map`` specifiers (e.g. ``["0:2", "0:3"]``)
-        so that every subtitle stream can be extracted in a single ffmpeg pass.
-        Bitmap subtitle codecs (PGS, VobSub, DVB, ...) are skipped because they
-        cannot be muxed to SRT and would otherwise abort the whole extraction.
-
-        Returns ``None`` when ffprobe is unavailable or fails, signaling the
-        caller to fall back to extracting streams one at a time.
-        """
-        ffprobe_args = [
-            ffmpeg_bin_path(
-                "ffprobe", self.gui_mode, ffmpeg_resources_path=self.ffmpeg_path
-            ),
-            "-loglevel",
-            "fatal",
-            "-select_streams",
-            "s",
-            "-show_entries",
-            "stream=index,codec_name",
-            "-of",
-            "csv=p=0",
-            fname,
-        ]
-        try:
-            process = subprocess.Popen(
-                ffprobe_args, **subprocess_args(include_stdout=True)
-            )
-            output = process.communicate()[0]
-        except OSError as e:
-            logger.warning("ffprobe unavailable while enumerating subtitles: %s", e)
-            return None
-        if process.returncode != 0:
-            return None
-        streams: List[str] = []
-        for line in output.decode("utf-8", errors="replace").splitlines():
-            parts = line.strip().split(",")
-            if not parts or not parts[0].isdigit():
-                continue
-            index = parts[0]
-            codec_name = parts[1].strip().lower() if len(parts) > 1 else ""
-            if codec_name in _BITMAP_SUBTITLE_CODECS:
-                continue
-            streams.append("0:{}".format(index))
-        return streams or None
+        return _probe_embedded_subtitle_streams(
+            fname, ffmpeg_path=self.ffmpeg_path, gui_mode=self.gui_mode
+        )
 
     def _extract_embedded_subs_single_pass(
         self, fname: str, streams: List[str]
@@ -1206,3 +1215,294 @@ class PGSSpeechTransformer(TransformerMixin, ComputeSpeechFrameBoundariesMixin):
     def transform(self, *_) -> np.ndarray:
         assert self.pgs_speech_results_ is not None
         return self.pgs_speech_results_
+
+
+def _infer_whisper_language(model_path: str, language: Optional[str]) -> str:
+    """Pick the language to pass to the whisper filter.
+
+    An explicit ``language`` always wins. Otherwise, whisper.cpp English-only
+    models are named ``ggml-<size>.en.bin``, so a ``.en`` marker in the filename
+    implies English; anything else falls back to ``auto`` (whisper detects it).
+    """
+    if language:
+        return language
+    base = os.path.basename(model_path).lower()
+    if base.endswith(".en.bin") or ".en." in base:
+        return "en"
+    return DEFAULT_WHISPER_LANGUAGE
+
+
+def _escape_ffmpeg_filter_value(value: str) -> str:
+    """Escape a value for use inside an ``-af`` filter option (``key=value``).
+
+    Within a filtergraph ``:`` separates a filter's options and ``\\`` is the
+    escape character, so a literal ``:`` or ``\\`` (e.g. a Windows path like
+    ``C:\\models\\ggml.bin``) must be backslash-escaped. ``\\`` is escaped first
+    so the backslashes added for ``:``/``'`` are not themselves doubled.
+    """
+    for ch in ("\\", ":", "'"):
+        value = value.replace(ch, "\\" + ch)
+    return value
+
+
+def _parse_filter_opts(opts_str: str) -> Dict[str, str]:
+    """Parse ``key=value:key=value`` (ffmpeg filter option syntax) into a dict.
+
+    Splits on ``:`` that is not backslash-escaped, preserving insertion order.
+    Malformed segments (no ``=``) are skipped with a warning. Values are taken
+    verbatim -- the caller is passing raw ffmpeg filter syntax and may pre-escape
+    if needed.
+    """
+    result: Dict[str, str] = {}
+    for part in re.split(r"(?<!\\):", opts_str):
+        if not part.strip():
+            continue
+        if "=" not in part:
+            logger.warning(
+                "ignoring malformed whisper option %r (expected key=value)", part
+            )
+            continue
+        key, val = part.split("=", 1)
+        result[key.strip()] = val
+    return result
+
+
+def _build_whisper_filter(
+    model_path: str,
+    language: str,
+    destination: str,
+    queue: int = DEFAULT_WHISPER_QUEUE,
+    vad_model: Optional[str] = None,
+    extra_opts: Optional[str] = None,
+) -> str:
+    """Assemble the ``whisper=...`` ``-af`` filter string.
+
+    ``format=srt`` and ``destination`` are always set by us (they are structural
+    -- we parse the emitted SRT), so a user-supplied ``--whisper-args`` cannot
+    override them (nor ``model``); it can override everything else, e.g.
+    ``queue``. Paths are escaped for the filtergraph syntax.
+    """
+    opts: Dict[str, str] = {}
+    opts["model"] = _escape_ffmpeg_filter_value(model_path)
+    opts["language"] = language
+    opts["queue"] = str(queue)
+    if vad_model:
+        opts["vad_model"] = _escape_ffmpeg_filter_value(vad_model)
+    if extra_opts:
+        for key, val in _parse_filter_opts(extra_opts).items():
+            if key in ("model", "format", "destination"):
+                logger.warning(
+                    "ignoring whisper option %r (managed by ffsubsync)", key
+                )
+                continue
+            opts[key] = val
+    # structural options set last so --whisper-args can never clobber them
+    opts["format"] = "srt"
+    opts["destination"] = _escape_ffmpeg_filter_value(destination)
+    return "whisper=" + ":".join("%s=%s" % (k, v) for k, v in opts.items())
+
+
+def _ffmpeg_supports_whisper(ffmpeg_bin: str) -> bool:
+    """Return True if ``ffmpeg_bin`` was built with the whisper audio filter.
+
+    ``ffmpeg -h filter=whisper`` prints the filter's option help on a supported
+    build and ``Unknown filter 'whisper'`` otherwise.
+    """
+    try:
+        process = subprocess.Popen(
+            [ffmpeg_bin, "-hide_banner", "-h", "filter=whisper"],
+            **subprocess_args(include_stdout=True),
+        )
+        stdout, stderr = process.communicate()
+    except OSError:
+        return False
+    combined = (stdout or b"").decode("utf-8", errors="replace") + (
+        stderr or b""
+    ).decode("utf-8", errors="replace")
+    return "Unknown filter" not in combined and "whisper" in combined.lower()
+
+
+class WhisperSpeechTransformer(TransformerMixin):
+    """Use ffmpeg's whisper audio filter to transcribe the reference for sync.
+
+    ffmpeg (>= 8.0, built with ``--enable-whisper``) can transcribe audio to SRT
+    in a single pass via its ``whisper`` audio filter. This transformer runs that
+    filter, writes the transcript to a temp SRT, and rasterizes the cue timings
+    into the same 100 Hz binary speech signal that
+    :class:`SubtitleSpeechTransformer` produces for real subtitle files -- so the
+    normal FFT + framerate-ratio search aligns the input subtitles against the
+    transcript with no other changes. This is a reference *source*, analogous to
+    :class:`PGSSpeechTransformer`, selected via ``--whisper-weights``.
+
+    ffsubsync reduces the ffmpeg burden: the model path has ``~`` expanded (ffmpeg
+    won't), the language is inferred/defaulted, and clear errors are raised when
+    the weights are missing or ffmpeg lacks the whisper filter.
+    """
+
+    # whisper may clip speech at the very start/end of the reference, which would
+    # skew a duration-based framerate estimate; like PGS, return None so try_sync
+    # skips length-ratio inference and relies on the discrete-ratio / --gss search.
+    @property
+    def num_frames(self) -> None:
+        return None
+
+    def __init__(
+        self,
+        model_path: str,
+        language: Optional[str] = None,
+        whisper_args: Optional[str] = None,
+        vad: Optional[str] = None,
+        sample_rate: int = SAMPLE_RATE,
+        start_seconds: int = 0,
+        max_duration_seconds: Optional[float] = None,
+        ffmpeg_path: Optional[str] = None,
+        ref_stream: Optional[str] = None,
+        gui_mode: bool = False,
+    ) -> None:
+        super(WhisperSpeechTransformer, self).__init__()
+        # expand ~ up front -- ffmpeg does not do this itself
+        self.model_path: str = (
+            os.path.expanduser(model_path) if model_path else model_path
+        )
+        self.language: Optional[str] = language
+        self.whisper_args: Optional[str] = whisper_args
+        self.vad: Optional[str] = vad
+        self.sample_rate: int = sample_rate
+        self.start_seconds: int = start_seconds
+        self.max_duration_seconds: Optional[float] = max_duration_seconds
+        self.ffmpeg_path: Optional[str] = ffmpeg_path
+        self.ref_stream: Optional[str] = ref_stream
+        self.gui_mode: bool = gui_mode
+        self.speech_results_: Optional[np.ndarray] = None
+
+    def _resolve_vad_model(self) -> Optional[str]:
+        """Interpret the reused --vad flag as whisper's optional VAD model path.
+
+        In transcription mode whisper does its own speech detection, so the named
+        VAD choices (webrtc/silero/...) don't apply; instead ``--vad`` may point
+        at a ggml VAD model that whisper uses to fragment the audio. A non-path
+        value is ignored (with a warning explaining the repurposing).
+        """
+        vad = self.vad
+        if not vad:
+            return None
+        expanded = os.path.expanduser(vad)
+        if os.path.exists(expanded):
+            return expanded
+        if vad in VAD_CHOICES:
+            logger.warning(
+                "--vad '%s' is ignored in whisper-transcription mode (whisper "
+                "does its own speech detection); to enable whisper's optional VAD "
+                "fragmentation, pass a path to a ggml VAD model as --vad instead.",
+                vad,
+            )
+        else:
+            logger.warning(
+                "--vad '%s' is not an existing file, so it is not used as a "
+                "whisper VAD model; ignoring.",
+                vad,
+            )
+        return None
+
+    def _build_ffmpeg_args(
+        self, ffmpeg_bin: str, fname: str, whisper_filter: str
+    ) -> List[str]:
+        ffmpeg_args = [ffmpeg_bin]
+        if self.start_seconds > 0:
+            ffmpeg_args.extend(["-ss", str(timedelta(seconds=self.start_seconds))])
+        if self.max_duration_seconds is not None:
+            ffmpeg_args.extend(
+                ["-t", str(timedelta(seconds=self.max_duration_seconds))]
+            )
+        ffmpeg_args.extend(["-loglevel", "error", "-nostdin", "-i", fname])
+        if self.ref_stream is not None and self.ref_stream.startswith("0:a:"):
+            ffmpeg_args.extend(["-map", self.ref_stream])
+        # -vn: whisper only needs audio; -f null: we consume the SRT via destination
+        ffmpeg_args.extend(["-vn", "-af", whisper_filter, "-f", "null", "-"])
+        return ffmpeg_args
+
+    def fit(self, fname: str, *_) -> "WhisperSpeechTransformer":
+        if not self.model_path or not os.path.exists(self.model_path):
+            raise ValueError(
+                "whisper weights not found: {!r}. Pass an existing model file "
+                "via --whisper-weights (e.g. a whisper.cpp ggml-*.bin); '~' is "
+                "expanded for you.".format(self.model_path)
+            )
+        ffmpeg_bin = ffmpeg_bin_path(
+            "ffmpeg", self.gui_mode, ffmpeg_resources_path=self.ffmpeg_path
+        )
+        if not _ffmpeg_supports_whisper(ffmpeg_bin):
+            raise ValueError(
+                "the ffmpeg at '{}' does not support the whisper filter. You need "
+                "ffmpeg >= 8.0 built with --enable-whisper (libwhisper). Point "
+                "--ffmpeg-path at such a build, or install one.".format(ffmpeg_bin)
+            )
+        language = _infer_whisper_language(self.model_path, self.language)
+        vad_model = self._resolve_vad_model()
+        try:
+            embedded_streams = _probe_embedded_subtitle_streams(
+                fname, ffmpeg_path=self.ffmpeg_path, gui_mode=self.gui_mode
+            )
+        except Exception:
+            embedded_streams = None
+        if embedded_streams:
+            logger.warning(
+                "reference '%s' already contains %d embedded subtitle stream(s); "
+                "those may be a better sync reference than whisper transcription "
+                "-- consider '--vad subs_then_webrtc' or '--reference-stream s:0'.",
+                fname,
+                len(embedded_streams),
+            )
+        with tempfile.TemporaryDirectory(prefix="ffsubsync_whisper_") as tmpdir:
+            destination = os.path.join(tmpdir, "whisper.srt")
+            whisper_filter = _build_whisper_filter(
+                self.model_path,
+                language,
+                destination,
+                queue=DEFAULT_WHISPER_QUEUE,
+                vad_model=vad_model,
+                extra_opts=self.whisper_args,
+            )
+            ffmpeg_args = self._build_ffmpeg_args(ffmpeg_bin, fname, whisper_filter)
+            logger.info(
+                "transcribing reference audio with whisper (language=%s); "
+                "this can take a while...",
+                language,
+            )
+            process = subprocess.Popen(
+                ffmpeg_args, **subprocess_args(include_stdout=True)
+            )
+            _, stderr = process.communicate()
+            if process.returncode != 0:
+                tail = "\n".join(
+                    (stderr or b"")
+                    .decode("utf-8", errors="replace")
+                    .strip()
+                    .splitlines()[-5:]
+                )
+                raise ValueError(
+                    "ffmpeg whisper transcription failed (return code {}):\n{}".format(
+                        process.returncode, tail
+                    )
+                )
+            if not os.path.exists(destination) or os.path.getsize(destination) == 0:
+                raise ValueError(
+                    "whisper transcription produced no subtitles; the audio may be "
+                    "silent, or the model/language may not match it."
+                )
+            with open(destination, "rb") as f:
+                buffer = io.BytesIO(f.read())
+        pipe = cast(
+            Pipeline,
+            make_subtitle_speech_pipeline(start_seconds=self.start_seconds),
+        ).fit(buffer)
+        speech_step = pipe.steps[-1][1]
+        self.speech_results_ = speech_step.subtitle_speech_results_
+        logger.info(
+            "...done; total of speech segments: %s", np.sum(self.speech_results_)
+        )
+        return self
+
+    def transform(self, *_) -> np.ndarray:
+        assert self.speech_results_ is not None
+        return self.speech_results_

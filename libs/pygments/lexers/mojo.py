@@ -101,11 +101,11 @@ class MojoLexer(RegexLexer):
         "root": [
             (r"\s+", Whitespace),
             (
-                r'^(\s*)([rRuUbB]{,2})("""(?:.|\n)*?""")',
+                r'^(\s*)([rRuUbB]{,2})("""[\s\S]*?""")',
                 bygroups(Whitespace, String.Affix, String.Doc),
             ),
             (
-                r"^(\s*)([rRuUbB]{,2})('''(?:.|\n)*?''')",
+                r"^(\s*)([rRuUbB]{,2})('''[\s\S]*?''')",
                 bygroups(Whitespace, String.Affix, String.Doc),
             ),
             (r"\A#!.+$", Comment.Hashbang),

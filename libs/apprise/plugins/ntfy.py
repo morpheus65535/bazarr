@@ -240,6 +240,7 @@ class NotifyNtfy(NotifyBase):
             "targets": {
                 "name": _("Targets"),
                 "type": "list:string",
+                "required": True,
             },
         },
     )
@@ -685,6 +686,10 @@ class NotifyNtfy(NotifyBase):
 
                     # We could not parse JSON response.
                     # We will just use the status we already have.
+                    self.logger.debug(
+                        "Failed to parse ntfy JSON response; body: %r",
+                        (r.content or b"")[:2000],
+                    )
                     pass
 
                 self.logger.warning(

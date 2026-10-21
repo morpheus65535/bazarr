@@ -13,12 +13,11 @@ import os
 import sys
 import os.path
 from io import StringIO
+from html import escape as _escape
 
 from pygments.formatter import Formatter
 from pygments.token import Token, Text, STANDARD_TYPES
-from pygments.util import get_bool_opt, get_int_opt, get_list_opt
-
-import html
+from pygments.util import get_bool_opt, get_int_opt, get_list_opt, html_escape
 
 try:
     import ctags
@@ -28,22 +27,8 @@ except ImportError:
 __all__ = ['HtmlFormatter']
 
 
-_escape_html_table = {
-    ord('&'): '&amp;',
-    ord('<'): '&lt;',
-    ord('>'): '&gt;',
-    ord('"'): '&quot;',
-    ord("'"): '&#39;',
-}
-
-
-def escape_html(text, table=_escape_html_table):
-    """Escape &, <, > as well as single and double quotes for HTML."""
-    return text.translate(table)
-
-
 def webify(color):
-    if color.startswith('calc') or color.startswith('var'):
+    if color == 'transparent' or color.startswith('calc') or color.startswith('var'):
         return color
     else:
         # Check if the color can be shortened from 6 to 3 characters
@@ -424,14 +409,14 @@ class HtmlFormatter(Formatter):
         self.nowrap = get_bool_opt(options, 'nowrap', False)
         self.noclasses = get_bool_opt(options, 'noclasses', False)
         self.classprefix = options.get('classprefix', '')
-        self.cssclass = html.escape(self._decodeifneeded(options.get('cssclass', 'highlight')))
-        self.cssstyles = html.escape(self._decodeifneeded(options.get('cssstyles', '')))
+        self.cssclass = html_escape(self._decodeifneeded(options.get('cssclass', 'highlight')))
+        self.cssstyles = html_escape(self._decodeifneeded(options.get('cssstyles', '')))
         self.prestyles = self._decodeifneeded(options.get('prestyles', ''))
         self.cssfile = self._decodeifneeded(options.get('cssfile', ''))
         self.noclobber_cssfile = get_bool_opt(options, 'noclobber_cssfile', False)
         self.tagsfile = self._decodeifneeded(options.get('tagsfile', ''))
         self.tagurlformat = self._decodeifneeded(options.get('tagurlformat', ''))
-        self.filename = html.escape(self._decodeifneeded(options.get('filename', '')))
+        self.filename = html_escape(self._decodeifneeded(options.get('filename', '')))
         self.wrapcode = get_bool_opt(options, 'wrapcode', False)
         self.span_element_openers = {}
         self.debug_token_types = get_bool_opt(options, 'debug_token_types', False)
@@ -454,9 +439,9 @@ class HtmlFormatter(Formatter):
         self.linenostep = abs(get_int_opt(options, 'linenostep', 1))
         self.linenospecial = abs(get_int_opt(options, 'linenospecial', 0))
         self.nobackground = get_bool_opt(options, 'nobackground', False)
-        self.lineseparator = html.escape(options.get('lineseparator', '\n'))
-        self.lineanchors = html.escape(options.get('lineanchors', ''))
-        self.linespans = html.escape(options.get('linespans', ''))
+        self.lineseparator = html_escape(options.get('lineseparator', '\n'))
+        self.lineanchors = html_escape(options.get('lineanchors', ''))
+        self.linespans = html_escape(options.get('linespans', ''))
         self.anchorlinenos = get_bool_opt(options, 'anchorlinenos', False)
         self.hl_lines = set()
         for lineno in get_list_opt(options, 'hl_lines', []):
@@ -833,8 +818,14 @@ class HtmlFormatter(Formatter):
 
     @functools.lru_cache(maxsize=100)
     def _translate_parts(self, value):
-        """HTML-escape a value and split it by newlines."""
-        return value.translate(_escape_html_table).split('\n')
+        """HTML-escape a value and split it by newlines.
+
+        ``quote=False`` is intentional: token values are emitted as element
+        text content (inside ``<span>``/``<pre>``), where ``"`` and ``'`` do
+        not need escaping.  Skipping those two replacements is measurably
+        faster on the per-token hot path.
+        """
+        return _escape(value, quote=False).split('\n')
 
     def _format_lines(self, tokensource):
         """
@@ -844,12 +835,14 @@ class HtmlFormatter(Formatter):
         nocls = self.noclasses
         lsep = self.lineseparator
         tagsfile = self.tagsfile
+        span_openers = self.span_element_openers
+        translate = self._translate_parts
 
         lspan = ''
         line = []
         for ttype, value in tokensource:
             try:
-                cspan = self.span_element_openers[ttype]
+                cspan = span_openers[ttype]
             except KeyError:
                 title = ' title="{}"'.format('.'.join(ttype)) if self.debug_token_types else ''
                 if nocls:
@@ -865,9 +858,9 @@ class HtmlFormatter(Formatter):
                         cspan = f'<span class="{css_class}"{title}>'
                     else:
                         cspan = ''
-                self.span_element_openers[ttype] = cspan
+                span_openers[ttype] = cspan
 
-            parts = self._translate_parts(value)
+            parts = translate(value)
 
             if tagsfile and ttype in Token.Name:
                 filename, linenumber = self._lookup_ctag(value)
@@ -882,31 +875,34 @@ class HtmlFormatter(Formatter):
                         (url, self.lineanchors, linenumber, parts[0])
                     parts[-1] = parts[-1] + "</a>"
 
-            # for all but the last line
-            for part in parts[:-1]:
-                if line:
-                    # Also check for part being non-empty, so we avoid creating
-                    # empty <span> tags
-                    if lspan != cspan and part:
-                        line.extend(((lspan and '</span>'), cspan, part,
-                                     (cspan and '</span>'), lsep))
-                    else:  # both are the same, or the current part was empty
-                        line.extend((part, (lspan and '</span>'), lsep))
-                    yield 1, ''.join(line)
-                    line = []
-                elif part:
-                    yield 1, ''.join((cspan, part, (cspan and '</span>'), lsep))
-                else:
-                    yield 1, lsep
+            # for all but the last line (skipped entirely for single-line
+            # tokens, which are the common case, to avoid the parts[:-1] slice)
+            if len(parts) > 1:
+                for part in parts[:-1]:
+                    if line:
+                        # Also check for part being non-empty, so we avoid
+                        # creating empty <span> tags
+                        if lspan != cspan and part:
+                            line.extend(((lspan and '</span>'), cspan, part,
+                                         (cspan and '</span>'), lsep))
+                        else:  # both are the same, or the current part was empty
+                            line.extend((part, (lspan and '</span>'), lsep))
+                        yield 1, ''.join(line)
+                        line = []
+                    elif part:
+                        yield 1, ''.join((cspan, part, (cspan and '</span>'), lsep))
+                    else:
+                        yield 1, lsep
             # for the last line
-            if line and parts[-1]:
+            last = parts[-1]
+            if line and last:
                 if lspan != cspan:
-                    line.extend(((lspan and '</span>'), cspan, parts[-1]))
+                    line.extend(((lspan and '</span>'), cspan, last))
                     lspan = cspan
                 else:
-                    line.append(parts[-1])
-            elif parts[-1]:
-                line = [cspan, parts[-1]]
+                    line.append(last)
+            elif last:
+                line = [cspan, last]
                 lspan = cspan
             # else we neither have to open a new span nor set lspan
 

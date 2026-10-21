@@ -18,6 +18,7 @@ from knowit.properties.subtitle import (
 from knowit.properties.video import (
     Ratio,
     ScanType,
+    VideoBitDepth,
     VideoCodec,
     VideoDimensions,
     VideoEncoder,
@@ -26,3 +27,27 @@ from knowit.properties.video import (
     VideoProfileLevel,
     VideoProfileTier,
 )
+
+__all__ = [
+    'AudioChannels',
+    'AudioCodec',
+    'AudioCompression',
+    'AudioProfile',
+    'Basic',
+    'BitRateMode',
+    'Duration',
+    'Language',
+    'Quantity',
+    'Ratio',
+    'ScanType',
+    'SubtitleFormat',
+    'VideoBitDepth',
+    'VideoCodec',
+    'VideoDimensions',
+    'VideoEncoder',
+    'VideoHdrFormat',
+    'VideoProfile',
+    'VideoProfileLevel',
+    'VideoProfileTier',
+    'YesNo',
+]

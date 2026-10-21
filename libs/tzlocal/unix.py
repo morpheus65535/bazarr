@@ -97,8 +97,13 @@ def _get_localzone_name(_root="/"):
                     match = timezone_re.match(line)
                 if match is not None:
                     # Some setting existed
-                    line = line[match.end() :]
-                    etctz = line[: end_re.search(line).start()]
+                    tzline = line[match.end() :]
+                    end_match = end_re.search(tzline)
+                    if end_match is None:
+                        # Syntax error. Ignore this line.
+                        warnings.warn(f"Syntax error in {tzpath}. Ignoring line: {line}")
+                        continue
+                    etctz = tzline[:end_match.start()]
 
                     # We found a timezone
                     found_configs[tzpath] = etctz.replace(" ", "_")

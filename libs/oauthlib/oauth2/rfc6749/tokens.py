@@ -121,7 +121,7 @@ def prepare_mac_header(token, uri, key, http_method,
         ts = common.generate_timestamp()
         nonce = common.generate_nonce()
 
-    sch, net, path, par, query, fra = urlparse(uri)
+    _sch, _net, path, _par, query, _fra = urlparse(uri)
 
     request_uri = path + '?' + query if query else path
 

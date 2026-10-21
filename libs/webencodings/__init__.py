@@ -1,4 +1,3 @@
-# coding: utf-8
 """
 
     webencodings
@@ -12,28 +11,32 @@
 
 """
 
-from __future__ import unicode_literals
-
 import codecs
 
+from .custom import replacement_codec_info, user_codec_info
 from .labels import LABELS
 
+VERSION = __version__ = '0.6.1'
 
-VERSION = '0.5.1'
 
-
-# Some names in Encoding are not valid Python aliases. Remap these.
 PYTHON_NAMES = {
-    'iso-8859-8-i': 'iso-8859-8',
+    # Some names in Encoding are not valid Python aliases. Remap these:
+    'iso-8859-8-i': 'iso8859-8',
     'x-mac-cyrillic': 'mac-cyrillic',
     'macintosh': 'mac-roman',
-    'windows-874': 'cp874'}
+    'windows-874': 'cp874',
+    # Some WHATWG-defined names conflict with a Python alias for an
+    # incompatible codec. These should be remapped to the correct one:
+    'shift_jis': 'cp932',
+    'big5': 'big5hkscs',
+    'euc-kr': 'cp949',
+}
 
 CACHE = {}
 
 
 def ascii_lower(string):
-    r"""Transform (only) ASCII letters to lower case: A-Z is mapped to a-z.
+    """Transform (only) ASCII letters to lower case: A-Z is mapped to a-z.
 
     :param string: An Unicode string.
     :returns: A new Unicode string.
@@ -44,24 +47,24 @@ def ascii_lower(string):
     The same matching is also used, among other things,
     for `CSS keywords <http://dev.w3.org/csswg/css-values/#keywords>`_.
 
-    This is different from the :meth:`~py:str.lower` method of Unicode strings
+    This is different from the :meth:`str.lower` method of Unicode strings
     which also affect non-ASCII characters,
     sometimes mapping them into the ASCII range:
 
-        >>> keyword = u'Bac\N{KELVIN SIGN}ground'
-        >>> assert keyword.lower() == u'background'
+        >>> keyword = 'Bac\\N{KELVIN SIGN}ground'
+        >>> assert keyword.lower() == 'background'
         >>> assert ascii_lower(keyword) != keyword.lower()
-        >>> assert ascii_lower(keyword) == u'bac\N{KELVIN SIGN}ground'
+        >>> assert ascii_lower(keyword) == 'bac\\N{KELVIN SIGN}ground'
 
     """
     # This turns out to be faster than unicode.translate()
-    return string.encode('utf8').lower().decode('utf8')
+    return string.encode().lower().decode()
 
 
 def lookup(label):
-    """
-    Look for an encoding by its label.
-    This is the spec’s `get an encoding
+    """Look for an encoding by its label.
+
+    This is the spec's `get an encoding
     <http://encoding.spec.whatwg.org/#concept-encoding-get>`_ algorithm.
     Supported labels are listed there.
 
@@ -78,7 +81,9 @@ def lookup(label):
     encoding = CACHE.get(name)
     if encoding is None:
         if name == 'x-user-defined':
-            from .x_user_defined import codec_info
+            codec_info = user_codec_info
+        elif name == 'replacement':
+            codec_info = replacement_codec_info
         else:
             python_name = PYTHON_NAMES.get(name, name)
             # Any python_name value that gets to here should be valid.
@@ -89,12 +94,11 @@ def lookup(label):
 
 
 def _get_encoding(encoding_or_label):
-    """
-    Accept either an encoding object or label.
+    """Accept either an encoding object or label.
 
     :param encoding: An :class:`Encoding` object or a label string.
     :returns: An :class:`Encoding` object.
-    :raises: :exc:`~exceptions.LookupError` for an unknown label.
+    :raises: :exc:`LookupError` for an unknown label.
 
     """
     if hasattr(encoding_or_label, 'codec_info'):
@@ -102,13 +106,12 @@ def _get_encoding(encoding_or_label):
 
     encoding = lookup(encoding_or_label)
     if encoding is None:
-        raise LookupError('Unknown encoding label: %r' % encoding_or_label)
+        raise LookupError(f'Unknown encoding label: {encoding_or_label!r}')
     return encoding
 
 
-class Encoding(object):
-    """Reresents a character encoding such as UTF-8,
-    that can be used for decoding or encoding.
+class Encoding:
+    """A character encoding that can be used for decoding or encoding.
 
     .. attribute:: name
 
@@ -126,7 +129,7 @@ class Encoding(object):
         self.codec_info = codec_info
 
     def __repr__(self):
-        return '<Encoding %s>' % self.name
+        return f'<Encoding {self.name}>'
 
 
 #: The UTF-8 encoding. Should be used for new content and formats.
@@ -137,15 +140,14 @@ _UTF16BE = lookup('utf-16be')
 
 
 def decode(input, fallback_encoding, errors='replace'):
-    """
-    Decode a single string.
+    """Decode a single string.
 
     :param input: A byte string
     :param fallback_encoding:
         An :class:`Encoding` object or a label string.
-        The encoding to use if :obj:`input` does note have a BOM.
+        The encoding to use if :obj:`input` does not have a BOM.
     :param errors: Type of error handling. See :func:`codecs.register`.
-    :raises: :exc:`~exceptions.LookupError` for an unknown encoding label.
+    :raises: :exc:`LookupError` for an unknown encoding label.
     :return:
         A ``(output, encoding)`` tuple of an Unicode string
         and an :obj:`Encoding`.
@@ -170,13 +172,12 @@ def _detect_bom(input):
 
 
 def encode(input, encoding=UTF8, errors='strict'):
-    """
-    Encode a single string.
+    """Encode a single string.
 
     :param input: An Unicode string.
     :param encoding: An :class:`Encoding` object or a label string.
     :param errors: Type of error handling. See :func:`codecs.register`.
-    :raises: :exc:`~exceptions.LookupError` for an unknown encoding label.
+    :raises: :exc:`LookupError` for an unknown encoding label.
     :return: A byte string.
 
     """
@@ -184,8 +185,7 @@ def encode(input, encoding=UTF8, errors='strict'):
 
 
 def iter_decode(input, fallback_encoding, errors='replace'):
-    """
-    "Pull"-based decoder.
+    """"Pull"-based decoder.
 
     :param input:
         An iterable of byte strings.
@@ -195,13 +195,13 @@ def iter_decode(input, fallback_encoding, errors='replace'):
         then consumed on demand when the return value is.
     :param fallback_encoding:
         An :class:`Encoding` object or a label string.
-        The encoding to use if :obj:`input` does note have a BOM.
+        The encoding to use if :obj:`input` does not have a BOM.
     :param errors: Type of error handling. See :func:`codecs.register`.
-    :raises: :exc:`~exceptions.LookupError` for an unknown encoding label.
+    :raises: :exc:`LookupError` for an unknown encoding label.
     :returns:
         An ``(output, encoding)`` tuple.
-        :obj:`output` is an iterable of Unicode strings,
-        :obj:`encoding` is the :obj:`Encoding` that is being used.
+        ``output`` is an iterable of Unicode strings,
+        ``encoding`` is the :obj:`Encoding` that is being used.
 
     """
 
@@ -212,8 +212,10 @@ def iter_decode(input, fallback_encoding, errors='replace'):
 
 
 def _iter_decode_generator(input, decoder):
-    """Return a generator that first yields the :obj:`Encoding`,
-    then yields output chukns as Unicode strings.
+    """Return a decode generator.
+
+    It first yields the :obj:`Encoding`, then yields output chunks as Unicode
+    strings.
 
     """
     decode = decoder.decode
@@ -244,13 +246,12 @@ def _iter_decode_generator(input, decoder):
 
 
 def iter_encode(input, encoding=UTF8, errors='strict'):
-    """
-    “Pull”-based encoder.
+    """"Pull"-based encoder.
 
     :param input: An iterable of Unicode strings.
     :param encoding: An :class:`Encoding` object or a label string.
     :param errors: Type of error handling. See :func:`codecs.register`.
-    :raises: :exc:`~exceptions.LookupError` for an unknown encoding label.
+    :raises: :exc:`LookupError` for an unknown encoding label.
     :returns: An iterable of byte strings.
 
     """
@@ -260,6 +261,7 @@ def iter_encode(input, encoding=UTF8, errors='strict'):
 
 
 def _iter_encode_generator(input, encode):
+    """Return an encode generator."""
     for chunck in input:
         output = encode(chunck)
         if output:
@@ -269,15 +271,14 @@ def _iter_encode_generator(input, encode):
         yield output
 
 
-class IncrementalDecoder(object):
-    """
-    “Push”-based decoder.
+class IncrementalDecoder:
+    """"Push"-based decoder.
 
     :param fallback_encoding:
         An :class:`Encoding` object or a label string.
-        The encoding to use if :obj:`input` does note have a BOM.
+        The encoding to use if :obj:`input` does not have a BOM.
     :param errors: Type of error handling. See :func:`codecs.register`.
-    :raises: :exc:`~exceptions.LookupError` for an unknown encoding label.
+    :raises: :exc:`LookupError` for an unknown encoding label.
 
     """
     def __init__(self, fallback_encoding, errors='replace'):
@@ -320,13 +321,12 @@ class IncrementalDecoder(object):
         return decoder(input, final)
 
 
-class IncrementalEncoder(object):
-    """
-    “Push”-based encoder.
+class IncrementalEncoder:
+    """"Push"-based encoder.
 
     :param encoding: An :class:`Encoding` object or a label string.
     :param errors: Type of error handling. See :func:`codecs.register`.
-    :raises: :exc:`~exceptions.LookupError` for an unknown encoding label.
+    :raises: :exc:`LookupError` for an unknown encoding label.
 
     .. method:: encode(input, final=False)
 

@@ -9,14 +9,14 @@ from trakit.language import language
 from trakit.words import seps
 
 
-def configure(config: Config):
+def configure(config: Config) -> Rebulk:
     seps_surround = partial(chars_surround, seps)
 
     others = Rebulk()
     others.defaults(ignore_case=True, validator=seps_surround)
-    others.regex_defaults(flags=re.IGNORECASE,
-                          abbreviations=[(r'-', rf'[{re.escape("".join(seps))}]')],
-                          validator=seps_surround)
+    others.regex_defaults(
+        flags=re.IGNORECASE, abbreviations=[(r'-', rf'[{re.escape("".join(seps))}]')], validator=seps_surround
+    )
     for name in ('forced', 'commentary', 'external'):
         others.string(name, name=name, value=True)
 

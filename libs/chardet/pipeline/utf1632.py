@@ -34,6 +34,13 @@ _UTF16_MIN_NULL_FRACTION = 0.03
 # patterns.
 _MIN_TEXT_QUALITY = 0.5
 
+# Quality margin a byte order with the weaker null signal must win by to
+# override the null pattern's choice.  Keeps noisy near-ties (e.g. two
+# alphabetic decodings of similar letter density) on the side the null
+# evidence favors, while letting a clear gap (real CJK vs its byte-swapped
+# scatter across the BMP) flip the answer.
+_QUALITY_TIE_MARGIN = 0.05
+
 # Minimum fraction of printable characters for a decoded sample to be
 # considered text rather than binary data.
 _MIN_PRINTABLE_FRACTION = 0.7
@@ -42,9 +49,18 @@ _MIN_PRINTABLE_FRACTION = 0.7
 # the data is checked for a null-separator pattern.  If the null fraction
 # is below this AND all non-null bytes are printable ASCII, the candidate
 # is rejected as a null-separator false positive rather than real UTF-16.
-# Real Latin UTF-16 has ~50% nulls; CJK UTF-16 has fewer but non-ASCII
-# non-null bytes.  15% is generous — separator data is typically 1-5%.
-_NULL_SEPARATOR_MAX_FRACTION = 0.15
+#
+# When every non-null byte is printable ASCII, the two readings are easy
+# to tell apart by how many code units carry a null.  UTF-16 text made of
+# ASCII characters puts a null in every unit, and the only thing that
+# lowers the fraction is a stretch that fell out of phase (the corpus has
+# a UTF-16-BE file with one such stretch, at 0.865).  Null-separated
+# records (``find -print0``, ``git ls-tree -z``) put a null in at most
+# half the units once records are two characters or longer: three-byte
+# ``abc\0`` records on one parity give exactly 0.5, and longer records
+# give less.  Single-character records are byte-identical to UTF-16 and
+# are read as UTF-16.  0.75 sits between the two shapes.
+_NULL_SEPARATOR_MAX_FRACTION = 0.75
 
 # ASCII_TEXT_BYTES plus the null byte — used by the null-separator guard
 # to check whether non-null bytes are all printable ASCII.
@@ -161,9 +177,9 @@ def _check_utf16(data: bytes) -> DetectionResult | None:
     Non-UTF-16 single-byte encodings never contain null bytes, so even a
     small null-byte fraction in alternating positions is a strong signal.
 
-    When both endiannesses show null-byte patterns (e.g., Latin text where
-    every other byte is null), we disambiguate by decoding both ways and
-    comparing text-quality scores.
+    The null pattern only establishes that the data is UTF-16-like.  Byte
+    order is always chosen by decoding both ways and comparing text-quality
+    scores, with the null signal breaking near-ties (see below).
     """
     sample_len = min(len(data), _SAMPLE_SIZE)
     sample_len -= sample_len % 2
@@ -180,50 +196,69 @@ def _check_utf16(data: bytes) -> DetectionResult | None:
     be_frac = be_null_count / num_units
     le_frac = le_null_count / num_units
 
-    candidates: list[tuple[str, float]] = []
-    if le_frac >= _UTF16_MIN_NULL_FRACTION and not _is_null_separator_pattern(
-        data[:sample_len], le_frac
-    ):
-        candidates.append(("utf-16-le", le_frac))
-    if be_frac >= _UTF16_MIN_NULL_FRACTION and not _is_null_separator_pattern(
-        data[:sample_len], be_frac
-    ):
-        candidates.append(("utf-16-be", be_frac))
+    le_qualified = (
+        le_frac >= _UTF16_MIN_NULL_FRACTION
+        and not _is_null_separator_pattern(data[:sample_len], le_frac)
+    )
+    be_qualified = (
+        be_frac >= _UTF16_MIN_NULL_FRACTION
+        and not _is_null_separator_pattern(data[:sample_len], be_frac)
+    )
 
-    if not candidates:
+    if not (le_qualified or be_qualified):
         return None
 
-    # If only one candidate, validate and return
-    if len(candidates) == 1:
-        encoding = candidates[0][0]
-        try:
-            text = data[:sample_len].decode(encoding)
-            if _looks_like_text(text):
-                return DetectionResult(
-                    encoding=encoding,
-                    confidence=DETERMINISTIC_CONFIDENCE,
-                    language=None,
-                )
-        except UnicodeDecodeError:
-            pass
-        return None
+    # The null-byte pattern only establishes that the data is UTF-16-like;
+    # it cannot be trusted to pick the byte order on its own.  In pure-CJK
+    # text with no ASCII at all, the only null bytes come from the *low*
+    # byte of characters like U+4E00, which sit in the opposite parity
+    # position and vote for the swapped byte order.  Decode both ways and
+    # let text quality decide.  Sides are visited in null-signal order and
+    # a challenger must win by a clear margin, so noisy near-ties keep the
+    # answer the null pattern chose.
+    sides = [("utf-16-le", le_frac, le_qualified), ("utf-16-be", be_frac, be_qualified)]
+    if be_frac > le_frac:
+        sides.reverse()
 
-    # Both candidates matched (common for Latin-heavy text where every other
-    # byte is null).  Decode both and pick the one with higher text quality.
     best_encoding: str | None = None
-    best_quality = -1.0
+    best_quality = -2.0
+    best_qualified = False
+    viable = 0
+    qualified_side_decoded = False
 
-    for encoding, _ in candidates:
+    for encoding, _frac, qualified in sides:
         try:
             text = data[:sample_len].decode(encoding)
         except UnicodeDecodeError:
             continue
+        if qualified:
+            qualified_side_decoded = True
+        if not _looks_like_text(text):
+            continue
+        viable += 1
         quality = _text_quality(text)
-        if quality > best_quality:
+        if quality > best_quality + (_QUALITY_TIE_MARGIN if viable > 1 else 0.0):
             best_quality = quality
             best_encoding = encoding
+            best_qualified = qualified
 
-    if best_encoding is not None and best_quality >= _MIN_TEXT_QUALITY:
+    if best_encoding is None:
+        return None
+
+    if best_qualified:
+        # The null pattern and the quality comparison agree.  A sole viable
+        # side keeps the old single-candidate behavior (no quality floor);
+        # a contested choice must look like real text on its own merits.
+        accepted = viable == 1 or best_quality >= _MIN_TEXT_QUALITY
+    else:
+        # A side that failed the null check can win only when a
+        # null-qualified side actually decoded (so the quality comparison
+        # was a fair fight, e.g. real CJK beating its byte-swapped scatter)
+        # and the winner clears the quality floor.  If the null-favored
+        # side could not even decode, the data is corrupt in the only byte
+        # order the evidence supports: report nothing rather than the swap.
+        accepted = qualified_side_decoded and best_quality >= _MIN_TEXT_QUALITY
+    if accepted:
         return DetectionResult(
             encoding=best_encoding,
             confidence=DETERMINISTIC_CONFIDENCE,

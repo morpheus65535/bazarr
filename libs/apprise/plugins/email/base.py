@@ -25,6 +25,7 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+import contextlib
 from datetime import datetime
 from email.header import Header
 from email.mime.application import MIMEApplication
@@ -34,6 +35,7 @@ from email.mime.text import MIMEText
 from email.utils import format_datetime, formataddr, make_msgid
 import re
 import smtplib
+import ssl
 from typing import Optional
 
 from ...common import NotifyFormat, NotifyType, PersistentStoreMode
@@ -119,6 +121,8 @@ class NotifyEmail(NotifyBase):
     # Define object templates
     templates = (
         "{schema}://{host}",
+        "{schema}://{host}:{port}",
+        "{schema}://{host}:{port}/{targets}",
         "{schema}://{host}/{targets}",
         "{schema}://{user}@{host}",
         "{schema}://{user}@{host}/{targets}",
@@ -231,6 +235,11 @@ class NotifyEmail(NotifyBase):
                 "default": False,
                 "map_to": "use_wkd",
             },
+            "inline": {
+                "name": _("Inline Attachments"),
+                "type": "bool",
+                "default": False,
+            },
             "to": {
                 "name": _("To Email"),
                 "type": "string",
@@ -269,6 +278,7 @@ class NotifyEmail(NotifyBase):
         pgp_key=None,
         pgp_privkey=None,
         use_wkd=False,
+        inline=None,
         **kwargs,
     ):
         """
@@ -531,6 +541,12 @@ class NotifyEmail(NotifyBase):
                 "ask admin to install PGPy"
             )
 
+        # Store inline attachment mode (RFC 2387); fall back to the
+        # template default when the value is None or unrecognisable
+        self.inline = parse_bool(
+            inline, self.template_args["inline"]["default"]
+        )
+
         return
 
     def apply_email_defaults(self, secure_mode=None, port=None, **kwargs):
@@ -565,7 +581,7 @@ class NotifyEmail(NotifyBase):
 
             match = templates.EMAIL_TEMPLATES[i][1].match(from_addr)
             if match:
-                self.logger.info(
+                self.logger.debug(
                     f"Applying {templates.EMAIL_TEMPLATES[i][0]} Defaults"
                 )
 
@@ -650,24 +666,36 @@ class NotifyEmail(NotifyBase):
         # Always call throttle before any remote server i/o is made
         self.throttle()
 
+        # Build an SSL context that honours our verify_certificate setting so
+        # that SMTPS/STARTTLS connections actually validate the remote server's
+        # certificate (and hostname) instead of silently accepting any
+        # certificate presented to us.
+        context = ssl.create_default_context()
+        if not self.verify_certificate:
+            context.check_hostname = False
+            context.verify_mode = ssl.CERT_NONE
+
         try:
             self.logger.debug("Connecting to remote SMTP server...")
             socket_func = smtplib.SMTP
+            socket_args = {}
             if self.secure_mode == SecureMailMode.SSL:
                 self.logger.debug("Securing connection with SSL...")
                 socket_func = smtplib.SMTP_SSL
+                socket_args["context"] = context
 
             socket = socket_func(
                 self.smtp_host,
                 self.port,
                 None,
                 timeout=self.socket_connect_timeout,
+                **socket_args,
             )
 
             if self.secure_mode == SecureMailMode.STARTTLS:
                 # Handle Secure Connections
                 self.logger.debug("Securing connection with STARTTLS...")
-                socket.starttls()
+                socket.starttls(context=context)
 
             self.logger.trace("Login ID: {}".format(self.user))
             if self.user and self.password:
@@ -698,6 +726,7 @@ class NotifyEmail(NotifyBase):
                 names=self.names,
                 pgp=self.pgp,
                 pgp_mode=self.pgp_mode,
+                inline=self.inline,
                 tzinfo=self.tzinfo,
             ):
                 try:
@@ -735,7 +764,13 @@ class NotifyEmail(NotifyBase):
         finally:
             # Gracefully terminate the connection with the server
             if socket is not None:
-                socket.quit()
+                with contextlib.suppress(
+                    OSError, smtplib.SMTPException, RuntimeError
+                ):
+                    # Handles a failed TLS handshake that may have already
+                    # invalidated the socket.
+                    socket.quit()
+                    pass
 
         # Reduce our dictionary (eliminate expired keys if any)
         self.pgp.prune()
@@ -779,6 +814,10 @@ class NotifyEmail(NotifyBase):
         # Include wkd= when Web Key Directory lookup is enabled
         if self.use_wkd:
             params["wkd"] = "yes"
+
+        # Emit inline flag only when enabled
+        if self.inline:
+            params["inline"] = "yes"
 
         # Append our headers into our parameters
         params.update({"+{}".format(k): v for k, v in self.headers.items()})
@@ -1023,6 +1062,13 @@ class NotifyEmail(NotifyBase):
                 results["qsd"]["pgpprv"]
             )
 
+        # Get inline attachment flag
+        if "inline" in results["qsd"]:
+            results["inline"] = parse_bool(
+                results["qsd"]["inline"],
+                NotifyEmail.template_args["inline"]["default"],
+            )
+
         # The From address is a must; either through the use of templates
         # from= entry and/or merging the user and hostname together, this
         # must be calculated or parse_url will fail.
@@ -1122,6 +1168,9 @@ class NotifyEmail(NotifyBase):
         pgp=None,
         # PGP mode string (PGPMode.NONE / PGPMode.SIGN / PGPMode.ENCRYPT)
         pgp_mode=PGP_MODE_DEFAULT,
+        # When True, image attachments are embedded inline (RFC 2387)
+        # so HTML bodies can reference them via <img src="cid:filename">
+        inline=False,
         # Define our timezone; if one isn't provided, then we use
         # the system time instead
         tzinfo=None,
@@ -1234,6 +1283,97 @@ class NotifyEmail(NotifyBase):
             if reply_to_:
                 logger.debug("Email Reply-To: {}".format(", ".join(reply_to_)))
 
+            # When inline mode is active, pre-scan image attachments
+            # before the MIME body is built so the modified body is
+            # picked up by all parts (text/plain alternative included).
+            #
+            # HTML emails: collect any existing cid:filename refs from
+            # the body, then append <br/><img src="cid:name"> for each
+            # image attachment that is not yet referenced.  This ensures
+            # all images are embedded inline -- even when the caller did
+            # not write the cid: anchors manually.
+            #
+            # Plain-text emails: images cannot be embedded; append a
+            # short [Image: name] marker so the recipient knows the
+            # attachment is there.
+            #
+            # Non-image attachments are never modified here; they always
+            # fall back to standard Content-Disposition: attachment.
+            cid_refs = set()
+            if inline and attach:
+                if notify_format == NotifyFormat.HTML:
+                    # Collect filenames already referenced via cid:;
+                    # decode %20 to spaces so filenames with spaces match
+                    # the raw attachment name regardless of how the caller
+                    # encoded the URI.
+                    cid_refs = {
+                        ref.replace("%20", " ")
+                        for ref in re.findall(r'cid:([^\s"\'>\)]+)', body)
+                    }
+
+                    # Build a set of all attachment filenames so we can
+                    # warn about cid: refs that have no matching file
+                    _attach_names = {
+                        _a.name or f"file{_no:03}.dat"
+                        for _no, _a in enumerate(attach, start=1)
+                    }
+
+                    # Warn for every cid: ref in the body that has no
+                    # corresponding attachment -- the user likely made a
+                    # typo or forgot to include the file
+                    for _ref in sorted(cid_refs - _attach_names):
+                        logger.warning(
+                            "Email inline: no attachment matches "
+                            "cid:%s -- check the filename.",
+                            _ref,
+                        )
+
+                    # Drop refs that have no matching attachment so they
+                    # do not influence the multipart/related decision.
+                    # Note: only IMAGE attachments are ever auto-appended
+                    # (see img_appends loop below), but explicit cid: refs
+                    # in the caller-supplied body are honored for any
+                    # attachment type -- a cid: URI can only resolve
+                    # within the same MIME package, so if the caller wrote
+                    # it they clearly attached the file on purpose.
+                    cid_refs &= _attach_names
+
+                    # Append inline anchors for any image not yet listed
+                    img_appends = []
+                    for _no, _a in enumerate(attach, start=1):
+                        _fname = _a.name or f"file{_no:03}.dat"
+                        if (_a.mimetype or "").lower().startswith(
+                            "image/"
+                        ) and _fname not in cid_refs:
+                            img_appends.append(_fname)
+                            cid_refs.add(_fname)
+
+                    if img_appends:
+                        # Encode spaces as %20 in cid: URIs so filenames
+                        # with spaces remain valid HTML attribute values
+                        body = body + "".join(
+                            '<br/><img src="cid:{}">'.format(
+                                n.replace(" ", "%20")
+                            )
+                            for n in img_appends
+                        )
+
+                else:
+                    # Plain text: annotate inline images with a short
+                    # text placeholder (images cannot be embedded here)
+                    txt_imgs = []
+                    for _no, _a in enumerate(attach, start=1):
+                        _fname = _a.name or f"file{_no:03}.dat"
+                        if (_a.mimetype or "").lower().startswith("image/"):
+                            txt_imgs.append(_fname)
+
+                    if txt_imgs:
+                        body = (
+                            body
+                            + "\n"
+                            + "\n".join(f"[Image: {n}]" for n in txt_imgs)
+                        )
+
             # Prepare Email Message
             if notify_format == NotifyFormat.HTML:
                 base = MIMEMultipart("alternative")
@@ -1247,12 +1387,16 @@ class NotifyEmail(NotifyBase):
                     )
                 )
                 base.attach(MIMEText(body, "html", "utf-8"))
+
             else:
                 base = MIMEText(body, "plain", "utf-8")
 
             if attach:
-                mixed = MIMEMultipart("mixed")
+                # Use multipart/related when any image will be embedded
+                # inline (RFC 2387); otherwise keep multipart/mixed
+                mixed = MIMEMultipart("related" if cid_refs else "mixed")
                 mixed.attach(base)
+
                 # Now store our attachments
                 for no, attachment in enumerate(attach, start=1):
                     if not attachment:
@@ -1272,7 +1416,7 @@ class NotifyEmail(NotifyBase):
                         )
                     )
 
-                    with open(attachment.path, "rb") as abody:
+                    with attachment.open() as abody:
                         app = MIMEApplication(abody.read())
                         app.set_type(attachment.mimetype)
 
@@ -1283,13 +1427,34 @@ class NotifyEmail(NotifyBase):
                             else f"file{no:03}.dat"
                         )
 
-                        app.add_header(
-                            "Content-Disposition",
-                            'attachment; filename="{}"'.format(
-                                Header(filename, "utf-8")
-                            ),
-                        )
+                        if filename in cid_refs:
+                            # Filename is referenced by a cid: anchor in
+                            # the HTML body; embed it inline so clients
+                            # render it in-place rather than as a download
+                            app.add_header(
+                                "Content-Disposition",
+                                'inline; filename="{}"'.format(
+                                    Header(filename, "utf-8")
+                                ),
+                            )
+                            app.add_header(
+                                "Content-ID",
+                                # Encode spaces so the Content-ID matches
+                                # the cid: URI in the HTML anchor
+                                "<{}>".format(filename.replace(" ", "%20")),
+                            )
+
+                        else:
+                            # Non-image or plain-text-email attachment;
+                            # keep it as a regular downloadable file
+                            app.add_header(
+                                "Content-Disposition",
+                                'attachment; filename="{}"'.format(
+                                    Header(filename, "utf-8")
+                                ),
+                            )
                         mixed.attach(app)
+
                 base = mixed
 
             if pgp and pgp_mode == PGPMode.SIGN:

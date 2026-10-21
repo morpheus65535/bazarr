@@ -1,25 +1,26 @@
 """
 Config module.
 """
+
+from __future__ import annotations
+
 from importlib import import_module
-from typing import Any, List
+from typing import TYPE_CHECKING, Any
 
-from rebulk import Rebulk
+if TYPE_CHECKING:
+    from rebulk import Rebulk
 
-_regex_prefix = 're:'
-_import_prefix = 'import:'
-_import_cache = {}
-_eval_prefix = 'eval:'
-_eval_cache = {}
-_pattern_types = ('regex', 'string')
-_default_module_names = {
-    'validator': 'guessit.rules.common.validators',
-    'formatter': 'guessit.rules.common.formatters'
-}
+_regex_prefix = "re:"
+_import_prefix = "import:"
+_import_cache: dict[Any, Any] = {}
+_eval_prefix = "eval:"
+_eval_cache: dict[Any, Any] = {}
+_pattern_types = ("regex", "string")
+_default_module_names = {"validator": "guessit.rules.common.validators", "formatter": "guessit.rules.common.formatters"}
 
 
-def _process_option(name: str, value: Any):
-    if name in ('validator', 'conflict_solver', 'formatter'):
+def _process_option(name: str, value: Any) -> Any:
+    if name in ("validator", "conflict_solver", "formatter"):
         if isinstance(value, dict):
             return {item_key: _process_option(name, item_value) for item_key, item_value in value.items()}
         if value is not None:
@@ -27,12 +28,14 @@ def _process_option(name: str, value: Any):
     return value
 
 
-def _import(value: str, default_module_name=None):
-    if '.' in value:
-        module_name, target = value.rsplit(':', 1)
+def _import(value: str, default_module_name: str | None = None) -> Any:
+    module_name: str | None
+    if "." in value:
+        module_name, target = value.rsplit(":", 1)
     else:
         module_name = default_module_name
         target = value
+    assert module_name is not None
     import_id = module_name + ":" + target
     if import_id in _import_cache:
         return _import_cache[import_id]
@@ -48,36 +51,36 @@ def _import(value: str, default_module_name=None):
     return imported
 
 
-def _eval(value: str):
+def _eval(value: str) -> Any:
     compiled = _eval_cache.get(value)
     if not compiled:
-        compiled = compile(value, '<string>', 'eval')
-    return eval(compiled)  # pylint:disable=eval-used
+        compiled = compile(value, "<string>", "eval")
+    return eval(compiled)
 
 
-def _process_option_executable(value: str, default_module_name=None):
+def _process_option_executable(value: str, default_module_name: str | None = None) -> Any:
     if value.startswith(_import_prefix):
-        value = value[len(_import_prefix):]
+        value = value[len(_import_prefix) :]
         return _import(value, default_module_name)
     if value.startswith(_eval_prefix):
-        value = value[len(_eval_prefix):]
+        value = value[len(_eval_prefix) :]
         return _eval(value)
-    if value.startswith('lambda ') or value.startswith('lambda:'):
+    if value.startswith(("lambda ", "lambda:")):
         return _eval(value)
     return value
 
 
-def _process_callable_entry(callable_spec: str, rebulk: Rebulk, entry: dict):
+def _process_callable_entry(callable_spec: str, rebulk: Rebulk, entry: dict[str, Any]) -> None:
     _process_option_executable(callable_spec)(rebulk, **entry)
 
 
-def _build_entry_decl(entry, options, value):
+def _build_entry_decl(entry: Any, options: dict[Any, Any], value: str) -> dict[str, Any]:
     entry_decl = dict(options.get(None, {}))
-    if not value.startswith('_'):
-        entry_decl['value'] = value
+    if not value.startswith("_"):
+        entry_decl["value"] = value
     if isinstance(entry, str):
         if entry.startswith(_regex_prefix):
-            entry_decl["regex"] = [entry[len(_regex_prefix):]]
+            entry_decl["regex"] = [entry[len(_regex_prefix) :]]
         else:
             entry_decl["string"] = [entry]
     else:
@@ -85,16 +88,15 @@ def _build_entry_decl(entry, options, value):
     if "pattern" in entry_decl:
         legacy_pattern = entry.pop("pattern")
         if legacy_pattern.startswith(_regex_prefix):
-            entry_decl["regex"] = [legacy_pattern[len(_regex_prefix):]]
+            entry_decl["regex"] = [legacy_pattern[len(_regex_prefix) :]]
         else:
             entry_decl["string"] = [legacy_pattern]
     return entry_decl
 
 
-def load_patterns(rebulk: Rebulk,
-                  pattern_type: str,
-                  patterns: List[str],
-                  options: dict = None):
+def load_patterns(
+    rebulk: Rebulk, pattern_type: str, patterns: list[str], options: dict[Any, Any] | None = None
+) -> None:
     """
     Load patterns for a prepared config entry
     :param rebulk: Rebulk builder to use.
@@ -105,16 +107,14 @@ def load_patterns(rebulk: Rebulk,
     """
     default_options = options.get(None) if options else None
     item_options = dict(default_options) if default_options else {}
-    pattern_type_option = options.get(pattern_type)
+    pattern_type_option = options.get(pattern_type) if options else None
     if pattern_type_option:
         item_options.update(pattern_type_option)
     item_options = {name: _process_option(name, value) for name, value in item_options.items()}
     getattr(rebulk, pattern_type)(*patterns, **item_options)
 
 
-def load_config_patterns(rebulk: Rebulk,
-                         config: dict,
-                         options: dict = None):
+def load_config_patterns(rebulk: Rebulk, config: dict[str, Any] | None, options: dict[Any, Any] | None = None) -> None:
     """
     Load patterns defined in given config.
     :param rebulk: Rebulk builder to use.
@@ -124,13 +124,16 @@ def load_config_patterns(rebulk: Rebulk,
     the default kwargs options to pass.
     :return:
     """
+    if config is None:
+        return
+
     if options is None:
         options = {}
 
     for value, raw_entries in config.items():
         entries = raw_entries if isinstance(raw_entries, list) else [raw_entries]
         for entry in entries:
-            if isinstance(entry, dict) and "callable" in entry.keys():
+            if isinstance(entry, dict) and "callable" in entry:
                 _process_callable_entry(entry.pop("callable"), rebulk, entry)
                 continue
             entry_decl = _build_entry_decl(entry, options, value)

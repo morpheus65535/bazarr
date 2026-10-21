@@ -137,13 +137,14 @@ class StateMachineMatcher:
                             remaining = [""]
 
                     converter_groups = sorted(
-                        match.groupdict().items(), key=lambda entry: entry[0]
+                        (
+                            item
+                            for item in match.groupdict().items()
+                            if item[0].startswith("__werkzeug_")
+                        ),
+                        key=lambda item: int(item[0][11:]),
                     )
-                    groups = [
-                        value
-                        for key, value in converter_groups
-                        if key[:11] == "__werkzeug_"
-                    ]
+                    groups = [item[1] for item in converter_groups]
                     rv = _match(new_state, remaining, values + groups)
                     if rv is not None:
                         return rv
@@ -188,8 +189,8 @@ class StateMachineMatcher:
             for name, value in zip(rule._converters.keys(), values):
                 try:
                     value = rule._converters[name].to_python(value)
-                except ValidationError:
-                    raise NoMatch(have_match_for, websocket_mismatch) from None
+                except ValidationError as e:
+                    raise NoMatch(have_match_for, websocket_mismatch) from e
                 result[str(name)] = value
             if rule.defaults:
                 result.update(rule.defaults)

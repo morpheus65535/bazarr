@@ -30,7 +30,7 @@ class GraphvizLexer(RegexLexer):
         'root': [
             (r'\s+', Whitespace),
             (r'(#|//).*?$', Comment.Single),
-            (r'/(\\\n)?[*](.|\n)*?[*](\\\n)?/', Comment.Multiline),
+            (r'/(\\\n)?[*][\s\S]*?[*](\\\n)?/', Comment.Multiline),
             (r'(?i)(node|edge|graph|digraph|subgraph|strict)\b', Keyword),
             (r'--|->', Operator),
             (r'[{}[\]:;,]', Punctuation),

@@ -35,7 +35,7 @@ class BashLexer(RegexLexer):
                  '.kshrc', 'kshrc',
                  'PKGBUILD']
     mimetypes = ['application/x-sh', 'application/x-shellscript', 'text/x-shellscript']
-    url = 'https://en.wikipedia.org/wiki/Unix_shell'
+    url = 'https://www.gnu.org/software/bash/manual/bash.html'
     version_added = '0.6'
 
     tokens = {
@@ -55,7 +55,7 @@ class BashLexer(RegexLexer):
         ],
         'basic': [
             (r'\b(if|fi|else|while|in|do|done|for|then|return|function|case|'
-             r'select|break|continue|until|esac|elif)(\s*)\b',
+             r'select|break|continue|until|esac|elif)(?![\w#$?!*@-])(\s*)',
              bygroups(Keyword, Whitespace)),
             (r'\b(alias|bg|bind|builtin|caller|cd|command|compgen|'
              r'complete|declare|dirs|disown|echo|enable|eval|exec|exit|'
@@ -237,7 +237,7 @@ class BashSessionLexer(ShellSessionBaseLexer):
     _innerLexerCls = BashLexer
     _ps1rgx = re.compile(
         r'^((?:(?:\[.*?\])|(?:\(\S+\))?(?:| |sh\S*?|\w+\S+[@:]\S+(?:\s+\S+)' \
-        r'?|\[\S+[@:][^\n]+\].+))\s*[$#%]\s*)(.*\n?)')
+        r'?|\[\S+[@:][^\n]+\].+))\s*[$#%❯]\s*)(.*\n?)')
     _ps2 = '> '
 
 
@@ -817,7 +817,7 @@ class FishShellLexer(RegexLexer):
             (r'(?s)\$?"(\\\\|\\[0-7]+|\\.|[^"\\$])*"', String.Double),
             (r'"', String.Double, 'string'),
             (r"(?s)\$'(\\\\|\\[0-7]+|\\.|[^'\\])*'", String.Single),
-            (r"(?s)'.*?'", String.Single),
+            (r"'(\\\\|\\[^\\]|[^'\\])*'", String.Single),
             (r';', Punctuation),
             (r'&|\||\^|<|>', Operator),
             (r'\s+', Text),

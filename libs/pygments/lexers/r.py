@@ -108,7 +108,7 @@ class SLexer(RegexLexer):
              r'letters|LETTERS|Inf|TRUE|FALSE|NaN|pi|\.\.(\.|[0-9]+))'
              r'(?![\w.])',
              Keyword.Constant),
-            (r'(T|F)\b', Name.Builtin.Pseudo),
+            (r'[TF]\b', Name.Builtin.Pseudo),
         ],
         'numbers': [
             # hex number

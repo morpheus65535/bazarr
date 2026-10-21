@@ -29,6 +29,17 @@ __all__ = ['BBCodeLexer', 'MoinWikiLexer', 'RstLexer', 'TexLexer', 'GroffLexer',
            'WikitextLexer']
 
 
+def _shift_indices(tokens, offset):
+    """Re-base token indices yielded by a delegated sub-lexer.
+
+    A sub-lexer's ``get_tokens_unprocessed`` returns indices relative to the
+    snippet it was given (starting at 0), but the surrounding lexer must yield
+    indices that are absolute within the whole input text.
+    """
+    for index, token, value in tokens:
+        yield index + offset, token, value
+
+
 class BBCodeLexer(RegexLexer):
     """
     A lexer that highlights BBCode(-like) syntax.
@@ -168,12 +179,14 @@ class RstLexer(RegexLexer):
                 code += line[indention_size:]
             else:
                 code += line
-        yield from do_insertions(ins, lexer.get_tokens_unprocessed(code))
+        yield from _shift_indices(
+            do_insertions(ins, lexer.get_tokens_unprocessed(code)),
+            match.start(8))
 
     # from docutils.parsers.rst.states
     closers = '\'")]}>\u2019\u201d\xbb!?'
     unicode_delimiters = '\u2010\u2011\u2012\u2013\u2014\u00a0'
-    end_string_suffix = (rf'((?=$)|(?=[-/:.,; \n\x00{re.escape(unicode_delimiters)}{re.escape(closers)}]))')
+    end_string_suffix = (rf'($|(?=[-/:.,; \n\x00{re.escape(unicode_delimiters)}{re.escape(closers)}]))')
 
     tokens = {
         'root': [
@@ -207,7 +220,7 @@ class RstLexer(RegexLexer):
              r'(\n[ \t]*\n)([ \t]+)(.*)(\n)((?:(?:\8.*)?\n)+)',
              _handle_sourcecode),
             # A directive
-            (r'^( *\.\.)(\s*)([\w:-]+?)(::)(?:([ \t]*)(.*))',
+            (r'^( *\.\.)(\s*)([\w:.+-]+?)(::)(?:([ \t]*)(.*))',
              bygroups(Punctuation, Text, Operator.Word, Punctuation, Text,
                       using(this, state='inline'))),
             # A reference target
@@ -239,9 +252,9 @@ class RstLexer(RegexLexer):
             (r'(`.+?)(<.+?>)(`__?)',  # reference with inline target
              bygroups(String, String.Interpol, String)),
             (r'`.+?`__?', String),  # reference
-            (r'(`.+?`)(:[a-zA-Z0-9:-]+?:)?',
+            (r'(`.+?`)(:[a-zA-Z0-9:.+-]+?:)?',
              bygroups(Name.Variable, Name.Attribute)),  # role
-            (r'(:[a-zA-Z0-9:-]+?:)(`.+?`)',
+            (r'(:[a-zA-Z0-9:.+-]+?:)(`.+?`)',
              bygroups(Name.Attribute, Name.Variable)),  # role (content first)
             (r'\*\*.+?\*\*', Generic.Strong),  # Strong emphasis
             (r'\*.+?\*', Generic.Emph),  # Emphasis
@@ -292,6 +305,9 @@ class TexLexer(RegexLexer):
             (r'[&_^]', Name.Builtin),
         ],
         'root': [
+            (r'(\\begin)(\{)((?:display)?math|equation\*?|align\*?)(\})',
+             bygroups(Keyword, Name.Builtin, Name.Builtin, Name.Builtin),
+             'environmentmath'),
             (r'\\\[', String.Backtick, 'displaymath'),
             (r'\\\(', String, 'inlinemath'),
             (r'\$\$', String.Backtick, 'displaymath'),
@@ -317,6 +333,11 @@ class TexLexer(RegexLexer):
             (r'\\\]', String, '#pop'),
             (r'\$\$', String, '#pop'),
             (r'\$', Name.Builtin),
+            include('math'),
+        ],
+        'environmentmath': [
+            (r'(\\end)(\{)((?:display)?math|equation\*?|align\*?)(\})',
+             bygroups(Keyword, Name.Builtin, Name.Builtin, Name.Builtin), '#pop'),
             include('math'),
         ],
         'command': [
@@ -533,8 +554,9 @@ class MarkdownLexer(RegexLexer):
         if lexer is None:
             yield match.start('code'), String, code
         else:
-            # FIXME: aren't the offsets wrong?
-            yield from do_insertions([], lexer.get_tokens_unprocessed(code))
+            yield from _shift_indices(
+                do_insertions([], lexer.get_tokens_unprocessed(code)),
+                match.start('code'))
 
         yield match.start('terminator'), String.Backtick, match.group('terminator')
 
@@ -571,7 +593,7 @@ class MarkdownLexer(RegexLexer):
                  (?P<whitespace>[^\S\n]+)
                  (?P<extra>.*))?
               (?P<newline>\n)
-              (?P<code>(.|\n)*?)
+              (?P<code>([\s\S])*?)
               (?P<terminator>^\s*```$\n)
               ''',
              _handle_codeblock),
@@ -585,6 +607,10 @@ class MarkdownLexer(RegexLexer):
             (r'([^`]?)(`[^`\n]+`)', bygroups(Text, String.Backtick)),
             # warning: the following rules eat outer tags.
             # eg. **foo _bar_ baz** => foo and baz are not recognized as bold
+            # bold-italics fenced by '***'
+            (r'([^\*]?)(\*\*\*[^* \n][^*\n]*\*\*\*)', bygroups(Text, Generic.EmphStrong)),
+            # bold-italics fenced by '___'
+            (r'([^_]?)(___[^_ \n][^_\n]*___)', bygroups(Text, Generic.EmphStrong)),
             # bold fenced by '**'
             (r'([^\*]?)(\*\*[^* \n][^*\n]*\*\*)', bygroups(Text, Generic.Strong)),
             # bold fenced by '__'
@@ -596,7 +622,7 @@ class MarkdownLexer(RegexLexer):
             # strikethrough
             (r'([^~]?)(~~[^~ \n][^~\n]*~~)', bygroups(Text, Generic.Deleted)),
             # mentions and topics (twitter and github stuff)
-            (r'[@#][\w/:]+', Name.Entity),
+            (r'[@#][\w/:-]+', Name.Entity),
             # (image?) links eg: ![Image of Yaktocat](https://octodex.github.com/images/yaktocat.png)
             (r'(!?\[)([^]]+)(\])(\()([^)]+)(\))',
              bygroups(Text, Name.Tag, Text, Text, Name.Attribute, Text)),
@@ -661,27 +687,27 @@ class OrgLexer(RegexLexer):
             (r'^( *)([0-9]+[.)])( \[@[0-9]+\])?', bygroups(Whitespace, Keyword, Generic.Emph)),
 
             # Dynamic blocks
-            (r'(?i)^( *#\+begin: *)((?:.|\n)*?)(^ *#\+end: *$)',
+            (r'(?i)^( *#\+begin: *)([\s\S]*?)(^ *#\+end: *$)',
              bygroups(Operator.Word, using(this), Operator.Word)),
 
             # Comment blocks
-            (r'(?i)^( *#\+begin_comment *\n)((?:.|\n)*?)(^ *#\+end_comment *$)',
+            (r'(?i)^( *#\+begin_comment *\n)([\s\S]*?)(^ *#\+end_comment *$)',
              bygroups(Operator.Word, Comment.Multiline, Operator.Word)),
 
             # Source code blocks
             # TODO: language-dependent syntax highlighting (see Markdown lexer)
-            (r'(?i)^( *#\+begin_src .*)((?:.|\n)*?)(^ *#\+end_src *$)',
+            (r'(?i)^( *#\+begin_src .*)([\s\S]*?)(^ *#\+end_src *$)',
              bygroups(Operator.Word, Text, Operator.Word)),
 
             # Other blocks
-            (r'(?i)^( *#\+begin_\w+)( *\n)((?:.|\n)*?)(^ *#\+end_\w+)( *$)',
+            (r'(?i)^( *#\+begin_\w+)( *\n)([\s\S]*?)(^ *#\+end_\w+)( *$)',
              bygroups(Operator.Word, Whitespace, Text, Operator.Word, Whitespace)),
 
             # Keywords
             (r'^(#\+\w+:)(.*)$', bygroups(Name.Namespace, Text)),
 
             # Properties and drawers
-            (r'(?i)^( *:\w+: *\n)((?:.|\n)*?)(^ *:end: *$)',
+            (r'(?i)^( *:\w+: *\n)([\s\S]*?)(^ *:end: *$)',
              bygroups(Name.Decorator, Comment.Special, Name.Decorator)),
 
             # Line break operator
@@ -769,7 +795,9 @@ class TiddlyWiki5Lexer(RegexLexer):
             yield match.start(4), String, code
             return
 
-        yield from do_insertions([], lexer.get_tokens_unprocessed(code))
+        yield from _shift_indices(
+            do_insertions([], lexer.get_tokens_unprocessed(code)),
+            match.start(4))
 
         yield match.start(5), String, match.group(5)
 
@@ -796,7 +824,9 @@ class TiddlyWiki5Lexer(RegexLexer):
             yield match.start(3), String, code
             return
 
-        yield from do_insertions([], lexer.get_tokens_unprocessed(code))
+        yield from _shift_indices(
+            do_insertions([], lexer.get_tokens_unprocessed(code)),
+            match.start(3))
 
         yield match.start(4), String, match.group(4)
 

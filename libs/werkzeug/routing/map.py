@@ -300,7 +300,7 @@ class Map:
         wsgi_server_name = get_host(env).lower()
         scheme = env["wsgi.url_scheme"]
         upgrade = any(
-            v.strip() == "upgrade"
+            v.strip(" \t") == "upgrade"
             for v in env.get("HTTP_CONNECTION", "").lower().split(",")
         )
 

@@ -8,7 +8,7 @@
     :license: BSD, see LICENSE for details.
 """
 
-from pygments.lexer import RegexLexer, include, bygroups
+from pygments.lexer import RegexLexer, include, bygroups, words
 from pygments.token import Generic, Comment, String, Text, Keyword, Name, \
     Punctuation, Number, Whitespace
 
@@ -74,30 +74,41 @@ class PyPyLogLexer(RegexLexer):
             (r"(None|descr|ConstClass|ConstPtr|TargetToken)", Name),
             (r"<.*?>+", Name.Builtin),
             (r"(label|debug_merge_point|jump|finish)", Name.Class),
-            (r"(int_add_ovf|int_add|int_sub_ovf|int_sub|int_mul_ovf|int_mul|"
-             r"int_floordiv|int_mod|int_lshift|int_rshift|int_and|int_or|"
-             r"int_xor|int_eq|int_ne|int_ge|int_gt|int_le|int_lt|int_is_zero|"
-             r"int_is_true|"
-             r"uint_floordiv|uint_ge|uint_lt|"
-             r"float_add|float_sub|float_mul|float_truediv|float_neg|"
-             r"float_eq|float_ne|float_ge|float_gt|float_le|float_lt|float_abs|"
-             r"ptr_eq|ptr_ne|instance_ptr_eq|instance_ptr_ne|"
-             r"cast_int_to_float|cast_float_to_int|"
-             r"force_token|quasiimmut_field|same_as|virtual_ref_finish|"
-             r"virtual_ref|mark_opaque_ptr|"
-             r"call_may_force|call_assembler|call_loopinvariant|"
-             r"call_release_gil|call_pure|call|"
-             r"new_with_vtable|new_array|newstr|newunicode|new|"
-             r"arraylen_gc|"
-             r"getarrayitem_gc_pure|getarrayitem_gc|setarrayitem_gc|"
-             r"getarrayitem_raw|setarrayitem_raw|getfield_gc_pure|"
-             r"getfield_gc|getinteriorfield_gc|setinteriorfield_gc|"
-             r"getfield_raw|setfield_gc|setfield_raw|"
-             r"strgetitem|strsetitem|strlen|copystrcontent|"
-             r"unicodegetitem|unicodesetitem|unicodelen|"
-             r"guard_true|guard_false|guard_value|guard_isnull|"
-             r"guard_nonnull_class|guard_nonnull|guard_class|guard_no_overflow|"
-             r"guard_not_forced|guard_no_exception|guard_not_invalidated)",
+            (words(('int_add_ovf', 'int_add', 'int_sub_ovf', 'int_sub',
+                    'int_mul_ovf', 'int_mul', 'int_floordiv',
+                    'int_mod', 'int_lshift', 'int_rshift',
+                    'int_and', 'int_or', 'int_xor', 'int_eq',
+                    'int_ne', 'int_ge', 'int_gt', 'int_le',
+                    'int_lt', 'int_is_zero', 'int_is_true',
+                    'uint_floordiv', 'uint_ge', 'uint_lt',
+                    'float_add', 'float_sub', 'float_mul',
+                    'float_truediv', 'float_neg', 'float_eq',
+                    'float_ne', 'float_ge', 'float_gt',
+                    'float_le', 'float_lt', 'float_abs',
+                    'ptr_eq', 'ptr_ne', 'instance_ptr_eq',
+                    'instance_ptr_ne', 'cast_int_to_float',
+                    'cast_float_to_int', 'force_token',
+                    'quasiimmut_field', 'same_as',
+                    'virtual_ref_finish', 'virtual_ref',
+                    'mark_opaque_ptr', 'call_may_force',
+                    'call_assembler', 'call_loopinvariant',
+                    'call_release_gil', 'call_pure', 'call',
+                    'new_with_vtable', 'new_array', 'newstr',
+                    'newunicode', 'new', 'arraylen_gc',
+                    'getarrayitem_gc_pure', 'getarrayitem_gc',
+                    'setarrayitem_gc', 'getarrayitem_raw',
+                    'setarrayitem_raw', 'getfield_gc_pure',
+                    'getfield_gc', 'getinteriorfield_gc',
+                    'setinteriorfield_gc', 'getfield_raw',
+                    'setfield_gc', 'setfield_raw', 'strgetitem',
+                    'strsetitem', 'strlen', 'copystrcontent',
+                    'unicodegetitem', 'unicodesetitem',
+                    'unicodelen', 'guard_true', 'guard_false',
+                    'guard_value', 'guard_isnull',
+                    'guard_nonnull_class', 'guard_nonnull',
+                    'guard_class', 'guard_no_overflow',
+                    'guard_not_forced', 'guard_no_exception',
+                    'guard_not_invalidated')),
              Name.Builtin),
             include("extra-stuff"),
         ],

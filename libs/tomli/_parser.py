@@ -4,8 +4,11 @@
 
 from __future__ import annotations
 
+# Defer loading regular expressions until we actually need them in
+# parse_value().
+__lazy_modules__ = ["tomli._re", "tomllib._re"]
+
 import sys
-from types import MappingProxyType
 
 from ._re import (
     RE_DATETIME,
@@ -15,6 +18,9 @@ from ._re import (
     match_to_localtime,
     match_to_number,
 )
+
+if sys.version_info < (3, 15):  # pragma: no cover
+    from types import MappingProxyType as frozendict
 
 TYPE_CHECKING = False
 if TYPE_CHECKING:
@@ -29,10 +35,12 @@ if TYPE_CHECKING:
 # mypyc docs this will be fixed in the future:
 # https://mypyc.readthedocs.io/en/latest/differences_from_python.html#stack-overflows
 # Before mypyc's fix is in, recursion needs to be limited by this library.
-# Choosing `sys.getrecursionlimit()` as maximum inline table/array nesting
-# level, as it allows more nesting than pure Python, but still seems a far
-# lower number than where mypyc binaries crash.
-MAX_INLINE_NESTING: Final = sys.getrecursionlimit()
+# Choosing 400 as maximum inline table/array nesting level, as it's 4x the
+# spec recommended minimum (https://github.com/toml-lang/toml/pull/1087)
+# (unreleased at the time of writing) and less than half of what causes an
+# unrecoverable crash in a worker (not main) thread on a python:3.13-alpine
+# image.
+MAX_INLINE_NESTING: Final = 400
 
 # Pathologically excessive number of parts in a key runs into quadratic
 # behavior (e.g. in Flags.is_).
@@ -61,7 +69,7 @@ BARE_KEY_CHARS: Final = frozenset(
 KEY_INITIAL_CHARS: Final = BARE_KEY_CHARS | frozenset("\"'")
 HEXDIGIT_CHARS: Final = frozenset("abcdef" "ABCDEF" "0123456789")
 
-BASIC_STR_ESCAPE_REPLACEMENTS: Final = MappingProxyType(
+BASIC_STR_ESCAPE_REPLACEMENTS: Final = frozendict(
     {
         "\\b": "\u0008",  # backspace
         "\\t": "\u0009",  # tab

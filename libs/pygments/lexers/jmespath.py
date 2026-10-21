@@ -27,7 +27,7 @@ class JMESPathLexer(RegexLexer):
 
     tokens = {
         'string': [
-            (r"'(\\(.|\n)|[^'\\])*'", String),
+            (r"'(\\([\s\S])|[^'\\])*'", String),
         ],
         'punctuation': [
             (r'(\[\?|[\.\*\[\],:\(\)\{\}\|])', Punctuation),

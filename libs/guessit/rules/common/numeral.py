@@ -1,31 +1,90 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """
 parse numeral from various formats
 """
+
+from __future__ import annotations
+
 from rebulk.remodule import re
 
-digital_numeral = r'\d{1,4}'
+digital_numeral = r"\d{1,4}"
 
-roman_numeral = r'(?=[MCDLXVI]+)M{0,4}(?:CM|CD|D?C{0,3})(?:XC|XL|L?X{0,3})(?:IX|IV|V?I{0,3})'
+roman_numeral = r"(?=[MCDLXVI]+)M{0,4}(?:CM|CD|D?C{0,3})(?:XC|XL|L?X{0,3})(?:IX|IV|V?I{0,3})"
 
 english_word_numeral_list = [
-    'zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten',
-    'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen', 'twenty'
+    "zero",
+    "one",
+    "two",
+    "three",
+    "four",
+    "five",
+    "six",
+    "seven",
+    "eight",
+    "nine",
+    "ten",
+    "eleven",
+    "twelve",
+    "thirteen",
+    "fourteen",
+    "fifteen",
+    "sixteen",
+    "seventeen",
+    "eighteen",
+    "nineteen",
+    "twenty",
 ]
 
 french_word_numeral_list = [
-    'zéro', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf', 'dix',
-    'onze', 'douze', 'treize', 'quatorze', 'quinze', 'seize', 'dix-sept', 'dix-huit', 'dix-neuf', 'vingt'
+    "zéro",
+    "un",
+    "deux",
+    "trois",
+    "quatre",
+    "cinq",
+    "six",
+    "sept",
+    "huit",
+    "neuf",
+    "dix",
+    "onze",
+    "douze",
+    "treize",
+    "quatorze",
+    "quinze",
+    "seize",
+    "dix-sept",
+    "dix-huit",
+    "dix-neuf",
+    "vingt",
 ]
 
 french_alt_word_numeral_list = [
-    'zero', 'une', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf', 'dix',
-    'onze', 'douze', 'treize', 'quatorze', 'quinze', 'seize', 'dixsept', 'dixhuit', 'dixneuf', 'vingt'
+    "zero",
+    "une",
+    "deux",
+    "trois",
+    "quatre",
+    "cinq",
+    "six",
+    "sept",
+    "huit",
+    "neuf",
+    "dix",
+    "onze",
+    "douze",
+    "treize",
+    "quatorze",
+    "quinze",
+    "seize",
+    "dixsept",
+    "dixhuit",
+    "dixneuf",
+    "vingt",
 ]
 
 
-def __build_word_numeral(*args):
+def __build_word_numeral(*args: list[str]) -> str:
     """
     Build word numeral regexp from list.
 
@@ -36,42 +95,44 @@ def __build_word_numeral(*args):
     :return:
     :rtype:
     """
-    re_ = None
+    # Initialise to "" rather than None: Nuitka miscompiles the None branch here
+    # (Nuitka#2101), and an empty string keeps the same first-iteration behaviour.
+    re_ = ""
     for word_list in args:
         for word in word_list:
             if not re_:
-                re_ = r'(?:(?=\w+)'
+                re_ = r"(?:(?=\w+)"
             else:
-                re_ += '|'
+                re_ += "|"
             re_ += word
-    re_ += ')'
+    re_ += ")"
     return re_
 
 
 word_numeral = __build_word_numeral(english_word_numeral_list, french_word_numeral_list, french_alt_word_numeral_list)
 
-numeral = '(?:' + digital_numeral + '|' + roman_numeral + '|' + word_numeral + ')'
+numeral = "(?:" + digital_numeral + "|" + roman_numeral + "|" + word_numeral + ")"
 
-__romanNumeralMap = (
-    ('M', 1000),
-    ('CM', 900),
-    ('D', 500),
-    ('CD', 400),
-    ('C', 100),
-    ('XC', 90),
-    ('L', 50),
-    ('XL', 40),
-    ('X', 10),
-    ('IX', 9),
-    ('V', 5),
-    ('IV', 4),
-    ('I', 1)
+_roman_numeral_map = (
+    ("M", 1000),
+    ("CM", 900),
+    ("D", 500),
+    ("CD", 400),
+    ("C", 100),
+    ("XC", 90),
+    ("L", 50),
+    ("XL", 40),
+    ("X", 10),
+    ("IX", 9),
+    ("V", 5),
+    ("IV", 4),
+    ("I", 1),
 )
 
-__romanNumeralPattern = re.compile('^' + roman_numeral + '$')
+__romanNumeralPattern = re.compile("^" + roman_numeral + "$")
 
 
-def __parse_roman(value):
+def __parse_roman(value: str) -> int:
     """
     convert Roman numeral to integer
 
@@ -81,18 +142,18 @@ def __parse_roman(value):
     :rtype:
     """
     if not __romanNumeralPattern.search(value):
-        raise ValueError(f'Invalid Roman numeral: {value}')
+        raise ValueError(f"Invalid Roman numeral: {value}")
 
     result = 0
     index = 0
-    for num, integer in __romanNumeralMap:
-        while value[index:index + len(num)] == num:
+    for num, integer in _roman_numeral_map:
+        while value[index : index + len(num)] == num:
             result += integer
             index += len(num)
     return result
 
 
-def __parse_word(value):
+def __parse_word(value: str) -> int:
     """
     Convert Word numeral to integer
 
@@ -109,10 +170,16 @@ def __parse_word(value):
     raise ValueError  # pragma: no cover
 
 
-_clean_re = re.compile(r'[^\d]*(\d+)[^\d]*')
+_clean_re = re.compile(r"[^\d]*(\d+)[^\d]*")
 
 
-def parse_numeral(value, int_enabled=True, roman_enabled=True, word_enabled=True, clean=True):
+def parse_numeral(
+    value: str,
+    int_enabled: bool = True,
+    roman_enabled: bool = True,
+    word_enabled: bool = True,
+    clean: bool = True,
+) -> int:
     """
     Parse a numeric value into integer.
 
@@ -129,7 +196,6 @@ def parse_numeral(value, int_enabled=True, roman_enabled=True, word_enabled=True
     :return: Numeric value, or None if value can't be parsed
     :rtype: int
     """
-    # pylint: disable=too-many-branches
     if int_enabled:
         try:
             if clean:
@@ -162,4 +228,4 @@ def parse_numeral(value, int_enabled=True, roman_enabled=True, word_enabled=True
             return __parse_word(value)  # pragma: no cover
         except ValueError:  # pragma: no cover
             pass
-    raise ValueError('Invalid numeral: ' + value)   # pragma: no cover
+    raise ValueError("Invalid numeral: " + value)  # pragma: no cover

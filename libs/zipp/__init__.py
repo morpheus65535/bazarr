@@ -66,7 +66,7 @@ def _ancestry(path):
     path = path.rstrip(posixpath.sep)
     while path.rstrip(posixpath.sep):
         yield path
-        path, tail = posixpath.split(path)
+        path, _tail = posixpath.split(path)
 
 
 _dedupe = dict.fromkeys
@@ -156,10 +156,7 @@ class CompleteDirs(InitializedState, zipfile.ZipFile):
             return cls(source)
 
         # Only allow for FastLookup when supplied zipfile is read-only
-        if 'r' not in source.mode:
-            cls = CompleteDirs
-
-        source.__class__ = cls
+        source.__class__ = cls if 'r' in source.mode else CompleteDirs
         return source
 
     @classmethod

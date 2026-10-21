@@ -8,7 +8,7 @@
     :license: BSD, see LICENSE for details.
 """
 
-from pygments.lexer import RegexLexer, include, bygroups
+from pygments.lexer import RegexLexer, include, bygroups, words
 from pygments.token import Text, Comment, Operator, Keyword, Name, String, \
     Number, Punctuation, Whitespace
 
@@ -46,13 +46,19 @@ class FloScriptLexer(RegexLexer):
             (r'[]{}:(),;[]', Punctuation),
             (r'(\\)(\n)', bygroups(Text, Whitespace)),
             (r'\\', Text),
-            (r'(to|by|with|from|per|for|cum|qua|via|as|at|in|of|on|re|is|if|be|into|'
-             r'and|not)\b', Operator.Word),
+            (words(('to', 'by', 'with', 'from', 'per', 'for', 'cum', 'qua', 'via',
+                    'as', 'at', 'in', 'of', 'on', 're', 'is',
+                    'if', 'be', 'into', 'and', 'not'), suffix=r'\b'), Operator.Word),
             (r'!=|==|<<|>>|[-~+/*%=<>&^|.]', Operator),
-            (r'(load|init|server|logger|log|loggee|first|over|under|next|done|timeout|'
-             r'repeat|native|benter|enter|recur|exit|precur|renter|rexit|print|put|inc|'
-             r'copy|set|aux|rear|raze|go|let|do|bid|ready|start|stop|run|abort|use|flo|'
-             r'give|take)\b', Name.Builtin),
+            (words(('load', 'init', 'server', 'logger', 'log', 'loggee', 'first',
+                    'over', 'under', 'next', 'done', 'timeout',
+                    'repeat', 'native', 'benter', 'enter',
+                    'recur', 'exit', 'precur', 'renter',
+                    'rexit', 'print', 'put', 'inc', 'copy',
+                    'set', 'aux', 'rear', 'raze', 'go', 'let',
+                    'do', 'bid', 'ready', 'start', 'stop',
+                    'run', 'abort', 'use', 'flo', 'give',
+                    'take'), suffix=r'\b'), Name.Builtin),
             (r'(frame|framer|house)\b', Keyword),
             ('"', String, 'string'),
 

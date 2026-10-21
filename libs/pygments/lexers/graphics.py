@@ -32,7 +32,7 @@ class GLShaderLexer(RegexLexer):
         'root': [
             (r'#(?:.*\\\n)*.*$', Comment.Preproc),
             (r'//.*$', Comment.Single),
-            (r'/(\\\n)?[*](.|\n)*?[*](\\\n)?/', Comment.Multiline),
+            (r'/(\\\n)?[*][\s\S]*?[*](\\\n)?/', Comment.Multiline),
             (r'\+|-|~|!=?|\*|/|%|<<|>>|<=?|>=?|==?|&&?|\^|\|\|?',
              Operator),
             (r'[?:]', Operator),  # quick hack for ternary
@@ -163,7 +163,7 @@ class HLSLShaderLexer(RegexLexer):
         'root': [
             (r'#(?:.*\\\n)*.*$', Comment.Preproc),
             (r'//.*$', Comment.Single),
-            (r'/(\\\n)?[*](.|\n)*?[*](\\\n)?/', Comment.Multiline),
+            (r'/(\\\n)?[*][\s\S]*?[*](\\\n)?/', Comment.Multiline),
             (r'\+|-|~|!=?|\*|/|%|<<|>>|<=?|>=?|==?|&&?|\^|\|\|?',
              Operator),
             (r'[?:]', Operator),  # quick hack for ternary
@@ -335,11 +335,11 @@ class PostScriptLexer(RegexLexer):
             # Numbers
             (r'<[0-9A-Fa-f]+>' + delimiter_end, Number.Hex),
             # Slight abuse: use Oct to signify any explicit base system
-            (r'[0-9]+\#(\-|\+)?([0-9]+\.?|[0-9]*\.[0-9]+|[0-9]+\.[0-9]*)'
-             r'((e|E)[0-9]+)?' + delimiter_end, Number.Oct),
-            (r'(\-|\+)?([0-9]+\.?|[0-9]*\.[0-9]+|[0-9]+\.[0-9]*)((e|E)[0-9]+)?'
+            (r'[0-9]+\#[+-]?([0-9]+\.?|[0-9]*\.[0-9]+|[0-9]+\.[0-9]*)'
+             r'([eE][0-9]+)?' + delimiter_end, Number.Oct),
+            (r'[+-]?([0-9]+\.?|[0-9]*\.[0-9]+|[0-9]+\.[0-9]*)([eE][0-9]+)?'
              + delimiter_end, Number.Float),
-            (r'(\-|\+)?[0-9]+' + delimiter_end, Number.Integer),
+            (r'[+-]?[0-9]+' + delimiter_end, Number.Integer),
 
             # References
             (rf'\/{valid_name}', Name.Variable),
@@ -415,8 +415,8 @@ class AsymptoteLexer(RegexLexer):
             (r'\n', Whitespace),
             (r'\s+', Whitespace),
             (r'(\\)(\n)', bygroups(Text, Whitespace)),  # line continuation
-            (r'//(\n|(.|\n)*?[^\\]\n)', Comment),
-            (r'/(\\\n)?\*(.|\n)*?\*(\\\n)?/', Comment),
+            (r'//(\n|[\s\S]*?[^\\]\n)', Comment),
+            (r'/(\\\n)?\*[\s\S]*?\*(\\\n)?/', Comment),
         ],
         'statements': [
             # simple string (TeX friendly)

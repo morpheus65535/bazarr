@@ -74,6 +74,7 @@ class JsxLexer(JavascriptLexer):
         "root": [
             include("jsx"),
             inherit,
+            (r"'", Text),
         ],
     **_JSX_RULES}
 
@@ -96,5 +97,6 @@ class TsxLexer(TypeScriptLexer):
         "root": [
             include("jsx"),
             inherit,
+            (r"'", Text),
         ],
     **_JSX_RULES}

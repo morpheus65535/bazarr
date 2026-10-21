@@ -18,7 +18,7 @@ from knowit.units import units
 from knowit.utils import round_decimal
 
 
-def format_property(profile: str, o):
+def format_property(profile: str, o: typing.Any) -> typing.Any:
     """Convert properties to string."""
     if isinstance(o, timedelta):
         return format_duration(o, profile)
@@ -32,37 +32,39 @@ def format_property(profile: str, o):
     return str(o)
 
 
-def get_json_encoder(context):
+def get_json_encoder(context: typing.Mapping[str, typing.Any]) -> type[json.JSONEncoder]:
     """Return json encoder that handles all needed object types."""
+
     class StringEncoder(json.JSONEncoder):
         """String json encoder."""
 
-        def default(self, o):
+        def default(self, o: typing.Any) -> typing.Any:
             return format_property(context['profile'], o)
 
     return StringEncoder
 
 
-def get_yaml_dumper(context):
+def get_yaml_dumper(context: typing.Mapping[str, typing.Any]) -> type[yaml.SafeDumper]:
     """Return yaml dumper that handles all needed object types."""
+
     class CustomDumper(yaml.SafeDumper):
         """Custom YAML Dumper."""
 
-        def default_representer(self, data):
+        def default_representer(self, data: typing.Any) -> yaml.Node:
             """Convert data to string."""
             if isinstance(data, int):
                 return self.represent_int(data)
             return self.represent_str(str(data))
 
-        def default_language_representer(self, data):
+        def default_language_representer(self, data: babelfish.language.Language) -> yaml.Node:
             """Convert language to string."""
             return self.represent_str(format_language(data, context['profile']))
 
-        def default_quantity_representer(self, data):
+        def default_quantity_representer(self, data: typing.Any) -> yaml.Node:
             """Convert quantity to string."""
             return self.default_representer(format_quantity(data, context['profile']))
 
-        def default_duration_representer(self, data):
+        def default_duration_representer(self, data: datetime.timedelta) -> yaml.Node:
             """Convert quantity to string."""
             return self.default_representer(format_duration(data, context['profile']))
 
@@ -74,7 +76,9 @@ def get_yaml_dumper(context):
     return CustomDumper
 
 
-def get_yaml_loader(constructors=None):
+def get_yaml_loader(
+    constructors: typing.Mapping[str, typing.Callable[..., typing.Any]] | None = None,
+) -> type[typing.Any]:
     """Return a yaml loader that handles sequences as python lists."""
     constructors = constructors or {}
     custom_yaml_implicit_resolvers = {
@@ -89,20 +93,23 @@ def get_yaml_loader(constructors=None):
 
     Resolver.add_implicit_resolver(  # regex copied from yaml source
         '!decimal',
-        re.compile(r'''^(?:
+        re.compile(
+            r"""^(?:
             [-+]?(?:[0-9][0-9_]*)\.[0-9_]*(?:[eE][-+][0-9]+)?
             |\.[0-9_]+(?:[eE][-+][0-9]+)?
             |[-+]?[0-9][0-9_]*(?::[0-9]?[0-9])+\.[0-9_]*
             |[-+]?\.(?:inf|Inf|INF)
             |\.(?:nan|NaN|NAN)
-        )$''', re.VERBOSE),
-        list('-+0123456789.')
+        )$""",
+            re.VERBOSE,
+        ),
+        list('-+0123456789.'),
     )
 
     class CustomLoader(Reader, Scanner, Parser, Composer, SafeConstructor, Resolver):
         """Custom YAML Loader."""
 
-        def __init__(self, stream):
+        def __init__(self, stream: str | bytes | typing.IO[str] | typing.IO[bytes]) -> None:
             Reader.__init__(self, stream)
             Scanner.__init__(self)
             Parser.__init__(self)
@@ -110,11 +117,16 @@ def get_yaml_loader(constructors=None):
             SafeConstructor.__init__(self)
             Resolver.__init__(self)
 
-    CustomLoader.add_constructor('tag:yaml.org,2002:seq', yaml.Loader.construct_python_tuple)
+    # construct_python_tuple is defined on yaml.constructor.Constructor at runtime,
+    # but the types-pyyaml stubs don't declare it.
+    CustomLoader.add_constructor(
+        'tag:yaml.org,2002:seq',
+        yaml.Loader.construct_python_tuple,  # type: ignore[attr-defined]
+    )
     for tag, constructor in constructors.items():
         CustomLoader.add_constructor(tag, constructor)
 
-    def decimal_constructor(loader, node):
+    def decimal_constructor(loader: yaml.SafeLoader, node: yaml.ScalarNode) -> Decimal:
         value = loader.construct_scalar(node)
         return Decimal(value)
 
@@ -124,16 +136,16 @@ def get_yaml_loader(constructors=None):
 
 
 def format_duration(
-        duration: datetime.timedelta,
-        profile='default',
-) -> typing.Union[str, Decimal]:
+    duration: datetime.timedelta,
+    profile: str = 'default',
+) -> str | Decimal:
     if profile == 'technical':
         return str(duration)
 
     seconds = duration.total_seconds()
     if profile == 'code':
         return round_decimal(
-            Decimal((duration.days * 86400 + duration.seconds) * 10 ** 6 + duration.microseconds) / 10**6, min_digits=1
+            Decimal((duration.days * 86400 + duration.seconds) * 10**6 + duration.microseconds) / 10**6, min_digits=1
         )
 
     hours = int(seconds // 3600)
@@ -151,8 +163,8 @@ def format_duration(
 
 
 def format_language(
-        language: babelfish.language.Language,
-        profile: str = 'default',
+    language: babelfish.language.Language,
+    profile: str = 'default',
 ) -> str:
     if profile in ('default', 'human'):
         return str(language.name)
@@ -161,9 +173,9 @@ def format_language(
 
 
 def format_quantity(
-        quantity,
-        profile='default',
-) -> str:
+    quantity: typing.Any,
+    profile: str = 'default',
+) -> typing.Any:
     """Human friendly format."""
     if profile == 'code':
         return quantity.magnitude
@@ -184,10 +196,10 @@ def format_quantity(
 
 
 def _format_quantity(
-        num,
-        unit: str = 'B',
-        binary: bool = False,
-        precision: int = 2,
+    num: typing.Any,
+    unit: str = 'B',
+    binary: bool = False,
+    precision: int = 2,
 ) -> str:
     if binary:
         factor = 1024
@@ -195,7 +207,7 @@ def _format_quantity(
     else:
         factor = 1000
         affix = ''
-    for prefix in ('', 'K', 'M', 'G', 'T', 'P', 'E', 'Z'):
+    for prefix in ('', 'K', 'M', 'G', 'T', 'P', 'E', 'Z'):  # noqa: B007 (used below via for-else)
         if abs(num) < factor:
             break
         num /= factor

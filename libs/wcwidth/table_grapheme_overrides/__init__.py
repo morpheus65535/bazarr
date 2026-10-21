@@ -31,7 +31,7 @@ def get(term_canonical: str) -> dict[str, int]:
         return result
     except ImportError:
         # This can occur during a program re-install when the registry and files are out of sync
-        # (filesystem vs. in-memory copy differ), this can happen with a "pip upgrade" of a running
-        # service, or if the upgrade tool itself uses wcwidth. Not being able to provide terminal
-        # overrides in this situation is not important, continue without them.
+        # (filesystem vs. in-memory copy differ), like "pip upgrade" during long-running process, or
+        # if the upgrade tool itself uses wcwidth.  Terminal overrides in this situation are not
+        # fatal, continue without them.
         return {}

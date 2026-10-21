@@ -28,6 +28,7 @@ from keyword import kwlist
 from pathlib import Path
 from typing import Any,Union,Tuple,List,Dict
 from dynaconf.vendor import box
+from dynaconf.utils import find_the_correct_casing
 from.converters import _to_json,_from_json,_from_toml,_to_toml,_from_yaml,_to_yaml,BOX_PARAMETERS
 from.exceptions import BoxError,BoxKeyError,BoxTypeError,BoxValueError,BoxWarning
 __all__=['Box']
@@ -206,7 +207,7 @@ class Box(dict):
 			if A._box_config[_G]and isinstance(B,str):
 				for D in A:
 					if _camel_killer(B)==D:B=D;break
-		super().__delitem__(B)
+		super().__delitem__(find_the_correct_casing(B,tuple(A.keys())))
 	def __delattr__(A,item):
 		B=item
 		if A._box_config[_D]:raise BoxError(_U)

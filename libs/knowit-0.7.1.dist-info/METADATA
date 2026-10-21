@@ -1,0 +1,265 @@
+Metadata-Version: 2.5
+Name: knowit
+Version: 0.7.1
+Summary: Know your media files better
+Project-URL: Repository, https://github.com/ratoaq2/knowit
+Author: Rato
+License-Expression: MIT
+License-File: LICENSE
+Keywords: episode,mediainfo,metadata,mkv,movie,mp4,series,shows,tv,video
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Intended Audience :: Developers
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3 :: Only
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Programming Language :: Python :: 3.13
+Classifier: Programming Language :: Python :: 3.14
+Classifier: Topic :: Multimedia :: Video
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Requires-Python: <4.0,>=3.10
+Requires-Dist: babelfish>=0.6.1
+Requires-Dist: enzyme>=0.5.2
+Requires-Dist: pymediainfo>=7.0.1
+Requires-Dist: pyyaml>=6.0
+Requires-Dist: trakit>=0.2.2
+Provides-Extra: pint
+Requires-Dist: pint>=0.20.1; extra == 'pint'
+Description-Content-Type: text/markdown
+
+# knowit
+
+**Know your media files better.**
+
+Read the metadata of video files: codecs, resolution, HDR, audio channels, languages, and subtitles.
+
+[![PyPI version](https://img.shields.io/pypi/v/knowit.svg)](https://pypi.org/project/knowit/)
+[![Python versions](https://img.shields.io/pypi/pyversions/knowit.svg)](https://pypi.org/project/knowit/)
+[![Tests](https://github.com/ratoaq2/knowit/actions/workflows/test.yml/badge.svg)](https://github.com/ratoaq2/knowit/actions/workflows/test.yml)
+[![Docker pulls](https://img.shields.io/docker/pulls/ratoaq2/knowit.svg)](https://hub.docker.com/r/ratoaq2/knowit)
+[![License](https://img.shields.io/github/license/ratoaq2/knowit.svg)](https://github.com/ratoaq2/knowit/blob/main/LICENSE)
+
+## Why knowit
+
+Different tools give video metadata in different formats and with different names. knowit reads the
+output of MediaInfo, ffprobe, mkvmerge, or enzyme. It gives the result in one format, with the same names
+and units for all of them. You can use knowit as a command or as a Python library.
+
+## Quick start
+
+1. Install knowit:
+
+   ```bash
+   uv tool install "knowit[pint]"
+   ```
+
+2. Read a video:
+
+   ```text
+   $ knowit movie.mkv
+   {
+       "title": "Big Buck Bunny",
+       "path": "movie.mkv",
+       "duration": "0:00:46",
+       "size": "31.76 MB",
+       "bit_rate": "5.4 Mbps",
+       "container": "mkv",
+       "video": [
+           {
+               "id": 1,
+               "width": "1024 pixel",
+               "height": "576 pixel",
+               "resolution": "576p",
+               "frame_rate": "24.0 FPS",
+               "codec": "H.264",
+               ...
+           }
+       ],
+       "audio": [
+           {
+               "id": 2,
+               "codec": "AAC",
+               "channels": "2.0",
+               "sampling_rate": "48.0 KHz",
+               ...
+           }
+       ],
+       "subtitle": [
+           {
+               "id": 3,
+               "language": "English",
+               "format": "SubRip",
+               "default": true
+           },
+           ...
+       ]
+   }
+   ```
+
+To try knowit without installing it, use `uvx knowit movie.mkv`.
+
+## Installation
+
+### Install knowit
+
+Use one of these commands:
+
+| Command | When to use it |
+| --- | --- |
+| `uv tool install "knowit[pint]"` | Recommended. [uv](https://docs.astral.sh/uv/getting-started/installation/) also installs Python if necessary. |
+| `pipx install "knowit[pint]"` | You already use [pipx](https://pipx.pypa.io/). |
+| `pip install knowit` | You want to use knowit as a Python library. |
+
+The `pint` extra adds units to the values, for example `31.76 MB` or `1024 pixel`. Without it, knowit
+shows plain numbers.
+
+To upgrade, use `uv tool upgrade knowit` or `pipx upgrade knowit`.
+
+### Install a provider
+
+A provider is the program that knowit uses to read the file. knowit uses the first installed provider in
+this order:
+
+| Provider | Program | Files | Notes |
+| --- | --- | --- | --- |
+| `mediainfo` | [MediaInfo](https://mediaarea.net/MediaInfo) | All video files | Default. Gives the most information. |
+| `ffmpeg` | ffprobe, from [FFmpeg](https://ffmpeg.org/download.html) | All video files | |
+| `mkvmerge` | mkvmerge, from [MKVToolNix](https://mkvtoolnix.download/downloads.html) | `.mkv`, `.mka`, `.mks` | |
+| `enzyme` | Included in knowit | `.mkv` | Gives less information. |
+
+On most systems, knowit installs the MediaInfo library with the
+[pymediainfo](https://github.com/sbraz/pymediainfo) package. You do not need to install more programs.
+
+If your system has no MediaInfo library, or if you want other providers, install the programs:
+
+**Ubuntu, Debian, and WSL**
+
+```bash
+sudo apt-get install mediainfo ffmpeg mkvtoolnix
+```
+
+**Windows** (with [Chocolatey](https://chocolatey.org/))
+
+```bash
+choco install mediainfo ffmpeg mkvtoolnix
+```
+
+**macOS** (with [Homebrew](https://brew.sh/))
+
+```bash
+brew install media-info ffmpeg mkvtoolnix
+```
+
+To see which providers knowit finds, run `knowit --version`.
+
+### Docker
+
+The [Docker image](https://hub.docker.com/r/ratoaq2/knowit) contains knowit, MediaInfo, FFmpeg, and
+MKVToolNix:
+
+```bash
+docker run -it --rm -v /medias:/medias ratoaq2/knowit /medias/movie.mkv
+```
+
+## Usage
+
+Read a video with a specific provider:
+
+```bash
+knowit -p ffmpeg movie.mkv
+```
+
+Show the result in YAML:
+
+```bash
+knowit -y movie.mkv
+```
+
+A profile changes how knowit shows the values. The same file with two profiles:
+
+```text
+$ knowit -y -P human movie.mkv        $ knowit -y -P technical movie.mkv
+  duration: 46 seconds                  duration: '0:00:46.665000'
+  size: 31.76 MB                        size: 30.291 MiB
+  bit_rate: 5.4 Mbps                    bit_rate: 5.193 Mibps
+```
+
+### Main options
+
+| Option | What it does |
+| --- | --- |
+| `-p`, `--provider` | Use this provider: `mediainfo`, `ffmpeg`, `mkvmerge`, or `enzyme`. |
+| `-y`, `--yaml` | Show the result in YAML. The default is JSON. |
+| `-P`, `--profile` | Show the values with this profile: `default`, `human`, `technical`, or `code`. |
+| `-N`, `--no-units` | Show the values without units. |
+| `--mediainfo`, `--ffmpeg`, `--mkvmerge` | Look for the program in this folder. |
+| `--report` | Read a folder and list the values that knowit does not know. |
+| `--bug-report` | Write a file to attach to an issue. See [Report a problem](#report-a-problem). |
+| `--version` | Show the knowit version and the providers that knowit finds. |
+
+Run `knowit --help` for all options.
+
+### Python API
+
+```python
+from knowit import know
+
+info = know('/medias/movie.mkv')
+print(info['video'][0]['codec'])  # H.264
+
+info = know('/medias/movie.mkv', {'provider': 'ffmpeg', 'profile': 'code'})
+```
+
+`know` returns a `dict`. It raises `KnowitException` when knowit cannot read the file.
+
+## Report a problem
+
+Do not send your media file. Run this command instead, and attach `knowit-report.yml` to an
+[issue](https://github.com/ratoaq2/knowit/issues):
+
+```bash
+knowit --bug-report "/path/to/your/video.mkv"
+```
+
+The report contains the output of every provider. Titles, file names, and free-text tags are masked.
+
+When the problem is the name of the file, use `knowit --check-name "The Accountant² (2025).mkv"`. It
+tells you which provider fails because of the name.
+
+[Troubleshooting](https://github.com/ratoaq2/knowit/blob/main/docs/troubleshooting.md) gives all the
+details.
+
+## Help to improve knowit
+
+knowit is more correct when it sees many different files. Run this command on your library, and attach
+the files that it writes to an [issue](https://github.com/ratoaq2/knowit/issues):
+
+```bash
+knowit --collect /path/to/your/media
+```
+
+Your media is not needed. Titles and file names are masked. See
+[Help to improve knowit](https://github.com/ratoaq2/knowit/blob/main/docs/troubleshooting.md#help-to-improve-knowit).
+
+## Used by
+
+- [Subliminal](https://github.com/Diaoul/subliminal)
+- [Bazarr](https://github.com/morpheus65535/bazarr)
+- [Medusa](https://github.com/pymedusa/Medusa)
+
+## FAQ
+
+**Which provider should I use?**
+Use MediaInfo if you can. It gives the most information. If knowit gives a wrong value, try another
+provider with `-p`, and [report the problem](#report-a-problem).
+
+**Which files does knowit read?**
+With MediaInfo or ffprobe, knowit reads all common video files, for example `.mkv`, `.mp4`, `.avi`, and
+`.ts`. With only mkvmerge or enzyme, knowit reads only Matroska files (`.mkv`).
+
+**Does knowit send my files or file names anywhere?**
+No. knowit reads the files on your computer. It does not use the network. A bug report or a collect file
+leaves your computer only when you attach it to an issue.

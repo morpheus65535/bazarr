@@ -18,6 +18,9 @@ from ffsubsync.constants import (
     DEFAULT_MAX_OFFSET_SECONDS,
     DEFAULT_MAX_SUBTITLE_SECONDS,
     DEFAULT_NON_SPEECH_LABEL,
+    DEFAULT_SPLIT_PENALTY,
+    DEFAULT_SPLIT_LENGTH_PENALTY,
+    DEFAULT_SPLIT_SUBSAMPLE,
     DEFAULT_START_SECONDS,
     DEFAULT_VAD,
     DEFAULT_ENCODING,
@@ -27,6 +30,7 @@ from ffsubsync.constants import (
     DEFAULT_MIN_SCORE,
     DEFAULT_QUALITY_MAX_OFFSET_SECONDS,
     DEFAULT_MAX_FRAMERATE_DEVIATION,
+    VAD_CHOICES,
     is_remote_url,
 )
 from ffsubsync.ffmpeg_utils import ffmpeg_bin_path
@@ -36,11 +40,17 @@ from ffsubsync.speech_transformers import (
     MultiSegmentVideoSpeechTransformer,
     DeserializeSpeechTransformer,
     PGSSpeechTransformer,
+    WhisperSpeechTransformer,
     ProgressInfo,
     make_subtitle_speech_pipeline,
 )
+from ffsubsync.split_aligner import compute_split_offsets, log_split_segments
 from ffsubsync.subtitle_parser import make_subtitle_parser
-from ffsubsync.subtitle_transformers import SubtitleMerger, SubtitleShifter
+from ffsubsync.subtitle_transformers import (
+    SubtitleMerger,
+    SubtitleShifter,
+    VariableSubtitleShifter,
+)
 from ffsubsync.version import get_version
 
 
@@ -222,15 +232,17 @@ def try_sync(
                 )
                 logger.info("...done")
             logger.info("computing alignments...")
+            reference_speech = None
             if skip_sync:
                 best_score = 0.0
                 best_srt_pipe = cast(Pipeline, srt_pipes[0])
                 offset_samples = 0
             else:
+                reference_speech = reference_pipe.transform(args.reference)
                 (best_score, offset_samples), best_srt_pipe = MaxScoreAligner(
                     FFTAligner, srtin, SAMPLE_RATE, args.max_offset_seconds
                 ).fit_transform(
-                    reference_pipe.transform(args.reference),
+                    reference_speech,
                     srt_pipes,
                 )
             if best_score < 0:
@@ -269,9 +281,62 @@ def try_sync(
                 )
                 out_subs.write_file(srtout)
                 continue
-            output_steps: List[Tuple[str, TransformerMixin]] = [
-                ("shift", SubtitleShifter(offset_seconds))
-            ]
+            split_penalty = getattr(args, "split_penalty", None)
+            use_split = (
+                split_penalty is not None
+                and not skip_sync
+                and reference_speech is not None
+            )
+            if use_split:
+                length_penalty = getattr(
+                    args, "split_length_penalty", DEFAULT_SPLIT_LENGTH_PENALTY
+                )
+                subsample = max(1, int(getattr(args, "split_subsample", 1) or 1))
+                max_off = abs(int(args.max_offset_seconds * SAMPLE_RATE))
+                # Joint framerate + split search: score the piecewise alignment at
+                # every candidate framerate scale (reusing the pipelines the global
+                # search already fit) and keep the best-scoring one, rather than
+                # committing to the scale the single-offset FFT search preferred.
+                candidate_pipes = [p for p in srt_pipes if not callable(p)]
+                if best_srt_pipe not in candidate_pipes:
+                    candidate_pipes.append(cast(Pipeline, best_srt_pipe))
+                best_split: Optional[Tuple[float, List[float], Pipeline]] = None
+                for cand_pipe in candidate_pipes:
+                    cand_offsets, cand_score = compute_split_offsets(
+                        reference_speech,
+                        list(cand_pipe.named_steps["scale"].subs_),
+                        sample_rate=SAMPLE_RATE,
+                        start_seconds=args.start_seconds,
+                        split_penalty=split_penalty * SAMPLE_RATE,
+                        length_penalty=length_penalty,
+                        offset_step_samples=1.0 / subsample,
+                        max_offset_samples=max_off,
+                        return_score=True,
+                        log_segments=False,
+                    )
+                    if best_split is None or cand_score > best_split[0]:
+                        best_split = (cand_score, cand_offsets, cand_pipe)
+                assert best_split is not None
+                _, offsets_samples, best_split_pipe = best_split
+                if best_split_pipe is not best_srt_pipe:
+                    logger.info(
+                        "split search preferred framerate scale %.3f (single-offset "
+                        "search had chosen %.3f)",
+                        best_split_pipe.named_steps["scale"].scale_factor,
+                        scale_step.scale_factor,
+                    )
+                scale_step = best_split_pipe.named_steps["scale"]
+                log_split_segments(offsets_samples, SAMPLE_RATE)
+                offsets_seconds = [
+                    off / float(SAMPLE_RATE) + args.apply_offset_seconds
+                    for off in offsets_samples
+                ]
+                shift_step: TransformerMixin = VariableSubtitleShifter(offsets_seconds)
+                if offsets_seconds:
+                    offset_seconds = float(np.median(offsets_seconds))
+            else:
+                shift_step = SubtitleShifter(offset_seconds)
+            output_steps: List[Tuple[str, TransformerMixin]] = [("shift", shift_step)]
             if args.merge_with_reference:
                 output_steps.append(
                     ("merge", SubtitleMerger(reference_pipe.named_steps["parse"].subs_))
@@ -319,6 +384,30 @@ def make_reference_pipe(
                         start_seconds=args.start_seconds,
                         ffmpeg_path=args.ffmpeg_path,
                         ref_stream=resolved_stream,
+                        gui_mode=args.gui_mode,
+                    ),
+                ),
+            ]
+        )
+    if getattr(args, "whisper_weights", None) is not None:
+        # transcribe the reference audio with ffmpeg's whisper filter and use the
+        # transcript timings as the sync reference (an alternative to audio VAD)
+        return Pipeline(
+            [
+                (
+                    "speech_extract",
+                    WhisperSpeechTransformer(
+                        model_path=args.whisper_weights,
+                        language=args.language,
+                        whisper_args=getattr(args, "whisper_args", None),
+                        vad=args.vad,  # reused as whisper's optional VAD-model path
+                        sample_rate=SAMPLE_RATE,
+                        start_seconds=args.start_seconds,
+                        max_duration_seconds=getattr(
+                            args, "max_duration_seconds", None
+                        ),
+                        ffmpeg_path=args.ffmpeg_path,
+                        ref_stream=args.reference_stream,
                         gui_mode=args.gui_mode,
                     ),
                 ),
@@ -477,6 +566,15 @@ def _detect_srtin_from_reference(reference: str) -> List[str]:
 def validate_args(args: argparse.Namespace) -> None:
     if args.vlc_mode:
         logger.setLevel(logging.CRITICAL)
+    # --vad no longer uses argparse `choices` (in whisper mode it carries a model
+    # path), so enforce the named-detector choices here when not in whisper mode.
+    if getattr(args, "whisper_weights", None) is None and args.vad is not None:
+        if args.vad not in VAD_CHOICES:
+            raise ValueError(
+                "invalid --vad {!r}; choose one of: {}".format(
+                    args.vad, ", ".join(VAD_CHOICES)
+                )
+            )
     if args.reference is None:
         if args.apply_offset_seconds == 0 or not args.srtin:
             raise ValueError(
@@ -839,6 +937,43 @@ def add_cli_only_args(parser: argparse.ArgumentParser) -> None:
         "(default=%d seconds)." % DEFAULT_MAX_OFFSET_SECONDS,
     )
     parser.add_argument(
+        "--split-penalty",
+        type=float,
+        nargs="?",
+        const=DEFAULT_SPLIT_PENALTY,
+        default=None,
+        help="Enable alass-style piecewise synchronization: instead of a single "
+        "global offset, allow the offset to change across the timeline to correct "
+        "commercial breaks, inserted/removed scenes (director's cuts), or discs "
+        "concatenated into one file. An optional value is the cost (in seconds of "
+        "overlap) of introducing each such split -- lower splits more eagerly, "
+        "higher stays closer to a single global offset; values around 4-20 are "
+        "typical. Pass the flag with no value to use a reasonable default "
+        "(%.0f). If the flag is omitted entirely (the default), a single global "
+        "offset is used as before." % DEFAULT_SPLIT_PENALTY,
+    )
+    parser.add_argument(
+        "--split-length-penalty",
+        type=float,
+        default=DEFAULT_SPLIT_LENGTH_PENALTY,
+        help="Only meaningful with --split-penalty. Weight of the edge/length term "
+        "used when scoring each cue's placement ('standard scoring'): a cue is "
+        "charged this fraction of the reference speech just outside its edges, so it "
+        "prefers a same-sized speech block over sitting anywhere inside a longer one. "
+        "0 falls back to pure overlap scoring (default=%.2f)."
+        % DEFAULT_SPLIT_LENGTH_PENALTY,
+    )
+    parser.add_argument(
+        "--split-subsample",
+        type=int,
+        default=DEFAULT_SPLIT_SUBSAMPLE,
+        help="Only meaningful with --split-penalty. Sub-sample resolution of the "
+        "offset search: 1 aligns to whole %d Hz samples (%dms); higher values refine "
+        "the offset to 1/N of a sample via exact linear interpolation of the "
+        "reference. 1 is plenty for perceptual sync (default=%d)."
+        % (SAMPLE_RATE, 1000 // SAMPLE_RATE, DEFAULT_SPLIT_SUBSAMPLE),
+    )
+    parser.add_argument(
         "--max-duration-seconds",
         type=float,
         default=None,
@@ -955,23 +1090,45 @@ def add_cli_only_args(parser: argparse.ArgumentParser) -> None:
     )
     parser.add_argument(
         "--vad",
-        choices=[
-            "subs_then_webrtc",
-            "webrtc",
-            "subs_then_auditok",
-            "auditok",
-            "subs_then_silero",
-            "silero",
-            "fused",
-            "fused:weighted",
-            "fused:intersection",
-            "fused:union",
-        ],
+        # NB: no argparse `choices=` -- validated in validate_args instead, because
+        # in --whisper-weights transcription mode --vad is reused to carry a path
+        # to whisper's optional ggml VAD model rather than a named detector.
         default=None,
         help="Which voice activity detector to use for speech extraction "
-        "(if using video / audio as a reference, default={}). The `fused` "
-        "options combine webrtc and silero and require the optional silero "
-        "dependency (torch).".format(DEFAULT_VAD),
+        "(if using video / audio as a reference, default={default}). Choices: "
+        "{choices}. The `fused` options combine webrtc and silero and require the "
+        "optional silero dependency (torch). With --whisper-weights this instead "
+        "takes a path to a ggml VAD model for whisper's optional audio "
+        "fragmentation.".format(
+            default=DEFAULT_VAD, choices=", ".join(VAD_CHOICES)
+        ),
+    )
+    parser.add_argument(
+        "--whisper-weights",
+        "--whisper-model",
+        "--ffmpeg-transcription-model-weights",
+        default=None,
+        help="Path to a whisper.cpp ggml model file (e.g. ggml-base.en.bin). If "
+        "given, the reference audio is transcribed with ffmpeg's whisper filter "
+        "and the transcript is used as the sync reference instead of audio VAD "
+        "(requires ffmpeg >= 8.0 built with --enable-whisper). '~' is expanded "
+        "for you. Example: `ffs video.mp4 -i in.srt -o out.srt "
+        "--whisper-weights ~/whisper.cpp/models/ggml-base.en.bin`.",
+    )
+    parser.add_argument(
+        "--language",
+        default=None,
+        help="Language code for --whisper-weights transcription (e.g. en, es, "
+        "fr), or 'auto' to let whisper detect it. Default: inferred as 'en' for "
+        "*.en model files, else 'auto'. Only used with --whisper-weights.",
+    )
+    parser.add_argument(
+        "--whisper-args",
+        default=None,
+        help="Extra options for ffmpeg's whisper filter as key=value pairs "
+        "separated by ':' (e.g. `queue=12`), overriding ffsubsync's defaults. "
+        "The model, format, and destination are managed by ffsubsync and cannot "
+        "be overridden. Only used with --whisper-weights.",
     )
     parser.add_argument(
         "--no-fix-framerate",

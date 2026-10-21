@@ -45,7 +45,7 @@ class GSQLLexer(RegexLexer):
         ],
         'comment': [
             (r'\#.*', Comment.Single),
-            (r'/\*(.|\n)*?\*/', Comment.Multiline),
+            (r'/\*[\s\S]*?\*/', Comment.Multiline),
         ],
         'keywords': [
             (words((

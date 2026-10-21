@@ -54,7 +54,7 @@ class BerryLexer(RegexLexer):
         ],
         'whitespace': [
             (r'\s+', Whitespace),
-            (r'#-(.|\n)*?-#', Comment.Multiline),
+            (r'#-[\s\S]*?-#', Comment.Multiline),
             (r'#.*?$', Comment.Single)
         ],
         'keywords': [

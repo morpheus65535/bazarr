@@ -7,14 +7,8 @@ annotations.
 
 import warnings
 
-from chardet._utils import DEFAULT_MAX_BYTES
+from chardet._utils import DEFAULT_MAX_BYTES, EVIDENCE_CAP_BYTES, decodes_without_error
 from chardet.enums import EncodingEra
-from chardet.models import (
-    BigramProfile,
-    has_model_variants,
-    infer_language,
-    score_best_language,
-)
 from chardet.pipeline import (
     _NONE_RESULT,
     DETERMINISTIC_CONFIDENCE,
@@ -25,20 +19,21 @@ from chardet.pipeline import (
 from chardet.pipeline.ascii import detect_ascii
 from chardet.pipeline.binary import is_binary
 from chardet.pipeline.bom import detect_bom
-from chardet.pipeline.confusion import resolve_confusion_groups
 from chardet.pipeline.escape import detect_escape_encoding
+from chardet.pipeline.language import fill_languages
 from chardet.pipeline.magic import detect_magic
-from chardet.pipeline.markup import detect_markup_charset
+from chardet.pipeline.markup import detect_markup_charset, promote_markup_superset
+from chardet.pipeline.postprocess import postprocess_results
 from chardet.pipeline.statistical import score_candidates
 from chardet.pipeline.structural import (
     compute_lead_byte_diversity,
     compute_multibyte_byte_coverage,
     compute_structural_score,
 )
-from chardet.pipeline.utf8 import detect_utf8
+from chardet.pipeline.utf8 import scan_utf8
 from chardet.pipeline.utf1632 import detect_utf1632_patterns
 from chardet.pipeline.validity import filter_by_validity
-from chardet.registry import REGISTRY, EncodingInfo, get_candidates
+from chardet.registry import EncodingInfo, get_candidates
 
 _BINARY_RESULT = DetectionResult(
     encoding=None,
@@ -56,224 +51,6 @@ _STRUCTURAL_CONFIDENCE_THRESHOLD = 0.85
 # unnecessary work on large files.  Experimentally verified: 0 real
 # accuracy losses across 835 test files at this threshold.
 _STAT_SCORE_MAX_BYTES = 16384
-
-# Common Western Latin encodings that share the iso-8859-1 character
-# repertoire for the byte values where iso-8859-10 is indistinguishable.
-# Used as swap targets when demoting iso-8859-10 — we prefer these over
-# iso-8859-10, but do not want to accidentally promote an unrelated encoding
-# (e.g. windows-1254).
-_COMMON_LATIN_ENCODINGS: frozenset[str] = frozenset(
-    {
-        "iso8859-1",
-        "iso8859-15",
-        "cp1252",
-    }
-)
-
-# Bytes where iso-8859-10 decodes to a different character than iso-8859-1.
-# Computed programmatically via:
-#   {b for b in range(0x80, 0x100)
-#    if bytes([b]).decode('iso-8859-10') != bytes([b]).decode('iso-8859-1')}
-_ISO_8859_10_DISTINGUISHING: frozenset[int] = frozenset(
-    {
-        0xA1,
-        0xA2,
-        0xA3,
-        0xA4,
-        0xA5,
-        0xA6,
-        0xA8,
-        0xA9,
-        0xAA,
-        0xAB,
-        0xAC,
-        0xAE,
-        0xAF,
-        0xB1,
-        0xB2,
-        0xB3,
-        0xB4,
-        0xB5,
-        0xB6,
-        0xB8,
-        0xB9,
-        0xBA,
-        0xBB,
-        0xBC,
-        0xBD,
-        0xBE,
-        0xBF,
-        0xC0,
-        0xC7,
-        0xC8,
-        0xCA,
-        0xCC,
-        0xD1,
-        0xD2,
-        0xD7,
-        0xD9,
-        0xE0,
-        0xE7,
-        0xE8,
-        0xEA,
-        0xEC,
-        0xF1,
-        0xF2,
-        0xF7,
-        0xF9,
-        0xFF,
-    }
-)
-
-# Bytes where iso-8859-14 decodes to a different character than iso-8859-1.
-# Computed programmatically via:
-#   {b for b in range(0x80, 0x100)
-#    if bytes([b]).decode('iso-8859-14') != bytes([b]).decode('iso-8859-1')}
-_ISO_8859_14_DISTINGUISHING: frozenset[int] = frozenset(
-    {
-        0xA1,
-        0xA2,
-        0xA4,
-        0xA5,
-        0xA6,
-        0xA8,
-        0xAA,
-        0xAB,
-        0xAC,
-        0xAF,
-        0xB0,
-        0xB1,
-        0xB2,
-        0xB3,
-        0xB4,
-        0xB5,
-        0xB7,
-        0xB8,
-        0xB9,
-        0xBA,
-        0xBB,
-        0xBC,
-        0xBD,
-        0xBE,
-        0xBF,
-        0xD0,
-        0xD7,
-        0xDE,
-        0xF0,
-        0xF7,
-        0xFE,
-    }
-)
-
-# Bytes where windows-1254 has Turkish-specific characters that differ from
-# windows-1252.  Windows-1254 differs from windows-1252 at 8 byte positions.
-# Two (0x8E, 0x9E) are undefined in Windows-1254 but defined in Windows-1252;
-# these are excluded here because undefined bytes are not useful for
-# identifying Turkish text.  The remaining six positions map to
-# Turkish-specific letters and are the primary distinguishing signal.
-_WINDOWS_1254_DISTINGUISHING: frozenset[int] = frozenset(
-    {0xD0, 0xDD, 0xDE, 0xF0, 0xFD, 0xFE}
-)
-
-# Encodings that are often false positives when their distinguishing bytes
-# are absent.  Keyed by encoding name -> frozenset of byte values where
-# that encoding differs from iso-8859-1 (or windows-1252 in the case of
-# windows-1254).
-# Bytes where HP-Roman8 maps to lowercase accented letters but ISO-8859-1
-# maps to uppercase letters.  Real HP-Roman8 text (from HP-UX terminals)
-# contains these bytes; data misdetected as HP-Roman8 typically does not.
-#   {b for b in range(0x80, 0x100)
-#    if (unicodedata.category(bytes([b]).decode('hp-roman8')) == 'Ll'
-#        and unicodedata.category(bytes([b]).decode('iso-8859-1')) == 'Lu')}
-_HP_ROMAN8_DISTINGUISHING: frozenset[int] = frozenset(
-    {
-        0xC0,
-        0xC1,
-        0xC2,
-        0xC3,
-        0xC4,
-        0xC5,
-        0xC6,
-        0xC7,
-        0xC8,
-        0xC9,
-        0xCA,
-        0xCB,
-        0xCC,
-        0xCD,
-        0xCE,
-        0xCF,
-        0xD1,
-        0xD4,
-        0xD5,
-        0xD6,
-        0xD9,
-        0xDD,
-        0xDE,
-    }
-)
-
-_DEMOTION_CANDIDATES: dict[str, frozenset[int]] = {
-    "iso8859-10": _ISO_8859_10_DISTINGUISHING,
-    "iso8859-14": _ISO_8859_14_DISTINGUISHING,
-    "cp1254": _WINDOWS_1254_DISTINGUISHING,
-    "hp-roman8": _HP_ROMAN8_DISTINGUISHING,
-}
-
-# Bytes where KOI8-T maps to Tajik-specific Cyrillic letters but KOI8-R
-# maps to box-drawing characters.  Presence of any of these bytes is strong
-# evidence for KOI8-T over KOI8-R.
-_KOI8_T_DISTINGUISHING: frozenset[int] = frozenset(
-    {0x80, 0x81, 0x83, 0x8A, 0x8C, 0x8D, 0x8E, 0x90, 0xA1, 0xA2, 0xA5, 0xB5}
-)
-
-
-# Markup charset declarations that commonly refer to a Windows superset
-# encoding rather than the strict standard encoding.  Japanese web content
-# almost universally declares "Shift_JIS" but actually uses CP932 extensions;
-# similarly, Korean web content declares "EUC-KR" but uses CP949/UHC.
-# When the declared encoding resolves to the base (left), we check whether
-# the superset (right) is a better structural match.
-_MARKUP_SUPERSET_PROMOTIONS: dict[str, str] = {
-    "shift_jis_2004": "cp932",
-    "euc_kr": "cp949",
-}
-
-
-def _try_promote_markup_superset(
-    data: bytes,
-    markup_result: DetectionResult,
-    allowed: frozenset[str],
-) -> DetectionResult:
-    """Promote a markup-declared encoding to its superset when structural evidence supports it.
-
-    If the declared encoding has a known superset, the superset validates the
-    data, and the superset's structural score is materially better, return a
-    new result using the superset encoding.  Otherwise return the original.
-    """
-    if markup_result.encoding is None:
-        return markup_result
-    superset_name = _MARKUP_SUPERSET_PROMOTIONS.get(markup_result.encoding)
-    if superset_name is None or superset_name not in allowed:
-        return markup_result
-    superset_info = REGISTRY[superset_name]
-    # Validate: superset must be able to decode the data
-    try:
-        data.decode(superset_name, errors="strict")
-    except (UnicodeDecodeError, LookupError):
-        return markup_result
-    # Compare structural scores
-    ctx = PipelineContext()
-    base_score = compute_structural_score(data, REGISTRY[markup_result.encoding], ctx)
-    superset_score = compute_structural_score(data, superset_info, ctx)
-    if superset_score > base_score:
-        return DetectionResult(
-            superset_name,
-            markup_result.confidence,
-            markup_result.language,
-            markup_result.mime_type,
-        )
-    return markup_result
 
 
 def _make_fallback_or_none(
@@ -297,18 +74,41 @@ def _make_fallback_or_none(
     return [DetectionResult(encoding=encoding, confidence=0.10, language=None)]
 
 
-def _should_demote(encoding: str, data: bytes) -> bool:
-    """Return True if encoding is a demotion candidate with no distinguishing bytes.
+def _hold_validity_past_cap(
+    data: bytes,
+    evidence: bytes,
+    results: list[DetectionResult],
+    allowed: frozenset[str],
+    no_match_encoding: str,
+) -> list[DetectionResult]:
+    """Keep the validity contract for the part of the window past the evidence cap.
 
-    Checks whether any non-ASCII byte in *data* falls in the set of byte
-    values that decode differently under the given encoding vs iso-8859-1.
-    If none do, the data is equally valid under both encodings and there is
-    no byte-level evidence for preferring the candidate encoding.
+    Byte-validity filtering converges on the first ``EVIDENCE_CAP_BYTES``
+    of the window (ADR-0006), so on a longer window a candidate that
+    cannot decode the rest can still reach the top.  What callers rely on
+    is that the answer decodes the window chardet examined: they pass
+    ``max_bytes`` precisely to say how much of the input the verdict is
+    about.  So walk the corrected ranking and drop every entry ahead of
+    the first one that decodes the whole window, under the same tolerant
+    judgment the validity filter passes on the evidence slice.  Those
+    entries are what validity would have removed had it seen the bytes;
+    the survivors keep their own ranks and confidences, since nothing
+    about the evidence they were scored on has changed.
+
+    The walk is bounded by the ranking's length, each step is one C-speed
+    decode that stops at the first bad byte, and it costs nothing at all
+    when the window fits inside the cap, which every default call does.
+    Entries below the first decodable one are not re-examined, so a
+    ``detect_all`` ranking on a long window is exact down to its winner
+    and unverified past it.  When no listed entry decodes, the answer is
+    the no-match fallback, as it is when validity leaves nothing.
     """
-    distinguishing = _DEMOTION_CANDIDATES.get(encoding)
-    if distinguishing is None:
-        return False
-    return not any(b in distinguishing for b in data if b > 0x7F)
+    if len(data) <= len(evidence):
+        return results
+    for i, r in enumerate(results):
+        if r.encoding is not None and decodes_without_error(data, r.encoding):
+            return results if i == 0 else results[i:]
+    return _make_fallback_or_none(no_match_encoding, allowed, "no_match_encoding")
 
 
 # Minimum structural score (valid multi-byte sequences / lead bytes) required
@@ -372,7 +172,7 @@ def _gate_cjk_candidates(
     """
     gated: list[EncodingInfo] = []
     for enc in valid_candidates:
-        if enc.is_multibyte:
+        if enc.is_multibyte_cjk:
             mb_score = compute_structural_score(data, enc, ctx)
             ctx.mb_scores[enc.name] = mb_score
             if mb_score < _CJK_MIN_MB_RATIO:
@@ -400,6 +200,8 @@ def _score_structural_candidates(
     structural_scores: list[tuple[str, float]],
     valid_candidates: tuple[EncodingInfo, ...],
     ctx: PipelineContext,
+    *,
+    full_ranking: bool = False,
 ) -> list[DetectionResult]:
     """Score structurally-valid CJK candidates using statistical bigrams.
 
@@ -419,14 +221,18 @@ def _score_structural_candidates(
     confidence values to [0.0, 1.0] before returning to callers.
     """
     enc_lookup: dict[str, EncodingInfo] = {
-        e.name: e for e in valid_candidates if e.is_multibyte
+        e.name: e for e in valid_candidates if e.is_multibyte_cjk
     }
     valid_mb = tuple(
         enc_lookup[name] for name, _sc in structural_scores if name in enc_lookup
     )
-    single_byte = tuple(e for e in valid_candidates if not e.is_multibyte)
+    single_byte = tuple(e for e in valid_candidates if not e.is_multibyte_cjk)
     results = list(
-        score_candidates(data[:_STAT_SCORE_MAX_BYTES], (*valid_mb, *single_byte))
+        score_candidates(
+            data[:_STAT_SCORE_MAX_BYTES],
+            (*valid_mb, *single_byte),
+            full_ranking=full_ranking,
+        )
     )
 
     # Boost multi-byte candidates with high byte coverage.
@@ -445,157 +251,12 @@ def _score_structural_candidates(
     return boosted
 
 
-def _demote_niche_latin(
-    data: bytes,
-    results: list[DetectionResult],
-) -> list[DetectionResult]:
-    """Demote niche Latin encodings when no distinguishing bytes are present.
-
-    Some bigram models (e.g. iso-8859-10, iso-8859-14, windows-1254) can win
-    on data that contains only bytes shared with common Western Latin
-    encodings.  When there is no byte-level evidence for the winning
-    encoding, promote the first common Western Latin candidate to the top and
-    push the demoted encoding to last.
-    """
-    if (
-        len(results) > 1
-        and results[0].encoding is not None
-        and _should_demote(results[0].encoding, data)
-    ):
-        demoted_encoding = results[0].encoding
-        top_conf = results[0].confidence
-        for r in results[1:]:
-            if r.encoding in _COMMON_LATIN_ENCODINGS:
-                promoted = DetectionResult(
-                    r.encoding, top_conf, r.language, r.mime_type
-                )
-                others = [
-                    x for x in results if x.encoding != demoted_encoding and x is not r
-                ]
-                demoted_entries = [x for x in results if x.encoding == demoted_encoding]
-                return [promoted, *others, *demoted_entries]
-    return results
-
-
-def _promote_koi8t(
-    data: bytes,
-    results: list[DetectionResult],
-) -> list[DetectionResult]:
-    """Promote KOI8-T over KOI8-R when Tajik-specific bytes are present.
-
-    KOI8-T and KOI8-R share the entire 0xC0-0xFF Cyrillic letter block,
-    making statistical discrimination difficult.  However, KOI8-T maps 12
-    bytes in 0x80-0xBF to Tajik-specific Cyrillic letters where KOI8-R has
-    box-drawing characters.  If any of these bytes appear, KOI8-T is the
-    better match.
-    """
-    if not results or results[0].encoding != "koi8-r":
-        return results
-    # Check if KOI8-T is anywhere in the results
-    koi8t_idx = next((i for i, r in enumerate(results) if r.encoding == "koi8-t"), None)
-    if koi8t_idx is None:
-        return results
-    # Check for Tajik-specific bytes
-    if any(b in _KOI8_T_DISTINGUISHING for b in data if b > 0x7F):
-        koi8t_result = results[koi8t_idx]
-        top_conf = results[0].confidence
-        promoted = DetectionResult(
-            koi8t_result.encoding,
-            top_conf,
-            koi8t_result.language,
-            koi8t_result.mime_type,
-        )
-        others = [r for i, r in enumerate(results) if i != koi8t_idx]
-        return [promoted, *others]
-    return results
-
-
-# Maximum bytes of data used for language scoring in _fill_language.
-# Language bigrams converge quickly — 2 KB is sufficient for discrimination
-# across all language models while keeping Tier 3 (language-model scoring) fast.
-_LANG_SCORE_MAX_BYTES = 2048
-
-
-def _to_utf8(data: bytes, encoding: str) -> bytes | None:
-    """Decode data from encoding and re-encode as UTF-8 for language scoring.
-
-    Returns None if the encoding is unknown. For UTF-8, returns data as-is.
-    Uses ``errors="ignore"`` because the data already passed byte-validity
-    filtering for the detected encoding; any residual invalid bytes are
-    irrelevant for language scoring.
-    """
-    if encoding == "utf-8":
-        return data
-    try:
-        return data.decode(encoding, errors="ignore").encode(
-            "utf-8", errors="surrogatepass"
-        )
-    except (LookupError, TypeError, ValueError):
-        return None
-
-
-def _fill_metadata(
-    data: bytes, results: list[DetectionResult]
-) -> list[DetectionResult]:
-    """Fill in language and mime_type for results missing them.
-
-    **Language** (only for text results where ``encoding is not None``):
-
-    Tier 1: single-language encodings via hardcoded map (instant).
-    Tier 2: multi-language encodings via statistical bigram scoring (lazy).
-    Tier 3: decode to UTF-8, score against UTF-8 language models (universal fallback).
-
-    **MIME type**: text results default to ``"text/plain"``, binary results
-    (``encoding is None``) default to ``"application/octet-stream"``.
-    """
-    filled: list[DetectionResult] = []
-    profile: BigramProfile | None = None
-    utf8_profile: BigramProfile | None = None
-    for result in results:
-        lang = result.language
-        if lang is None and result.encoding is not None:
-            # Tier 1: single-language encoding
-            lang = infer_language(result.encoding)
-            # Tier 2: statistical scoring for multi-language encodings
-            if lang is None and data and has_model_variants(result.encoding):
-                if profile is None:
-                    profile = BigramProfile(data)
-                _, lang = score_best_language(data, result.encoding, profile=profile)
-            # Tier 3: decode to UTF-8, score against UTF-8 language models
-            if lang is None and data and has_model_variants("utf-8"):
-                utf8_data = _to_utf8(data, result.encoding)
-                if utf8_data:
-                    if utf8_profile is None or result.encoding != "utf-8":
-                        utf8_profile = BigramProfile(utf8_data)
-                    _, lang = score_best_language(
-                        utf8_data, "utf-8", profile=utf8_profile
-                    )
-
-        mime = result.mime_type
-        if mime is None:
-            mime = (
-                "text/plain"
-                if result.encoding is not None
-                else "application/octet-stream"
-            )
-
-        if lang != result.language or mime != result.mime_type:
-            filled.append(
-                DetectionResult(result.encoding, result.confidence, lang, mime)
-            )
-        else:
-            filled.append(result)
-    return filled
-
-
-def _postprocess_results(
-    data: bytes,
-    results: list[DetectionResult],
-) -> list[DetectionResult]:
-    """Apply confusion resolution, niche Latin demotion, and KOI8-T promotion."""
-    results = resolve_confusion_groups(data, results)
-    results = _demote_niche_latin(data, results)
-    return _promote_koi8t(data, results)
+def _with_default_mime(result: DetectionResult) -> DetectionResult:
+    """Default ``mime_type`` to ``text/plain`` (text) or ``application/octet-stream`` (binary)."""
+    if result.mime_type is not None:
+        return result
+    mime = "text/plain" if result.encoding is not None else "application/octet-stream"
+    return DetectionResult(result.encoding, result.confidence, result.language, mime)
 
 
 def _run_pipeline_core(  # noqa: PLR0913
@@ -607,9 +268,12 @@ def _run_pipeline_core(  # noqa: PLR0913
     exclude_encodings: frozenset[str] | None = None,
     no_match_encoding: str = "cp1252",
     empty_input_encoding: str = "utf-8",
+    full_ranking: bool = False,
+    input_truncated: bool = False,
 ) -> list[DetectionResult]:
     """Core pipeline logic. Returns list of results sorted by confidence."""
     ctx = PipelineContext()
+    input_truncated = input_truncated or len(data) > max_bytes
     data = data[:max_bytes]
 
     # Build candidate set once — used for both early-exit gating and
@@ -625,7 +289,7 @@ def _run_pipeline_core(  # noqa: PLR0913
 
     # Stage 1a: BOM detection (runs first — BOMs are definitive and
     # UTF-16/32 data looks binary due to null bytes)
-    bom_result = detect_bom(data)
+    bom_result = detect_bom(data, input_truncated=input_truncated)
     if bom_result is not None and bom_result.encoding in allowed:
         return [bom_result]
 
@@ -633,7 +297,15 @@ def _run_pipeline_core(  # noqa: PLR0913
     # BOMs — must run before binary detection since these encodings contain
     # many null bytes that would trigger the binary check)
     utf1632_result = detect_utf1632_patterns(data)
-    if utf1632_result is not None and utf1632_result.encoding in allowed:
+    # The stage samples and decodes the first few KB only.  The answer has
+    # to decode the whole window, so a lone surrogate or out-of-range unit
+    # past the sample sends the input on to the other stages instead.
+    if (
+        utf1632_result is not None
+        and utf1632_result.encoding is not None
+        and utf1632_result.encoding in allowed
+        and decodes_without_error(data, utf1632_result.encoding)
+    ):
         return [utf1632_result]
 
     # Escape-sequence encodings (ISO-2022, HZ-GB-2312, UTF-7): must run
@@ -658,7 +330,7 @@ def _run_pipeline_core(  # noqa: PLR0913
     # codes) that would otherwise exceed the binary threshold.  We compute
     # the result now but return it at the normal pipeline position (after
     # markup) so that explicit charset declarations still take precedence.
-    utf8_precheck = detect_utf8(data)
+    utf8_valid, utf8_precheck = scan_utf8(data)
 
     # Pre-check ASCII to prevent false binary classification.  ASCII text
     # with null byte separators (e.g. find -print0 output) would exceed the
@@ -678,10 +350,31 @@ def _run_pipeline_core(  # noqa: PLR0913
 
     # Stage 1b: Markup charset extraction (before ASCII/UTF-8 so explicit
     # declarations like <?xml encoding="iso-8859-1"?> are honoured even
-    # when the bytes happen to be pure ASCII or valid UTF-8).
+    # when the bytes happen to be pure ASCII).
     markup_result = detect_markup_charset(data)
     if markup_result is not None and markup_result.encoding in allowed:
-        markup_result = _try_promote_markup_superset(data, markup_result, allowed)
+        # A declaration is honoured over pure ASCII (the declared encoding
+        # decodes those bytes identically), but not over genuine UTF-8
+        # structure: data containing valid multi-byte UTF-8 sequences is
+        # UTF-8 regardless of what the (frequently stale) declaration
+        # claims, and decoding it as the declared encoding would produce
+        # mojibake.  Keep the markup mime type; only the encoding wins.
+        if (
+            utf8_precheck is not None
+            and utf8_precheck.encoding != markup_result.encoding
+            and utf8_precheck.encoding in allowed
+        ):
+            return [
+                DetectionResult(
+                    utf8_precheck.encoding,
+                    utf8_precheck.confidence,
+                    utf8_precheck.language,
+                    markup_result.mime_type,
+                )
+            ]
+        # The stage already holds every declaration it returns, and the
+        # promotion it may apply, to the whole window.
+        markup_result = promote_markup_superset(data, markup_result, allowed)
         return [markup_result]
 
     # Stage 1c: ASCII (use pre-computed result)
@@ -692,15 +385,37 @@ def _run_pipeline_core(  # noqa: PLR0913
     if utf8_precheck is not None and utf8_precheck.encoding in allowed:
         return [utf8_precheck]
 
+    # The filtering, gating, and probing stages below converge on bounded
+    # evidence (ADR-0006).  One slice, taken here, feeds them all: the
+    # structural analysis cache is keyed by encoding name only, so every
+    # consumer must see the same view of the data.  For the decode-safety
+    # flip in postprocess, a window that outruns the cap counts as
+    # truncation — the slice's tail is a chardet-made cut, not the end of
+    # what the caller will decode.
+    evidence = data[:EVIDENCE_CAP_BYTES]
+    evidence_truncated = input_truncated or len(data) > len(evidence)
+
     # Stage 2a: Byte validity filtering
-    valid_candidates = filter_by_validity(data, candidates)
+    valid_candidates = filter_by_validity(evidence, candidates)
+
+    # The exhaustive UTF-8 check saw the whole window; when it *rejected*
+    # the data but the window extends past the evidence cap, the slice
+    # alone may still look like valid UTF-8 to the statistical path.  Honor
+    # the proof: chardet never calls data UTF-8 that is not valid UTF-8
+    # throughout the window.  A missing precheck result is not a rejection
+    # — valid UTF-8 with no multi-byte evidence (pure ASCII, ASCII plus
+    # control bytes, ASCII plus a truncated tail) also returns None, and
+    # ruling utf-8 out for those would be wrong.  (Within the cap the slice
+    # is the window, so validity already agrees and this never fires.)
+    if not utf8_valid and len(data) > len(evidence):
+        valid_candidates = tuple(e for e in valid_candidates if e.name != "utf-8")
 
     if not valid_candidates:
         return _make_fallback_or_none(no_match_encoding, allowed, "no_match_encoding")
 
     # Gate: eliminate CJK multi-byte candidates that lack genuine
     # multi-byte structure.  Cache structural scores for Stage 2b.
-    valid_candidates = _gate_cjk_candidates(data, valid_candidates, ctx)
+    valid_candidates = _gate_cjk_candidates(evidence, valid_candidates, ctx)
 
     if not valid_candidates:
         return _make_fallback_or_none(no_match_encoding, allowed, "no_match_encoding")
@@ -709,10 +424,10 @@ def _run_pipeline_core(  # noqa: PLR0913
     # Reuse scores already computed during the CJK gate above.
     structural_scores: list[tuple[str, float]] = []
     for enc in valid_candidates:
-        if enc.is_multibyte:
+        if enc.is_multibyte_cjk:
             score = ctx.mb_scores.get(enc.name)
             if score is None:  # pragma: no cover - gate always populates cache
-                score = compute_structural_score(data, enc, ctx)
+                score = compute_structural_score(evidence, enc, ctx)
             if score > 0.0:
                 structural_scores.append((enc.name, score))
 
@@ -723,20 +438,34 @@ def _run_pipeline_core(  # noqa: PLR0913
         _, best_score = structural_scores[0]
         if best_score >= _STRUCTURAL_CONFIDENCE_THRESHOLD:
             results = _score_structural_candidates(
-                data, structural_scores, valid_candidates, ctx
+                evidence,
+                structural_scores,
+                valid_candidates,
+                ctx,
+                full_ranking=full_ranking,
             )
             if results:
-                return _postprocess_results(data, results)
+                results = postprocess_results(
+                    evidence, results, input_truncated=evidence_truncated
+                )
+                return _hold_validity_past_cap(
+                    data, evidence, results, allowed, no_match_encoding
+                )
 
     # Stage 3: Statistical scoring for all remaining candidates.
     # Bigram models converge quickly and don't benefit from scanning
     # beyond 16 KB — cap the data to avoid unnecessary work on large files.
-    stat_data = data[:_STAT_SCORE_MAX_BYTES]
-    results = list(score_candidates(stat_data, tuple(valid_candidates)))
+    stat_data = evidence[:_STAT_SCORE_MAX_BYTES]
+    results = list(
+        score_candidates(stat_data, tuple(valid_candidates), full_ranking=full_ranking)
+    )
     if not results:
         return _make_fallback_or_none(no_match_encoding, allowed, "no_match_encoding")
 
-    return _postprocess_results(data, results)
+    # Rank corrections reason about the same evidence window the ranking
+    # came from, which also bounds their byte-presence scans.
+    results = postprocess_results(evidence, results, input_truncated=evidence_truncated)
+    return _hold_validity_past_cap(data, evidence, results, allowed, no_match_encoding)
 
 
 def run_pipeline(  # noqa: PLR0913
@@ -748,6 +477,8 @@ def run_pipeline(  # noqa: PLR0913
     exclude_encodings: frozenset[str] | None = None,
     no_match_encoding: str = "cp1252",
     empty_input_encoding: str = "utf-8",
+    full_ranking: bool = False,
+    input_truncated: bool = False,
 ) -> list[DetectionResult]:
     """Run the full detection pipeline.
 
@@ -758,20 +489,42 @@ def run_pipeline(  # noqa: PLR0913
     :param exclude_encodings: If not ``None``, never return these encodings.
     :param no_match_encoding: Encoding returned when no candidate survives.
     :param empty_input_encoding: Encoding returned for empty input.
+    :param full_ranking: When ``True``, statistical scoring evaluates every
+        candidate so the returned list is complete (``detect_all`` needs
+        this).  When ``False``, candidates that provably cannot affect the
+        top of the ranking may be omitted from the tail.
+    :param input_truncated: Pass ``True`` when *data* is already a truncated
+        view of the caller's input (``UniversalDetector`` caps its buffer at
+        ``max_bytes``, which this function cannot see from ``len(data)``
+        alone).  Truncation by the ``max_bytes`` slice here is detected
+        either way; the flag only ever widens it.
     :returns: A list of :class:`DetectionResult` sorted by confidence descending.
     """
     results = _run_pipeline_core(
         data,
         encoding_era,
         max_bytes,
+        input_truncated=input_truncated,
         include_encodings=include_encodings,
         exclude_encodings=exclude_encodings,
         no_match_encoding=no_match_encoding,
         empty_input_encoding=empty_input_encoding,
+        full_ranking=full_ranking,
     )
-    # Language scoring uses only the first 2 KB — bigrams converge quickly
-    # and this keeps Tier 3 (language-model scoring) fast even on large inputs.
-    results = _fill_metadata(data[:_LANG_SCORE_MAX_BYTES], results)
+    # Same slice the core ran on: ``max_bytes`` is the caller's cap on what
+    # chardet may look at, and language fill is not exempt from it just
+    # because it applies a smaller cap of its own.
+    results = fill_languages(data[:max_bytes], results)
+    # The ANSI-art model is keyed under the "zxx" pseudo-language (ISO 639
+    # for "no linguistic content").  Kept internal so language fill does not
+    # overwrite it; callers see language=None.
+    results = [
+        DetectionResult(r.encoding, r.confidence, None, r.mime_type)
+        if r.language == "zxx"
+        else r
+        for r in results
+    ]
+    results = [_with_default_mime(r) for r in results]
     if not results:  # pragma: no cover
         msg = "pipeline must always return at least one result"
         raise RuntimeError(msg)

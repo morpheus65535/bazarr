@@ -16,7 +16,7 @@ of the semver specifictation, author, maintainers, and description.
 """
 
 #: Semver version
-__version__ = "3.0.4"
+__version__ = "3.1.0"
 
 #: Original semver author
 __author__ = "Kostiantyn Rybnikov"

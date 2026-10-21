@@ -69,7 +69,16 @@ class AbbrExtension(Extension):
             self.glossary = {**dictionary, **self.glossary}
 
     def extendMarkdown(self, md):
-        """ Insert `AbbrTreeprocessor` and `AbbrBlockprocessor`. """
+        """
+        Register the processors.
+
+        | Class Instance                                                      | Registry                                                         | Name   | Priority |
+        | ------------------------------------------------------------------- | ---------------------------------------------------------------- | ------ | :------: |
+        | [`AbbrTreeprocessor`][markdown.extensions.abbr.AbbrTreeprocessor]   | [`treeprocessors`][markdown.treeprocessors.build_treeprocessors] | `abbr` | `7`      |
+        | [`AbbrBlockprocessor`][markdown.extensions.abbr.AbbrBlockprocessor] | [`blockprocessors`][markdown.blockprocessors.build_block_parser] | `abbr` | `16`     |
+
+        """
+        # flake8: noqa: E501 75-78
         if (self.config['glossary'][0]):
             self.load_glossary(self.config['glossary'][0])
         self.abbrs.update(self.glossary)

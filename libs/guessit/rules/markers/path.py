@@ -1,14 +1,17 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """
 Path markers
 """
-from rebulk import Rebulk
 
+from __future__ import annotations
+
+from typing import Any
+
+from rebulk import Rebulk
 from rebulk.utils import find_all
 
 
-def path(config):  # pylint:disable=unused-argument
+def path(config: dict[str, Any]) -> Rebulk:
     """
     Builder for rebulk object.
 
@@ -20,7 +23,7 @@ def path(config):  # pylint:disable=unused-argument
     rebulk = Rebulk()
     rebulk.defaults(name="path", marker=True)
 
-    def mark_path(input_string, context):
+    def mark_path(input_string: str, context: dict[str, Any]) -> list[tuple[int, int]]:
         """
         Functional pattern to mark path elements.
 
@@ -28,17 +31,17 @@ def path(config):  # pylint:disable=unused-argument
         :param context:
         :return:
         """
-        ret = []
-        if context.get('name_only', False):
+        ret: list[tuple[int, int]] = []
+        if context.get("name_only", False):
             ret.append((0, len(input_string)))
         else:
-            indices = list(find_all(input_string, '/'))
-            indices += list(find_all(input_string, '\\'))
+            indices = list(find_all(input_string, "/"))
+            indices += list(find_all(input_string, "\\"))
             indices += [-1, len(input_string)]
 
             indices.sort()
 
-            for i in range(0, len(indices) - 1):
+            for i in range(len(indices) - 1):
                 ret.append((indices[i] + 1, indices[i + 1]))
 
         return ret

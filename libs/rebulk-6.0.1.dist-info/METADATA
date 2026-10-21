@@ -1,0 +1,814 @@
+Metadata-Version: 2.4
+Name: rebulk
+Version: 6.0.1
+Summary: Rebulk - Define simple search patterns in bulk to perform advanced matching on any string.
+Keywords: re,regexp,regular expression,search,pattern,string,match
+Author: Rémi Alvergnat
+Author-email: Rémi Alvergnat <toilal.dev@gmail.com>
+License-Expression: MIT
+License-File: LICENSE
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Operating System :: OS Independent
+Classifier: Intended Audience :: Developers
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Programming Language :: Python :: 3.13
+Classifier: Programming Language :: Python :: 3.14
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Requires-Dist: regex ; extra == 'native'
+Requires-Python: >=3.10
+Project-URL: Homepage, https://github.com/Toilal/rebulk/
+Provides-Extra: native
+Description-Content-Type: text/markdown
+
+ReBulk
+======
+
+[![Latest Version](https://img.shields.io/pypi/v/rebulk.svg)](https://pypi.python.org/pypi/rebulk)
+[![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](https://pypi.python.org/pypi/rebulk)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/Toilal/rebulk/ci.yml?branch=main)](https://github.com/Toilal/rebulk/actions/workflows/ci.yml)
+[![Coveralls](https://img.shields.io/coveralls/github/Toilal/rebulk/main.svg)](https://coveralls.io/r/Toilal/rebulk?branch=main)
+[![semantic-release](https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg)](https://github.com/python-semantic-release/python-semantic-release)
+
+
+ReBulk is a python library that performs advanced searches in strings
+that would be hard to implement using [re
+module](https://docs.python.org/3/library/re.html) or [String
+methods](https://docs.python.org/3/library/stdtypes.html#str) only.
+
+It includes some features like `Patterns`, `Match`, `Rule` that allows
+developers to build a custom and complex string matcher using a readable
+and extendable API.
+
+This project is hosted on GitHub: <https://github.com/Toilal/rebulk>
+
+Install
+=======
+
+```sh
+$ pip install rebulk
+```
+
+Usage
+=====
+
+Regular expression, string and function based patterns are declared in a
+`Rebulk` object. It use a fluent API to chain `string`, `regex`, and
+`functional` methods to define various patterns types.
+
+```python
+>>> from rebulk import Rebulk
+>>> bulk = Rebulk().string('brown').regex(r'qu\w+').functional(lambda s: (20, 25))
+
+```
+
+When `Rebulk` object is fully configured, you can call `matches` method
+with an input string to retrieve all `Match` objects found by registered
+pattern.
+
+```python
+>>> bulk.matches("The quick brown fox jumps over the lazy dog")
+[<brown:(10, 15)>, <quick:(4, 9)>, <jumps:(20, 25)>]
+
+```
+
+If multiple `Match` objects are found at the same position, only the
+longer one is kept.
+
+```python
+>>> bulk = Rebulk().string('lakers').string('la')
+>>> bulk.matches("the lakers are from la")
+[<lakers:(4, 10)>, <la:(20, 22)>]
+
+```
+
+String Patterns
+===============
+
+String patterns are based on
+[str.find](https://docs.python.org/3/library/stdtypes.html#str.find)
+method to find matches, but returns all matches in the string.
+`ignore_case` can be enabled to ignore case.
+
+```python
+>>> Rebulk().string('la').matches("lalalilala")
+[<la:(0, 2)>, <la:(2, 4)>, <la:(6, 8)>, <la:(8, 10)>]
+
+>>> Rebulk().string('la').matches("LalAlilAla")
+[<la:(8, 10)>]
+
+>>> Rebulk().string('la', ignore_case=True).matches("LalAlilAla")
+[<La:(0, 2)>, <lA:(2, 4)>, <lA:(6, 8)>, <la:(8, 10)>]
+
+```
+
+You can define several patterns with a single `string` method call.
+
+```python
+>>> Rebulk().string('Winter', 'coming').matches("Winter is coming...")
+[<Winter:(0, 6)>, <coming:(10, 16)>]
+
+```
+
+Regular Expression Patterns
+===========================
+
+Regular Expression patterns are based on a compiled regular expression.
+[re.finditer](https://docs.python.org/3/library/re.html#re.finditer)
+method is used to find matches.
+
+If [regex module](https://pypi.python.org/pypi/regex) is available, it
+can be used by rebulk instead of default [re
+module](https://docs.python.org/3/library/re.html). Enable it with `REBULK_REGEX_ENABLED=1` environment variable.
+
+```python
+>>> Rebulk().regex(r'l\w').matches("lolita")
+[<lo:(0, 2)>, <li:(2, 4)>]
+
+```
+
+You can define several patterns with a single `regex` method call.
+
+```python
+>>> Rebulk().regex(r'Wint\wr', r'com\w{3}').matches("Winter is coming...")
+[<Winter:(0, 6)>, <coming:(10, 16)>]
+
+```
+
+All keyword arguments from
+[re.compile](https://docs.python.org/3/library/re.html#re.compile) are
+supported.
+
+```python
+>>> import re  # import required for flags constant
+>>> Rebulk().regex('L[A-Z]KERS', flags=re.IGNORECASE) \
+...         .matches("The LaKeRs are from La")
+[<LaKeRs:(4, 10)>]
+
+>>> Rebulk().regex('L[A-Z]', 'L[A-Z]KERS', flags=re.IGNORECASE) \
+...         .matches("The LaKeRs are from La")
+[<La:(20, 22)>, <LaKeRs:(4, 10)>]
+
+>>> Rebulk().regex(('L[A-Z]', re.IGNORECASE), ('L[a-z]KeRs')) \
+...         .matches("The LaKeRs are from La")
+[<La:(20, 22)>, <LaKeRs:(4, 10)>]
+
+```
+
+If [regex module](https://pypi.python.org/pypi/regex) is available, it
+automatically supports repeated captures.
+
+```python
+>>> # If regex module is available, repeated_captures is True by default.
+>>> matches = Rebulk().regex(r'(\d+)(?:-(\d+))+').matches("01-02-03-04")
+>>> matches[0].children # doctest:+SKIP
+[<01:(0, 2)>, <02:(3, 5)>, <03:(6, 8)>, <04:(9, 11)>]
+
+>>> # If regex module is not available, or if repeated_captures is forced to False.
+>>> matches = Rebulk().regex(r'(\d+)(?:-(\d+))+', repeated_captures=False) \
+...                   .matches("01-02-03-04")
+>>> matches[0].children
+[<01:(0, 2)+initiator=01-02-03-04>, <04:(9, 11)+initiator=01-02-03-04>]
+
+```
+
+-   `abbreviations`
+
+    Defined as a list of 2-tuple, each tuple is an abbreviation. It
+    simply replace `tuple[0]` with `tuple[1]` in the expression.
+
+    \>\>\> Rebulk().regex(r\'Custom-separators\',
+    abbreviations=\[(\"-\", r\"\[W\_\]+\")\])\...
+    .matches(\"Custom\_separators using-abbreviations\")
+    \[\<Custom\_separators:(0, 17)\>\]
+
+Functional Patterns
+===================
+
+Functional Patterns are based on the evaluation of a function.
+
+The function should have the same parameters as `Rebulk.matches` method,
+that is the input string, and must return at least start index and end
+index of the `Match` object.
+
+```python
+>>> def func(string):
+...     index = string.find('?')
+...     if index > -1:
+...         return 0, index - 11
+>>> Rebulk().functional(func).matches("Why do simple ? Forget about it ...")
+[<Why:(0, 3)>]
+
+```
+
+You can also return a dict of keywords arguments for `Match` object.
+
+You can define several patterns with a single `functional` method call,
+and function used can return multiple matches.
+
+Chain Patterns
+==============
+
+Chain Patterns are ordered composition of string, functional and regex
+patterns. Repeater can be set to define repetition on chain part.
+
+```python
+>>> r = Rebulk().regex_defaults(flags=re.IGNORECASE)\
+...             .defaults(children=True, formatter={'episode': int, 'version': int})\
+...             .chain()\
+...             .regex(r'e(?P<episode>\d{1,4})').repeater(1)\
+...             .regex(r'v(?P<version>\d+)').repeater('?')\
+...             .regex(r'[ex-](?P<episode>\d{1,4})').repeater('*')\
+...             .close() # .repeater(1) could be omitted as it's the default behavior
+>>> dict(r.matches("This is E14v2-15-16-17").to_dict())  # converts matches to dict
+{'episode': [14, 15, 16, 17], 'version': 2}
+
+```
+
+Patterns parameters
+===================
+
+All patterns have options that can be given as keyword arguments.
+
+-   `validator`
+
+    Function to validate `Match` value given by the pattern. Can also be
+    a `dict`, to use `validator` with pattern named with key.
+
+    ```python
+    >>> def check_leap_year(match):
+    ...     return int(match.value) in [1980, 1984, 1988]
+    >>> matches = Rebulk().regex(r'\d{4}', validator=check_leap_year) \
+    ...                   .matches("In year 1982 ...")
+    >>> len(matches)
+    0
+    >>> matches = Rebulk().regex(r'\d{4}', validator=check_leap_year) \
+    ...                   .matches("In year 1984 ...")
+    >>> len(matches)
+    1
+
+    ```
+
+Some base validator functions are available in `rebulk.validators`
+module. Most of those functions have to be configured using
+`functools.partial` to map them to function accepting a single `match`
+argument.
+
+-   `formatter`
+
+    Function to convert `Match` value given by the pattern. Can also be
+    a `dict`, to use `formatter` with matches named with key.
+
+    ```python
+    >>> def year_formatter(value):
+    ...     return int(value)
+    >>> matches = Rebulk().regex(r'\d{4}', formatter=year_formatter) \
+    ...                   .matches("In year 1982 ...")
+    >>> isinstance(matches[0].value, int)
+    True
+
+    ```
+
+-   `pre_match_processor` / `post_match_processor`
+
+    Function to mutagen or invalidate a match generated by a pattern.
+
+    Function has a single parameter which is the Match object. If
+    function returns False, it will be considered as an invalid match.
+    If function returns a match instance, it will replace the original
+    match with this instance in the process.
+
+-   `post_processor`
+
+    Function to change the default output of the pattern. Function
+    parameters are Matches list and Pattern object.
+
+-   `name`
+
+    The name of the pattern. It is automatically passed to `Match`
+    objects generated by this pattern.
+
+-   `tags`
+
+    A list of string that qualifies this pattern.
+
+-   `value`
+
+    Override value property for generated `Match` objects. Can also be a
+    `dict`, to use `value` with pattern named with key.
+
+-   `validate_all`
+
+    By default, validator is called for returned `Match` objects only.
+    Enable this option to validate them all, parent and children
+    included.
+
+-   `format_all`
+
+    By default, formatter is called for returned `Match` values only.
+    Enable this option to format them all, parent and children included.
+
+-   `disabled`
+
+    A `function(context)` to disable the pattern if returning `True`.
+
+-   `children`
+
+    If `True`, all children `Match` objects will be retrieved instead of
+    a single parent `Match` object.
+
+-   `private`
+
+    If `True`, `Match` objects generated from this pattern are available
+    internally only. They will be removed at the end of `Rebulk.matches`
+    method call.
+
+-   `private_parent`
+
+    Force parent matches to be returned and flag them as private.
+
+-   `private_children`
+
+    Force children matches to be returned and flag them as private.
+
+-   `private_names`
+
+    Matches names that will be declared as private
+
+-   `ignore_names`
+
+    Matches names that will be ignored from the pattern output, after
+    validation.
+
+-   `marker`
+
+    If `true`, `Match` objects generated from this pattern will be
+    markers matches instead of standard matches. They won\'t be included
+    in `Matches` sequence, but will be available in `Matches.markers`
+    sequence (see `Markers` section).
+
+Match
+=====
+
+A `Match` object is the result created by a registered pattern.
+
+It has a `value` property defined, and position indices are available
+through `start`, `end` and `span` properties.
+
+In some case, it contains children `Match` objects in `children`
+property, and each child `Match` object reference its parent in `parent`
+property. Also, a `name` property can be defined for the match.
+
+If groups are defined in a Regular Expression pattern, each group match
+will be converted to a single `Match` object. If a group has a name
+defined (`(?P<name>group)`), it is set as `name` property in a child
+`Match` object. The whole regexp match (`re.group(0)`) will be converted
+to the main `Match` object, and all subgroups (1, 2, \... n) will be
+converted to `children` matches of the main `Match` object.
+
+```python
+>>> matches = Rebulk() \
+...         .regex(r"One, (?P<one>\w+), Two, (?P<two>\w+), Three, (?P<three>\w+)") \
+...         .matches("Zero, 0, One, 1, Two, 2, Three, 3, Four, 4")
+>>> matches
+[<One, 1, Two, 2, Three, 3:(9, 33)>]
+>>> for child in matches[0].children:
+...     '%s = %s' % (child.name, child.value)
+'one = 1'
+'two = 2'
+'three = 3'
+
+```
+
+It\'s possible to retrieve only children by using `children` parameters.
+You can also customize the way structure is generated with `every`,
+`private_parent` and `private_children` parameters.
+
+```python
+>>> matches = Rebulk() \
+...         .regex(r"One, (?P<one>\w+), Two, (?P<two>\w+), Three, (?P<three>\w+)", children=True) \
+...         .matches("Zero, 0, One, 1, Two, 2, Three, 3, Four, 4")
+>>> matches
+[<1:(14, 15)+name=one+initiator=One, 1, Two, 2, Three, 3>, <2:(22, 23)+name=two+initiator=One, 1, Two, 2, Three, 3>, <3:(32, 33)+name=three+initiator=One, 1, Two, 2, Three, 3>]
+
+```
+
+Match object has the following properties that can be given to Pattern
+objects
+
+-   `formatter`
+
+    Function to convert `Match` value given by the pattern. Can also be
+    a `dict`, to use `formatter` with matches named with key.
+
+    ```python
+    >>> def year_formatter(value):
+    ...     return int(value)
+    >>> matches = Rebulk().regex(r'\d{4}', formatter=year_formatter) \
+    ...                   .matches("In year 1982 ...")
+    >>> isinstance(matches[0].value, int)
+    True
+
+    ```
+
+-   `format_all`
+
+    By default, formatter is called for returned `Match` values only.
+    Enable this option to format them all, parent and children included.
+
+-   `conflict_solver`
+
+    A `function(match, conflicting_match)` used to solve conflict.
+    Returned object will be removed from matches by `ConflictSolver`
+    default rule. If `__default__` string is returned, it will fallback
+    to default behavior keeping longer match.
+
+Matches
+=======
+
+A `Matches` object holds the result of `Rebulk.matches` method call.
+It\'s a sequence of `Match` objects and it behaves like a list.
+
+All methods accepts a `predicate` function to filter `Match` objects
+using a callable, and an `index` int to retrieve a single element from
+default returned matches.
+
+It has the following additional methods and properties on it.
+
+-   `starting(index, predicate=None, index=None)`
+
+    Retrieves a list of `Match` objects that starts at given index.
+
+-   `ending(index, predicate=None, index=None)`
+
+    Retrieves a list of `Match` objects that ends at given index.
+
+-   `previous(match, predicate=None, index=None)`
+
+    Retrieves a list of `Match` objects that are previous and nearest to
+    match.
+
+-   `next(match, predicate=None, index=None)`
+
+    Retrieves a list of `Match` objects that are next and nearest to
+    match.
+
+-   `tagged(tag, predicate=None, index=None)`
+
+    Retrieves a list of `Match` objects that have the given tag defined.
+
+-   `named(*names, predicate=None, index=None)`
+
+    Retrieves a list of `Match` objects that have any of the given names
+    (in the order of the names, then match order within each).
+
+    ```python
+    >>> matches = Rebulk().regex(r'\d{4}', name="year").string("Big Buck Bunny", name="title") \
+    ...                   .matches("Big Buck Bunny 2008")
+    >>> [m.name for m in matches.named("title", "year")]
+    ['title', 'year']
+
+    ```
+
+-   `range(start=0, end=None, predicate=None, index=None)`
+
+    Retrieves a list of `Match` objects for given range, sorted from
+    start to end.
+
+-   `holes(start=0, end=None, formatter=None, ignore=None, predicate=None, index=None)`
+
+    Retrieves a list of *hole* `Match` objects for given range. A hole
+    match is created for each range where no match is available.
+
+-   `conflicting(match, predicate=None, index=None)`
+
+    Retrieves a list of `Match` objects that conflicts with given match.
+
+-   `chain_before(self, position, seps, start=0, predicate=None, index=None)`:
+
+    Retrieves a list of chained matches, before position, matching
+    predicate and separated by characters from seps only.
+
+-   `chain_after(self, position, seps, end=None, predicate=None, index=None)`:
+
+    Retrieves a list of chained matches, after position, matching
+    predicate and separated by characters from seps only.
+
+-   `at_match(match, predicate=None, index=None)`
+
+    Retrieves a list of `Match` objects at the same position as match.
+
+-   `at_span(span, predicate=None, index=None)`
+
+    Retrieves a list of `Match` objects from given (start, end) tuple.
+
+-   `at_index(pos, predicate=None, index=None)`
+
+    Retrieves a list of `Match` objects from given position.
+
+-   `names`
+
+    Retrieves a sequence of all `Match.name` properties.
+
+-   `tags`
+
+    Retrieves a sequence of all `Match.tags` properties.
+
+-   `to_dict(details=False, first_value=False, enforce_list=False)`
+
+    Convert to an ordered dict, with `Match.name` as key and
+    `Match.value` as value.
+
+    It\'s a subclass of
+    [OrderedDict](https://docs.python.org/2/library/collections.html#collections.OrderedDict),
+    that contains a `matches` property which is a dict with `Match.name`
+    as key and list of `Match` objects as value.
+
+    If `first_value` is `True` and distinct values are found for the
+    same name, value will be wrapped to a list. If `False`, first value
+    only will be kept and values lists can be retrieved with
+    `values_list` which is a dict with `Match.name` as key and list of
+    `Match.value` as value.
+
+    if `enforce_list` is `True`, all values will be wrapped to a list,
+    even if a single value is found. This form has a predictable, typed
+    shape (`MatchesDict[list]`), unlike the default which is a scalar *or*
+    a list per name. For fully typed access, prefer the typed retrieval
+    API above (`Key` and `Matches.to(...)`).
+
+    If `details` is True, `Match.value` objects are replaced with
+    complete `Match` object.
+
+-   `markers`
+
+    A custom `Matches` sequences specialized for `markers` matches (see
+    below)
+
+Typed retrieval
+===============
+
+By default `Match.value` is dynamically typed (`Any`). For type-safe access,
+declare a `Key` that binds a match name to its value type, and pass it to a
+builder method with `key=`. The value type is used as the formatter, and
+reading the value back through `Matches` is fully typed: `matches[key]`
+returns `T | None`, and `matches.all(key)` returns `list[T]`.
+
+```python
+>>> from rebulk import Rebulk, Key
+>>> year = Key("year", int)
+>>> title = Key("title", str)
+>>> matches = Rebulk().regex(r'\d{4}', key=year).string('Big Buck Bunny', key=title) \
+...                   .matches("Big Buck Bunny 2008")
+>>> matches[year]
+2008
+>>> matches.all(year)
+[2008]
+>>> matches[title]
+'Big Buck Bunny'
+
+```
+
+For values that aren't built straight from a string, pass an explicit
+`formatter` (a `(str) -> T` converter); the key stays fully typed as `T`.
+
+```python
+>>> from datetime import date
+>>> released = Key("released", date, formatter=date.fromisoformat)
+>>> Rebulk().regex(r'\d{4}-\d{2}-\d{2}', key=released).matches("on 2008-01-02")[released]
+datetime.date(2008, 1, 2)
+
+```
+
+A single `key=` wires one match name and formatter. For a `children=True`
+pattern that exposes several named groups, pass a sequence of keys to the same
+`key=` parameter instead: each key's converter is registered under its name as a
+per-name formatter, and an explicit per-pattern `formatter` entry still
+overrides it.
+
+```python
+>>> season = Key("season", int)
+>>> episode = Key("episode", int)
+>>> matches = Rebulk().regex(r'S(?P<season>\d+)E(?P<episode>\d+)',
+...                          key=[season, episode], children=True) \
+...                   .matches("Show.S03E07.mkv")
+>>> matches[season]
+3
+>>> matches[episode]
+7
+
+```
+
+To avoid repeating the same per-name formatters across many patterns, declare
+the keys once on the builder with `declare_keys`. Every pattern built afterwards
+inherits each key's converter as a per-name formatter for the matching group
+name; a pattern that defines its own formatter for that name still overrides it,
+so formatter variance across patterns is preserved.
+
+```python
+>>> rb = Rebulk().declare_keys(season, episode)
+>>> _ = rb.regex(r'S(?P<season>\d+)E(?P<episode>\d+)', children=True)   # inherits int, int
+>>> _ = rb.regex(r'(?P<season>\d+)x(?P<episode>\d+)', children=True)    # inherits int, int
+>>> matches = rb.matches("Show.S03E07.mkv")
+>>> matches[season], matches[episode]
+(3, 7)
+
+```
+
+You can also project the matches onto a typed dataclass with `to`. Each field
+is filled from matches sharing its name: a `list[...]` field collects all
+values, any other field takes the first, and unmatched fields fall back to
+their default.
+
+```python
+>>> from dataclasses import dataclass, field
+>>> @dataclass
+... class Movie:
+...     year: int
+...     title: str
+...     tags: list[str] = field(default_factory=list)
+>>> tag = Key("tags", str)
+>>> matches = Rebulk().regex(r'\d{4}', key=year).string('Big Buck Bunny', key=title) \
+...                   .string('HD', key=tag).string('BluRay', key=tag) \
+...                   .matches("Big Buck Bunny 2008 HD BluRay")
+>>> matches.to(Movie)
+Movie(year=2008, title='Big Buck Bunny', tags=['HD', 'BluRay'])
+
+```
+
+`Matches.to` also accepts a `TypedDict`, returning a typed dict (unmatched
+keys are simply omitted):
+
+```python
+>>> from typing import TypedDict
+>>> class MovieDict(TypedDict):
+...     year: int
+...     title: str
+...     tags: list[str]
+>>> Rebulk().regex(r'\d{4}', key=year).string('Big Buck Bunny', key=title) \
+...        .string('HD', key=tag).string('BluRay', key=tag) \
+...        .matches("Big Buck Bunny 2008 HD BluRay").to(MovieDict)
+{'year': 2008, 'title': 'Big Buck Bunny', 'tags': ['HD', 'BluRay']}
+
+```
+
+`to` also accepts a primitive type (returns the first value) or a `list[...]`
+of a scalar type (returns the values of all matches). A `list` of a dataclass
+or `TypedDict` is rejected, as a flat match sequence has no record grouping.
+
+```python
+>>> Rebulk().regex(r'\d{4}', key=year).matches("born 1984").to(int)
+1984
+>>> digit = Key("digit", int)
+>>> Rebulk().regex(r'\d', key=digit).matches("1 2 3").to(list[int])
+[1, 2, 3]
+
+```
+
+Keys declared with `declare_keys` are carried on the resulting `Matches` (as
+`matches.declared_keys`) and used by `to` to close the typing loop: a model
+field whose type contradicts the declared `value_type` of a key with the same
+name raises `TypeError`, instead of silently building an ill-typed result. A
+`list[...]` field is checked against the declared *element* type, and fields
+with no matching declared key are left untouched.
+
+```python
+>>> @dataclass
+... class Wrong:
+...     season: str   # declared as int by the key above
+>>> Rebulk().declare_keys(season).regex(r'S(?P<season>\d+)', children=True) \
+...        .matches("S03").to(Wrong)
+Traceback (most recent call last):
+    ...
+TypeError: Wrong field 'season' typed <class 'str'> contradicts declared key 'season' of value_type <class 'int'>
+
+```
+
+The declared `value_type` only describes the *output*; the actual conversion is
+the per-pattern formatter, which `declare_keys` lets a pattern override. An
+opt-in contract check verifies the two agree: when enabled, `matches` asserts
+that every named match value is an instance of the declared key's `value_type`,
+raising `TypeError` on a mismatch (a `None` value, a `value=`-mapped literal that
+never went through the converter, are exempt). It is **off by default** (zero
+cost in production) — turn it on in development or CI to catch a formatter
+override that does not produce the declared type:
+
+```python
+>>> from rebulk import debug
+>>> debug.CHECK_DECLARED_KEYS = True   # or env REBULK_CHECK_DECLARED_KEYS=1
+>>> bad = Rebulk().declare_keys(season).regex(r'S(?P<season>\d+)', formatter={'season': str}, children=True)
+>>> bad.matches("S03")
+Traceback (most recent call last):
+    ...
+TypeError: match 'season' value '03' of type 'str' does not match declared key 'season' value_type <class 'int'>
+>>> debug.CHECK_DECLARED_KEYS = False
+
+```
+
+A declared key binds by *name*, so a typo or a name kept after its pattern was
+removed silently no-ops. `check_keys` guards against that: it returns the
+declared key names that no built pattern can produce (its `name`, regex group
+names, and declared `properties`, across the rebulk and its children). The full
+pattern set is considered regardless of `disabled`, so the result is
+deterministic — assert it in a test so a typo fails fast instead of doing
+nothing. A name produced only by a rule (e.g. `RenameMatch`) or dynamically by a
+functional pattern is not statically detectable; pass such names — or any other
+intentionally pattern-less key — to `allowed_unused` (a single name or an
+iterable).
+
+```python
+>>> rb = Rebulk().declare_keys(Key('season', int), Key('seson', int)) \
+...        .regex(r'S(?P<season>\d+)', children=True)
+>>> rb.check_keys()
+['seson']
+>>> rb.check_keys(allowed_unused=['seson'])
+[]
+
+```
+
+A functional pattern emits its match names dynamically, so they cannot be read
+off the pattern statically. Rather than allowlisting them, declare the names the
+callable emits via `properties` — a `{name: [values]}` mapping `check_keys`
+reads as the names that pattern can produce (the values are unused here). This
+keeps the key statically accounted for instead of silently exempted:
+
+```python
+>>> part = Key('part', int)
+>>> rb = Rebulk().declare_keys(part) \
+...        .functional(lambda string: None, properties={'part': [None]})
+>>> rb.check_keys()
+[]
+
+```
+
+Markers
+=======
+
+If you have defined some patterns with `markers` property, then
+`Matches.markers` points to a special `Matches` sequence that contains
+only `markers` matches. This sequence supports all methods from
+`Matches`.
+
+Markers matches are not intended to be used in final result, but can be
+used to implement a `Rule`.
+
+Rules
+=====
+
+Rules are a convenient and readable way to implement advanced
+conditional logic involving several `Match` objects. When a rule is
+triggered, it can perform an action on `Matches` object, like filtering
+out, adding additional tags or renaming.
+
+Rules are implemented by extending the abstract `Rule` class. They are
+registered using `Rebulk.rule` method by giving either a `Rule`
+instance, a `Rule` class or a module containing `Rule classes` only.
+
+For a rule to be triggered, `Rule.when` method must return `True`, or a
+non empty list of `Match` objects, or any other truthy object. When
+triggered, `Rule.then` method is called to perform the action with
+`when_response` parameter defined as the response of `Rule.when` call.
+
+Instead of implementing `Rule.then` method, you can define `consequence`
+class property with a Consequence classe or instance, like
+`RemoveMatch`, `RenameMatch` or `AppendMatch`. You can also use a list
+of consequence when required : `when_response` must then be iterable,
+and elements of this iterable will be given to each consequence in the
+same order.
+
+When many rules are registered, it can be useful to set `priority` class
+variable to define a priority integer between all rule executions
+(higher priorities will be executed first). You can also define
+`dependency` to declare another Rule class as dependency for the current
+rule, meaning that it will be executed before.
+
+For all rules with the same `priority` value, `when` is called before,
+and `then` is called after all.
+
+```python
+>>> from rebulk import Rule, RemoveMatch
+
+>>> class FirstOnlyRule(Rule):
+...     consequence = RemoveMatch
+...
+...     def when(self, matches, context):
+...         grabbed = matches.named("grabbed", 0)
+...         if grabbed and matches.previous(grabbed):
+...             return grabbed
+
+>>> rebulk = Rebulk()
+
+>>> rebulk.regex("This match(.*?)grabbed", name="grabbed")
+<...Rebulk object ...>
+>>> rebulk.regex("if it's(.*?)first match", private=True)
+<...Rebulk object at ...>
+>>> rebulk.rules(FirstOnlyRule)
+<...Rebulk object at ...>
+
+>>> rebulk.matches("This match is grabbed only if it's the first match")
+[<This match is grabbed:(0, 21)+name=grabbed>]
+>>> rebulk.matches("if it's NOT the first match, This match is NOT grabbed")
+[]
+
+```

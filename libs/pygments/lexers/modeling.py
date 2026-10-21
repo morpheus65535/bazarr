@@ -10,7 +10,7 @@
 
 import re
 
-from pygments.lexer import RegexLexer, include, bygroups, using, default
+from pygments.lexer import RegexLexer, include, bygroups, using, default, words
 from pygments.token import Text, Comment, Operator, Keyword, Name, String, \
     Number, Punctuation, Whitespace
 
@@ -48,27 +48,46 @@ class ModelicaLexer(RegexLexer):
             (r'\.?[*^/+-]|\.|<>|[<>:=]=?', Operator),
             (r'\d+(\.?\d*[eE][-+]?\d+|\.\d*)', Number.Float),
             (r'\d+', Number.Integer),
-            (r'(abs|acos|actualStream|array|asin|assert|AssertionLevel|atan|'
-             r'atan2|backSample|Boolean|cardinality|cat|ceil|change|Clock|'
-             r'Connections|cos|cosh|cross|delay|diagonal|div|edge|exp|'
-             r'ExternalObject|fill|floor|getInstanceName|hold|homotopy|'
-             r'identity|inStream|integer|Integer|interval|inverse|isPresent|'
-             r'linspace|log|log10|matrix|max|min|mod|ndims|noClock|noEvent|'
-             r'ones|outerProduct|pre|previous|product|Real|reinit|rem|rooted|'
-             r'sample|scalar|semiLinear|shiftSample|sign|sin|sinh|size|skew|'
-             r'smooth|spatialDistribution|sqrt|StateSelect|String|subSample|'
-             r'sum|superSample|symmetric|tan|tanh|terminal|terminate|time|'
-             r'transpose|vector|zeros)\b', Name.Builtin),
-            (r'(algorithm|annotation|break|connect|constant|constrainedby|der|'
-             r'discrete|each|else|elseif|elsewhen|encapsulated|enumeration|'
-             r'equation|exit|expandable|extends|external|firstTick|final|flow|for|if|'
-             r'import|impure|in|initial|inner|input|interval|loop|nondiscrete|outer|'
-             r'output|parameter|partial|protected|public|pure|redeclare|'
-             r'replaceable|return|stream|then|when|while)\b',
+            (words(('abs', 'acos', 'actualStream', 'array', 'asin', 'assert',
+                    'AssertionLevel', 'atan', 'atan2',
+                    'backSample', 'Boolean', 'cardinality',
+                    'cat', 'ceil', 'change', 'Clock',
+                    'Connections', 'cos', 'cosh', 'cross',
+                    'delay', 'diagonal', 'div', 'edge', 'exp',
+                    'ExternalObject', 'fill', 'floor',
+                    'getInstanceName', 'hold', 'homotopy',
+                    'identity', 'inStream', 'integer',
+                    'Integer', 'interval', 'inverse',
+                    'isPresent', 'linspace', 'log', 'log10',
+                    'matrix', 'max', 'min', 'mod', 'ndims',
+                    'noClock', 'noEvent', 'ones',
+                    'outerProduct', 'pre', 'previous',
+                    'product', 'Real', 'reinit', 'rem',
+                    'rooted', 'sample', 'scalar', 'semiLinear',
+                    'shiftSample', 'sign', 'sin', 'sinh',
+                    'size', 'skew', 'smooth',
+                    'spatialDistribution', 'sqrt',
+                    'StateSelect', 'String', 'subSample', 'sum',
+                    'superSample', 'symmetric', 'tan', 'tanh',
+                    'terminal', 'terminate', 'time',
+                    'transpose', 'vector', 'zeros'), suffix=r'\b'), Name.Builtin),
+            (words(('algorithm', 'annotation', 'break', 'connect', 'constant',
+                    'constrainedby', 'der', 'discrete', 'each',
+                    'else', 'elseif', 'elsewhen',
+                    'encapsulated', 'enumeration', 'equation',
+                    'exit', 'expandable', 'extends', 'external',
+                    'firstTick', 'final', 'flow', 'for', 'if',
+                    'import', 'impure', 'in', 'initial',
+                    'inner', 'input', 'interval', 'loop',
+                    'nondiscrete', 'outer', 'output',
+                    'parameter', 'partial', 'protected',
+                    'public', 'pure', 'redeclare',
+                    'replaceable', 'return', 'stream', 'then',
+                    'when', 'while'), suffix=r'\b'),
              Keyword.Reserved),
             (r'(and|not|or)\b', Operator.Word),
-            (r'(block|class|connector|end|function|model|operator|package|'
-             r'record|type)\b', Keyword.Reserved, 'class'),
+            (words(('block', 'class', 'connector', 'end', 'function', 'model',
+                    'operator', 'package', 'record', 'type'), suffix=r'\b'), Keyword.Reserved, 'class'),
             (r'(false|true)\b', Keyword.Constant),
             (r'within\b', Keyword.Reserved, 'package-prefix'),
             (_name, Name)

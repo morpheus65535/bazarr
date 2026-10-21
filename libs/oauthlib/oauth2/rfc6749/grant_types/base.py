@@ -175,6 +175,57 @@ class GrantTypeBase:
                                                       request.scopes, request.client, request):
             raise errors.InvalidScopeError(request=request)
 
+    def validate_client_confidential(self, request):
+        # If the client type is confidential or the client was issued client
+        # credentials (or assigned other authentication requirements), the
+        # client MUST authenticate with the authorization server as described
+        # in Section 3.2.1.
+        # https://tools.ietf.org/html/rfc6749#section-3.2.1
+        log.debug('Authenticating confidential client, %r.', request)
+        if not self.request_validator.authenticate_client(request):
+            log.debug('Client authentication failed, %r.', request)
+            raise errors.InvalidClientError(request=request)
+
+        if request.client is None or \
+            not hasattr(request.client, 'client_id'):
+            raise NotImplementedError('Authenticate client must set the '
+                                      'request.client.client_id attribute '
+                                      'in authenticate_client.')
+
+        if not request.client_id:
+            request.client_id = request.client.client_id
+        elif request.client_id != request.client.client_id:
+            raise errors.ServerError('Discrepency found between client identifier')
+
+    def validate_client_public(self, request):
+        # REQUIRED, if the client is not authenticating with the
+        # authorization server as described in Section 3.2.1.
+        # https://tools.ietf.org/html/rfc6749#section-3.2.1
+        log.debug('Authenticating public client, %r.', request)
+        if not self.request_validator.authenticate_client_id(request.client_id, request):
+            log.debug('Client authentication failed, %r.', request)
+            raise errors.InvalidClientError(request=request)
+
+        if request.client is None or \
+            not hasattr(request.client, 'client_id'):
+            raise NotImplementedError('Authenticate client must set the '
+                                      'request.client.client_id attribute '
+                                      'in authenticate_client.')
+
+        if not request.client_id:
+            request.client_id = request.client.client_id
+        elif request.client_id != request.client.client_id:
+            raise errors.ServerError('Discrepency found between client identifier')
+
+    def validate_client_authentication(self, request):
+        """Raise on failed client authentication."""
+        # Handles confidential clients
+        if self.request_validator.client_authentication_required(request):
+            self.validate_client_confidential(request)
+        # Handles public clients
+        else:
+            self.validate_client_public(request)
+
     def prepare_authorization_response(self, request, token, headers, body, status):
         """Place token according to response mode.
 

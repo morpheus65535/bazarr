@@ -3,17 +3,12 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 import logging
 import re
 from typing import Any
 from typing import cast
-from typing import Dict
-from typing import List
-from typing import Optional
-from typing import Sequence
-from typing import Tuple
 from typing import TYPE_CHECKING
-from typing import Union
 
 from sqlalchemy import Column
 from sqlalchemy import Float
@@ -52,7 +47,6 @@ from ..operations.base import Operations
 from ..util import sqla_compat
 from ..util.sqla_compat import compiles
 
-
 if TYPE_CHECKING:
     from typing import Literal
 
@@ -70,7 +64,7 @@ if TYPE_CHECKING:
     from sqlalchemy.sql.schema import Table
     from sqlalchemy.sql.type_api import TypeEngine
 
-    from .base import _ServerDefaultType
+    from .base import _ServerDefaultArgument
     from .impl import _ReflectedConstraint
     from ..autogenerate.api import AutogenContext
     from ..autogenerate.render import _f_name
@@ -162,20 +156,16 @@ class PostgresqlImpl(DefaultImpl):
         table_name: str,
         column_name: str,
         *,
-        nullable: Optional[bool] = None,
-        server_default: Optional[
-            Union[_ServerDefaultType, Literal[False]]
-        ] = False,
-        name: Optional[str] = None,
-        type_: Optional[TypeEngine] = None,
-        schema: Optional[str] = None,
-        autoincrement: Optional[bool] = None,
-        existing_type: Optional[TypeEngine] = None,
-        existing_server_default: Optional[
-            Union[_ServerDefaultType, Literal[False]]
-        ] = None,
-        existing_nullable: Optional[bool] = None,
-        existing_autoincrement: Optional[bool] = None,
+        nullable: bool | None = None,
+        server_default: _ServerDefaultArgument = False,
+        name: str | None = None,
+        type_: TypeEngine | None = None,
+        schema: str | None = None,
+        autoincrement: bool | None = None,
+        existing_type: TypeEngine | None = None,
+        existing_server_default: _ServerDefaultArgument = None,
+        existing_nullable: bool | None = None,
+        existing_autoincrement: bool | None = None,
         **kw: Any,
     ) -> None:
         using = kw.pop("postgresql_using", None)
@@ -269,9 +259,6 @@ class PostgresqlImpl(DefaultImpl):
         for ix in doubled_constraints:
             conn_indexes.remove(ix)
 
-        if not sqla_compat.sqla_2:
-            self._skip_functional_indexes(metadata_indexes, conn_indexes)
-
     # pg behavior regarding modifiers
     # | # | compiled sql     | returned sql     | regexp. group is removed |
     # | - | ---------------- | -----------------| ------------------------ |
@@ -326,8 +313,8 @@ class PostgresqlImpl(DefaultImpl):
         return expr
 
     def _dialect_options(
-        self, item: Union[Index, UniqueConstraint]
-    ) -> Tuple[Any, ...]:
+        self, item: Index | UniqueConstraint
+    ) -> tuple[Any, ...]:
         # only the positive case is returned by sqlalchemy reflection so
         # None and False are treated the same
         if item.dialect_kwargs.get("postgresql_nulls_not_distinct"):
@@ -424,14 +411,14 @@ class PostgresqlImpl(DefaultImpl):
 
     def adjust_reflected_dialect_options(
         self, reflected_object: _ReflectedConstraint, kind: str
-    ) -> Dict[str, Any]:
-        options: Dict[str, Any]
+    ) -> dict[str, Any]:
+        options: dict[str, Any]
         options = reflected_object.get("dialect_options", {}).copy()  # type: ignore[attr-defined]  # noqa: E501
         if not options.get("postgresql_include"):
             options.pop("postgresql_include", None)
         return options
 
-    def _compile_element(self, element: Union[ClauseElement, str]) -> str:
+    def _compile_element(self, element: ClauseElement | str) -> str:
         if isinstance(element, str):
             return element
         return element.compile(
@@ -464,7 +451,7 @@ class PostgresqlImpl(DefaultImpl):
 
     def render_type(
         self, type_: TypeEngine, autogen_context: AutogenContext
-    ) -> Union[str, Literal[False]]:
+    ) -> str | Literal[False]:
         mod = type(type_).__module__
         if not mod.startswith("sqlalchemy.dialects.postgresql"):
             return False
@@ -618,14 +605,13 @@ class CreateExcludeConstraintOp(ops.AddConstraintOp):
     def __init__(
         self,
         constraint_name: sqla_compat._ConstraintName,
-        table_name: Union[str, quoted_name],
-        elements: Union[
-            Sequence[Tuple[str, str]],
-            Sequence[Tuple[ColumnClause[Any], str]],
-        ],
-        where: Optional[Union[ColumnElement[bool], str]] = None,
-        schema: Optional[str] = None,
-        _orig_constraint: Optional[ExcludeConstraint] = None,
+        table_name: str | quoted_name,
+        elements: (
+            Sequence[tuple[str, str]] | Sequence[tuple[ColumnClause[Any], str]]
+        ),
+        where: ColumnElement[bool] | str | None = None,
+        schema: str | None = None,
+        _orig_constraint: ExcludeConstraint | None = None,
         **kw,
     ) -> None:
         self.constraint_name = constraint_name
@@ -637,7 +623,7 @@ class CreateExcludeConstraintOp(ops.AddConstraintOp):
         self.kw = kw
 
     @classmethod
-    def from_constraint(  # type:ignore[override]
+    def from_constraint(  # type: ignore[override]
         cls, constraint: ExcludeConstraint
     ) -> CreateExcludeConstraintOp:
         constraint_table = sqla_compat._table_for_constraint(constraint)
@@ -656,7 +642,7 @@ class CreateExcludeConstraintOp(ops.AddConstraintOp):
         )
 
     def to_constraint(
-        self, migration_context: Optional[MigrationContext] = None
+        self, migration_context: MigrationContext | None = None
     ) -> ExcludeConstraint:
         if self._orig_constraint is not None:
             return self._orig_constraint
@@ -685,7 +671,7 @@ class CreateExcludeConstraintOp(ops.AddConstraintOp):
         table_name: str,
         *elements: Any,
         **kw: Any,
-    ) -> Optional[Table]:
+    ) -> Table | None:
         """Issue an alter to create an EXCLUDE constraint using the
         current migration context.
 
@@ -730,7 +716,7 @@ class CreateExcludeConstraintOp(ops.AddConstraintOp):
         constraint_name: str,
         *elements: Any,
         **kw: Any,
-    ) -> Optional[Table]:
+    ) -> Table | None:
         """Issue a "create exclude constraint" instruction using the
         current batch migration context.
 
@@ -781,7 +767,7 @@ def _exclude_constraint(
     autogen_context: AutogenContext,
     alter: bool,
 ) -> str:
-    opts: List[Tuple[str, Union[quoted_name, str, _f_name, None]]] = []
+    opts: list[tuple[str, quoted_name | str | _f_name | None]] = []
 
     has_batch = autogen_context._has_batch
 
@@ -803,7 +789,7 @@ def _exclude_constraint(
             "(%s, %r)"
             % (
                 _render_potential_column(
-                    sqltext,  # type:ignore[arg-type]
+                    sqltext,  # type: ignore[arg-type]
                     autogen_context,
                 ),
                 opstring,
@@ -840,9 +826,7 @@ def _exclude_constraint(
 
 
 def _render_potential_column(
-    value: Union[
-        ColumnClause[Any], Column[Any], TextClause, FunctionElement[Any]
-    ],
+    value: ColumnClause[Any] | Column[Any] | TextClause | FunctionElement[Any],
     autogen_context: AutogenContext,
 ) -> str:
     if isinstance(value, ColumnClause):
