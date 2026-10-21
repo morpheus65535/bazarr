@@ -147,7 +147,8 @@ async def translate_request(scope, receive, send):
                 while self.event.get('more_body'):
                     self.event = await receive()
                     if self.event['type'] == 'http.request':
-                        self.payload += self.event.get('body') or b''
+                        if length is None or len(self.payload) < length:
+                            self.payload += self.event.get('body') or b''
             if length is None:
                 r = self.payload
                 self.payload = b''

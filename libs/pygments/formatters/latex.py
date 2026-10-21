@@ -449,7 +449,15 @@ class LatexEmbeddedLexer(Lexer):
         self.left = left
         self.right = right
         self.lang = lang
-        Lexer.__init__(self, **options)
+        # Inherit the wrapped lexer's options so that wrapping is
+        # transparent: input-preprocessing options such as ``stripnl``,
+        # ``stripall``, ``ensurenl`` and ``tabsize`` are applied by
+        # ``Lexer.get_tokens`` on *this* lexer, so they must match the
+        # wrapped lexer or its settings are silently overridden by our
+        # defaults (e.g. ``stripnl=False`` would be ignored, stripping
+        # leading/trailing blank lines). Options passed explicitly to this
+        # lexer still take precedence.
+        Lexer.__init__(self, **{**lang.options, **options})
 
     def get_tokens_unprocessed(self, text):
         # find and remove all the escape tokens (replace with an empty string)

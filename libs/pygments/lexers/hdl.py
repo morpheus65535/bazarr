@@ -36,8 +36,8 @@ class VerilogLexer(RegexLexer):
             (r'^\s*`define', Comment.Preproc, 'macro'),
             (r'\s+', Whitespace),
             (r'(\\)(\n)', bygroups(String.Escape, Whitespace)),  # line continuation
-            (r'/(\\\n)?/(\n|(.|\n)*?[^\\]\n)', Comment.Single),
-            (r'/(\\\n)?[*](.|\n)*?[*](\\\n)?/', Comment.Multiline),
+            (r'/(\\\n)?/(\n|[\s\S]*?[^\\]\n)', Comment.Single),
+            (r'/(\\\n)?[*][\s\S]*?[*](\\\n)?/', Comment.Multiline),
             (r'[{}#@]', Punctuation),
             (r'L?"', String, 'string'),
             (r"L?'(\\.|\\[0-7]{1,3}|\\x[a-fA-F0-9]{1,2}|[^\\\'\n])'", String.Char),
@@ -102,7 +102,7 @@ class VerilogLexer(RegexLexer):
             (words((
                 'byte', 'shortint', 'int', 'longint', 'integer', 'time',
                 'bit', 'logic', 'reg', 'supply0', 'supply1', 'tri', 'triand',
-                'trior', 'tri0', 'tri1', 'trireg', 'uwire', 'wire', 'wand', 'wor'
+                'trior', 'tri0', 'tri1', 'trireg', 'uwire', 'wire', 'wand', 'wor',
                 'shortreal', 'real', 'realtime'), suffix=r'\b'),
              Keyword.Type),
             (r'[a-zA-Z_]\w*:(?!:)', Name.Label),
@@ -118,7 +118,7 @@ class VerilogLexer(RegexLexer):
         ],
         'macro': [
             (r'[^/\n]+', Comment.Preproc),
-            (r'/[*](.|\n)*?[*]/', Comment.Multiline),
+            (r'/[*][\s\S]*?[*]/', Comment.Multiline),
             (r'//.*?\n', Comment.Single, '#pop'),
             (r'/', Comment.Preproc),
             (r'(?<=\\)\n', Comment.Preproc),
@@ -166,8 +166,8 @@ class SystemVerilogLexer(RegexLexer):
 
             (r'\s+', Whitespace),
             (r'(\\)(\n)', bygroups(String.Escape, Whitespace)),  # line continuation
-            (r'/(\\\n)?/(\n|(.|\n)*?[^\\]\n)', Comment.Single),
-            (r'/(\\\n)?[*](.|\n)*?[*](\\\n)?/', Comment.Multiline),
+            (r'/(\\\n)?/(\n|[\s\S]*?[^\\]\n)', Comment.Single),
+            (r'/(\\\n)?[*][\s\S]*?[*](\\\n)?/', Comment.Multiline),
             (r'[{}#@]', Punctuation),
             (r'L?"', String, 'string'),
             (r"L?'(\\.|\\[0-7]{1,3}|\\x[a-fA-F0-9]{1,2}|[^\\\'\n])'", String.Char),
@@ -358,7 +358,7 @@ class SystemVerilogLexer(RegexLexer):
         ],
         'macro': [
             (r'[^/\n]+', Comment.Preproc),
-            (r'/[*](.|\n)*?[*]/', Comment.Multiline),
+            (r'/[*][\s\S]*?[*]/', Comment.Multiline),
             (r'//.*?$', Comment.Single, '#pop'),
             (r'/', Comment.Preproc),
             (r'(?<=\\)\n', Comment.Preproc),
@@ -387,7 +387,7 @@ class VhdlLexer(RegexLexer):
             (r'\s+', Whitespace),
             (r'(\\)(\n)', bygroups(String.Escape, Whitespace)),  # line continuation
             (r'--.*?$', Comment.Single),
-            (r'/(\\\n)?[*](.|\n)*?[*](\\\n)?/', Comment.Multiline),
+            (r'/(\\\n)?[*][\s\S]*?[*](\\\n)?/', Comment.Multiline),
             (r"'(U|X|0|1|Z|W|L|H|-)'", String.Char),
             (r'[~!%^&*+=|?:<>/-]', Operator),
             (r"'[a-z_]\w*", Name.Attribute),

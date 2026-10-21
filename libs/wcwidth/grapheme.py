@@ -10,8 +10,6 @@ https://www.unicode.org/reports/tr29/
 from __future__ import annotations
 
 # std imports
-import sys
-import unicodedata
 from enum import IntEnum
 from functools import lru_cache
 
@@ -42,12 +40,6 @@ if TYPE_CHECKING:  # pragma: no cover
     # std imports
     from collections.abc import Iterator
 
-# check for python 3.15 for new iter_graphemes() function
-_HAS_PYTHON315_ITER_GRAPHEMES = (
-    sys.version_info >= (3, 15)
-    and hasattr(unicodedata, 'iter_graphemes')
-)
-
 # Maximum backward scan distance when finding grapheme cluster boundaries.
 # Covers all known Unicode grapheme clusters with margin; longer sequences are pathological.
 MAX_GRAPHEME_SCAN = 32
@@ -74,7 +66,7 @@ class GCB(IntEnum):
 
 # All lru_cache sizes in this file use maxsize=1024, chosen by benchmarking UDHR data (500+
 # languages) and considering typical process-long sessions: western scripts need ~64 unique
-# codepoints, but CJK could reach ~2000 -- but likely not.
+# codepoints, and CJK can reach ~2000.
 @lru_cache(maxsize=1024)
 def _grapheme_cluster_break(ucs: int) -> GCB:
     # pylint: disable=too-many-branches,too-complex
@@ -213,25 +205,14 @@ def _should_break(
         return BreakResult(should_break=False, ri_count=0)
 
     # GB9c: Indic conjunct cluster
-    # \p{InCB=Consonant} [\p{InCB=Extend}\p{InCB=Linker}]* \p{InCB=Linker}
-    #     [\p{InCB=Extend}\p{InCB=Linker}]* x \p{InCB=Consonant}
+    # \p{InCB=Linker} \p{InCB=Extend}* x \p{InCB=Consonant}
     curr_ucs = ord(text[curr_idx])
     if _is_incb_consonant(curr_ucs):
-        has_linker = False
         i = curr_idx - 1
-        while i >= 0:
-            prev_ucs = ord(text[i])
-            if _is_incb_linker(prev_ucs):
-                has_linker = True
-                i -= 1
-            elif _is_incb_extend(prev_ucs):
-                i -= 1
-            elif _is_incb_consonant(prev_ucs):
-                if has_linker:
-                    return BreakResult(should_break=False, ri_count=0)
-                break
-            else:
-                break
+        while i >= 0 and _is_incb_extend(ord(text[i])):
+            i -= 1
+        if i >= 0 and _is_incb_linker(ord(text[i])):
+            return BreakResult(should_break=False, ri_count=0)
 
     # GB11: ExtPict Extend* ZWJ x ExtPict
     if prev_gcb == GCB.ZWJ and _is_extended_pictographic(curr_ucs):
@@ -257,59 +238,13 @@ def _should_break(
     return BreakResult(should_break=True, ri_count=ri_count)
 
 
-def _iter_graphemes_stdlib(
-    unistr: str,
-    start: int = 0,
-    end: Optional[int] = None,
-) -> Iterator[str]:
-    r"""
-    Iterate over grapheme clusters using :func:`unicodedata.iter_graphemes`.
-
-    Grapheme clusters are "user-perceived characters" - what a user would
-    consider a single character, which may consist of multiple Unicode
-    codepoints (e.g., a base character with combining marks, emoji sequences).
-
-    :param unistr: The Unicode string to segment.
-    :param start: Starting index (default 0).
-    :param end: Ending index (default len(unistr)).
-    :yields: Grapheme cluster substrings.
-
-    Example::
-
-        >>> list(iter_graphemes('cafe\u0301'))
-        ['c', 'a', 'f', 'e\u0301']
-        >>> list(iter_graphemes('ok\U0001F468\u200D\U0001F469\u200D\U0001F467'))
-        ['o', 'k', '\U0001F468\u200D\U0001F469\u200D\U0001F467']
-        >>> list(iter_graphemes('ok\U0001F1FA\U0001F1F8'))
-        ['o', 'k', '\U0001F1FA\U0001F1F8']
-
-    .. versionadded:: 0.3.0
-    """
-    if not unistr:
-        return
-
-    length = len(unistr)
-
-    if end is None:
-        end = length
-
-    if start >= end or start >= length:
-        return
-
-    end = min(end, length)
-
-    full_segment = unistr[start:end]
-    for seg in unicodedata.iter_graphemes(full_segment):  # type: ignore[attr-defined]  # pylint: disable=no-member
-        yield full_segment[seg.start:seg.end]
-
-
 def _iter_graphemes_python(
     unistr: str,
     start: int = 0,
     end: int | None = None,
 ) -> Iterator[str]:
     r"""
-    Iterate over grapheme clusters using :func:`unicodedata.iter_graphemes`.
+    Iterate over grapheme clusters by UAX #29 extended grapheme cluster rules.
 
     Grapheme clusters are "user-perceived characters" - what a user would
     consider a single character, which may consist of multiple Unicode
@@ -323,11 +258,11 @@ def _iter_graphemes_python(
     Example::
 
         >>> list(iter_graphemes('cafe\u0301'))
-        ['c', 'a', 'f', 'e\u0301']
+        ['c', 'a', 'f', 'é']
         >>> list(iter_graphemes('ok\U0001F468\u200D\U0001F469\u200D\U0001F467'))
-        ['o', 'k', '\U0001F468\u200D\U0001F469\u200D\U0001F467']
+        ['o', 'k', '👨\u200d👩\u200d👧']
         >>> list(iter_graphemes('ok\U0001F1FA\U0001F1F8'))
-        ['o', 'k', '\U0001F1FA\U0001F1F8']
+        ['o', 'k', '🇺🇸']
 
     .. versionadded:: 0.3.0
     """
@@ -487,7 +422,4 @@ def iter_graphemes_reverse(
 
 
 # Bind iter_graphemes at module level to avoid per-call dispatch overhead.
-iter_graphemes = (
-    _iter_graphemes_stdlib if _HAS_PYTHON315_ITER_GRAPHEMES
-    else _iter_graphemes_python
-)
+iter_graphemes = _iter_graphemes_python

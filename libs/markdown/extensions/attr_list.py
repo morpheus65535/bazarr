@@ -196,6 +196,15 @@ class AttrListTreeprocessor(Treeprocessor):
 class AttrListExtension(Extension):
     """ Attribute List extension for Python-Markdown """
     def extendMarkdown(self, md):
+        """
+        Register the processor.
+
+        | Class Instance                                                              | Registry                                                         | Name   | Priority |
+        | --------------------------------------------------------------------------- | ---------------------------------------------------------------- | ------ | :------: |
+        | [`AttrListTreeprocessor`][markdown.extensions.attr_list.AttrListTreeprocessor] | [`treeprocessors`][markdown.treeprocessors.build_treeprocessors] | `attr_list` | `8` |
+
+        """
+        # flake8: noqa: E501 202-204
         md.treeprocessors.register(AttrListTreeprocessor(md), 'attr_list', 8)
         md.registerExtension(self)
 

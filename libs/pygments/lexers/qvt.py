@@ -53,7 +53,7 @@ class QVToLexer(RegexLexer):
             # Uncomment the following if you want to distinguish between
             # '/*' and '/**', à la javadoc
             # (r'/[*]{2}(.|\n)*?[*]/', Comment.Multiline),
-            (r'/[*](.|\n)*?[*]/', Comment.Multiline),
+            (r'/[*][\s\S]*?[*]/', Comment.Multiline),
             (r'\\\n', Text),
             (r'(and|not|or|xor|##?)\b', Operator.Word),
             (r'(:{1,2}=|[-+]=)\b', Operator.Word),

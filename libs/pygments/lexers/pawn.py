@@ -43,8 +43,8 @@ class SourcePawnLexer(RegexLexer):
             (r'\n', Text),
             (r'\s+', Text),
             (r'\\\n', Text),  # line continuation
-            (r'/(\\\n)?/(\n|(.|\n)*?[^\\]\n)', Comment.Single),
-            (r'/(\\\n)?\*(.|\n)*?\*(\\\n)?/', Comment.Multiline),
+            (r'/(\\\n)?/(\n|[\s\S]*?[^\\]\n)', Comment.Single),
+            (r'/(\\\n)?\*[\s\S]*?\*(\\\n)?/', Comment.Multiline),
             (r'[{}]', Punctuation),
             (r'L?"', String, 'string'),
             (r"L?'(\\.|\\[0-7]{1,3}|\\x[a-fA-F0-9]{1,2}|[^\\\'\n])'", String.Char),
@@ -71,7 +71,7 @@ class SourcePawnLexer(RegexLexer):
         ],
         'macro': [
             (r'[^/\n]+', Comment.Preproc),
-            (r'/\*(.|\n)*?\*/', Comment.Multiline),
+            (r'/\*[\s\S]*?\*/', Comment.Multiline),
             (r'//.*?\n', Comment.Single, '#pop'),
             (r'/', Comment.Preproc),
             (r'(?<=\\)\n', Comment.Preproc),
@@ -154,7 +154,7 @@ class PawnLexer(RegexLexer):
             (r'\n', Text),
             (r'\s+', Text),
             (r'\\\n', Text),  # line continuation
-            (r'/(\\\n)?/(\n|(.|\n)*?[^\\]\n)', Comment.Single),
+            (r'/(\\\n)?/(\n|[\s\S]*?[^\\]\n)', Comment.Single),
             (r'/(\\\n)?\*[\w\W]*?\*(\\\n)?/', Comment.Multiline),
             (r'[{}]', Punctuation),
             (r'L?"', String, 'string'),
@@ -182,7 +182,7 @@ class PawnLexer(RegexLexer):
         ],
         'macro': [
             (r'[^/\n]+', Comment.Preproc),
-            (r'/\*(.|\n)*?\*/', Comment.Multiline),
+            (r'/\*[\s\S]*?\*/', Comment.Multiline),
             (r'//.*?\n', Comment.Single, '#pop'),
             (r'/', Comment.Preproc),
             (r'(?<=\\)\n', Comment.Preproc),

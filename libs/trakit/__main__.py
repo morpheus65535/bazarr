@@ -46,15 +46,9 @@ def build_argument_parser() -> argparse.ArgumentParser:
         '--debug',
         action='store_true',
         dest='debug',
-        help='Print information for debugging trakit and for reporting bugs.'
+        help='Print information for debugging trakit and for reporting bugs.',
     )
-    output_opts.add_argument(
-        '-y',
-        '--yaml',
-        action='store_true',
-        dest='yaml',
-        help='Display output in yaml format'
-    )
+    output_opts.add_argument('-y', '--yaml', action='store_true', dest='yaml', help='Display output in yaml format')
 
     information_opts = opts.add_argument_group('Information')
     information_opts.add_argument('--version', action='version', version=__version__)
@@ -62,11 +56,11 @@ def build_argument_parser() -> argparse.ArgumentParser:
     return opts
 
 
-def _as_yaml(value: str, info: typing.Mapping[str, typing.Any]) -> str:
+def _as_yaml(value: str, info: typing.Mapping[str | None, typing.Any]) -> str:
     """Convert info to string using YAML format."""
     import yaml
 
-    def default_representer(r: yaml.representer.SafeRepresenter, data: typing.Any):
+    def default_representer(r: yaml.representer.SafeRepresenter, data: typing.Any) -> yaml.ScalarNode:
         return r.represent_scalar('tag:yaml.org,2002:str', str(data))
 
     yaml.representer.SafeRepresenter.add_representer(babelfish.Language, default_representer)
@@ -74,12 +68,12 @@ def _as_yaml(value: str, info: typing.Mapping[str, typing.Any]) -> str:
     return yaml.safe_dump({value: dict(info)}, allow_unicode=True, sort_keys=False)
 
 
-def _as_json(info: typing.Mapping[str, typing.Any]) -> str:
+def _as_json(info: typing.Mapping[str | None, typing.Any]) -> str:
     """Convert info to string using JSON format."""
     return json.dumps(info, ensure_ascii=False, indent=2, default=str)
 
 
-def dump(value: str, info: typing.Mapping[str, typing.Any], opts: argparse.Namespace) -> str:
+def dump(value: str, info: typing.Mapping[str | None, typing.Any], opts: argparse.Namespace) -> str:
     """Convert info to string using json or yaml format."""
     if opts.yaml:
         return _as_yaml(value, info)
@@ -87,7 +81,7 @@ def dump(value: str, info: typing.Mapping[str, typing.Any], opts: argparse.Names
     return _as_json(info)
 
 
-def trakit(value: str, opts: argparse.Namespace) -> typing.Mapping:
+def trakit(value: str, opts: argparse.Namespace) -> typing.Mapping[str | None, typing.Any]:
     """Extract video metadata."""
     if not opts.yaml:
         console.info('Parsing: %s', value)
@@ -98,7 +92,7 @@ def trakit(value: str, opts: argparse.Namespace) -> typing.Mapping:
     return info
 
 
-def execute(args: typing.Optional[typing.List[str]] = None):
+def execute(args: list[str] | None = None) -> typing.Mapping[str | None, typing.Any]:
     """Execute main function for entry point."""
     argument_parser = build_argument_parser()
     args = args or sys.argv[1:]
@@ -111,7 +105,7 @@ def execute(args: typing.Optional[typing.List[str]] = None):
     return trakit(opts.value, opts)
 
 
-def main(args: typing.Optional[typing.List[str]] = None):
+def main(args: list[str] | None = None) -> None:
     execute(args)
 
 

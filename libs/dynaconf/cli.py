@@ -11,6 +11,7 @@ import webbrowser
 from contextlib import redirect_stdout
 from contextlib import suppress
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from dynaconf import constants
 from dynaconf import default_settings
@@ -36,6 +37,9 @@ from dynaconf.validator import Validator
 from dynaconf.vendor import click
 from dynaconf.vendor import toml
 from dynaconf.vendor import tomllib
+
+if TYPE_CHECKING:  # pragma: no cover
+    from dynaconf.base import Settings  # noqa: F401
 
 os.environ["PYTHONIOENCODING"] = "utf-8"
 
@@ -148,7 +152,6 @@ def import_settings(dotted_path):
         raise click.UsageError(
             f"invalid path to settings instance: {dotted_path}"
         )
-
     try:
         with redirect_stdout(None):
             module = importlib.import_module(module)
@@ -383,9 +386,9 @@ def init(ctx, fileformat, path, env, _vars, _secrets, wg, y, django):
         gitignore_path = path.parent / ".gitignore"
     else:
         if fileformat == "env":
-            if str(path) in (".env", "./.env"):  # pragma: no cover
-                settings_path = path
-            elif str(path).endswith("/.env"):  # pragma: no cover
+            if str(path) in (".env", "./.env") or str(path).endswith(
+                "/.env"
+            ):  # pragma: no cover
                 settings_path = path
             elif str(path).endswith(".env"):  # pragma: no cover
                 settings_path = path.parent / ".env"
@@ -603,8 +606,8 @@ def _list(
         data = settings.as_dict(env=env, internal=_all)
     else:
         identifier = f"{loader}_{cur_env}"
-        data = settings._loaded_by_loaders.get(identifier, {})
-        data = data or settings._loaded_by_loaders.get(loader, {})
+        data = settings.loaded_by_loaders.get(identifier, {})
+        data = data or settings.loaded_by_loaders.get(loader, {})
 
     # remove to avoid displaying twice
     data.pop("SETTINGS_MODULE", None)
@@ -721,9 +724,9 @@ def write(to, _vars, _secrets, path, env, y):
             secrets_path = path.parent / f".secrets.{to}"
         else:
             if to == "env":
-                if str(path) in (".env", "./.env"):  # pragma: no cover
-                    settings_path = path
-                elif str(path).endswith("/.env"):
+                if str(path) in (".env", "./.env") or str(path).endswith(
+                    "/.env"
+                ):  # pragma: no cover
                     settings_path = path
                 elif str(path).endswith(".env"):
                     settings_path = path.parent / ".env"
@@ -817,9 +820,9 @@ def validate(path):  # pragma: no cover
         )
         sys.exit(1)
 
-    # guarantee there is an environment
     validation_data = {k.lower(): v for k, v in validation_data.items()}
-    if not validation_data.get("default"):
+    if not settings.ENVIRONMENTS_FOR_DYNACONF:
+        # flat file: top-level keys are field names, not environments
         validation_data = {"default": validation_data}
 
     success = True

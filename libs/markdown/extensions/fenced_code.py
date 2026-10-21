@@ -44,7 +44,15 @@ class FencedCodeExtension(Extension):
         super().__init__(**kwargs)
 
     def extendMarkdown(self, md):
-        """ Add `FencedBlockPreprocessor` to the Markdown instance. """
+        """
+        Register the processor.
+
+        | Class Instance                                                              | Registry                                                         | Name   | Priority |
+        | --------------------------------------------------------------------------- | ---------------------------------------------------------------- | ------ | :------: |
+        | [`FencedBlockPreprocessor`][markdown.extensions.fenced_code.FencedBlockPreprocessor] | [`blockprocessors`][markdown.blockprocessors.build_block_parser] | `fenced_code_block` | `25` |
+
+        """
+        # flake8: noqa: E501 50-52
         md.registerExtension(self)
 
         md.preprocessors.register(FencedBlockPreprocessor(md, self.getConfigs()), 'fenced_code_block', 25)

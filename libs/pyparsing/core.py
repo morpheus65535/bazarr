@@ -1743,20 +1743,24 @@ class ParserElement(ABC):
             return And([])
 
         if optElements:
-
-            def makeOptionalList(n):
-                if n > 1:
-                    return Opt(self + makeOptionalList(n - 1))
-                else:
-                    return Opt(self)
+            # Build the optional tail as a bounded ``ZeroOrMore`` instead of a
+            # deeply nested ``Opt(self + Opt(self + ...))`` chain. The nested
+            # form recursed ``optElements`` levels deep, which raised
+            # RecursionError for large upper bounds (e.g. ``expr[..., 1000]``)
+            # -- see issue #332. ``ZeroOrMore(..., max=optElements)`` is a flat
+            # loop that still *exits early* (it stops at the first non-match,
+            # just like the recursive form), so it preserves the original
+            # early-exit behavior while no longer scaling the call stack with
+            # the upper bound.
+            optionalTail = ZeroOrMore(self, max=optElements)
 
             if minElements:
                 if minElements == 1:
-                    ret = self + makeOptionalList(optElements)
+                    ret = self + optionalTail
                 else:
-                    ret = And([self] * minElements) + makeOptionalList(optElements)
+                    ret = And([self] * minElements) + optionalTail
             else:
-                ret = makeOptionalList(optElements)
+                ret = optionalTail
         else:
             if minElements == 1:
                 ret = self
@@ -5638,6 +5642,7 @@ class _MultipleMatch(ParseElementEnhance):
         self,
         expr: Union[str, ParserElement],
         stop_on: typing.Optional[Union[ParserElement, str]] = None,
+        max: typing.Optional[int] = None,
         **kwargs,
     ) -> None:
         stopOn: typing.Optional[Union[ParserElement, str]] = deprecate_argument(
@@ -5645,8 +5650,11 @@ class _MultipleMatch(ParseElementEnhance):
         )
 
         super().__init__(expr)
+        if max is not None and max <= 0:
+            raise ValueError("max must be greater than 0")
         stopOn = stopOn or stop_on
         self.saveAsList = True
+        self.max_count = max
         ender = stopOn
         if isinstance(ender, str_type):
             ender = self._literalStringClass(ender)
@@ -5673,9 +5681,10 @@ class _MultipleMatch(ParseElementEnhance):
         if check_ender:
             try_not_ender(instring, loc)
         loc, tokens = self_expr_parse(instring, loc, do_actions)
+        match_count = 1
         try:
             hasIgnoreExprs = not not self.ignoreExprs
-            while 1:
+            while self.max_count is None or match_count < self.max_count:
                 if check_ender:
                     try_not_ender(instring, loc)
                 if hasIgnoreExprs:
@@ -5684,6 +5693,7 @@ class _MultipleMatch(ParseElementEnhance):
                     preloc = loc
                 loc, tmptokens = self_expr_parse(instring, preloc, do_actions)
                 tokens += tmptokens
+                match_count += 1
         except (ParseException, IndexError):
             pass
 
@@ -5725,6 +5735,9 @@ class OneOrMore(_MultipleMatch):
     - ``stop_on`` - (default= ``None``) - expression for a terminating sentinel
       (only required if the sentinel would ordinarily match the repetition
       expression)
+    - ``max`` - (default= ``None``) - maximum number times to match ``expr``
+      (does not raise an exception if the expression occurs more than ``max``
+      times, simply limits the number of matches to make)
 
     Example:
 
@@ -5778,11 +5791,12 @@ class ZeroOrMore(_MultipleMatch):
         self,
         expr: Union[str, ParserElement],
         stop_on: typing.Optional[Union[ParserElement, str]] = None,
+        max: typing.Optional[int] = None,
         **kwargs,
     ) -> None:
         stopOn: Union[ParserElement, str] = deprecate_argument(kwargs, "stopOn", None)
 
-        super().__init__(expr, stop_on=stopOn or stop_on)
+        super().__init__(expr, stop_on=stopOn or stop_on, max=max)
         self._may_return_empty = True
 
     def parseImpl(self, instring, loc, do_actions=True) -> ParseImplReturnType:
@@ -6168,6 +6182,9 @@ class Forward(ParseElementEnhance):
         self.lshift_line = None
 
     def __lshift__(self, other) -> Forward:
+        """
+        ``'<<'`` operator overload to "inject" an expression into a :class:`Forward`.
+        """
         if hasattr(self, "caller_frame"):
             del self.caller_frame
         if isinstance(other, str_type):
@@ -6190,6 +6207,9 @@ class Forward(ParseElementEnhance):
         return self
 
     def __ilshift__(self, other) -> Forward:
+        """
+        ``'<<='`` operator overload to "inject" an expression into a :class:`Forward`.
+        """
         if not isinstance(other, ParserElement):
             return NotImplemented
 
@@ -6256,6 +6276,7 @@ class Forward(ParseElementEnhance):
             )
         if not ParserElement._left_recursion_enabled:
             return super().parseImpl(instring, loc, do_actions)
+
         # ## Bounded Recursion algorithm ##
         # Recursion only needs to be processed at ``Forward`` elements, since they are
         # the only ones that can actually refer to themselves. The general idea is

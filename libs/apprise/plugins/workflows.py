@@ -79,6 +79,18 @@ class APIVersion:
     POWER_AUTOMATE = "2022-03-01-preview"
 
 
+# Match Teams ``<at>...</at>`` mentions in the message body.
+# Adaptive Cards require a matching entity for each resolved mention.
+#
+# ``[^<]+`` keeps matching linear and stops before a nested opening tag.
+# This allows a valid inner mention to survive a malformed outer wrapper,
+# such as ``<at><at>user</at>`` or ``<at>text<at>user</at>``.
+#
+# Detection runs only for generated Teams Adaptive Cards. Template-based
+# Power Automate flows bypass this payload path.
+WORKFLOWS_MENTION_RE = re.compile(r"<at>([^<]+)</at>", re.I)
+
+
 class NotifyWorkflows(NotifyBase):
     """A wrapper for Microsoft Workflows (MS Teams) Notifications."""
 
@@ -172,6 +184,13 @@ class NotifyWorkflows(NotifyBase):
                 "map_to": "power_automate",
             },
             "powerautomate": {"alias_of": "pa"},
+            "route": {
+                "name": _("Power Automate Routing ID"),
+                "type": "string",
+                "regex": (r"^[0-9]+$", ""),
+                "map_to": "routing_id",
+            },
+            "routeid": {"alias_of": "route"},
             "wrap": {
                 "name": _("Wrap Text"),
                 "type": "bool",
@@ -210,6 +229,7 @@ class NotifyWorkflows(NotifyBase):
         signature,
         include_image=None,
         power_automate=None,
+        routing_id=None,
         version=None,
         template=None,
         tokens=None,
@@ -248,6 +268,20 @@ class NotifyWorkflows(NotifyBase):
             if power_automate is not None
             else self.template_args["pa"]["default"]
         )
+
+        # Microsoft may provide a routing ID in native Power Automate URLs
+        self.routing_id = None
+        if routing_id is not None:
+            self.routing_id = validate_regex(
+                routing_id, *self.template_args["route"]["regex"]
+            )
+            if not self.routing_id:
+                msg = (
+                    "An invalid Workflows Routing ID"
+                    f" ({routing_id}) was specified."
+                )
+                self.logger.warning(msg)
+                raise TypeError(msg)
 
         # Wrap Text
         self.wrap = bool(
@@ -345,6 +379,37 @@ class NotifyWorkflows(NotifyBase):
             # By default we use a generic working payload if there was
             # no template specified
             schema = "http://adaptivecards.io/schemas/adaptive-card.json"
+
+            # Collect the explicit entities required to resolve Teams mentions.
+            # Dict insertion order preserves the first occurrence of each ID.
+            seen = {}
+            for m in WORKFLOWS_MENTION_RE.finditer(body):
+                # Normalize the ID and skip empty or duplicate mentions.
+                key = m.group(1).strip()
+                if not key or key in seen:
+                    continue
+
+                seen[key] = {
+                    "type": "mention",
+                    # Preserve the original tag because Teams matches mention
+                    # text verbatim, including its casing and whitespace.
+                    "text": m.group(0),
+                    "mentioned": {
+                        "id": key,
+                        "name": key,
+                    },
+                }
+
+            # Build the Teams metadata and include entities only when present.
+            msteams = (
+                {
+                    "width": "full",
+                    "entities": list(seen.values()),
+                }
+                if seen
+                else {"width": "full"}
+            )
+
             payload = {
                 "type": "message",
                 "attachments": [
@@ -359,7 +424,7 @@ class NotifyWorkflows(NotifyBase):
                             "version": self.adaptive_card_version,
                             "body": body_content,
                             # Additionally
-                            "msteams": {"width": "full"},
+                            "msteams": msteams,
                         },
                     }
                 ],
@@ -387,18 +452,17 @@ class NotifyWorkflows(NotifyBase):
         tokens["app_id"] = self.app_id
         tokens["app_desc"] = self.app_desc
         tokens["app_color"] = self.color(notify_type)
+        # app_color_hex is an explicit alias for app_color so templates
+        # can reference the hex variant by a self-documenting name
+        tokens["app_color_hex"] = self.color(notify_type)
         tokens["app_image_url"] = image_url
         tokens["app_url"] = self.app_url
 
         # Enforce Application mode
         tokens["app_mode"] = TemplateType.JSON
 
-        # Coerce all substitution values to str before JSON-escaping.
-        # apply_template's _escape_json() calls json.dumps(v)[1:-1] which
-        # is only correct for strings; None produces "ul" and other non-
-        # string types produce similarly corrupted output.  app_mode is a
-        # TemplateType sentinel passed as a named parameter, not a
-        # substitution value, so it is left as-is.
+        # JSON escaping expects string substitutions; map None to empty text.
+        # Preserve app_mode because it controls the template escaping mode.
         safe_tokens = {
             k: (
                 v
@@ -494,6 +558,8 @@ class NotifyWorkflows(NotifyBase):
         path = (
             "/powerautomate/automations/direct" if self.power_automate else ""
         )
+        if path and self.routing_id:
+            path += f"/cu/{self.routing_id}"
 
         notify_url = (
             "https://{host}{port}{path}/workflows/{workflow}/"
@@ -582,6 +648,7 @@ class NotifyWorkflows(NotifyBase):
             self.port,
             self.workflow,
             self.signature,
+            self.routing_id,
         )
 
     def url(self, privacy=False, *args, **kwargs):
@@ -593,6 +660,9 @@ class NotifyWorkflows(NotifyBase):
             "wrap": "yes" if self.wrap else "no",
             "pa": "yes" if self.power_automate else "no",
         }
+
+        if self.routing_id:
+            params["route"] = self.routing_id
 
         if self.template:
             params["template"] = NotifyWorkflows.quote(
@@ -655,6 +725,17 @@ class NotifyWorkflows(NotifyBase):
                 ),
             )
         )
+
+        # Power Automate CU routing ID
+        if "route" in results["qsd"] and results["qsd"]["route"]:
+            results["routing_id"] = NotifyWorkflows.unquote(
+                results["qsd"]["route"]
+            )
+
+        elif "routeid" in results["qsd"] and results["qsd"]["routeid"]:
+            results["routing_id"] = NotifyWorkflows.unquote(
+                results["qsd"]["routeid"]
+            )
 
         # Wrap Text?
         results["wrap"] = parse_bool(
@@ -732,7 +813,9 @@ class NotifyWorkflows(NotifyBase):
             r"^https?://(?P<host>[A-Z0-9_.-]+)"
             r"(?P<port>:[1-9][0-9]{0,5})?"
             # The new URL structure includes /powerautomate/automations/direct
-            r"(?P<power_automate>/powerautomate/automations/direct)?"
+            # and may include a CU routing ID before /workflows
+            r"(?P<power_automate>/powerautomate/automations/direct"
+            r"(?:/cu/(?P<routing_id>[0-9]+))?)?"
             r"/workflows/"
             r"(?P<workflow>[A-Z0-9_-]+)"
             r"/triggers/manual/paths/invoke/?"
@@ -748,7 +831,7 @@ class NotifyWorkflows(NotifyBase):
             )
 
             # Construct our URL
-            return NotifyWorkflows.parse_url(
+            results = NotifyWorkflows.parse_url(
                 "{schema}://{host}{port}/{workflow}/{params}{pa}".format(
                     schema=NotifyWorkflows.secure_protocol[0],
                     host=result.group("host"),
@@ -762,4 +845,7 @@ class NotifyWorkflows(NotifyBase):
                     pa=power_automate,
                 )
             )
+            if result.group("routing_id"):
+                results["routing_id"] = result.group("routing_id")
+            return results
         return None

@@ -85,14 +85,6 @@ class ResourceOwnerPasswordCredentialsGrant(GrantTypeBase):
         """
         headers = self._get_default_headers()
         try:
-            if self.request_validator.client_authentication_required(request):
-                log.debug('Authenticating client, %r.', request)
-                if not self.request_validator.authenticate_client(request):
-                    log.debug('Client authentication failed, %r.', request)
-                    raise errors.InvalidClientError(request=request)
-            elif not self.request_validator.authenticate_client_id(request.client_id, request):
-                log.debug('Client authentication failed, %r.', request)
-                raise errors.InvalidClientError(request=request)
             log.debug('Validating access token request, %r.', request)
             self.validate_token_request(request)
         except errors.OAuth2Error as e:
@@ -175,23 +167,18 @@ class ResourceOwnerPasswordCredentialsGrant(GrantTypeBase):
         if not request.grant_type == 'password':
             raise errors.UnsupportedGrantTypeError(request=request)
 
+        self.validate_client_authentication(request)
+
         log.debug('Validating username %s.', request.username)
         if not self.request_validator.validate_user(request.username,
                                                     request.password, request.client, request):
             raise errors.InvalidGrantError(
                 'Invalid credentials given.', request=request)
-        elif not hasattr(request.client, 'client_id'):
-            raise NotImplementedError(
-                'Validate user must set the '
-                'request.client.client_id attribute '
-                'in authenticate_client.')
         log.debug('Authorizing access to user %r.', request.user)
 
         # Ensure client is authorized use of this grant type
         self.validate_grant_type(request)
 
-        if request.client:
-            request.client_id = request.client_id or request.client.client_id
         self.validate_scopes(request)
 
         for validator in self.custom_validators.post_token:

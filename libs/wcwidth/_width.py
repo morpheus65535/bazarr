@@ -26,7 +26,8 @@ from ._constants import (_EMOJI_ZWJ_SET,
                          _FITZPATRICK_RANGE,
                          _REGIONAL_INDICATOR_SET,
                          resolve_terminal,
-                         get_term_overrides)
+                         get_term_overrides,
+                         _clamp_ambiguous_width)
 from .table_vs15 import VS15_WIDE_TO_NARROW
 from .table_vs16 import VS16_NARROW_TO_WIDE
 from .text_sizing import TextSizing, TextSizingParams
@@ -149,13 +150,14 @@ def width(
         1
     """
     # pylint: disable=too-complex,too-many-branches,too-many-statements,too-many-locals,redefined-variable-type,too-many-nested-blocks
-    # This could be broken into sub-functions (#1, #3, and #6 especially), but for reduced overhead
-    # in consideration of this function a likely "hot path", they are inline, breaking many pylint
-    # complexity rules.
+    # This could be split into sub-functions (#1, #3 and #6 especially), but this function is a
+    # hot path, so the steps stay inline and the pylint complexity rules are disabled.
 
     # Fast path for ASCII printable (no tabs, escapes, or control chars)
     if text.isascii() and text.isprintable():
         return len(text)
+
+    ambiguous_width = _clamp_ambiguous_width(ambiguous_width)
 
     # Fast parse: if no horizontal cursor movements are possible, switch to 'ignore' mode.
     # Only check longer strings - the detection overhead hurts short string performance.
@@ -269,16 +271,16 @@ def width(
                     current_col -= n_backward
                     if current_col < 0:
                         current_col = 0
-                # 2d. OSC 66 Text Sizing — has positive display width
+                # 2d. OSC 66 Text Sizing: positive display width
                 elif (ts_meta := m.group('ts_meta')) is not None:
-                    ts_text = m.group('ts_text')
+                    ts_text = m.group('ts_text') or ''
                     ts_term = m.group('ts_term')
-                    assert ts_text is not None and ts_term is not None
+                    assert ts_term is not None
                     text_size = TextSizing(
                         TextSizingParams.from_params(ts_meta, control_codes=control_codes),
                         ts_text, ts_term)
                     current_col += text_size.display_width(ambiguous_width)
-                # 2e. SGR and other zero-width sequences -- no column advance
+                # 2e. SGR and other zero-width sequences: no column advance
                 idx = m.end()
             # Escape sequences break VS16 adjacency: reset last-measured state
             last_measured_idx = -2
@@ -399,7 +401,7 @@ def width(
                 pass
             elif _bisearch(last_measured_ucs, vs16_nw_table):
                 cluster_width = 2
-            last_measured_idx = -2  # prevent double application
+            last_measured_idx = -2
             idx += 1
             continue
 
@@ -412,6 +414,7 @@ def width(
             if vs15_narrow and last_measured_w == 2:
                 current_col -= 1
                 max_extent = max(_max_extent_before, current_col)
+            last_measured_idx = -2
             idx += 1
             continue
 
@@ -423,7 +426,7 @@ def width(
                 while j >= 0 and ord(text[j]) in _REGIONAL_INDICATOR_SET:
                     ri_before += 1
                     j -= 1
-                if ri_before % 2 == 1:
+                if ri_before % 2 == 1 and not (_narrower and _bisearch(ucs, _narrower)):
                     last_measured_ucs = ucs
                     idx += 1
                     continue

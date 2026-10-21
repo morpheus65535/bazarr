@@ -302,8 +302,8 @@ class KuinLexer(RegexLexer):
             (r"'(?:\\.|.)+?'", String.Char),
 
             # Operator
-            (r'(?:\.|\$(?:>|<)?)', Operator),
-            (r'(?:\^)', Operator),
+            (r'(?:\.|\$[<>]?)', Operator),
+            (r'\^', Operator),
             (r'(?:\+|-|!|##?)', Operator),
             (r'(?:\*|/|%)', Operator),
             (r'(?:~)', Operator),

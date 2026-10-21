@@ -668,6 +668,19 @@
   screen_size: 720p
   title: Happiness Charge Precure
 
+# #741: a trailing "up" (upscaled) marker glued to a WxH resolution must still resolve to the
+# screen_size; the malformed token must not be left over to shadow the real release group [BOIL].
+? '[BOIL] Inazuma Eleven - Choujigen Dream Match (DVDrip 1280x720up) [B97A2B39].mkv'
+: title: Inazuma Eleven
+  episode_title: Choujigen Dream Match
+  source: DVD
+  other: Rip
+  screen_size: 720p
+  release_group: BOIL
+  crc32: B97A2B39
+  container: mkv
+  type: episode
+
 ? "[Daisei] Free!：Iwatobi Swim Club - 01 ~ (BD 720p 10-bit AAC) [99E8E009].mkv"
 : audio_codec: AAC
   crc32: 99E8E009
@@ -1024,6 +1037,70 @@
   episode_title: Title Here
   video_codec: H.264
   year: 2013
+
+# The word linking a number to its total, in the languages the markers already cover.
+? Show.Name.Capitulo.5.de.12.HDTV.x264-GRUPO
+: title: Show Name
+  episode: 5
+  episode_count: 12
+  source: HDTV
+  video_codec: H.264
+  release_group: GRUPO
+
+? Serie.Temporada.1.de.5.1080p.WEB-DL
+: title: Serie
+  season: 1
+  season_count: 5
+  screen_size: 1080p
+  source: Web
+
+? Show.Name.Episodio.5.di.12.ITA.1080p.BluRay
+: title: Show Name
+  episode: 5
+  episode_count: 12
+  language: it
+  screen_size: 1080p
+  source: Blu-ray
+
+? Show.Name.Stagione.1.di.5.720p
+: title: Show Name
+  season: 1
+  season_count: 5
+  screen_size: 720p
+
+? Show.Name.Folge.5.von.12.German.HDTV
+: title: Show Name
+  episode: 5
+  episode_count: 12
+  language: de
+  source: HDTV
+
+? Show.Name.Aflevering.5.van.12.1080p
+: title: Show Name
+  episode: 5
+  episode_count: 12
+  screen_size: 1080p
+
+? Show.Name.Episodul.5.din.12.HDTV
+: title: Show Name
+  episode: 5
+  episode_count: 12
+  source: HDTV
+
+# Russian numbers its episode before the marker, and its total after it.
+? Show.Name.5.серия.из.12.WEB-DL.1080p
+: title: Show Name
+  episode: 5
+  episode_count: 12
+  source: Web
+  screen_size: 1080p
+
+# "av" is left out of the of-words: it would read the AV1 codec as a total (#950).
+? Show.Name.Season.2.AV1.1080p
+: title: Show Name
+  season: 2
+  screen_size: 1080p
+  -season_count: 1
 
 ? Something.S04E05E09
 : episode: # 1.x guessit this as a range from 5 to 9. But not sure if it should ...
@@ -1944,14 +2021,102 @@
   type: episode
   video_codec: H.264
 
+? Breaking.Bad.COMPLETE.1080p.BluRay.x264-GRP
+: title: Breaking Bad
+  other: Complete
+  screen_size: 1080p
+  source: Blu-ray
+  video_codec: H.264
+  release_group: GRP
+  type: episode
+
+? The.Wire.COMPLETE.SERIES.720p.BluRay-GRP
+: title: The Wire
+  other: Complete
+  screen_size: 720p
+  source: Blu-ray
+  release_group: GRP
+  type: episode
+
+? Chernobyl.COMPLETE.MINISERIES.1080p.WEB-GRP
+: title: Chernobyl
+  other: Complete
+  screen_size: 1080p
+  source: Web
+  release_group: GRP
+  type: episode
+
+# A season word next to the marker outweighs the year: a film is never a *series*.
+? The.Wire.COMPLETE.SERIES.2002.720p.BluRay-GRP
+: title: The Wire
+  year: 2002
+  other: Complete
+  screen_size: 720p
+  source: Blu-ray
+  release_group: GRP
+  type: episode
+
+? Chernobyl.2019.COMPLETE.MINISERIES.1080p.WEB-GRP
+: title: Chernobyl
+  year: 2019
+  other: Complete
+  screen_size: 1080p
+  source: Web
+  release_group: GRP
+  type: episode
+
+? Kampen Om Tungtvannet aka The Heavy Water War COMPLETE 720p x265 HEVC-Lund
+: title: Kampen Om Tungtvannet aka The Heavy Water War
+  other: Complete
+  screen_size: 720p
+  video_codec: H.265
+  release_group: Lund
+  type: episode
+
 ? How.I.Met.Your.Mother.COMPLETE.SERIES.DVDRip.XviD-AR
 : options: -L en -C us
   source: DVD
   other: [Complete, Rip]
   release_group: AR
   title: How I Met Your Mother
-  type: movie # Should be episode
+  type: episode
   video_codec: Xvid
+
+? Friends.INTEGRALE.MULTi.1080p.BluRay-GRP
+? Friends.INTÉGRALE.MULTi.1080p.BluRay-GRP
+: title: Friends
+  other: Complete
+  language: mul
+  screen_size: 1080p
+  source: Blu-ray
+  release_group: GRP
+  type: episode
+
+? Malcolm.LIntegrale.FRENCH.DVDRip-GRP
+? Malcolm.L'Integrale.FRENCH.DVDRip-GRP
+: title: Malcolm
+  other: [Complete, Rip]
+  language: French
+  source: DVD
+  release_group: GRP
+  type: episode
+
+? Engrenages.Coffret.Integrale.FRENCH.1080p-GRP
+: title: Engrenages
+  other: Complete
+  language: French
+  screen_size: 1080p
+  release_group: GRP
+  type: episode
+
+? Breaking.Bad.INTEGRALE.Saison.1.FRENCH.1080p-GRP
+: title: Breaking Bad
+  other: Complete
+  season: 1
+  language: French
+  screen_size: 1080p
+  release_group: GRP
+  type: episode
 
 ? Show Name The Complete Seasons 1 to 5 720p BluRay x265 HEVC-SUJAIDR[UTR]
 : source: Blu-ray
@@ -4770,3 +4935,559 @@
   video_codec: H.264
   release_group: NOGRP
   type: episode
+
+# a 4-digit year is not a season-word number (#800/#815);
+# with no real season/episode the title falls back to a movie.
+
+? Show.Name.Season.2025.1080p.WEB-DL.x264-GRP.mkv
+: title: Show Name Season
+  year: 2025
+  -season: 2025
+  screen_size: 1080p
+  source: Web
+  video_codec: H.264
+  release_group: GRP
+  container: mkv
+  type: movie
+
+# SxxExx is unaffected: a 4-digit season number is still parsed there
+
+? Show.Name.S2013E14.1080p.HDTV.x264-GRP.mkv
+: title: Show Name
+  season: 2013
+  episode: 14
+  screen_size: 1080p
+  source: HDTV
+  video_codec: H.264
+  release_group: GRP
+  container: mkv
+  type: episode
+
+# --- #814 / #670: leading subtitle-format bracket [SSA] is an anime release_group ---
+
+? "[SSA] Uma Musume Pretty Derby - 01.mkv"
+: release_group: SSA
+  title: Uma Musume Pretty Derby
+  episode: 1
+
+# --- #816: CJK (Japanese) season/episode markers, Unicode x, numeric episode_title ---
+
+# CJK episode marker 第N話 (upstream #671)
+? Show 第195話.mkv
+: title: Show
+  episode: 195
+  type: episode
+
+# CJK season/episode markers シーズン / 第 / 話 (upstream #763)
+? アニメ シーズン2 第3話.mkv
+: title: "アニメ"
+  season: 2
+  episode: 3
+  type: episode
+
+# CJK season suffix N期 (upstream #763)
+? Title 2期.mkv
+: title: Title
+  season: 2
+  type: episode
+
+# Chinese season/episode markers 第N季 / 第N集, ASCII or Han numerals (#779)
+? 庆余年第二季/01.mp4
+: title: 庆余年
+  season: 2
+  episode: 1
+  type: episode
+
+? 庆余年第2季/01.mp4
+: title: 庆余年
+  season: 2
+  episode: 1
+  type: episode
+
+? 庆余年 第二季 第3集.mp4
+: title: 庆余年
+  season: 2
+  episode: 3
+  type: episode
+
+# Han numeral composition: 十一 -> 11, 二十三 -> 23 (#779)
+? 庆余年第十一季 第二十三集.mkv
+: title: 庆余年
+  season: 11
+  episode: 23
+  type: episode
+
+# Unicode x (U+00D7) normalised like x (upstream #790)
+? La casa del dragón 2×7.mkv
+: title: La casa del dragón
+  season: 2
+  episode: 7
+  type: episode
+
+? Show 1×02.mkv
+: title: Show
+  season: 1
+  episode: 2
+  type: episode
+
+# Numeric episode_title with a season but no episode becomes the episode (upstream #667)
+? "[ASW] Show - S2 - 01 [1080p].mkv"
+: title: Show
+  season: 2
+  episode: 1
+  release_group: ASW
+  screen_size: 1080p
+  type: episode
+
+# --- #813: hyphenated / compound titles kept whole, not split into release_group ---
+
+# leading hyphenated title with a season/episode anchor after it (upstream #634/#640)
+? grown-ish.s03e01.web.x264-tbs[eztv].mkv
+: title: grown-ish
+  season: 3
+  episode: 1
+  -release_group: grown
+  -title: ish
+
+? grown-ish.s03e01.web.x264-tbs[ettv].mkv
+: title: grown-ish
+  season: 3
+  episode: 1
+  -release_group: grown
+
+# name-number title kept whole (upstream #796)
+? Adam-12.S01E02.mkv
+: title: Adam-12
+  season: 1
+  episode: 2
+  -release_group: Adam
+  -alternative_title: '12'
+
+# the title from the parent directory must keep the dash-joined name whole too,
+# so it collapses with the filename title instead of returning ['Adam', '12'] (upstream #796)
+? Adam-12 1968 Season 1 Complete x264 [i_c]/Adam-12 S01E02 Log 141 The Color TV Bandit.mkv
+: title: Adam-12
+  year: 1968
+  season: 1
+  episode: 2
+  episode_title: Log 141 The Color TV Bandit
+  -title: Adam
+  -alternative_title: '12'
+
+# a real leading scene group followed by a multi-word title + episode is still detected
+# (the hyphenated-title guard must only fire for a single dash-joined word)
+? FoV-Show.Name.S01E01.720p.HDTV.x264.mkv
+: release_group: FoV
+  title: Show Name
+  season: 1
+  episode: 1
+
+# --- #812: a real title word must not be consumed as language/other/country ---
+
+# lone article swallows the following language word (upstream #737)
+? The.English.S01E01.1080p.mkv
+: title: The English
+  season: 1
+  episode: 1
+  -language: English
+
+# leading "other" word is the show title (upstream #722)
+? Extras.2005.S01E01.mkv
+: title: Extras
+  season: 1
+  episode: 1
+  -other: Extras
+
+# trailing Title-Case language after a stop-word stays in the title (upstream #745)
+? "[ASW] Oshi no Ko - 01 [1080p].mkv"
+: title: Oshi no Ko
+  episode: 1
+  release_group: ASW
+  screen_size: 1080p
+  -language: ko
+
+# --- #696/#757: the leading [bracket] is the anime release group, not a trailing (title) ---
+? "[ASW] Fumetsu no Anata e - S01E03 [1080p HEVC x265 10Bit][AAC] (To Your Eternity)"
+: title: Fumetsu no Anata e
+  season: 1
+  episode: 3
+  release_group: ASW
+
+# the trailing "+" is normalised away by StripSeparators (it is a separator); the
+# group is now correctly identified instead of the trailing (WEB … service) parenthetical
+? "[SubsPlus+] Helck - S01E01 (WEB 1080p HIDIVE)"
+: title: Helck
+  season: 1
+  episode: 1
+  release_group: SubsPlus
+
+? "[SubsPlus+] Spy Classroom - S02E01 (WEB 1080p ADN) (Spy Kyoushitsu)"
+: title: Spy Classroom
+  season: 2
+  episode: 1
+  release_group: SubsPlus
+
+# casing guard: an uppercase US tag is a real country, kept
+? The.Office.US.1x03.mkv
+: title: The Office
+  country: US
+  season: 1
+  episode: 3
+
+# #812: a preposition like "in" before a Title-Case "Us"
+# keeps it in the title; only an uppercase tag (The.Office.US above) or a bracketed [Us]
+# stays a country.
+? Shameless.in.Us.S01E01.mkv
+: title: Shameless in Us
+  season: 1
+  episode: 1
+  -country: US
+
+# guard: a bracketed [Us] is a deliberate country tag, never merged into the title
+? Shameless.in.[Us].S01E01.mkv
+: country: US
+  season: 1
+  episode: 1
+  -title: Shameless in Us
+
+# #739: a title ending on a stop-word + Title-Case "Us" keeps "Us" in the title (like #789
+# "It Ends With Us"); "of" triggers the KeepTrailingStopWordTitle merge
+? The.Last.of.Us.S01E01.1080p.mkv
+: title: The Last of Us
+  season: 1
+  episode: 1
+  screen_size: 1080p
+  -country: US
+
+# --- #743: a lone article episode_title swallows the following "other" word ---
+# "The" + other "Converted" -> episode_title "The Convert" (ExtendLoneArticleTitle)
+? Chapter.19.The.Convert.720p.mkv
+: title: Chapter
+  episode: 19
+  episode_title: The Convert
+  screen_size: 720p
+  -other: Converted
+
+# regression anchors (#743 boundary): the lone-article merge must stay scoped — an episode_title
+# that merely *ends* with an article must NOT swallow a following real other/proper word into the
+# title (a broadening that did this was withdrawn from PR #838). Assert the property survives.
+? Game.of.Thrones.S01E09.Baelor.The.Real.1080p.BluRay
+: season: 1
+  episode: 9
+  other: Proper
+  -episode_title: Baelor The Real
+
+? Better.Call.Saul.S04E10.Winner.The.Internal.1080p.WEB
+: season: 4
+  episode: 10
+  other: Internal
+  -episode_title: Winner The Internal
+
+# --- #775: a release tag (REPACK -> Proper, INTERNAL, ...) between the episode marker and the
+# episode title must not hide the title; the tag stays a property and the title is still parsed ---
+? Total.Forgiveness.S00E01.REPACK.Grant.OBrien.Its.All.Love.Full.Stand.up.Set.1080p.DRPO.WEBRip.x265.AAC.2.0-NOXXUS.mkv
+: title: Total Forgiveness
+  season: 0
+  episode: 1
+  episode_title: Grant OBrien Its All Love Full Stand up Set
+  other: [Proper, Rip]
+  proper_count: 1
+  release_group: NOXXUS
+
+? Total.Forgiveness.S00E01.INTERNAL.Grant.OBrien.1080p.x265-NOXXUS.mkv
+: title: Total Forgiveness
+  season: 0
+  episode: 1
+  episode_title: Grant OBrien
+  other: Internal
+  release_group: NOXXUS
+
+# --- #732: a bare "Cam" right after the episode marker is the episode title ---
+# isolated "Cam" (no other release metadata) is reclaimed from source: Camera
+? Show.S01E01.Cam.mkv
+: title: Show
+  season: 1
+  episode: 1
+  episode_title: Cam
+  -source: Camera
+
+# but "Cam" surrounded by release metadata stays source: Camera (real CAM release)
+? Show.S01E01.Cam.720p.x264.mkv
+: title: Show
+  season: 1
+  episode: 1
+  source: Camera
+  screen_size: 720p
+  video_codec: H.264
+
+# --- #797: a more complete SxxExx (season+episode) wins over a season-only parent directory ---
+? How the Universe Works (2010) Season 1 S01/How the Universe Works (2010) - S44E03 - Monster Black Hole.mkv
+: title: How the Universe Works
+  year: 2010
+  season: 44
+  episode: 3
+  episode_title: Monster Black Hole
+  -season: 1
+
+# guard: with equally-complete SxxExx in both fileparts, the parent (real episode) still wins
+# over a sample clip in a subdirectory — the filename must not override it
+? Westworld.S02E03.720p.WEB-DL/sample/Westworld.S01E01.sample.mkv
+: title: Westworld
+  season: 2
+  episode: 3
+  other: Sample
+  -season: 1
+  -episode: 1
+
+# guard: season and episode stay a coherent pair (no S05E08 from mixing fileparts)
+? Show S03E08/Show S05.mkv
+: title: Show
+  season: 3
+  episode: 8
+  -season: 5
+
+# anchor: the common "season folder + episode-numbered file" layout still combines correctly —
+# season from the directory, episode from the filename (#797 weight change must not break this)
+? Friends S03/Friends - 07 - The One.mkv
+: title: Friends
+  season: 3
+  episode: 7
+
+# anchor: a parent directory still provides the season when the filename carries none
+? The Wire Season 3/The Wire - Episode Name.mkv
+: title: The Wire
+  season: 3
+
+# #777 (by @zoriya): absolute episode numbering with the title in the parent directory
+? video/zettai karen children/01 - Absolutely Lovely! Their Name Is The Children.mkv
+: title: zettai karen children
+  episode: 1
+  episode_title: Absolutely Lovely! Their Name Is The Children
+  container: mkv
+  type: episode
+
+# #627: with `-t episode`, the single-digit episode rule must not steal the digit prefix of an
+# obfuscated dash-separated release group ("...x264.1-URANiME-Obfuscated"). Result matches auto.
+? Kemono.Michi.Rise.Up.E03.1080p.WEB.x264.1-URANiME-Obfuscated
+: options: -t episode
+  title: Kemono Michi Rise Up
+  episode: 3
+  release_group: 1-URANiME
+  source: Web
+  video_codec: H.264
+  other: Obfuscated
+  -episode_title: URANiME
+
+# #794: a weekday glued to the broadcast date ("Thu.2.Jan.2025") is part of the air-date stamp,
+# not the episode_title; absorbing it into the date frees the real title sitting after the date.
+? A.Place.in.the.Sun.S2025E01.Thu.2.Jan.2025.Mar.Menor.Spain.1080p.ALL4.WEB-DL.AAC2.0.H.264-TBN
+: title: A Place in the Sun
+  season: 2025
+  episode: 1
+  date: 2025-01-02
+  episode_title: Mar Menor Spain
+  screen_size: 1080p
+  streaming_service: Channel 4
+  source: Web
+  audio_codec: AAC
+  audio_channels: '2.0'
+  video_codec: H.264
+  release_group: TBN
+  type: episode
+
+# #874: non-English season/episode keywords. Spanish/Portuguese "Temporada" (with
+# ordinals "1ª"/"04ª"/"3º" or bare), Turkish "Sezon"/"Bölüm", Russian
+# "Сезон"/"Серия"/"Эпизод" (both word-first and number-first, with "-й"/"-я"
+# ordinals), Italian "Stagione"/"Episodio", plus the compact "T02E22"/"T01XE08" forms.
+? Teen Wolf - 04ª Temporada 720p
+: title: Teen Wolf
+  season: 4
+
+? Vikings 3 Temporada 720p
+: title: Vikings
+  season: 3
+
+? Merli - 1a. Temporada
+: season: 1
+
+? My Little Pony - T02E22.mp4
+: season: 2
+  episode: 22
+
+? 30 M0N3D4S ESP T01XE08.mkv
+: season: 1
+  episode: 8
+
+? The.White.Lotus.2.Sezon.7.Bolum.2021.1080p.WEB-DL
+: title: The White Lotus
+  season: 2
+  episode: 7
+
+? Sherlock Temporada 1 Capitulo 3
+: season: 1
+  episode: 3
+
+? La Casa di Carta Stagione 2 Episodio 5
+: season: 2
+  episode: 5
+
+? Vikings Сезон 3 Эпизод 21 1080p
+: season: 3
+  episode: 21
+
+? Интерны 2 сезон 24 серия
+: season: 2
+
+? Проклytie 5-й сезон 09-я серия
+: season: 5
+  episode: 9
+
+? Kaamelott Saison 2 Épisode 5 FRENCH 1080p
+: title: Kaamelott
+  season: 2
+  episode: 5
+
+# #874: additional non-English keywords for non-scene names — German "Staffel"/"Folge"
+# (also number-first "2. Staffel"), Dutch "aflevering"/"afl", Polish "Odcinek",
+# Romanian "Sezonul"/"Episodul", Hungarian number-first "2. évad 5. rész", Scandinavian
+# "Säsong"/"Sesong" + "Avsnitt".
+? Die.Simpsons.Staffel.2.Folge.5.German.1080p
+: title: Die Simpsons
+  season: 2
+  episode: 5
+
+? Die Simpsons 2. Staffel Folge 5
+: season: 2
+  episode: 5
+
+? Pokemon Seizoen 22 aflevering 5 720p
+: season: 22
+  episode: 5
+
+? Serial Sezon 1 Odcinek 5 PL 720p
+: season: 1
+  episode: 5
+
+? Sorozat 2. évad 5. rész
+: season: 2
+  episode: 5
+
+? Serie Säsong 2 Avsnitt 5 SWEDISH 1080p
+: season: 2
+  episode: 5
+
+# #874: a 4-digit year in the title before a word-first keyword must not be
+# mistaken for that keyword's leading number ("... 2019 Сезон 1 Серия 5").
+? Cosmos 2019 Сезон 1 Серия 5 1080p
+: season: 1
+  episode: 5
+  year: 2019
+
+# #874: Russian multi-letter ordinal suffix on a number-first season ("5-го сезон").
+? Serial 5-го сезон 9 серия
+: season: 5
+  episode: 9
+
+# #874: a title ending in a number right before a number-first keyword must not
+# be read as that keyword's season number when the keyword carries its own
+# trailing number ("Studio 60 Сезон 5" -> season 5, "60" stays in the title).
+? Studio 60 Сезон 5 1080p
+: season: 5
+
+? Apollo 18 Temporada 2
+: season: 2
+
+# #890: a leading original-language (non-Latin) title glued before the romanized title is
+# split — the Latin part is the title, the original run becomes alternative_title.
+? 超能警探.Memorist.S01E01.2160p.WEB-DL.H265.AAC-FLTTH.mkv
+: title: Memorist
+  alternative_title: 超能警探
+  season: 1
+  episode: 1
+  screen_size: 2160p
+  source: Web
+  video_codec: H.265
+  release_group: FLTTH
+
+# #933: the "season x episode" marker tolerates separators only when they are symmetric —
+# "1 x 03" stays an episode, while a lone leading separator marks a codec token ("1080.x264").
+? Show Name 1 x 03 HDTV.avi
+: title: Show Name
+  season: 1
+  episode: 3
+  source: HDTV
+
+? Show.Name.S01.1080.x264-GRP.mkv
+: title: Show Name
+  season: 1
+  screen_size: 1080p
+  video_codec: H.264
+  release_group: GRP
+
+# The codec only marks the number as a resolution when both sit in the same tag block: a codec
+# quoted in its own group leaves an absolute episode number alone (#933).
+? '[Group] One Piece - 1080 [1080p][x264].mkv'
+: title: One Piece
+  episode: 1080
+  screen_size: 1080p
+  video_codec: H.264
+  release_group: Group
+
+? '[Group] Show Name - 1080 [x264].mkv'
+: title: Show Name
+  episode: 1080
+  video_codec: H.264
+  -screen_size: 1080p
+
+# "101" reads as S01E01 whatever the codec spelling follows it — "x264" now behaves like "h264".
+? Show.Name.101.x264-GRP
+: title: Show Name
+  season: 1
+  episode: 1
+  video_codec: H.264
+  release_group: GRP
+  -screen_size: 101x264
+
+? Show.Name.101.h264-GRP
+: title: Show Name
+  season: 1
+  episode: 1
+  video_codec: H.264
+  release_group: GRP
+
+? Anime - 03 x264 GRP.mkv
+: title: Anime
+  episode: 3
+  video_codec: H.264
+  -season: 3
+
+# A leading country-code word that opens the title is the title, not a country tag (#928)
+? Au.bout.c'est.la.mer.-.8x01.-.Le.fleuve.Yukon.mp4
+: title: Au bout c'est la mer
+  season: 8
+  episode: 1
+  episode_title: Le fleuve Yukon
+  -country: AU
+
+? Au bout c'est la mer - 8x01 - Le fleuve Yukon.mp4
+: title: Au bout c'est la mer
+  season: 8
+  episode: 1
+  episode_title: Le fleuve Yukon
+  -country: AU
+
+# guard: a property between the leading word and the anchor means the word is a real tag
+? Au.HDTV.8x01.Le.fleuve.mkv
+: country: AU
+  source: HDTV
+  season: 8
+  episode: 1
+  title: Le fleuve
+
+# trade-off of accepting title text before the anchor: a genuine country tag followed by
+# plain title text is now read as the opening word of that title
+? Uk.Top.Gear.S01E01.mkv
+: title: Uk Top Gear
+  season: 1
+  episode: 1
+  -country: GB

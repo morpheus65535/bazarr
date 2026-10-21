@@ -1,3 +1,5 @@
+import sys
+
 from sqlalchemy.testing.requirements import Requirements
 
 from alembic import util
@@ -5,6 +7,14 @@ from ..testing import exclusions
 
 
 class SuiteRequirements(Requirements):
+    @property
+    def windows(self):
+        """target platform is Windows"""
+
+        return exclusions.only_if(
+            lambda config: sys.platform.startswith("win")
+        )
+
     @property
     def schemas(self):
         """Target database must support external schemas, and have one
@@ -66,6 +76,10 @@ class SuiteRequirements(Requirements):
         return exclusions.open()
 
     @property
+    def check_constraint_reflection(self):
+        return exclusions.open()
+
+    @property
     def reflects_pk_names(self):
         return exclusions.closed()
 
@@ -74,17 +88,10 @@ class SuiteRequirements(Requirements):
         return exclusions.closed()
 
     @property
-    def sqlalchemy_1x(self):
+    def sqlalchemy_2_1(self):
         return exclusions.skip_if(
-            lambda config: util.sqla_2,
-            "SQLAlchemy 1.x test",
-        )
-
-    @property
-    def sqlalchemy_2(self):
-        return exclusions.skip_if(
-            lambda config: not util.sqla_2,
-            "SQLAlchemy 2.x test",
+            lambda config: not util.sqla_2_1,
+            "SQLAlchemy 2.1 or greater required",
         )
 
     @property

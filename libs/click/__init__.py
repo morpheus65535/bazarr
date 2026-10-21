@@ -18,6 +18,7 @@ from .core import ParameterSource as ParameterSource
 from .decorators import argument as argument
 from .decorators import command as command
 from .decorators import confirmation_option as confirmation_option
+from .decorators import custom_version_option as custom_version_option
 from .decorators import group as group
 from .decorators import help_option as help_option
 from .decorators import make_pass_decorator as make_pass_decorator
@@ -69,8 +70,6 @@ from .types import UUID as UUID
 from .utils import echo as echo
 from .utils import format_filename as format_filename
 from .utils import get_app_dir as get_app_dir
-from .utils import get_binary_stream as get_binary_stream
-from .utils import get_text_stream as get_text_stream
 from .utils import open_file as open_file
 
 
@@ -112,7 +111,6 @@ def __getattr__(name: str) -> object:
 
     if name == "__version__":
         import importlib.metadata
-        import warnings
 
         warnings.warn(
             "The '__version__' attribute is deprecated and will be removed in"
@@ -122,5 +120,25 @@ def __getattr__(name: str) -> object:
             stacklevel=2,
         )
         return importlib.metadata.version("click")
+
+    if name == "get_binary_stream":
+        from .utils import _get_binary_stream
+
+        warnings.warn(
+            "'get_binary_stream' is deprecated and will be removed in Click 9.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return _get_binary_stream
+
+    if name == "get_text_stream":
+        from .utils import _get_text_stream
+
+        warnings.warn(
+            "'get_text_stream' is deprecated and will be removed in Click 9.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return _get_text_stream
 
     raise AttributeError(name)

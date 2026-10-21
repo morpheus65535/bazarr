@@ -257,6 +257,21 @@ class SmartyExtension(Extension):
         self._addPatterns(md, patterns, 'quotes', 30)
 
     def extendMarkdown(self, md):
+        """ Register the processors.
+
+        | Class Instance                                                              | Registry                                                         | Name   | Priority |
+        | --------------------------------------------------------------------------- | ---------------------------------------------------------------- | ------ | :------: |
+        | [`markdown.treeprocessors.InlineProcessor`][markdown.treeprocessors.InlineProcessor] | [`treeprocessors`][markdown.treeprocessors.build_treeprocessors] | `smarty` | `6` |
+        | [`markdown.inlinepatterns.HtmlInlineProcessor`][markdown.inlinepatterns.HtmlInlineProcessor] | [`inlinepatterns`][markdown.inlinepatterns.build_inlinepatterns] | `html` | `90` |
+
+        The `HtmlInlineProcessor` , above, is only used if the `smart_angled_quotes` option is enabled.
+
+        The `InlineProcessor`, above, is a separate instance from the `InlineProcessor` used for
+        standard inline parsing. It contains a collection of inline patterns dependent upon the
+        various configuration options.
+
+        """
+        # flake8: noqa: E501 263-265
         configs = self.getConfigs()
         self.inlinePatterns: Registry[inlinepatterns.InlineProcessor] = Registry()
         if configs['smart_ellipses']:

@@ -70,8 +70,8 @@ class UsdLexer(RegexLexer):
             (";", Punctuation),  # ";"s are allowed to combine separate metadata lines
             ("=", Operator),
             (r"[-]*([0-9]*[.])?[0-9]+(?:e[+-]*\d+)?", Number),
-            (r"'''(?:.|\n)*?'''", String),
-            (r'"""(?:.|\n)*?"""', String),
+            (r"'''[\s\S]*?'''", String),
+            (r'"""[\s\S]*?"""', String),
             (r"'.*?'", String),
             (r'".*?"', String),
             (r"<(\.\./)*([\w/]+|[\w/]+\.\w+[\w:]*)>", Name.Namespace),

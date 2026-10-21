@@ -1,23 +1,30 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """
 Processor functions
 """
-from logging import getLogger
 
+from __future__ import annotations
+
+from logging import getLogger
+from typing import TYPE_CHECKING, Any
+
+from .rules import RemoveMatch, Rule
 from .utils import IdentitySet
 
-from .rules import Rule, RemoveMatch
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from .match import Match, Matches
 
 log = getLogger(__name__).log
 
-DEFAULT = '__default__'
+DEFAULT = "__default__"
 
-POST_PROCESS = -2048
-PRE_PROCESS = 2048
+POST_PROCESS: int = -2048
+PRE_PROCESS: int = 2048
 
 
-def _default_conflict_solver(match, conflicting_match):
+def _default_conflict_solver(match: Match, conflicting_match: Match) -> Match | None:
     """
     Default conflict solver for matches, shorter matches if they conflicts with longer ones
 
@@ -39,19 +46,19 @@ class ConflictSolver(Rule):
     """
     Remove conflicting matches.
     """
+
     priority = PRE_PROCESS
 
     consequence = RemoveMatch
 
     @property
-    def default_conflict_solver(self):
+    def default_conflict_solver(self) -> Callable[[Match, Match], Match | None]:
         """
         Default conflict solver to use.
         """
         return _default_conflict_solver
 
-    def when(self, matches, context):
-        # pylint:disable=too-many-nested-blocks
+    def when(self, matches: Matches, context: dict[str, Any] | None) -> Any:
         to_remove_matches = IdentitySet()
 
         public_matches = [match for match in matches if not match.private]
@@ -62,8 +69,9 @@ class ConflictSolver(Rule):
 
             if conflicting_matches:
                 # keep the match only if it's the longest
-                conflicting_matches = [conflicting_match for conflicting_match in conflicting_matches if
-                                       not conflicting_match.private]
+                conflicting_matches = [
+                    conflicting_match for conflicting_match in conflicting_matches if not conflicting_match.private
+                ]
                 conflicting_matches.sort(key=len)
 
                 for conflicting_match in conflicting_matches:
@@ -87,8 +95,12 @@ class ConflictSolver(Rule):
                             to_keep = both_matches[0]
 
                             if to_keep not in to_remove_matches:
-                                log(self.log_level, "Conflicting match %s will be removed in favor of match %s",
-                                    to_remove, to_keep)
+                                log(
+                                    self.log_level,
+                                    "Conflicting match %s will be removed in favor of match %s",
+                                    to_remove,
+                                    to_keep,
+                                )
 
                                 to_remove_matches.add(to_remove)
                         break
@@ -99,9 +111,10 @@ class PrivateRemover(Rule):
     """
     Removes private matches rule.
     """
+
     priority = POST_PROCESS
 
     consequence = RemoveMatch
 
-    def when(self, matches, context):
+    def when(self, matches: Matches, context: dict[str, Any] | None) -> Any:
         return [match for match in matches if match.private]

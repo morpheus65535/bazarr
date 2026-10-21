@@ -103,18 +103,11 @@ class ClientCredentialsGrant(GrantTypeBase):
                 raise errors.InvalidRequestError(description='Duplicate %s parameter.' % param,
                                                  request=request)
 
-        log.debug('Authenticating client, %r.', request)
-        if not self.request_validator.authenticate_client(request):
-            log.debug('Client authentication failed, %r.', request)
-            raise errors.InvalidClientError(request=request)
-        elif not hasattr(request.client, 'client_id'):
-            raise NotImplementedError('Authenticate client must set the '
-                                      'request.client.client_id attribute '
-                                      'in authenticate_client.')
+        self.validate_client_confidential(request)
+
         # Ensure client is authorized use of this grant type
         self.validate_grant_type(request)
 
-        request.client_id = request.client_id or request.client.client_id
         log.debug('Authorizing access to client %r.', request.client_id)
         self.validate_scopes(request)
 

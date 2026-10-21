@@ -65,7 +65,7 @@ class ChapelLexer(RegexLexer):
             (r'\\\n', Text),
 
             (r'//(.*?)\n', Comment.Single),
-            (r'/(\\\n)?[*](.|\n)*?[*](\\\n)?/', Comment.Multiline),
+            (r'/(\\\n)?[*][\s\S]*?[*](\\\n)?/', Comment.Multiline),
 
             (words(declarations, suffix=r'\b'), Keyword.Declaration),
             (words(constants, suffix=r'\b'), Keyword.Constant),

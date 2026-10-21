@@ -530,6 +530,42 @@ def test_hi_source_does_not_silence_non_hi_candidate(ai_provider, movies, reques
     assert candidate.hearing_impaired is False
 
 
+def test_english_source_beats_better_matching_other_language(ai_provider, movies, requests_mock):
+    # The Farsi source is the user's exact release, the English one is not.
+    # English still wins: release matching only breaks ties within a language.
+    translation = entitled_translation(
+        missing=["NL"],
+        sources=[
+            {"n_id": "srcEN", "language": "EN", "hi": False, "releases": [OTHER_RELEASE]},
+            {"n_id": "srcFA", "language": "FA", "hi": False, "releases": [MATCHING_RELEASE]},
+        ],
+    )
+    requests_mock.get(SEARCH_URL, json=search_response(translation))
+
+    subtitles = ai_provider.list_subtitles(movies["dune"], {Language("nld")})
+
+    assert len(subtitles) == 1
+    assert subtitles[0].ai_source_n_id == "srcEN"
+    assert subtitles[0].ai_source_language == "EN"
+
+
+def test_non_english_source_used_when_no_english(ai_provider, movies, requests_mock):
+    translation = entitled_translation(
+        missing=["NL"],
+        sources=[
+            {"n_id": "srcAR", "language": "AR", "hi": False, "releases": [OTHER_RELEASE]},
+            {"n_id": "srcFA", "language": "FA", "hi": False, "releases": [MATCHING_RELEASE]},
+        ],
+    )
+    requests_mock.get(SEARCH_URL, json=search_response(translation))
+
+    subtitles = ai_provider.list_subtitles(movies["dune"], {Language("nld")})
+
+    assert len(subtitles) == 1
+    # Among non-English sources, the release match decides.
+    assert subtitles[0].ai_source_n_id == "srcFA"
+
+
 def test_quota_exhausted_pauses_candidates(movies, requests_mock, mocker):
     requests_mock.get(SEARCH_URL, json=search_response(entitled_translation()))
     requests_mock.post(

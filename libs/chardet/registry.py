@@ -5,6 +5,7 @@ from __future__ import annotations
 import codecs
 import dataclasses
 import functools
+import warnings
 from collections.abc import Iterable
 from types import MappingProxyType
 from typing import Literal
@@ -135,8 +136,27 @@ class EncodingInfo:
     name: EncodingName
     aliases: tuple[str, ...]
     era: EncodingEra
-    is_multibyte: bool
+    #: Whether the encoding has the CJK byte structure that the structural
+    #: stage probes and the CJK gate requires.  Off for UTF-8, UTF-16 and
+    #: UTF-32, which spend more than one byte per character but are handled
+    #: by their own stages.
+    is_multibyte_cjk: bool
     languages: tuple[str, ...]
+
+    @property
+    def is_multibyte(self) -> bool:
+        """Deprecated name for :attr:`is_multibyte_cjk`.
+
+        The old name read as "more than one byte per character", which the
+        flag never meant.  Will be removed in chardet 8.0.
+        """
+        warnings.warn(
+            "EncodingInfo.is_multibyte is deprecated; use is_multibyte_cjk "
+            "instead. Will be removed in chardet 8.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.is_multibyte_cjk
 
 
 @functools.lru_cache(maxsize=256)
@@ -170,7 +190,7 @@ _REGISTRY_ENTRIES = (
         name="ascii",
         aliases=("us-ascii",),
         era=EncodingEra.MODERN_WEB,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=(),
     ),
     EncodingInfo(
@@ -185,63 +205,63 @@ _REGISTRY_ENTRIES = (
             "x-unicode20utf8",
         ),
         era=EncodingEra.MODERN_WEB,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=(),
     ),
     EncodingInfo(
         name="utf-8-sig",
         aliases=("UTF-8-SIG", "utf-8-bom"),
         era=EncodingEra.MODERN_WEB,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=(),
     ),
     EncodingInfo(
         name="utf-16",
         aliases=("UTF-16", "utf16", "csutf16"),
         era=EncodingEra.MODERN_WEB,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=(),
     ),
     EncodingInfo(
         name="utf-16-be",
         aliases=("UTF-16-BE", "utf-16be", "csutf16be"),
         era=EncodingEra.MODERN_WEB,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=(),
     ),
     EncodingInfo(
         name="utf-16-le",
         aliases=("UTF-16-LE", "utf-16le", "csutf16le"),
         era=EncodingEra.MODERN_WEB,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=(),
     ),
     EncodingInfo(
         name="utf-32",
         aliases=("UTF-32", "utf32", "csutf32"),
         era=EncodingEra.MODERN_WEB,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=(),
     ),
     EncodingInfo(
         name="utf-32-be",
         aliases=("UTF-32-BE", "utf-32be", "csutf32be"),
         era=EncodingEra.MODERN_WEB,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=(),
     ),
     EncodingInfo(
         name="utf-32-le",
         aliases=("UTF-32-LE", "utf-32le", "csutf32le"),
         era=EncodingEra.MODERN_WEB,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=(),
     ),
     EncodingInfo(
         name="utf-7",
         aliases=("UTF-7", "utf7", "csutf7"),
         era=EncodingEra.LEGACY_REGIONAL,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=(),
     ),
     # CJK - Modern Web
@@ -259,7 +279,7 @@ _REGISTRY_ENTRIES = (
             "csbig5hkscs",
         ),
         era=EncodingEra.MODERN_WEB,
-        is_multibyte=True,
+        is_multibyte_cjk=True,
         languages=("zh",),
     ),
     EncodingInfo(
@@ -273,7 +293,7 @@ _REGISTRY_ENTRIES = (
             "windows-31j",
         ),
         era=EncodingEra.MODERN_WEB,
-        is_multibyte=True,
+        is_multibyte_cjk=True,
         languages=("ja",),
     ),
     EncodingInfo(
@@ -295,7 +315,7 @@ _REGISTRY_ENTRIES = (
             "ksc_5601",
         ),
         era=EncodingEra.MODERN_WEB,
-        is_multibyte=True,
+        is_multibyte_cjk=True,
         languages=("ko",),
     ),
     EncodingInfo(
@@ -311,14 +331,14 @@ _REGISTRY_ENTRIES = (
             "x-euc-jp",
         ),
         era=EncodingEra.MODERN_WEB,
-        is_multibyte=True,
+        is_multibyte_cjk=True,
         languages=("ja",),
     ),
     EncodingInfo(
         name="euc_kr",
         aliases=("EUC-KR", "euckr", "cseuckr"),
         era=EncodingEra.MODERN_WEB,
-        is_multibyte=True,
+        is_multibyte_cjk=True,
         languages=("ko",),
     ),
     EncodingInfo(
@@ -348,14 +368,14 @@ _REGISTRY_ENTRIES = (
             "windows-936",
         ),
         era=EncodingEra.MODERN_WEB,
-        is_multibyte=True,
+        is_multibyte_cjk=True,
         languages=("zh",),
     ),
     EncodingInfo(
         name="hz",
         aliases=("HZ-GB-2312", "hz"),
         era=EncodingEra.LEGACY_REGIONAL,
-        is_multibyte=True,
+        is_multibyte_cjk=True,
         languages=("zh",),
     ),
     EncodingInfo(
@@ -368,28 +388,28 @@ _REGISTRY_ENTRIES = (
             "csiso2022jp2",
         ),
         era=EncodingEra.MODERN_WEB,
-        is_multibyte=True,
+        is_multibyte_cjk=True,
         languages=("ja",),
     ),
     EncodingInfo(
         name="iso2022_jp_2004",
         aliases=("ISO-2022-JP-2004", "iso2022-jp-3"),
         era=EncodingEra.MODERN_WEB,
-        is_multibyte=True,
+        is_multibyte_cjk=True,
         languages=("ja",),
     ),
     EncodingInfo(
         name="iso2022_jp_ext",
         aliases=("ISO-2022-JP-EXT",),
         era=EncodingEra.MODERN_WEB,
-        is_multibyte=True,
+        is_multibyte_cjk=True,
         languages=("ja",),
     ),
     EncodingInfo(
         name="iso2022_kr",
         aliases=("ISO-2022-KR", "csiso2022kr"),
         era=EncodingEra.LEGACY_REGIONAL,
-        is_multibyte=True,
+        is_multibyte_cjk=True,
         languages=("ko",),
     ),
     EncodingInfo(
@@ -407,7 +427,7 @@ _REGISTRY_ENTRIES = (
             "ms_kanji",
         ),
         era=EncodingEra.MODERN_WEB,
-        is_multibyte=True,
+        is_multibyte_cjk=True,
         languages=("ja",),
     ),
     # Windows code pages - Modern Web
@@ -415,70 +435,70 @@ _REGISTRY_ENTRIES = (
         name="cp874",
         aliases=("CP874", "windows-874", "dos-874"),
         era=EncodingEra.MODERN_WEB,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=("th",),
     ),
     EncodingInfo(
         name="cp1250",
         aliases=("Windows-1250", "cp1250", "x-cp1250", "cswindows1250"),
         era=EncodingEra.MODERN_WEB,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=(*_CENTRAL_EU, "sr"),
     ),
     EncodingInfo(
         name="cp1251",
         aliases=("Windows-1251", "cp1251", "x-cp1251", "cswindows1251"),
         era=EncodingEra.MODERN_WEB,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=_CYRILLIC,
     ),
     EncodingInfo(
         name="cp1252",
         aliases=("Windows-1252", "cp1252", "x-cp1252", "cswindows1252"),
         era=EncodingEra.MODERN_WEB,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=_WESTERN,
     ),
     EncodingInfo(
         name="cp1253",
         aliases=("Windows-1253", "cp1253", "x-cp1253", "cswindows1253"),
         era=EncodingEra.MODERN_WEB,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=("el",),
     ),
     EncodingInfo(
         name="cp1254",
         aliases=("Windows-1254", "cp1254", "x-cp1254", "cswindows1254"),
         era=EncodingEra.MODERN_WEB,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=("tr",),
     ),
     EncodingInfo(
         name="cp1255",
         aliases=("Windows-1255", "cp1255", "x-cp1255", "cswindows1255"),
         era=EncodingEra.MODERN_WEB,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=("he",),
     ),
     EncodingInfo(
         name="cp1256",
         aliases=("Windows-1256", "cp1256", "x-cp1256", "cswindows1256"),
         era=EncodingEra.MODERN_WEB,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=_ARABIC,
     ),
     EncodingInfo(
         name="cp1257",
         aliases=("Windows-1257", "cp1257", "x-cp1257", "cswindows1257"),
         era=EncodingEra.MODERN_WEB,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=_BALTIC,
     ),
     EncodingInfo(
         name="cp1258",
         aliases=("Windows-1258", "cp1258", "x-cp1258", "cswindows1258"),
         era=EncodingEra.MODERN_WEB,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=("vi",),
     ),
     # KOI8 - Modern Web
@@ -486,14 +506,14 @@ _REGISTRY_ENTRIES = (
         name="koi8-r",
         aliases=("KOI8-R", "koi8r", "koi", "koi8", "cskoi8r"),
         era=EncodingEra.MODERN_WEB,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=("ru",),
     ),
     EncodingInfo(
         name="koi8-u",
         aliases=("KOI8-U", "koi8u", "koi8-ru", "cskoi8u"),
         era=EncodingEra.MODERN_WEB,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=("uk",),
     ),
     # TIS-620 - Modern Web
@@ -508,7 +528,7 @@ _REGISTRY_ENTRIES = (
             "cstis620",
         ),
         era=EncodingEra.MODERN_WEB,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=("th",),
     ),
     # === LEGACY_ISO ===
@@ -516,35 +536,35 @@ _REGISTRY_ENTRIES = (
         name="iso8859-1",
         aliases=("ISO-8859-1", "latin-1", "latin1", "iso8859-1", "iso88591"),
         era=EncodingEra.LEGACY_ISO,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=_WESTERN,
     ),
     EncodingInfo(
         name="iso8859-2",
         aliases=("ISO-8859-2", "latin-2", "latin2", "iso8859-2", "iso88592"),
         era=EncodingEra.LEGACY_ISO,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=_CENTRAL_EU,
     ),
     EncodingInfo(
         name="iso8859-3",
         aliases=("ISO-8859-3", "latin-3", "latin3", "iso8859-3", "iso88593"),
         era=EncodingEra.LEGACY_ISO,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=("eo", "mt", "tr"),
     ),
     EncodingInfo(
         name="iso8859-4",
         aliases=("ISO-8859-4", "latin-4", "latin4", "iso8859-4", "iso88594"),
         era=EncodingEra.LEGACY_ISO,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=_BALTIC,
     ),
     EncodingInfo(
         name="iso8859-5",
         aliases=("ISO-8859-5", "iso8859-5", "cyrillic", "iso88595"),
         era=EncodingEra.LEGACY_ISO,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=_CYRILLIC,
     ),
     EncodingInfo(
@@ -565,7 +585,7 @@ _REGISTRY_ENTRIES = (
             "csiso88596i",
         ),
         era=EncodingEra.LEGACY_ISO,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=_ARABIC,
     ),
     EncodingInfo(
@@ -578,7 +598,7 @@ _REGISTRY_ENTRIES = (
             "sun_eu_greek",
         ),
         era=EncodingEra.LEGACY_ISO,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=("el",),
     ),
     EncodingInfo(
@@ -601,21 +621,21 @@ _REGISTRY_ENTRIES = (
             "logical",
         ),
         era=EncodingEra.LEGACY_ISO,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=("he",),
     ),
     EncodingInfo(
         name="iso8859-9",
         aliases=("ISO-8859-9", "latin-5", "latin5", "iso8859-9", "iso88599"),
         era=EncodingEra.LEGACY_ISO,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=("tr",),
     ),
     EncodingInfo(
         name="iso8859-10",
         aliases=("ISO-8859-10", "latin-6", "latin6", "iso8859-10", "iso885910"),
         era=EncodingEra.LEGACY_ISO,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=("is", "fi"),
     ),
     EncodingInfo(
@@ -629,7 +649,7 @@ _REGISTRY_ENTRIES = (
             "csiso885913",
         ),
         era=EncodingEra.LEGACY_ISO,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=_BALTIC,
     ),
     EncodingInfo(
@@ -647,7 +667,7 @@ _REGISTRY_ENTRIES = (
             "l8",
         ),
         era=EncodingEra.LEGACY_ISO,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=("cy", "ga", "br", "gd"),
     ),
     EncodingInfo(
@@ -663,7 +683,7 @@ _REGISTRY_ENTRIES = (
             "l9",
         ),
         era=EncodingEra.LEGACY_ISO,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=_WESTERN,
     ),
     EncodingInfo(
@@ -679,7 +699,7 @@ _REGISTRY_ENTRIES = (
             "l10",
         ),
         era=EncodingEra.LEGACY_ISO,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=("ro", "pl", "hr", "hu", "sk", "sl"),
     ),
     # Johab - Legacy ISO per chardet 6.0.0
@@ -687,7 +707,7 @@ _REGISTRY_ENTRIES = (
         name="johab",
         aliases=("Johab",),
         era=EncodingEra.LEGACY_ISO,
-        is_multibyte=True,
+        is_multibyte_cjk=True,
         languages=("ko",),
     ),
     # === LEGACY_MAC ===
@@ -701,28 +721,28 @@ _REGISTRY_ENTRIES = (
             "x-mac-ukrainian",
         ),
         era=EncodingEra.LEGACY_MAC,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=_CYRILLIC,
     ),
     EncodingInfo(
         name="mac-greek",
         aliases=("Mac-Greek", "MacGreek", "macgreek"),
         era=EncodingEra.LEGACY_MAC,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=("el",),
     ),
     EncodingInfo(
         name="mac-iceland",
         aliases=("Mac-Iceland", "MacIceland", "maciceland"),
         era=EncodingEra.LEGACY_MAC,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=("is",),
     ),
     EncodingInfo(
         name="mac-latin2",
         aliases=("Mac-Latin2", "MacLatin2", "maclatin2", "maccentraleurope"),
         era=EncodingEra.LEGACY_MAC,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=_CENTRAL_EU_NO_RO,
     ),
     EncodingInfo(
@@ -737,14 +757,14 @@ _REGISTRY_ENTRIES = (
             "x-mac-roman",
         ),
         era=EncodingEra.LEGACY_MAC,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=_WESTERN,
     ),
     EncodingInfo(
         name="mac-turkish",
         aliases=("Mac-Turkish", "MacTurkish", "macturkish"),
         era=EncodingEra.LEGACY_MAC,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=("tr",),
     ),
     # === LEGACY_REGIONAL ===
@@ -752,49 +772,49 @@ _REGISTRY_ENTRIES = (
         name="cp720",
         aliases=("CP720",),
         era=EncodingEra.LEGACY_REGIONAL,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=_ARABIC,
     ),
     EncodingInfo(
         name="cp1006",
         aliases=("CP1006",),
         era=EncodingEra.LEGACY_REGIONAL,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=("ur",),
     ),
     EncodingInfo(
         name="cp1125",
         aliases=("CP1125",),
         era=EncodingEra.LEGACY_REGIONAL,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=("uk",),
     ),
     EncodingInfo(
         name="koi8-t",
         aliases=("KOI8-T",),
         era=EncodingEra.LEGACY_REGIONAL,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=("tg",),
     ),
     EncodingInfo(
         name="kz1048",
         aliases=("KZ-1048", "kz1048", "strk1048-2002", "rk1048"),
         era=EncodingEra.LEGACY_REGIONAL,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=("kk",),
     ),
     EncodingInfo(
         name="ptcp154",
         aliases=("PTCP154", "pt154", "cp154"),
         era=EncodingEra.LEGACY_REGIONAL,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=("kk",),
     ),
     EncodingInfo(
         name="hp-roman8",
         aliases=("HP-Roman8", "roman8", "r8", "csHPRoman8"),
         era=EncodingEra.LEGACY_REGIONAL,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=_WESTERN,
     ),
     # === DOS ===
@@ -802,119 +822,119 @@ _REGISTRY_ENTRIES = (
         name="cp437",
         aliases=("CP437",),
         era=EncodingEra.DOS,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=("en", "fr", "de", "es", "pt", "it", "nl", "da", "sv", "fi", "ga"),
     ),
     EncodingInfo(
         name="cp737",
         aliases=("CP737",),
         era=EncodingEra.DOS,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=("el",),
     ),
     EncodingInfo(
         name="cp775",
         aliases=("CP775",),
         era=EncodingEra.DOS,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=_BALTIC,
     ),
     EncodingInfo(
         name="cp850",
         aliases=("CP850",),
         era=EncodingEra.DOS,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=_WESTERN,
     ),
     EncodingInfo(
         name="cp852",
         aliases=("CP852",),
         era=EncodingEra.DOS,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=_CENTRAL_EU,
     ),
     EncodingInfo(
         name="cp855",
         aliases=("CP855",),
         era=EncodingEra.DOS,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=_CYRILLIC,
     ),
     EncodingInfo(
         name="cp856",
         aliases=("CP856",),
         era=EncodingEra.DOS,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=("he",),
     ),
     EncodingInfo(
         name="cp857",
         aliases=("CP857",),
         era=EncodingEra.DOS,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=("tr",),
     ),
     EncodingInfo(
         name="cp858",
         aliases=("CP858",),
         era=EncodingEra.DOS,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=_WESTERN,
     ),
     EncodingInfo(
         name="cp860",
         aliases=("CP860",),
         era=EncodingEra.DOS,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=("pt",),
     ),
     EncodingInfo(
         name="cp861",
         aliases=("CP861",),
         era=EncodingEra.DOS,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=("is",),
     ),
     EncodingInfo(
         name="cp862",
         aliases=("CP862",),
         era=EncodingEra.DOS,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=("he",),
     ),
     EncodingInfo(
         name="cp863",
         aliases=("CP863",),
         era=EncodingEra.DOS,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=("fr",),
     ),
     EncodingInfo(
         name="cp864",
         aliases=("CP864",),
         era=EncodingEra.DOS,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=("ar",),
     ),
     EncodingInfo(
         name="cp865",
         aliases=("CP865",),
         era=EncodingEra.DOS,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=("da", "no"),
     ),
     EncodingInfo(
         name="cp866",
         aliases=("CP866",),
         era=EncodingEra.DOS,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=_CYRILLIC,
     ),
     EncodingInfo(
         name="cp869",
         aliases=("CP869",),
         era=EncodingEra.DOS,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=("el",),
     ),
     # === MAINFRAME ===
@@ -929,42 +949,42 @@ _REGISTRY_ENTRIES = (
             "csibm01140",
         ),
         era=EncodingEra.MAINFRAME,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=_WESTERN_TR,
     ),
     EncodingInfo(
         name="cp424",
         aliases=("CP424",),
         era=EncodingEra.MAINFRAME,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=("he",),
     ),
     EncodingInfo(
         name="cp500",
         aliases=("CP500",),
         era=EncodingEra.MAINFRAME,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=_WESTERN,
     ),
     EncodingInfo(
         name="cp875",
         aliases=("CP875",),
         era=EncodingEra.MAINFRAME,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=("el",),
     ),
     EncodingInfo(
         name="cp1026",
         aliases=("CP1026",),
         era=EncodingEra.MAINFRAME,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=("tr",),
     ),
     EncodingInfo(
         name="cp273",
         aliases=("CP273",),
         era=EncodingEra.MAINFRAME,
-        is_multibyte=False,
+        is_multibyte_cjk=False,
         languages=("de",),
     ),
 )
@@ -974,7 +994,10 @@ REGISTRY: MappingProxyType[str, EncodingInfo] = MappingProxyType(
 )
 
 
-@functools.cache
+# Bounded because *name* comes from untrusted markup (``<meta charset>``,
+# ``<?xml encoding>``) and the set of distinct spellings is unbounded.  1024
+# is well above the registry's names and aliases, so real lookups never evict.
+@functools.lru_cache(maxsize=1024)
 def lookup_encoding(name: str) -> EncodingName | None:
     """Convert an encoding name string to the canonical EncodingName.
 

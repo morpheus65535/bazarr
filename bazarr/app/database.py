@@ -411,6 +411,7 @@ class TableShows(Base):
     sortTitle = mapped_column(Text)
     tags = mapped_column(Text)
     title = mapped_column(Text, nullable=False)
+    tmdbId = mapped_column(Integer)
     updated_at_timestamp = mapped_column(DateTime)
     year = mapped_column(Text)
 

@@ -112,7 +112,7 @@ def get_history_from_radarr_api(apikey_radarr, movie_id):
     url_radarr_api_history = f"{url_api_radarr()}history?eventType=1&movieIds={movie_id}&apikey={apikey_radarr}"
 
     try:
-        r = requests.get(url_radarr_api_history, timeout=int(settings.sonarr.http_timeout), verify=False,
+        r = requests.get(url_radarr_api_history, timeout=int(settings.radarr.http_timeout), verify=False,
                          headers=HEADERS)
         r.raise_for_status()
     except requests.exceptions.HTTPError:

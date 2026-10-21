@@ -144,6 +144,17 @@ DOTTED_LOOKUP_FOR_DYNACONF = get("DOTTED_LOOKUP_FOR_DYNACONF", True)
 # To disable it one can set `NESTED_SEPARATOR_FOR_DYNACONF=false`
 NESTED_SEPARATOR_FOR_DYNACONF = get("NESTED_SEPARATOR_FOR_DYNACONF", "__")
 
+# By default `__(\d+)` (regexp) is the separated for nested list env vars
+# export `DYNACONF_DATABASE_servers__0=server.com`
+# export `DYNACONF_DATABASE_servers__1=server.org`
+# export `DYNACONF_DATABASE_servers_2_0=server.io`
+# Should result in settings.DATABASE == {
+#   "servers": ["server.com", "server.org"],
+#   "servers_2_0": "server.io"
+# }
+# To disable it one can set `INDEX_SEPARATOR_FOR_DYNACONF=None`
+INDEX_SEPARATOR_FOR_DYNACONF = get("INDEX_SEPARATOR_FOR_DYNACONF", None)
+
 # The env var specifying settings module
 ENVVAR_FOR_DYNACONF = get("ENVVAR_FOR_DYNACONF", "SETTINGS_FILE_FOR_DYNACONF")
 
@@ -157,6 +168,7 @@ default_redis = {
     "password": get("REDIS_PASSWORD_FOR_DYNACONF", None),
 }
 REDIS_FOR_DYNACONF = get("REDIS_FOR_DYNACONF", default_redis)
+REDIS_URL_FOR_DYNACONF = get("REDIS_URL_FOR_DYNACONF", None)
 REDIS_ENABLED_FOR_DYNACONF = get("REDIS_ENABLED_FOR_DYNACONF", False)
 
 # Hashicorp Vault Project
@@ -211,6 +223,8 @@ SILENT_ERRORS_FOR_DYNACONF = get("SILENT_ERRORS_FOR_DYNACONF", True)
 # always fresh variables
 FRESH_VARS_FOR_DYNACONF = get("FRESH_VARS_FOR_DYNACONF", [])
 
+# This was missing for some reason
+# LOAD_DOTENV_FOR_DYNACONF = get("LOAD_DOTENV_FOR_DYNACONF", False)
 DOTENV_PATH_FOR_DYNACONF = get("DOTENV_PATH_FOR_DYNACONF", None)
 DOTENV_VERBOSE_FOR_DYNACONF = get("DOTENV_VERBOSE_FOR_DYNACONF", False)
 DOTENV_OVERRIDE_FOR_DYNACONF = get("DOTENV_OVERRIDE_FOR_DYNACONF", False)

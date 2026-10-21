@@ -376,6 +376,10 @@ class Registry(Generic[_T]):
         old item is lost with no way to recover it. The new item will be
         sorted according to its priority and will **not** retain the position
         of the old item.
+
+        Items assigned a higher number are given a higher priority. In other
+        words, items assigned a higher number are sorted to be before those
+        assigned a lower number.
         """
         if name in self:
             # Remove existing item of same name first

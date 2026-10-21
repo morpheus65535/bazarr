@@ -1,6 +1,10 @@
 import userEvent from "@testing-library/user-event";
 import { Mock, vi, vitest } from "vitest";
-import { useSettingsMutation, useSystemSettings } from "@/apis/hooks";
+import {
+  useSettingsMutation,
+  useSystemSettings,
+  useSystemStatus,
+} from "@/apis/hooks";
 import { customRender, screen } from "@/tests";
 import SettingsSubtitleProcessingView from "./index";
 
@@ -10,11 +14,13 @@ vi.mock("@/apis/hooks", async (importOriginal) => {
     ...actual,
     useSystemSettings: vitest.fn(),
     useSettingsMutation: vitest.fn(),
+    useSystemStatus: vitest.fn(),
   };
 });
 
 const mockedUseSystemSettings = useSystemSettings as Mock;
 const mockedUseSettingsMutation = useSettingsMutation as Mock;
+const mockedUseSystemStatus = useSystemStatus as Mock;
 
 const baseSettings = {
   general: {
@@ -32,6 +38,7 @@ const baseSettings = {
     use_subsync_movie_threshold: true,
     force_audio: "true",
     use_original_language: true,
+    concurrent_syncs: 1,
   },
 } as unknown as Settings;
 
@@ -44,6 +51,11 @@ const setupMocks = () => {
   mockedUseSettingsMutation.mockReturnValue({
     mutate: vi.fn(),
     isPending: false,
+  });
+  mockedUseSystemStatus.mockReturnValue({
+    data: { cpu_cores: 4 },
+    isLoading: false,
+    isRefetching: false,
   });
 };
 

@@ -1,19 +1,27 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """
 video_bit_rate and audio_bit_rate properties
 """
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
 from rebulk import Rebulk
 from rebulk.remodule import re
-from rebulk.rules import Rule, RemoveMatch, RenameMatch
+from rebulk.rules import RemoveMatch, RenameMatch, Rule
 
+from ...config import load_config_patterns
 from ..common import dash, seps
+from ..common.keys import AUDIO_BIT_RATE
 from ..common.pattern import is_disabled
 from ..common.validators import seps_surround
-from ...config import load_config_patterns
+
+if TYPE_CHECKING:
+    from rebulk.match import Match, Matches
 
 
-def bit_rate(config):  # pylint:disable=unused-argument
+def bit_rate(config: dict[str, Any]) -> Rebulk:
     """
     Builder for rebulk object.
 
@@ -22,12 +30,14 @@ def bit_rate(config):  # pylint:disable=unused-argument
     :return: Created Rebulk object
     :rtype: Rebulk
     """
-    rebulk = Rebulk(disabled=lambda context: (is_disabled(context, 'audio_bit_rate')
-                                              and is_disabled(context, 'video_bit_rate')))
+    rebulk = Rebulk(
+        disabled=lambda context: is_disabled(context, "audio_bit_rate") and is_disabled(context, "video_bit_rate")
+    )
     rebulk = rebulk.regex_defaults(flags=re.IGNORECASE, abbreviations=[dash])
-    rebulk.defaults(name='audio_bit_rate', validator=seps_surround)
+    rebulk.defaults(name="audio_bit_rate", validator=seps_surround)
+    rebulk.declare_keys(AUDIO_BIT_RATE)
 
-    load_config_patterns(rebulk, config.get('bit_rate'))
+    load_config_patterns(rebulk, config.get("bit_rate"))
 
     rebulk.rules(BitRateTypeRule)
 
@@ -38,24 +48,26 @@ class BitRateTypeRule(Rule):
     """
     Convert audio bit rate guess into video bit rate.
     """
-    consequence = [RenameMatch('video_bit_rate'), RemoveMatch]
 
-    def when(self, matches, context):
-        to_rename = []
-        to_remove = []
+    consequence = [RenameMatch("video_bit_rate"), RemoveMatch]
 
-        if is_disabled(context, 'audio_bit_rate'):
-            to_remove.extend(matches.named('audio_bit_rate'))
+    def when(self, matches: Matches, context: dict[str, Any] | None) -> Any:
+        to_rename: list[Match] = []
+        to_remove: list[Match] = []
+
+        if is_disabled(context, "audio_bit_rate"):
+            to_remove.extend(matches.named("audio_bit_rate"))
         else:
-            video_bit_rate_disabled = is_disabled(context, 'video_bit_rate')
-            for match in matches.named('audio_bit_rate'):
-                previous = matches.previous(match, index=0,
-                                            predicate=lambda m: m.name in ('source', 'screen_size', 'video_codec'))
+            video_bit_rate_disabled = is_disabled(context, "video_bit_rate")
+            for match in matches.named("audio_bit_rate"):
+                previous = matches.previous(
+                    match, index=0, predicate=lambda m: m.name in ("source", "screen_size", "video_codec")
+                )
                 if previous and not matches.holes(previous.end, match.start, predicate=lambda m: m.value.strip(seps)):
-                    after = matches.next(match, index=0, predicate=lambda m: m.name == 'audio_codec')
+                    after = matches.next(match, index=0, predicate=lambda m: m.name == "audio_codec")
                     if after and not matches.holes(match.end, after.start, predicate=lambda m: m.value.strip(seps)):
                         bitrate = match.value
-                        if bitrate.units == 'Kbps' or (bitrate.units == 'Mbps' and bitrate.magnitude < 10):
+                        if bitrate.units == "Kbps" or (bitrate.units == "Mbps" and bitrate.magnitude < 10):
                             continue
 
                     if video_bit_rate_disabled:

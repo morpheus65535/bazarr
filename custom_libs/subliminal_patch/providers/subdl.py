@@ -668,14 +668,17 @@ class SubdlProvider(Provider):
             return
 
         # The server already orders sources deliberately (English first for
-        # translation quality, non-HI before HI). Keep that order and only use
-        # release-name matching to break ties, since translations inherit the
-        # source subtitle's timing.
+        # translation quality, non-HI before HI). Language comes first here
+        # too: release matching only picks among sources of the same language,
+        # since translations inherit the source subtitle's timing. Ranking by
+        # matches alone let a Farsi source of the user's exact release beat
+        # the English one, so the Dutch file was a translation of a translation.
         def source_rank(indexed_source):
             index, source = indexed_source
             matches = set()
             utils.update_matches(matches, video, source.get('releases') or [])
-            return (-len(matches), index)
+            is_english = (source.get('language') or '').upper() == 'EN'
+            return (0 if is_english else 1, -len(matches), index)
 
         # One best source PER HI CLASS, not one overall: when an SDH source
         # happened to match the video's release best, every non-HI profile

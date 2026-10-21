@@ -77,7 +77,7 @@ class TypstLexer(RegexLexer):
             (r'@[a-zA-Z_][a-zA-Z0-9_-]*', Name.Label),  # reference
             (r'\\#', Text), # escaped
             include('into_code'),
-            (r'```(?:.|\n)*?```', String.Backtick),  # code block
+            (r'```[\s\S]*?```', String.Backtick),  # code block
             (r'https?://[0-9a-zA-Z~/%#&=\',;.+?]*', Generic.Emph),  # links
             (words(('---', '\\', '~', '--', '...'), suffix=r'\B'), Punctuation),  # special chars shorthand
             (r'\\\[', Punctuation),  # escaped
@@ -106,7 +106,7 @@ class TypstLexer(RegexLexer):
         ],
         'comment': [
             (r'//.*$', Comment.Single),
-            (r'/[*](.|\n)*?[*]/', Comment.Multiline),
+            (r'/[*][\s\S]*?[*]/', Comment.Multiline),
         ],
         'code': [
             include('comment'),

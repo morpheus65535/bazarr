@@ -11,8 +11,6 @@ from ..http import parse_etags
 from ..http import parse_if_range_header
 from ..http import unquote_etag
 
-_etag_re = re.compile(r'([Ww]/)?(?:"(.*?)"|(.*?))(?:\s*,\s*|$)')
-
 
 def is_resource_modified(
     http_range: str | None = None,
@@ -42,7 +40,7 @@ def is_resource_modified(
     .. versionadded:: 2.2
     """
     if etag is None and data is not None:
-        etag = generate_etag(data)
+        etag = f'"{generate_etag(data)}"'
     elif data is not None:
         raise TypeError("both data and etag given")
 
@@ -74,7 +72,7 @@ def is_resource_modified(
         etag, _ = unquote_etag(etag)
 
         if if_range is not None and if_range.etag is not None:
-            unmodified = parse_etags(if_range.etag).contains(etag)
+            unmodified = if_range.etag == etag
         else:
             if_none_match = parse_etags(http_if_none_match)
             if if_none_match:
@@ -95,15 +93,17 @@ def is_resource_modified(
 
 _cookie_re = re.compile(
     r"""
-    ([^=;]*)
-    (?:\s*=\s*
-      (
-        "(?:[^\\"]|\\.)*"
-      |
-        .*?
-      )
+    [ \t]*  # ignore leading space
+    ([^ \t=";]+)  # key
+    (?:[ \t]*=[ \t]*  # optional =value, ignoring invalid space
+        (
+            "(?:[^\\"]|\\.)*"  # quoted value with backslash escapes
+        |
+            [^ \t";]*  # token value
+        )
     )?
-    \s*;\s*
+    [ \t]*  # ignore trailing space
+    (?:;|\Z)  # only if followed by semicolon or end
     """,
     flags=re.ASCII | re.VERBOSE,
 )
@@ -145,17 +145,24 @@ def parse_cookie(
     if not cookie:
         return cls()
 
-    cookie = f"{cookie};"
     out = []
+    pos = 0
 
-    for ck, cv in _cookie_re.findall(cookie):
-        ck = ck.strip()
-        cv = cv.strip()
+    while True:
+        if (m := _cookie_re.match(cookie, pos)) is None:
+            # Skip invalid chars until the next semicolon.
+            if (pos := cookie.find(";", pos) + 1) == 0:
+                break
 
-        if not ck:
             continue
 
-        if len(cv) >= 2 and cv[0] == cv[-1] == '"':
+        ck, cv = m.groups()
+        pos = m.end()
+
+        if cv is None:
+            cv = ""
+
+        if cv.startswith('"') and cv.endswith('"'):
             # Work with bytes here, since a UTF-8 character could be multiple bytes.
             cv = _cookie_unslash_re.sub(
                 _cookie_unslash_replace, cv[1:-1].encode()

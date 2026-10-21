@@ -434,8 +434,21 @@ def version_option(
     ``package_name``.
 
     If ``package_name`` is not provided, Click will try to detect it by
-    inspecting the stack frames. This will be used to detect the
-    version, so it must match the name of the installed package.
+    inspecting the stack frames. If the detected (or given) name does
+    not match an installed distribution, Click resolves it as an import
+    (top-level module) name via
+    :func:`importlib.metadata.packages_distributions`, so e.g. ``PIL``
+    resolves to the ``Pillow`` distribution.
+
+    .. note::
+        The parameters and message variables accepted by this option are
+        frozen: no new slots will be added, to keep the common case simple
+        and predictable. If you need values it does not expose, such as a
+        file path, the Python version, or git metadata, use
+        :func:`custom_version_option` to render the output yourself.
+
+        Rationale: `discussion #3527
+        <https://github.com/pallets/click/discussions/3527>`_.
 
     :param version: The version number to show. If not provided, Click
         will try to detect it.
@@ -460,6 +473,10 @@ def version_option(
         version is detected based on the package name, not the entry
         point name. The Python package name must match the installed
         package name, or be passed with ``package_name=``.
+
+    .. versionchanged:: 8.4.2
+        When ``package_name`` does not match an installed distribution,
+        Click now resolves it as an import (top-level module).
     """
     if message is None:
         message = _("%(prog)s, version %(version)s")
@@ -487,6 +504,7 @@ def version_option(
 
         nonlocal prog_name
         nonlocal version
+        nonlocal package_name
 
         if prog_name is None:
             prog_name = ctx.find_root().info_name
@@ -497,10 +515,26 @@ def version_option(
             try:
                 version = importlib.metadata.version(package_name)
             except importlib.metadata.PackageNotFoundError:
-                raise RuntimeError(
-                    f"{package_name!r} is not installed. Try passing"
-                    " 'package_name' instead."
-                ) from None
+                # The given name didn't match an installed distribution.
+                # Try resolving it as an import (top-level module) name,
+                # e.g. ``PIL`` is provided by the ``Pillow`` distribution.
+                distributions = importlib.metadata.packages_distributions().get(
+                    package_name, []
+                )
+                if len(distributions) == 1:
+                    package_name = distributions[0]
+                    version = importlib.metadata.version(package_name)
+                elif len(distributions) > 1:
+                    raise RuntimeError(
+                        f"{package_name!r} maps to multiple installed"
+                        f" distributions ({', '.join(distributions)})."
+                        " Pass 'package_name' to disambiguate."
+                    ) from None
+                else:
+                    raise RuntimeError(
+                        f"{package_name!r} is not installed. Try passing"
+                        " 'package_name' instead."
+                    ) from None
 
         if version is None:
             raise RuntimeError(
@@ -521,6 +555,48 @@ def version_option(
     kwargs.setdefault("is_eager", True)
     kwargs.setdefault("help", _("Show the version and exit."))
     kwargs["callback"] = callback
+    return option(*param_decls, **kwargs)
+
+
+def custom_version_option(
+    callback: t.Callable[[Context], str],
+    *param_decls: str,
+    **kwargs: t.Any,
+) -> t.Callable[[FC], FC]:
+    """Add a ``--version`` option whose output is produced by ``callback``.
+
+    This is the customizable companion to :func:`version_option`. Where
+    :func:`version_option` is intentionally limited to a fixed message and
+    a small set of values, this option calls ``callback`` to build the
+    whole string to print. Use it when you need values that
+    :func:`version_option` does not expose, such as a file path, the
+    Python version, or git metadata.
+
+    :param callback: Called with the current :class:`Context` when the
+        option is invoked. Its return value is printed, then the program
+        exits.
+    :param param_decls: One or more option names. Defaults to the single
+        value ``--version``.
+    :param kwargs: Extra arguments are passed to :func:`option`.
+
+    .. versionadded:: 8.5.0
+    """
+
+    def show_version(ctx: Context, param: Parameter, value: bool) -> None:
+        if not value or ctx.resilient_parsing:
+            return
+
+        echo(callback(ctx), color=ctx.color)
+        ctx.exit()
+
+    if not param_decls:
+        param_decls = ("--version",)
+
+    kwargs.setdefault("is_flag", True)
+    kwargs.setdefault("expose_value", False)
+    kwargs.setdefault("is_eager", True)
+    kwargs.setdefault("help", _("Show the version and exit."))
+    kwargs["callback"] = show_version
     return option(*param_decls, **kwargs)
 
 

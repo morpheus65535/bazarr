@@ -245,7 +245,6 @@ class FantomLexer(RegexLexer):
             (r'\s+', Whitespace),
             (r'(\s*)(\w+)(\s*)(=)', bygroups(Whitespace, Name, Whitespace, Operator)),
             (r'\}', Punctuation, '#pop'),
-            (r'\s+', Whitespace),
             (r'.', Text)
         ],
     }

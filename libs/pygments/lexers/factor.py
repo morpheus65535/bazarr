@@ -247,8 +247,6 @@ class FactorLexer(RegexLexer):
             (r'(PREDICATE:)(\s+)(\S+)(\s+)(<)(\s+)(\S+)',
              bygroups(Keyword, Whitespace, Name.Class, Whitespace,
                  Punctuation, Whitespace, Name.Class)),
-            (r'(C:)(\s+)(\S+)(\s+)(\S+)',
-             bygroups(Keyword, Whitespace, Name.Function, Whitespace, Name.Class)),
             (r'(INSTANCE:)(\s+)(\S+)(\s+)(\S+)',
              bygroups(Keyword, Whitespace, Name.Class, Whitespace, Name.Class)),
             (r'(SLOT:)(\s+)(\S+)', bygroups(Keyword, Whitespace, Name.Function)),
@@ -281,7 +279,7 @@ class FactorLexer(RegexLexer):
             (r'(<PRIVATE|PRIVATE>)(\s)', bygroups(Keyword.Namespace, Whitespace)),
 
             # strings
-            (r'"""\s(?:.|\n)*?\s"""', String),
+            (r'"""\s[\s\S]*?\s"""', String),
             (r'"(?:\\\\|\\"|[^"])*"', String),
             (r'(\S+")(\s+)((?:\\\\|\\"|[^"])*")',
                 bygroups(String, Whitespace, String)),
@@ -291,7 +289,7 @@ class FactorLexer(RegexLexer):
             # comments
             (r'!\s+.*$', Comment),
             (r'#!\s+.*$', Comment),
-            (r'/\*\s+(?:.|\n)*?\s\*/', Comment),
+            (r'/\*\s+[\s\S]*?\s\*/', Comment),
 
             # boolean constants
             (r'[tf]\b', Name.Constant),

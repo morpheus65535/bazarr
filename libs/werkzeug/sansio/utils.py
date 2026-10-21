@@ -16,7 +16,7 @@ _host_re = re.compile(
     |
         \[[a-f0-9]*:[a-f0-9.:]+]  # ipv6
     )
-    (?::[0-9]+)?  # optional port
+    (?::([1-9][0-9]{,4}))?  # optional port
     """,
     flags=re.ASCII | re.IGNORECASE | re.VERBOSE,
 )
@@ -47,10 +47,13 @@ def host_is_trusted(
     if not hostname:
         return False
 
-    if _host_re.fullmatch(hostname) is None:
+    if (m := _host_re.fullmatch(hostname)) is None:
         return False
 
-    hostname = hostname.partition(":")[0]
+    hostname, port_str = m.groups()
+
+    if port_str and not (1 <= int(port_str) <= 65535):
+        return False
 
     if not trusted_list:
         return True

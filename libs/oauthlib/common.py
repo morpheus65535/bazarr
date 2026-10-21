@@ -371,6 +371,7 @@ class Request:
             "redirect_uri": None,
             "refresh_token": None,
             "request_token": None,
+            "resource": None,
             "response_type": None,
             "scope": None,
             "scopes": None,

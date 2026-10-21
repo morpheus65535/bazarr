@@ -390,8 +390,8 @@ class PostgresExplainLexer(RegexLexer):
 
     tokens = {
         'root': [
-            (r'(:|\(|\)|ms|kB|->|\.\.|\,|\/|=|%)', Punctuation),
-            (r'(\s+)', Whitespace),
+            (r':|\(|\)|ms|kB|->|\.\.|\,|\/|=|%|text', Punctuation),
+            (r'\s+', Whitespace),
 
             # This match estimated cost and effectively measured counters with ANALYZE
             # Then, we move to instrumentation state
@@ -406,8 +406,8 @@ class PostgresExplainLexer(RegexLexer):
                     'Index Searches', 'Storage', 'Disk Maximum Storage'), suffix=r'\b'),
              Comment.Single),
 
-            (r'(hit|read|dirtied|written|write|time|calls)(=)', bygroups(Comment.Single, Operator)),
-            (r'(shared|temp|local)', Keyword.Pseudo),
+            (r'(hit|read|dirtied|written|write|time|calls|records|bytes|allocated|used|output|format)(=)', bygroups(Comment.Single, Operator)),
+            (r'shared|temp|local', Keyword.Pseudo),
 
             # We move to sort state in order to emphasize specific keywords (especially disk access)
             (r'(Sort Method)(: )', bygroups(Comment.Preproc, Punctuation), 'sort'),
@@ -427,7 +427,8 @@ class PostgresExplainLexer(RegexLexer):
              Comment.Preproc, 'predicate'),
 
             # Special keyword to handle ON CONFLICT
-            (r'Conflict ', Comment.Preproc, 'conflict'),
+            (r'Conflict(ing)? ', Comment.Preproc, 'conflict'),
+            (r'(Tuples Inserted: )', Comment.Preproc, 'predicate'),
 
             # Special keyword for InitPlan or SubPlan
             (r'(InitPlan|SubPlan)( )(\d+)( )',
@@ -438,7 +439,7 @@ class PostgresExplainLexer(RegexLexer):
                     'Planning Time', 'Execution time', 'Execution Time',
                     'Workers Planned', 'Workers Launched', 'Buffers',
                     'Planning', 'Worker', 'Query Identifier', 'Time',
-                    'Full-sort Groups', 'Pre-sorted Groups'), suffix=r'\b'), Comment.Preproc),
+                    'Full-sort Groups', 'Pre-sorted Groups', 'Serialization'), suffix=r'\b'), Comment.Preproc),
 
             # Emphasize these keywords
 
@@ -447,30 +448,31 @@ class PostgresExplainLexer(RegexLexer):
                     'Heap Fetches', 'never executed'),
                    suffix=r'\b'), Name.Exception),
             (r'(I/O Timings)(:)( )', bygroups(Name.Exception, Punctuation, Whitespace)),
+            (r'(WAL)(:)( )', bygroups(Name.Exception, Punctuation, Whitespace)),
 
             (words(_postgres_builtins.EXPLAIN_KEYWORDS, suffix=r'\b'), Keyword),
 
             # join keywords
-            (r'((Right|Left|Full|Semi|Anti) Join)', Keyword.Type),
-            (r'(Parallel |Async |Finalize |Partial )', Comment.Preproc),
+            (r'(Right|Left|Full|Semi|Anti) Join', Keyword.Type),
+            (r'Parallel |Async |Finalize |Partial ', Comment.Preproc),
             (r'Backward', Comment.Preproc),
-            (r'(Intersect|Except|Hash)', Comment.Preproc),
+            (r'Intersect|Except|Hash', Comment.Preproc),
 
             (r'(CTE)( )(\w*)?', bygroups(Comment, Whitespace, Name.Variable)),
 
 
             # Treat "on" and "using" as a punctuation
-            (r'(on|using)', Punctuation, 'object_name'),
+            (r'on|using', Punctuation, 'object_name'),
 
 
             # strings
             (r"'(''|[^'])*'", String.Single),
             # numbers
             (r'-?\d+\.\d+', Number.Float),
-            (r'(-?\d+)', Number.Integer),
+            (r'-?\d+', Number.Integer),
 
             # boolean
-            (r'(true|false)', Name.Constant),
+            (r'true|false', Name.Constant),
             # explain header
             (r'\s*QUERY PLAN\s*\n\s*-+', Comment.Single),
             # Settings
@@ -490,7 +492,7 @@ class PostgresExplainLexer(RegexLexer):
             # the first opening paren is matched by the 'caller'
             (r'\(', Punctuation, '#push'),
             (r'\)', Punctuation, '#pop'),
-            (r'(never executed)', Name.Exception),
+            (r'never executed', Name.Exception),
             (r'[^)(]+', Comment),
         ],
         'object_name': [
@@ -502,7 +504,7 @@ class PostgresExplainLexer(RegexLexer):
             # if object_name is parenthesized, mark opening paren as
             # punctuation, call 'expression', and exit state
             (r'\(', Punctuation, 'expression'),
-            (r'(on)', Punctuation),
+            (r'on', Punctuation),
             # matches possibly schema-qualified table and column names
             (r'\w+(\.\w+)*( USING \S+| \w+ USING \S+)', Name.Variable),
             (r'\"?\w+\"?(?:\.\"?\w+\"?)?', Name.Variable),
@@ -535,15 +537,16 @@ class PostgresExplainLexer(RegexLexer):
         'instrumentation': [
             (r'=|\.\.', Punctuation),
             (r' +', Whitespace),
-            (r'(rows|width|time|loops)', Name.Class),
+            (r'rows|width|time|loops', Name.Class),
             (r'\d+\.\d+', Number.Float),
-            (r'(\d+)', Number.Integer),
+            (r'\d+', Number.Integer),
             (r'\)', Punctuation, '#pop'),
         ],
         'conflict': [
             (r'(Resolution: )(\w+)', bygroups(Comment.Preproc, Name.Variable)),
-            (r'(Arbiter \w+:)', Comment.Preproc, 'object_name'),
-            (r'(Filter: )', Comment.Preproc, 'predicate'),
+            (r'Arbiter \w+:', Comment.Preproc, 'object_name'),
+            (r'Filter: ', Comment.Preproc, 'predicate'),
+            (r'Tuples: ', Comment.Preproc, 'predicate'),
         ],
         'setting': [
             (r'([a-z_]*?)(\s*)(=)(\s*)(\'.*?\')', bygroups(Name.Attribute, Whitespace, Operator, Whitespace, String)),
@@ -556,9 +559,9 @@ class PostgresExplainLexer(RegexLexer):
         ],
         'sort': [
             (r':|kB', Punctuation),
-            (r'(quicksort|top-N|heapsort|Average|Memory|Peak)', Comment.Prepoc),
-            (r'(external|merge|Disk|sort)', Name.Exception),
-            (r'(\d+)', Number.Integer),
+            (r'quicksort|top-N|heapsort|Average|Memory|Peak', Comment.Prepoc),
+            (r'external|merge|Disk|sort', Name.Exception),
+            (r'\d+', Number.Integer),
             (r' +', Whitespace),
         ],
     }
@@ -764,7 +767,7 @@ class MySqlLexer(RegexLexer):
             (r'[!%&*+/:<=>^|~-]+', Operator),
 
             # Exceptions; these words tokenize differently in different contexts.
-            (r'\b(set)(?!\s*\()', Keyword),
+            (r'\b(set)\b(?!\s*\()', Keyword),
             (r'\b(character)(\s+)(set)\b', bygroups(Keyword, Whitespace, Keyword)),
             # In all other known cases, "SET" is tokenized by MYSQL_DATATYPES.
 
@@ -948,7 +951,7 @@ class GoogleSqlLexer(RegexLexer):
             (r'\?', Name.Variable),  # For demonstrating prepared statements
 
             # Exceptions; these words tokenize differently in different contexts.
-            (r'\b(set)(?!\s*\()', Keyword),
+            (r'\b(set)\b(?!\s*\()', Keyword),
             (r'\b(character)(\s+)(set)\b', bygroups(Keyword, Whitespace, Keyword)),
 
             # Constants, types, keywords, functions, operators

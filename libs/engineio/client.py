@@ -229,7 +229,13 @@ class Client(base_client.BaseClient):
 
         self.state = 'connected'
         base_client.connected_clients.append(self)
-        self._trigger_event('connect', run_async=False)
+        try:
+            self._trigger_event('connect', run_async=False, reraise=True)
+        except Exception as exc:
+            base_client.connected_clients.remove(self)
+            self._reset()
+            raise exceptions.ConnectionError(
+                'Connect handler failed: ' + str(exc))
 
         for pkt in p.packets[1:]:
             self._receive_packet(pkt)
@@ -403,7 +409,13 @@ class Client(base_client.BaseClient):
 
             self.state = 'connected'
             base_client.connected_clients.append(self)
-            self._trigger_event('connect', run_async=False)
+            try:
+                self._trigger_event('connect', run_async=False, reraise=True)
+            except Exception as exc:
+                base_client.connected_clients.remove(self)
+                self._reset()
+                raise exceptions.ConnectionError(
+                    'Connect handler failed: ' + str(exc))
         self.ws = ws
         self.ws.settimeout(self.ping_interval + self.ping_timeout)
 
@@ -477,6 +489,10 @@ class Client(base_client.BaseClient):
                             raise
                 except:
                     self.logger.exception(event + ' handler error')
+                    if event == 'connect':
+                        # for the connection event we reraise the exception
+                        # to stop the connection from completing
+                        raise
 
     def _read_loop_polling(self):
         """Read packets by polling the Engine.IO server."""
@@ -508,7 +524,13 @@ class Client(base_client.BaseClient):
 
         if self.write_loop_task:  # pragma: no branch
             self.logger.info('Waiting for write loop task to end')
-            self.write_loop_task.join()
+            try:
+                # the write loop task cleans its own task when it ends, so we
+                # avoid a race condition when using threads with a try/catch
+                self.write_loop_task.join()
+            except AttributeError:  # pragma: no cover
+                if self.write_loop_task is not None:
+                    raise  # for any erros not related to task == None we raise
         if self.state == 'connected':
             self._trigger_event('disconnect', self.reason.TRANSPORT_ERROR,
                                 run_async=False)
@@ -521,7 +543,7 @@ class Client(base_client.BaseClient):
 
     def _read_loop_websocket(self):
         """Read packets from the Engine.IO WebSocket connection."""
-        while self.state == 'connected':
+        while self.state == 'connected' and self.write_loop_task:
             p = None
             try:
                 p = self.ws.recv()
@@ -559,7 +581,13 @@ class Client(base_client.BaseClient):
 
         if self.write_loop_task:  # pragma: no branch
             self.logger.info('Waiting for write loop task to end')
-            self.write_loop_task.join()
+            try:
+                # the write loop task cleans its own task when it ends, so we
+                # avoid a race condition when using threads with a try/catch
+                self.write_loop_task.join()
+            except AttributeError:  # pragma: no cover
+                if self.write_loop_task is not None:
+                    raise  # for any erros not related to task == None we raise
         if self.state == 'connected':
             self._trigger_event('disconnect', self.reason.TRANSPORT_ERROR,
                                 run_async=False)
@@ -616,7 +644,6 @@ class Client(base_client.BaseClient):
                 if r.status_code < 200 or r.status_code >= 300:
                     self.logger.warning('Unexpected status code %s in server '
                                         'response, aborting', r.status_code)
-                    self.write_loop_task = None
                     break
             else:
                 # websocket
@@ -634,3 +661,4 @@ class Client(base_client.BaseClient):
                         'WebSocket connection was closed, aborting')
                     break
         self.logger.info('Exiting write loop task')
+        self.write_loop_task = None

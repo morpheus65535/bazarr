@@ -50,9 +50,9 @@ class GDScriptLexer(RegexLexer):
     tokens = {
         "root": [
             (r"\n", Whitespace),
-            (r'^(\s*)([rRuUbB]{,2})("""(?:.|\n)*?""")',
+            (r'^(\s*)([rRuUbB]{,2})("""[\s\S]*?""")',
              bygroups(Whitespace, String.Affix, String.Doc)),
-            (r"^(\s*)([rRuUbB]{,2})('''(?:.|\n)*?''')",
+            (r"^(\s*)([rRuUbB]{,2})('''[\s\S]*?''')",
              bygroups(Whitespace, String.Affix, String.Doc)),
             (r"[^\S\n]+", Whitespace),
             (r"#.*$", Comment.Single),

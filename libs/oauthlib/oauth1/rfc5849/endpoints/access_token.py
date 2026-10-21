@@ -102,7 +102,7 @@ class AccessTokenEndpoint(BaseEndpoint):
         resp_headers = {'Content-Type': 'application/x-www-form-urlencoded'}
         try:
             request = self._create_request(uri, http_method, body, headers)
-            valid, processed_request = self.validate_access_token_request(
+            valid, _processed_request = self.validate_access_token_request(
                 request)
             if valid:
                 token = self.create_access_token(request, credentials or {})
@@ -183,7 +183,7 @@ class AccessTokenEndpoint(BaseEndpoint):
         # .. _`Section 3.2`: https://tools.ietf.org/html/rfc5849#section-3.2
         #
         # Note that early exit would enable resource owner authorization
-        # verifier enumertion.
+        # verifier enumeration.
         valid_verifier = self.request_validator.validate_verifier(
             request.client_key,
             request.resource_owner_key,

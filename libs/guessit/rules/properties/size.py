@@ -1,19 +1,22 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """
 size property
 """
-from rebulk.remodule import re
+
+from __future__ import annotations
+
+from typing import Any
 
 from rebulk import Rebulk
+from rebulk.remodule import re
 
 from ..common import dash
-from ..common.quantity import Size
+from ..common.keys import SIZE
 from ..common.pattern import is_disabled
 from ..common.validators import seps_surround
 
 
-def size(config):  # pylint:disable=unused-argument
+def size(config: dict[str, Any]) -> Rebulk:
     """
     Builder for rebulk object.
 
@@ -22,9 +25,9 @@ def size(config):  # pylint:disable=unused-argument
     :return: Created Rebulk object
     :rtype: Rebulk
     """
-    rebulk = Rebulk(disabled=lambda context: is_disabled(context, 'size'))
+    rebulk = Rebulk(disabled=lambda context: is_disabled(context, "size"))
     rebulk.regex_defaults(flags=re.IGNORECASE, abbreviations=[dash])
-    rebulk.defaults(name='size', validator=seps_surround)
-    rebulk.regex(r'\d+-?[mgt]b', r'\d+\.\d+-?[mgt]b', formatter=Size.fromstring, tags=['release-group-prefix'])
+    rebulk.defaults(validator=seps_surround)
+    rebulk.regex(r"\d+-?[mgt]b", r"\d+\.\d+-?[mgt]b", key=SIZE, tags=["release-group-prefix"])
 
     return rebulk

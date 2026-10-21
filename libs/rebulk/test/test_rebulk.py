@@ -1,22 +1,27 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
-# pylint: disable=pointless-statement, missing-docstring, no-member, len-as-condition
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
 
 from ..rebulk import Rebulk
 from ..rules import Rule
 from . import rebulk_rules_module as rm
 
+if TYPE_CHECKING:
+    from ..match import Matches
 
-def test_rebulk_simple():
+
+def test_rebulk_simple() -> None:
     rebulk = Rebulk()
 
     rebulk.string("quick")
     rebulk.regex("f.x")
 
-    def func(input_string):
+    def func(input_string: str) -> tuple[int, int] | None:
         i = input_string.find("over")
         if i > -1:
             return i, i + len("over")
+        return None
 
     rebulk.functional(func)
 
@@ -30,7 +35,7 @@ def test_rebulk_simple():
     assert matches[2].value == "over"
 
 
-def test_rebulk_composition():
+def test_rebulk_composition() -> None:
     rebulk = Rebulk()
 
     rebulk.string("quick")
@@ -47,19 +52,20 @@ def test_rebulk_composition():
     assert matches[1].value == "fox"
 
 
-def test_rebulk_context():
+def test_rebulk_context() -> None:
     rebulk = Rebulk()
 
-    context = {'nostring': True, 'word': 'lazy'}
+    context = {"nostring": True, "word": "lazy"}
 
-    rebulk.string("quick", disabled=lambda context: context.get('nostring', False))
-    rebulk.regex("f.x", disabled=lambda context: context.get('noregex', False))
+    rebulk.string("quick", disabled=lambda context: context.get("nostring", False))
+    rebulk.regex("f.x", disabled=lambda context: context.get("noregex", False))
 
-    def func(input_string, context):
-        word = context.get('word', 'over')
+    def func(input_string: str, context: dict[str, Any]) -> tuple[int, int] | None:
+        word = context.get("word", "over")
         i = input_string.find(word)
         if i > -1:
             return i, i + len(word)
+        return None
 
     rebulk.functional(func)
 
@@ -72,7 +78,7 @@ def test_rebulk_context():
     assert matches[1].value == "lazy"
 
 
-def test_rebulk_prefer_longer():
+def test_rebulk_prefer_longer() -> None:
     input_string = "The quick brown fox jumps over the lazy dog"
 
     matches = Rebulk().string("quick").string("own").regex("br.{2}n").matches(input_string)
@@ -83,35 +89,40 @@ def test_rebulk_prefer_longer():
     assert matches[1].value == "brown"
 
 
-def test_rebulk_defaults():
+def test_rebulk_defaults() -> None:
     input_string = "The quick brown fox jumps over the lazy dog"
 
-    def func(input_string):
+    def func(input_string: str) -> tuple[int, int] | None:
         i = input_string.find("fox")
         if i > -1:
             return i, i + len("fox")
+        return None
 
-    matches = Rebulk()\
-        .string_defaults(name="string", tags=["a", "b"])\
-        .regex_defaults(name="regex") \
-        .functional_defaults(name="functional") \
-        .string("quick", tags=["c"])\
-        .functional(func)\
-        .regex("br.{2}n") \
+    matches = (
+        Rebulk()
+        .string_defaults(name="string", tags=["a", "b"])
+        .regex_defaults(name="regex")
+        .functional_defaults(name="functional")
+        .string("quick", tags=["c"])
+        .functional(func)
+        .regex("br.{2}n")
         .matches(input_string)
+    )
     assert matches[0].name == "string"
     assert matches[0].tags == ["a", "b", "c"]
     assert matches[1].name == "functional"
     assert matches[2].name == "regex"
 
-    matches = Rebulk() \
-        .defaults(name="default", tags=["0"])\
-        .string_defaults(name="string", tags=["a", "b"]) \
-        .functional_defaults(name="functional", tags=["1"]) \
-        .string("quick", tags=["c"]) \
-        .functional(func) \
-        .regex("br.{2}n") \
+    matches = (
+        Rebulk()
+        .defaults(name="default", tags=["0"])
+        .string_defaults(name="string", tags=["a", "b"])
+        .functional_defaults(name="functional", tags=["1"])
+        .string("quick", tags=["c"])
+        .functional(func)
+        .regex("br.{2}n")
         .matches(input_string)
+    )
     assert matches[0].name == "string"
     assert matches[0].tags == ["0", "a", "b", "c"]
     assert matches[1].name == "functional"
@@ -120,36 +131,41 @@ def test_rebulk_defaults():
     assert matches[2].tags == ["0"]
 
 
-def test_rebulk_defaults_overrides():
+def test_rebulk_defaults_overrides() -> None:
     input_string = "The quick brown fox jumps over the lazy dog"
 
-    def func(input_string):
+    def func(input_string: str) -> tuple[int, int] | None:
         i = input_string.find("fox")
         if i > -1:
             return i, i + len("fox")
+        return None
 
-    matches = Rebulk() \
-        .string_defaults(name="string", tags=["a", "b"]) \
-        .regex_defaults(name="regex", tags=["d"]) \
-        .functional_defaults(name="functional") \
-        .string("quick", tags=["c"], overrides=["tags"]) \
-        .functional(func) \
-        .regex("br.{2}n") \
+    matches = (
+        Rebulk()
+        .string_defaults(name="string", tags=["a", "b"])
+        .regex_defaults(name="regex", tags=["d"])
+        .functional_defaults(name="functional")
+        .string("quick", tags=["c"], overrides=["tags"])
+        .functional(func)
+        .regex("br.{2}n")
         .matches(input_string)
+    )
     assert matches[0].name == "string"
     assert matches[0].tags == ["c"]
     assert matches[1].name == "functional"
     assert matches[2].name == "regex"
     assert matches[2].tags == ["d"]
 
-    matches = Rebulk() \
-        .defaults(name="default", tags=["0"]) \
-        .string_defaults(name="string", tags=["a", "b"]) \
-        .functional_defaults(name="functional", tags=["1"]) \
-        .string("quick", tags=["c"]) \
-        .functional(func) \
-        .regex("br.{2}n") \
+    matches = (
+        Rebulk()
+        .defaults(name="default", tags=["0"])
+        .string_defaults(name="string", tags=["a", "b"])
+        .functional_defaults(name="functional", tags=["1"])
+        .string("quick", tags=["c"])
+        .functional(func)
+        .regex("br.{2}n")
         .matches(input_string)
+    )
     assert matches[0].name == "string"
     assert matches[0].tags == ["0", "a", "b", "c"]
     assert matches[1].name == "functional"
@@ -158,7 +174,7 @@ def test_rebulk_defaults_overrides():
     assert matches[2].tags == ["0"]
 
 
-def test_rebulk_rebulk():
+def test_rebulk_rebulk() -> None:
     input_string = "The quick brown fox jumps over the lazy dog"
 
     base = Rebulk().string("quick")
@@ -172,7 +188,7 @@ def test_rebulk_rebulk():
     assert matches[1].value == "brown"
 
 
-def test_rebulk_no_default():
+def test_rebulk_no_default() -> None:
     input_string = "The quick brown fox jumps over the lazy dog"
 
     matches = Rebulk(default_rules=False).string("quick").string("own").regex("br.{2}n").matches(input_string)
@@ -184,11 +200,16 @@ def test_rebulk_no_default():
     assert matches[2].value == "brown"
 
 
-def test_rebulk_empty_match():
+def test_rebulk_empty_match() -> None:
     input_string = "The quick brown fox jumps over the lazy dog"
 
-    matches = Rebulk(default_rules=False).string("quick").string("own").regex("br(.*?)own", children=True)\
+    matches = (
+        Rebulk(default_rules=False)
+        .string("quick")
+        .string("own")
+        .regex("br(.*?)own", children=True)
         .matches(input_string)
+    )
 
     assert len(matches) == 2
 
@@ -196,23 +217,25 @@ def test_rebulk_empty_match():
     assert matches[1].value == "own"
 
 
-def test_rebulk_tags_names():
+def test_rebulk_tags_names() -> None:
     rebulk = Rebulk()
 
     rebulk.string("quick", name="str", tags=["first", "other"])
     rebulk.regex("f.x", tags="other")
 
-    def func(input_string):
+    def func(input_string: str) -> tuple[int, int, dict[str, Any]] | None:
         i = input_string.find("over")
         if i > -1:
-            return i, i + len("over"), {'tags': ['custom']}
+            return i, i + len("over"), {"tags": ["custom"]}
+        return None
 
     rebulk.functional(func, name="fn")
 
-    def func2(input_string):
+    def func2(input_string: str) -> dict[str, Any] | None:
         i = input_string.find("lazy")
         if i > -1:
-            return {'start': i, 'end': i + len("lazy"), 'tags': ['custom']}
+            return {"start": i, "end": i + len("lazy"), "tags": ["custom"]}
+        return None
 
     rebulk.functional(func2, name="fn")
 
@@ -230,10 +253,10 @@ def test_rebulk_tags_names():
     assert len(matches.tagged("custom")) == 2
 
 
-def test_rebulk_rules_1():
+def test_rebulk_rules_1() -> None:
     rebulk = Rebulk()
 
-    rebulk.regex(r'\d{4}', name="year")
+    rebulk.regex(r"\d{4}", name="year")
     rebulk.rules(rm.RemoveAllButLastYear)
 
     matches = rebulk.matches("1984 keep only last 1968 entry 1982 case")
@@ -241,12 +264,12 @@ def test_rebulk_rules_1():
     assert matches[0].value == "1982"
 
 
-def test_rebulk_rules_2():
+def test_rebulk_rules_2() -> None:
     rebulk = Rebulk()
 
-    rebulk.regex(r'\d{4}', name="year")
-    rebulk.string(r'year', name="yearPrefix", private=True)
-    rebulk.string(r'keep', name="yearSuffix", private=True)
+    rebulk.regex(r"\d{4}", name="year")
+    rebulk.string(r"year", name="yearPrefix", private=True)
+    rebulk.string(r"keep", name="yearSuffix", private=True)
     rebulk.rules(rm.PrefixedSuffixedYear)
 
     matches = rebulk.matches("Keep suffix 1984 keep prefixed year 1968 and remove the rest 1982")
@@ -255,12 +278,12 @@ def test_rebulk_rules_2():
     assert matches[1].value == "1968"
 
 
-def test_rebulk_rules_3():
+def test_rebulk_rules_3() -> None:
     rebulk = Rebulk()
 
-    rebulk.regex(r'\d{4}', name="year")
-    rebulk.string(r'year', name="yearPrefix", private=True)
-    rebulk.string(r'keep', name="yearSuffix", private=True)
+    rebulk.regex(r"\d{4}", name="year")
+    rebulk.string(r"year", name="yearPrefix", private=True)
+    rebulk.string(r"keep", name="yearSuffix", private=True)
     rebulk.rules(rm.PrefixedSuffixedYearNoLambda)
 
     matches = rebulk.matches("Keep suffix 1984 keep prefixed year 1968 and remove the rest 1982")
@@ -269,14 +292,15 @@ def test_rebulk_rules_3():
     assert matches[1].value == "1968"
 
 
-def test_rebulk_rules_4():
+def test_rebulk_rules_4() -> None:
     class FirstOnlyRule(Rule):
-        def when(self, matches, context):
+        def when(self, matches: Matches, context: dict[str, Any] | None) -> Any:
             grabbed = matches.named("grabbed", 0)
             if grabbed and matches.previous(grabbed):
                 return grabbed
+            return None
 
-        def then(self, matches, when_response, context):
+        def then(self, matches: Matches, when_response: Any, context: dict[str, Any] | None) -> Any:
             matches.remove(when_response)
 
     rebulk = Rebulk()
@@ -295,21 +319,27 @@ def test_rebulk_rules_4():
 
 
 class TestMarkers:
-    def test_one_marker(self):
+    def test_one_marker(self) -> None:
         class MarkerRule(Rule):
-            def when(self, matches, context):
+            def when(self, matches: Matches, context: dict[str, Any] | None) -> Any:
                 word_match = matches.named("word", 0)
+                if word_match is None:
+                    return None
                 marker = matches.markers.at_match(word_match, lambda marker: marker.name == "mark1", 0)
                 if not marker:
                     return word_match
+                return None
 
-            def then(self, matches, when_response, context):
+            def then(self, matches: Matches, when_response: Any, context: dict[str, Any] | None) -> Any:
                 matches.remove(when_response)
 
-        rebulk = Rebulk().regex(r'\(.*?\)', marker=True, name="mark1") \
-            .regex(r'\[.*?\]', marker=True, name="mark2") \
-            .string("word", name="word") \
+        rebulk = (
+            Rebulk()
+            .regex(r"\(.*?\)", marker=True, name="mark1")
+            .regex(r"\[.*?\]", marker=True, name="mark2")
+            .string("word", name="word")
             .rules(MarkerRule)
+        )
 
         matches = rebulk.matches("grab (word) only if it's in parenthesis")
 
@@ -322,22 +352,27 @@ class TestMarkers:
         matches = rebulk.matches("don't grab word at all")
         assert len(matches) == 0
 
-    def test_multiple_marker(self):
+    def test_multiple_marker(self) -> None:
         class MarkerRule(Rule):
-            def when(self, matches, context):
+            def when(self, matches: Matches, context: dict[str, Any] | None) -> Any:
                 word_match = matches.named("word", 0)
-                marker = matches.markers.at_match(word_match,
-                                                  lambda marker: marker.name in ["mark1", "mark2"])
+                if word_match is None:
+                    return None
+                marker = matches.markers.at_match(word_match, lambda marker: marker.name in ["mark1", "mark2"])
                 if len(marker) < 2:
                     return word_match
+                return None
 
-            def then(self, matches, when_response, context):
+            def then(self, matches: Matches, when_response: Any, context: dict[str, Any] | None) -> Any:
                 matches.remove(when_response)
 
-        rebulk = Rebulk().regex(r'\(.*?\)', marker=True, name="mark1") \
-            .regex(r'\[.*?\]', marker=True, name="mark2") \
-            .regex("w.*?d", name="word") \
+        rebulk = (
+            Rebulk()
+            .regex(r"\(.*?\)", marker=True, name="mark1")
+            .regex(r"\[.*?\]", marker=True, name="mark2")
+            .regex("w.*?d", name="word")
             .rules(MarkerRule)
+        )
 
         matches = rebulk.matches("[grab (word) only] if it's in parenthesis and brakets")
 
@@ -351,21 +386,21 @@ class TestMarkers:
         assert len(matches) == 1
         assert matches[0].value == "w[or)d"
 
-    def test_at_index_marker(self):
+    def test_at_index_marker(self) -> None:
         class MarkerRule(Rule):
-            def when(self, matches, context):
+            def when(self, matches: Matches, context: dict[str, Any] | None) -> Any:
                 word_match = matches.named("word", 0)
-                marker = matches.markers.at_index(word_match.start,
-                                                  lambda marker: marker.name == "mark1", 0)
+                if word_match is None:
+                    return None
+                marker = matches.markers.at_index(word_match.start, lambda marker: marker.name == "mark1", 0)
                 if not marker:
                     return word_match
+                return None
 
-            def then(self, matches, when_response, context):
+            def then(self, matches: Matches, when_response: Any, context: dict[str, Any] | None) -> Any:
                 matches.remove(when_response)
 
-        rebulk = Rebulk().regex(r'\(.*?\)', marker=True, name="mark1") \
-            .regex("w.*?d", name="word") \
-            .rules(MarkerRule)
+        rebulk = Rebulk().regex(r"\(.*?\)", marker=True, name="mark1").regex("w.*?d", name="word").rules(MarkerRule)
 
         matches = rebulk.matches("gr(ab wo)rd only if starting of match is inside parenthesis")
 
@@ -376,19 +411,18 @@ class TestMarkers:
 
         assert len(matches) == 0
 
-    def test_remove_marker(self):
+    def test_remove_marker(self) -> None:
         class MarkerRule(Rule):
-            def when(self, matches, context):
+            def when(self, matches: Matches, context: dict[str, Any] | None) -> Any:
                 marker = matches.markers.named("mark1", 0)
                 if marker:
                     return marker
+                return None
 
-            def then(self, matches, when_response, context):
+            def then(self, matches: Matches, when_response: Any, context: dict[str, Any] | None) -> Any:
                 matches.markers.remove(when_response)
 
-        rebulk = Rebulk().regex(r'\(.*?\)', marker=True, name="mark1") \
-            .regex("w.*?d", name="word") \
-            .rules(MarkerRule)
+        rebulk = Rebulk().regex(r"\(.*?\)", marker=True, name="mark1").regex("w.*?d", name="word").rules(MarkerRule)
 
         matches = rebulk.matches("grab word event (if it's not) inside parenthesis")
 
@@ -399,7 +433,7 @@ class TestMarkers:
 
 
 class TestUnicode:
-    def test_rebulk_simple(self):
+    def test_rebulk_simple(self) -> None:
         input_string = "敏捷的棕色狐狸跳過懶狗"
 
         rebulk = Rebulk()
@@ -407,10 +441,11 @@ class TestUnicode:
         rebulk.string("敏")
         rebulk.regex("捷")
 
-        def func(input_string):
+        def func(input_string: str) -> tuple[int, int] | None:
             i = input_string.find("的")
             if i > -1:
                 return i, i + len("的")
+            return None
 
         rebulk.functional(func)
 
@@ -423,33 +458,33 @@ class TestUnicode:
 
 
 class TestImmutable:
-    def test_starting(self):
+    def test_starting(self) -> None:
         input_string = "The quick brown fox jumps over the lazy dog"
         matches = Rebulk().string("quick").string("over").string("fox").matches(input_string)
 
-        for i in range(0, len(input_string)):
+        for i in range(len(input_string)):
             starting = matches.starting(i)
             for match in list(starting):
                 starting.remove(match)
 
         assert len(matches) == 3
 
-    def test_ending(self):
+    def test_ending(self) -> None:
         input_string = "The quick brown fox jumps over the lazy dog"
         matches = Rebulk().string("quick").string("over").string("fox").matches(input_string)
 
-        for i in range(0, len(input_string)):
+        for i in range(len(input_string)):
             starting = matches.ending(i)
             for match in list(starting):
                 starting.remove(match)
 
         assert len(matches) == 3
 
-    def test_named(self):
+    def test_named(self) -> None:
         input_string = "The quick brown fox jumps over the lazy dog"
-        matches = Rebulk().defaults(name='test').string("quick").string("over").string("fox").matches(input_string)
+        matches = Rebulk().defaults(name="test").string("quick").string("over").string("fox").matches(input_string)
 
-        named = matches.named('test')
+        named = matches.named("test")
         for match in list(named):
             named.remove(match)
 

@@ -266,7 +266,7 @@ def test_refresh_item_stays_lightweight(fake, settings):
 
     jellyfin_refresh_item(imdb_id="tt123", is_movie=True)
 
-    assert fake.refresh_item_modes == [("m1", "ValidationOnly", "None")]
+    assert fake.refresh_item_modes == [("m1", "ValidationOnly", "ValidationOnly")]
 
 
 def test_refresh_falls_back_to_library_update_on_error(fake, settings):

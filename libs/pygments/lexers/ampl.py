@@ -30,7 +30,7 @@ class AmplLexer(RegexLexer):
             (r'\n', Text),
             (r'\s+', Whitespace),
             (r'#.*?\n', Comment.Single),
-            (r'/[*](.|\n)*?[*]/', Comment.Multiline),
+            (r'/[*][\s\S]*?[*]/', Comment.Multiline),
             (words((
                 'call', 'cd', 'close', 'commands', 'data', 'delete', 'display',
                 'drop', 'end', 'environ', 'exit', 'expand', 'include', 'load',

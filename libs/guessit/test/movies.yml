@@ -327,6 +327,32 @@
   film_title: James Bond
   film: 17
 
+# #879: a leading "f<number>" with no collection title before it is part of
+# the title, not a film number (F1 = the 2025 movie, not "film 1").
+? F1.The.Movie.2025.1080p.AMZN.WEB-DL.DDP5.1.Atmos.H.264-BYNDR.mkv
+: title: F1 The Movie
+  year: 2025
+  -film: 1
+
+? F1.2024.1080p.mkv
+: title: F1
+  -film: 1
+
+# #751: with a film_title and no real title after the film number, a language-only
+# hole ("Ita Eng") must stay languages and not be promoted to a bogus title.
+? Fast and Furious F9 2021 BluRay 1080p.H264 Ita Eng AC3 5.1 Sub Ita Eng.mkv
+: film_title: Fast and Furious
+  film: 9
+  year: 2021
+  source: Blu-ray
+  screen_size: 1080p
+  video_codec: H.264
+  language: [Italian, English]
+  subtitle_language: Italian
+  audio_codec: Dolby Digital
+  audio_channels: '5.1'
+  -title: y
+
 
 ? /movies/James_Bond-f21-Casino_Royale.mkv
 : title: Casino Royale
@@ -1090,13 +1116,38 @@
   video_codec: H.264
   type: movie
 
-? Kampen Om Tungtvannet aka The Heavy Water War COMPLETE 720p x265 HEVC-Lund
-: title: Kampen Om Tungtvannet aka The Heavy Water War
+? The.Matrix.1999.COMPLETE.BLURAY-GRP
+: title: The Matrix
+  year: 1999
   other: Complete
-  screen_size: 720p
-  video_codec: H.265
-  release_group: Lund
+  source: Blu-ray
+  release_group: GRP
   type: movie
+
+? Heat.1995.COMPLETE.BLURAY.REMUX-GRP
+: title: Heat
+  year: 1995
+  other: [Complete, Remux]
+  source: Blu-ray
+  release_group: GRP
+  type: movie
+
+# The year is the only thing separating a film on a complete disc from a complete run of a
+# series. A film that does not carry its own year, and a box set of films, both fall on the
+# wrong side of that line.
+? The.Matrix.COMPLETE.BLURAY-GRP
+: title: The Matrix
+  other: Complete
+  source: Blu-ray
+  release_group: GRP
+  type: episode # Should be movie, no year to tell it from a complete run
+
+? Lord.of.the.Rings.Trilogy.COMPLETE.BLURAY-GRP
+: title: Lord of the Rings Trilogy
+  other: Complete
+  source: Blu-ray
+  release_group: GRP
+  type: episode # Should be movie, no year to tell it from a complete run
 
 ? All.Fall.Down.x264.PROOFFIX-OUTLAWS
 : title: All Fall Down
@@ -1320,6 +1371,19 @@
   other: [Dolby Vision]
   video_codec: H.265
   release_group: ASDF
+  type: movie
+
+? Some.Movie.2017.2160p.UHD.BluRay.DTS-HD.MA.5.1.DoVi.x265-NoGroup
+: title: Some Movie
+  year: 2017
+  screen_size: 2160p
+  source: Ultra HD Blu-ray
+  audio_codec: DTS-HD
+  audio_profile: Master Audio
+  audio_channels: '5.1'
+  other: [Dolby Vision]
+  video_codec: H.265
+  release_group: NoGroup
   type: movie
 
 ? How To Steal A Dog.2014.BluRay.1080p.12bit.HEVC.OPUS 5.1-Hn1Dr2.mkv
@@ -1880,3 +1944,280 @@
   release_group: DON
   container: mkv
   type: movie
+
+# MicroHD / HDlite regex form (#818)
+
+? Some.Movie.2019.Micro-HD.1080p.x264-GRP.mkv
+: title: Some Movie
+  year: 2019
+  other: Micro HD
+  screen_size: 1080p
+  video_codec: H.264
+  release_group: GRP
+  container: mkv
+  type: movie
+
+? Barbecue-2014-French-mHD-1080p
+: title: Barbecue
+  year: 2014
+  language: fr
+  other: Micro HD
+  screen_size: 1080p
+  type: movie
+
+# pre-1920 year accepted (#646/#815)
+
+? The.Immigrant.1917.1080p.BluRay.x264-GRP.mkv
+: title: The Immigrant
+  year: 1917
+  screen_size: 1080p
+  source: Blu-ray
+  video_codec: H.264
+  release_group: GRP
+  container: mkv
+  type: movie
+
+# --- #812: a real title word must not be consumed as country/edition/other ---
+
+# Title-Case country-looking word before a year is the title (upstream #638)
+? Us.2019.mkv
+: title: Us
+  year: 2019
+  -country: US
+
+# lone article swallows the following edition/other word (upstream #652, #784)
+? The.Collector.2009.1080p.mkv
+: title: The Collector
+  year: 2009
+  -edition: Collector
+
+? The.Convert.2024.1080p.mkv
+: title: The Convert
+  year: 2024
+  -other: Converted
+
+# leading property word becomes the title when there is none (upstream #773)
+? xXx.2002.1080p.mkv
+: title: xXx
+  year: 2002
+  -other: XXX
+
+# trailing Title-Case country after a stop-word stays in the title (upstream #789)
+? It.Ends.With.Us.2024.1080p.mkv
+: title: It Ends With Us
+  year: 2024
+  -country: US
+
+# a bare leading edition / scene-tag before a year stays a property, not a title (#812 review)
+? Extended.2019.1080p.mkv
+: edition: Extended
+  year: 2019
+  -title: Extended
+
+? Proper.2020.720p.mkv
+: other: Proper
+  year: 2020
+  -title: Proper
+
+# an uppercase country tag stays country (only Title-Case "Us" becomes a title)
+? US.2019.1080p.mkv
+: country: US
+  year: 2019
+  -title: US
+
+# #812 review: a bracketed country tag is a deliberate tag, kept as country, not merged
+? It.Ends.With.[Us].2019.1080p.mkv
+: title: It Ends With
+  country: US
+  year: 2019
+  -title: It Ends With Us
+
+# #696/#757 review: the leading-[bracket]/trailing-(group) anime guard is gated on an
+# episode/season, so a movie keeps its trailing (group) and the [site] tag is not claimed
+? "[YTS.MX] Movie Name (2019) 1080p BluRay (YIFY)"
+: title: Movie Name
+  year: 2019
+  release_group: YIFY
+  -release_group: YTS.MX
+
+# regression anchor (#743 boundary): a title ending in a (foreign) article must keep a following
+# real edition as a property, not swallow it into the title (a withdrawn broadening did this).
+? Cinema.Paradiso.La.Extended.1988.1080p.BluRay.x264-GRP.mkv
+: year: 1988
+  edition: Extended
+  -title: Cinema Paradiso La Extended
+
+# #739: a movie title ending on a stop-word + Title-Case "Us" keeps "Us" in the title
+? The.Last.of.Us.2023.1080p.BluRay.x264-GROUP.mkv
+: title: The Last of Us
+  year: 2023
+  release_group: GROUP
+  -country: US
+
+# #791 (by @plotski): Laserdisc source. Bare "LD" is also "Line Dubbed", so it only counts
+# as Laserdisc with a Rip suffix; the full word matches with or without it.
+? Some.Title.1983.LDRip.x264-GRP.mkv
+: title: Some Title
+  year: 1983
+  source: Laserdisc
+  other: Rip
+  video_codec: H.264
+
+? Some.Title.1983.Laserdisc.x264-GRP.mkv
+: title: Some Title
+  year: 1983
+  source: Laserdisc
+  video_codec: H.264
+  -other: Rip
+
+# #79: a weak "LiNE" token mid-name must not truncate the title; the whole title is kept.
+? Dr.Line.Seuss.The.Lorax.2012.DVDRip.LiNE.XviD.AC3.HQ.Hive-CM8.mp4
+: title: Dr Line Seuss The Lorax
+  year: 2012
+  source: DVD
+  video_codec: Xvid
+  audio_codec: Dolby Digital
+  release_group: Hive-CM8
+  type: movie
+
+# #887: a leading release-site host on a modern gTLD (.party, .vip, .show, .pics) must be
+# detected as a website and kept out of the title. Refreshing the IANA TLD list fixes these.
+? www.Tamilblasters.party - The Wheel of Time (2021) 720p x264
+: title: The Wheel of Time
+  year: 2021
+  screen_size: 720p
+  video_codec: H.264
+  website: www.Tamilblasters.party
+
+? www.TamilBlasters.vip - Shang-Chi (2021) 720p BDRip x264
+: title: Shang-Chi
+  year: 2021
+  screen_size: 720p
+  source: Blu-ray
+  video_codec: H.264
+  website: www.TamilBlasters.vip
+
+? www.5MovieRulz.show - Khel Khel Mein (2024) 1080p x264
+: title: Khel Khel Mein
+  year: 2024
+  screen_size: 1080p
+  video_codec: H.264
+  website: www.5MovieRulz.show
+
+? www.1TamilMV.pics - 777 Charlie (2022) 720p x264
+: title: 777 Charlie
+  year: 2022
+  screen_size: 720p
+  video_codec: H.264
+  website: www.1TamilMV.pics
+
+# #890: leading original-language (non-Latin) title prefix split off into alternative_title.
+? 劇場版 ペンギン・ハイウェイ Penguin Highway The Movie (BD 1280x720 AVC).mp4
+: title: Penguin Highway The Movie
+  alternative_title: 劇場版 ペンギン・ハイウェイ
+  source: Blu-ray
+  screen_size: 720p
+  video_codec: H.264
+
+# #885: a property value that is also a plain title word (tagged title-word, e.g. audio_codec
+# "Opus") sitting in the title zone -- before the year/season/episode anchor -- is title text,
+# not a codec. Case-insensitive and works at the start, end or middle of the title.
+? Opus.2025.Hybrid.2160p.WEB-DL.DV.HDR.DDP5.1.Atmos.H265-AOC.mkv
+: title: Opus
+  year: 2025
+  audio_codec:
+    - Dolby Digital Plus
+    - Dolby Atmos
+  -audio_codec: Opus
+
+? Something.Opus.2025.1080p.WEB-DL.DDP5.1-AOC.mkv
+: title: Something Opus
+  year: 2025
+  -audio_codec: Opus
+
+# Lowercase (scene style): title-word is still reclaimed at the start, end and middle.
+? opus.2025.1080p.web-dl.ddp5.1.atmos.h265-aoc.mkv
+: title: opus
+  year: 2025
+  -audio_codec: Opus
+
+? something.opus.2025.1080p.web-dl.ddp5.1-aoc.mkv
+: title: something opus
+  year: 2025
+  -audio_codec: Opus
+
+? foo.opus.bar.2025.1080p.web-dl.ddp5.1-aoc.mkv
+: title: foo opus bar
+  year: 2025
+  -audio_codec: Opus
+
+# The codec proper stays a codec: "OPUS"/"Opus" that lives in the technical tag block
+# (after the anchor / among the other tags) is untouched, whatever its case.
+? How To Steal A Dog.2014.BluRay.1080p.12bit.HEVC.OPUS 5.1-Hn1Dr2.mkv
+: title: How To Steal A Dog
+  year: 2014
+  audio_codec: Opus
+
+? Alien.Director.Cut.Ita.Eng.VP9.Opus.AlphaBot.webm
+: title: Alien
+  audio_codec: Opus
+
+# A "p"-less resolution followed by an x264/x265 codec: the "x" belongs to the codec, not to a
+# <width>x<height> resolution nor to a "season x episode" marker (#933).
+? Les.Profs.2013.FRENCH.AC3.1080.x264-Ox
+: title: Les Profs
+  year: 2013
+  language: French
+  audio_codec: Dolby Digital
+  screen_size: 1080p
+  video_codec: H.264
+  release_group: Ox
+  -aspect_ratio: 4.091
+  -season: 1080
+
+? Movie.Name.2013.720.x264-Ox.mkv
+: title: Movie Name
+  year: 2013
+  screen_size: 720p
+  video_codec: H.264
+  release_group: Ox
+
+? Movie.Name.2013.2160.x265-Ox.mkv
+: title: Movie Name
+  year: 2013
+  screen_size: 2160p
+  video_codec: H.265
+  release_group: Ox
+
+# Every separator flavour between the number and the codec behaves the same.
+? Movie Name 2013 1080 x265 Ox.mkv
+: title: Movie Name
+  year: 2013
+  screen_size: 1080p
+  video_codec: H.265
+
+? Movie.Name.2013.1080-x264-Ox.mkv
+: title: Movie Name
+  year: 2013
+  screen_size: 1080p
+  video_codec: H.264
+  release_group: Ox
+
+# The same release with the type forced: the number keeps its resolution reading even when the
+# weak-episode patterns are off, so no orphan season is left behind (#937).
+? Les.Profs.2013.FRENCH.AC3.1080.x264-Ox
+: options: --type movie
+  title: Les Profs
+  year: 2013
+  screen_size: 1080p
+  video_codec: H.264
+  release_group: Ox
+  -season: 1080
+
+? Movie.Name.2013.720.x264-Ox.mkv
+: options: --type movie
+  title: Movie Name
+  year: 2013
+  screen_size: 720p
+  video_codec: H.264
+  -season: 720

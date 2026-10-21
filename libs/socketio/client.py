@@ -168,10 +168,13 @@ class Client(base_client.BaseClient):
                     break
             if set(self.namespaces) != set(self.connection_namespaces):
                 self.disconnect()
-                raise exceptions.ConnectionError(
-                    'One or more namespaces failed to connect: '
-                    + ', '.join(self.failed_namespaces))
-
+                if self.failed_namespaces:
+                    raise exceptions.ConnectionError(
+                        'One or more namespaces failed to connect: '
+                        + ', '.join(self.failed_namespaces))
+                else:  # pragma: no cover
+                    raise exceptions.ConnectionError(
+                        'Unexpected connection error')
         self.connected = True
 
     def wait(self):

@@ -68,7 +68,7 @@ def test_refresh_item(mock_post, client):
     client.refresh_item("item-123")
     mock_post.assert_called_once_with("/Items/item-123/Refresh", params={
         "metadataRefreshMode": "ValidationOnly",
-        "imageRefreshMode": "None",
+        "imageRefreshMode": "ValidationOnly",
         "replaceAllMetadata": "false",
         "replaceAllImages": "false",
     })

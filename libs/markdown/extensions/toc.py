@@ -416,6 +416,7 @@ class TocTreeprocessor(Treeprocessor):
 
 
 class TocExtension(Extension):
+    """ Table of Contents Extension to Python-Markdown. """
 
     TreeProcessorClass = TocTreeprocessor
 
@@ -472,7 +473,14 @@ class TocExtension(Extension):
         super().__init__(**kwargs)
 
     def extendMarkdown(self, md):
-        """ Add TOC tree processor to Markdown. """
+        """ Register the processor.
+
+        | Class Instance                                                 | Registry                                                         | Name   | Priority |
+        | -------------------------------------------------------------- | ---------------------------------------------------------------- | ------ | :------: |
+        | [`TocTreeprocessor`][markdown.extensions.toc.TocTreeprocessor] | [`treeprocessors`][markdown.treeprocessors.build_treeprocessors] | `toc` | `5` |
+
+        """
+        # flake8: noqa: E501 478-480
         md.registerExtension(self)
         self.md = md
         self.reset()

@@ -1,17 +1,53 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """
 Entry point functions and classes for Rebulk
 """
-from logging import getLogger
 
+from __future__ import annotations
+
+from logging import getLogger
+from typing import TYPE_CHECKING, Any, cast
+
+from . import debug
 from .builder import Builder
+from .chain import Chain
 from .match import Matches
+from .pattern import Pattern, RePattern
 from .processors import ConflictSolver, PrivateRemover
-from .rules import Rules
+from .rules import CustomRule, Rules
 from .utils import extend_safe
 
+if TYPE_CHECKING:
+    from collections.abc import Callable, Iterable
+
+    from typing_extensions import Self
+
+    from .key import Key
+
 log = getLogger(__name__).log
+
+
+def _producible_names(pattern: Pattern) -> set[str]:
+    """
+    Names a pattern can emit: any name it declares via ``properties``, its own
+    ``name``, every regex group name, and — for a :class:`~rebulk.chain.Chain` —
+    the names of its parts. Private/marker names are included so a key targeting
+    one is not flagged as unused.
+
+    This mirrors the name extraction in :class:`~rebulk.introspector.PatternDescription`
+    but is intentionally *inclusive* (it keeps private/marker names), whereas
+    introspection filters them out for its public-properties view.
+    """
+    names: set[str] = set(pattern.properties)
+    if pattern.name:
+        names.add(pattern.name)
+    if isinstance(pattern, RePattern):
+        for compiled in pattern.patterns:
+            names.update(compiled.groupindex)
+    elif isinstance(pattern, Chain):
+        for part in pattern.parts:
+            names |= _producible_names(part.pattern)
+    return names
 
 
 class Rebulk(Builder):
@@ -41,9 +77,11 @@ class Rebulk(Builder):
         [<lakers:(4, 10)>, <la:(20, 22)>]
     """
 
-    # pylint:disable=protected-access
-
-    def __init__(self, disabled=lambda context: False, default_rules=True):
+    def __init__(
+        self,
+        disabled: bool | Callable[[dict[str, Any] | None], bool] = lambda context: False,
+        default_rules: bool = True,
+    ) -> None:
         """
         Creates a new Rebulk object.
         :param disabled: if True, this pattern is disabled. Can also be a function(context).
@@ -54,17 +92,18 @@ class Rebulk(Builder):
         :rtype:
         """
         super().__init__()
+        self.disabled: Callable[[dict[str, Any] | None], bool]
         if not callable(disabled):
             self.disabled = lambda context: disabled
         else:
             self.disabled = disabled
-        self._patterns = []
+        self._patterns: list[Pattern] = []
         self._rules = Rules()
         if default_rules:
             self.rules(ConflictSolver, PrivateRemover)
-        self._rebulks = []
+        self._rebulks: list[Rebulk] = []
 
-    def pattern(self, *pattern):
+    def pattern(self, *pattern: Pattern) -> Self:
         """
         Add patterns objects
 
@@ -76,7 +115,7 @@ class Rebulk(Builder):
         self._patterns.extend(pattern)
         return self
 
-    def rules(self, *rules):
+    def rules(self, *rules: CustomRule | type[CustomRule] | Any) -> Self:
         """
         Add rules as a module, class or instance.
         :param rules:
@@ -86,7 +125,7 @@ class Rebulk(Builder):
         self._rules.load(*rules)
         return self
 
-    def rebulk(self, *rebulks):
+    def rebulk(self, *rebulks: Rebulk) -> Self:
         """
         Add a children rebulk object
         :param rebulks:
@@ -96,7 +135,7 @@ class Rebulk(Builder):
         self._rebulks.extend(rebulks)
         return self
 
-    def matches(self, string, context=None):
+    def matches(self, string: str, context: dict[str, Any] | None = None) -> Matches:
         """
         Search for all matches with current configuration against input_string
         :param string: string to search into
@@ -110,13 +149,22 @@ class Rebulk(Builder):
         if context is None:
             context = {}
 
+        if not self.disabled(context):
+            matches.declared_keys = self.effective_keys(context)
+
         self._matches_patterns(matches, context)
+
+        # Validate formatter output against declared Key.value_type *before* rules
+        # run: the contract is about the value a pattern's formatter produced, not
+        # about matches that a rule later renames/relocates onto a declared name.
+        if debug.CHECK_DECLARED_KEYS:
+            matches.check_declared_keys()
 
         self._execute_rules(matches, context)
 
         return matches
 
-    def effective_rules(self, context=None):
+    def effective_rules(self, context: dict[str, Any] | None = None) -> Rules:
         """
         Get effective rules for this rebulk object and its children.
         :param context:
@@ -131,7 +179,63 @@ class Rebulk(Builder):
                 extend_safe(rules, rebulk._rules)
         return rules
 
-    def _execute_rules(self, matches, context):
+    def effective_keys(self, context: dict[str, Any] | None = None) -> dict[str, Key[Any]]:
+        """
+        Get effective declared keys for this rebulk object and its children.
+
+        Keys declared on a child rebulk are merged in (without overriding the
+        parent's), so the returned registry mirrors the patterns actually run.
+        :param context:
+        :type context:
+        :return:
+        :rtype:
+        """
+        keys: dict[str, Key[Any]] = dict(self._keys)
+        for rebulk in self._rebulks:
+            if not rebulk.disabled(context):
+                for name, key in rebulk._keys.items():
+                    keys.setdefault(name, key)
+        return keys
+
+    def check_keys(self, *, allowed_unused: str | Iterable[str] = ()) -> list[str]:
+        """
+        Return declared key names that no built pattern can produce (typo guard).
+
+        A declared :class:`~rebulk.key.Key` binds its converter/type to a match
+        name (see :meth:`~rebulk.builder.PatternFactory.declare_keys`); a typo or
+        a name kept after its pattern was removed silently no-ops. This compares
+        every declared key name against the names every pattern *can* emit — its
+        ``name`` plus regex group names, across this rebulk and its children —
+        and returns the declared names matched by none, sorted.
+
+        The full pattern set is considered regardless of ``disabled`` (a key
+        whose patterns are all disabled by config is still legitimately declared),
+        so the result is deterministic and config-independent: ideal to assert in
+        a test (``assert not rb.check_keys()``) so a typo fails fast in CI rather
+        than silently doing nothing.
+
+        Only names a *pattern* can emit are considered (its ``name``, regex group
+        names, and declared ``properties``). A name produced solely by a rule
+        (e.g. ``RenameMatch``/``AppendMatch``) or dynamically by a functional
+        pattern is not detectable statically; pass such names — and any other
+        intentionally pattern-less key — via ``allowed_unused`` (a single name or
+        an iterable of names) to exempt them.
+        """
+        declared: dict[str, Key[Any]] = dict(self._keys)
+        patterns: list[Pattern] = list(self._patterns)
+        for rebulk in self._rebulks:
+            for name, key in rebulk._keys.items():
+                declared.setdefault(name, key)
+            patterns.extend(rebulk._patterns)
+        if not declared:
+            return []
+        produced: set[str] = set()
+        for pattern in patterns:
+            produced |= _producible_names(pattern)
+        allowed = {allowed_unused} if isinstance(allowed_unused, str) else set(allowed_unused)
+        return sorted(name for name in declared if name not in produced and name not in allowed)
+
+    def _execute_rules(self, matches: Matches, context: dict[str, Any]) -> None:
         """
         Execute rules for this rebulk and children.
         :param matches:
@@ -145,7 +249,7 @@ class Rebulk(Builder):
             rules = self.effective_rules(context)
             rules.execute_all_rules(matches, context)
 
-    def effective_patterns(self, context=None):
+    def effective_patterns(self, context: dict[str, Any] | None = None) -> list[Pattern]:
         """
         Get effective patterns for this rebulk object and its children.
         :param context:
@@ -159,7 +263,7 @@ class Rebulk(Builder):
                 extend_safe(patterns, rebulk._patterns)
         return patterns
 
-    def _matches_patterns(self, matches, context):
+    def _matches_patterns(self, matches: Matches, context: dict[str, Any]) -> None:
         """
         Search for all matches with current paterns agains input_string
         :param matches: matches list
@@ -173,12 +277,9 @@ class Rebulk(Builder):
             patterns = self.effective_patterns(context)
             for pattern in patterns:
                 if not pattern.disabled(context):
-                    pattern_matches = pattern.matches(matches.input_string, context)
+                    pattern_matches = pattern.matches(cast("str", matches.input_string), context)
                     if pattern_matches:
                         log(pattern.log_level, "Pattern has %s match(es). (%s)", len(pattern_matches), pattern)
-                    else:
-                        pass
-                        # log(pattern.log_level, "Pattern doesn't match. (%s)" % (pattern,))
                     for match in pattern_matches:
                         if match.marker:
                             log(pattern.log_level, "Marker found. (%s)", match)

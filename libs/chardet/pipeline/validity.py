@@ -5,6 +5,7 @@ this module is compiled with mypyc, which does not support PEP 563 string
 annotations.
 """
 
+from chardet._utils import decodes_without_error
 from chardet.registry import EncodingInfo
 
 
@@ -20,11 +21,4 @@ def filter_by_validity(
     if not data:
         return candidates
 
-    valid = []
-    for enc in candidates:
-        try:
-            data.decode(enc.name, errors="strict")
-            valid.append(enc)
-        except (UnicodeDecodeError, LookupError):
-            continue
-    return tuple(valid)
+    return tuple(enc for enc in candidates if decodes_without_error(data, enc.name))

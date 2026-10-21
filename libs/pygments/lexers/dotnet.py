@@ -96,6 +96,8 @@ class CSharpLexer(RegexLexer):
                 (r'=~|!=|==|<<|>>|[-+/*%=<>&^|]', Operator),
                 (r'[()\[\];:,.]', Punctuation),
                 (r'[{}]', Punctuation),
+                (r'\$*"{3,}.*?"{3,}', String),
+                (r'(?:\$@|@\$)"(""|[^"])*"', String),
                 (r'@"(""|[^"])*"', String),
                 (r'\$?"(\\\\|\\[^\\]|[^"\\\n])*["\n]', String),
                 (r"'\\.'|'[^\\]'", String.Char),
@@ -133,7 +135,7 @@ class CSharpLexer(RegexLexer):
                 (r'(global)(::)', bygroups(Keyword, Punctuation)),
                 (r'(bool|byte|char|decimal|double|dynamic|float|int|long|object|'
                  r'sbyte|short|string|uint|ulong|ushort|var)\b\??', Keyword.Type),
-                (r'(class|struct)(\s+)', bygroups(Keyword, Whitespace), 'class'),
+                (r'(class|struct|union)(\s+)', bygroups(Keyword, Whitespace), 'class'),
                 (r'(namespace|using)(\s+)', bygroups(Keyword, Whitespace), 'namespace'),
                 (cs_ident, Name),
             ],
@@ -261,18 +263,23 @@ class NemerleLexer(RegexLexer):
                  r'line|error|warning|region|endregion|pragma)\b',
                  bygroups(Comment.Preproc, Whitespace, Comment.Preproc), 'preproc'),
                 (r'\b(extern)(\s+)(alias)\b', bygroups(Keyword, Whitespace, Keyword)),
-                (r'(abstract|and|as|base|catch|def|delegate|'
-                 r'enum|event|extern|false|finally|'
-                 r'fun|implements|interface|internal|'
-                 r'is|macro|match|matches|module|mutable|new|'
-                 r'null|out|override|params|partial|private|'
-                 r'protected|public|ref|sealed|static|'
-                 r'syntax|this|throw|true|try|type|typeof|'
-                 r'virtual|volatile|when|where|with|'
-                 r'assert|assert2|async|break|checked|continue|do|else|'
-                 r'ensures|for|foreach|if|late|lock|new|nolate|'
-                 r'otherwise|regexp|repeat|requires|return|surroundwith|'
-                 r'unchecked|unless|using|while|yield)\b', Keyword),
+                (words(('abstract', 'and', 'as', 'base', 'catch', 'def', 'delegate',
+                    'enum', 'event', 'extern', 'false',
+                    'finally', 'fun', 'implements', 'interface',
+                    'internal', 'is', 'macro', 'match',
+                    'matches', 'module', 'mutable', 'new',
+                    'null', 'out', 'override', 'params',
+                    'partial', 'private', 'protected', 'public',
+                    'ref', 'sealed', 'static', 'syntax', 'this',
+                    'throw', 'true', 'try', 'type', 'typeof',
+                    'virtual', 'volatile', 'when', 'where',
+                    'with', 'assert', 'assert2', 'async',
+                    'break', 'checked', 'continue', 'do',
+                    'else', 'ensures', 'for', 'foreach', 'if',
+                    'late', 'lock', 'new', 'nolate',
+                    'otherwise', 'regexp', 'repeat', 'requires',
+                    'return', 'surroundwith', 'unchecked',
+                    'unless', 'using', 'while', 'yield'), suffix=r'\b'), Keyword),
                 (r'(global)(::)', bygroups(Keyword, Punctuation)),
                 (r'(bool|byte|char|decimal|double|float|int|long|object|sbyte|'
                  r'short|string|uint|ulong|ushort|void|array|list)\b\??',
@@ -374,13 +381,18 @@ class BooLexer(RegexLexer):
             (r'/(\\\\|\\[^\\]|[^/\\\s])/', String.Regex),
             (r'@/(\\\\|\\[^\\]|[^/\\])*/', String.Regex),
             (r'=~|!=|==|<<|>>|[-+/*%=<>&^|]', Operator),
-            (r'(as|abstract|callable|constructor|destructor|do|import|'
-             r'enum|event|final|get|interface|internal|of|override|'
-             r'partial|private|protected|public|return|set|static|'
-             r'struct|transient|virtual|yield|super|and|break|cast|'
-             r'continue|elif|else|ensure|except|for|given|goto|if|in|'
-             r'is|isa|not|or|otherwise|pass|raise|ref|try|unless|when|'
-             r'while|from|as)\b', Keyword),
+            (words(('as', 'abstract', 'callable', 'constructor', 'destructor',
+                    'do', 'import', 'enum', 'event', 'final',
+                    'get', 'interface', 'internal', 'of',
+                    'override', 'partial', 'private',
+                    'protected', 'public', 'return', 'set',
+                    'static', 'struct', 'transient', 'virtual',
+                    'yield', 'super', 'and', 'break', 'cast',
+                    'continue', 'elif', 'else', 'ensure',
+                    'except', 'for', 'given', 'goto', 'if',
+                    'in', 'is', 'isa', 'not', 'or', 'otherwise',
+                    'pass', 'raise', 'ref', 'try', 'unless',
+                    'when', 'while', 'from'), suffix=r'\b'), Keyword),
             (r'def(?=\s+\(.*?\))', Keyword),
             (r'(def)(\s+)', bygroups(Keyword, Whitespace), 'funcname'),
             (r'(class)(\s+)', bygroups(Keyword, Whitespace), 'classname'),
@@ -520,7 +532,8 @@ class VbNetLexer(RegexLexer):
         ],
         'end': [
             (r'\s+', Whitespace),
-            (r'(Function|Sub|Property|Class|Structure|Enum|Module|Namespace)\b',
+            (words(('Function', 'Sub', 'Property', 'Class', 'Structure', 'Enum',
+                    'Module', 'Namespace'), suffix=r'\b'),
              Keyword, '#pop'),
             default('#pop'),
         ]

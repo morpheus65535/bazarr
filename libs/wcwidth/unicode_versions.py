@@ -17,5 +17,5 @@ def list_versions() -> tuple[str, ...]:
     :returns: Supported Unicode version numbers in ascending sorted order.
     """
     return (
-        "17.0.0",
+        "18.0.0",
     )

@@ -193,7 +193,7 @@ class _DictAccessorProperty(t.Generic[_TAccessorValue]):
         return f"<{type(self).__name__} {self.name}>"
 
 
-_plain_int_re = re.compile(r"-?\d+", re.ASCII)
+_plain_int_re = re.compile(r"-?[0-9]+", re.ASCII)
 
 
 def _plain_int(value: str) -> int:
@@ -204,7 +204,7 @@ def _plain_int(value: str) -> int:
 
     Any leading or trailing whitespace is stripped
     """
-    value = value.strip()
+    value = value.strip(" \t")
     if _plain_int_re.fullmatch(value) is None:
         raise ValueError
 

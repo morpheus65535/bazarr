@@ -21,7 +21,8 @@ from ._constants import (_EMOJI_ZWJ_SET,
                          _FITZPATRICK_RANGE,
                          _REGIONAL_INDICATOR_SET,
                          resolve_terminal,
-                         get_term_overrides)
+                         get_term_overrides,
+                         _clamp_ambiguous_width)
 from .table_vs15 import VS15_WIDE_TO_NARROW
 from .table_vs16 import VS16_NARROW_TO_WIDE
 from .table_grapheme import GRAPHEME_EXTEND
@@ -45,8 +46,8 @@ def _scan_zwj_cluster_end(text: str, start: int, end: int) -> int:
         idx += 1
         # GB11: \p{ExtPict} Extend* ZWJ × \p{ExtPict}
         # Extend modifiers (VS16, Fitzpatrick skin tones, etc.) attach to
-        # the ExtPict *before* the ZWJ, not after it.  After ZWJ the next
-        # codepoint is always an ExtPict directly, no Extend skip needed.
+        # the ExtPict *before* the ZWJ.  After ZWJ the next codepoint is
+        # always an ExtPict directly, no Extend skip needed.
         if idx < end and ord(text[idx]) in _EMOJI_ZWJ_SET:
             idx += 1
             # Skip trailing Extend (VS16, etc.) after ExtPict before next ZWJ
@@ -96,9 +97,11 @@ def wcswidth(
     if n is None and pwcs.isascii() and pwcs.isprintable():
         return len(pwcs)
 
+    ambiguous_width = _clamp_ambiguous_width(ambiguous_width)
+
     _wcwidth = wcwidth if ambiguous_width == 1 else lambda c: wcwidth(c, 'auto', ambiguous_width)
 
-    end = len(pwcs) if n is None else n
+    end = len(pwcs) if n is None else min(n, len(pwcs))
     total_width = 0
     idx = 0
 
@@ -144,6 +147,7 @@ def wcswidth(
         if ucs == 0xFE0E and last_measured_idx >= 0:
             if bisearch(last_measured_ucs, vs15_wn_table) and last_measured_w == 2:
                 total_width -= 1
+            last_measured_idx = -2
             idx += 1
             continue
 
@@ -236,6 +240,8 @@ def wcstwidth(
     if n is None and pwcs.isascii() and pwcs.isprintable():
         return len(pwcs)
 
+    ambiguous_width = _clamp_ambiguous_width(ambiguous_width)
+
     # Resolve terminal software for override lookup
     term_canonical = resolve_terminal(term_program)
 
@@ -262,7 +268,7 @@ def wcstwidth(
     # Select wcwidth call pattern for best lru_cache performance
     _wcwidth = wcwidth if ambiguous_width == 1 else lambda c: wcwidth(c, 'auto', ambiguous_width)
 
-    end = len(pwcs) if n is None else n
+    end = len(pwcs) if n is None else min(n, len(pwcs))
     total_width = 0
     idx = 0
 
@@ -286,8 +292,8 @@ def wcstwidth(
         ucs = ord(char)
 
         #
-        # Much of the logic below matches the logic in width(), but is repeated for improved
-        # performance, they are given matching index reference numbers (starting at #5).
+        # Much of the logic below matches width(); it is repeated here for performance, with
+        # matching index reference numbers (starting at #5).
         #
         # 5. ZWJ (U+200D): consumed without contributing width.
         # Virama codepoints are treated as zero-width combining marks (Mn). When a
@@ -331,7 +337,7 @@ def wcstwidth(
                 pass
             elif _bisearch(last_measured_ucs, vs16_nw_table):
                 cluster_width = 2
-            last_measured_idx = -2  # prevent double application
+            last_measured_idx = -2
             idx += 1
             continue
 
@@ -343,6 +349,7 @@ def wcstwidth(
                 vs15_narrow = False
             if vs15_narrow and last_measured_w == 2:
                 total_width -= 1
+            last_measured_idx = -2
             idx += 1
             continue
 
@@ -354,7 +361,7 @@ def wcstwidth(
                 while j >= 0 and ord(pwcs[j]) in _REGIONAL_INDICATOR_SET:
                     ri_before += 1
                     j -= 1
-                if ri_before % 2 == 1:
+                if ri_before % 2 == 1 and not (_narrower and _bisearch(ucs, _narrower)):
                     last_measured_ucs = ucs
                     idx += 1
                     continue

@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 # std imports
+import os
+import sys
 import enum
 from itertools import islice
 
@@ -11,15 +13,29 @@ from typing import Literal, Callable, Optional, NamedTuple
 from ._width import width
 from .grapheme import iter_graphemes
 from .hyperlink import Hyperlink, HyperlinkParams
-from .sgr_state import (_SGR_STATE_DEFAULT,
+from .sgr_state import (_SGR_PATTERN,
+                        _SGR_STATE_DEFAULT,
                         _SGRState,
                         _sgr_state_update,
                         _sgr_state_is_active,
                         _sgr_state_to_sequence)
+from ._constants import _clamp_ambiguous_width
 from .text_sizing import TextSizing, TextSizingParams
 from .escape_sequences import (_SEQUENCE_CLASSIFY,
                                _HORIZONTAL_CURSOR_MOVEMENT,
                                INDETERMINATE_EFFECT_SEQUENCE)
+
+_c_clip: Optional[Callable[..., Optional[str]]]  # pylint: disable=invalid-name
+if os.environ.get('WCWIDTH_PYTHON', ''):
+    _c_clip = None
+else:
+    try:
+        # local
+        from ._wcwidth_c import clip as _c_clip_impl
+    except ImportError:
+        _c_clip = None
+    else:
+        _c_clip = _c_clip_impl
 
 
 class _HyperlinkAction(enum.Enum):
@@ -48,17 +64,24 @@ class _HyperlinkResult(NamedTuple):
     hl_col_end: int = 0
 
 
-def _apply_sgr_wrap(result: str, captured_style: Optional[_SGRState]) -> str:
+def _apply_sgr_wrap(result: str, captured_style: Optional[_SGRState],
+                    end_style: Optional[_SGRState] = None) -> str:
     """
     Apply SGR prefix/suffix around *result*.
 
     If an SGR state was captured at the first visible character, prefix the result with the
-    corresponding SGR sequence and suffix with a reset if any styles are active.
+    corresponding SGR sequence, and suffix with a reset if any styles remain active at the end
+    of the clipped region.
+
+    *end_style* is the style in effect after the final SGR sequence emitted within the clip window,
+    or ``None`` when no such sequence was emitted, the style at the first visible character is still
+    in effect.  This matches :func:`wcwidth.propagate_sgr`, which decides the trailing reset by SGR
+    state at the end of each line.
     """
     if captured_style is not None:
         if prefix := _sgr_state_to_sequence(captured_style):
             result = prefix + result
-        if _sgr_state_is_active(captured_style):
+        if _sgr_state_is_active(captured_style if end_style is None else end_style):
             result += '\x1b[0m'
     return result
 
@@ -173,7 +196,7 @@ def _reconstruct_painter(
         if walk_col in cells:
             cell_text, cell_w = cells[walk_col]
             parts.append(cell_text)
-            walk_col += cell_w
+            walk_col += cell_w or 1
         else:
             if start <= walk_col <= max_cell_col:
                 parts.append(fillchar)
@@ -198,30 +221,24 @@ def _clip_simple(
     term_program: bool | str,
     fillchar: str,
     tabsize: int,
-    strict: bool,
     control_codes: Literal['parse', 'strict', 'ignore'],
-) -> tuple[str, Optional[_SGRState]]:
+) -> tuple[str, Optional[_SGRState], Optional[_SGRState]]:
     """
     Clip text without cursor movement (simple append-to-output path).
 
-    Returns ``(result, captured_style)``.  The caller applies SGR wrapping.
+    Returns ``(result, captured_style, end_style)``.  The caller applies SGR wrapping.
     """
     # pylint: disable=too-complex,too-many-locals,too-many-branches,too-many-statements
     # pylint: disable=too-many-nested-blocks
     # code length and complexity traded for performance, to allow this to be used as a "hot path"
 
+    strict = control_codes == 'strict'
+
     output: list[str] = []
     col = 0
     idx = 0
-    # captured_style is a frozen snapshot of current_style taken at the first
-    # visible character emitted within the clip window (start, end).  It stays
-    # None until that point.  current_style, by contrast, is continuously
-    # updated by SGR sequences throughout the scan.  The snapshot is what the
-    # caller uses to wrap the result in the correct SGR state.
-    #
-    # When propagate_sgr is False, current_style (and therefore captured_style)
-    # remain None, and SGR sequences pass through as literal text.
     captured_style: Optional[_SGRState] = None
+    end_style: Optional[_SGRState] = None
     current_style = _SGR_STATE_DEFAULT if propagate_sgr else None
 
     while idx < len(text):
@@ -248,9 +265,15 @@ def _clip_simple(
                 idx += 1
                 continue
 
-            # SGR: update current_style, do not emit.
+            # SGR: update current_style.  Sequences before the first visible
+            # emission are folded into the prefix synthesized by
+            # _apply_sgr_wrap(); those inside the clip window are emitted at
+            # their original position; those at or beyond *end* are dropped.
             if m.group('sgr_params') is not None and propagate_sgr and current_style is not None:
                 current_style = _sgr_state_update(current_style, m.group())
+                if captured_style is not None and col < end:
+                    output.append(m.group())
+                    end_style = current_style
                 idx = m.end()
                 continue
 
@@ -276,15 +299,21 @@ def _clip_simple(
                     output.append(r.close_seq)
                     if propagate_sgr and captured_style is None:
                         captured_style = current_style
+                    # Inner text is clipped with propagate_sgr=False, so any SGR
+                    # sequences it emits are verbatim: fold them into our state.
+                    if propagate_sgr and current_style is not None:
+                        for sgr_m in _SGR_PATTERN.finditer(r.clipped_inner):
+                            current_style = _sgr_state_update(current_style, sgr_m.group())
+                            end_style = current_style
                     col += r.inner_width
                     idx = r.close_end
                 continue
 
             # OSC 66 Text Sizing.
             if (ts_meta := m.group('ts_meta')) is not None:
-                ts_text = m.group('ts_text')
+                ts_text = m.group('ts_text') or ''
                 ts_term = m.group('ts_term')
-                assert ts_text is not None and ts_term is not None
+                assert ts_term is not None
                 ts = TextSizing(
                     TextSizingParams.from_params(ts_meta, control_codes=control_codes),
                     ts_text, ts_term)
@@ -335,7 +364,7 @@ def _clip_simple(
                         if propagate_sgr and captured_style is None:
                             captured_style = current_style
                     col += 1
-            else:
+            elif start <= col < end:
                 output.append('\t')
             idx += 1
             continue
@@ -360,7 +389,7 @@ def _clip_simple(
         col += grapheme_w
         idx += len(grapheme)
 
-    return ''.join(output), captured_style
+    return ''.join(output), captured_style, end_style
 
 
 def _text_sizing_clip(
@@ -461,18 +490,20 @@ def _clip_painter(
     term_program: bool | str,
     fillchar: str,
     tabsize: int,
-    strict: bool,
     control_codes: Literal['parse', 'strict', 'ignore'],
-) -> tuple[str, Optional[_SGRState]]:
+) -> tuple[str, Optional[_SGRState], Optional[_SGRState]]:
     """
-    Clip text with cursor movement (painter's algorithm path).
+    Clip text, painting cells so that cursor movement can overwrite them.
 
-    Returns ``(result, captured_style)``.  The caller applies SGR wrapping.
+    Text with no cursor movement to resolve is clipped by _clip_simple() instead.
+
+    Returns ``(result, captured_style, end_style)``.  The caller applies SGR wrapping.
     """
     # pylint: disable=too-complex,too-many-locals,too-many-branches
     # pylint: disable=too-many-statements,too-many-nested-blocks
     # code length and complexity traded for performance, to allow this to be used as a "hot path"
 
+    strict = control_codes == 'strict'
     cells: dict[int, tuple[str, int]] = {}
     hyperlink_cells: set[int] = set()
     sequences: list[tuple[int, int, str]] = []
@@ -481,19 +512,33 @@ def _clip_painter(
     col = 0
     idx = 0
     # captured_style is a frozen snapshot of current_style taken at the first
-    # visible character emitted within the clip window (start, end).  It stays
-    # None until that point.  current_style, by contrast, is continuously
-    # updated by SGR sequences throughout the scan.
+    # visible character emitted within the clip window (start, end); it stays
+    # None until that point.  current_style is continuously updated by SGR
+    # sequences throughout the scan.
     #
     # When propagate_sgr is False, current_style (and therefore captured_style)
     # remain None, and SGR sequences pass through as literal text.
     captured_style: Optional[_SGRState] = None
+    # end_style is the state after the last SGR sequence emitted *within* the
+    # clip window; it decides the trailing reset.  None until such a sequence
+    # is emitted, meaning captured_style is still in effect at the end.
+    end_style: Optional[_SGRState] = None
     current_style = _SGR_STATE_DEFAULT if propagate_sgr else None
+    # Next movement at or after the scan position, -1 when none is left.
+    next_movement: Optional[int] = None
 
     def _write_cells(s: str, w: int, write_col: int,
                      is_hyperlink: bool = False) -> None:
         """Write *w* cells of text *s* at *write_col*, handling wide-char splitting."""
-        nonlocal captured_style
+        nonlocal captured_style, seq_order
+        if w == 0:
+            # Zero-width: a cell here would be overwritten by the next write.
+            if s:
+                sequences.append((write_col, seq_order, s))
+                seq_order += 1
+                if propagate_sgr and captured_style is None:
+                    captured_style = current_style
+            return
         for offset in range(w):
             src_col = write_col + offset
             if src_col > 0 and cells.get(src_col - 1, ('', 0))[1] == 2:
@@ -514,9 +559,24 @@ def _clip_painter(
     while idx < len(text):
         char = text[idx]
 
-        # Early exit: past visible region, SGR captured, no escape ahead.
-        if col >= end and captured_style is not None and char != '\x1b':
-            break
+        # Early exit: past visible region.
+        if col >= end and char not in '\r\x08\t\x1b':
+            # Movement right-of the window can still rewinds back into it.
+            if next_movement is None or 0 <= next_movement < idx:
+                # Any match starts with one of these, and rfind is far cheaper.
+                if max(text.rfind('\x08'), text.rfind('\r'), text.rfind('\x1b')) < idx:
+                    next_movement = -1
+                else:
+                    found = _HORIZONTAL_CURSOR_MOVEMENT.search(text, idx)
+                    next_movement = -1 if found is None else found.end()
+            if next_movement < 0:
+                if captured_style is not None:
+                    break
+                next_esc = text.find('\x1b', idx + 1)
+                if next_esc == -1:
+                    break
+                idx = next_esc
+                continue
 
         if char == '\x1b':
             m = _SEQUENCE_CLASSIFY.match(text, idx)
@@ -524,14 +584,19 @@ def _clip_painter(
                 # Record lone ESC as a zero-width sequence at current column.
                 sequences.append((col, seq_order, char))
                 seq_order += 1
-                if propagate_sgr and captured_style is None:
-                    captured_style = current_style
                 idx += 1
                 continue
 
-            # SGR: update current_style, do not emit.
+            # SGR: update current_style.  Sequences before the first visible
+            # emission are folded into the prefix synthesized by
+            # _apply_sgr_wrap(); those inside the clip window are emitted at
+            # their original position; those at or beyond *end* are dropped.
             if m.group('sgr_params') is not None and propagate_sgr and current_style is not None:
                 current_style = _sgr_state_update(current_style, m.group())
+                if captured_style is not None and col < end:
+                    sequences.append((col, seq_order, m.group()))
+                    seq_order += 1
+                    end_style = current_style
                 idx = m.end()
                 continue
 
@@ -546,8 +611,6 @@ def _clip_painter(
                 if r.action is _HyperlinkAction.NO_CLOSE:
                     sequences.append((col, seq_order, m.group()))
                     seq_order += 1
-                    if propagate_sgr and captured_style is None:
-                        captured_style = current_style
                     idx = m.end()
                 elif r.action is _HyperlinkAction.EMPTY:
                     idx = r.close_end
@@ -557,22 +620,26 @@ def _clip_painter(
                 else:
                     sequences.append((col, seq_order, r.open_seq))
                     seq_order += 1
-                    if propagate_sgr and captured_style is None:
-                        captured_style = current_style
                     _write_cells(r.clipped_inner, r.clipped_width, col,
                                  is_hyperlink=True)
                     col += r.clipped_width
                     sequences.append((col, seq_order, r.close_seq))
                     seq_order += 1
+                    # Inner text is clipped with propagate_sgr=False, so any SGR
+                    # sequences it emits are verbatim: fold them into our state.
+                    if propagate_sgr and current_style is not None:
+                        for sgr_m in _SGR_PATTERN.finditer(r.clipped_inner):
+                            current_style = _sgr_state_update(current_style, sgr_m.group())
+                            end_style = current_style
                     col = r.hl_col_end
                     idx = r.close_end
                 continue
 
             # OSC 66 Text Sizing.
             if (ts_meta := m.group('ts_meta')) is not None:
-                ts_text = m.group('ts_text')
+                ts_text = m.group('ts_text') or ''
                 ts_term = m.group('ts_term')
-                assert ts_text is not None and ts_term is not None
+                assert ts_term is not None
                 ts = TextSizing(
                     TextSizingParams.from_params(ts_meta, control_codes=control_codes),
                     ts_text, ts_term)
@@ -580,8 +647,6 @@ def _clip_painter(
                     ts, col, start, end, fillchar, ambiguous_width,
                     term_program,
                     _write_cells)
-                if propagate_sgr and captured_style is None:
-                    captured_style = current_style
                 idx = m.end()
                 continue
 
@@ -628,8 +693,6 @@ def _clip_painter(
             # Any other recognized sequence: preserve as-is.
             sequences.append((col, seq_order, m.group()))
             seq_order += 1
-            if propagate_sgr and captured_style is None:
-                captured_style = current_style
             idx = m.end()
             continue
 
@@ -650,15 +713,12 @@ def _clip_painter(
         if char == '\t':
             if tabsize > 0:
                 next_tab = col + (tabsize - (col % tabsize))
-                while col < next_tab:
-                    if start <= col < end:
-                        _write_cells(fillchar, 1, col)
-                    col += 1
-            else:
+                for fill_col in range(max(col, start), min(next_tab, end)):
+                    _write_cells(' ', 1, fill_col)
+                col = next_tab
+            elif start <= col < end:
                 sequences.append((col, seq_order, '\t'))
                 seq_order += 1
-                if propagate_sgr and captured_style is None:
-                    captured_style = current_style
             idx += 1
             continue
 
@@ -672,8 +732,6 @@ def _clip_painter(
             if start <= col < end:
                 sequences.append((col, seq_order, grapheme))
                 seq_order += 1
-                if propagate_sgr and captured_style is None:
-                    captured_style = current_style
         elif col >= start and col + grapheme_w <= end:
             _write_cells(grapheme, grapheme_w, col)
         elif col < end and col + grapheme_w > start:
@@ -684,13 +742,14 @@ def _clip_painter(
         col += grapheme_w
         idx += len(grapheme)
 
-    return _reconstruct_painter(cells, sequences, start, end, fillchar), captured_style
+    return (_reconstruct_painter(cells, sequences, start, end, fillchar),
+            captured_style, end_style)
 
 
 def clip(
     text: str,
-    start: int,
-    end: int,
+    start: int = 0,
+    end: int = -1,
     *,
     fillchar: str = ' ',
     tabsize: int = 8,
@@ -703,28 +762,26 @@ def clip(
     r"""
     Clip text to display columns (start, end) while preserving all terminal sequences.
 
-    This function extracts a substring based on visible column positions rather than
-    character indices. Terminal escape sequences are preserved in the output since
-    they have zero display width. If a wide character (width 2) is split at
-    either boundary, it is replaced with ``fillchar``.
+    This function extracts a substring using visible column positions. Terminal escape sequences
+    are preserved in output. If a wide character (width of 2) is
+    split at a boundary, it is replaced with ``fillchar``.
 
-    TAB characters (``\t``) are expanded to spaces up to the next tab stop,
-    controlled by the ``tabsize`` parameter. When cursor movement is detected,
-    a "painter's algorithm" is used, cursor movements actively change the write
-    position, allowing cursor-left and carriage return to overwrite previously
-    written cells. It is assumed that ``text`` begins at column 0.
+    TAB characters (``\t``) are expanded to spaces up to the next tab stop, controlled by the
+    ``tabsize`` parameter.  When cursor movement is detected, a "painter's algorithm" is used unless
+    ``overtyping=False`` is set.  Cursor movement control codes are parsed for their effects instead
+    of ignored.  For these operations, it is assumed that ``text`` begins at column 0.
 
-    **OSC 8 hyperlinks** are handled specially: the visible text inside a hyperlink
-    is clipped to the requested column range, and the hyperlink is rebuilt around
-    the clipped text.  Empty hyperlinks (those with no remaining visible text after
-    clipping) are removed::
+    For text containing **OSC 8 hyperlinks**, the visible text inside a hyperlink is clipped to the
+    requested column range and the hyperlink sequence is rebuilt::
 
         >>> clip('\x1b]8;;http://example.com\x07Click This link\x1b]8;;\x07', 6, 10)
         '\x1b]8;;http://example.com\x07This\x1b]8;;\x07'
 
     :param text: String to clip, may contain terminal escape sequences.
-    :param start: Absolute starting column (inclusive, 0-indexed).
-    :param end: Absolute ending column (exclusive).
+    :param start: Absolute starting column (inclusive, 0-indexed), default ``0``.
+    :param end: Absolute ending column (exclusive).  The default value, ``-1``,
+        signifies "to the end of the line", clipping only from *start* without
+        requiring the caller to measure the display width of *text*.
     :param fillchar: Character to use when a wide character must be split at
         a boundary (default space). Must have display width of 1.
     :param tabsize: Tab stop width (default 8). Set to 0 to pass tabs through
@@ -732,8 +789,10 @@ def clip(
     :param ambiguous_width: Width to use for East Asian Ambiguous (A)
         characters. Default is ``1`` (narrow). Set to ``2`` for CJK contexts.
     :param propagate_sgr: If True (default), SGR (terminal styling) sequences
-        are propagated. The result begins with any active style at the start
-        position and ends with a reset sequence if styles are active.
+        are propagated, matching :func:`propagate_sgr`.  The result begins with
+        any style active at the start position, retains any style changes
+        occurring within the clipped region at their original position, and
+        ends with a reset sequence if styles are active at the end position.
     :param control_codes: How to handle control characters and sequences:
 
         - ``'parse'`` (default): Track horizontal cursor movement and clip
@@ -766,16 +825,26 @@ def clip(
         with all terminal sequences preserved and wide characters at boundaries
         replaced with ``fillchar``.
 
-    :raises ValueError: If ``control_codes='strict'`` and an indeterminate-effect
-        sequence or out-of-bounds cursor movement is encountered.
+    :raises ValueError: If ``end`` is negative and not ``-1``, or if
+        ``control_codes='strict'`` and an indeterminate-effect sequence or
+        out-of-bounds cursor movement is encountered.
 
     SGR (terminal styling) sequences are propagated by default. The result
     begins with any active style and ends with a reset::
 
         >>> clip('\x1b[1;34mHello world\x1b[0m', 6, 11)
         '\x1b[1;34mworld\x1b[0m'
+        >>> clip('\x1b[1mbold\x1b[m normal', 1, 9)
+        '\x1b[1mold\x1b[m norm'
 
     Set ``propagate_sgr=False`` to disable this behavior.
+
+    .. note::
+
+       Segmentation follows UAX #29 grapheme clusters. Tamil, Kannada and Sinhala may be clipped
+       short of ``end`` and leave a bare virama at the boundary. Correct rendering of these
+       languages is not specified by unicode.org standards, and no terminal emulator or editor
+       handles them legibly, so this library function makes no attempt at accommodating them.
 
     .. versionadded:: 0.3.0
 
@@ -787,6 +856,13 @@ def clip(
        OSC 8 hyperlink-aware clipping.  OSC 66 text sizing protocol support.
        Added ``overtyping`` parameter (default None, auto-detect).
 
+    .. versionchanged:: 0.8.4
+       ``start`` now defaults to ``0`` and ``end`` to ``-1``, meaning "to the
+       end of the line"::
+
+           >>> clip('\x1b[1;34mHello world\x1b[0m', 6)
+           '\x1b[1;34mworld\x1b[0m'
+
     Example::
 
         >>> clip('hello world', 0, 5)
@@ -797,12 +873,34 @@ def clip(
         'a       b'
     """
     start = max(start, 0)
+    if end < 0:
+        if end != -1:
+            raise ValueError(
+                f"end must be -1 (to end of line) or non-negative, got {end}")
+        # Unbounded: clip only from *start*, to the end of the line.
+        end = sys.maxsize
     if end <= start:
         return ''
 
     # Fast path: printable ASCII only.
     if text.isascii() and text.isprintable():
         return text[start:end]
+
+    # Offload to libwcwidth, which reports an unsupported sequence rather than
+    # answering differently.  Only the options are tested here, never the text.
+    if (_c_clip is not None
+            and control_codes == 'parse'
+            and overtyping is not True
+            and tabsize > 0
+            and len(fillchar) == 1 and fillchar.isascii()):
+        result = _c_clip(
+            text, start, end, fillchar=fillchar, tabsize=tabsize,
+            ambiguous_width=ambiguous_width, propagate_sgr=propagate_sgr,
+            control_codes=control_codes, term_program=term_program)
+        if result is not None:
+            return result
+
+    ambiguous_width = _clamp_ambiguous_width(ambiguous_width)
 
     # No escape sequences => no SGR tracking needed.
     has_esc = '\x1b' in text
@@ -819,9 +917,21 @@ def clip(
         )
     elif overtyping and control_codes == 'ignore':
         overtyping = False  # control_codes='ignore' overrides
-    fn_clip = _clip_painter if overtyping else _clip_simple
 
-    return _apply_sgr_wrap(*fn_clip(
+    if overtyping:
+        return _apply_sgr_wrap(*_clip_painter(
+            text=text,
+            start=start,
+            end=end,
+            propagate_sgr=propagate_sgr,
+            ambiguous_width=ambiguous_width,
+            term_program=term_program,
+            fillchar=fillchar,
+            tabsize=tabsize,
+            control_codes=control_codes,
+        ))
+
+    return _apply_sgr_wrap(*_clip_simple(
         text=text,
         start=start,
         end=end,
@@ -830,6 +940,5 @@ def clip(
         term_program=term_program,
         fillchar=fillchar,
         tabsize=tabsize,
-        strict=(control_codes == 'strict'),
         control_codes=control_codes,
     ))

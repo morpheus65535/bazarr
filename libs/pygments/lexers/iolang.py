@@ -32,7 +32,7 @@ class IoLexer(RegexLexer):
             # Comments
             (r'//(.*?)$', Comment.Single),
             (r'#(.*?)$', Comment.Single),
-            (r'/(\\\n)?[*](.|\n)*?[*](\\\n)?/', Comment.Multiline),
+            (r'/(\\\n)?[*][\s\S]*?[*](\\\n)?/', Comment.Multiline),
             (r'/\+', Comment.Multiline, 'nestedcomment'),
             # DoubleQuotedString
             (r'"(\\\\|\\[^\\]|[^"\\])*"', String),

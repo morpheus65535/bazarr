@@ -1,8 +1,15 @@
-
-from knowit.rules.audio import AtmosRule
-from knowit.rules.audio import AudioChannelsRule
-from knowit.rules.audio import DtsHdRule
-from knowit.rules.general import LanguageRule
-from knowit.rules.subtitle import ClosedCaptionRule
-from knowit.rules.subtitle import HearingImpairedRule
+from knowit.rules.audio import AtmosRule, AudioChannelsRule, DtsHdRule
+from knowit.rules.general import CommentaryRule, LanguageRule
+from knowit.rules.subtitle import ClosedCaptionRule, HearingImpairedRule
 from knowit.rules.video import ResolutionRule
+
+__all__ = [
+    'AtmosRule',
+    'AudioChannelsRule',
+    'ClosedCaptionRule',
+    'CommentaryRule',
+    'DtsHdRule',
+    'HearingImpairedRule',
+    'LanguageRule',
+    'ResolutionRule',
+]

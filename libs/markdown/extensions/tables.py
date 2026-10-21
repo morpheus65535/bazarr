@@ -237,7 +237,14 @@ class TableExtension(Extension):
         super().__init__(**kwargs)
 
     def extendMarkdown(self, md):
-        """ Add an instance of `TableProcessor` to `BlockParser`. """
+        """ Register the processor.
+
+        | Class Instance                                                | Registry                                                         | Name   | Priority |
+        | ------------------------------------------------------------- | ---------------------------------------------------------------- | ------ | :------: |
+        | [`TableProcessor`][markdown.extensions.tables.TableProcessor] | [`blockprocessors`][markdown.blockprocessors.build_block_parser] | `table` | `75` |
+
+        """
+        # flake8: noqa: E501 242-244
         if '|' not in md.ESCAPED_CHARS:
             md.ESCAPED_CHARS.append('|')
         processor = TableProcessor(md.parser, self.getConfigs())

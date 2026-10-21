@@ -28,6 +28,8 @@ import os
 import sys
 
 import dynaconf
+from dynaconf.hooking import Action
+from dynaconf.hooking import Hook
 from dynaconf.hooking import HookableSettings
 
 try:  # pragma: no cover
@@ -39,7 +41,37 @@ except ImportError:  # pragma: no cover
     django_installed = False
 
 
+# Compat with Django 5.x
+def _add_script_prefix(value):  # pragma: nocover
+    """
+    Add SCRIPT_NAME prefix to relative paths.
+
+    Useful when the app is being served at a subpath and manually prefixing
+    subpath to STATIC_URL and MEDIA_URL in settings is inconvenient.
+    """
+    # Don't apply prefix to absolute paths and URLs.
+    if value.startswith(("http://", "https://", "/")):
+        return value
+    from django.urls import get_script_prefix
+
+    return f"{get_script_prefix()}{value}"
+
+
+# Special case some settings which require further modification.
+# This is done here for performance reasons so the modified value is cached.
+def fix_absolute_urls(_settings):  # pragma: nocover
+    data = {}
+    if media_url := _settings.get("MEDIA_URL"):
+        data["MEDIA_URL"] = _add_script_prefix(media_url)
+    if static_url := _settings.get("STATIC_URL"):
+        data["STATIC_URL"] = _add_script_prefix(static_url)
+    return data
+
+
 def load(django_settings_module_name=None, **kwargs):  # pragma: no cover
+    converters_before_loading = set(
+        dynaconf.utils.parse_conf.converters.keys()
+    )
     if not django_installed:
         raise RuntimeError(
             "To use this extension django must be installed "
@@ -59,8 +91,8 @@ def load(django_settings_module_name=None, **kwargs):  # pragma: no cover
 
     # 1) Create the lazy settings object reusing settings_module consts
     options = {
-        k.upper(): v
-        for k, v in django_settings_module.__dict__.items()
+        k: v
+        for k, v in inspect.getmembers(django_settings_module)
         if k.isupper()
     }
     options.update(kwargs)
@@ -91,6 +123,10 @@ def load(django_settings_module_name=None, **kwargs):  # pragma: no cover
     setattr(django_settings_module, "DYNACONF", lazy_settings)
 
     # 4) keep django original settings
+    # dir(django_settings) triggers _setup() which populates _wrapped.
+    # Read from _wrapped directly to bypass LazySettings.__getattr__
+    # validation (e.g. empty SECRET_KEY raises ImproperlyConfigured,
+    # not AttributeError, so getattr's default can't catch it).
     dj = {}
     for key in dir(django_settings):
         if (
@@ -98,10 +134,21 @@ def load(django_settings_module_name=None, **kwargs):  # pragma: no cover
             and (key != "SETTINGS_MODULE")
             and key not in lazy_settings.store
         ):
-            dj[key] = getattr(django_settings, key, None)
-        dj["ORIGINAL_SETTINGS_MODULE"] = django_settings.SETTINGS_MODULE
+            wrapped = django_settings._wrapped
+            val = getattr(wrapped, key, None)
+            dj[key] = val
+        dj["ORIGINAL_SETTINGS_MODULE"] = (
+            django_settings._wrapped.SETTINGS_MODULE
+        )
 
     lazy_settings.update(dj)
+
+    # 2 pass execution, 1st immediately and second deferred
+    # to post hooks so it can fix URLS added later in the
+    # loading pipeline
+    lazy_settings.update(fix_absolute_urls(lazy_settings))
+    config = lazy_settings.__core__.config
+    config.post_hooks.append(fix_absolute_urls)
 
     # Allow dynaconf_hooks to be in the same folder as the django.settings
     dynaconf.loaders.execute_hooks(
@@ -111,7 +158,7 @@ def load(django_settings_module_name=None, **kwargs):  # pragma: no cover
         modules=[settings_module_name],
         files=[settings_file],
     )
-    lazy_settings._loaded_py_modules.insert(0, settings_module_name)
+    config.loaded_py_modules.insert(0, settings_module_name)
 
     # 5) Patch django.conf.settings
     class Wrapper:
@@ -128,6 +175,26 @@ def load(django_settings_module_name=None, **kwargs):  # pragma: no cover
     # https://mail.python.org/pipermail/python-ideas/2012-May/014969.html
     sys.modules["django.conf"] = Wrapper()
 
+    # 5b) Replay Django's LazySettings.__getattr__ validations
+    # (e.g. empty SECRET_KEY raises ImproperlyConfigured).
+    # django_settings._wrapped is populated from step 4's dir() call.
+    _original_django_settings = django_settings
+
+    def _django_validate_hook(temp_settings, value, *args, **kwargs):
+        key = args[0] if args else kwargs.get("key")
+        if key and key.isupper():
+            try:
+                conf.LazySettings.__getattr__(_original_django_settings, key)
+            except AttributeError:
+                # Key exists in dynaconf but not in Django's Settings.
+                # Not a Django-managed key, so no validation to apply.
+                pass
+        return value
+
+    hooks = lazy_settings.store.get("_registered_hooks", {})
+    hooks.setdefault(Action.AFTER_GET, []).append(Hook(_django_validate_hook))
+    lazy_settings["_registered_hooks"] = hooks
+
     # 6) Enable standalone scripts to use Dynaconf
     # This is for when `django.conf.settings` is imported directly
     # on external `scripts` (out of Django's lifetime)
@@ -137,6 +204,13 @@ def load(django_settings_module_name=None, **kwargs):  # pragma: no cover
         ):
             stack_item.frame.f_globals["settings"] = lazy_settings
 
+    if converters_before_loading != set(
+        dynaconf.utils.parse_conf.converters.keys()
+    ):
+        # When new converter keys are added after settings initialization
+        # it is required to reload the settings so values a re-evaluated
+        # with the new converters.
+        lazy_settings.reload()
     return lazy_settings
 
 

@@ -1,0 +1,14 @@
+soupsieve-2.10.dist-info/INSTALLER,sha256=zuuue4knoyJ-UwPPXg8fezS7VCrXJQrAP7zeNuwvFQg,4
+soupsieve-2.10.dist-info/METADATA,sha256=AuzWxy0voJEb7f2Z1TshmOG79Vb0YGEIgZ6MGf3zKIA,4437
+soupsieve-2.10.dist-info/RECORD,,
+soupsieve-2.10.dist-info/REQUESTED,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
+soupsieve-2.10.dist-info/WHEEL,sha256=W3fkpkm7-wf9vBI5Z-7s0eWkeM-spu78I8Neb98DeEg,87
+soupsieve-2.10.dist-info/licenses/LICENSE.md,sha256=dqCs25jDpjaB4gtvCWaZ74ytX7NdVu74OH4Ppx15epo,1096
+soupsieve/__init__.py,sha256=1L-rgrX3dQKWxvglaVuoAcZk4ImaY_jrUA8VkEqIh2o,5145
+soupsieve/__meta__.py,sha256=uid8eA6uT5j9RV3Zkkpr4JFzJ59iu38sKjzJdwcDEkg,6767
+soupsieve/css_match.py,sha256=3l7inf4tZEUk6GKtkeVwd8jDu8-kN2n4Rlo-OX0zj2g,63105
+soupsieve/css_parser.py,sha256=_p7p-UCWZtuAQDFbSpygLQSekipKQJNjq03RIRALKh8,48962
+soupsieve/css_types.py,sha256=yboTb2zl0CDwVI2k221FIhT8BDsCDOW9BMYeZp9Dxu8,9226
+soupsieve/pretty.py,sha256=iSM-NKCzruJQCwEriQT72LrF4slxsib7TB552H2bsqA,4362
+soupsieve/py.typed,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
+soupsieve/util.py,sha256=M6bE3QSBfbzPhUDJ9UqwO4ldzYVC44GmVxpqgqpm_fs,3370

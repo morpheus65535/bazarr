@@ -220,7 +220,7 @@ class FakeJellyfinClient:
         return response["Items"]
 
     def refresh_item(self, item_id: str, metadata_refresh_mode: str = 'ValidationOnly',
-                     image_refresh_mode: str = 'None') -> None:
+                     image_refresh_mode: str = 'ValidationOnly') -> None:
         if _has_spec():
             _validate_enum(metadata_refresh_mode, "/Items/{itemId}/Refresh", "post", "metadataRefreshMode")
             _validate_enum(image_refresh_mode, "/Items/{itemId}/Refresh", "post", "imageRefreshMode")

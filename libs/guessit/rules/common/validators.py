@@ -1,19 +1,28 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """
 Validators
 """
-from functools import partial
 
-from rebulk.validators import chars_before, chars_after, chars_surround
+from __future__ import annotations
+
+from functools import partial
+from typing import TYPE_CHECKING, TypeVar
+
+from rebulk.validators import chars_after, chars_before, chars_surround
+
 from . import seps
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+_T = TypeVar("_T")
 
 seps_before = partial(chars_before, seps)
 seps_after = partial(chars_after, seps)
 seps_surround = partial(chars_surround, seps)
 
 
-def int_coercable(string):
+def int_coercable(string: str) -> bool:
     """
     Check if string can be coerced to int
     :param string:
@@ -28,7 +37,7 @@ def int_coercable(string):
         return False
 
 
-def and_(*validators):
+def and_(*validators: Callable[[_T], bool]) -> Callable[[_T], bool]:
     """
     Compose validators functions
     :param validators:
@@ -36,7 +45,8 @@ def and_(*validators):
     :return:
     :rtype:
     """
-    def composed(string):
+
+    def composed(string: _T) -> bool:
         """
         Composed validators function
         :param string:
@@ -44,14 +54,12 @@ def and_(*validators):
         :return:
         :rtype:
         """
-        for validator in validators:
-            if not validator(string):
-                return False
-        return True
+        return all(validator(string) for validator in validators)
+
     return composed
 
 
-def or_(*validators):
+def or_(*validators: Callable[[_T], bool]) -> Callable[[_T], bool]:
     """
     Compose validators functions
     :param validators:
@@ -59,7 +67,8 @@ def or_(*validators):
     :return:
     :rtype:
     """
-    def composed(string):
+
+    def composed(string: _T) -> bool:
         """
         Composed validators function
         :param string:
@@ -67,8 +76,6 @@ def or_(*validators):
         :return:
         :rtype:
         """
-        for validator in validators:
-            if validator(string):
-                return True
-        return False
+        return any(validator(string) for validator in validators)
+
     return composed

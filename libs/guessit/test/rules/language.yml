@@ -45,3 +45,40 @@
 ? French.Kiss.1995.1080p
 : title: French Kiss
   -language: french
+
+# --- #668: a language glued to a subtitle extension is kept even if it is a common word ---
+# ".no.srt" -> Norwegian subtitle (was dropped by RemoveInvalidLanguages as the common word "no")
+? Show.S01E01.DBRETAiL.no.srt
+: subtitle_language: Norwegian
+  episode_title: DBRETAiL
+
+# but the same common-word code before a video extension is still filtered out
+? Show.S01E01.DBRETAiL.no.mkv
+: -subtitle_language: Norwegian
+  -language: Norwegian
+
+# but a Title-Case token before a subtitle extension is the last title word, not a language
+# ("Dr.No.srt" = the film *Dr. No*, not Norwegian subtitles)
+? Dr.No.srt
+: title: Dr No
+  -subtitle_language: Norwegian
+
+? Garfield.It.srt
+: title: Garfield It
+  -subtitle_language: it
+
+# regression anchor (#668): a lowercase language code before a subtitle extension is kept
+? Show.S01E01.Some.Title.it.srt
+: subtitle_language: Italian
+  episode_title: Some Title
+
+# anchor (#668 boundary): the common-word filter still suppresses a stray language code mid-name
+# in a video file — only a subtitle extension (or a non-common code) keeps it
+? Show.no.Way.Home.2021.1080p.mkv
+: title: Show no Way Home
+  -language: Norwegian
+  -subtitle_language: Norwegian
+
+# anchor: a real (non-common-word) language is unaffected by the filter
+? Show.S01E01.German.1080p.WEB-DL.mkv
+: language: German
