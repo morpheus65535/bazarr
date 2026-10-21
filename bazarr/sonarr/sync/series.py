@@ -73,7 +73,7 @@ def update_series(job_id=None, wait_for_completion=False):
                                 select(TableShows.sonarrSeriesId))
                             .all()]
 
-        current_shows_sonarr = []
+        current_shows_sonarr: set[int] = set()
         complete_series_list = True
 
         series_count = len(series)
@@ -115,16 +115,16 @@ def update_series(job_id=None, wait_for_completion=False):
                     trace(f"{i}: (Monitor Status Mismatch) {show.title}")
                     # pass
                 elif not show.monitored:
-                    # Add unmonitored series in sonarr to current series list, otherwise it will be deleted from db
+                    # Retain unmonitored series so the deletion sweep keeps them.
                     trace(f"{i}: (Skipped Unmonitored) {show.title}")
-                    current_shows_sonarr.append(show_id)
+                    current_shows_sonarr.add(show_id)
                     skipped_count += 1
                     continue
 
             trace(f"{i}: (Processing) {show.title}")
 
-            # Add shows in Sonarr to current shows list
-            current_shows_sonarr.append(show_id)
+            # Keep series present in Sonarr.
+            current_shows_sonarr.add(show_id)
 
             # Update series in DB
             update_one_series(show_id, action='updated', sync_episodes_after_update=False,
@@ -136,7 +136,7 @@ def update_series(job_id=None, wait_for_completion=False):
 
         # Calculate series to remove from DB
         removed_series = (
-            list(set(current_shows_db) - set(current_shows_sonarr)) if complete_series_list else []
+            list(set(current_shows_db) - current_shows_sonarr) if complete_series_list else []
         )
         if not complete_series_list:
             logging.warning('BAZARR Skipping series deletion because Sonarr returned unidentified series.')

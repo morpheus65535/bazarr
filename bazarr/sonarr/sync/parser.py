@@ -32,43 +32,7 @@ def get_matching_profile(tags, language_profiles):
 
 
 def seriesParser(show: Series, action: str, tags_dict: list[ArrTag], language_profiles, serie_default_profile: int | None, audio_profiles) -> SeriesValues:
-    """
-    Parse a Sonarr series object into a dictionary of values suitable for
-    storing in the Bazarr database.
-
-    The function extracts and normalizes metadata from the given show,
-    including poster and fanart image URLs (the poster is converted to its
-    250px variant and query strings are stripped), alternate titles
-    (excluding empty values and the main title), tag labels resolved from
-    the provided tag list, the ``ended`` flag, the formatted last-aired
-    date, and the original language name. When embedded audio track parsing
-    is disabled in the general settings, the audio language is resolved
-    from the series quality profile (legacy Sonarr) or language profile
-    (current Sonarr) using the provided audio profiles.
-
-    When the action is ``'insert'``, the series default language profile is
-    assigned. If series tag-based profile selection is enabled, a profile
-    matching the series tags overrides the assigned profile, and if any of
-    the series tags appear in the configured "remove profile" tag list, the
-    profile is cleared.
-
-    :param show: Series object returned by the Sonarr API.
-    :param action: Action being performed on the series, such as
-        ``'insert'`` or ``'update'``; affects whether the default profile
-        is applied.
-    :param tags_dict: List of Sonarr tags used to resolve tag identifiers
-        into tag labels.
-    :param language_profiles: Bazarr language profiles used to match
-        series tags to a language profile.
-    :param serie_default_profile: Default language profile identifier to
-        assign to newly inserted series, or ``None`` if no default is set.
-    :param audio_profiles: Sonarr quality or language profiles used to
-        resolve the series audio language.
-    :return: Dictionary containing the parsed series values ready to be
-        persisted.
-    :raises ValueError: If the series last-aired date cannot be parsed
-        into a valid datetime.
-    """
+    """Return TableShows column values for a Sonarr series."""
     overview = show.overview
     poster = ''
     fanart = ''
