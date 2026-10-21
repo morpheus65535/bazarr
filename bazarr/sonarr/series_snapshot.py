@@ -6,6 +6,8 @@ from typing_extensions import NotRequired
 
 import msgspec
 
+from utilities.external_ids import TmdbId
+
 
 class SeriesImage(msgspec.Struct):
     coverType: str
@@ -34,7 +36,7 @@ class Series(msgspec.Struct, kw_only=True):
     tags: list[int]
     overview: str | None = ''
     imdbId: str | None = None
-    tmdbId: int | None = None
+    tmdbId: TmdbId | None = None
     ended: bool = False
     lastAired: str | None = None
     originalLanguage: SeriesLanguage | None = None
@@ -57,6 +59,7 @@ class SeriesValues(TypedDict):
     tags: str
     seriesType: str
     imdbId: str | None
+    tmdbId: TmdbId | None
     monitored: str
     ended: str
     lastAired: str | None
