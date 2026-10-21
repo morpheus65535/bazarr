@@ -34,7 +34,7 @@ class Series(msgspec.Struct, kw_only=True):
     tags: list[int]
     overview: str | None = ''
     imdbId: str | None = None
-    tmdbId: str | None = None
+    tmdbId: int | None = None
     ended: bool = False
     lastAired: str | None = None
     originalLanguage: SeriesLanguage | None = None
