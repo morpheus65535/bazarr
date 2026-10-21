@@ -184,3 +184,39 @@ def test_case_insensitive_codec_metadata_extensions() -> None:
     assert radarr_video_codec('hevc', None, 'X265 build') == 'h265'
     assert radarr_video_codec('mpeg video', 'v_mpeg2', None) == 'Mpeg2'
     assert radarr_video_codec('mpeg-4 visual', 'xvid', 'dIvX') == 'XviD'
+
+
+def test_casefold_unicode_matches_and_near_misses() -> None:
+    assert radarr_audio_codec('AAC', 'A_AAC/MPEG4/LC/ſBR', None, None) == 'HE-AAC'
+    assert radarr_video_codec('MPEG-4 Viſual', 'XVID', 'DivX') == 'XviD'
+    assert radarr_video_codec('V_MPEGH/IſO/HEVC', None, 'x265') == 'h265'
+    for value in ('MPEG-4 VİDEO', 'DıvX', 'XVİD', 'MPEG-4 Vısual'):
+        assert sonarr_audio_codec(value) == value
+        assert sonarr_video_codec(value) == value
+        assert radarr_audio_codec(value, None, None, None) == value
+        assert radarr_video_codec(value, 'XVID', 'DivX') == value
+
+
+def test_codec_caches_remain_bounded_and_work_after_eviction() -> None:
+    codecs = (sonarr_audio_codec, sonarr_video_codec, radarr_audio_codec, radarr_video_codec)
+    for codec in codecs:
+        codec.cache_clear()
+    try:
+        for index in range(1024):
+            value = f'vendor codec {index}'
+            assert sonarr_audio_codec(value) == value
+            assert sonarr_video_codec(value) == value
+            assert radarr_audio_codec(value, None, None, None) == value
+            assert radarr_video_codec(value, None, None) == value
+        for codec in codecs:
+            assert codec.cache_info().currsize == codec.cache_info().maxsize == 128
+        for _ in range(2):
+            assert sonarr_audio_codec('ac-3') == 'AC3'
+            assert sonarr_video_codec('xViD encoder VP9') == 'XviD'
+            assert radarr_audio_codec('aac', 'a_aac/mpeg4/lc/sbr', None, None) == 'HE-AAC'
+            assert radarr_video_codec('hevc', None, 'X265 encoder') == 'h265'
+        for codec in codecs:
+            assert codec.cache_info().hits == 1
+    finally:
+        for codec in codecs:
+            codec.cache_clear()
