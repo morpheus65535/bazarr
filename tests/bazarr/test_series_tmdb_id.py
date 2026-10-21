@@ -33,7 +33,9 @@ def _series_payload(**overrides: JsonValue) -> dict[str, JsonValue]:
 
 
 def _series(**overrides: JsonValue) -> Series:
-    return msgspec.convert(_series_payload(**overrides), Series)
+    record = SERIES_DECODER.complete_from_value(_series_payload(**overrides))
+    assert isinstance(record, Series)
+    return record
 
 
 @pytest.fixture

@@ -1,18 +1,29 @@
 # coding=utf-8
 
 from collections.abc import Callable
-from typing import Generic, TypeAlias, TypeVar
+from typing import TYPE_CHECKING, Generic, Protocol, TypeAlias, TypeVar
 
 import msgspec
 import requests
-from requests.compat import JSONDecodeError, json
 
-from utilities.json_types import JsonValue
-from utilities.arr_types import decode_display_text
+from utilities.json_types import ArrResponse, JsonLoader, JsonValue
+from utilities.arr_types import ArrTag, decode_arr_value
 
 
-Record = TypeVar('Record', bound=msgspec.Struct)
-Invalid = TypeVar('Invalid')
+if TYPE_CHECKING:
+    from json import JSONDecodeError as JSONDecodeError
+    json: JsonLoader
+else:
+    from requests.compat import JSONDecodeError, json
+
+
+class IncompleteRecord(Protocol):
+    @property
+    def id(self) -> int | None: ...
+
+
+Record = TypeVar('Record', bound=msgspec.Struct | ArrTag)
+Invalid = TypeVar('Invalid', bound=IncompleteRecord | None)
 
 
 CompleteResult: TypeAlias = Record | list[Record] | None
@@ -21,15 +32,15 @@ PartialResult: TypeAlias = Record | Invalid | list[Record | Invalid] | None
 
 class ArrRecordDecoder(Generic[Record, Invalid]):
     def __init__(self, record_type: type[Record], invalid_record: Callable[[JsonValue], Invalid]) -> None:
-        self.record_type = record_type
-        self.invalid_record = invalid_record
-        self._record = msgspec.json.Decoder(record_type, dec_hook=decode_display_text)
-        self._payload = msgspec.json.Decoder(record_type | list[record_type] | None, dec_hook=decode_display_text)
-        self._rows = msgspec.json.Decoder(list[msgspec.Raw])
+        self.record_type: type[Record] = record_type
+        self.invalid_record: Callable[[JsonValue], Invalid] = invalid_record
+        self._record: msgspec.json.Decoder[Record] = msgspec.json.Decoder(record_type, dec_hook=decode_arr_value)
+        self._payload: msgspec.json.Decoder[CompleteResult[Record]] = msgspec.json.Decoder(record_type | list[record_type] | None, dec_hook=decode_arr_value)
+        self._rows: msgspec.json.Decoder[list[msgspec.Raw]] = msgspec.json.Decoder(list[msgspec.Raw])
 
     def _convert_record(self, value: JsonValue) -> Record | Invalid:
         try:
-            return msgspec.convert(value, type=self.record_type, dec_hook=decode_display_text)
+            return msgspec.convert(value, type=self.record_type, dec_hook=decode_arr_value)
         except msgspec.ValidationError:
             return self.invalid_record(value)
 
@@ -74,7 +85,7 @@ class ArrRecordDecoder(Generic[Record, Invalid]):
         except (msgspec.DecodeError, UnicodeDecodeError):
             return self.from_value(self._json_value(data))
 
-    def decode_response(self, response: requests.Response) -> PartialResult[Record, Invalid]:
+    def decode_response(self, response: ArrResponse) -> PartialResult[Record, Invalid]:
         if response.encoding is None or response.encoding.lower() not in ('utf-8', 'utf8'):
             value: JsonValue = response.json()
             return self.from_value(value)
@@ -82,8 +93,11 @@ class ArrRecordDecoder(Generic[Record, Invalid]):
 
     def complete_from_value(self, value: JsonValue) -> CompleteResult[Record]:
         try:
-            return msgspec.convert(value, type=self.record_type | list[self.record_type] | None,
-                                   dec_hook=decode_display_text)
+            if value is None:
+                return None
+            if isinstance(value, list):
+                return [msgspec.convert(row, type=self.record_type, dec_hook=decode_arr_value) for row in value]
+            return msgspec.convert(value, type=self.record_type, dec_hook=decode_arr_value)
         except msgspec.ValidationError:
             return None
 
@@ -93,7 +107,7 @@ class ArrRecordDecoder(Generic[Record, Invalid]):
         except (msgspec.DecodeError, UnicodeDecodeError):
             return self.complete_from_value(self._json_value(data))
 
-    def decode_complete_response(self, response: requests.Response) -> CompleteResult[Record]:
+    def decode_complete_response(self, response: ArrResponse) -> CompleteResult[Record]:
         if response.encoding is None or response.encoding.lower() not in ('utf-8', 'utf8'):
             value: JsonValue = response.json()
             return self.complete_from_value(value)

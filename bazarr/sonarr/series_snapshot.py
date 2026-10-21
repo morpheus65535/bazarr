@@ -7,6 +7,7 @@ from typing_extensions import NotRequired
 import msgspec
 
 from utilities.external_ids import TmdbId
+from utilities.arr_types import Year
 
 
 class SeriesImage(msgspec.Struct):
@@ -28,7 +29,7 @@ class Series(msgspec.Struct, kw_only=True):
     path: str
     tvdbId: int
     sortTitle: str
-    year: int | str | bool
+    year: Year | None
     seriesType: str
     monitored: bool
     images: list[SeriesImage]

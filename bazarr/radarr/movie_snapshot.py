@@ -7,7 +7,7 @@ from typing_extensions import NotRequired
 
 import msgspec
 
-from utilities.arr_types import Language, FileQuality, DisplayText
+from utilities.arr_types import Language, FileQuality, DisplayText, RadarrFileSizeBytes, Year
 from utilities.json_types import JsonValue
 
 
@@ -27,7 +27,7 @@ class MovieMediaInfo(msgspec.Struct):
 class MovieFile(msgspec.Struct, kw_only=True):
     id: int
     path: str
-    size: int | str | float
+    size: RadarrFileSizeBytes
     quality: FileQuality
     sceneName: str | None = None
     languages: list[Language] | None = None
@@ -36,8 +36,6 @@ class MovieFile(msgspec.Struct, kw_only=True):
     def __post_init__(self) -> None:
         if self.id <= 0 or not self.path.strip():
             raise ValueError('Invalid movie file identity')
-        if movie_file_size(self.size) is None:
-            raise ValueError('Invalid movie file size')
 
 
 class MovieImage(msgspec.Struct):
@@ -56,7 +54,7 @@ class Movie(msgspec.Struct, kw_only=True):
     id: int
     title: str
     tmdbId: int | str | bool
-    year: int | str | bool
+    year: Year | None
     sortTitle: str
     monitored: bool
     hasFile: bool
