@@ -11,7 +11,7 @@ from datetime import datetime
 
 from app.config import settings
 from sonarr.rootfolder import check_sonarr_rootfolder
-from app.database import TableShows, TableLanguagesProfiles, database, insert, update, select
+from app.database import TableShows, TableLanguagesProfiles, database, insert, update, select, text_boolean
 from utilities.helper import bool_map
 from utilities.arr_sync_lookups import ArrSyncLookups
 from utilities.path_mappings import path_mappings
@@ -37,12 +37,10 @@ def get_language_profiles() -> Sequence[tuple[int, str, str | None]]:
         select(TableLanguagesProfiles.profileId, TableLanguagesProfiles.name, TableLanguagesProfiles.tag)).tuples().all()
 
 
-def get_series_monitored_table():
-    series_monitored = database.execute(
-        select(TableShows.sonarrSeriesId, TableShows.monitored))\
-        .all()
-    series_dict = dict((x, y) for x, y in series_monitored)
-    return series_dict
+def get_series_monitored_table() -> dict[int, bool]:
+    return {identifier: monitored for identifier, monitored in database.execute(
+        select(TableShows.sonarrSeriesId, text_boolean(TableShows.monitored))).tuples()
+        if identifier is not None and monitored is not None}
 
 
 def update_series(job_id: int | None = None, wait_for_completion: bool = False) -> None:
@@ -106,10 +104,7 @@ def update_series(job_id: int | None = None, wait_for_completion: bool = False) 
             jobs_queue.update_job_progress(job_id=job_id, progress_value=i, progress_message=show.title)
 
             if settings.sonarr.sync_only_monitored_series:
-                try:
-                    monitored_status_db = bool_map[series_monitored.get(show.id)]
-                except (KeyError, TypeError):
-                    monitored_status_db = None
+                monitored_status_db = series_monitored.get(show.id) if series_monitored is not None else None
                 if monitored_status_db is None:
                     # not in db, need to add
                     pass
