@@ -11,12 +11,7 @@ config = context.config
 
 
 def get_engine():
-    try:
-        # this works with Flask-SQLAlchemy<3 and Alchemical
-        return current_app.extensions['migrate'].db.get_engine()
-    except TypeError:
-        # this works with Flask-SQLAlchemy>=3
-        return current_app.extensions['migrate'].db.engine
+    return current_app.extensions['migrate'].db.engine
 
 
 def get_engine_url():
