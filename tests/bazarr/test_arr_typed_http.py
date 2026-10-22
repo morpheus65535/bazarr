@@ -6,7 +6,6 @@ from radarr.movie_snapshot import IncompleteMovie, Movie
 from radarr.sync import utils as radarr
 from sonarr.episode_snapshot import Episode, EpisodeFile, complete_episode_snapshot
 from sonarr.series_snapshot import Series
-from sonarr.sync import episodes as episode_sync
 from sonarr.sync import utils as sonarr
 from tests.bazarr.test_arr_typed_decoding import make_response
 from tests.helpers.arr_fixtures import episode_payload, episode_record, movie_payload, series_payload, stub_arr_api
@@ -100,9 +99,11 @@ def test_duplicate_episode_file_ids_abort_reconciliation() -> None:
 def test_wrong_series_response_aborts_before_version_lookup(
     monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture,
 ) -> None:
-    episode = episode_record(episode_payload(series_id=7))
-    monkeypatch.setattr(episode_sync.get_sonarr_info, 'is_legacy', lambda: pytest.fail('Wrong identity must abort'))
-    assert episode_sync._validated_episodes([episode], series_id=8) is None
+    monkeypatch.setattr(sonarr, 'url_api_sonarr', lambda: 'http://example.invalid/api/v3/')
+    monkeypatch.setattr(sonarr.requests, 'get', lambda *args, **kwargs: make_response(
+        json.dumps([episode_payload(series_id=7)]).encode()))
+    monkeypatch.setattr(sonarr.get_sonarr_info, 'semver', lambda: pytest.fail('Wrong identity must abort'))
+    assert sonarr.get_episodes_from_sonarr_api('key', series_id=8) is None
     assert 'series 8: response contains another series' in caplog.text
 
 
@@ -116,18 +117,25 @@ def test_wrong_series_response_aborts_before_version_lookup(
 def test_rejected_episode_snapshot_logs_context(
     reason: str, message: str, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture,
 ) -> None:
-    episode = episode_record(episode_payload())
+    payload = episode_payload()
     series_id = None if reason in ('file_id', 'file') else 7
-    monkeypatch.setattr(episode_sync.get_sonarr_info, 'is_legacy', lambda: False)
-    version = None if reason == 'version' else episode_sync.semver.Version(4, 1 if reason == 'snapshot' else 0, 0)
-    monkeypatch.setattr(episode_sync.get_sonarr_info, 'semver', lambda: version)
-    monkeypatch.setattr(episode_sync, 'get_episodesFiles_from_sonarr_api', lambda **kwargs: None)
     if reason == 'file_id':
-        episode.episodeFileId = None
+        payload['episodeFileId'] = 0
     elif reason == 'snapshot':
-        episode.episodeFile = None
-
-    assert episode_sync._validated_episodes([episode], series_id=series_id) is None
+        payload['episodeFile'] = None
+    monkeypatch.setattr(sonarr, 'url_api_sonarr', lambda: 'http://example.invalid/api/v3/')
+    monkeypatch.setattr(sonarr.requests, 'get', lambda *args, **kwargs: make_response(
+        json.dumps([payload] if series_id is not None else payload).encode()))
+    version = None if reason == 'version' else sonarr.semver.Version(4, 1 if reason == 'snapshot' else 0, 0)
+    monkeypatch.setattr(sonarr.get_sonarr_info, 'semver', lambda: version)
+    monkeypatch.setattr(sonarr, 'get_episodesFiles_from_sonarr_api', lambda **kwargs: None)
+    if reason == 'file_id':
+        result = sonarr.get_episodes_from_sonarr_api('key', episode_id=101)
+    elif reason == 'file':
+        result = sonarr.get_episodes_from_sonarr_api('key', episode_id=101)
+    else:
+        result = sonarr.get_episodes_from_sonarr_api('key', series_id=series_id)
+    assert result is None
     assert message in caplog.text
 
 
