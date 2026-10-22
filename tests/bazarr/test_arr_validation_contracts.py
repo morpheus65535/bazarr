@@ -92,3 +92,14 @@ def test_nonstandard_numbers_use_the_requests_json_fallback(
         else:
             _ = SERIES_DECODER.decode(wire)
     assert seen == [wire]
+
+
+@pytest.mark.parametrize('title', ['Avengers: Infinity War', 'Infinity', 'NaN', 'NaN values'])
+def test_number_names_in_strings_keep_direct_json_decoding(title: str, monkeypatch: pytest.MonkeyPatch) -> None:
+    def unexpected_fallback(_data: bytes | str) -> JsonValue:
+        pytest.fail('A title containing a number name should use direct decoding')
+
+    monkeypatch.setattr(ArrRecordDecoder, '_json_value', staticmethod(unexpected_fallback))
+    record = SERIES_DECODER.decode(json.dumps(series_payload(title=title)))
+    assert isinstance(record, Series)
+    assert record.title == title
