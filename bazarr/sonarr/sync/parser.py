@@ -14,7 +14,7 @@ from utilities.video_analyzer import embedded_audio_reader
 from sonarr.info import get_sonarr_info
 from sonarr.series_snapshot import Series, SeriesValues
 from utilities.arr_sync_lookups import ArrSyncLookups
-from utilities.media_codecs import sonarr_audio_codec, sonarr_video_codec
+from utilities.media_codecs import sonarr_codecs
 from sonarr.episode_snapshot import Episode, EpisodeFile, EpisodeValues
 
 
@@ -147,8 +147,8 @@ def episodeParser(episode: Episode, parse_embedded_audio_track: bool | None = No
                                                               .where(TableShows.sonarrSeriesId == series_id)).scalar()
             audio_language = audio_languages[series_id]
     media_info = file.mediaInfo
-    video_codec = sonarr_video_codec(media_info.videoCodec) if media_info else None
-    audio_codec = sonarr_audio_codec(media_info.audioCodec) if media_info else None
+    audio_codec, video_codec = (sonarr_codecs(media_info.audioCodec, media_info.videoCodec)
+                                if media_info else (None, None))
     quality = file.quality.quality
     try:
         video_format, video_resolution = quality.name.split('-')

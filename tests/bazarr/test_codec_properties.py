@@ -4,7 +4,8 @@ from itertools import product
 
 import pytest
 
-from utilities.media_codecs import radarr_audio_codec, radarr_video_codec, sonarr_audio_codec, sonarr_video_codec
+from utilities.media_codecs import (radarr_audio_codec, radarr_video_codec, sonarr_audio_codec,
+                                   sonarr_codecs, sonarr_video_codec)
 
 
 def test_nullable_sonarr_audio_aliases_and_unknown_values() -> None:
@@ -198,7 +199,7 @@ def test_casefold_unicode_matches_and_near_misses() -> None:
 
 
 def test_codec_caches_remain_bounded_and_work_after_eviction() -> None:
-    codecs = (sonarr_audio_codec, sonarr_video_codec, radarr_audio_codec, radarr_video_codec)
+    codecs = (sonarr_codecs, radarr_audio_codec, radarr_video_codec)
     for codec in codecs:
         codec.cache_clear()
     try:
@@ -206,6 +207,7 @@ def test_codec_caches_remain_bounded_and_work_after_eviction() -> None:
             value = f'vendor codec {index}'
             assert sonarr_audio_codec(value) == value
             assert sonarr_video_codec(value) == value
+            assert sonarr_codecs(value, value) == (value, value)
             assert radarr_audio_codec(value, None, None, None) == value
             assert radarr_video_codec(value, None, None) == value
         for codec in codecs:
@@ -213,6 +215,7 @@ def test_codec_caches_remain_bounded_and_work_after_eviction() -> None:
         for _ in range(2):
             assert sonarr_audio_codec('ac-3') == 'AC3'
             assert sonarr_video_codec('xViD encoder VP9') == 'XviD'
+            assert sonarr_codecs('ac-3', 'xViD encoder VP9') == ('AC3', 'XviD')
             assert radarr_audio_codec('aac', 'a_aac/mpeg4/lc/sbr', None, None) == 'HE-AAC'
             assert radarr_video_codec('hevc', None, 'X265 encoder') == 'h265'
         for codec in codecs:
@@ -220,3 +223,13 @@ def test_codec_caches_remain_bounded_and_work_after_eviction() -> None:
     finally:
         for codec in codecs:
             codec.cache_clear()
+
+
+def test_sonarr_cached_pairs_preserve_each_codec_independently() -> None:
+    audio_values = (None, '', 'none', 'AAC', 'AC-3', 'e-aC-3', 'mPeG aUdIo', 'Opus', '音声', ' AAC ')
+    video_values = (None, '', 'none', 'x264', 'aVc', 'HeVc', 'MPEG-4 Video',
+                    'xViD encoder VP9', 'dIvX encoder VP8', 'On2 vP9', 'AV1', '音声', ' AVC ')
+    for audio, video in product(audio_values, video_values):
+        expected = sonarr_audio_codec(audio), sonarr_video_codec(video)
+        assert sonarr_codecs(audio, video) == expected
+        assert sonarr_codecs(audio, video) == expected

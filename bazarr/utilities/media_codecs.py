@@ -48,12 +48,10 @@ def radarr_video_codec(codec: str | None, codec_id: str | None, codec_library: s
     return _RADARR_VIDEO_ALIASES.get(key, codec)
 
 
-@lru_cache(maxsize=128)
 def sonarr_audio_codec(codec: str | None) -> str | None:
     return _AUDIO_ALIASES.get((codec or '').casefold(), codec)
 
 
-@lru_cache(maxsize=128)
 def sonarr_video_codec(codec: str | None) -> str | None:
     key = (codec or '').casefold()
     if key.startswith('xvid'):
@@ -61,3 +59,8 @@ def sonarr_video_codec(codec: str | None) -> str | None:
     if key.startswith('divx'):
         return 'DivX'
     return _VIDEO_SUFFIXES.get(key[-3:], _SONARR_VIDEO_ALIASES.get(key, codec))
+
+
+@lru_cache(maxsize=128)
+def sonarr_codecs(audio: str | None, video: str | None) -> tuple[str | None, str | None]:
+    return sonarr_audio_codec(audio), sonarr_video_codec(video)
