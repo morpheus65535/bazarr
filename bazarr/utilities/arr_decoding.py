@@ -17,6 +17,17 @@ else:
     from requests.compat import JSONDecodeError, json
 
 
+def _json_accepts_nonstandard_numbers() -> bool:
+    try:
+        _ = json.loads('[NaN, Infinity, -Infinity]')
+    except JSONDecodeError:
+        return False
+    return True
+
+
+_CHECK_NONSTANDARD_NUMBERS = not _json_accepts_nonstandard_numbers()
+
+
 class IncompleteRecord(Protocol):
     @property
     def id(self) -> int | None: ...
@@ -84,7 +95,7 @@ class ArrRecordDecoder(Generic[Record, Invalid]):
         return _contains_nonstandard_number(data, ('NaN', 'Infinity'), _NONSTANDARD_TEXT)
 
     def decode(self, data: bytes | str) -> PartialResult[Record, Invalid]:
-        if self._may_have_nonstandard_number(data):
+        if _CHECK_NONSTANDARD_NUMBERS and self._may_have_nonstandard_number(data):
             return self.from_value(self._json_value(data))
         try:
             return self._partial.validate_json(data)
@@ -103,7 +114,7 @@ class ArrRecordDecoder(Generic[Record, Invalid]):
             return None
 
     def decode_complete(self, data: bytes | str) -> CompleteResult[Record]:
-        if self._may_have_nonstandard_number(data):
+        if _CHECK_NONSTANDARD_NUMBERS and self._may_have_nonstandard_number(data):
             return self.complete_from_value(self._json_value(data))
         try:
             return self._payload.validate_json(data)

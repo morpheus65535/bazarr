@@ -9,6 +9,7 @@ from sonarr.episode_snapshot import Episode
 from sonarr.series_snapshot import Series
 from sonarr.sync.utils import EPISODE_DECODER, SERIES_DECODER
 from tests.helpers.arr_fixtures import episode_payload, movie_payload, series_payload
+import utilities.arr_decoding as arr_decoding
 from utilities.arr_decoding import ArrRecordDecoder
 from utilities.json_types import JsonValue
 
@@ -85,6 +86,7 @@ def test_nonstandard_numbers_use_the_requests_json_fallback(
         seen.append(data)
         raise requests.JSONDecodeError('Nonstandard number', body, body.index(token))
 
+    monkeypatch.setattr(arr_decoding, '_CHECK_NONSTANDARD_NUMBERS', True)
     monkeypatch.setattr(ArrRecordDecoder, '_json_value', staticmethod(reject_nonstandard))
     with pytest.raises(requests.JSONDecodeError, match='Nonstandard number'):
         if complete:
@@ -99,7 +101,31 @@ def test_number_names_in_strings_keep_direct_json_decoding(title: str, monkeypat
     def unexpected_fallback(_data: bytes | str) -> JsonValue:
         pytest.fail('A title containing a number name should use direct decoding')
 
+    monkeypatch.setattr(arr_decoding, '_CHECK_NONSTANDARD_NUMBERS', True)
     monkeypatch.setattr(ArrRecordDecoder, '_json_value', staticmethod(unexpected_fallback))
     record = SERIES_DECODER.decode(json.dumps(series_payload(title=title)))
+    assert isinstance(record, Series)
+    assert record.title == title
+
+
+@pytest.mark.parametrize('token', ['NaN', 'Infinity', '-Infinity'])
+@pytest.mark.parametrize('as_bytes', [False, True])
+@pytest.mark.parametrize('complete', [False, True])
+def test_accepting_json_backends_need_neither_a_scan_nor_a_dictionary_fallback(
+    token: str, as_bytes: bool, complete: bool, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def unexpected_scan(_data: bytes | str) -> bool:
+        pytest.fail('This JSON backend accepts nonstandard numbers')
+
+    def unexpected_fallback(_data: bytes | str) -> JsonValue:
+        pytest.fail('Valid records should decode directly')
+
+    monkeypatch.setattr(arr_decoding, '_CHECK_NONSTANDARD_NUMBERS', False)
+    monkeypatch.setattr(ArrRecordDecoder, '_may_have_nonstandard_number', staticmethod(unexpected_scan))
+    monkeypatch.setattr(ArrRecordDecoder, '_json_value', staticmethod(unexpected_fallback))
+    title = 'To Infinity, and Beyond'
+    body = json.dumps(series_payload(title=title))[:-1] + ', "unused": ' + token + '}'
+    wire = body.encode() if as_bytes else body
+    record = SERIES_DECODER.decode_complete(wire) if complete else SERIES_DECODER.decode(wire)
     assert isinstance(record, Series)
     assert record.title == title
