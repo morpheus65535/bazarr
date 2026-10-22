@@ -1,23 +1,26 @@
 # coding=utf-8
 
 from datetime import datetime
+from dataclasses import dataclass
 from typing import Annotated, TypedDict
 from typing_extensions import NotRequired
 
-import msgspec
+from pydantic import Field, StrictBool, StrictInt
 
-from utilities.arr_types import Language, FileQuality
+from utilities.arr_types import Language, FileQuality, OmittedInt
 
 
-class MediaInfo(msgspec.Struct):
+@dataclass(slots=True)
+class MediaInfo:
     videoCodec: str | None = None
     audioCodec: str | None = None
 
 
-class EpisodeFile(msgspec.Struct, kw_only=True):
-    id: Annotated[int, msgspec.Meta(gt=0)]
+@dataclass(slots=True, kw_only=True)
+class EpisodeFile:
+    id: Annotated[StrictInt, Field(gt=0)]
     path: str
-    size: Annotated[int, msgspec.Meta(ge=0)]
+    size: Annotated[StrictInt, Field(ge=0)]
     quality: FileQuality
     sceneName: str | None = None
     language: Language | None = None
@@ -29,18 +32,19 @@ class EpisodeFile(msgspec.Struct, kw_only=True):
             raise ValueError('Episode file path is empty')
 
 
-class Episode(msgspec.Struct, kw_only=True):
-    id: Annotated[int, msgspec.Meta(gt=0)]
-    seriesId: Annotated[int, msgspec.Meta(gt=0)]
+@dataclass(slots=True, kw_only=True)
+class Episode:
+    id: Annotated[StrictInt, Field(gt=0)]
+    seriesId: Annotated[StrictInt, Field(gt=0)]
     title: str
-    hasFile: bool
-    monitored: bool
-    seasonNumber: int
-    episodeNumber: int
-    episodeFileId: int | msgspec.UnsetType = msgspec.UNSET
+    hasFile: StrictBool
+    monitored: StrictBool
+    seasonNumber: StrictInt
+    episodeNumber: StrictInt
+    episodeFileId: OmittedInt = None
     episodeFile: EpisodeFile | None = None
-    absoluteEpisodeNumber: int | None = None
-    tvdbId: int | None = None
+    absoluteEpisodeNumber: StrictInt | None = None
+    tvdbId: StrictInt | None = None
 
 
 class EpisodeValues(TypedDict):
@@ -84,7 +88,7 @@ def complete_episode_snapshot(episodes: list[Episode], episode_files: list[Episo
             continue
         if separate_files:
             file_id = episode.episodeFileId
-            if file_id is msgspec.UNSET or file_id not in files_by_id:
+            if file_id is None or file_id not in files_by_id:
                 return None
         elif episode.episodeFile is None:
             return None
@@ -92,7 +96,7 @@ def complete_episode_snapshot(episodes: list[Episode], episode_files: list[Episo
         for episode in episodes:
             if episode.hasFile:
                 file_id = episode.episodeFileId
-                if file_id is msgspec.UNSET:
+                if file_id is None:
                     return None
                 episode.episodeFile = files_by_id[file_id]
     return episodes

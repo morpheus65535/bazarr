@@ -4,7 +4,6 @@ import os
 import logging
 import operator
 import semver
-import msgspec
 
 from sonarr.episode_snapshot import Episode, EpisodeFile, complete_episode_snapshot
 
@@ -78,7 +77,7 @@ def _validated_episodes(episodes: list[Episode], *, series_id: int | None = None
             files = result
         elif episodes and episodes[0].hasFile:
             file_id = episodes[0].episodeFileId
-            if file_id is msgspec.UNSET:
+            if file_id is None:
                 logging.warning('BAZARR Skipping episode %s: episodeFileId is missing.', episodes[0].id)
                 return None
             file = get_episodesFiles_from_sonarr_api(apikey_sonarr=settings.sonarr.apikey, episode_file_id=file_id)

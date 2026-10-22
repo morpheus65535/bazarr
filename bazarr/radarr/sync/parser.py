@@ -2,9 +2,6 @@
 
 import os
 
-import msgspec
-
-
 from app.config import settings
 from languages.get_languages import audio_language_from_name
 from radarr.info import get_radarr_info
@@ -45,7 +42,7 @@ def movieParser(movie: Movie, action: str, tags_dict: list[ArrTag], language_pro
     except ValueError:
         video_format = quality.name
         quality_resolution = quality.resolution
-        resolution = f'{quality_resolution}p' if quality_resolution is not msgspec.UNSET else None
+        resolution = f'{quality_resolution}p' if quality_resolution is not None else None
     media = file.mediaInfo
     if media:
         video_codec = RadarrFormatVideoCodec((media.videoFormat if legacy else media.videoCodec),

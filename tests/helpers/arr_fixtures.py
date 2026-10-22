@@ -1,13 +1,12 @@
 from collections.abc import Callable, Sequence
 from types import ModuleType
-from typing import ParamSpec
+from typing import ParamSpec, TypeAlias
 
-import msgspec
 import pytest
 
-from sonarr.episode_snapshot import Episode
+from sonarr.episode_snapshot import Episode, EpisodeFile
 from sonarr.series_snapshot import Series
-from radarr.movie_snapshot import IncompleteMovie
+from radarr.movie_snapshot import IncompleteMovie, Movie
 from utilities.json_types import JsonValue
 
 
@@ -33,6 +32,7 @@ def episode_payload(series_id: int = 7, episode_id: int = 101) -> dict[str, Json
 
 
 Params = ParamSpec('Params')
+ArrFixtureRecord: TypeAlias = Movie | IncompleteMovie | Series | Episode | EpisodeFile
 
 
 def stub_arr_api(monkeypatch: pytest.MonkeyPatch, module: ModuleType, name: str,
@@ -51,7 +51,7 @@ def stub_arr_api(monkeypatch: pytest.MonkeyPatch, module: ModuleType, name: str,
 
     @wraps(fetch)
     def response(*args: Params.args, **kwargs: Params.kwargs) -> (
-        msgspec.Struct | IncompleteMovie | Sequence[msgspec.Struct | IncompleteMovie | None] | None
+        ArrFixtureRecord | Sequence[ArrFixtureRecord | None] | None
     ):
         result = decode(fetch(*args, **kwargs))
         return [result] if name == 'get_series_from_sonarr_api' and isinstance(result, Series) else result

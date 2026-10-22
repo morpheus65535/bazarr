@@ -2,14 +2,21 @@
 
 import requests
 import logging
+from typing import Annotated, TypeAlias
+
+from pydantic import Field, PlainValidator
 
 from app.config import settings
 from radarr.info import get_radarr_info, url_api_radarr
 from constants import HEADERS
-from utilities.arr_decoding import ArrRecordDecoder, PartialResult
+from utilities.arr_decoding import ArrRecordDecoder, PartialResult, RecordPayload
 from radarr.movie_snapshot import IncompleteMovie, Movie
 
-MOVIE_DECODER = ArrRecordDecoder(Movie, IncompleteMovie.from_value)
+MovieRecord: TypeAlias = Annotated[
+    Movie | Annotated[IncompleteMovie, PlainValidator(IncompleteMovie.from_value)],
+    Field(union_mode='left_to_right'),
+]
+MOVIE_DECODER = ArrRecordDecoder[Movie, IncompleteMovie](RecordPayload[Movie], RecordPayload[MovieRecord])
 
 
 def get_profile_list():

@@ -5,13 +5,14 @@ from dataclasses import dataclass
 from typing import TypedDict
 from typing_extensions import NotRequired
 
-import msgspec
+from pydantic import StrictBool, StrictInt
 
-from utilities.arr_types import Language, FileQuality, DisplayText, RadarrFileSizeBytes, Year
+from utilities.arr_types import Language, FileQuality, DisplayText, RadarrFileSizeBytes, Year, OmittedInt
 from utilities.json_types import JsonValue
 
 
-class MovieMediaInfo(msgspec.Struct):
+@dataclass(slots=True)
+class MovieMediaInfo:
     videoFormat: str | None = None
     videoCodec: str | None = None
     videoCodecID: str | None = None
@@ -24,8 +25,9 @@ class MovieMediaInfo(msgspec.Struct):
     audioLanguages: str | None = None
 
 
-class MovieFile(msgspec.Struct, kw_only=True):
-    id: int
+@dataclass(slots=True, kw_only=True)
+class MovieFile:
+    id: StrictInt
     path: str
     size: RadarrFileSizeBytes
     quality: FileQuality
@@ -38,35 +40,39 @@ class MovieFile(msgspec.Struct, kw_only=True):
             raise ValueError('Invalid movie file identity')
 
 
-class MovieImage(msgspec.Struct):
+@dataclass(slots=True)
+class MovieImage:
     url: str
 
 
-class MovieTitle(msgspec.Struct):
+@dataclass(slots=True)
+class MovieTitle:
     title: str | None
 
 
-class MovieLanguage(msgspec.Struct):
+@dataclass(slots=True)
+class MovieLanguage:
     name: str | None = None
 
 
-class Movie(msgspec.Struct, kw_only=True):
-    id: int
+@dataclass(slots=True, kw_only=True)
+class Movie:
+    id: StrictInt
     title: str
-    tmdbId: int | str | bool
+    tmdbId: StrictInt | str | StrictBool
     year: Year | None
     sortTitle: str
-    monitored: bool
-    hasFile: bool
-    tags: list[int]
+    monitored: StrictBool
+    hasFile: StrictBool
+    tags: list[StrictInt]
     movieFile: MovieFile | None = None
     images: list[MovieImage] | None = None
-    overview: DisplayText = DisplayText('')
+    overview: DisplayText = ''
     alternativeTitles: list[MovieTitle] | None = None
     alternateTitles: list[MovieTitle] | None = None
     imdbId: str | None = None
     originalLanguage: MovieLanguage | None = None
-    qualityProfileId: int | msgspec.UnsetType = msgspec.UNSET
+    qualityProfileId: OmittedInt = None
 
 
 @dataclass(frozen=True, slots=True)

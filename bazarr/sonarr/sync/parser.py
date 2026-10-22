@@ -3,8 +3,6 @@
 import os
 from datetime import datetime
 
-import msgspec
-
 from dateutil import parser
 
 from app.config import settings
@@ -74,7 +72,7 @@ def seriesParser(show: Series, action: str, tags_dict: list[ArrTag], language_pr
         if get_sonarr_info.is_legacy():
             audio_language = profile_id_to_language(show.qualityProfileId, audio_profiles)
         else:
-            if show.languageProfileId is not msgspec.UNSET:
+            if show.languageProfileId is not None:
                 audio_language = profile_id_to_language(show.languageProfileId, audio_profiles)
             else:
                 audio_language = []
@@ -164,7 +162,7 @@ def episodeParser(episode: Episode, parse_embedded_audio_track: bool | None = No
     except ValueError:
         video_format = quality.name
         resolution = quality.resolution
-        video_resolution = f'{resolution}p' if resolution is not msgspec.UNSET else None
+        video_resolution = f'{resolution}p' if resolution is not None else None
     return {'sonarrSeriesId': episode.seriesId,
             'sonarrEpisodeId': episode.id,
             'title': episode.title,

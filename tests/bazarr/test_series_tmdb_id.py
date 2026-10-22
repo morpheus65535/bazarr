@@ -1,8 +1,8 @@
+import json
 import importlib
 from collections.abc import Iterator
 from unittest import mock
 
-import msgspec
 import pytest
 from alembic.migration import MigrationContext
 from alembic.operations import Operations
@@ -80,7 +80,7 @@ def test_invalid_tmdb_id_preserves_valid_neighboring_records(invalid_id: JsonVal
         _series_payload(id=2, tmdbId=invalid_id),
         _series_payload(id=3, tmdbId=604),
     ]
-    decoded = SERIES_DECODER.decode(msgspec.json.encode(payloads)) if encoded else SERIES_DECODER.from_value(payloads)
+    decoded = SERIES_DECODER.decode(json.dumps(payloads).encode()) if encoded else SERIES_DECODER.from_value(payloads)
     assert isinstance(decoded, list)
     assert len(decoded) == 3
     first, invalid, last = decoded

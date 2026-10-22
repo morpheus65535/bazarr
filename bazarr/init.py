@@ -77,7 +77,8 @@ if not args.no_update:
     try:
         if os.name == 'nt':
             import win32api, win32con  # noqa E401
-        import lxml, numpy, webrtcvad, setuptools, PIL, msgspec as _  # noqa E401
+        import lxml, numpy, webrtcvad, setuptools, PIL  # noqa E401
+        from pydantic import TypeAdapter as _
     except ImportError:
         try:
             import pip  # noqa W0611

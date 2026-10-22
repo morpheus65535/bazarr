@@ -3,7 +3,6 @@ import gzip
 from io import BytesIO
 from urllib3.response import HTTPResponse
 
-import msgspec
 import pytest
 import requests
 

@@ -1,7 +1,6 @@
 import json
 
 import pytest
-import msgspec
 
 from radarr.movie_snapshot import IncompleteMovie, Movie
 from radarr.sync import utils as radarr
@@ -124,7 +123,7 @@ def test_rejected_episode_snapshot_logs_context(
     monkeypatch.setattr(episode_sync.get_sonarr_info, 'semver', lambda: version)
     monkeypatch.setattr(episode_sync, 'get_episodesFiles_from_sonarr_api', lambda **kwargs: None)
     if reason == 'file_id':
-        episode.episodeFileId = msgspec.UNSET
+        episode.episodeFileId = None
     elif reason == 'snapshot':
         episode.episodeFile = None
 

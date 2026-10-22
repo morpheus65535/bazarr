@@ -1,13 +1,13 @@
 # coding=utf-8
 
-from collections.abc import Callable
-from typing import TYPE_CHECKING, Generic, Protocol, TypeAlias, TypeVar
+import re
+from typing import Annotated, TYPE_CHECKING, Generic, Protocol, TypeAlias, TypeVar
+from typing_extensions import TypeForm
 
-import msgspec
+from pydantic import Field, PlainValidator, TypeAdapter, ValidationError
 import requests
 
 from utilities.json_types import ArrResponse, JsonLoader, JsonValue
-from utilities.arr_types import ArrTag, decode_arr_value
 
 
 if TYPE_CHECKING:
@@ -22,93 +22,83 @@ class IncompleteRecord(Protocol):
     def id(self) -> int | None: ...
 
 
-Record = TypeVar('Record', bound=msgspec.Struct | ArrTag)
+Record = TypeVar('Record')
 Invalid = TypeVar('Invalid', bound=IncompleteRecord | None)
 
 
-CompleteResult: TypeAlias = Record | list[Record] | None
+CompleteResult: TypeAlias = list[Record] | Record | None
 PartialResult: TypeAlias = Record | Invalid | list[Record | Invalid] | None
+# Try arrays before the fallback for an invalid individual record.
+RecordPayload: TypeAlias = Annotated[CompleteResult[Record], Field(union_mode='left_to_right')]
+
+
+def _invalid_record(_value: JsonValue) -> None:
+    return None
+
+
+PartialRecord: TypeAlias = Annotated[
+    Record | Annotated[None, PlainValidator(_invalid_record)], Field(union_mode='left_to_right')]
+
+
+_NONSTANDARD_NUMBER = r'(?:^|[\[:,])\s*(?:NaN|-?Infinity)(?=$|[\s,\]}])'
+_NONSTANDARD_TEXT = re.compile(_NONSTANDARD_NUMBER)
+_NONSTANDARD_BYTES = re.compile(_NONSTANDARD_NUMBER.encode('ascii'))
 
 
 class ArrRecordDecoder(Generic[Record, Invalid]):
-    def __init__(self, record_type: type[Record], invalid_record: Callable[[JsonValue], Invalid]) -> None:
-        self.record_type: type[Record] = record_type
-        self.invalid_record: Callable[[JsonValue], Invalid] = invalid_record
-        self._record: msgspec.json.Decoder[Record] = msgspec.json.Decoder(record_type, dec_hook=decode_arr_value)
-        self._payload: msgspec.json.Decoder[CompleteResult[Record]] = msgspec.json.Decoder(record_type | list[record_type] | None, dec_hook=decode_arr_value)
-        self._rows: msgspec.json.Decoder[list[msgspec.Raw]] = msgspec.json.Decoder(list[msgspec.Raw])
-
-    def _convert_record(self, value: JsonValue) -> Record | Invalid:
-        try:
-            return msgspec.convert(value, type=self.record_type, dec_hook=decode_arr_value)
-        except msgspec.ValidationError:
-            return self.invalid_record(value)
+    def __init__(self, complete: TypeForm[CompleteResult[Record]],
+                 partial: TypeForm[PartialResult[Record, Invalid]]) -> None:
+        self._payload: TypeAdapter[CompleteResult[Record]] = TypeAdapter(complete)
+        self._partial: TypeAdapter[PartialResult[Record, Invalid]] = TypeAdapter(partial)
 
     def from_value(self, value: JsonValue) -> PartialResult[Record, Invalid]:
-        if value is None:
-            return None
-        if isinstance(value, list):
-            return [self._convert_record(row) for row in value]
-        return self._convert_record(value)
+        return self._partial.validate_python(value)
 
     @staticmethod
-    def _json_value(data: bytes | str | msgspec.Raw) -> JsonValue:
-        # Match Requests' UTF-8 replacement and selected JSON backend on the
-        # exceptional path, including non-standard JSON accepted by that backend.
-        text = data if isinstance(data, str) else bytes(data).decode('utf-8', errors='replace')
+    def _json_value(data: bytes | str) -> JsonValue:
+        # Preserve Requests' replacement decoding, JSON backend and error details.
+        text = data if isinstance(data, str) else data.decode('utf-8', errors='replace')
         try:
             value: JsonValue = json.loads(text)
         except JSONDecodeError as error:
             raise requests.exceptions.JSONDecodeError(error.msg, error.doc, error.pos) from error
         return value
 
+    @staticmethod
+    def _has_nonstandard_number(data: bytes | str) -> bool:
+        # Pydantic accepts these tokens even when Requests' JSON backend rejects them.
+        if isinstance(data, bytes):
+            return _NONSTANDARD_BYTES.search(data) is not None
+        return _NONSTANDARD_TEXT.search(data) is not None
+
     def decode(self, data: bytes | str) -> PartialResult[Record, Invalid]:
+        if self._has_nonstandard_number(data):
+            return self.from_value(self._json_value(data))
         try:
-            return self._payload.decode(data)
-        except msgspec.ValidationError:
-            # Decode valid rows directly even when another row is incomplete.
-            # Raw views avoid constructing the unused fields of the valid rows.
-            prefix = data.lstrip()[:1]
-            if prefix not in (b'[', '['):
-                return self.from_value(self._json_value(data))
-            try:
-                rows = self._rows.decode(data)
-            except (msgspec.DecodeError, UnicodeDecodeError):
-                return self.from_value(self._json_value(data))
-            result: list[Record | Invalid] = []
-            for row in rows:
-                try:
-                    result.append(self._record.decode(row))
-                except (msgspec.DecodeError, UnicodeDecodeError):
-                    result.append(self._convert_record(self._json_value(row)))
-            return result
-        except (msgspec.DecodeError, UnicodeDecodeError):
+            return self._partial.validate_json(data)
+        except ValidationError:
             return self.from_value(self._json_value(data))
 
     def decode_response(self, response: ArrResponse) -> PartialResult[Record, Invalid]:
         if response.encoding is None or response.encoding.lower() not in ('utf-8', 'utf8'):
-            value: JsonValue = response.json()
-            return self.from_value(value)
+            return self.from_value(response.json())
         return self.decode(response.content)
 
     def complete_from_value(self, value: JsonValue) -> CompleteResult[Record]:
         try:
-            if value is None:
-                return None
-            if isinstance(value, list):
-                return [msgspec.convert(row, type=self.record_type, dec_hook=decode_arr_value) for row in value]
-            return msgspec.convert(value, type=self.record_type, dec_hook=decode_arr_value)
-        except msgspec.ValidationError:
+            return self._payload.validate_python(value)
+        except ValidationError:
             return None
 
     def decode_complete(self, data: bytes | str) -> CompleteResult[Record]:
+        if self._has_nonstandard_number(data):
+            return self.complete_from_value(self._json_value(data))
         try:
-            return self._payload.decode(data)
-        except (msgspec.DecodeError, UnicodeDecodeError):
+            return self._payload.validate_json(data)
+        except ValidationError:
             return self.complete_from_value(self._json_value(data))
 
     def decode_complete_response(self, response: ArrResponse) -> CompleteResult[Record]:
         if response.encoding is None or response.encoding.lower() not in ('utf-8', 'utf8'):
-            value: JsonValue = response.json()
-            return self.complete_from_value(value)
+            return self.complete_from_value(response.json())
         return self.decode_complete(response.content)

@@ -1,48 +1,53 @@
 # coding=utf-8
 
 from datetime import datetime
-from typing import TypedDict
+from dataclasses import dataclass
+from typing import Annotated, TypedDict
 from typing_extensions import NotRequired
 
-import msgspec
+from pydantic import Strict, StrictBool, StrictInt
 
 from utilities.external_ids import TmdbId
-from utilities.arr_types import Year
+from utilities.arr_types import Year, OmittedInt
 
 
-class SeriesImage(msgspec.Struct):
+@dataclass(slots=True)
+class SeriesImage:
     coverType: str
     url: str
 
 
-class AlternateTitle(msgspec.Struct):
+@dataclass(slots=True)
+class AlternateTitle:
     title: str | None = None
 
 
-class SeriesLanguage(msgspec.Struct):
+@dataclass(slots=True)
+class SeriesLanguage:
     name: str | None = None
 
 
-class Series(msgspec.Struct, kw_only=True):
-    id: int
+@dataclass(slots=True, kw_only=True)
+class Series:
+    id: StrictInt
     title: str
     path: str
-    tvdbId: int
+    tvdbId: StrictInt
     sortTitle: str
     year: Year | None
     seriesType: str
-    monitored: bool
+    monitored: StrictBool
     images: list[SeriesImage]
     alternateTitles: list[AlternateTitle] | None
-    tags: list[int]
+    tags: list[StrictInt]
     overview: str | None = ''
     imdbId: str | None = None
-    tmdbId: TmdbId | None = None
-    ended: bool = False
+    tmdbId: Annotated[TmdbId, Strict()] | None = None
+    ended: StrictBool = False
     lastAired: str | None = None
     originalLanguage: SeriesLanguage | None = None
-    qualityProfileId: int | msgspec.UnsetType = msgspec.UNSET
-    languageProfileId: int | msgspec.UnsetType = msgspec.UNSET
+    qualityProfileId: OmittedInt = None
+    languageProfileId: OmittedInt = None
 
 
 class SeriesValues(TypedDict):
