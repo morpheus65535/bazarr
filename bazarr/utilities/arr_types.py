@@ -17,7 +17,8 @@ def _present_integer(value: JsonValue) -> JsonValue:
 
 
 # Omitted fields default to None; explicitly supplied nulls remain invalid.
-OmittedInt: TypeAlias = Annotated[StrictInt | None, BeforeValidator(_present_integer)]
+OmittedInt: TypeAlias = Annotated[
+    StrictInt | Annotated[None, BeforeValidator(_present_integer)], Field(union_mode='left_to_right')]
 
 
 @dataclass(slots=True)
@@ -55,15 +56,20 @@ def _year_input(value: JsonValue) -> JsonValue:
     return value
 
 
-def parse_file_size(value: JsonValue) -> int:
-    if isinstance(value, bool) or not isinstance(value, (int, str, float)):
-        raise ValueError('File size must be a byte count')
+_FILE_SIZE_TYPES = (int, str, float)
+
+
+def parse_file_size(value: JsonValue) -> int | None:
+    if isinstance(value, bool) or not isinstance(value, _FILE_SIZE_TYPES):
+        return None
     try:
         return int(value)
-    except (ValueError, OverflowError) as error:
-        raise ValueError('Invalid file byte count') from error
+    except (ValueError, OverflowError):
+        return None
 
 
 DisplayText: TypeAlias = Annotated[str, BeforeValidator(str)]
-Year: TypeAlias = Annotated[int, Field(strict=False), BeforeValidator(_year_input)]
-RadarrFileSizeBytes: TypeAlias = Annotated[int, BeforeValidator(parse_file_size)]
+Year: TypeAlias = Annotated[
+    StrictInt | Annotated[int, Field(strict=False), BeforeValidator(_year_input)], Field(union_mode='left_to_right')]
+RadarrFileSizeBytes: TypeAlias = Annotated[
+    StrictInt | Annotated[int, BeforeValidator(parse_file_size)], Field(union_mode='left_to_right')]

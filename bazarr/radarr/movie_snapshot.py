@@ -8,6 +8,7 @@ from typing_extensions import NotRequired
 from pydantic import StrictBool, StrictInt
 
 from utilities.arr_types import Language, FileQuality, DisplayText, RadarrFileSizeBytes, Year, OmittedInt
+from utilities.arr_types import parse_file_size as movie_file_size
 from utilities.json_types import JsonValue
 
 
@@ -130,12 +131,3 @@ class MovieValues(TypedDict):
     profileId: NotRequired[int | None]
     created_at_timestamp: NotRequired[datetime]
     updated_at_timestamp: NotRequired[datetime]
-
-
-def movie_file_size(value: JsonValue) -> int | None:
-    if not isinstance(value, (int, str, float)) or isinstance(value, bool):
-        return None
-    try:
-        return int(value)
-    except (ValueError, OverflowError):
-        return None
