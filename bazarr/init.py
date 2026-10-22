@@ -79,7 +79,7 @@ if not args.no_update:
             import win32api, win32con  # noqa E401
         import lxml, numpy, webrtcvad, setuptools, PIL  # noqa E401
         from pydantic import TypeAdapter as _
-    except ImportError:
+    except (ImportError, SystemError):
         try:
             import pip  # noqa W0611
         except ImportError:

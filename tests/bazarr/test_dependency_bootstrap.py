@@ -11,3 +11,6 @@ def test_bootstrap_checks_pydantic_dependencies_before_skipping_install() -> Non
     assert any(isinstance(node, ast.ImportFrom) and node.module == 'pydantic'
                and any(alias.name == 'TypeAdapter' for alias in node.names)
                for statement in check.body for node in ast.walk(statement))
+    errors = check.handlers[0].type
+    assert isinstance(errors, ast.Tuple)
+    assert {node.id for node in errors.elts if isinstance(node, ast.Name)} == {'ImportError', 'SystemError'}
