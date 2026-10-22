@@ -121,7 +121,7 @@ enzyme==0.5.2
 ftfy==6.3.1
 html5lib==1.1
 Js2Py==0.74
-pydantic<=1.10.14  # newer version requires other compiled dependency
+pydantic==2.14.1
 pyjsparser==2.7.1
 pyparsing==3.3.3
 # python-anticaptcha==1.0.0  # include PR to fix DeprecationWarning: pkg_resources is deprecated as an API.
