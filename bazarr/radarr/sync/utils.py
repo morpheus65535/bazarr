@@ -4,17 +4,17 @@ import requests
 import logging
 from typing import Annotated, TypeAlias
 
-from pydantic import Field, PlainValidator
+from pydantic import Field
 
 from app.config import settings
 from radarr.info import get_radarr_info, url_api_radarr
 from constants import HEADERS
-from utilities.arr_decoding import ArrRecordDecoder, PartialResult, RecordPayload
+from utilities.arr_decoding import ArrRecordDecoder, DefaultOnError, PartialResult, RecordPayload
 from radarr.movie_snapshot import IncompleteMovie, Movie
 
 MovieRecord: TypeAlias = Annotated[
-    Movie | Annotated[IncompleteMovie, PlainValidator(IncompleteMovie.from_value)],
-    Field(union_mode='left_to_right'),
+    Movie | IncompleteMovie, Field(union_mode='left_to_right'),
+    DefaultOnError[Movie | IncompleteMovie](IncompleteMovie()),
 ]
 MOVIE_DECODER = ArrRecordDecoder[Movie, IncompleteMovie](RecordPayload[Movie], RecordPayload[MovieRecord])
 

@@ -2,14 +2,13 @@
 
 from datetime import datetime
 from dataclasses import dataclass
-from typing import TypedDict
+from typing import Annotated, TypedDict
 from typing_extensions import NotRequired
 
-from pydantic import StrictBool, StrictInt
+from pydantic import Field, StrictBool, StrictInt
 
 from utilities.arr_types import Language, FileQuality, DisplayText, RadarrFileSizeBytes, Year, OmittedInt
-from utilities.arr_types import parse_file_size as movie_file_size
-from utilities.json_types import JsonValue
+from utilities.arr_decoding import InvalidAsNone
 
 
 @dataclass(slots=True)
@@ -78,31 +77,20 @@ class Movie:
 
 @dataclass(frozen=True, slots=True)
 class FileState:
-    id: int
+    id: Annotated[StrictInt, Field(gt=0)]
     path: str
-    size: int
+    size: RadarrFileSizeBytes
+
+    def __post_init__(self) -> None:
+        if not self.path.strip():
+            raise ValueError('Movie file path is empty')
 
 
 @dataclass(frozen=True, slots=True)
 class IncompleteMovie:
-    id: int | None
-    hasFile: bool | None
-    movieFile: FileState | None
-
-    @classmethod
-    def from_value(cls, value: JsonValue) -> 'IncompleteMovie':
-        if not isinstance(value, dict):
-            return cls(None, None, None)
-        identifier, has_file = value.get('id'), value.get('hasFile')
-        raw_file = value.get('movieFile')
-        file = None
-        if isinstance(raw_file, dict):
-            file_id, path = raw_file.get('id'), raw_file.get('path')
-            size = movie_file_size(raw_file.get('size'))
-            if type(file_id) is int and file_id > 0 and isinstance(path, str) and path.strip() and size is not None:
-                file = FileState(file_id, path, size)
-        return cls(identifier if type(identifier) is int else None,
-                   has_file if isinstance(has_file, bool) else None, file)
+    id: InvalidAsNone[StrictInt] = None
+    hasFile: InvalidAsNone[StrictBool] = None
+    movieFile: InvalidAsNone[FileState] = None
 
 
 class MovieValues(TypedDict):

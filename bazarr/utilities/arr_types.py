@@ -5,7 +5,7 @@ import re
 from typing import Annotated, TypeAlias
 from typing_extensions import TypedDict
 
-from pydantic import BeforeValidator, Field, StrictInt, TypeAdapter
+from pydantic import BeforeValidator, Field, StrictInt, StrictStr, TypeAdapter
 
 from utilities.json_types import JsonValue
 
@@ -68,7 +68,8 @@ def parse_file_size(value: JsonValue) -> int | None:
         return None
 
 
-DisplayText: TypeAlias = Annotated[str, BeforeValidator(str)]
+DisplayText: TypeAlias = Annotated[
+    StrictStr | Annotated[str, BeforeValidator(str)], Field(union_mode='left_to_right')]
 Year: TypeAlias = Annotated[
     StrictInt | Annotated[int, Field(strict=False), BeforeValidator(_year_input)], Field(union_mode='left_to_right')]
 RadarrFileSizeBytes: TypeAlias = Annotated[

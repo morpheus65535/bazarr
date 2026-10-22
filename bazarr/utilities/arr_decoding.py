@@ -1,10 +1,12 @@
 # coding=utf-8
 
 import re
+from dataclasses import dataclass
 from typing import Annotated, TYPE_CHECKING, Generic, Protocol, TypeAlias, TypeVar
 from typing_extensions import TypeForm
 
-from pydantic import Field, PlainValidator, TypeAdapter, ValidationError
+from pydantic import Field, GetCoreSchemaHandler, TypeAdapter, ValidationError
+from pydantic_core import CoreSchema, core_schema
 import requests
 
 from utilities.json_types import ArrResponse, JsonLoader, JsonValue
@@ -37,18 +39,22 @@ Record = TypeVar('Record')
 Invalid = TypeVar('Invalid', bound=IncompleteRecord | None)
 
 
+@dataclass(frozen=True)
+class DefaultOnError(Generic[Record]):
+    """Handle validation failures inside Pydantic without a Python callback."""
+
+    default: Record
+
+    def __get_pydantic_core_schema__(self, source_type: TypeForm[Record], handler: GetCoreSchemaHandler) -> CoreSchema:
+        return core_schema.with_default_schema(handler(source_type), default=self.default, on_error='default')
+
+
 CompleteResult: TypeAlias = list[Record] | Record | None
 PartialResult: TypeAlias = Record | Invalid | list[Record | Invalid] | None
+InvalidAsNone: TypeAlias = Annotated[Record | None, DefaultOnError[Record | None](None)]
 # Try arrays before the fallback for an invalid individual record.
-RecordPayload: TypeAlias = Annotated[CompleteResult[Record], Field(union_mode='left_to_right')]
-
-
-def _invalid_record(_value: JsonValue) -> None:
-    return None
-
-
-PartialRecord: TypeAlias = Annotated[
-    Record | Annotated[None, PlainValidator(_invalid_record)], Field(union_mode='left_to_right')]
+RecordPayload: TypeAlias = Annotated[
+    CompleteResult[Record], Field(union_mode='left_to_right'), DefaultOnError[CompleteResult[Record]](None)]
 
 
 JsonText = TypeVar('JsonText', str, bytes)

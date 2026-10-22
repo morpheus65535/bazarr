@@ -6,13 +6,13 @@ import logging
 from app.config import settings
 from sonarr.info import get_sonarr_info, url_api_sonarr
 from constants import HEADERS
-from utilities.arr_decoding import ArrRecordDecoder, CompleteResult, PartialRecord, RecordPayload
+from utilities.arr_decoding import ArrRecordDecoder, CompleteResult, InvalidAsNone, RecordPayload
 from sonarr.series_snapshot import Series
 from sonarr.episode_snapshot import Episode, EpisodeFile
 
-SERIES_DECODER = ArrRecordDecoder[Series, None](RecordPayload[Series], RecordPayload[PartialRecord[Series]])
-EPISODE_DECODER = ArrRecordDecoder[Episode, None](RecordPayload[Episode], RecordPayload[PartialRecord[Episode]])
-EPISODEFILE_DECODER = ArrRecordDecoder[EpisodeFile, None](RecordPayload[EpisodeFile], RecordPayload[PartialRecord[EpisodeFile]])
+SERIES_DECODER = ArrRecordDecoder[Series, None](RecordPayload[Series], RecordPayload[InvalidAsNone[Series]])
+EPISODE_DECODER = ArrRecordDecoder[Episode, None](RecordPayload[Episode], RecordPayload[InvalidAsNone[Episode]])
+EPISODEFILE_DECODER = ArrRecordDecoder[EpisodeFile, None](RecordPayload[EpisodeFile], RecordPayload[InvalidAsNone[EpisodeFile]])
 
 
 def get_profile_list():

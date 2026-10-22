@@ -3,11 +3,11 @@ import json
 import pytest
 import requests
 
-from radarr.movie_snapshot import Movie
+from radarr.movie_snapshot import FileState, IncompleteMovie, Movie
 from radarr.sync.utils import MOVIE_DECODER
 from sonarr.episode_snapshot import Episode
 from sonarr.series_snapshot import Series
-from sonarr.sync.utils import EPISODE_DECODER, SERIES_DECODER
+from sonarr.sync.utils import EPISODE_DECODER, EPISODEFILE_DECODER, SERIES_DECODER
 from tests.helpers.arr_fixtures import episode_payload, movie_payload, series_payload
 import utilities.arr_decoding as arr_decoding
 from utilities.arr_decoding import ArrRecordDecoder
@@ -129,3 +129,44 @@ def test_accepting_json_backends_need_neither_a_scan_nor_a_dictionary_fallback(
     record = SERIES_DECODER.decode_complete(wire) if complete else SERIES_DECODER.decode(wire)
     assert isinstance(record, Series)
     assert record.title == title
+
+
+@pytest.mark.parametrize('kind', ['movie', 'series', 'episode', 'file'])
+@pytest.mark.parametrize('invalid_index', [0, 1, 2])
+def test_invalid_complete_catalogues_do_not_decode_json_again(
+    kind: str, invalid_index: int, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    file = episode_payload()['episodeFile']
+    payload = {'movie': movie_payload(), 'series': series_payload(), 'episode': episode_payload(), 'file': file}[kind]
+    rows = [payload, payload, payload]
+    rows[invalid_index] = {}
+    decoder = {'movie': MOVIE_DECODER, 'series': SERIES_DECODER,
+               'episode': EPISODE_DECODER, 'file': EPISODEFILE_DECODER}[kind]
+
+    def unexpected_fallback(_data: bytes | str) -> JsonValue:
+        pytest.fail('The JSON is valid; the record validation failure should return None')
+
+    monkeypatch.setattr(ArrRecordDecoder, '_json_value', staticmethod(unexpected_fallback))
+    assert decoder.decode_complete(json.dumps(rows)) is None
+
+
+@pytest.mark.parametrize('value', [False, 0, 'error', [], [None], {}])
+@pytest.mark.parametrize('encoded', [False, True])
+def test_invalid_movie_rows_keep_their_positions(value: JsonValue, encoded: bool) -> None:
+    payloads: list[JsonValue] = [movie_payload(), value, movie_payload()]
+    result = MOVIE_DECODER.decode(json.dumps(payloads)) if encoded else MOVIE_DECODER.from_value(payloads)
+    assert isinstance(result, list)
+    assert isinstance(result[0], Movie)
+    assert result[1] == IncompleteMovie()
+    assert isinstance(result[2], Movie)
+    assert MOVIE_DECODER.decode('null') is None
+    assert MOVIE_DECODER.decode('[null]') == [IncompleteMovie()]
+
+
+@pytest.mark.parametrize('path', ['', ' \t\n', '\u2003', '\x1c', '\u200b', ' /movie.mkv '])
+@pytest.mark.parametrize('encoded', [False, True])
+def test_recovered_file_paths_keep_whitespace_validation(path: str, encoded: bool) -> None:
+    payload: JsonValue = {'id': 7, 'hasFile': True, 'movieFile': {'id': 10, 'path': path, 'size': '4096'}}
+    result = MOVIE_DECODER.decode(json.dumps(payload)) if encoded else MOVIE_DECODER.from_value(payload)
+    expected_file = FileState(10, path, 4096) if path.strip() else None
+    assert result == IncompleteMovie(7, True, expected_file)
