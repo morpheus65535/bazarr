@@ -8,7 +8,7 @@ import logging
 import os
 import re
 import subprocess
-import time
+import threading
 
 from .exceptions import ExtractionError
 from .exceptions import InvalidSource
@@ -33,39 +33,44 @@ _PROGRESS_RE = re.compile(
 def _ffmpeg_call(command, log_callback=None, progress_callback=None, timeout=10000):
     proc = subprocess.Popen(
         command,
-        stdout=subprocess.PIPE,
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
         stderr=subprocess.PIPE,
         universal_newlines=True,
     )
     log_callback = log_callback or logger.debug
 
-    start = time.time()
-
-    while True:
-        line = proc.stderr.readline()
-        if not line:
-            break
-
-        if line:
+    def _drain_stderr():
+        # Read until EOF in a separate thread. If nothing reads stderr while
+        # waiting for ffmpeg, the pipe fills up and ffmpeg blocks forever.
+        for line in proc.stderr:
             log_callback("ffmpeg: %s", line.strip())
 
-        if progress_callback is not None:
-            match = _PROGRESS_RE.search(line)
-            if match:
-                size, time_, bitrate, speed = match.groups()
-                info = {"size": size, "time": time_, "bitrate": bitrate, "speed": speed}
-            else:
-                info = {"size": "n/a", "time": "n/a", "bitrate": "n/a", "speed": "n/a"}
+            if progress_callback is not None:
+                match = _PROGRESS_RE.search(line)
+                if match:
+                    size, time_, bitrate, speed = match.groups()
+                    info = {"size": size, "time": time_, "bitrate": bitrate, "speed": speed}
+                else:
+                    info = {"size": "n/a", "time": "n/a", "bitrate": "n/a", "speed": "n/a"}
 
-            progress_callback(info)
+                progress_callback(info)
 
-        if timeout is not None and time.time() - start > timeout:
-            proc.kill()
-            raise subprocess.TimeoutExpired(command, timeout)
+    reader = threading.Thread(target=_drain_stderr, daemon=True)
+    reader.start()
 
-        return_code = proc.wait()
-        if return_code != 0:
-            raise subprocess.CalledProcessError(return_code, command)
+    try:
+        return_code = proc.wait(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        proc.wait()
+        reader.join()
+        raise
+
+    reader.join()
+
+    if return_code != 0:
+        raise subprocess.CalledProcessError(return_code, command)
 
 
 class FFprobeVideoContainer:
