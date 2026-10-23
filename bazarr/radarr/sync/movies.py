@@ -4,6 +4,8 @@ import logging
 import os
 import operator
 
+from radarr.movie_snapshot import IncompleteMovie, Movie
+
 from datetime import datetime
 from functools import reduce
 
@@ -45,48 +47,17 @@ def get_movie_file_size_from_db(movie_path):
     return bazarr_file_size
 
 
-def _movie_file_size(movie_file):
-    try:
-        return int(movie_file.get('size') or 0)
-    except (TypeError, ValueError):
-        return 0
-
-
-def _movie_file_path(movie_file):
-    path = movie_file.get('path')
-    if isinstance(path, str) and path.strip():
-        return path
-    return ''
-
-
-def _has_usable_movie_file(movie):
-    # None means the response cannot tell us whether a known file was removed.
-    if not isinstance(movie, dict) or not isinstance(movie.get('hasFile'), bool):
-        return None
-    if not movie['hasFile']:
+def _has_usable_movie_file(movie: Movie | IncompleteMovie) -> bool | None:
+    if movie.hasFile is False:
         return False
-
-    movie_file = movie.get('movieFile')
-    if not isinstance(movie_file, dict):
+    file = movie.movieFile
+    if movie.hasFile is None or file is None:
         return None
+    if int(file.size) > MINIMUM_VIDEO_SIZE or get_movie_file_size_from_db(file.path) > MINIMUM_VIDEO_SIZE:
+        return True
+    general_settings = settings.general
+    return bool(general_settings.enable_strm_support and file.path.lower().endswith('.strm'))
 
-    movie_file_path = _movie_file_path(movie_file)
-    if not movie_file_path or type(movie_file.get('id')) is not int or movie_file['id'] <= 0:
-        return None
-
-    try:
-        int(movie_file['size'])
-    except (KeyError, TypeError, ValueError):
-        return None
-
-    return (
-        _movie_file_size(movie_file) > MINIMUM_VIDEO_SIZE
-        or get_movie_file_size_from_db(movie_file_path) > MINIMUM_VIDEO_SIZE
-        or (
-            settings.general.enable_strm_support
-            and movie_file_path.lower().endswith('.strm')
-        )
-    )
 
 
 # Update movies in DB
@@ -199,16 +170,12 @@ def update_movies(job_id=None, wait_for_completion=False):
             }
             current_movies_id_db = set(current_movies_in_db)
 
-            complete_movie_list = all(
-                isinstance(movie, dict) and type(movie.get('id')) is int and movie['id'] > 0
-                for movie in movies
-            )
+            identifiers = [movie.id for movie in movies]
+            complete_movie_list = (all(identifier is not None and identifier > 0 for identifier in identifiers)
+                                   and len(set(identifiers)) == len(identifiers))
             current_movies_radarr = [
-                movie['id']
-                for movie in movies
-                if isinstance(movie, dict)
-                and type(movie.get('id')) is int and movie['id'] > 0
-                and _has_usable_movie_file(movie) is not False
+                identifier for movie, identifier in zip(movies, identifiers)
+                if identifier is not None and identifier > 0 and _has_usable_movie_file(movie) is not False
             ]
 
             # Remove movies from DB that either no longer exist in Radarr or exist and Radarr says do not have a movie file
@@ -242,53 +209,52 @@ def update_movies(job_id=None, wait_for_completion=False):
                 if job.cancel_event.is_set():
                     raise JobCanceled
 
-                if not isinstance(movie, dict):
+                if not isinstance(movie, Movie):
+                    identifier = movie.id
+                    if identifier is not None and identifier > 0:
+                        files_missing += 1
                     continue
-                movie_id = movie.get('id')
-                if type(movie_id) is not int or movie_id <= 0:
+                movie_id = movie.id
+                if movie_id <= 0:
                     continue
-                jobs_queue.update_job_progress(job_id=job_id, progress_value=i, progress_message=movie.get('title', 'Unknown'))
+                jobs_queue.update_job_progress(job_id=job_id, progress_value=i, progress_message=movie.title)
                 # Only movies that Radarr says have files downloaded will be kept up to date in the DB
-                if movie.get('hasFile') is True:
-                    movie_file = movie.get('movieFile')
-                    if isinstance(movie_file, dict):
+                if movie.hasFile is True:
+                    movie_file = movie.movieFile
+                    if movie_file is not None:
                         if sync_monitored:
-                            if get_movie_monitored_status(movie_id) != movie.get('monitored'):
+                            if get_movie_monitored_status(movie_id) != movie.monitored:
                                 # monitored status is not the same as our DB
-                                trace(f"{i}: (Monitor Status Mismatch) {movie.get('title', 'Unknown')}")
-                            elif not movie.get('monitored'):
-                                trace(f"{i}: (Skipped Unmonitored) {movie.get('title', 'Unknown')}")
+                                trace(f"{i}: (Monitor Status Mismatch) {movie.title}")
+                            elif not movie.monitored:
+                                trace(f"{i}: (Skipped Unmonitored) {movie.title}")
                                 skipped_count += 1
                                 continue
 
                         if _has_usable_movie_file(movie):
                             # Add/update movies from Radarr that have a movie file to current movies list
-                            trace(f"{i}: (Processing) {movie.get('title', 'Unknown')}")
-                            if movie_id in current_movies_id_db:
-                                parsed_movie = movieParser(movie, action='update',
-                                                           tags_dict=tagsDict,
-                                                           language_profiles=language_profiles,
-                                                           movie_default_profile=movie_default_profile,
-                                                           audio_profiles=audio_profiles)
+                            trace(f"{i}: (Processing) {movie.title}")
+                            exists = movie_id in current_movies_id_db
+                            parsed_movie = movieParser(movie, action='update' if exists else 'insert',
+                                                       tags_dict=tagsDict,
+                                                       language_profiles=language_profiles,
+                                                       movie_default_profile=movie_default_profile,
+                                                       audio_profiles=audio_profiles)
+                            if exists:
                                 if not parsed_movie.items() <= current_movies_in_db[movie_id].items():
                                     update_movie(parsed_movie)
                                     movies_updated.append(parsed_movie['title'])
                             else:
-                                parsed_movie = movieParser(movie, action='insert',
-                                                           tags_dict=tagsDict,
-                                                           language_profiles=language_profiles,
-                                                           movie_default_profile=movie_default_profile,
-                                                           audio_profiles=audio_profiles)
                                 add_movie(parsed_movie)
                                 movies_added.append(parsed_movie['title'])
                         else:
-                            trace(f"{i}: (Skipped File Missing) {movie.get('title', 'Unknown')}")
+                            trace(f"{i}: (Skipped File Missing) {movie.title}")
                             files_missing += 1
                     else:
-                        trace(f"{i}: (Skipped File Missing) {movie.get('title', 'Unknown')}")
+                        trace(f"{i}: (Skipped File Missing) {movie.title}")
                         files_missing += 1
                 else:
-                    trace(f"{i}: (Skipped File Missing) {movie.get('title', 'Unknown')}")
+                    trace(f"{i}: (Skipped File Missing) {movie.title}")
                     files_missing += 1
 
             trace(f"Skipped {files_missing} file missing movies out of {movies_count}")
@@ -349,15 +315,15 @@ def update_one_movie(movie_id, action, defer_search=False, is_signalr=False):
         # Get movie data from radarr api
         movie = None
         movie_data = get_movies_from_radarr_api(apikey_radarr=settings.radarr.apikey, radarr_id=movie_id)
-        if not movie_data:
+        if not isinstance(movie_data, (Movie, IncompleteMovie)) or movie_data.id != int(movie_id):
             return
-        else:
-            if action == 'updated' and existing_movie:
-                movie = movieParser(movie_data, action='update', tags_dict=tagsDict, language_profiles=language_profiles,
-                                    movie_default_profile=movie_default_profile, audio_profiles=audio_profiles)
-            elif action == 'updated' and not existing_movie:
-                movie = movieParser(movie_data, action='insert', tags_dict=tagsDict, language_profiles=language_profiles,
-                                    movie_default_profile=movie_default_profile, audio_profiles=audio_profiles)
+        usable = _has_usable_movie_file(movie_data)
+        if usable is None or (usable and isinstance(movie_data, IncompleteMovie)):
+            return
+        if usable and isinstance(movie_data, Movie) and action == 'updated':
+            movie = movieParser(movie_data, action='update' if existing_movie else 'insert',
+                                tags_dict=tagsDict, language_profiles=language_profiles,
+                                movie_default_profile=movie_default_profile, audio_profiles=audio_profiles)
     except Exception:
         logging.exception('BAZARR cannot get movie returned by SignalR feed from Radarr API.')
         return
@@ -382,8 +348,10 @@ def update_one_movie(movie_id, action, defer_search=False, is_signalr=False):
                     f'BAZARR deleted this movie from the database:{path_mappings.path_replace_movie(existing_movie.path)}')
         return
 
+    assert movie is not None
+
     # Update existing movie in DB
-    elif movie and existing_movie:
+    if existing_movie:
         try:
             movie['updated_at_timestamp'] = datetime.now()
             database.execute(
