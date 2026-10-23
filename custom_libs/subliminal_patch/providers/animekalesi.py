@@ -3,11 +3,10 @@ from __future__ import absolute_import
 import logging
 import re
 import io
-import os
 import zipfile
 from random import randint
 from typing import Optional, Dict, List, Set
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from babelfish import Language
 from guessit import guessit
@@ -18,7 +17,6 @@ from subliminal_patch.providers.mixins import ProviderSubtitleArchiveMixin
 from subliminal_patch.http import RetryingCFSession
 from subliminal.subtitle import fix_line_ending
 from subliminal.video import Episode
-from subliminal_patch.utils import sanitize, fix_inconsistent_naming
 from subzero.language import Language
 from subliminal.cache import region
 
@@ -181,8 +179,12 @@ class AnimeKalesiProvider(Provider, ProviderSubtitleArchiveMixin):
 
         return None
 
-    def _parse_season_episode(self, title: str) -> tuple:
-        """Extract season and episode numbers from title."""
+    @staticmethod
+    def _parse_season_episode(title: str) -> tuple:
+        """Extract season and episode numbers from title.
+
+        The season is None when the title has no explicit season, which means the episode number is absolute.
+        """
         if not title:
             return None, None
 
@@ -191,7 +193,7 @@ class AnimeKalesiProvider(Provider, ProviderSubtitleArchiveMixin):
             episode = int(ep_match.group(1)) if ep_match else None
 
             season_match = re.search(r'(\d+)\.\s*Sezon', title)
-            season = int(season_match.group(1)) if season_match else 1
+            season = int(season_match.group(1)) if season_match else None
 
             return season, episode
         except (AttributeError, ValueError) as e:
@@ -228,7 +230,8 @@ class AnimeKalesiProvider(Provider, ProviderSubtitleArchiveMixin):
             logger.error('Error getting episode list: %s', e)
             return None
 
-    def query(self, series: str, season: int, episode: int) -> List[AnimeKalesiSubtitle]:
+    def query(self, series: str, season: int, episode: int,
+              absolute_episode: Optional[int] = None) -> List[AnimeKalesiSubtitle]:
         """Search subtitles from AnimeKalesi."""
         if not series or not season or not episode:
             return []
@@ -253,10 +256,19 @@ class AnimeKalesiProvider(Provider, ProviderSubtitleArchiveMixin):
 
                 # Extract season and episode numbers
                 current_season, current_episode = self._parse_season_episode(title)
-                if current_season is None or current_episode is None:
+                if current_episode is None:
                     continue
 
-                if current_season == season and current_episode == episode:
+                if current_season is not None:
+                    is_match = current_season == season and current_episode == episode
+                elif absolute_episode:
+                    # Seasonless entries use the series' absolute numbering
+                    is_match = current_episode == absolute_episode
+                else:
+                    # Without absolute numbering, only season 1 is safe: site and seasonal numbers coincide there
+                    is_match = season == 1 and current_episode == episode
+
+                if is_match:
                     try:
                         # Navigate to subtitle download page
                         response = self.session.get(link_url, timeout=10)
@@ -285,17 +297,18 @@ class AnimeKalesiProvider(Provider, ProviderSubtitleArchiveMixin):
                                                 uploader = uploader.strip()
                                         break
 
-                            version = f"{series_data['title']} - S{current_season:02d}E{current_episode:02d}"
+                            version = f"{series_data['title']} - S{season:02d}E{episode:02d}"
                             if uploader:
                                 version += f" by {uploader}"
 
                             try:
+                                # Store the requested season/episode so get_matches() sees them, even for absolute entries
                                 subtitle = self.subtitle_class(
                                     Language('tur'),
                                     link_url,
                                     series_data['title'],
-                                    current_season,
-                                    current_episode,
+                                    season,
+                                    episode,
                                     version,
                                     download_link,
                                     uploader=uploader,
@@ -319,7 +332,8 @@ class AnimeKalesiProvider(Provider, ProviderSubtitleArchiveMixin):
         if not video.series or not video.episode:
             return []
 
-        return self.query(video.series, video.season, video.episode)
+        return self.query(video.series, video.season, video.episode,
+                          absolute_episode=getattr(video, 'absolute_episode', None))
 
     def download_subtitle(self, subtitle: AnimeKalesiSubtitle) -> None:
         try:
