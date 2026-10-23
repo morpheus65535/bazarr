@@ -9,6 +9,7 @@ from app.database import get_exclusion_clause, TableEpisodes, TableShows, TableM
     select, func
 from app.config import settings
 
+from app.get_args import args
 from app.get_providers import get_throttled_providers
 from app.signalr_client import sonarr_signalr_client, radarr_signalr_client
 from app.announcements import get_all_announcements
@@ -64,13 +65,19 @@ class Badges(Resource):
 
         live_str = "LIVE" if settings.general.show_live_badge else ""
 
+        if args.no_signalr:
+            sonarr_signalr = radarr_signalr = "OFF"
+        else:
+            sonarr_signalr = live_str if sonarr_signalr_client.connected else "DOWN"
+            radarr_signalr = live_str if radarr_signalr_client.connected else "DOWN"
+
         result = {
             "episodes": missing_episodes_count,
             "movies": missing_movies_count,
             "providers": throttled_providers,
             "status": health_issues,
-            'sonarr_signalr': live_str if sonarr_signalr_client.connected else "DOWN",
-            'radarr_signalr': live_str if radarr_signalr_client.connected else "DOWN",
+            'sonarr_signalr': sonarr_signalr,
+            'radarr_signalr': radarr_signalr,
             'announcements': len(get_all_announcements()),
         }
         return marshal(result, self.get_model)
