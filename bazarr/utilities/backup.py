@@ -5,6 +5,7 @@ import sqlite3
 import shutil
 import logging
 import re
+import tempfile
 
 from datetime import datetime, timedelta, timezone
 from zipfile import ZipFile, BadZipFile, ZIP_DEFLATED
@@ -210,35 +211,47 @@ def backup_to_zip(job_id: int | None = None, wait_for_completion: bool = False) 
         database_src_file = os.path.join(args.config_dir, 'db', 'bazarr.db')
         logging.debug(f'Database file path to backup is: {database_src_file}')
 
+        database_src_con = None
+        database_backup_con = None
         try:
             database_src_con = sqlite3.connect(database_src_file)
 
-            database_backup_file = os.path.join(_get_backup_path(), 'bazarr_temp.db')
+            database_backup_fd, database_backup_file = tempfile.mkstemp(prefix='bazarr_temp_', suffix='.db')
+            os.close(database_backup_fd)
             database_backup_con = sqlite3.connect(database_backup_file)
 
             with database_backup_con:
                 database_src_con.backup(database_backup_con)
-
-            database_backup_con.close()
-            database_src_con.close()
         except Exception:
-            database_backup_file = None
             logging.exception('Unable to backup database file.')
+            if database_backup_file:
+                try:
+                    os.remove(database_backup_file)
+                except (OSError, FileNotFoundError):
+                    logging.exception(f'Unable to delete temporary database backup file: {database_backup_file}')
+            database_backup_file = None
+        finally:
+            for database_con in (database_backup_con, database_src_con):
+                if database_con is not None:
+                    database_con.close()
 
     config_file = os.path.join(args.config_dir, 'config', 'config.yaml')
     logging.debug(f'Config file path to backup is: {config_file}')
 
-    with ZipFile(os.path.join(_get_backup_path(), backup_filename), 'w', compression=ZIP_DEFLATED,
-                 compresslevel=9) as backupZip:
+    try:
+        with ZipFile(os.path.join(_get_backup_path(), backup_filename), 'w', compression=ZIP_DEFLATED,
+                     compresslevel=9) as backupZip:
+            if database_backup_file:
+                backupZip.write(database_backup_file, 'bazarr.db')
+            else:
+                logging.debug('Database file is not included in backup. See previous exception')
+            backupZip.write(config_file, 'config.yaml')
+    finally:
         if database_backup_file:
-            backupZip.write(database_backup_file, 'bazarr.db')
             try:
                 os.remove(database_backup_file)
             except (OSError, FileNotFoundError):
                 logging.exception(f'Unable to delete temporary database backup file: {database_backup_file}')
-        else:
-            logging.debug('Database file is not included in backup. See previous exception')
-        backupZip.write(config_file, 'config.yaml')
 
     jobs_queue.update_job_name(job_id=job_id, new_job_name="Backed up Database and Configuration File")
     event_stream(type='backup')
