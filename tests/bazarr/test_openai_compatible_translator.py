@@ -26,12 +26,14 @@ def _response(mocker, content, finish_reason='stop'):
 def test_openai_compatible_request_and_validation(mocker):
     _settings(mocker)
     post = mocker.patch.object(openai_compatible_translator.requests, 'post',
-                               return_value=_response(mocker, '["Cześć"]'))
+                               return_value=_response(mocker, '[{"id":1,"text":"Cześć"}]'))
     assert _service()._translate_batch(['Hello']) == ['Cześć']
     assert post.call_args.args[0] == 'http://model/v1/chat/completions'
     payload = post.call_args.kwargs['json']
     assert payload['model'] == 'local-model'
     assert payload['chat_template_kwargs'] == {'enable_thinking': False}
+    assert 'exactly 1 cue' in payload['messages'][0]['content']
+    assert payload['messages'][1]['content'] == '[{"id": 1, "text": "Hello"}]'
 
 
 @pytest.mark.parametrize(('base_url', 'expected_url'), [
@@ -41,7 +43,7 @@ def test_openai_compatible_request_and_validation(mocker):
 ])
 def test_chat_completions_url_supports_bare_host_version_and_full_endpoint(mocker, base_url, expected_url):
     post = mocker.patch.object(openai_compatible_translator.requests, 'post',
-                               return_value=_response(mocker, '["Bonjour"]'))
+                               return_value=_response(mocker, '[{"id":1,"text":"Bonjour"}]'))
 
     openai_compatible_translator._request_translation(
         cues=['Hello'], base_url=base_url, model='local-model', api_key='', timeout=30,
@@ -53,9 +55,89 @@ def test_chat_completions_url_supports_bare_host_version_and_full_endpoint(mocke
 def test_rejects_truncated_response(mocker):
     _settings(mocker)
     mocker.patch.object(openai_compatible_translator.requests, 'post',
-                        return_value=_response(mocker, '["Hej"]', finish_reason='length'))
+                        return_value=_response(mocker, '[{"id":1,"text":"Hej"}]', finish_reason='length'))
     with pytest.raises(RuntimeError, match='incomplete'):
         _service()._translate_batch(['Hello'])
+
+
+def test_mismatched_batch_is_retried_as_smaller_batches(mocker):
+    _settings(mocker)
+    post = mocker.patch.object(
+        openai_compatible_translator.requests,
+        'post',
+        side_effect=[
+            _response(mocker, '[{"id":1,"text":"Merged translation"}]'),
+            _response(mocker, '[{"id":1,"text":"Still merged"}]'),
+            _response(mocker, '[{"id":1,"text":"Premier"}]'),
+            _response(mocker, '[{"id":1,"text":"Deuxième"}]'),
+        ],
+    )
+
+    result = _service()._translate_batch(['First cue', 'Second cue'])
+
+    assert result == ['Premier', 'Deuxième']
+    assert post.call_count == 4
+    assert 'exactly these fields' in post.call_args_list[0].kwargs['json']['messages'][0]['content']
+    correction_prompt = post.call_args_list[1].kwargs['json']['messages'][0]['content']
+    assert 'previous response was invalid' in correction_prompt
+    assert 'missing IDs [2]' in correction_prompt
+
+
+def test_translations_are_mapped_by_cue_id_not_response_order(mocker):
+    _settings(mocker)
+    mocker.patch.object(
+        openai_compatible_translator.requests,
+        'post',
+        return_value=_response(mocker, '[{"id":2,"text":"Deuxième"},{"id":1,"text":"Premier"}]'),
+    )
+
+    assert _service()._translate_batch(['First cue', 'Second cue']) == ['Premier', 'Deuxième']
+
+
+def test_count_mismatch_reprompts_same_batch_before_accepting_translation(mocker):
+    _settings(mocker)
+    post = mocker.patch.object(
+        openai_compatible_translator.requests,
+        'post',
+        side_effect=[
+            _response(mocker, '[{"id":1,"text":"Only one"}]'),
+            _response(mocker, '[{"id":1,"text":"Premier"},{"id":2,"text":"Deuxième"}]'),
+        ],
+    )
+
+    result = _service()._translate_batch(['First cue', 'Second cue'])
+
+    assert result == ['Premier', 'Deuxième']
+    assert post.call_count == 2
+    correction_prompt = post.call_args_list[1].kwargs['json']['messages'][0]['content']
+    assert 'previous response was invalid' in correction_prompt
+    assert 'missing IDs [2]' in correction_prompt
+
+
+def test_invalid_response_is_reprompted_before_failing(mocker):
+    _settings(mocker)
+    post = mocker.patch.object(
+        openai_compatible_translator.requests,
+        'post',
+        side_effect=[
+            _response(mocker, 'I will translate these cues now.'),
+            _response(mocker, '[{"id":1,"text":"Bonjour"}]'),
+        ],
+    )
+
+    assert _service()._translate_batch(['Hello']) == ['Bonjour']
+    assert post.call_count == 2
+    assert 'previous response was invalid' in post.call_args_list[1].kwargs['json']['messages'][0]['content']
+
+
+def test_single_cue_count_mismatch_is_reported(mocker):
+    _settings(mocker)
+    post = mocker.patch.object(openai_compatible_translator.requests, 'post',
+                               return_value=_response(mocker, '[]'))
+
+    with pytest.raises(openai_compatible_translator.CueIdentityMismatchError, match=r'missing IDs \[1\]'):
+        _service()._translate_batch(['Hello'])
+    assert post.call_count == 2
 
 
 def test_invalid_json_is_rejected(mocker):
@@ -67,7 +149,7 @@ def test_invalid_json_is_rejected(mocker):
 
 
 def test_connection_test_uses_supplied_settings(mocker):
-    response = _response(mocker, '["Bonjour"]')
+    response = _response(mocker, '[{"id":1,"text":"Bonjour"}]')
     post = mocker.patch.object(openai_compatible_translator.requests, 'post', return_value=response)
 
     translation = openai_compatible_translator.test_openai_compatible_connection(
@@ -79,7 +161,7 @@ def test_connection_test_uses_supplied_settings(mocker):
     assert post.call_args.kwargs['headers']['Authorization'] == 'Bearer test-key'
     payload = post.call_args.kwargs['json']
     assert payload['model'] == 'local-model'
-    assert payload['messages'][1]['content'] == '["Hello"]'
+    assert payload['messages'][1]['content'] == '[{"id": 1, "text": "Hello"}]'
 
 
 def test_connection_test_reports_authentication_errors_without_echoing_key(mocker):
