@@ -1,7 +1,7 @@
 # Bazarr dependencies
-alembic==1.20.0
+alembic==1.20.1
 aniso8601==10.0.1
-apprise==1.13.1, <2.0.0
+apprise==2.1.0
 apscheduler==3.11.3
 attrs==26.1.0
 blinker==1.9.0
@@ -23,7 +23,7 @@ ga4mp==2.0.4
 guess_language-spirit==0.5.4
 guessit==4.4.0
 h11==0.16.0
-inflect==7.5.0
+inflect==7.6.0
 jsonschema<=4.17.3  # newer version requires other compiled dependency
 knowit==0.7.1
 Mako==1.4.3
@@ -59,7 +59,7 @@ requests_oauthlib==2.0.0
 
 # Required-by: apscheduler
 tzdata==2026.5
-tzlocal==5.4.4
+tzlocal==5.4.5
 
 # Required-by: beautifulsoup4
 soupsieve>=2.10, <3.0  # newer version requires Python 3.11
@@ -83,10 +83,10 @@ jinja2==3.1.6
 werkzeug==3.1.9
 
 # Required-by: guessit
-python-dateutil==2.9.0.post0
+python-dateutil==3.0.0
 importlib_resources==7.1.0
 rebulk==6.0.1
-zipp==4.1.1
+zipp==4.1.2
 
 # Required-by: jinja2
 markupsafe==3.0.4
@@ -128,7 +128,7 @@ pyparsing==3.3.3
 git+https://github.com/morpheus65535/python-anticaptcha.git
 retry==0.9.2
 six==1.17.0
-wcwidth==0.9.3
+wcwidth==0.9.4
 webencodings==0.6.1
 
 # Required-by: subzero
@@ -140,7 +140,7 @@ tld==0.13.2
 platformdirs>=4.12.4, <4.13.0  # newer version requires Python 3.11
 
 # Required-by: requests
-certifi==2026.10.19
+certifi==2026.10.23
 idna==3.20
 oauthlib==4.0.0
 requests_toolbelt==1.0.0

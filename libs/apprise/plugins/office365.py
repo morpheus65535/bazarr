@@ -53,6 +53,7 @@ import requests
 
 from .. import exception
 from ..common import NotifyFormat, NotifyType, PersistentStoreMode
+from ..exception import AppriseImproperlyConfigured
 from ..locale import gettext_lazy as _
 from ..url import PrivacyMode
 from ..utils.parse import is_email, parse_bool, parse_emails, validate_regex
@@ -280,7 +281,7 @@ class NotifyOffice365(NotifyBase):
             },
             "target_email": {
                 "name": _("Target Email"),
-                "type": "string",
+                "type": "email",
                 "map_to": "targets",
             },
             "targets": {
@@ -352,7 +353,7 @@ class NotifyOffice365(NotifyBase):
             if _mode not in OFFICE365_MODES:
                 msg = f"The Office 365 mode specified ({mode}) is invalid."
                 self.logger.warning(msg)
-                raise TypeError(msg)
+                raise AppriseImproperlyConfigured(msg)
             self.mode = _mode
         else:
             _src = is_email(source) if source else None
@@ -376,7 +377,7 @@ class NotifyOffice365(NotifyBase):
                 f"({client_id}) was specified."
             )
             self.logger.warning(msg)
-            raise TypeError(msg)
+            raise AppriseImproperlyConfigured(msg)
 
         # Client Secret (org) or seed Refresh Token (personal)
         self.secret = validate_regex(secret)
@@ -386,7 +387,7 @@ class NotifyOffice365(NotifyBase):
                 f"({secret}) was specified."
             )
             self.logger.warning(msg)
-            raise TypeError(msg)
+            raise AppriseImproperlyConfigured(msg)
 
         if self.mode == Office365Mode.ORG:
             # Tenant identifier — required for org mode
@@ -396,7 +397,7 @@ class NotifyOffice365(NotifyBase):
             if not self.tenant:
                 msg = f"An invalid Office 365 Tenant ({tenant}) was specified."
                 self.logger.warning(msg)
-                raise TypeError(msg)
+                raise AppriseImproperlyConfigured(msg)
 
         else:
             # Personal mode requires no tenant
@@ -518,7 +519,7 @@ class NotifyOffice365(NotifyBase):
                     f"mode; got ({self.source})."
                 )
                 self.logger.warning(msg)
-                raise TypeError(msg)
+                raise AppriseImproperlyConfigured(msg)
 
             self.from_email = result["full_email"]
             self.from_name = result["name"] or None
@@ -707,7 +708,7 @@ class NotifyOffice365(NotifyBase):
                                 else f"file{no:03}.dat"
                             ),
                             # MIME type of the attachment
-                            "contentType": "attachment.mimetype",
+                            "contentType": attachment.mimetype,
                             # Base64 Content
                             "contentBytes": attachment.base64(),
                         }
@@ -740,6 +741,11 @@ class NotifyOffice365(NotifyBase):
 
             # Get our email to notify
             to_name, to_addr = emails.pop(0)
+
+            # Skip a recipient that already accepted this message so a
+            # retry does not deliver it twice.
+            if self.is_delivered(to_addr):
+                continue
 
             # Strip target out of cc list if in To or Bcc
             cc = self.cc - self.bcc - {to_addr}
@@ -836,8 +842,9 @@ class NotifyOffice365(NotifyBase):
             # Test if we were okay
             if not postokay:
                 has_error = True
+                continue
 
-            elif large_attachments:
+            if large_attachments:
                 # We have large attachments now to upload and associate with
                 # our message. We need to prepare a draft message; acquire
                 # the message-id associated with it and then attach the file
@@ -888,10 +895,13 @@ class NotifyOffice365(NotifyBase):
                 postokay, response = self._fetch(url=attach_url)
                 if not postokay:
                     self.logger.warning(
-                        "Could not send drafted email id: {} ", message_id
+                        "Could not send drafted email id: %s", message_id
                     )
                     has_error = True
                     continue
+
+            # Delivered; a retry can safely skip this recipient.
+            self.mark_delivered(to_addr)
 
         # Memory management
         del small_attachments

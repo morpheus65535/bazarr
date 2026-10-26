@@ -56,6 +56,8 @@ import requests
 from ..apprise_attachment import AppriseAttachment
 from ..attachment.base import AttachBase
 from ..common import NotifyFormat, NotifyImageSize, NotifyType
+from ..conversion import commonmark_sections
+from ..exception import AppriseImproperlyConfigured
 from ..locale import gettext_lazy as _
 from ..utils.parse import parse_bool, parse_list, validate_regex
 from ..utils.templates import TemplateType, apply_template
@@ -64,6 +66,21 @@ from .base import NotifyBase
 # Used to detect user/role IDs and @here/@everyone tokens.
 USER_ROLE_DETECTION_RE = re.compile(
     r"\s*(?:<?@(?P<role>&?)(?P<id>[0-9]+)>?|@(?P<value>[a-z0-9]+))", re.I
+)
+
+# Discord draws any :name: it recognizes as an emoji, even in the middle
+# of a word, so 2001:db8:100::1 would show an emoji in place of :100:.
+# This finds every colon that opens a :name: so it can be escaped.  These
+# are stepped over and left exactly as they are:
+#  - Characters that are already escaped.
+#  - Code, where Discord never draws emoji.
+#  - Discord tokens such as <:party:123>, <t:1700000000:R> and <@123>.
+#  - Web links, so an address like http://[fe80::1:2]/ keeps working.
+DISCORD_EMOJI_ESCAPE_RE = re.compile(
+    r"(?P<skip>\\.|(?P<tick>`+).+?(?P=tick)|<[^<>\s]*>"
+    r"|(?i:https?)://\S+)"
+    r"|:(?=[a-z0-9_+-]+:)",
+    re.S,
 )
 
 
@@ -84,6 +101,10 @@ class NotifyDiscord(NotifyBase):
 
     # Discord Webhook
     notify_url = "https://discord.com/api/webhooks"
+
+    # Discord supports plain text and Markdown-style embeds. Plain text
+    # remains the default.
+    notify_format = (NotifyFormat.TEXT, NotifyFormat.MARKDOWN)
 
     # Support attachments
     attachment_support = True
@@ -113,6 +134,11 @@ class NotifyDiscord(NotifyBase):
     # embeds message. This value allows the discord message to safely
     # break into multiple messages to handle these cases.
     discord_max_fields = 10
+
+    # Discord limits the length of each embed field name and value; see
+    # https://docs.discord.com/developers/resources/message
+    discord_field_name_maxlen = 256
+    discord_field_value_maxlen = 1024
 
     # There is no reason we should exceed 35KB when reading in a JSON
     # file. If it is more than this, then it is not accepted
@@ -273,7 +299,7 @@ class NotifyDiscord(NotifyBase):
                 f"An invalid Discord Webhook ID ({webhook_id}) was specified."
             )
             self.logger.warning(msg)
-            raise TypeError(msg)
+            raise AppriseImproperlyConfigured(msg)
 
         # Webhook Token (associated with project)
         self.webhook_token = validate_regex(webhook_token)
@@ -283,7 +309,7 @@ class NotifyDiscord(NotifyBase):
                 f"({webhook_token}) was specified."
             )
             self.logger.warning(msg)
-            raise TypeError(msg)
+            raise AppriseImproperlyConfigured(msg)
 
         # Text To Speech
         self.tts = tts
@@ -327,7 +353,7 @@ class NotifyDiscord(NotifyBase):
                     "specified."
                 )
                 self.logger.warning(msg)
-                raise TypeError(msg) from None
+                raise AppriseImproperlyConfigured(msg) from None
         else:
             self.flags = None
 
@@ -360,7 +386,7 @@ class NotifyDiscord(NotifyBase):
                 # add() failed (unsupported schema, unparseable URL, etc.)
                 msg = "The Discord template specified could not be loaded."
                 self.logger.warning(msg)
-                raise TypeError(msg)
+                raise AppriseImproperlyConfigured(msg)
 
             # Enforce maximum file size
             self.template[0].max_file_size = self.max_discord_template_size
@@ -376,7 +402,7 @@ class NotifyDiscord(NotifyBase):
                 f"({tokens}) are not identified as a dictionary."
             )
             self.logger.warning(msg)
-            raise TypeError(msg)
+            raise AppriseImproperlyConfigured(msg)
 
         # else: NoneType - this is okay
 
@@ -498,15 +524,48 @@ class NotifyDiscord(NotifyBase):
         # Return the validated payload content dict
         return content
 
+    def dialect_convert(
+        self,
+        body: str,
+        body_format: NotifyFormat | None = None,
+        *args: Any,
+        **kwargs: Any,
+    ) -> str:
+        """Escape each ``:name:`` so Discord shows it as text.
+
+        This only happens when emoji support is turned off.
+        """
+        if self.interpret_emojis is not False:
+            # Left unset, Discord draws emoji as it always has.  Turned on,
+            # Apprise already converted the names it knows and Discord is
+            # free to draw the rest.
+            return body
+
+        # Discord shows \: as a plain colon, in text and markdown alike.
+        return DISCORD_EMOJI_ESCAPE_RE.sub(
+            lambda m: m.group("skip") or "\\:", body
+        )
+
     def send(
         self,
         body: str,
         title: str = "",
         notify_type: NotifyType = NotifyType.INFO,
         attach: list[AttachBase] | None = None,
+        body_format: NotifyFormat | None = None,
         **kwargs: Any,
     ) -> bool:
         """Perform Discord Notification."""
+
+        # body_format arrives as the resolved render target.
+
+        if title and not kwargs.get("body_passthrough"):
+            # The title skips dialect_convert(), so protect it here too.
+            title = self.dialect_convert(title)
+
+        # Use embeds only when the URL explicitly selects Markdown. Discord
+        # already renders Markdown sent as regular content.
+        use_embeds = self._format_override == NotifyFormat.MARKDOWN
 
         payload: dict[str, Any] = {
             "tts": self.tts,
@@ -537,11 +596,9 @@ class NotifyDiscord(NotifyBase):
         # Template mode bypasses ping detection and embed construction;
         # the template defines the complete payload content.
         if not self.template:
-            # Ping handling rules:
-            # - If ping= is set, it is an additive if in MARKDOWN mode
-            #   otherwise it is explicit for TEXT/HTML formats.
-            # - Otherwise, ping detection only happens in MARKDOWN mode
-            if self.notify_format == NotifyFormat.MARKDOWN:
+            # Embed mode can detect pings; ping= is additive there and
+            # explicit for regular content.
+            if use_embeds:
                 if self.ping:
                     payload.update(
                         self.ping_payload(body, " ".join(self.ping))
@@ -549,7 +606,7 @@ class NotifyDiscord(NotifyBase):
                 else:
                     payload.update(self.ping_payload(body))
 
-            # TEXT/HTML: no body parsing, ping= is exclusive
+            # Regular content: no body parsing, ping= is exclusive.
             elif self.ping:
                 payload.update(self.ping_payload(" ".join(self.ping)))
 
@@ -568,15 +625,20 @@ class NotifyDiscord(NotifyBase):
             # Merge template content over our base payload
             payload.update(template_payload)
 
-            if not self._send(payload, params=params):
-                # We failed to post our message
-                return False
+            # Skip the message if an earlier attempt already posted it
+            if not self.is_delivered("message"):
+                if not self._send(payload, params=params):
+                    # We failed to post our message
+                    return False
+
+                # Posted; a retry can safely skip it
+                self.mark_delivered("message")
 
         elif body:
             # Track extra embed fields (if used)
             fields: list[dict[str, str]] = []
 
-            if self.notify_format == NotifyFormat.MARKDOWN:
+            if use_embeds:
                 # Use embeds for payload
                 payload["embeds"] = [
                     {
@@ -628,7 +690,7 @@ class NotifyDiscord(NotifyBase):
                         fields = fields[self.discord_max_fields :]
 
             else:
-                # TEXT or HTML:
+                # TEXT, HTML, or markdown without an explicit request:
                 # - No ping detection unless ping= was provided.
                 # - If ping= was provided, ping_payload() already generated
                 #   payload["content"] starting with "👉 ...", and we
@@ -637,20 +699,32 @@ class NotifyDiscord(NotifyBase):
                     body if not title else f"{title}\r\n{body}"
                 ) + payload.get("content", "")
 
-            if not self._send(payload, params=params):
-                # We failed to post our message
-                return False
+            # Skip the message if an earlier attempt already posted it
+            if not self.is_delivered("message"):
+                if not self._send(payload, params=params):
+                    # We failed to post our message
+                    return False
+
+                # Posted; a retry can safely skip it
+                self.mark_delivered("message")
 
             # Send remaining fields (if any)
             if fields:
                 payload["embeds"][0]["description"] = ""
                 for i in range(0, len(fields), self.discord_max_fields):
+                    # Each extra message of fields is tracked on its own
+                    if self.is_delivered(("fields", i)):
+                        continue
+
                     payload["embeds"][0]["fields"] = fields[
                         i : i + self.discord_max_fields
                     ]
-                    if not self._send(payload):
+                    if not self._send(payload, params=params):
                         # We failed to post our message
                         return False
+
+                    # Posted; a retry can safely skip these fields
+                    self.mark_delivered(("fields", i))
 
         if attach and self.attachment_support:
             # Update our payload; the idea is to preserve it's other detected
@@ -711,10 +785,17 @@ class NotifyDiscord(NotifyBase):
             #
             # Send each attachment batch
             #
-            for batch in batches:
+            for index, batch in enumerate(batches):
+                # Skip a batch an earlier attempt already posted
+                if self.is_delivered(("attach", index)):
+                    continue
+
                 if not self._send(payload, params=params, attach=batch):
                     # We failed to post our attachment batch
                     return False
+
+                # Posted; a retry can safely skip this batch
+                self.mark_delivered(("attach", index))
 
         # Otherwise return
         return True
@@ -968,7 +1049,9 @@ class NotifyDiscord(NotifyBase):
         params.update({f":{k}": v for k, v in self.tokens.items()})
 
         # Ensure our botname is set
-        botname = f"{self.user}@" if self.user else ""
+        botname = (
+            f"{NotifyDiscord.quote(self.user, safe='')}@" if self.user else ""
+        )
 
         # Extend our parameters
         params.update(self.url_parameters(privacy=privacy, *args, **kwargs))
@@ -1180,50 +1263,31 @@ class NotifyDiscord(NotifyBase):
 
         return payload
 
-    @staticmethod
+    @classmethod
     def extract_markdown_sections(
+        cls,
         markdown: str,
     ) -> tuple[str, list[dict[str, str]]]:
         """Extract headers and their corresponding sections into embed
         fields."""
 
-        # Search for any header information found without it's own section
-        # identifier
-        match = re.match(
-            r"^\s*(?P<desc>[^\s#]+.*?)(?=\s*$|[\r\n]+\s*#)",
+        # Room left for a section's text once the code block markers
+        # ("```md\n" and "\n```") are wrapped around it
+        description, sections = commonmark_sections(
             markdown,
-            flags=re.S,
+            cls.discord_field_name_maxlen,
+            cls.discord_field_value_maxlen - 10,
         )
 
-        description = match.group("desc").strip() if match else ""
-        if description:
-            # Strip description from our string since it has been handled
-            # now.
-            markdown = re.sub(re.escape(description), "", markdown, count=1)
-
-        regex = re.compile(
-            r"\s*#[# \t\v]*(?P<name>[^\n]+)(\n|\s*$)"
-            r"\s*((?P<value>[^#].+?)(?=\s*$|[\r\n]+\s*#))?",
-            flags=re.S,
-        )
-
-        common = regex.finditer(markdown)
-        fields: list[dict[str, str]] = []
-        for el in common:
-            d = el.groupdict()
-
-            fields.append(
-                {
-                    "name": d.get("name", "").strip("#`* \r\n\t\v"),
-                    "value": "```{}\n{}```".format(
-                        "md" if d.get("value") else "",
-                        (
-                            d.get("value").strip() + "\n"
-                            if d.get("value")
-                            else ""
-                        ),
-                    ),
-                }
-            )
+        # Show each section as a code block.  An empty one stays empty.
+        fields = [
+            {
+                "name": name,
+                "value": "```md\n{}\n```".format(value.rstrip())
+                if value
+                else "```\n```",
+            }
+            for name, value in sections
+        ]
 
         return description, fields

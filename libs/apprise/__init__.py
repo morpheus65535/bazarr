@@ -29,7 +29,7 @@ __title__ = "Apprise"
 __description__: str = (
     "Push Notifications that work with just about every platform!"
 )
-__version__ = "1.13.1"
+__version__ = "2.1.0"
 __author__ = "Chris Caron"
 __email__ = "lead2gold@gmail.com"
 __license__ = "BSD 2-Clause"
@@ -65,13 +65,20 @@ from .config.base import ConfigBase
 from .locale import AppriseLocale
 
 # Inherit our logging with our additional entries added to it
-from .logger import LOGGER_NAME, LogCapture, logger, logging
+from .logger import LOGGER_NAME, LogCapture, NotifyLogEntry, logger, logging
 from .manager_attachment import AttachmentManager
 from .manager_config import ConfigurationManager
 from .manager_plugins import NotificationManager
 from .persistent_store import PersistentStore
 from .plugins.base import NotifyBase
+from .result import (
+    AppriseResult,
+    AppriseResultStatus,
+    NotifyAttempt,
+    NotifyResult,
+)
 from .tag import AppriseTag
+from .template import NotifyTemplate
 from .url import PrivacyMode, URLBase
 
 # Set default logging handler to avoid "No handler found" warnings.
@@ -94,6 +101,8 @@ __all__ = [
     "AppriseAttachment",
     "AppriseConfig",
     "AppriseLocale",
+    "AppriseResult",
+    "AppriseResultStatus",
     "AppriseTag",
     "AttachBase",
     "AttachmentManager",
@@ -105,9 +114,13 @@ __all__ = [
     "LogCapture",
     # Managers
     "NotificationManager",
+    "NotifyAttempt",
     "NotifyBase",
     "NotifyFormat",
     "NotifyImageSize",
+    "NotifyLogEntry",
+    "NotifyResult",
+    "NotifyTemplate",
     # Reference
     "NotifyType",
     "OverflowMode",

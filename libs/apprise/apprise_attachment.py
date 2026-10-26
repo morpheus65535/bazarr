@@ -25,15 +25,17 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence, Set as AbstractSet
 from typing import Any, Optional, Union
 
 from .asset import AppriseAsset
 from .attachment.base import AttachBase
 from .common import ContentLocation
+from .exception import AppriseImproperlyConfigured
 from .logger import logger
 from .manager_attachment import AttachmentManager
 from .url import URLBase
+from .utils.cwe312 import cwe312_loggable
 from .utils.parse import GET_SCHEMA_RE
 
 # Grant access to our Notification Manager Singleton
@@ -46,7 +48,12 @@ class AppriseAttachment:
     def __init__(
         self,
         paths: Optional[
-            Union[str, list[Union[str, AttachBase, "AppriseAttachment"]]]
+            Union[
+                str,
+                AttachBase,
+                Sequence[Union[str, AttachBase, "AppriseAttachment"]],
+                AbstractSet[Union[str, AttachBase, "AppriseAttachment"]],
+            ]
         ] = None,
         asset: Optional[AppriseAsset] = None,
         cache: Union[bool, int] = True,
@@ -117,14 +124,16 @@ class AppriseAttachment:
                     "specified.",
                 )
                 logger.warning(err)
-                raise TypeError(err) from None
+                raise AppriseImproperlyConfigured(err) from None
         else:
             # do not set location if no initialization was made for it
             self.location = None
 
         # Now parse any paths specified
         if paths is not None and not self.add(paths):
-            raise TypeError("One or more attachments could not be added.")
+            raise AppriseImproperlyConfigured(
+                "One or more attachments could not be added."
+            )
 
     def add(
         self,
@@ -132,7 +141,8 @@ class AppriseAttachment:
             str,
             AttachBase,
             "AppriseAttachment",
-            list[Union[str, AttachBase, "AppriseAttachment"]],
+            Sequence[Union[str, AttachBase, "AppriseAttachment"]],
+            AbstractSet[Union[str, AttachBase, "AppriseAttachment"]],
         ],
         asset: Optional[AppriseAsset] = None,
         cache: Optional[Union[bool, int]] = None,
@@ -163,6 +173,10 @@ class AppriseAttachment:
             # prepare default asset
             asset = self.asset
 
+        secure_logging = (
+            asset.secure_logging if isinstance(asset, AppriseAsset) else True
+        )
+
         if isinstance(attachments, (AttachBase, str)):
             # store our instance
             attachments = (attachments,)
@@ -178,13 +192,17 @@ class AppriseAttachment:
         for attachment in attachments:
             if self.location == ContentLocation.INACCESSIBLE:
                 logger.warning(
-                    f"Attachments are disabled; ignoring {attachment}"
+                    "Attachments are disabled; ignoring %s",
+                    cwe312_loggable(attachment, secure_logging),
                 )
                 return_status = False
                 continue
 
             if isinstance(attachment, str):
-                logger.debug(f"Loading attachment: {attachment}")
+                logger.debug(
+                    "Loading attachment: %s",
+                    cwe312_loggable(attachment, secure_logging),
+                )
                 # Instantiate ourselves an object, this function throws or
                 # returns None if it fails
                 instance = AppriseAttachment.instantiate(
@@ -228,7 +246,7 @@ class AppriseAttachment:
                 return_status = False
                 continue
 
-            # Add our initialized plugin to our server listings
+            # Add the initialized plugin to our attachment list.
             if isinstance(instance, list):
                 self.attachments.extend(instance)
 
@@ -251,6 +269,10 @@ class AppriseAttachment:
 
         A specified cache value will over-ride anything set
         """
+        # Prepare the asset before any URL can be written to a log.
+        asset = asset if isinstance(asset, AppriseAsset) else AppriseAsset()
+        loggable_url = cwe312_loggable(url, asset.secure_logging)
+
         # Attempt to acquire the schema at the very least to allow our
         # attachment based urls.
         schema = GET_SCHEMA_RE.match(url)
@@ -268,19 +290,16 @@ class AppriseAttachment:
                 logger.warning(f"Unsupported schema {schema}.")
                 return None
 
-        # Parse our url details of the server object as dictionary containing
-        # all of the information parsed from our URL
+        # Parse the attachment URL into constructor arguments.
         results = A_MGR[schema].parse_url(url)
 
         if not results:
-            # Failed to parse the server URL
-            logger.warning(f"Unparseable URL {url}.")
+            # The attachment URL could not be parsed.
+            logger.warning(f"Unparseable URL {loggable_url}.")
             return None
 
         # Prepare our Asset Object
-        results["asset"] = (
-            asset if isinstance(asset, AppriseAsset) else AppriseAsset()
-        )
+        results["asset"] = asset
 
         if cache is not None:
             # Force an over-ride of the cache value to what we have specified
@@ -294,7 +313,7 @@ class AppriseAttachment:
 
             except Exception:
                 # the arguments are invalid or can not be used.
-                logger.warning(f"Could not load URL: {url}")
+                logger.warning(f"Could not load URL: {loggable_url}")
                 return None
 
         else:

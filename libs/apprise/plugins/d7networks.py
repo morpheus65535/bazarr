@@ -39,6 +39,7 @@ from json import dumps, loads
 import requests
 
 from ..common import NotifyType
+from ..exception import AppriseImproperlyConfigured
 from ..locale import gettext_lazy as _
 from ..utils.parse import (
     is_phone_no,
@@ -178,7 +179,7 @@ class NotifyD7Networks(NotifyBase):
         if not self.token:
             msg = f"The D7 Networks token specified ({token}) is invalid."
             self.logger.warning(msg)
-            raise TypeError(msg)
+            raise AppriseImproperlyConfigured(msg)
 
         # Parse our targets
         self.targets = []
@@ -253,6 +254,11 @@ class NotifyD7Networks(NotifyBase):
                 # We're not in a batch mode; so get our next target
                 # Get our target(s) to notify
                 target = targets.pop(0)
+
+                # Skip a target that already accepted this message so
+                # a retry does not deliver it twice.
+                if self.is_delivered(target):
+                    continue
 
                 # Prepare our payload
                 payload["messages"][0]["recipients"] = [target]
@@ -348,6 +354,9 @@ class NotifyD7Networks(NotifyBase):
                 has_error = True
                 continue
 
+            # Delivered; a retry can safely skip this target.
+            self.mark_delivered(target)
+
         return not has_error
 
     def url(self, privacy=False, *args, **kwargs):
@@ -360,7 +369,7 @@ class NotifyD7Networks(NotifyBase):
         }
 
         if self.source:
-            params["from"] = self.source
+            params["source"] = self.source
 
         # Extend our parameters
         params.update(self.url_parameters(privacy=privacy, *args, **kwargs))

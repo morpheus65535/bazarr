@@ -8,6 +8,7 @@ proper handling of Unicode grapheme clusters and character display widths.
 from __future__ import annotations
 
 # std imports
+import os
 import secrets
 import textwrap
 
@@ -15,10 +16,20 @@ from typing import TYPE_CHECKING, Optional
 
 # local
 from ._width import width as wcwidth_width
-from .grapheme import iter_graphemes
 from .hyperlink import HyperlinkParams
 from .sgr_state import propagate_sgr as _propagate_sgr
 from .escape_sequences import ZERO_WIDTH_PATTERN, iter_sequences
+
+if os.environ.get('WCWIDTH_PYTHON', ''):
+    # local
+    from .grapheme import iter_graphemes
+else:
+    try:
+        # local
+        from ._wcwidth_c import iter_graphemes
+    except ImportError:
+        # local
+        from .grapheme import iter_graphemes
 
 if TYPE_CHECKING:  # pragma: no cover
     from typing import Any, Literal

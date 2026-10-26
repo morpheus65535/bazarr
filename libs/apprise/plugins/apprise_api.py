@@ -28,11 +28,13 @@
 from json import dumps
 import logging
 import re
+from typing import Optional, Union
 
 import requests
 
 from .. import exception
-from ..common import NotifyType
+from ..common import NotifyFormat, NotifyType
+from ..exception import AppriseImproperlyConfigured
 from ..locale import gettext_lazy as _
 from ..url import PrivacyMode
 from ..utils.parse import URL_PATH_SAFE_CHARS, parse_list, validate_regex
@@ -41,7 +43,7 @@ from .base import NotifyBase
 
 
 class AppriseAPIMethod:
-    """Defines the method to post data tot he remote server."""
+    """Defines the method used to post to the remote server."""
 
     JSON = "json"
     FORM = "form"
@@ -50,6 +52,19 @@ class AppriseAPIMethod:
 APPRISE_API_METHODS = (
     AppriseAPIMethod.FORM,
     AppriseAPIMethod.JSON,
+)
+
+
+class AppriseAPIVersion:
+    """Defines how the configuration ID is sent to Apprise API."""
+
+    V1 = "1"
+    V2 = "2"
+
+
+APPRISE_API_VERSIONS = (
+    AppriseAPIVersion.V1,
+    AppriseAPIVersion.V2,
 )
 
 
@@ -74,6 +89,13 @@ class NotifyAppriseAPI(NotifyBase):
     # Support attachments
     attachment_support = True
 
+    # Relay content unchanged; the downstream Apprise server converts it.
+    notify_format = (
+        NotifyFormat.TEXT,
+        NotifyFormat.HTML,
+        NotifyFormat.MARKDOWN,
+    )
+
     # Depending on the number of transactions/notifications taking place, this
     # could take a while. 30 seconds should be enough to perform the task
     socket_read_timeout = 30.0
@@ -86,6 +108,8 @@ class NotifyAppriseAPI(NotifyBase):
     templates = (
         "{schema}://{host}/{token}",
         "{schema}://{host}:{port}/{token}",
+        "{schema}://:{password}@{host}/{token}",
+        "{schema}://:{password}@{host}:{port}/{token}",
         "{schema}://{user}@{host}/{token}",
         "{schema}://{user}@{host}:{port}/{token}",
         "{schema}://{user}:{password}@{host}/{token}",
@@ -142,6 +166,12 @@ class NotifyAppriseAPI(NotifyBase):
                 "values": APPRISE_API_METHODS,
                 "default": APPRISE_API_METHODS[0],
             },
+            "version": {
+                "name": _("Apprise API Version"),
+                "type": "choice:string",
+                "values": APPRISE_API_VERSIONS,
+                "default": AppriseAPIVersion.V2,
+            },
             "to": {
                 "alias_of": "token",
             },
@@ -157,7 +187,13 @@ class NotifyAppriseAPI(NotifyBase):
     }
 
     def __init__(
-        self, token=None, tags=None, method=None, headers=None, **kwargs
+        self,
+        token=None,
+        tags=None,
+        method=None,
+        version=None,
+        headers=None,
+        **kwargs,
     ):
         """Initialize Apprise API Object.
 
@@ -172,7 +208,7 @@ class NotifyAppriseAPI(NotifyBase):
         if not self.token:
             msg = f"The Apprise API token specified ({token}) is invalid."
             self.logger.warning(msg)
-            raise TypeError(msg)
+            raise AppriseImproperlyConfigured(msg)
 
         self.method = (
             self.template_args["method"]["default"]
@@ -183,7 +219,19 @@ class NotifyAppriseAPI(NotifyBase):
         if self.method not in APPRISE_API_METHODS:
             msg = f"The method specified ({method}) is invalid."
             self.logger.warning(msg)
-            raise TypeError(msg)
+            raise AppriseImproperlyConfigured(msg)
+
+        # Version 2 keeps the configuration ID out of the HTTP URL. Version 1
+        # remains available for older Apprise API servers.
+        self.version = (
+            self.template_args["version"]["default"]
+            if not isinstance(version, str)
+            else version
+        )
+        if self.version not in APPRISE_API_VERSIONS:
+            msg = f"The Apprise API version specified ({version}) is invalid."
+            self.logger.warning(msg)
+            raise AppriseImproperlyConfigured(msg)
 
         # Build list of tags
         self.__tags = parse_list(tags)
@@ -201,6 +249,7 @@ class NotifyAppriseAPI(NotifyBase):
         # Define any URL parameters
         params = {
             "method": self.method,
+            "version": self.version,
         }
 
         # Extend our parameters
@@ -214,9 +263,9 @@ class NotifyAppriseAPI(NotifyBase):
 
         # Determine Authentication
         auth = ""
-        if self.user and self.password:
+        if self.password:
             auth = "{user}:{password}@".format(
-                user=NotifyAppriseAPI.quote(self.user, safe=""),
+                user=NotifyAppriseAPI.quote(self.user or "", safe=""),
                 password=self.pprint(
                     self.password, privacy, mode=PrivacyMode.Secret, safe=""
                 ),
@@ -256,12 +305,29 @@ class NotifyAppriseAPI(NotifyBase):
             )
         )
 
+    def resolve_format(
+        self, body_format: Optional[Union[str, NotifyFormat]] = None
+    ) -> NotifyFormat:
+        """Keep the caller's format so this relay does not convert content.
+
+        The downstream Apprise server performs the required conversion. With
+        no source format, normal passthrough rules apply.
+        """
+        if body_format in self._formats():
+            # Target the source format so no conversion takes place
+            return NotifyFormat(body_format)
+
+        # No source format; fall back to the normal resolution
+        return super().resolve_format(body_format)
+
     def send(
         self,
         body,
         title="",
         notify_type=NotifyType.INFO,
         attach=None,
+        body_format=None,
+        body_passthrough=None,
         **kwargs,
     ):
         """Perform Apprise API Notification."""
@@ -339,8 +405,19 @@ class NotifyAppriseAPI(NotifyBase):
             "title": title,
             "body": body,
             "type": notify_type.value,
-            "format": self.notify_format.value,
         }
+
+        if body_passthrough:
+            # For passthrough content, relay an explicit URL format only.
+            if self._format_override is not None:
+                payload["format"] = self._format_override.value
+
+        elif body_format is not None:
+            # Label unchanged content with its declared source format.
+            payload["format"] = body_format.value
+
+        if self.__tags:
+            payload["tag"] = self.__tags
 
         if self.method == AppriseAPIMethod.JSON:
             headers["Content-Type"] = "application/json"
@@ -350,12 +427,11 @@ class NotifyAppriseAPI(NotifyBase):
 
             payload = dumps(payload)
 
-        if self.__tags:
-            payload["tag"] = self.__tags
-
         auth = None
-        if self.user:
-            auth = (self.user, self.password)
+        if self.user or self.password:
+            # An empty username is valid for password-only Apprise API
+            # administrator accounts.
+            auth = (self.user or "", self.password)
 
         # Set our schema
         schema = "https" if self.secure else "http"
@@ -366,7 +442,15 @@ class NotifyAppriseAPI(NotifyBase):
 
         fullpath = self.fullpath.strip("/")
         url += "{}".format("/" + fullpath) if fullpath else ""
-        url += f"/notify/{self.token}"
+        url += "/notify"
+
+        if self.version == AppriseAPIVersion.V1:
+            # Version 1 places the configuration ID in the request path.
+            url += f"/{self.token}"
+
+        else:
+            # Version 2 keeps the ID out of the request URL and access logs.
+            headers["X-Apprise-Config-ID"] = self.token
 
         # Some entries can not be over-ridden
         headers.update(
@@ -474,7 +558,7 @@ class NotifyAppriseAPI(NotifyBase):
         )
 
         if result:
-            return NotifyAppriseAPI.parse_url(
+            results = NotifyAppriseAPI.parse_url(
                 "{schema}://{hostname}{port}{path}/{token}/{params}".format(
                     schema=(
                         NotifyAppriseAPI.secure_protocol
@@ -493,13 +577,18 @@ class NotifyAppriseAPI(NotifyBase):
                         else result.group("path")
                     ),
                     token=result.group("token"),
-                    params=(
-                        ""
-                        if not result.group("params")
-                        else "?{}".format(result.group("params"))
-                    ),
+                    # The "params" group already includes its own leading
+                    # "?" (it's captured by the regex), so it's used as-is.
+                    params=result.group("params") or "",
                 )
             )
+
+            if results and not results.get("version"):
+                # A /notify/{token} URL is the Version 1 endpoint shape, so
+                # default to it unless the URL already specified a version.
+                results["version"] = AppriseAPIVersion.V1
+
+            return results
 
         return None
 
@@ -553,5 +642,14 @@ class NotifyAppriseAPI(NotifyBase):
             results["method"] = NotifyAppriseAPI.unquote(
                 results["qsd"]["method"]
             )
+
+        # Support the same long and short version arguments as Matrix.
+        if "version" in results["qsd"] and len(results["qsd"]["version"]):
+            results["version"] = NotifyAppriseAPI.unquote(
+                results["qsd"]["version"]
+            )
+
+        elif "v" in results["qsd"] and len(results["qsd"]["v"]):
+            results["version"] = NotifyAppriseAPI.unquote(results["qsd"]["v"])
 
         return results

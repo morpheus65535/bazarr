@@ -66,14 +66,18 @@
 # http://www.aprs.org/doc/APRS101.PDF
 #
 
+from __future__ import annotations
+
 import contextlib
 from itertools import chain
 import re
 import socket
 import sys
+from typing import Any
 
 from .. import __version__
 from ..common import NotifyType
+from ..exception import AppriseImproperlyConfigured
 from ..locale import gettext_lazy as _
 from ..url import PrivacyMode
 from ..utils.parse import is_call_sign, parse_call_sign
@@ -231,7 +235,7 @@ class NotifyAprs(NotifyBase):
         if not (self.user and self.password):
             msg = "An APRS user/pass was not provided."
             self.logger.warning(msg)
-            raise TypeError(msg)
+            raise AppriseImproperlyConfigured(msg)
 
         """
         Check if the user tries to use a read-only access
@@ -241,7 +245,7 @@ class NotifyAprs(NotifyBase):
         if self.password == "-1":
             msg = "APRS read-only passwords are not supported."
             self.logger.warning(msg)
-            raise TypeError(msg)
+            raise AppriseImproperlyConfigured(msg)
 
         """
         Check if the password is numeric
@@ -249,7 +253,7 @@ class NotifyAprs(NotifyBase):
         if not self.password.isnumeric():
             msg = "Invalid APRS-IS password"
             self.logger.warning(msg)
-            raise TypeError(msg)
+            raise AppriseImproperlyConfigured(msg)
 
         """
         Convert given user name (FROM callsign) and
@@ -269,7 +273,7 @@ class NotifyAprs(NotifyBase):
                 )
             )
             self.logger.warning(msg)
-            raise TypeError(msg)
+            raise AppriseImproperlyConfigured(msg)
 
         # Update our delay
         if delay is None:
@@ -287,7 +291,7 @@ class NotifyAprs(NotifyBase):
             except (TypeError, ValueError):
                 msg = f"Unsupported APRS-IS delay ({delay}) specified. "
                 self.logger.warning(msg)
-                raise TypeError(msg) from None
+                raise AppriseImproperlyConfigured(msg) from None
 
         # Bump up our request_rate
         self.request_rate_per_sec += self.delay
@@ -561,7 +565,13 @@ class NotifyAprs(NotifyBase):
 
         return rx_buf.rstrip()
 
-    def send(self, body, title="", notify_type=NotifyType.INFO, **kwargs):
+    def send(
+        self,
+        body: str,
+        title: str = "",
+        notify_type: NotifyType = NotifyType.INFO,
+        **kwargs: Any,
+    ) -> bool:
         """Perform APRS Notification."""
 
         if not self.targets:
@@ -611,6 +621,15 @@ class NotifyAprs(NotifyBase):
             lambda x: APRS_BAD_CHARMAP[x.group()], payload
         )
 
+        # APRS-IS ends packets at line breaks, so join the message into one
+        # line. The pattern starts at the first space to scan long runs once.
+        # See https://www.aprs-is.net/Connecting.aspx
+        payload = re.sub(
+            r"(?:(?<![ \t])[ \t]+)?[\r\n]+[ \t]*",
+            " ",
+            payload.strip("\r\n"),
+        )
+
         # Finally, constrain output string to 67 characters as
         # APRS messages are limited in length
         payload = payload[:67]
@@ -623,6 +642,11 @@ class NotifyAprs(NotifyBase):
 
         # send the message to our target call sign(s)
         for index in range(0, len(targets)):
+            # Skip a callsign that already accepted this message so a
+            # retry does not deliver it twice.
+            if self.is_delivered(targets[index]):
+                continue
+
             # prepare the output string
             # Format:
             # Device ID/TOCALL - our call sign - target call sign - body
@@ -639,6 +663,9 @@ class NotifyAprs(NotifyBase):
             if not self.socket_send(buffer):
                 has_error = True
                 break
+
+            # Delivered; a retry can safely skip this callsign.
+            self.mark_delivered(targets[index])
 
             # Finally, reset our socket buffer
             # we DO NOT read from the socket as we

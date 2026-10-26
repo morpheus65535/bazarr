@@ -75,3 +75,9 @@ def iter_graphemes(
     start: int = 0,
     end: Optional[int] = None,
 ) -> Iterator[str]: ...
+def iter_graphemes_reverse(
+    unistr: str,
+    start: int = 0,
+    end: Optional[int] = None,
+) -> Iterator[str]: ...
+def grapheme_boundary_before(unistr: str, pos: int) -> int: ...

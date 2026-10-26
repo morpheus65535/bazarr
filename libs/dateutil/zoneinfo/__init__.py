@@ -1,55 +1,124 @@
 # -*- coding: utf-8 -*-
-import warnings
+"""
+The ``dateutil.zoneinfo`` module was originally designed to work with a tarball
+shipped with ``dateutil``. Since ``dateutil`` now uses data from the same
+sources as :py:mod:`zoneinfo`, this module is no longer necessary.
+
+.. caution::
+    This module is deprecated, and its functionality has been dramatically
+    curtailed. It is recommended that you adopt the standard library module
+    :py:mod:`zoneinfo` or :func:`dateutil.tz.gettz` instead.
+
+"""
+
 import json
-
+import sys
+import warnings
 from tarfile import TarFile
-from pkgutil import get_data
-from io import BytesIO
 
+import six
+
+from dateutil import _tzdata_impl
 from dateutil.tz import tzfile as _tzfile
 
 __all__ = ["get_zonefile_instance", "gettz", "gettz_db_metadata"]
 
-ZONEFILENAME = "dateutil-zoneinfo.tar.gz"
+ZONEFILENAME = None
 METADATA_FN = 'METADATA'
 
 
-class tzfile(_tzfile):
-    def __reduce__(self):
-        return (gettz, (self._filename,))
+def _importer_stacklevel():
+    """The ``stacklevel`` that attributes a warning to the importing code.
+
+    This module can be imported through ``dateutil.__getattr__`` (e.g. by
+    ``from dateutil import zoneinfo``), which calls
+    ``importlib.import_module``; the warnings machinery skips the import
+    system's own frames, but not those two, so skip them here.
+    """
+    level = 1
+    frame = sys._getframe(1)  # The body of this module
+    while frame.f_back is not None:
+        frame = frame.f_back
+        filename = frame.f_code.co_filename
+        if "importlib" in filename and "_bootstrap" in filename:
+            # Since Python 3.5, the warnings machinery skips these frames
+            # without counting them; before that they count like any other.
+            if sys.version_info < (3, 5):
+                level += 1
+            continue
+
+        level += 1
+        if frame.f_globals.get("__name__") not in ("importlib", "dateutil"):
+            return level
+
+    return 2
 
 
-def getzoneinfofile_stream():
-    try:
-        return BytesIO(get_data(__name__, ZONEFILENAME))
-    except IOError as e:  # TODO  switch to FileNotFoundError?
-        warnings.warn("I/O error({0}): {1}".format(e.errno, e.strerror))
-        return None
+warnings.warn(
+    "The `dateutil.zoneinfo` module has been replaced with a wrapper around "
+    "the tzdata package, and its use is deprecated, to be removed in a future "
+    "version. Use the standard library module `zoneinfo` or `dateutil.tz` "
+    "instead.",
+    DeprecationWarning,
+    stacklevel=_importer_stacklevel(),
+)
 
+
+tzfile = _tzfile
 
 class ZoneInfoFile(object):
     def __init__(self, zonefile_stream=None):
         if zonefile_stream is not None:
-            with TarFile.open(fileobj=zonefile_stream) as tf:
-                self.zones = {zf.name: tzfile(tf.extractfile(zf), filename=zf.name)
-                              for zf in tf.getmembers()
-                              if zf.isfile() and zf.name != METADATA_FN}
-                # deal with links: They'll point to their parent object. Less
-                # waste of memory
-                links = {zl.name: self.zones[zl.linkname]
-                         for zl in tf.getmembers() if
-                         zl.islnk() or zl.issym()}
-                self.zones.update(links)
-                try:
-                    metadata_json = tf.extractfile(tf.getmember(METADATA_FN))
-                    metadata_str = metadata_json.read().decode('UTF-8')
-                    self.metadata = json.loads(metadata_str)
-                except KeyError:
-                    # no metadata in tar file
-                    self.metadata = None
+            self._load_legacy_zonefile_stream(zonefile_stream)
         else:
-            self.zones = {}
-            self.metadata = None
+            self._eager_load_tzdata()
+
+    def _eager_load_tzdata(self):
+        try:
+            import tzdata
+        except ImportError as e:
+            six.raise_from(
+                ImportError(
+                    "The tzdata module is required to use ZoneInfoFile; either add "
+                    "a dependency on tzdata or migrate away from dateutil.zoneinfo."
+                ),
+                e,
+            )
+
+        zone_dict = {}
+
+        for key in _tzdata_impl._load_tzdata_keys():
+            with _tzdata_impl._load_tzdata(key) as f:
+                zone_dict[key] = tzfile(f, key=key)
+
+        self.zones = zone_dict
+        self.metadata = {
+            "metadata_version": "3.0",
+            "tzversion": tzdata.IANA_VERSION,
+        }
+
+    def _load_legacy_zonefile_stream(self, zonefile_stream):
+        with TarFile.open(fileobj=zonefile_stream) as tf:
+            self.zones = {
+                zf.name: tzfile(tf.extractfile(zf), filename=zf.name)
+                for zf in tf.getmembers()
+                if zf.isfile() and zf.name != METADATA_FN
+            }
+            # deal with links: They'll point to their parent object. Less
+            # waste of memory
+            links = {
+                zl.name: self.zones[zl.linkname]
+                for zl in tf.getmembers()
+                if zl.islnk() or zl.issym()
+            }
+            self.zones.update(links)
+            try:
+                metadata_json = tf.extractfile(tf.getmember(METADATA_FN))
+                metadata_str = metadata_json.read().decode("UTF-8")
+                self.metadata = json.loads(metadata_str)
+            except KeyError:
+                # no metadata in tar file
+                self.metadata = None
 
     def get(self, name, default=None):
         """
@@ -99,7 +168,7 @@ def get_zonefile_instance(new_instance=False):
         zif = getattr(get_zonefile_instance, '_cached_instance', None)
 
     if zif is None:
-        zif = ZoneInfoFile(getzoneinfofile_stream())
+        zif = ZoneInfoFile()
 
         get_zonefile_instance._cached_instance = zif
 
@@ -108,8 +177,7 @@ def get_zonefile_instance(new_instance=False):
 
 def gettz(name):
     """
-    This retrieves a time zone from the local zoneinfo tarball that is packaged
-    with dateutil.
+    This retrieves a time zone from the ``tzdata`` package.
 
     :param name:
         An IANA-style time zone name, as found in the zoneinfo file.
@@ -140,14 +208,12 @@ def gettz(name):
                   DeprecationWarning)
 
     if len(_CLASS_ZONE_INSTANCE) == 0:
-        _CLASS_ZONE_INSTANCE.append(ZoneInfoFile(getzoneinfofile_stream()))
+        _CLASS_ZONE_INSTANCE.append(ZoneInfoFile())
     return _CLASS_ZONE_INSTANCE[0].zones.get(name)
 
 
 def gettz_db_metadata():
-    """ Get the zonefile metadata
-
-    See `zonefile_metadata`_
+    """Get the zonefile metadata
 
     :returns:
         A dictionary with the database metadata
@@ -163,5 +229,5 @@ def gettz_db_metadata():
                   DeprecationWarning)
 
     if len(_CLASS_ZONE_INSTANCE) == 0:
-        _CLASS_ZONE_INSTANCE.append(ZoneInfoFile(getzoneinfofile_stream()))
+        _CLASS_ZONE_INSTANCE.append(ZoneInfoFile())
     return _CLASS_ZONE_INSTANCE[0].metadata

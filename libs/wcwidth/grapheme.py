@@ -40,9 +40,9 @@ if TYPE_CHECKING:  # pragma: no cover
     # std imports
     from collections.abc import Iterator
 
-# Maximum backward scan distance when finding grapheme cluster boundaries.
+# Maximum backward scan distance before falling back to scanning to the start.
 # Covers all known Unicode grapheme clusters with margin; longer sequences are pathological.
-MAX_GRAPHEME_SCAN = 32
+MAX_GRAPHEME_SCAN = 16
 
 
 class GCB(IntEnum):
@@ -147,7 +147,8 @@ def _simple_break_check(prev_gcb: GCB, curr_gcb: GCB) -> Optional[BreakResult]:
 
     # GB4: (Control|CR|LF) ÷
     if prev_gcb in (GCB.CONTROL, GCB.CR, GCB.LF):
-        return BreakResult(should_break=True, ri_count=0)
+        return BreakResult(should_break=True,
+                           ri_count=1 if curr_gcb == GCB.REGIONAL_INDICATOR else 0)
 
     # GB5: ÷ (Control|CR|LF)
     if curr_gcb in (GCB.CONTROL, GCB.CR, GCB.LF):
@@ -175,7 +176,8 @@ def _simple_break_check(prev_gcb: GCB, curr_gcb: GCB) -> Optional[BreakResult]:
 
     # GB9b: Prepend x
     if prev_gcb == GCB.PREPEND:
-        return BreakResult(should_break=False, ri_count=0)
+        return BreakResult(should_break=False,
+                           ri_count=1 if curr_gcb == GCB.REGIONAL_INDICATOR else 0)
 
     # GB9c and GB11 need lookback - return None to signal complex check needed
     # GB12/13 (RI pairs) need ri_count state - also handled in main function
@@ -188,6 +190,8 @@ def _should_break(
     text: str,
     curr_idx: int,
     ri_count: int,
+    *,
+    start: int = 0,
 ) -> BreakResult:
     # pylint: disable=too-many-branches,too-complex
     """
@@ -209,15 +213,15 @@ def _should_break(
     curr_ucs = ord(text[curr_idx])
     if _is_incb_consonant(curr_ucs):
         i = curr_idx - 1
-        while i >= 0 and _is_incb_extend(ord(text[i])):
+        while i >= start and _is_incb_extend(ord(text[i])):
             i -= 1
-        if i >= 0 and _is_incb_linker(ord(text[i])):
+        if i >= start and _is_incb_linker(ord(text[i])):
             return BreakResult(should_break=False, ri_count=0)
 
     # GB11: ExtPict Extend* ZWJ x ExtPict
     if prev_gcb == GCB.ZWJ and _is_extended_pictographic(curr_ucs):
         i = curr_idx - 2  # Skip the ZWJ at curr_idx - 1
-        while i >= 0:
+        while i >= start:
             prev_ucs = ord(text[i])
             prev_prop = _grapheme_cluster_break(prev_ucs)
             if prev_prop == GCB.EXTEND:
@@ -271,6 +275,8 @@ def _iter_graphemes_python(
 
     length = len(unistr)
 
+    start = max(start, 0)
+
     if end is None:
         end = length
 
@@ -293,7 +299,7 @@ def _iter_graphemes_python(
     for idx in range(start + 1, end):
         curr_gcb = _grapheme_cluster_break(ord(unistr[idx]))
 
-        result = _should_break(prev_gcb, curr_gcb, unistr, idx, ri_count)
+        result = _should_break(prev_gcb, curr_gcb, unistr, idx, ri_count, start=start)
         ri_count = result.ri_count
 
         if result.should_break:
@@ -334,11 +340,14 @@ def _find_cluster_start(text: str, pos: int) -> int:
 
     # Scan backward to find a safe starting point
     safe_start = pos - 1
-    while safe_start > 0 and (pos - safe_start) < MAX_GRAPHEME_SCAN:
+    while safe_start > 0:
         cp = ord(text[safe_start])
         if 0x20 <= cp < 0x80:  # ASCII always starts a cluster
             break
         if _grapheme_cluster_break(cp) == GCB.CONTROL:  # GB4
+            break
+        if pos - safe_start >= MAX_GRAPHEME_SCAN:
+            safe_start = 0
             break
         safe_start -= 1
 
@@ -375,7 +384,7 @@ def grapheme_boundary_before(unistr: str, pos: int) -> int:
 
     .. versionadded:: 0.3.6
     """
-    if pos <= 0:
+    if pos <= 0 or not unistr:
         return 0
     return _find_cluster_start(unistr, min(pos, len(unistr)))
 

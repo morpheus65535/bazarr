@@ -37,7 +37,7 @@ from ..common import (
 from ..locale import LazyTranslation, gettext_lazy as _
 from ..logger import logger
 from ..manager_plugins import NotificationManager
-from ..utils.cwe312 import cwe312_url
+from ..utils.cwe312 import cwe312_loggable
 from ..utils.parse import GET_SCHEMA_RE, parse_list
 
 # Used for testing
@@ -166,10 +166,14 @@ def details(plugin):
     #       # templates list.
     #       'token_name': {
     #
-    #            # types can be 'string', 'int', 'choice', 'list, 'float'
-    #            # both choice and list may additionally have a : identify
-    #            # what the list/choice type is comprised of; the default
-    #            # is string.
+    #            # Types include 'string', 'int', 'choice', 'list', 'float',
+    #            # and 'email'.
+    #
+    #            # 'choice' and 'list' may identify their value type after a
+    #            # colon; the default is 'string'.
+    #
+    #            # 'email' is one address (local-part@domain). URL builders
+    #            # keep its '@' unescaped, matching plugin URLs.
     #            'type': 'choice:string',
     #
     #            # values will only exist the type must be a fixed
@@ -321,6 +325,25 @@ def details(plugin):
                 # We only nee to remove this key
                 del template_args[key]["_exists_if"]
 
+    # notify_format may be one NotifyFormat or a tuple of supported
+    # formats. `values` stays the broad three-item set because ?format=
+    # remains a standard Apprise URL parameter on every plugin. The
+    # additive `supported` field tells newer consumers which destination
+    # formats this plugin actually renders natively, with index 0 as the
+    # default. Keeping older `values`/`default` consumers working avoids
+    # making the service metadata update a breaking change.
+    # sort=False preserves declaration order because parse_list() sorts
+    # alphabetically by default, which would change the fallback format.
+    if "format" in template_args:
+        formats = parse_list(plugin.notify_format, sort=False)
+        template_args["format"]["supported"] = formats
+        if len(formats) > 1:
+            # A single-format plugin's default was already correctly
+            # resolved above via _lookup_default; only a multi-format
+            # plugin needs correcting here (that mechanism would
+            # otherwise leave the raw tuple in place).
+            template_args["format"]["default"] = formats[0]
+
     return {
         "templates": templates,
         "tokens": template_tokens,
@@ -426,7 +449,7 @@ def url_to_dict(url, secure_logging=True):
     url_ = url.replace("/#", "/%23")
 
     # CWE-312 (Secure Logging) Handling
-    loggable_url = url if not secure_logging else cwe312_url(url)
+    loggable_url = cwe312_loggable(url, secure_logging)
 
     # Attempt to acquire the schema at the very least to allow our plugins to
     # determine if they can make a better interpretation of a URL geared for
@@ -463,8 +486,7 @@ def url_to_dict(url, secure_logging=True):
         )
 
     else:
-        # Parse our url details of the server object as dictionary
-        # containing all of the information parsed from our URL
+        # Parse the service URL into constructor arguments.
         results = N_MGR[schema].parse_url(url_)
         if not results:
             logger.error(

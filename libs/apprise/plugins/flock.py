@@ -45,6 +45,7 @@ import re
 import requests
 
 from ..common import NotifyFormat, NotifyImageSize, NotifyType
+from ..exception import AppriseImproperlyConfigured
 from ..locale import gettext_lazy as _
 from ..utils.parse import parse_bool, parse_list, validate_regex
 from .base import NotifyBase
@@ -157,7 +158,7 @@ class NotifyFlock(NotifyBase):
         if not self.token:
             msg = f"An invalid Flock Access Key ({token}) was specified."
             self.logger.warning(msg)
-            raise TypeError(msg)
+            raise AppriseImproperlyConfigured(msg)
 
         # Track whether or not we want to send an image with our notification
         # or not.
@@ -189,7 +190,7 @@ class NotifyFlock(NotifyBase):
             # We have a bot token and no target(s) to message
             msg = "No Flock targets to notify."
             self.logger.warning(msg)
-            raise TypeError(msg)
+            raise AppriseImproperlyConfigured(msg)
 
         return
 
@@ -204,16 +205,16 @@ class NotifyFlock(NotifyBase):
         # error tracking (used for function return)
         has_error = False
 
-        if self.notify_format == NotifyFormat.HTML:
-            body = f"<flockml>{body}</flockml>"
+        # The title always arrives as plain text, so escape it for FlockML
+        title = NotifyFlock.escape_html(title, whitespace=False)
 
-        else:
-            title = NotifyFlock.escape_html(title, whitespace=False)
+        # An HTML body is already FlockML-ready; anything else is escaped
+        if self.notify_format != NotifyFormat.HTML:
             body = NotifyFlock.escape_html(body, whitespace=False)
 
-            body = "<flockml>{}{}</flockml>".format(
-                "" if not title else f"<b>{title}</b><br/>", body
-            )
+        body = "<flockml>{}{}</flockml>".format(
+            "" if not title else f"<b>{title}</b><br/>", body
+        )
 
         payload = {
             "token": self.token,
@@ -238,12 +239,21 @@ class NotifyFlock(NotifyBase):
                 # Get our first item
                 target = targets.pop(0)
 
+                # Skip a target that already accepted this message so
+                # a retry does not deliver it twice.
+                if self.is_delivered(target):
+                    continue
+
                 # Copy and update our payload
                 payload_ = payload.copy()
                 payload_["to"] = target
 
                 if not self._post(self.notify_api, headers, payload_):
                     has_error = True
+                    continue
+
+                # Delivered; a retry can safely skip this target.
+                self.mark_delivered(target)
 
         else:
             # Webhook

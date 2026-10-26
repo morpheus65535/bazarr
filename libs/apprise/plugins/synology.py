@@ -26,13 +26,15 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 from json import dumps
+from typing import Any
 
 import requests
 
 from ..common import NotifyType
+from ..exception import AppriseImproperlyConfigured
 from ..locale import gettext_lazy as _
 from ..url import PrivacyMode
-from ..utils.parse import URL_PATH_SAFE_CHARS
+from ..utils.parse import URL_ENCODED_PATH_SAFE_CHARS
 from .base import NotifyBase
 
 # For API Details see:
@@ -143,7 +145,7 @@ class NotifySynology(NotifyBase):
         if not self.token:
             msg = f"An invalid Synology Token ({token}) was specified."
             self.logger.warning(msg)
-            raise TypeError(msg)
+            raise AppriseImproperlyConfigured(msg)
 
         self.fullpath = kwargs.get("fullpath")
 
@@ -222,7 +224,7 @@ class NotifySynology(NotifyBase):
                 token=self.pprint(self.token, privacy, safe=""),
                 fullpath=(
                     NotifySynology.quote(
-                        self.fullpath, safe=URL_PATH_SAFE_CHARS
+                        self.fullpath, safe=URL_ENCODED_PATH_SAFE_CHARS
                     )
                     if self.fullpath
                     else "/"
@@ -231,7 +233,13 @@ class NotifySynology(NotifyBase):
             )
         )
 
-    def send(self, body, title="", notify_type=NotifyType.INFO, **kwargs):
+    def send(
+        self,
+        body: str,
+        title: str = "",
+        notify_type: NotifyType = NotifyType.INFO,
+        **kwargs: Any,
+    ) -> bool:
         """Perform Synology Chat Notification."""
 
         # Prepare HTTP Headers
@@ -286,7 +294,9 @@ class NotifySynology(NotifyBase):
         try:
             r = requests.post(
                 url,
-                data=f"payload={dumps(payload)}",
+                # Passing a dict lets requests URL-encode the form value so
+                # characters like &, + and % reach Synology Chat intact
+                data={"payload": dumps(payload)},
                 params=params,
                 headers=headers,
                 auth=auth,

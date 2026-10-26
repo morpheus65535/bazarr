@@ -29,6 +29,14 @@
 # You will need credits (new accounts start with a few)
 #     https://www.bulksms.com/account/
 #
+# BulkSMS signs you in with an API Token.  Create one under
+# Settings > Developers > API Tokens; it gives you a Token ID and a
+# Token Secret, used to build your Apprise URL:
+#     bulksms://{token_id}:{token_secret}@{phone_no}
+#
+# The Token Secret can contain characters such as # that must be
+# URL encoded (# becomes %23).
+#
 # API is documented here:
 #   - https://www.bulksms.com/developer/json/v1/#tag/Message
 from itertools import chain
@@ -38,6 +46,7 @@ import re
 import requests
 
 from ..common import NotifyType
+from ..exception import AppriseImproperlyConfigured
 from ..locale import gettext_lazy as _
 from ..url import PrivacyMode
 from ..utils.parse import is_phone_no, parse_bool, parse_phone_no
@@ -102,22 +111,24 @@ class NotifyBulkSMS(NotifyBase):
     title_maxlen = 0
 
     # Define object templates
-    templates = ("{schema}://{user}:{password}@{targets}",)
+    templates = ("{schema}://{token_id}:{token_secret}@{targets}",)
 
     # Define our template tokens
     template_tokens = dict(
         NotifyBase.template_tokens,
         **{
-            "user": {
-                "name": _("User Name"),
+            "token_id": {
+                "name": _("Token"),
                 "type": "string",
                 "required": True,
+                "map_to": "user",
             },
-            "password": {
-                "name": _("Password"),
+            "token_secret": {
+                "name": _("Secret"),
                 "type": "string",
                 "private": True,
                 "required": True,
+                "map_to": "password",
             },
             "target_phone": {
                 "name": _("Target Phone No"),
@@ -195,7 +206,7 @@ class NotifyBulkSMS(NotifyBase):
                     f"({source}) is invalid."
                 )
                 self.logger.warning(msg)
-                raise TypeError(msg)
+                raise AppriseImproperlyConfigured(msg)
 
             # Tidy source
             self.source = "+{}".format(result["full"])
@@ -209,7 +220,7 @@ class NotifyBulkSMS(NotifyBase):
         if self.route not in BULKSMS_ROUTING_GROUPS:
             msg = f"The route specified ({route}) is invalid."
             self.logger.warning(msg)
-            raise TypeError(msg)
+            raise AppriseImproperlyConfigured(msg)
 
         # Define whether or not we should set the unicode flag
         self.unicode = (
@@ -315,6 +326,11 @@ class NotifyBulkSMS(NotifyBase):
             # Get our target to notify
             target = targets.pop(0)
 
+            # Skip a target that already accepted this message so
+            # a retry does not deliver it twice.
+            if self.is_delivered(target):
+                continue
+
             # Prepare our user
             payload["to"] = target
 
@@ -413,6 +429,9 @@ class NotifyBulkSMS(NotifyBase):
                 # Mark our failure
                 has_error = True
                 continue
+
+            # Delivered; a retry can safely skip this target.
+            self.mark_delivered(target)
 
         return not has_error
 
