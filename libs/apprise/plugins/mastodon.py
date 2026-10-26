@@ -30,11 +30,14 @@ from copy import deepcopy
 from datetime import datetime, timezone
 from json import dumps, loads
 import re
+from typing import Any, Optional
 
 import requests
 
 from ..attachment.base import AttachBase
 from ..common import NotifyFormat, NotifyImageSize, NotifyType
+from ..conversion import commonmark_decode_backslash_escapes
+from ..exception import AppriseImproperlyConfigured
 from ..locale import gettext_lazy as _
 from ..url import PrivacyMode
 from ..utils.parse import parse_bool, parse_list, validate_regex
@@ -64,6 +67,12 @@ HASHTAG_DETECTION_RE = re.compile(
 )
 
 HASHTAG_VALUE_RE = re.compile(r"^[^\W_][\w]*$", re.I)
+
+# A leading CommonMark heading such as "# Title" or "## Title ##".
+# Closing markers and spaces are removed separately to keep matching fast.
+LEADING_HEADING_RE = re.compile(
+    r"\A {0,3}#{1,6}(?:[ \t]+(?P<title>.*))?(?=\r?\n|\Z)"
+)
 
 
 class MastodonMessageVisibility:
@@ -285,7 +294,7 @@ class NotifyMastodon(NotifyBase):
         if not self.token:
             msg = "An invalid Mastodon Access Token was specified."
             self.logger.warning(msg)
-            raise TypeError(msg)
+            raise AppriseImproperlyConfigured(msg)
 
         if visibility:
             # Input is a string; attempt to get the lookup from our
@@ -314,7 +323,7 @@ class NotifyMastodon(NotifyBase):
                     " invalid."
                 )
                 self.logger.warning(msg)
-                raise TypeError(msg)
+                raise AppriseImproperlyConfigured(msg)
 
         else:
             self.visibility = self.template_args["visibility"]["default"]
@@ -384,7 +393,7 @@ class NotifyMastodon(NotifyBase):
             # important we don't switch from the users original intentions
             msg = "No Mastodon targets to notify."
             self.logger.warning(msg)
-            raise TypeError(msg)
+            raise AppriseImproperlyConfigured(msg)
 
         # Ping targets (tokens from URL, already split by parse_list)
         self.ping = []
@@ -483,6 +492,46 @@ class NotifyMastodon(NotifyBase):
         """Returns the number of targets associated with this notification."""
         targets = len(self.targets)
         return targets if targets > 0 else 1
+
+    def dialect_convert(
+        self,
+        body: str,
+        body_format: Optional[NotifyFormat] = None,
+        *args: Any,
+        **kwargs: Any,
+    ) -> str:
+        """Turn CommonMark into the plain text a Mastodon status expects.
+
+        - A leading ``# title`` heading becomes a plain first line.
+        - Backslash escapes are removed so text reads as it was written.
+        """
+        if body_format != NotifyFormat.MARKDOWN:
+            return body
+
+        def _heading(match: re.Match) -> str:
+            """Return a heading's title without its closing "#" run."""
+            title = match.group("title") or ""
+
+            # A carriage return right before the new line is not part
+            # of the title; keep it after the title instead
+            cr = ""
+            if title.endswith("\r") and match.end() < len(body):
+                title, cr = title[:-1], "\r"
+
+            # Drop trailing spaces, then a closing "#" run, but only
+            # when a space separates that run from the title
+            title = title.rstrip(" \t")
+            text = title.rstrip("#")
+            if text != title and text.endswith((" ", "\t")):
+                title = text.rstrip(" \t")
+
+            return title + cr
+
+        # Statuses are plain text, so a heading is just its own line
+        body = LEADING_HEADING_RE.sub(_heading, body, count=1)
+
+        # Drop the escapes so mentions and hashtags stay intact
+        return commonmark_decode_backslash_escapes(body)
 
     def send(
         self,
@@ -736,6 +785,11 @@ class NotifyMastodon(NotifyBase):
         has_error = False
 
         for no, payload in enumerate(payloads, start=1):
+            # Skip a post that already went out so a retry does not
+            # publish it twice.
+            if self.is_delivered(no):
+                continue
+
             postokay, response = self._request(self.mastodon_toot, payload)
             if not postokay:
                 # Track our error
@@ -867,6 +921,9 @@ class NotifyMastodon(NotifyBase):
                 no,
                 len(payloads),
             )
+
+            # Delivered; a retry can safely skip this post.
+            self.mark_delivered(no)
 
         return not has_error
 

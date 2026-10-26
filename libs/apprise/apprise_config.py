@@ -27,7 +27,8 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from collections.abc import Sequence, Set as AbstractSet
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 from . import common
 from .asset import AppriseAsset
@@ -35,7 +36,7 @@ from .config.base import ConfigBase
 from .logger import logger
 from .manager_config import ConfigurationManager
 from .url import URLBase
-from .utils.cwe312 import cwe312_url
+from .utils.cwe312 import cwe312_loggable
 from .utils.logic import is_exclusive_match
 from .utils.parse import GET_SCHEMA_RE, parse_list
 
@@ -47,68 +48,65 @@ C_MGR = ConfigurationManager()
 
 
 class AppriseConfig:
-    """Our Apprise Configuration File Manager.
+    """Manage the configuration sources from which services are discovered.
 
-    - Supports a list of URLs defined one after another (text format)
-    - Supports a destinct YAML configuration format
+    Apprise supports a simple text format containing service URLs and a richer
+    YAML format. Sources may be local files, remote URLs, in-memory content, or
+    any other registered configuration plugin.
+
+    See https://appriseit.com/getting-started/configuration/ for the supported
+    file formats and examples.
     """
 
     def __init__(
         self,
-        paths: str | list[str] | None = None,
+        paths: Optional[
+            Union[
+                str,
+                ConfigBase,
+                Sequence[Union[str, ConfigBase]],
+                AbstractSet[Union[str, ConfigBase]],
+            ]
+        ] = None,
         asset: AppriseAsset | None = None,
         cache: bool | int = True,
         recursion: int = 0,
         insecure_includes: bool = False,
         **kwargs: Any,
     ) -> None:
-        """Loads all of the paths specified (if any).
+        """Initialize the manager and optionally add configuration sources.
 
-        The path can either be a single string identifying one explicit
-        location, otherwise you can pass in a series of locations to scan
-        via a list.
+        ``paths`` may be one source string or a list of source strings. A
+        source can be an explicit configuration URL such as ``file://`` or
+        ``https://``; a path without a scheme is treated as a local file. If
+        ``paths`` is omitted, the manager starts empty. Default configuration
+        locations are selected by higher-level callers such as the CLI, not by
+        this class.
 
-        If no path is specified then a default list is used.
+        ``asset`` is shared with configuration plugins and with the services
+        they create. ``cache`` controls whether a source is read again: true
+        retains parsed results, false reloads on each request, and an integer
+        gives the cache lifetime in seconds. Caching matters most for remote
+        sources, where reloading requires another network request.
 
-        By default we cache our responses so that subsiquent calls does not
-        cause the content to be retrieved again. Setting this to False does
-        mean more then one call can be made to retrieve the (same) data.  This
-        method can be somewhat inefficient if disabled and you're set up to
-        make remote calls.  Only disable caching if you understand the
-        consequences.
+        ``recursion`` is the number of nested ``include`` levels to follow.
+        Zero disables includes, one loads sources named by the top-level
+        configuration, and larger values allow the included sources to include
+        others. Keep this value low when loading content you do not control.
 
-        You can alternatively set the cache value to an int identifying the
-        number of seconds the previously retrieved can exist for before it
-        should be considered expired.
+        Configuration plugins declare whether they may be included from other
+        source types. In strict mode, a local ``file://`` source may include
+        another local file, but a remote ``http://`` or ``https://`` source may
+        not reach into the local filesystem. ``insecure_includes=True`` relaxes
+        this strict same-type boundary; it does not override sources that
+        prohibit inclusion entirely. This option is also required when trusted
+        in-memory configuration must include local files.
 
-        It's also worth nothing that the cache value is only set to elements
-        that are not already of subclass ConfigBase()
-
-        recursion defines how deep we recursively handle entries that use the
-        `import` keyword. This keyword requires us to fetch more configuration
-        from another source and add it to our existing compilation. If the
-        file we remotely retrieve also has an `import` reference, we will only
-        advance through it if recursion is set to 2 deep.  If set to zero
-        it is off.  There is no limit to how high you set this value. It would
-        be recommended to keep it low if you do intend to use it.
-
-        insecure includes by default are disabled. When set to True, all
-        Apprise Config files marked to be in STRICT mode are treated as being
-        in ALWAYS mode.
-
-        Take a file:// based configuration for example, only a file:// based
-        configuration can import another file:// based one. because it is set
-        to STRICT mode. If an http:// based configuration file attempted to
-        import a file:// one it woul fail. However this import would be
-        possible if insecure_includes is set to True.
-
-        There are cases where a self hosting apprise developer may wish to load
-        configuration from memory (in a string format) that contains import
-        entries (even file:// based ones).  In these circumstances if you want
-        these includes to be honored, this value must be set to True.
+        See https://appriseit.com/getting-started/configuration/ for the
+        configuration syntax and include examples.
         """
 
-        # Initialize a server list of URLs
+        # Store the configuration sources used to discover services.
         self.configs = []
 
         # Prepare our Asset Object
@@ -133,37 +131,41 @@ class AppriseConfig:
 
     def add(
         self,
-        configs: str | ConfigBase | list[str | ConfigBase],
+        configs: Union[
+            str,
+            ConfigBase,
+            Sequence[Union[str, ConfigBase]],
+            AbstractSet[Union[str, ConfigBase]],
+        ],
         asset: AppriseAsset | None = None,
-        tag: str | list[str] | None = None,
+        tag: Optional[Union[str, Sequence[str], AbstractSet[str]]] = None,
         cache: bool | int = True,
         recursion: int | None = None,
         insecure_includes: bool | None = None,
     ) -> bool:
-        """Adds one or more config URLs into our list.
+        """Add one or more configuration sources to the manager.
 
-        You can override the global asset if you wish by including it with the
-        config(s) that you add.
+        ``configs`` accepts a source string, an instantiated
+        :class:`ConfigBase`, or a collection containing either. Strings without
+        a URL scheme are treated as local file paths. ``tag`` is attached to
+        newly created configuration sources and can later select which sources
+        :meth:`services` reads; it does not tag each service found inside.
 
-        By default we cache our responses so that subsiquent calls does not
-        cause the content to be retrieved again. Setting this to False does
-        mean more then one call can be made to retrieve the (same) data.  This
-        method can be somewhat inefficient if disabled and you're set up to
-        make remote calls.  Only disable caching if you understand the
-        consequences.
+        ``asset``, ``cache``, ``recursion``, and ``insecure_includes`` are
+        passed to sources created from strings. ``asset``, ``recursion``, and
+        ``insecure_includes`` fall back to this manager's values when omitted.
+        An already instantiated :class:`ConfigBase` retains all of its own
+        settings because it is stored directly.
 
-        You can alternatively set the cache value to an int identifying the
-        number of seconds the previously retrieved can exist for before it
-        should be considered expired.
+        The cache setting may be true to retain parsed results, false to reload
+        whenever services are requested, or a non-negative integer cache
+        lifetime in seconds. ``recursion`` limits nested ``include`` entries.
+        ``insecure_includes`` relaxes strict cross-source inclusion rules; use
+        it only for trusted configuration.
 
-        It's also worth nothing that the cache value is only set to elements
-        that are not already of subclass ConfigBase()
-
-        Optionally override the default recursion value.
-
-        Optionally override the insecure_includes flag. if insecure_includes is
-        set to True then all plugins that are set to a STRICT mode will be a
-        treated as ALWAYS.
+        The return value is true only when every supplied item was accepted.
+        Valid sources remain loaded when another item in the same collection
+        is invalid.
         """
 
         # Initialize our return status
@@ -185,6 +187,10 @@ class AppriseConfig:
         if asset is None:
             # prepare default asset
             asset = self.asset
+
+        secure_logging = (
+            asset.secure_logging if isinstance(asset, AppriseAsset) else True
+        )
 
         if isinstance(configs, ConfigBase):
             # Go ahead and just add our configuration into our list
@@ -217,7 +223,10 @@ class AppriseConfig:
                 return_status = False
                 continue
 
-            logger.debug(f"Loading configuration: {config}")
+            logger.debug(
+                "Loading configuration: %s",
+                cwe312_loggable(config, secure_logging),
+            )
 
             # Instantiate ourselves an object, this function throws or
             # returns None if it fails
@@ -233,7 +242,7 @@ class AppriseConfig:
                 return_status = False
                 continue
 
-            # Add our initialized plugin to our server listings
+            # Keep the initialized configuration source.
             self.configs.append(instance)
 
         # Return our status
@@ -243,24 +252,24 @@ class AppriseConfig:
         self,
         content: str,
         asset: AppriseAsset | None = None,
-        tag: str | list[str] | None = None,
+        tag: Optional[Union[str, Sequence[str], AbstractSet[str]]] = None,
         format: str | None = None,
         recursion: int | None = None,
         insecure_includes: bool | None = None,
     ) -> bool:
-        """Adds one configuration file in it's raw format. Content gets loaded
-        as a memory based object and only exists for the life of this
-        AppriseConfig object it was loaded into.
+        """Add raw configuration text as an in-memory source.
 
-        If you know the format ('yaml' or 'text') you can specify it for
-        slightly less overhead during this call.  Otherwise the configuration
-        is auto-detected.
+        The content exists only for the lifetime of the resulting in-memory
+        configuration object. Set ``format`` to ``yaml`` or ``text`` when it is
+        known; otherwise Apprise detects the format. The method returns false
+        when ``content`` is not a string or its format cannot be determined.
 
-        Optionally override the default recursion value.
-
-        Optionally override the insecure_includes flag. if insecure_includes is
-        set to True then all plugins that are set to a STRICT mode will be a
-        treated as ALWAYS.
+        ``asset`` is passed to services created from the content, while ``tag``
+        labels the in-memory configuration source for filtering by
+        :meth:`services`. ``recursion`` and ``insecure_includes`` fall back to
+        this manager's defaults when omitted. Enable insecure includes only
+        when trusted in-memory content must include a source, such as a local
+        ``file://`` configuration, that the normal security boundary rejects.
         """
 
         # Initialize our default recursion value
@@ -305,29 +314,31 @@ class AppriseConfig:
             )
             return False
 
-        # Add our initialized plugin to our server listings
+        # Keep the initialized in-memory configuration source.
         self.configs.append(instance)
 
         # Return our status
         return True
 
-    def servers(
+    def services(
         self,
-        tag: str | list[str] = common.MATCH_ALL_TAG,
+        tag: Any = common.MATCH_ALL_TAG,
         match_always: bool = True,
         *args: Any,
         **kwargs: Any,
     ) -> list[NotifyBase]:
-        """Returns all of our servers dynamically build based on parsed
-        configuration.
+        """Read matching configuration sources and return their services.
 
-        If a tag is specified, it applies to the configuration sources
-        themselves and not the notification services inside them.
+        ``tag`` is matched against tags on the configuration sources
+        themselves, not tags on the services defined inside those sources.
+        This lets a caller choose which files or remote locations to poll.
+        Top-level tag entries are alternatives (OR), while nested collections
+        are intersections (AND).
 
-        This is for filtering the configuration files polled for results.
-
-        If the anytag is set, then any notification that is found set with that
-        tag are included in the response.
+        When ``match_always`` is true, configuration sources carrying the
+        reserved ``always`` tag are read even if the requested filter would not
+        otherwise select them. Each matching source applies its own cache,
+        recursion, and include-security policy as it builds the returned list.
         """
 
         # A match_always flag allows us to pick up on our 'any' keyword
@@ -354,9 +365,8 @@ class AppriseConfig:
                 match_all=common.MATCH_ALL_TAG,
                 match_always=match_always,
             ):
-                # Build ourselves a list of services dynamically and return the
-                # as a list
-                response.extend(entry.servers())
+                # Add services discovered in this configuration source.
+                response.extend(entry.services())
 
         return response
 
@@ -364,7 +374,7 @@ class AppriseConfig:
     def instantiate(
         url: str,
         asset: AppriseAsset | None = None,
-        tag: str | list[str] | None = None,
+        tag: Optional[Union[str, Sequence[str], AbstractSet[str]]] = None,
         cache: bool | int | None = None,
         recursion: int = 0,
         insecure_includes: bool = False,
@@ -392,19 +402,18 @@ class AppriseConfig:
                 logger.error(f"Unsupported schema {schema}.")
                 return None
 
-        # Parse our url details of the server object as dictionary containing
-        # all of the information parsed from our URL
+        # Parse the configuration URL into constructor arguments.
         results = C_MGR[schema].parse_url(url)
 
         if not results:
-            # Failed to parse the server URL
+            # The configuration URL could not be parsed.
             # CWE-312 (Secure Logging) Handling
             secure_logging = (
                 asset.secure_logging
                 if isinstance(asset, AppriseAsset)
                 else True
             )
-            loggable_url = url if not secure_logging else cwe312_url(url)
+            loggable_url = cwe312_loggable(url, secure_logging)
             logger.error(f"Unparseable URL {loggable_url}.")
             return None
 
@@ -435,10 +444,8 @@ class AppriseConfig:
             except Exception:
                 # the arguments are invalid or can not be used.
                 # CWE-312 (Secure Logging) Handling
-                loggable_url = (
-                    url
-                    if not results["asset"].secure_logging
-                    else cwe312_url(url)
+                loggable_url = cwe312_loggable(
+                    url, results["asset"].secure_logging
                 )
                 logger.error(f"Could not load URL: {loggable_url}")
                 return None
@@ -454,18 +461,23 @@ class AppriseConfig:
         """Empties our configuration list."""
         self.configs[:] = []
 
-    def server_pop(self, index: int) -> NotifyBase:
-        """Removes an indexed Apprise Notification from the servers."""
+    def service_pop(self, index: int) -> NotifyBase:
+        """Remove and return a service from the flattened configuration view.
+
+        The configuration sources remain loaded. ``index`` addresses the
+        services discovered across them as one continuous sequence, and an
+        out-of-range index raises :class:`IndexError`.
+        """
 
         # Tracking variables
         prev_offset = -1
         offset = prev_offset
 
         for entry in self.configs:
-            servers = entry.servers(cache=True)
-            if len(servers) > 0:
+            services = entry.services(cache=True)
+            if len(services) > 0:
                 # Acquire a new maximum offset to work with
-                offset = prev_offset + len(servers)
+                offset = prev_offset + len(services)
 
                 if offset >= index:
                     # we can pop an notification from our config stack

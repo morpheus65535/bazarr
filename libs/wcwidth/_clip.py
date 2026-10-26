@@ -11,7 +11,6 @@ from typing import Literal, Callable, Optional, NamedTuple
 
 # local
 from ._width import width
-from .grapheme import iter_graphemes
 from .hyperlink import Hyperlink, HyperlinkParams
 from .sgr_state import (_SGR_PATTERN,
                         _SGR_STATE_DEFAULT,
@@ -27,12 +26,17 @@ from .escape_sequences import (_SEQUENCE_CLASSIFY,
 
 _c_clip: Optional[Callable[..., Optional[str]]]  # pylint: disable=invalid-name
 if os.environ.get('WCWIDTH_PYTHON', ''):
+    # local
+    from .grapheme import iter_graphemes
     _c_clip = None
 else:
     try:
         # local
         from ._wcwidth_c import clip as _c_clip_impl
+        from ._wcwidth_c import iter_graphemes
     except ImportError:
+        # local
+        from .grapheme import iter_graphemes
         _c_clip = None
     else:
         _c_clip = _c_clip_impl

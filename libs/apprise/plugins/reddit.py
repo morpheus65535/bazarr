@@ -48,11 +48,14 @@
 #   - https://github.com/reddit-archive/reddit/wiki/API
 from datetime import datetime, timedelta, timezone
 from json import loads
+from typing import Any, Optional
 
 import requests
 
 from .. import __title__, __version__
 from ..common import NotifyFormat, NotifyType
+from ..conversion import commonmark_decode_backslash_escapes
+from ..exception import AppriseImproperlyConfigured
 from ..locale import gettext_lazy as _
 from ..url import PrivacyMode
 from ..utils.parse import parse_bool, parse_list, validate_regex
@@ -284,19 +287,19 @@ class NotifyReddit(NotifyBase):
         if self.kind not in REDDIT_MESSAGE_KINDS:
             msg = f"An invalid Reddit message kind ({kind}) was specified"
             self.logger.warning(msg)
-            raise TypeError(msg)
+            raise AppriseImproperlyConfigured(msg)
 
         self.user = validate_regex(self.user)
         if not self.user:
             msg = f"An invalid Reddit User ID ({self.user}) was specified"
             self.logger.warning(msg)
-            raise TypeError(msg)
+            raise AppriseImproperlyConfigured(msg)
 
         self.password = validate_regex(self.password)
         if not self.password:
             msg = f"An invalid Reddit Password ({self.password}) was specified"
             self.logger.warning(msg)
-            raise TypeError(msg)
+            raise AppriseImproperlyConfigured(msg)
 
         self.client_id = validate_regex(
             app_id, *self.template_tokens["app_id"]["regex"]
@@ -304,7 +307,7 @@ class NotifyReddit(NotifyBase):
         if not self.client_id:
             msg = f"An invalid Reddit App ID ({app_id}) was specified"
             self.logger.warning(msg)
-            raise TypeError(msg)
+            raise AppriseImproperlyConfigured(msg)
 
         self.client_secret = validate_regex(
             app_secret, *self.template_tokens["app_secret"]["regex"]
@@ -312,7 +315,7 @@ class NotifyReddit(NotifyBase):
         if not self.client_secret:
             msg = f"An invalid Reddit App Secret ({app_secret}) was specified"
             self.logger.warning(msg)
-            raise TypeError(msg)
+            raise AppriseImproperlyConfigured(msg)
 
         # Build list of subreddits
         self.subreddits = [
@@ -461,7 +464,15 @@ class NotifyReddit(NotifyBase):
         # Mark our failure
         return False
 
-    def send(self, body, title="", notify_type=NotifyType.INFO, **kwargs):
+    def send(
+        self,
+        body: str,
+        title: str = "",
+        notify_type: NotifyType = NotifyType.INFO,
+        body_format: Optional[NotifyFormat] = None,
+        body_passthrough: bool = False,
+        **kwargs: Any,
+    ) -> bool:
         """Perform Reddit Notification."""
 
         # error tracking (used for function return)
@@ -476,9 +487,17 @@ class NotifyReddit(NotifyBase):
             self.logger.warning("There are no Reddit targets to notify")
             return False
 
+        # A link post's url field is not Markdown, so any CommonMark
+        # escapes Apprise added (e.g. "my\\_page") are removed from it
+        link = (
+            commonmark_decode_backslash_escapes(body)
+            if body_format == NotifyFormat.MARKDOWN and not body_passthrough
+            else body
+        )
+
         # Prepare our Message Type/Kind
         if self.kind == RedditMessageKind.AUTO:
-            parsed = NotifyBase.parse_url(body)
+            parsed = NotifyBase.parse_url(link)
             # Detect a link
             if (
                 parsed
@@ -497,6 +516,11 @@ class NotifyReddit(NotifyBase):
         while len(subreddits) > 0:
             # Retrieve our subreddit
             subreddit = subreddits.pop()
+
+            # Skip a subreddit that already accepted this message so
+            # a retry does not deliver it twice.
+            if self.is_delivered(subreddit):
+                continue
 
             # Prepare our payload
             payload = {
@@ -521,7 +545,7 @@ class NotifyReddit(NotifyBase):
             if kind == RedditMessageKind.LINK:
                 payload.update(
                     {
-                        "url": body,
+                        "url": link,
                     }
                 )
             else:
@@ -540,6 +564,9 @@ class NotifyReddit(NotifyBase):
 
             # If we reach here, we were successful
             self.logger.info(f"Sent Reddit notification to {subreddit}")
+
+            # Delivered; a retry can safely skip this subreddit.
+            self.mark_delivered(subreddit)
 
         return not has_error
 

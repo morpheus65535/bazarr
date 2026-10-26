@@ -43,12 +43,17 @@
 # or consider purchasing a short-code from here:
 #    https://www.twilio.com/docs/glossary/what-is-a-short-code
 #
+from __future__ import annotations
+
 from json import loads
 import re
+from typing import Any
+from xml.sax.saxutils import escape
 
 import requests
 
 from ..common import NotifyType
+from ..exception import AppriseImproperlyConfigured
 from ..locale import gettext_lazy as _
 from ..url import PrivacyMode
 from ..utils.parse import is_phone_no, parse_phone_no, validate_regex
@@ -122,9 +127,7 @@ class NotifyTwilio(NotifyBase):
     # The maximum length of the call body in xml format
     body_call_maxlen = 4000
 
-    # A title can not be used for SMS Messages.  Setting this to zero will
-    # cause any title (if defined) to get placed into the message body.
-    title_maxlen = 0
+    # SMS folds titles into the body; calls keep TwiML separate.
 
     # Define object templates
     templates = (
@@ -230,7 +233,7 @@ class NotifyTwilio(NotifyBase):
                 f"An invalid Twilio Account SID ({account_sid}) was specified."
             )
             self.logger.warning(msg)
-            raise TypeError(msg)
+            raise AppriseImproperlyConfigured(msg)
 
         # The Authentication Token associated with the account
         self.auth_token = validate_regex(
@@ -242,7 +245,7 @@ class NotifyTwilio(NotifyBase):
                 f"({auth_token}) was specified."
             )
             self.logger.warning(msg)
-            raise TypeError(msg)
+            raise AppriseImproperlyConfigured(msg)
 
         # The API Key associated with the account (optional)
         self.apikey = validate_regex(
@@ -266,7 +269,7 @@ class NotifyTwilio(NotifyBase):
                     "is invalid."
                 )
                 self.logger.warning(msg)
-                raise TypeError(msg)
+                raise AppriseImproperlyConfigured(msg)
         else:
             self.method = self.template_args["method"]["default"]
 
@@ -278,7 +281,7 @@ class NotifyTwilio(NotifyBase):
                 f"({source}) is invalid."
             )
             self.logger.warning(msg)
-            raise TypeError(msg)
+            raise AppriseImproperlyConfigured(msg)
 
         # prepare our default mode to use for all numbers that follow in
         # target definitions
@@ -298,7 +301,7 @@ class NotifyTwilio(NotifyBase):
                 "message mode Whatsapp."
             )
             self.logger.warning(msg)
-            raise TypeError(msg)
+            raise AppriseImproperlyConfigured(msg)
 
         result = is_phone_no(result.group("phoneno"), min_len=5)
         if not result:
@@ -307,7 +310,7 @@ class NotifyTwilio(NotifyBase):
                 f"({source}) is invalid."
             )
             self.logger.warning(msg)
-            raise TypeError(msg)
+            raise AppriseImproperlyConfigured(msg)
 
         # Store The Source Phone # and/or short-code
         self.source = result["full"]
@@ -322,7 +325,7 @@ class NotifyTwilio(NotifyBase):
                     f"({source}) is invalid."
                 )
                 self.logger.warning(msg)
-                raise TypeError(msg)
+                raise AppriseImproperlyConfigured(msg)
 
             # else... it as a short code so we're okay
 
@@ -372,7 +375,13 @@ class NotifyTwilio(NotifyBase):
 
         return
 
-    def send(self, body, title="", notify_type=NotifyType.INFO, **kwargs):
+    def send(
+        self,
+        body: str,
+        title: str = "",
+        notify_type: NotifyType = NotifyType.INFO,
+        **kwargs: Any,
+    ) -> bool:
         """Perform Twilio Notification."""
 
         if not self.targets and len(self.source) in (5, 6):
@@ -400,7 +409,26 @@ class NotifyTwilio(NotifyBase):
             payload["Body"] = body
         else:
             url = self.notify_call_url.format(sid=self.account_sid)
-            payload["Twiml"] = body
+
+            if body.lstrip().startswith("<"):
+                # The body is already a TwiML document; send it untouched
+                # so it stays well formed (a title has no place in it)
+                if title:
+                    self.logger.debug(
+                        "Twilio call body is TwiML; the title is not used."
+                    )
+
+                payload["Twiml"] = body
+
+            else:
+                # Plain text is spoken aloud; the title is read out first
+                payload["Twiml"] = "<Response>{}</Response>".format(
+                    "".join(
+                        f"<Say>{escape(text)}</Say>"
+                        for text in (title, body)
+                        if text
+                    )
+                )
 
         # Create a copy of the targets list
         targets = list(self.targets)
@@ -415,6 +443,15 @@ class NotifyTwilio(NotifyBase):
         while len(targets):
             # Get our target to notify
             (mode, target) = targets.pop(0)
+
+            # The same phone number can be reached over more than one
+            # mode, so the mode forms part of what identifies it.
+            delivery_key = (mode, target)
+
+            # Skip a target that already accepted this message so
+            # a retry does not deliver it twice.
+            if self.is_delivered(delivery_key):
+                continue
 
             # Prepare our user
             if mode is TwilioMessageMode.TEXT:
@@ -508,7 +545,20 @@ class NotifyTwilio(NotifyBase):
                 has_error = True
                 continue
 
+            # Delivered; a retry can safely skip this target.
+            self.mark_delivered(delivery_key)
+
         return not has_error
+
+    @property
+    def title_maxlen(self) -> int:
+        """Maximum title length: 0 for SMS, 250 for phone calls."""
+        # Keep call titles separate so they cannot break a TwiML document.
+        return (
+            0
+            if self.method == TwilioNotificationMethod.SMS
+            else NotifyBase.title_maxlen
+        )
 
     @property
     def body_maxlen(self):
@@ -543,8 +593,11 @@ class NotifyTwilio(NotifyBase):
         params["method"] = self.method
 
         if self.apikey is not None:
-            # apikey specified; pass it back on the url
-            params["apikey"] = self.apikey
+            # apikey specified; pass it back on the url (urlencode() quotes
+            # it for us)
+            params["apikey"] = self.pprint(
+                self.apikey, privacy, mode=PrivacyMode.Tail, quote=False
+            )
 
         return "{schema}://{sid}:{token}@{source}/{targets}/?{params}".format(
             schema=self.secure_protocol,

@@ -63,10 +63,13 @@
 
 from json import dumps, loads
 import re
+from typing import Any, Optional
 
 import requests
 
 from ..common import NotifyFormat, NotifyType
+from ..conversion import commonmark_headings_to_bold
+from ..exception import AppriseImproperlyConfigured
 from ..locale import gettext_lazy as _
 from ..utils.parse import parse_list
 from .base import NotifyBase
@@ -216,7 +219,7 @@ class NotifyKook(NotifyBase):
         if not self.token:
             msg = "A Kook token must be specified."
             self.logger.warning(msg)
-            raise TypeError(msg)
+            raise AppriseImproperlyConfigured(msg)
 
         # Resolve operating mode
         if mode and isinstance(mode, str):
@@ -228,7 +231,7 @@ class NotifyKook(NotifyBase):
             if self.mode not in KOOK_MODES:
                 msg = f"The Kook mode specified ({mode}) is not valid."
                 self.logger.warning(msg)
-                raise TypeError(msg)
+                raise AppriseImproperlyConfigured(msg)
 
         else:
             # Default to bot mode
@@ -275,6 +278,24 @@ class NotifyKook(NotifyBase):
                     self._invalid_targets.append(target)
 
         return
+
+    def dialect_convert(
+        self,
+        body: str,
+        body_format: Optional[NotifyFormat] = None,
+        *args: Any,
+        **kwargs: Any,
+    ) -> str:
+        """Adapt CommonMark to KMarkdown.
+
+        KMarkdown has no headings, so a ``# title`` line is shown in bold:
+          https://developer.kookapp.cn/doc/kmarkdown
+        """
+        if body_format != NotifyFormat.MARKDOWN:
+            return body
+
+        # Render headings as bold; everything else is valid KMarkdown
+        return commonmark_headings_to_bold(body)
 
     def send(
         self,
@@ -408,6 +429,14 @@ class NotifyKook(NotifyBase):
         ]
 
         for endpoint, target_id in targets:
+            # A channel and a direct message use different endpoints,
+            # so the endpoint forms part of what identifies the target.
+            body_key = ("body", endpoint, target_id)
+            # Skip a target that already accepted this message so
+            # a retry does not deliver it twice.
+            if self.is_delivered(body_key):
+                continue
+
             # Prepare the message payload for this target
             payload = {
                 "type": kook_type,
@@ -483,15 +512,25 @@ class NotifyKook(NotifyBase):
                 has_error = True
                 continue
 
+            # Delivered; a retry can safely skip this target.
+            self.mark_delivered(body_key)
+
         # Handle file attachments after the text message is sent
         if attach and self.attachment_support and not has_error:
-            for attachment in attach:
-                # Upload each attachment to the Kook CDN and post a
-                # follow-up message per target referencing the returned URL
-                cdn_url = self._upload(attachment)
+            for attachment_no, attachment in enumerate(attach):
+                # Reuse the CDN URL from an earlier attempt, if any
+                cdn_key = ("cdn", attachment_no)
+                cdn_url = self.recall(cdn_key)
                 if cdn_url is None:
-                    # Upload failed; abort attachments for this send
-                    return False
+                    # Upload each attachment to the Kook CDN and post a
+                    # follow-up message per target referencing the URL
+                    cdn_url = self._upload(attachment)
+                    if cdn_url is None:
+                        # Upload failed; abort attachments for this send
+                        return False
+
+                    # Remember it so a retry does not upload it again
+                    self.remember(cdn_key, cdn_url)
 
                 # Determine the Kook type for the attachment message
                 attach_type = (
@@ -501,6 +540,18 @@ class NotifyKook(NotifyBase):
                 )
 
                 for endpoint, target_id in targets:
+                    # The endpoint keeps a channel and a DM user with the
+                    # same id apart
+                    attachment_key = (
+                        "attachment",
+                        attachment_no,
+                        endpoint,
+                        target_id,
+                    )
+                    # Skip a target that already has this attachment
+                    if self.is_delivered(attachment_key):
+                        continue
+
                     # Prepare the attachment message payload
                     payload = {
                         "type": attach_type,
@@ -564,6 +615,9 @@ class NotifyKook(NotifyBase):
                                 content.get("message", "Unknown"),
                             )
                             has_error = True
+                            continue
+
+                        self.mark_delivered(attachment_key)
 
                     except requests.RequestException as e:
                         self.logger.warning(
@@ -670,6 +724,14 @@ class NotifyKook(NotifyBase):
             # Guard 3: always close the file handle
             if files:
                 files["file"][1].close()
+
+    def __len__(self) -> int:
+        """Returns the number of targets associated with this notification."""
+        # A webhook posts once; bot mode posts once per channel and DM user
+        if self.mode == KookMode.WEBHOOK:
+            return 1
+
+        return max(1, len(self.channels) + len(self.dm_users))
 
     @property
     def url_identifier(self):

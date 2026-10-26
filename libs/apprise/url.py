@@ -964,8 +964,9 @@ class URLBase:
 
             # parse_url() always creates a 'password' and 'user' entry in the
             # results returned.  Entries are set to None if they weren't
-            # specified
-            if results["password"] is None and "user" in results["qsd"]:
+            # specified.  A simple parse (used by @notify) leaves them out
+            # entirely, so a missing entry is treated the same as None.
+            if results.get("password") is None and "user" in results["qsd"]:
                 # Handle cases where the user= provided in 2 locations, we want
                 # the original to fall back as a being a password (if one
                 # wasn't otherwise defined) e.g.
@@ -1040,9 +1041,9 @@ class URLBase:
         response_mask that contains a dictionary of integer -> string mapped
         variables
         """
-        if isinstance(response_mask, dict):
-            # Apply any/all header over-rides defined
-            HTML_LOOKUP.update(response_mask)
+        if isinstance(response_mask, dict) and code in response_mask:
+            # A plugin override wins without changing the shared table.
+            return response_mask[code]
 
         # Look up our response
         try:

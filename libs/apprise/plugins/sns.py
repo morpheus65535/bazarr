@@ -31,14 +31,16 @@ from hashlib import sha256
 import hmac
 from itertools import chain
 import re
-from xml.etree import ElementTree
+from typing import Any
 
 import requests
 
 from ..common import NotifyType
+from ..exception import AppriseImproperlyConfigured
 from ..locale import gettext_lazy as _
 from ..url import PrivacyMode
 from ..utils.parse import is_phone_no, parse_list, validate_regex
+from ..utils.xml import flatten_xml_response
 from .base import NotifyBase
 
 # Topic Detection
@@ -111,7 +113,7 @@ class NotifySNS(NotifyBase):
     # characters and has no title field (title_maxlen = 0 causes the
     # framework to fold the title into the body automatically); Topic
     # mode allows up to 256 KB and passes the title as the SNS Subject
-    # field (title_maxlen = 100).
+    # field (title_maxlen = 99).
     # Source: https://docs.aws.amazon.com/sns/latest/api/API_Publish.html
 
     # Define object templates
@@ -228,7 +230,7 @@ class NotifySNS(NotifyBase):
         if not self.aws_access_key_id:
             msg = "An invalid AWS Access Key ID was specified."
             self.logger.warning(msg)
-            raise TypeError(msg)
+            raise AppriseImproperlyConfigured(msg)
 
         # Store our AWS API Secret Access key
         self.aws_secret_access_key = validate_regex(secret_access_key)
@@ -238,7 +240,7 @@ class NotifySNS(NotifyBase):
                 f"({secret_access_key}) was specified."
             )
             self.logger.warning(msg)
-            raise TypeError(msg)
+            raise AppriseImproperlyConfigured(msg)
 
         # Acquire our AWS Region Name:
         # eg. us-east-1, cn-north-1, us-west-2, ...
@@ -248,7 +250,7 @@ class NotifySNS(NotifyBase):
         if not self.aws_region_name:
             msg = f"An invalid AWS Region ({region_name}) was specified."
             self.logger.warning(msg)
-            raise TypeError(msg)
+            raise AppriseImproperlyConfigured(msg)
 
         # Initialize topic list
         self.topics = []
@@ -297,7 +299,7 @@ class NotifySNS(NotifyBase):
             if self.mode not in SNS_MODES:
                 msg = f"The AWS SNS mode specified ({mode}) is invalid."
                 self.logger.warning(msg)
-                raise TypeError(msg)
+                raise AppriseImproperlyConfigured(msg)
 
         else:
             # Auto-detect: topic mode when all targets are SNS topics
@@ -310,7 +312,13 @@ class NotifySNS(NotifyBase):
 
         return
 
-    def send(self, body, title="", notify_type=NotifyType.INFO, **kwargs):
+    def send(
+        self,
+        body: str,
+        title: str = "",
+        notify_type: NotifyType = NotifyType.INFO,
+        **kwargs: Any,
+    ) -> bool:
         """Wrapper to send_notification since we can alert more then one
         channel."""
 
@@ -329,6 +337,11 @@ class NotifySNS(NotifyBase):
         while len(phone) > 0:
             # Get Phone No
             no = phone.pop(0)
+
+            # Skip a target that already accepted this message so
+            # a retry does not deliver it twice.
+            if self.is_delivered(no):
+                continue
 
             # In topic mode the framework passes the title through
             # separately; SMS has no Subject field so the title is
@@ -349,11 +362,20 @@ class NotifySNS(NotifyBase):
             (result, _) = self._post(payload=payload, to=no)
             if not result:
                 error_count += 1
+                continue
+
+            # Delivered; a retry can safely skip this target.
+            self.mark_delivered(no)
 
         # Send all our defined topic id's
         while len(topics):
             # Get Topic
             topic = topics.pop(0)
+
+            # Skip a topic that already accepted this message so
+            # a retry does not deliver it twice.
+            if self.is_delivered(topic):
+                continue
 
             # First ensure our topic exists, if it doesn't, it gets created
             payload = {
@@ -386,12 +408,23 @@ class NotifySNS(NotifyBase):
             # when a title was provided; email subscribers will see
             # it as the message subject line
             if self.mode == SNSMode.TOPIC and title:
-                payload["Subject"] = title
+                # AWS subjects must be printable, single-line, and shorter
+                # than 100 characters.
+                # See: https://docs.aws.amazon.com/sns/latest/api/
+                #      API_Publish.html
+                subject = "".join(c if c.isprintable() else " " for c in title)
+                payload["Subject"] = " ".join(subject.split())[
+                    : self.title_maxlen
+                ]
 
             # Send our payload to AWS
             (result, _) = self._post(payload=payload, to=topic)
             if not result:
                 error_count += 1
+                continue
+
+            # Delivered; a retry can safely skip this topic.
+            self.mark_delivered(topic)
 
         return error_count == 0
 
@@ -631,43 +664,9 @@ class NotifySNS(NotifyBase):
             "Message": "error_message",
         }
 
-        # A default response object that we'll manipulate as we pull more data
-        # from our AWS Response object
-        response = {
-            "type": None,
-            "request_id": None,
-        }
-
-        try:
-            # we build our tree, but not before first eliminating any
-            # reference to namespacing (if present) as it makes parsing
-            # the tree so much easier.
-            root = ElementTree.fromstring(
-                re.sub(r' xmlns="[^"]+"', "", aws_response, count=1)
-            )
-
-            # Store our response tag object name
-            response["type"] = str(root.tag)
-
-            def _xml_iter(root, response):
-                if len(root) > 0:
-                    for child in root:
-                        # use recursion to parse everything
-                        _xml_iter(child, response)
-
-                elif root.tag in aws_keep_map:
-                    response[aws_keep_map[root.tag]] = (root.text).strip()
-
-            # Recursivly iterate over our AWS Response to extract the
-            # fields we're interested in in efforts to populate our response
-            # object.
-            _xml_iter(root, response)
-
-        except (ElementTree.ParseError, TypeError):
-            # bad data just causes us to generate a bad response
-            pass
-
-        return response
+        return flatten_xml_response(
+            aws_response, aws_keep_map, defaults={"request_id": None}
+        )
 
     @property
     def url_identifier(self):
@@ -684,12 +683,10 @@ class NotifySNS(NotifyBase):
         )
 
     @property
-    def title_maxlen(self):
-        """Maximum title length: 100 for topic mode, 0 for SMS."""
-        # Return 100 in topic mode so the framework passes the title
-        # to send() separately; return 0 for SMS so the framework
-        # folds the title into the body automatically before send()
-        return 100 if self.mode == SNSMode.TOPIC else 0
+    def title_maxlen(self) -> int:
+        """Maximum title length: 99 for topic mode, 0 for SMS."""
+        # Topic mode keeps a valid AWS subject; SMS folds it into the body.
+        return 99 if self.mode == SNSMode.TOPIC else 0
 
     @property
     def body_maxlen(self):

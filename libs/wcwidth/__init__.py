@@ -33,7 +33,6 @@ from ._clip import clip
 # re-export common and outermost functions & definitions, even a few private ones. Some are for
 # convenience and others for legacy, only the items in '__all__' are documented as public API
 from .bisearch import bisearch as _bisearch
-from .grapheme import iter_graphemes_reverse, grapheme_boundary_before
 from .textwrap import SequenceTextWrapper, wrap
 from .hyperlink import Hyperlink, HyperlinkParams
 from ._constants import list_term_programs
@@ -75,6 +74,7 @@ if HAS_C_EXTENSION:
     from ._wcwidth_c import ljust, rjust, width, center
     from ._wcwidth_c import wcwidth as _c_wcwidth
     from ._wcwidth_c import wcswidth, wcstwidth, propagate_sgr, iter_graphemes, strip_sequences
+    from ._wcwidth_c import iter_graphemes_reverse, grapheme_boundary_before
     wcwidth = lru_cache(maxsize=1024)(_c_wcwidth)
 else:
     # local
@@ -82,6 +82,7 @@ else:
     from ._width import width
     from ._wcwidth import wcwidth
     from .grapheme import iter_graphemes
+    from .grapheme import iter_graphemes_reverse, grapheme_boundary_before
     from ._wcswidth import wcswidth, wcstwidth
     from .sgr_state import propagate_sgr
     from .escape_sequences import strip_sequences
@@ -98,4 +99,4 @@ __all__ = ('wcwidth', 'wcswidth', 'wcstwidth', 'width', 'iter_sequences', 'iter_
            'Hyperlink', 'HyperlinkParams', 'TextSizing', 'TextSizingParams')
 
 # Version is stamped by code generation (bin/update-tables.py) from pyproject.toml.
-__version__ = '0.9.3'
+__version__ = '0.9.4'

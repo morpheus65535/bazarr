@@ -51,10 +51,13 @@
 #
 # Development API Reference::
 #  - https://core.telegram.org/bots/api
+from contextlib import ExitStack
+from html import escape
 from json import dumps, loads
 from json.decoder import JSONDecodeError
 import os
 import re
+from typing import Any, Optional, Union
 
 import requests
 
@@ -67,17 +70,36 @@ from ..common import (
     PersistentStoreMode,
 )
 from ..conversion import (
-    build_backtick_run_index,
-    commonmark_prepend_title,
+    HTMLTagReducer,
+    commonmark_emphasis_run,
+    commonmark_find_backtick_run,
+    commonmark_headings_to_bold,
+    commonmark_index_backtick_runs,
+    commonmark_match_emphasis,
+    commonmark_new_scan_budget,
+    commonmark_pick_emphasis_sentinel,
     commonmark_scan_angle_dest,
-    find_unescaped_run,
+    commonmark_scan_autolink_dest,
+    commonmark_scan_paren_dest,
 )
+from ..exception import AppriseImproperlyConfigured
 from ..locale import gettext_lazy as _
 from ..utils.parse import parse_bool, parse_list, validate_regex
 from ..utils.templates import TemplateType, apply_template
 from .base import NotifyBase
 
 TELEGRAM_IMAGE_XY = NotifyImageSize.XY_256
+
+# A Telegram album carries between 2 and 10 photos and/or videos.
+# Source: https://core.telegram.org/bots/api#sendmediagroup
+TELEGRAM_MEDIA_GROUP_MIN = 2
+TELEGRAM_MEDIA_GROUP_MAX = 10
+
+# Telegram's upload limits.  Photos can be up to 10 MB and every other
+# file up to 50 MB.
+# Source: https://core.telegram.org/bots/api#sending-files
+TELEGRAM_PHOTO_MAX_BYTES = 10000000
+TELEGRAM_FILE_MAX_BYTES = 50000000
 
 # Chat ID is required
 # If the Chat ID is positive, then it's addressed to a single person
@@ -133,6 +155,232 @@ TELEGRAM_CONTENT_PLACEMENT = (
 )
 
 
+# The line break used in Telegram HTML messages; Telegram has no <br> tag
+TELEGRAM_HTML_BR = "\r\n"
+
+# Formatting tags Telegram accepts, and the tag written for each one.
+# See: https://core.telegram.org/bots/api#formatting-options
+TELEGRAM_HTML_INLINE_MAP = {
+    "b": "b",
+    "strong": "b",
+    "i": "i",
+    "em": "i",
+    "u": "u",
+    "ins": "u",
+    "s": "s",
+    "strike": "s",
+    "del": "s",
+    "tg-spoiler": "tg-spoiler",
+}
+
+# Heading tags; they become bold text on a line of their own
+TELEGRAM_HTML_HEADINGS = ("h1", "h2", "h3", "h4", "h5", "h6", "title")
+
+# Block tags that start and end their own line (lists are handled by
+# HTMLTagReducer)
+TELEGRAM_HTML_BLOCKS = ("p", "div", "table", "hr")
+
+# Tags whose content is never shown
+TELEGRAM_HTML_SKIP = ("script", "style")
+
+# Common entities often written without their closing semicolon
+TELEGRAM_HTML_LOOSE_ENTITY_RE = re.compile(
+    r"&(apos|quot|nbsp|emsp)(?!;)", re.I
+)
+
+# Telegram does not know &nbsp; or &emsp;, so use plain spaces instead
+TELEGRAM_HTML_SPACES = str.maketrans({"\xa0": " ", "\u2003": "   "})
+
+
+class TelegramHTMLReducer(HTMLTagReducer):
+    """Rewrite HTML so it only uses the markup Telegram accepts.
+
+    - b, i, u, s, spoilers, a href, code, pre, blockquote and tg-emoji
+      are kept; strong, em, ins, strike and del become b, i, u and s.
+    - Headings become bold text on their own line.
+    - List items become "- " (or "1. ") lines and table rows become
+      lines with cells split by " | ".
+    - <br> and block tags become new lines.
+    - Formatting is dropped inside code, and quotes are never nested,
+      because Telegram rejects both.
+    - Any other tag is dropped and only its text is kept.
+    - Every opened tag is closed, so the result is always balanced.
+    """
+
+    INLINE_MAP = TELEGRAM_HTML_INLINE_MAP
+    HEADINGS = TELEGRAM_HTML_HEADINGS
+    SKIP_TAGS = TELEGRAM_HTML_SKIP
+    LINE_BREAK = TELEGRAM_HTML_BR
+    TEXT_MAP = TELEGRAM_HTML_SPACES
+
+    def reset(self) -> None:
+        """Clear the reducer state, including the line tracking."""
+        super().reset()
+
+        # True once the current line holds text (anything but tags)
+        self.has_text = False
+
+        # How many pieces of self.out were already checked for text
+        self.checked = 0
+
+    def _is_open(self, tag: str) -> bool:
+        """Return True when Telegram tag ``tag`` is currently open."""
+        # These Telegram tags keep their source names in the output.
+        return bool(self.open_count[tag])
+
+    def _line(self) -> None:
+        """Start a new line unless the current one has no text yet."""
+        # Check only newly written pieces.
+        for piece in self.out[self.checked :]:
+            if piece == TELEGRAM_HTML_BR:
+                # Already on a fresh line
+                self.has_text = False
+
+            elif not piece.startswith("<"):
+                # The current line holds text
+                self.has_text = True
+
+        self.checked = len(self.out)
+
+        if not self.has_text:
+            # Nothing written on this line yet
+            return
+
+        # The current line holds text; end it
+        self._break()
+
+    def _break(self) -> None:
+        """End the current line, dropping spaces left at its end."""
+        if (
+            self.out
+            and not self.out[-1].startswith("<")
+            and not (self._is_open("pre") or self._is_open("code"))
+        ):
+            self.out[-1] = self.out[-1].rstrip()
+
+        self.out.append(TELEGRAM_HTML_BR)
+
+    def _start(self, tag: str, values: dict[str, Optional[str]]) -> None:
+        """Map an opening tag to Telegram markup."""
+        if tag == "br":
+            # Line breaks are always kept
+            self._break()
+            return
+
+        if self._is_open("code") or (self._is_open("pre") and tag != "code"):
+            # Telegram allows no formatting inside code, except the code
+            # tag that names the language of a code block
+            return
+
+        if tag == "span" and "tg-spoiler" in (values.get("class") or "").split(
+            " "
+        ):
+            # The span form of a spoiler
+            self._open(tag, "tg-spoiler")
+
+        elif tag == "a" and values.get("href") and not self._is_open("a"):
+            # Links keep only their destination and are never nested
+            href = escape(values["href"], quote=True)
+            self._open(tag, "a", f' href="{href}"')
+
+        elif tag == "tg-emoji" and values.get("emoji-id"):
+            # Custom emoji keep their identifier
+            emoji = escape(values["emoji-id"], quote=True)
+            self._open(tag, "tg-emoji", f' emoji-id="{emoji}"')
+
+        elif tag in ("pre", "code"):
+            # Code keeps only a "language-" class, and only inside pre
+            language = values.get("class") or ""
+            attr = (
+                f' class="{escape(language, quote=True)}"'
+                if tag == "code"
+                and self._is_open("pre")
+                and language.startswith("language-")
+                else ""
+            )
+            if tag == "pre":
+                self._line()
+
+            self._open(tag, tag, attr)
+
+        elif tag == "blockquote":
+            # Quotes start a new line and cannot be nested
+            self._line()
+            if not self._is_open("blockquote"):
+                self._open(
+                    tag,
+                    "blockquote",
+                    " expandable" if "expandable" in values else "",
+                )
+
+        elif tag in TELEGRAM_HTML_BLOCKS:
+            # Other blocks (and dividers) begin on a new line too
+            self._line()
+
+        else:
+            # Bold, italic, underline, strikethrough, spoilers, headings,
+            # lists, tables and images
+            super()._start(tag, values)
+
+    def _end(self, tag: str) -> None:
+        """Close a tag and add any line break it implies."""
+        if tag == "br":
+            # A closing </br> is treated as a line break too
+            self._break()
+            return
+
+        super()._end(tag)
+
+        if tag in TELEGRAM_HTML_BLOCKS or tag in ("pre", "blockquote"):
+            # These end their line too
+            self._line()
+
+    def _text(self, data: str) -> None:
+        """Write text with its special characters escaped."""
+        if not (self._is_open("pre") or self._is_open("code")):
+            # Outside code, HTML source spacing rules apply
+            super()._text(data)
+
+        elif data:
+            # Code keeps its spaces and line breaks as they are
+            self.out.append(
+                escape(data.translate(TELEGRAM_HTML_SPACES), quote=False)
+            )
+
+    def reduce(self, html: str) -> str:
+        """Return ``html`` rewritten for Telegram."""
+        # Accept entities that are missing their semicolon
+        return super().reduce(
+            TELEGRAM_HTML_LOOSE_ENTITY_RE.sub(
+                lambda m: f"&{m.group(1).lower()};", html
+            )
+        )
+
+
+class TelegramMediaKind:
+    """How an attachment is sent when album mode is enabled."""
+
+    # Apprise only groups photos and videos into albums
+    PHOTO = "photo"
+    VIDEO = "video"
+
+    # Send every other attachment in its own message
+    SINGLE = "single"
+
+
+class TelegramGroupResult:
+    """Possible results from an album upload."""
+
+    # Telegram accepted the album
+    OK = "ok"
+
+    # Telegram refused the album; the items may still be fine alone
+    RETRY = "retry"
+
+    # The album could not be delivered at all
+    FAIL = "fail"
+
+
 class NotifyTelegram(NotifyBase):
     """A wrapper for Telegram Notifications."""
 
@@ -148,8 +396,8 @@ class NotifyTelegram(NotifyBase):
     # A URL that takes you to the setup/help of the specific protocol
     setup_url = "https://appriseit.com/services/telegram/"
 
-    # Default Notify Format
-    notify_format = NotifyFormat.HTML
+    # Telegram supports HTML and Markdown. HTML remains the default.
+    notify_format = (NotifyFormat.HTML, NotifyFormat.MARKDOWN)
 
     # Telegram uses the http protocol with JSON requests
     notify_url = "https://api.telegram.org/bot"
@@ -244,7 +492,7 @@ class NotifyTelegram(NotifyBase):
     # output the user expected
     __telegram_escape_html_entries = (
         # Comments
-        (re.compile(r"\s*<!.+?-->\s*", (re.I | re.M | re.S)), "", {}),
+        (re.compile(r"\s*<!.+?-->\s*", (re.I | re.M | re.S)), ""),
         # the following tags are not supported
         (
             re.compile(
@@ -254,7 +502,6 @@ class NotifyTelegram(NotifyBase):
                 (re.I | re.M | re.S),
             ),
             "",
-            {},
         ),
         # All closing tags to be removed are put here
         (
@@ -265,7 +512,6 @@ class NotifyTelegram(NotifyBase):
                 (re.I | re.M | re.S),
             ),
             "",
-            {},
         ),
         # Bold
         (
@@ -273,30 +519,26 @@ class NotifyTelegram(NotifyBase):
                 r"<\s*(strong)([^a-z0-9>][^>]*)?>", (re.I | re.M | re.S)
             ),
             "<b>",
-            {},
         ),
         (
             re.compile(
                 r"<\s*/\s*(strong)([^a-z0-9>][^>]*)?>", (re.I | re.M | re.S)
             ),
             "</b>",
-            {},
         ),
         (
             re.compile(
                 r"\s*<\s*(h[1-6]|title)([^a-z0-9>][^>]*)?>\s*",
                 (re.I | re.M | re.S),
             ),
-            "{}<b>",
-            {"html": "\r\n"},
+            "<b>",
         ),
         (
             re.compile(
                 r"\s*<\s*/\s*(h[1-6]|title)([^a-z0-9>][^>]*)?>\s*",
                 (re.I | re.M | re.S),
             ),
-            "</b>{}",
-            {"html": "<br/>"},
+            "</b>",
         ),
         # Italic
         (
@@ -304,7 +546,6 @@ class NotifyTelegram(NotifyBase):
                 r"<\s*(caption|em)([^a-z0-9>][^>]*)?>", (re.I | re.M | re.S)
             ),
             "<i>",
-            {},
         ),
         (
             re.compile(
@@ -312,13 +553,11 @@ class NotifyTelegram(NotifyBase):
                 (re.I | re.M | re.S),
             ),
             "</i>",
-            {},
         ),
         # Bullet Lists
         (
             re.compile(r"<\s*li([^a-z0-9>][^>]*)?>\s*", (re.I | re.M | re.S)),
             " -",
-            {},
         ),
         # New Lines
         (
@@ -326,7 +565,6 @@ class NotifyTelegram(NotifyBase):
                 r"\s*<\s*/?\s*(ol|ul|br|hr)\s*/?>\s*", (re.I | re.M | re.S)
             ),
             "\r\n",
-            {},
         ),
         (
             re.compile(
@@ -334,19 +572,18 @@ class NotifyTelegram(NotifyBase):
                 (re.I | re.M | re.S),
             ),
             "\r\n",
-            {},
         ),
         # HTML Spaces (&nbsp;) and tabs (&emsp;) aren't supported
         # See https://core.telegram.org/bots/api#html-style
-        (re.compile(r"\&nbsp;?", re.I), " ", {}),
+        (re.compile(r"\&nbsp;?", re.I), " "),
         # Tabs become 3 spaces
-        (re.compile(r"\&emsp;?", re.I), "   ", {}),
+        (re.compile(r"\&emsp;?", re.I), "   "),
         # Some characters get re-escaped by the Telegram upstream
         # service so we need to convert these back,
-        (re.compile(r"\&apos;?", re.I), "'", {}),
-        (re.compile(r"\&quot;?", re.I), '"', {}),
+        (re.compile(r"\&apos;?", re.I), "'"),
+        (re.compile(r"\&quot;?", re.I), '"'),
         # New line cleanup
-        (re.compile(r"\r*\n[\r\n]+", re.I), "\r\n", {}),
+        (re.compile(r"\r*\n[\r\n]+", re.I), "\r\n"),
     )
 
     # Define our template tokens
@@ -401,6 +638,11 @@ class NotifyTelegram(NotifyBase):
                 "type": "bool",
                 "default": False,
             },
+            "album": {
+                "name": _("Group Photo/Video Attachments"),
+                "type": "bool",
+                "default": False,
+            },
             "topic": {
                 "name": _("Topic Thread ID"),
                 "type": "int",
@@ -447,6 +689,7 @@ class NotifyTelegram(NotifyBase):
         include_image=False,
         silent=None,
         preview=None,
+        album=False,
         topic=None,
         content=None,
         mdv=None,
@@ -463,7 +706,7 @@ class NotifyTelegram(NotifyBase):
         if not self.bot_token:
             err = f"The Telegram Bot Token specified ({bot_token}) is invalid."
             self.logger.warning(err)
-            raise TypeError(err)
+            raise AppriseImproperlyConfigured(err)
 
         # Get our Markdown Version
         self.markdown_ver = (
@@ -497,6 +740,9 @@ class NotifyTelegram(NotifyBase):
             else bool(preview)
         )
 
+        # Define whether eligible photo/video attachments should be grouped
+        self.album = bool(album)
+
         # Setup our content placement
         self.content = (
             self.template_args["content"]["default"]
@@ -506,7 +752,7 @@ class NotifyTelegram(NotifyBase):
         if self.content and self.content not in TELEGRAM_CONTENT_PLACEMENT:
             msg = f"The content placement specified ({content}) is invalid."
             self.logger.warning(msg)
-            raise TypeError(msg)
+            raise AppriseImproperlyConfigured(msg)
 
         if topic:
             try:
@@ -516,7 +762,7 @@ class NotifyTelegram(NotifyBase):
                 # Not a valid integer; ignore entry
                 err = f"The Telegram Topic ID specified ({topic}) is invalid."
                 self.logger.warning(err)
-                raise TypeError(err) from exc
+                raise AppriseImproperlyConfigured(err) from exc
         else:
             # No Topic Thread
             self.topic = None
@@ -581,7 +827,7 @@ class NotifyTelegram(NotifyBase):
                     " could not be loaded."
                 )
                 self.logger.warning(msg)
-                raise TypeError(msg)
+                raise AppriseImproperlyConfigured(msg)
 
             # Enforce a maximum file size on our template
             self.template[0].max_file_size = self.max_telegram_template_size
@@ -597,10 +843,17 @@ class NotifyTelegram(NotifyBase):
                 f" ({tokens}) are not identified as a dictionary."
             )
             self.logger.warning(msg)
-            raise TypeError(msg)
+            raise AppriseImproperlyConfigured(msg)
 
-    def send_media(self, target, notify_type, payload=None, attach=None):
-        """Sends a sticker based on the specified notify type."""
+    def send_media(
+        self,
+        target: tuple,
+        notify_type: NotifyType,
+        payload: Optional[dict] = None,
+        attach: Optional[Union[AttachBase, str]] = None,
+        document: bool = False,
+    ) -> bool:
+        """Upload an attachment, or the notify type image, to Telegram."""
 
         # Prepare our Headers
         if payload is None:
@@ -626,6 +879,16 @@ class NotifyTelegram(NotifyBase):
                 f"Posting Telegram attachment {attach.url(privacy=True)}"
             )
 
+            # Stop before uploading files Telegram will reject.
+            size = len(attach)
+            if size > TELEGRAM_FILE_MAX_BYTES:
+                self.logger.warning(
+                    "Telegram attachment %s is larger than the 50 MB"
+                    " upload limit.",
+                    attach.url(privacy=True),
+                )
+                return False
+
             # Store our path to our file
             path = attach.path
             file_name = attach.name
@@ -637,6 +900,13 @@ class NotifyTelegram(NotifyBase):
                 for x in self.mime_lookup
                 if x["regex"].match(mimetype)
             )  # pragma: no cover
+
+            if document or (
+                function_name == "sendPhoto"
+                and size > TELEGRAM_PHOTO_MAX_BYTES
+            ):
+                # Documents support larger photos and other file types.
+                function_name, key = "sendDocument", "document"
 
         else:
             attach = self.image_path(notify_type) if attach is None else attach
@@ -851,35 +1121,37 @@ class NotifyTelegram(NotifyBase):
         )
         return 0
 
-    # Convert HTML-derived CommonMark to Telegram Markdown in one pass while
-    # preserving nested entities and independently valid message chunks.
+    # Convert CommonMark into independently valid Telegram Markdown chunks.
     _TELEGRAM_STRICT_CHARS = "~#+=|{}.!<>-"
 
     # Legacy Markdown recognizes escapes only for these characters.
     _TELEGRAM_V1_ESCAPABLE = "`*_[]"
 
-    # Full MarkdownV2 reserved set for previously unescaped fragments.
-    _TELEGRAM_RESERVED_FULL = "_*[]()~`>#+=|{}.!<>-"
+    # Escape the full reserved set in literal text not handled as markup.
+    _TELEGRAM_RESERVED_FULL = _TELEGRAM_STRICT_CHARS + "_*[]()`"
 
-    @classmethod
-    def _strict_escape(cls, text):
-        """Escape an unescaped MarkdownV2 fragment without double-escaping."""
+    def dialect_convert(
+        self,
+        body: str,
+        body_format: Optional[NotifyFormat] = None,
+        *args: Any,
+        **kwargs: Any,
+    ) -> str:
+        """Adapt a declared body to Telegram's own markup.
 
-        out = []
-        i = 0
-        n = len(text)
-        while i < n:
-            ch = text[i]
-            if ch == "\\" and i + 1 < n:
-                out.append(text[i : i + 2])
-                i += 2
-                continue
-            if ch in cls._TELEGRAM_RESERVED_FULL:
-                out.append("\\" + ch)
-            else:
-                out.append(ch)
-            i += 1
-        return "".join(out)
+        - HTML is reduced to the tags Telegram accepts.
+        - CommonMark becomes the configured Telegram Markdown.
+        """
+        if body_format == NotifyFormat.HTML:
+            # Telegram rejects messages holding tags it does not support
+            return TelegramHTMLReducer().reduce(body)
+
+        if body_format != NotifyFormat.MARKDOWN:
+            # Nothing else needs a Telegram specific conversion
+            return body
+
+        strict = self.markdown_ver == TelegramMarkdownVersion.TWO
+        return self._commonmark_to_telegram(body, strict=strict)
 
     @classmethod
     def _commonmark_to_telegram(cls, body, strict=False):
@@ -887,27 +1159,42 @@ class NotifyTelegram(NotifyBase):
 
         CommonMark     Markdown v1     MarkdownV2
         -------------  --------------  --------------------
+        # heading      *heading*       *heading* (no heading syntax here)
         **bold**       *bold*          *bold*
         *italic*       _italic_        _italic_
         `code`         `code`          `code`
         [l](<u>)       [l](u)          [l](u)
         \\*            known escapes   all reserved escapes
 
-        Both versions strip angle brackets from link destinations. Strict
-        mode additionally escapes every MarkdownV2-reserved character.
+        Both versions normalize links. MarkdownV2 also applies its stricter
+        reserved-character escaping pass.
         """
+        # Telegram Markdown represents headings as bold text.
+        body = commonmark_headings_to_bold(body)
 
         # Accumulate output fragments; joined once at the end.
         out = []
-        # Track emphasis spans; ``None`` marks nesting suppressed by v1.
-        stack = []
+        # Record ``*`` and ``_`` markup, then match it after the full scan.
+        delimiters = []
+        # Track possible link-label openings in LIFO order.
+        link_stack = []
 
         # Initialize the single-pass scanner.
         i = 0
         n = len(body)
 
         # Pre-compute backtick run positions once; reused for every "`" hit.
-        backtick_runs = build_backtick_run_index(body)
+        backtick_runs = commonmark_index_backtick_runs(body)
+        # Pick a temporary marker that does not occur in the message.
+        sentinel = commonmark_pick_emphasis_sentinel(body)
+
+        def _orphan_bracket(idx: int) -> None:
+            # A "[" that opens no link is literal text. v1 escapes it only
+            # outside a span, which is known once the scan is done.
+            out[idx] = "\\[" if strict else f"{sentinel}[1{sentinel}"
+
+        # Bound the total work spent scanning labeled-link destinations.
+        scan_budget = commonmark_new_scan_budget(body)
 
         while i < n:
             ch = body[i]
@@ -924,7 +1211,7 @@ class NotifyTelegram(NotifyBase):
                 i += 2
                 continue
 
-            # Convert matched CommonMark code runs to Telegram delimiters.
+            # Convert matched CommonMark code spans to Telegram backticks.
             if ch == "`":
                 j = i
                 # Count consecutive backticks to get the run length.
@@ -932,7 +1219,7 @@ class NotifyTelegram(NotifyBase):
                     j += 1
                 run = j - i
                 # Find the next unescaped run of the same length.
-                close = find_unescaped_run(backtick_runs, j, run)
+                close = commonmark_find_backtick_run(backtick_runs, j, run)
 
                 if close is not None:
                     # Extract the code span content between the delimiters.
@@ -947,102 +1234,104 @@ class NotifyTelegram(NotifyBase):
                     i = close + run
                     continue
 
-                # Preserve unmatched backticks, escaping them only in v2.
-                out.append(("\\`" if strict else "`") * run)
+                if strict:
+                    # Escape unmatched backticks in v2.
+                    out.append("\\`" * run)
+                else:
+                    # v1 escapes them only outside a span; the emphasis
+                    # spans around them are known once the scan is done.
+                    out.append(f"{sentinel}`{run}{sentinel}")
                 i = j
                 continue
 
-            # Strip CommonMark angle brackets from Telegram link destinations.
-            if body.startswith("](<", i):
-                close = commonmark_scan_angle_dest(body, i, n)
+            # Record a possible CommonMark link-label opening.
+            if ch == "[":
+                link_stack.append(len(out))
+                out.append(ch)
+                i += 1
+                continue
+
+            # Normalize angle-bracket destinations produced by conversion.
+            # Scan only when a pending label can use the destination.
+            if body.startswith("](<", i) and link_stack:
+                # Charge this attempt against the shared destination budget.
+                close = commonmark_scan_angle_dest(
+                    body, i, n, budget=scan_budget
+                )
 
                 if close is not None:
                     # Extract the URL content between "(" and ">".
                     url = body[i + 3 : close]
-                    # In Telegram's format, backslashes and closing
-                    # parentheses inside the URL must be escaped.
+                    # Escape Telegram URL delimiters.
                     url = url.replace("\\", "\\\\").replace(")", "\\)")
+                    # A matching "[" from earlier confirms a real link.
+                    link_stack.pop()
                     # Emit the Telegram-style destination and skip past ">)".
                     out.append("](" + url + ")")
                     i = close + 2
                     continue
 
-            # Map CommonMark emphasis, including combined ``***`` runs.
-            if ch == "*":
-                j = i
-                # Measure the full asterisk run.
-                while j < n and body[j] == "*":
-                    j += 1
-                run = j - i
+                # Let the bare-link check handle this failed angle form.
 
-                # Detect runs that exactly close multiple nested spans.
-                cascade_levels = 0
-                cascade_width = 0
-                for delim, _ in reversed(stack):
-                    # Width contribution of this stack frame's close delimiter.
-                    need = 2 if delim == "*" else 1
-                    if cascade_width + need > run:
-                        # Adding this frame would overshoot; no cascade match.
-                        break
-                    cascade_width += need
-                    cascade_levels += 1
-                    if cascade_width == run:
-                        # Exact match found; cascade will close these frames.
-                        break
+            # Preserve complete links; invalid destinations remain literal.
+            if body.startswith("](", i) and link_stack:
+                close = commonmark_scan_paren_dest(
+                    body, i + 1, n, budget=scan_budget
+                )
 
-                if cascade_levels and cascade_width == run:
-                    # The run exactly closes cascade_levels stack frames.
-                    # Pop them innermost-first and emit each close delimiter.
-                    for _ in range(cascade_levels):
-                        delim, open_index = stack.pop()
-                        if open_index is None:
-                            # V1 suppressed span: nesting was not emitted,
-                            # so no close delimiter is needed here either.
-                            pass
+                if close is not None:
+                    link_stack.pop()
+                    # Telegram link destinations escape parentheses only.
+                    dest = []
+                    k = i + 2
+                    while k < close:
+                        if body[k] == "\\" and k + 1 < close:
+                            dest.append(body[k : k + 2])
+                            k += 2
+                            continue
+                        if body[k] in "()":
+                            dest.append("\\" + body[k])
                         else:
-                            # Emit the closing delimiter for this span.
-                            out.append(delim)
-                    # Advance past the entire asterisk run and move on.
-                    i = j
+                            dest.append(body[k])
+                        k += 1
+                    out.append("](" + "".join(dest) + ")")
+                    i = close + 1
                     continue
 
-                # Otherwise consume the run one span at a time.
-                while run > 0:
-                    if stack and stack[-1][0] == "*" and run >= 2:
-                        # Top of stack is a bold span; 2 asterisks close it.
-                        delim, open_index = stack.pop()
-                        if open_index is None:
-                            # V1 suppressed bold: discard silently.
-                            pass
-                        elif open_index == len(out) - 1:
-                            # Bold was opened but no content followed --
-                            # remove the dangling open delimiter entirely.
-                            out.pop()
-                        else:
-                            # Emit the bold close delimiter.
-                            out.append(delim)
-                        run -= 2
-                    elif run >= 2:
-                        # No closeable bold on stack; open a new bold span.
-                        # Legacy v1 suppresses nested emphasis delimiters.
-                        if strict or not stack:
-                            out.append("*")
-                            stack.append(("*", len(out) - 1))
-                        else:
-                            # Record suppression for the matching close.
-                            stack.append(("*", None))
-                        run -= 2
-                    else:
-                        # run == 1: open (or close, via cascade) an italic.
-                        if strict or not stack:
-                            out.append("_")
-                            stack.append(("_", len(out) - 1))
-                        else:
-                            stack.append(("_", None))
-                        run -= 1
+                # Same reasoning as the angle-dest case above.
+                _orphan_bracket(link_stack.pop())
 
-                # Advance past the entire asterisk run.
-                i = j
+            # Drop autolink brackets and escape its URL for the selected mode.
+            if ch == "<":
+                close, _ = commonmark_scan_autolink_dest(body, i, n)
+                if close is not None:
+                    # Escape all markup characters in literal autolink text.
+                    for c2 in body[i + 1 : close]:
+                        if strict and c2 in cls._TELEGRAM_RESERVED_FULL:
+                            out.append("\\" + c2)
+                        else:
+                            out.append(c2)
+                    i = close + 1
+                    continue
+
+            # A "]" that never forms "](" cannot close a link, in either
+            # mode. Retire the innermost pending "[" so a later, unrelated
+            # "](" cannot incorrectly reuse it as its own opener.
+            if ch == "]" and link_stack:
+                # Escape the orphaned "[" so it cannot match as markup.
+                _orphan_bracket(link_stack.pop())
+
+            # Escape non-link punctuation required by strict MarkdownV2.
+            if strict and ch in "]()":
+                out.append("\\" + ch)
+                i += 1
+                continue
+
+            # Record asterisk and underscore runs for later resolution.
+            if ch in "*_":
+                i = commonmark_emphasis_run(
+                    body, i, n, delimiters, out, sentinel
+                )
                 continue
 
             # Escape remaining MarkdownV2-reserved characters.
@@ -1055,253 +1344,105 @@ class NotifyTelegram(NotifyBase):
             out.append(ch)
             i += 1
 
-        # Close nonempty spans left open by malformed or truncated input.
-        while stack:
-            delim, open_index = stack.pop()
-            if open_index is None:
-                # V1 suppressed span: never emitted an open, nothing to close.
-                pass
-            elif open_index == len(out) - 1:
-                # Span opened but collected no content -- remove the orphan
-                # opening delimiter so the output contains no empty spans.
-                out.pop()
-            else:
-                # Emit the close delimiter to produce valid Telegram Markdown.
-                out.append(delim)
+        # Escape dangling "[" markers before span cleanup changes indexes.
+        for idx in link_stack:
+            _orphan_bracket(idx)
 
-        # Join the translated fragments once.
-        return "".join(out)
+        # Resolve all recorded runs using CommonMark matching rules.
+        commonmark_match_emphasis(delimiters)
 
-    @classmethod
-    def _repair_split_chunk(cls, text, strict, pending):
-        """Repair one Telegram Markdown chunk and return its pending state.
+        # MarkdownV2 keeps nesting; legacy v1 suppresses nested markers while
+        # retaining their text. Source-order depth identifies visible spans.
+        depth = 0
+        for descriptor in delimiters:
+            closes = [e for e in descriptor["events"] if e[0] == "close"]
+            # Decide open visibility from outermost to innermost.
+            opens = [e for e in descriptor["events"] if e[0] == "open"]
+            tagged = []
+            for kind, is_strong in closes:
+                tagged.append((kind, is_strong, strict or depth == 1))
+                depth -= 1
+            # Unmatched markers of this run sit between its closes and opens.
+            descriptor["depth"] = depth
+            for kind, is_strong in reversed(opens):
+                tagged.append((kind, is_strong, strict or depth == 0))
+                depth += 1
+            descriptor["events"] = tagged
+            descriptor["depth_after"] = depth
 
-        Each returned chunk is independently valid. ``pending`` carries only
-        the state needed to interpret delimiters appearing in later chunks:
+        # Span depth at the current position of the substitution pass.
+        span_depth = 0
 
-        Key             Meaning
-        --------------  ----------------------------------------------
-        ``in_code``     Width of a code fence continued from this chunk
-        ``in_link_dest`` Link destination continues into the next chunk
-        ``*`` / ``_``   Emphasis closes to discard in a later chunk
+        def _substitute(match: re.Match) -> str:
+            nonlocal span_depth
+            kind = match.group(1)
+            if kind:
+                # A literal v1 "`" or "[" opens an entity that never ends
+                # unless it is escaped. Text inside a v1 span is taken
+                # literally, so it stays as is there.
+                marker = ("\\" + kind) if span_depth == 0 else kind
+                return marker * int(match.group(2))
 
-        Returns ``(repaired_text, next_pending)``.
+            descriptor = delimiters[int(match.group(2))]
+            span_depth = descriptor["depth_after"]
+            char = descriptor["char"]
+            close_part = "".join(
+                "*" if is_strong else "_"
+                for kind, is_strong, visible in descriptor["events"]
+                if kind == "close" and visible
+            )
+            open_part = "".join(
+                "*" if is_strong else "_"
+                for kind, is_strong, visible in descriptor["events"]
+                if kind == "open" and visible
+            )
+            # Telegram rejects an unmatched marker as an entity that never
+            # ends. MarkdownV2 escapes it everywhere; v1 recognizes the escape
+            # only outside a span and reads text inside a span literally.
+            escape = strict or descriptor["depth"] == 0
+            marker = ("\\" + char) if escape else char
+            leftover = marker * descriptor["numdelims"]
+            return close_part + leftover + open_part
+
+        marker_re = re.compile(
+            re.escape(sentinel) + r"([`[]?)(\d+)" + re.escape(sentinel)
+        )
+        text = marker_re.sub(_substitute, "".join(out))
+
+        return text
+
+    def _attachment_send_index(self, total: int) -> int:
+        """Place the attachment on the last call for content=before.
+
+        This lets split text arrive before an attachment that should visually
+        precede its caption; other placements use the first call.
         """
-
-        # Output fragment list; joined once at the end.
-        out = []
-        # Track emphasis opened within this chunk.
-        open_state = {"*": False, "_": False}
-        # Record the out-index of each open delimiter for empty-span cleanup.
-        open_pos = {"*": None, "_": None}
-        # Work on a mutable copy so we do not mutate the caller's dict.
-        pending = dict(pending)
-        # Track possible link-label openings in this chunk.
-        link_stack = []
-
-        # Initialize the single-pass scanner.
-        i = 0
-        n = len(text)
-        # Pre-compute backtick run positions once for O(log n) code matching.
-        backtick_runs = build_backtick_run_index(text)
-
-        # Resume an entity left open by the previous chunk.
-        in_code_width = pending.pop("in_code", None)
-        if in_code_width and strict:
-            # Search this chunk for the carried code span's closing fence.
-            close = find_unescaped_run(backtick_runs, 0, in_code_width)
-            if close is not None:
-                # Escape carried code content and consume its closing fence.
-                out.append(cls._strict_escape(text[:close]))
-                i = close + in_code_width
-            else:
-                # Escape this chunk and carry the code state forward.
-                out.append(cls._strict_escape(text))
-                pending["in_code"] = in_code_width
-                i = n
-
-        elif pending.pop("in_link_dest", False) and strict:
-            # Search for a carried link destination's closing parenthesis.
-            close = None
-            k = 0
-            while k < n:
-                if text[k] == "\\" and k + 1 < n:
-                    # Skip escape sequences -- they cannot be the terminator.
-                    k += 2
-                    continue
-                if text[k] == ")":
-                    # Found the unescaped closing parenthesis.
-                    close = k
-                    break
-                k += 1
-
-            if close is not None:
-                # Strict-escape the URL fragment up to ")" then emit "\\)".
-                out.append(cls._strict_escape(text[:close]))
-                out.append("\\)")
-                i = close + 1
-            else:
-                # Destination has not closed yet: carry the state forward.
-                out.append(cls._strict_escape(text))
-                pending["in_link_dest"] = True
-                i = n
-
-        # Scan the remainder of this chunk.
-        while i < n:
-            ch = text[i]
-
-            # Preserve escapes already applied by the dialect adapter.
-            if ch == "\\" and i + 1 < n:
-                out.append(text[i : i + 2])
-                i += 2
-                continue
-
-            # Preserve complete code spans or carry split spans forward.
-            if ch == "`":
-                j = i
-                # Measure the opening backtick run.
-                while j < n and text[j] == "`":
-                    j += 1
-                run = j - i
-                # Look for the matching close run in the pre-built index.
-                close = find_unescaped_run(backtick_runs, j, run)
-                if close is not None:
-                    # Complete span in this chunk: copy verbatim.
-                    out.append(text[i : close + run])
-                    i = close + run
-                    continue
-
-                if strict:
-                    # Split code span: escape the partial content and carry
-                    # the fence width so the next chunk knows where to close.
-                    pending["in_code"] = run
-                    out.append(cls._strict_escape(text[j:]))
-                    i = n
-                    continue
-
-            # Reconcile carried or local emphasis delimiters.
-            if ch in "*_":
-                if pending.get(ch, 0) > 0:
-                    # Discard the close for an opening dropped previously.
-                    pending[ch] -= 1
-                    i += 1
-                    continue
-
-                if open_state[ch]:
-                    # Close the local span, dropping an empty opening.
-                    if open_pos[ch] == len(out) - 1:
-                        out.pop()
-                    else:
-                        # Emit the close delimiter.
-                        out.append(ch)
-                    open_state[ch] = False
-                    open_pos[ch] = None
-                else:
-                    # This delimiter opens a new span in this chunk.
-                    out.append(ch)
-                    open_pos[ch] = len(out) - 1
-                    open_state[ch] = True
-                i += 1
-                continue
-
-            # Track link labels only in strict MarkdownV2 mode.
-            if strict and ch == "[":
-                # Record the position of this "[" in out so we can escape it
-                # later if we never find a matching "](dest)" in this chunk.
-                link_stack.append(len(out))
-                out.append(ch)
-                i += 1
-                continue
-
-            if strict and text.startswith("](", i):
-                # We are at the "](" that closes a pending link label.
-                # Scan forward for the unescaped closing ")" of the URL.
-                close = None
-                k = i + 2
-                while k < n:
-                    if text[k] == "\\" and k + 1 < n:
-                        # Skip escaped chars inside the destination.
-                        k += 2
-                        continue
-                    if text[k] == ")":
-                        # Found the closing paren -- mark and stop.
-                        close = k
-                        break
-                    k += 1
-
-                if close is not None:
-                    if link_stack:
-                        # Matched a "[" from this chunk: emit the full
-                        # "](...)" substring verbatim.
-                        link_stack.pop()
-                        out.append(text[i : close + 1])
-                    else:
-                        # No matching "[" in this chunk (it was in a previous
-                        # chunk that ended mid-label).  Escape the brackets
-                        # and strict-escape the destination so the output is
-                        # valid MarkdownV2 literal text.
-                        out.append("\\]\\(")
-                        out.append(cls._strict_escape(text[i + 2 : close]))
-                        out.append("\\)")
-                    i = close + 1
-                    continue
-
-                # Escape the partial destination and carry it forward.
-                out.append("\\]\\(")
-                out.append(cls._strict_escape(text[i + 2 :]))
-                pending["in_link_dest"] = True
-                i = n
-                continue
-
-            if strict and ch in "[]()":
-                # Stray link punctuation outside a complete construct must be
-                # escaped so MarkdownV2's strict parser does not reject it.
-                out.append("\\" + ch)
-                i += 1
-                continue
-
-            # All other characters pass through unchanged.
-            out.append(ch)
-            i += 1
-
-        # Escape unmatched labels before index-changing cleanup.
-        if strict:
-            for idx in link_stack:
-                out[idx] = "\\" + out[idx]
-
-        # Classify open spans before deletions shift their indexes.
-        empty, nonempty = [], []
-        for d in ("*", "_"):
-            if not open_state[d]:
-                continue
-            (empty if open_pos[d] == len(out) - 1 else nonempty).append(d)
-
-        # Delete empty spans from right to left to preserve earlier indexes.
-        for d in sorted(empty, key=lambda d: open_pos[d], reverse=True):
-            del out[open_pos[d]]
-
-        # Close nonempty spans and carry their unmatched closes forward.
-        new_pending = dict(pending)
-        for d in nonempty:
-            out.append(d)
-            new_pending[d] = new_pending.get(d, 0) + 1
-
-        # Return the repaired chunk and state for its successor.
-        return "".join(out), new_pending
+        return (
+            total - 1 if self.content == TelegramContentPlacement.BEFORE else 0
+        )
 
     def _build_send_calls(
-        self, body=None, title=None, body_format=None, **kwargs
+        self,
+        body=None,
+        title=None,
+        body_format=None,
+        body_passthrough=None,
+        **kwargs,
     ):
-        """Convert HTML-derived CommonMark and repair each split chunk.
+        """Bypass the framework's split/format pipeline for Rich Message
+        templates.
 
-        Pending Telegram entity state is carried between generated calls.
+        Body and title are template substitution tokens there, not text
+        to be amalgamated, format-converted, or length-split the way a
+        normal message is. Everything else is left to the framework.
         """
 
+        # Direct plugin calls bypass Apprise's format resolution.
+        if body_passthrough is None:
+            body_passthrough = body_format is None
+            body_format = self.resolve_format(body_format)
+
         if self.template:
-            # A Rich Message template defines its own structure -- body
-            # and title are only substitution tokens for it, not text to
-            # be amalgamated, format-converted, or length-split the way a
-            # normal message is.
             attach = kwargs.pop("attach", None)
             if attach is not None and not isinstance(
                 attach, AppriseAttachment
@@ -1312,40 +1453,19 @@ class NotifyTelegram(NotifyBase):
                 "body": body if body else "",
                 "title": title if title else "",
                 "body_format": body_format,
+                "body_passthrough": body_passthrough,
                 "attach": attach,
                 **kwargs,
             }
             return
 
-        if not (
-            self.notify_format == NotifyFormat.MARKDOWN
-            and body_format == NotifyFormat.HTML
-        ):
-            yield from super()._build_send_calls(
-                body=body, title=title, body_format=body_format, **kwargs
-            )
-            return
-
-        strict = self.markdown_ver == TelegramMarkdownVersion.TWO
-
-        # Merge the title before translating its heading syntax.
-        if self.title_maxlen <= 0 and title:
-            body, title = commonmark_prepend_title(body, title)
-
-        body = self._commonmark_to_telegram(body, strict=strict)
-
-        pending = {}
-        for kwargs2 in super()._build_send_calls(
+        yield from super()._build_send_calls(
             body=body,
             title=title,
-            # Use Markdown-aware splitting on the translated body.
-            body_format=NotifyFormat.MARKDOWN,
+            body_format=body_format,
+            body_passthrough=body_passthrough,
             **kwargs,
-        ):
-            kwargs2["body"], pending = self._repair_split_chunk(
-                kwargs2["body"], strict, pending
-            )
-            yield kwargs2
+        )
 
     def send(
         self,
@@ -1354,6 +1474,7 @@ class NotifyTelegram(NotifyBase):
         notify_type=NotifyType.INFO,
         attach=None,
         body_format=None,
+        body_passthrough=None,
         **kwargs,
     ):
         """Perform Telegram Notification."""
@@ -1397,41 +1518,27 @@ class NotifyTelegram(NotifyBase):
         }
 
         # Prepare Message Body
-        if self.notify_format == NotifyFormat.MARKDOWN:
-            if (
-                body_format == NotifyFormat.TEXT
-                and self.markdown_ver == TelegramMarkdownVersion.TWO
-            ):
-                # Escape MarkdownV2-only reserved characters in plain text.
-                # See: https://stackoverflow.com/a/69892704/355584
-                # Also: https://core.telegram.org/bots/api#markdownv2-style
-                # HTML bodies were already escaped during dialect adaptation.
-                body = re.sub(r"(?<!\\)([_*[\]()~`>#+=|{}.!-])", r"\\\1", body)
-
-            # HTML was converted to Telegram Markdown before splitting so no
-            # further transformation is required here; direct Telegram Markdown
-            # input is left unchanged regardless of version.
+        if body_format == NotifyFormat.MARKDOWN:
+            # The framework already converted and resized this Markdown body.
+            bodies = [body]
             payload_["parse_mode"] = self.markdown_ver
-            payload_["text"] = body
 
         else:  # HTML
             # Use Telegram's HTML mode
             payload_["parse_mode"] = "HTML"
-            for r, v, m in self.__telegram_escape_html_entries:
-                if "html" in m:
-                    # Handle special cases where we need to alter new lines for
-                    # presentation purposes
-                    v = v.format(
-                        m["html"]
-                        if body_format
-                        in (NotifyFormat.HTML, NotifyFormat.MARKDOWN)
-                        else ""
-                    )
 
-                body = r.sub(v, body)
+            # Declared HTML was already reduced by dialect_convert(); only
+            # undeclared HTML still needs the unsupported tags removed.
+            if body_passthrough:
+                for r, v in self.__telegram_escape_html_entries:
+                    body = r.sub(v, body)
 
             # Prepare our payload based on HTML or TEXT
-            payload_["text"] = body
+            bodies = [body]
+
+        # Use the first piece for caption and attachment placement.
+        payload_["text"] = bodies[0]
+        has_body = bool(bodies[0])
 
         # Prepare our caption payload
         caption_payload = (
@@ -1443,7 +1550,7 @@ class NotifyTelegram(NotifyBase):
                 "parse_mode": payload_["parse_mode"],
             }
             if attach
-            and body
+            and has_body
             and len(payload_.get("text", "")) < self.telegram_caption_maxlen
             else {}
         )
@@ -1451,7 +1558,7 @@ class NotifyTelegram(NotifyBase):
         # Handle payloads without a body specified (but an attachment present)
         attach_content = (
             TelegramContentPlacement.AFTER
-            if not body or caption_payload
+            if not has_body or caption_payload
             else self.content
         )
 
@@ -1459,24 +1566,38 @@ class NotifyTelegram(NotifyBase):
         targets = list(self.targets)
         while len(targets):
             target = targets.pop(0)
+
+            # Skip a chat that already accepted this message on an
+            # earlier attempt so a retry does not deliver it twice.
+            if self.is_delivered(target):
+                continue
+
             chat_id, topic = target
 
             # Printable chat_id details
             pchat_id = f"{chat_id}" if not topic else f"{chat_id}:{topic}"
 
-            payload = payload_.copy()
-            payload["chat_id"] = chat_id
+            base_payload = payload_.copy()
+            base_payload["chat_id"] = chat_id
             if topic:
-                payload["message_thread_id"] = topic
+                base_payload["message_thread_id"] = topic
 
-            if self.include_image is True and not self.send_media(
-                target, notify_type
+            # The image is posted as its own message and belongs to the
+            # whole notification, so it goes out once no matter how many
+            # pieces the body is split into.
+            image_key = ("image", target)
+            if self.include_image is True and not self.is_delivered(
+                image_key, per_message=True
             ):
-                # We failed to send the image associated with our
-                # notify_type
-                self.logger.warning(
-                    "Failed to send Telegram attachment to {}.", pchat_id
-                )
+                if self.send_media(target, notify_type):
+                    self.mark_delivered(image_key, per_message=True)
+
+                else:
+                    # We failed to send the image associated with our
+                    # notify_type
+                    self.logger.warning(
+                        "Failed to send Telegram attachment to %s.", pchat_id
+                    )
 
             if (
                 attach
@@ -1493,77 +1614,96 @@ class NotifyTelegram(NotifyBase):
                     has_error = True
                     continue
 
-                if not body:
+                if not has_body:
                     # Nothing more to do; move along to the next attachment
+                    self.mark_delivered(target)
                     continue
 
             if caption_payload:
                 # nothing further to do; move along to the next attachment
+                self.mark_delivered(target)
                 continue
 
-            # Always call throttle before any remote server i/o is made;
-            # Telegram throttles to occur before sending the image so that
-            # content can arrive together.
-            self.throttle()
+            # Send every expanded piece so overflow splitting loses no content.
+            target_failed = False
+            for piece_no, piece in enumerate(bodies):
+                piece_key = ("body", target, piece_no)
+                if self.is_delivered(piece_key):
+                    continue
 
-            self.logger.debug(
-                f"Telegram POST URL: {url} "
-                f"(cert_verify={self.verify_certificate!r})"
-            )
-            self.logger.debug(f"Telegram Payload: {payload!s}")
+                payload = base_payload.copy()
+                payload["text"] = piece
 
-            try:
-                r = requests.post(
-                    url,
-                    data=dumps(payload),
-                    headers=headers,
-                    verify=self.verify_certificate,
-                    timeout=self.request_timeout,
-                    allow_redirects=self.redirects,
+                # Always call throttle before any remote server i/o is
+                # made; Telegram throttles to occur before sending the
+                # image so that content can arrive together.
+                self.throttle()
+
+                self.logger.debug(
+                    f"Telegram POST URL: {url} "
+                    f"(cert_verify={self.verify_certificate!r})"
                 )
+                self.logger.debug(f"Telegram Payload: {payload!s}")
 
-                if r.status_code != requests.codes.ok:
-                    # We had a problem
-                    status_str = NotifyTelegram.http_response_code_lookup(
-                        r.status_code
+                try:
+                    r = requests.post(
+                        url,
+                        data=dumps(payload),
+                        headers=headers,
+                        verify=self.verify_certificate,
+                        timeout=self.request_timeout,
+                        allow_redirects=self.redirects,
                     )
 
-                    try:
-                        # Try to get the error message if we can:
-                        error_msg = loads(r.content).get(
-                            "description", "unknown"
+                    if r.status_code != requests.codes.ok:
+                        # We had a problem
+                        status_str = NotifyTelegram.http_response_code_lookup(
+                            r.status_code
                         )
 
-                    except (AttributeError, TypeError, ValueError):
-                        # ValueError = r.content is Unparsable
-                        # TypeError = r.content is None
-                        # AttributeError = r is None
-                        error_msg = None
+                        try:
+                            # Try to get the error message if we can:
+                            error_msg = loads(r.content).get(
+                                "description", "unknown"
+                            )
 
+                        except (AttributeError, TypeError, ValueError):
+                            # ValueError = r.content is Unparsable
+                            # TypeError = r.content is None
+                            # AttributeError = r is None
+                            error_msg = None
+
+                        self.logger.warning(
+                            "Failed to send Telegram notification to "
+                            f"{pchat_id}: "
+                            f"{error_msg if error_msg else status_str}, "
+                            f"error={r.status_code}."
+                        )
+
+                        self.logger.debug(f"Response Details:\r\n{r.content}")
+
+                        # Flag our error
+                        has_error = True
+                        target_failed = True
+                        continue
+
+                except requests.RequestException as e:
                     self.logger.warning(
-                        f"Failed to send Telegram notification to {pchat_id}: "
-                        f"{error_msg if error_msg else status_str}, "
-                        f"error={r.status_code}."
+                        "A connection error occurred sending "
+                        f"Telegram:{pchat_id} notification."
                     )
-
-                    self.logger.debug(f"Response Details:\r\n{r.content}")
+                    self.logger.debug(f"Socket Exception: {e!s}")
 
                     # Flag our error
                     has_error = True
+                    target_failed = True
                     continue
 
-            except requests.RequestException as e:
-                self.logger.warning(
-                    f"A connection error occurred sending Telegram:{pchat_id} "
-                    + "notification."
-                )
-                self.logger.debug(f"Socket Exception: {e!s}")
+                self.logger.info("Sent Telegram notification.")
+                self.mark_delivered(piece_key)
 
-                # Flag our error
-                has_error = True
+            if target_failed:
                 continue
-
-            self.logger.info("Sent Telegram notification.")
 
             if (
                 attach
@@ -1580,15 +1720,314 @@ class NotifyTelegram(NotifyBase):
                 has_error = True
                 continue
 
+            # This chat is done; a retry can safely skip over it.
+            self.mark_delivered(target)
+
         return not has_error
 
-    def _send_attachments(self, target, notify_type, attach, payload=None):
+    def _album_kind(self, attachment: AttachBase) -> str:
+        """Choose album or single-message delivery for an attachment."""
+
+        if not isinstance(attachment, AttachBase) or not attachment:
+            # Let the regular path report unreadable attachments.
+            return TelegramMediaKind.SINGLE
+
+        mimetype = (attachment.mimetype or "").lower()
+
+        # GIF and raw H.264 files use Telegram's animation endpoint,
+        # which is not supported in albums
+        if (
+            mimetype.startswith("image/")
+            and mimetype != "image/gif"
+            and len(attachment) <= TELEGRAM_PHOTO_MAX_BYTES
+        ):
+            return TelegramMediaKind.PHOTO
+
+        if mimetype == "video/mp4" and (
+            len(attachment) <= TELEGRAM_FILE_MAX_BYTES
+        ):
+            return TelegramMediaKind.VIDEO
+
+        # Send audio, documents, animations, oversized media, and unknown
+        # types separately
+        return TelegramMediaKind.SINGLE
+
+    def _send_media_group(
+        self,
+        target: tuple,
+        batch: list,
+        kinds: list,
+        payload: Optional[dict] = None,
+    ) -> str:
+        """Upload a batch of attachments as one Telegram album."""
+
+        # Extract our target
+        chat_id, topic = target
+
+        # Prepare our payload
+        data = {
+            "chat_id": chat_id,
+            "disable_notification": self.silent,
+        }
+        if topic:
+            data["message_thread_id"] = topic
+
+        url = f"{self.notify_url}{self.bot_token}/sendMediaGroup"
+
+        # Link each album item to its uploaded file.
+        media = []
+        files = {}
+
+        try:
+            # Close every opened file, even when the upload fails
+            with ExitStack() as stack:
+                for no, (attachment, kind) in enumerate(zip(batch, kinds)):
+                    if not attachment:
+                        # We could not access the attachment
+                        self.logger.error(
+                            "Could not access attachment %s.",
+                            (
+                                attachment.url(privacy=True)
+                                if isinstance(attachment, AttachBase)
+                                else attachment
+                            ),
+                        )
+                        return TelegramGroupResult.FAIL
+
+                    field_name = f"file{no}"
+                    files[field_name] = (
+                        attachment.name or f"file{no:03}.dat",
+                        stack.enter_context(attachment.open()),
+                        attachment.mimetype,
+                    )
+
+                    item = {
+                        "type": kind,
+                        "media": f"attach://{field_name}",
+                    }
+
+                    # Telegram displays the caption on the first item only.
+                    if not no:
+                        item.update(payload or {})
+
+                    media.append(item)
+
+                data["media"] = dumps(media)
+
+                self.logger.debug(
+                    f"Telegram media group POST URL: {url} "
+                    f"(cert_verify={self.verify_certificate!r})"
+                )
+
+                # Always call throttle before any remote server i/o is made
+                self.throttle()
+
+                r = requests.post(
+                    url,
+                    headers={"User-Agent": self.app_id},
+                    files=files,
+                    data=data,
+                    verify=self.verify_certificate,
+                    timeout=self.request_timeout,
+                    allow_redirects=self.redirects,
+                )
+
+        except requests.RequestException as e:
+            self.logger.warning(
+                "A connection error occurred posting Telegram media group."
+            )
+            self.logger.debug(f"Socket Exception: {e!s}")
+            return TelegramGroupResult.FAIL
+
+        except OSError as e:
+            # OSError also covers the legacy IOError name
+            self.logger.warning(
+                "An I/O error occurred reading a Telegram media group"
+                " attachment."
+            )
+            self.logger.debug(f"I/O Exception: {e!s}")
+            return TelegramGroupResult.FAIL
+
+        if r.status_code == requests.codes.ok:
+            # Content was sent successfully if we got here
+            return TelegramGroupResult.OK
+
+        # We had a problem
+        status_str = NotifyTelegram.http_response_code_lookup(r.status_code)
+
+        self.logger.warning(
+            "Failed to send Telegram media group: {}{}error={}.".format(
+                status_str,
+                ", " if status_str else "",
+                r.status_code,
+            )
+        )
+
+        self.logger.debug("Response Details:\r\n%r", (r.content or b"")[:2000])
+
+        # A rejected album may still work as separate messages
+        return (
+            TelegramGroupResult.RETRY
+            if r.status_code == requests.codes.bad_request
+            else TelegramGroupResult.FAIL
+        )
+
+    def _send_album_item(
+        self,
+        target: tuple,
+        notify_type: NotifyType,
+        attachment: AttachBase,
+        kind: str,
+        payload: dict,
+    ) -> bool:
+        """Send one attachment on its own while album mode is enabled."""
+
+        # Try the attachment's usual endpoint first so media shows inline
+        if self.send_media(
+            target, notify_type, payload=dict(payload), attach=attachment
+        ):
+            return True
+
+        if kind == TelegramMediaKind.SINGLE:
+            # There is nothing else to try
+            return False
+
+        # Telegram refused the photo or video, so send it as a plain file
+        self.logger.info(
+            "Sending Telegram attachment %s as a document.",
+            attachment.url(privacy=True),
+        )
+        return self.send_media(
+            target,
+            notify_type,
+            payload=dict(payload),
+            attach=attachment,
+            document=True,
+        )
+
+    def _send_album_attachments(
+        self,
+        target: tuple,
+        notify_type: NotifyType,
+        attach: AppriseAttachment,
+        payload: Optional[dict] = None,
+    ) -> bool:
+        """Send supported attachments in Telegram albums."""
+
+        # Work out up front how each attachment wants to travel
+        attachments = list(attach)
+        kinds = [self._album_kind(x) for x in attachments]
+
+        # Track each item so retries skip attachments already delivered.
+        keys = [
+            ("attachment", target, no) for no in range(1, len(attachments) + 1)
+        ]
+
+        # Only photos and videos can be grouped into an album
+        grouped = (TelegramMediaKind.PHOTO, TelegramMediaKind.VIDEO)
+
+        # Only the first thing we send carries the caption
+        caption = payload if payload else {}
+
+        no = 0
+        while no < len(attachments):
+            if self.is_delivered(keys[no]):
+                # This one arrived on an earlier attempt, and took the
+                # caption with it if it was first
+                caption = {}
+                no += 1
+                continue
+
+            # Group adjacent media without changing attachment order.
+            end = no
+
+            # Album uploads use memory, so cap each batch at 50 MB.
+            total = 0
+            while (
+                end < len(attachments)
+                and kinds[end] in grouped
+                and end - no < TELEGRAM_MEDIA_GROUP_MAX
+                and total + len(attachments[end]) <= TELEGRAM_FILE_MAX_BYTES
+                and not self.is_delivered(keys[end])
+            ):
+                total += len(attachments[end])
+                end += 1
+
+            # Too few media for an album are sent one at a time
+            result = (
+                self._send_media_group(
+                    target,
+                    attachments[no:end],
+                    kinds[no:end],
+                    payload=caption,
+                )
+                if end - no >= TELEGRAM_MEDIA_GROUP_MIN
+                else TelegramGroupResult.RETRY
+            )
+
+            if result == TelegramGroupResult.FAIL:
+                # We failed; don't continue
+                return False
+
+            if result == TelegramGroupResult.RETRY:
+                # Retry rejected or ungrouped items separately.
+                end = max(end, no + 1)
+                for idx in range(no, end):
+                    if not self._send_album_item(
+                        target,
+                        notify_type,
+                        attachments[idx],
+                        kinds[idx],
+                        caption if idx == no else {},
+                    ):
+                        # We failed; don't continue
+                        return False
+
+                    # Delivered; a retry can safely skip it
+                    self.logger.info(
+                        f"Sent Telegram attachment: {attachments[idx]}."
+                    )
+                    self.mark_delivered(keys[idx])
+
+            else:
+                # The whole album arrived together
+                for idx in range(no, end):
+                    self.logger.info(
+                        f"Sent Telegram attachment: {attachments[idx]}."
+                    )
+                    self.mark_delivered(keys[idx])
+
+            # The caption has been spent
+            caption = {}
+            no = end
+
+        return True
+
+    def _send_attachments(
+        self,
+        target: tuple,
+        notify_type: NotifyType,
+        attach: AppriseAttachment,
+        payload: Optional[dict] = None,
+    ) -> bool:
         """Sends our attachments."""
+
+        if self.album:
+            # Album mode groups eligible media instead of sending one
+            # message per attachment
+            return self._send_album_attachments(
+                target, notify_type, attach, payload=payload
+            )
+
         if payload is None:
             payload = {}
         has_error = False
         # Send our attachments now (if specified and if it exists)
         for no, attachment in enumerate(attach, start=1):
+            attachment_key = ("attachment", target, no)
+            if self.is_delivered(attachment_key):
+                continue
+
             payload = payload if payload and no == 1 else {}
             payload.update(
                 {
@@ -1608,6 +2047,7 @@ class NotifyTelegram(NotifyBase):
                 break
 
             self.logger.info(f"Sent Telegram attachment: {attachment}.")
+            self.mark_delivered(attachment_key)
 
         return not has_error
 
@@ -1837,6 +2277,7 @@ class NotifyTelegram(NotifyBase):
             "detect": "yes" if self.detect_owner else "no",
             "silent": "yes" if self.silent else "no",
             "preview": "yes" if self.preview else "no",
+            "album": "yes" if self.album else "no",
             "content": self.content,
             "mdv": TELEGRAM_MARKDOWN_VERSIONS[self.markdown_ver],
         }
@@ -1984,6 +2425,9 @@ class NotifyTelegram(NotifyBase):
 
         # Show Web Page Preview
         results["preview"] = parse_bool(results["qsd"].get("preview", False))
+
+        # Group eligible photo/video attachments into Telegram media groups
+        results["album"] = parse_bool(results["qsd"].get("album", False))
 
         # Include images with our message
         results["include_image"] = parse_bool(
