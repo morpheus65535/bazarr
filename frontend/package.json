@@ -62,7 +62,7 @@
     "@vite-pwa/assets-generator": "^1.0.4",
     "@vitejs/plugin-react": "^6.1.1",
     "@vitest/coverage-v8": "^5.0.1",
-    "@vitest/ui": "^5.0.1",
+    "@vitest/ui": "^5.0.5",
     "clsx": "^2.1.1",
     "eslint": "^10.10.0",
     "eslint-plugin-react-refresh": "^0.5.7",
