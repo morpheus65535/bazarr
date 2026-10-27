@@ -1,5 +1,5 @@
-import userEvent from "@testing-library/user-event";
 import { notifications } from "@mantine/notifications";
+import userEvent from "@testing-library/user-event";
 import { Mock, vi, vitest } from "vitest";
 import {
   useOpenAICompatibleTranslatorTestMutation,
