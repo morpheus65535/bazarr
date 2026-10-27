@@ -24,6 +24,11 @@ class InvalidTranslationResponseError(RuntimeError):
     pass
 
 
+class ChatCompletionFormatError(RuntimeError):
+    # Not a subclass of InvalidTranslationResponseError: a malformed envelope is not fixed by splitting the batch.
+    pass
+
+
 class CueIdentityMismatchError(InvalidTranslationResponseError):
     def __init__(self, expected_ids, actual_ids, duplicate_ids):
         missing = sorted(expected_ids - actual_ids)
@@ -89,9 +94,13 @@ def _request_translation(cues, base_url, model, api_key, timeout, from_lang, to_
         headers['Authorization'] = f'Bearer {token}'
     response = requests.post(url, json=payload, headers=headers, timeout=int(timeout))
     response.raise_for_status()
-    result = response.json()['choices'][0]
-    content = result.get('message', {}).get('content')
-    if result.get('finish_reason') != 'stop' or not content:
+    try:
+        choice = response.json()['choices'][0]
+        finish_reason = choice.get('finish_reason')
+        content = choice['message']['content']
+    except (KeyError, IndexError, TypeError, AttributeError, ValueError) as error:
+        raise ChatCompletionFormatError('Translator response is not a Chat Completions choice') from error
+    if finish_reason != 'stop' or not isinstance(content, str) or not content:
         raise InvalidTranslationResponseError('Translator returned an incomplete response')
     match = re.search(r'\[[\s\S]*\]', content)
     if not match:
@@ -143,12 +152,12 @@ def test_openai_compatible_connection(base_url, model, api_key='', timeout=30):
         if status_code is not None:
             raise RuntimeError(f'The endpoint returned HTTP {status_code}') from None
         raise RuntimeError('The endpoint rejected the test request') from None
-    except json.JSONDecodeError:
+    except ChatCompletionFormatError:
         raise RuntimeError('The endpoint returned an invalid Chat Completions response') from None
+    except InvalidTranslationResponseError as error:
+        raise RuntimeError(f'The endpoint returned an unusable translation: {error}') from None
     except requests.exceptions.RequestException:
         raise RuntimeError('Could not reach the endpoint; check its URL and timeout') from None
-    except (KeyError, IndexError, TypeError, ValueError):
-        raise RuntimeError('The endpoint returned an invalid Chat Completions response') from None
 
     return result[0]
 
@@ -176,38 +185,53 @@ class OpenAICompatibleTranslatorService:
         return getattr(settings.translator, name, default)
 
     @retry(exceptions=(requests.exceptions.RequestException,), tries=3, delay=1, backoff=2, jitter=(0, 1))
-    def _translate_batch(self, cues):
-        request_args = {
-            'base_url': self._setting('openai_base_url', ''),
-            'model': self._setting('openai_model', ''),
-            'api_key': self._setting('openai_api_key', ''),
-            'timeout': self._setting('openai_timeout', 180),
-            'from_lang': self.from_lang,
-            'to_lang': self.to_lang,
-        }
+    def _request_with_retry(self, cues: list[str], retry_instruction: str | None = None) -> list[str]:
+        """Send one translation request, retrying only transient network failures.
+
+        :param cues: Subtitle texts to translate, in order.
+        :param retry_instruction: Optional correction appended to the system prompt.
+        :return: Translated texts in the same order as ``cues``.
+        """
+        return _request_translation(
+            cues=cues,
+            base_url=self._setting('openai_base_url', ''),
+            model=self._setting('openai_model', ''),
+            api_key=self._setting('openai_api_key', ''),
+            timeout=self._setting('openai_timeout', 180),
+            from_lang=self.from_lang,
+            to_lang=self.to_lang,
+            retry_instruction=retry_instruction,
+        )
+
+    def _translate_batch(self, cues: list[str]) -> list[str]:
+        """Translate a batch, requesting a correction and then splitting it if the response is invalid.
+
+        Network retries live in ``_request_with_retry`` so that recursive splits do not multiply them.
+
+        :param cues: Subtitle texts to translate, in order.
+        :return: Translated texts in the same order as ``cues``.
+        """
         try:
-            return _request_translation(cues=cues, **request_args)
+            return self._request_with_retry(cues)
         except InvalidTranslationResponseError as error:
-            cue_count = len(cues)
             retry_instruction = (
                 f'Your previous response was invalid: {error}. Retry the entire input and return only a JSON array '
                 'of objects with the original integer IDs and translated text, with every input ID represented '
                 'exactly once.'
             )
-            logger.warning(
-                'Translator returned an invalid response for a batch of %d cues; requesting a correction',
-                cue_count,
-            )
-            try:
-                return _request_translation(cues=cues, retry_instruction=retry_instruction, **request_args)
-            except InvalidTranslationResponseError:
-                pass
-
+        logger.warning(
+            'Translator returned an invalid response for a batch of %d cues; requesting a correction',
+            len(cues),
+        )
+        try:
+            return self._request_with_retry(cues, retry_instruction=retry_instruction)
+        except InvalidTranslationResponseError:
             if len(cues) <= 1:
                 raise
-            midpoint = len(cues) // 2
-            logger.warning('Translator still returned an invalid response; retrying as smaller batches')
-            return self._translate_batch(cues[:midpoint]) + self._translate_batch(cues[midpoint:])
+
+        midpoint = len(cues) // 2
+        logger.warning('Translator still returned an invalid response; retrying as smaller batches')
+        return self._translate_batch(cues[:midpoint]) + self._translate_batch(cues[midpoint:])
 
     def translate(self, job_id=None):
         try:

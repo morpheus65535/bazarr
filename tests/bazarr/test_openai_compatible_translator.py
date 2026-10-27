@@ -164,6 +164,37 @@ def test_connection_test_uses_supplied_settings(mocker):
     assert payload['messages'][1]['content'] == '[{"id": 1, "text": "Hello"}]'
 
 
+def test_malformed_chat_completion_envelope_is_not_split_or_reprompted(mocker):
+    _settings(mocker)
+    response = mocker.Mock()
+    response.json.return_value = {'choices': [{'finish_reason': 'stop', 'message': None}]}
+    post = mocker.patch.object(openai_compatible_translator.requests, 'post', return_value=response)
+
+    with pytest.raises(openai_compatible_translator.ChatCompletionFormatError):
+        _service()._translate_batch(['First cue', 'Second cue'])
+    assert post.call_count == 1
+
+
+def test_connection_test_reports_malformed_envelope(mocker):
+    response = mocker.Mock()
+    response.json.return_value = {'error': {'message': 'model not loaded'}}
+    mocker.patch.object(openai_compatible_translator.requests, 'post', return_value=response)
+
+    with pytest.raises(RuntimeError, match='invalid Chat Completions response'):
+        openai_compatible_translator.test_openai_compatible_connection(
+            base_url='http://model/v1', model='local-model', api_key='', timeout=12)
+
+
+def test_connection_test_reports_unusable_translation(mocker):
+    _settings(mocker)
+    mocker.patch.object(openai_compatible_translator.requests, 'post',
+                        return_value=_response(mocker, '[{"id":2,"text":"Bonjour"}]'))
+
+    with pytest.raises(RuntimeError, match='unusable translation'):
+        openai_compatible_translator.test_openai_compatible_connection(
+            base_url='http://model/v1', model='local-model', api_key='', timeout=12)
+
+
 def test_connection_test_reports_authentication_errors_without_echoing_key(mocker):
     response = mocker.Mock(status_code=401)
     error = openai_compatible_translator.requests.exceptions.HTTPError(response=response)
