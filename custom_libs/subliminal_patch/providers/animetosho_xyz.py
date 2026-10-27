@@ -84,9 +84,25 @@ class AnimeToshoXYZSubtitle(Subtitle):
 
         # Add these data are explicit extracted from the API and they always have to match otherwise they wouldn't
         # arrive at this point and would stop on list_subtitles.
-        self.matches.update(['series', 'season', 'episode'])
+        self.matches.update(['series', 'episode'])
+
+        # AnimeTosho sometimes files a later season's release under an earlier season's AniDB episode id
+        # (e.g. "Mashle S02E11" listed for Mashle S01E11), so the season is only assumed to match when no
+        # parsed name explicitly names a different one.
+        if not self._names_other_season(video):
+            self.matches.add('season')
 
         return self.matches
+
+    def _names_other_season(self, video):
+        guessed_seasons = set()
+        for release_guess in self.release_guesses:
+            season = release_guess.get('season')
+            if season is None:
+                continue
+            guessed_seasons.update(season if isinstance(season, list) else [season])
+
+        return bool(video.season is not None and guessed_seasons and video.season not in guessed_seasons)
 
 
 class AnimeToshoXYZProvider(Provider, ProviderSubtitleArchiveMixin):
