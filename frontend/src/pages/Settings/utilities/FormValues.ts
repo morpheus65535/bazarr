@@ -1,4 +1,10 @@
-import { createContext, useCallback, useContext, useRef } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+} from "react";
 import type { UseFormReturnType } from "@mantine/form";
 import { LOG } from "@/utilities/console";
 
@@ -25,7 +31,10 @@ export const useFormActions = () => {
   const form = useFormValues();
 
   const formRef = useRef(form);
-  formRef.current = form;
+
+  useEffect(() => {
+    formRef.current = form;
+  });
 
   const update = useCallback((object: Record<string, unknown>) => {
     LOG("info", `Updating values`, object);
@@ -53,7 +62,20 @@ export const useFormActions = () => {
     });
   }, []);
 
-  return { update, setValue };
+  // Removes a previously staged value, e.g. when a field is reverted back to
+  // its original value so it no longer counts as an unsaved change.
+  const removeValue = useCallback((key: string) => {
+    LOG("info", `Removing staged value of ${key}`);
+    formRef.current.setValues((values) => {
+      const changes = { ...values.settings };
+      const hooks = { ...values.hooks };
+      delete changes[key];
+      delete hooks[key];
+      return { ...values, settings: changes, hooks };
+    });
+  }, []);
+
+  return { update, setValue, removeValue };
 };
 
 export type HookType = (value: unknown) => unknown;

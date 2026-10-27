@@ -143,7 +143,7 @@ describe("SettingsNotificationsView", () => {
 
     await userEvent.type(urlInput, "https://discord.com/api/webhooks/...");
 
-    await userEvent.click(modalScope.getByRole("button", { name: "Save" }));
+    await userEvent.click(modalScope.getByRole("button", { name: "Confirm" }));
 
     await waitFor(() =>
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
@@ -167,7 +167,7 @@ describe("SettingsNotificationsView", () => {
     const modal = await screen.findByRole("dialog");
     const modalScope = within(modal);
 
-    await userEvent.click(modalScope.getByRole("button", { name: "Remove" }));
+    await userEvent.click(modalScope.getByRole("button", { name: "Disable" }));
 
     await waitFor(() =>
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
@@ -237,7 +237,7 @@ describe("SettingsNotificationsView", () => {
 
     await userEvent.type(urlInput, "https://discord.com/api/webhooks/...");
 
-    await userEvent.click(modalScope.getByRole("button", { name: "Save" }));
+    await userEvent.click(modalScope.getByRole("button", { name: "Confirm" }));
 
     await waitFor(() =>
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),

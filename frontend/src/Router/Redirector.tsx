@@ -22,7 +22,7 @@ const Redirector: FunctionComponent = () => {
       } else if (useSportarr) {
         navigate("/sports");
       } else {
-        navigate("/settings/general");
+        navigate("/settings/application/general");
       }
     }
   }, [data, navigate]);

@@ -19,7 +19,7 @@ class SystemAccount(Resource):
     post_request_parser.add_argument('username', type=str, required=False, help='Bazarr username')
     post_request_parser.add_argument('password', type=str, required=False, help='Bazarr password')
 
-    @api_ns_system_account.doc(parser=post_request_parser)
+    @api_ns_system_account.expect(post_request_parser)
     @api_ns_system_account.response(204, 'Success')
     @api_ns_system_account.response(400, 'Unknown action')
     @api_ns_system_account.response(403, 'Authentication failed')

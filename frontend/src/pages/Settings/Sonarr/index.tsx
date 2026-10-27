@@ -11,7 +11,6 @@ import {
   PathMappingTable,
   Section,
   Selector,
-  Slider,
   Text,
   URLTestButton,
 } from "@/pages/Settings/components";
@@ -57,10 +56,6 @@ const SettingsSonarrView: FunctionComponent = () => {
             When Bazarr connects or reconnects to Sonarr, run a series and
             episodes synchronization to make sure that we're up-to-date.
           </Message>
-          <Slider
-            label="Minimum Score For Episodes"
-            settingKey="settings-general-minimum_score"
-          ></Slider>
           <Chips
             label="Excluded Tags"
             settingKey="settings-sonarr-excluded_tags"
@@ -92,6 +87,40 @@ const SettingsSonarrView: FunctionComponent = () => {
             Automatic download of subtitles will only happen for monitored
             episodes in Sonarr.
           </Message>
+          <Check
+            label="Sync Only Monitored Series"
+            settingKey={"settings-sonarr-sync_only_monitored_series"}
+          ></Check>
+          <CollapseBox
+            settingKey={"settings-sonarr-sync_only_monitored_series"}
+          >
+            <Message>
+              If enabled, only series with a monitored status in Sonarr will be
+              synced. If you make changes to a specific unmonitored Sonarr
+              series and you want Bazarr to know about those changes, simply
+              toggle the monitored status back on in Sonarr and Bazarr will sync
+              any changes.
+            </Message>
+            <Check
+              label="Sync Only Monitored Episodes"
+              settingKey={"settings-sonarr-sync_only_monitored_episodes"}
+            ></Check>
+            <CollapseBox
+              indent
+              settingKey={"settings-sonarr-sync_only_monitored_episodes"}
+            >
+              <Message>
+                If enabled, only episodes with a monitored status in Sonarr will
+                be synced. If you make changes to a specific unmonitored Sonarr
+                episode (or season) and you want Bazarr to know about those
+                changes, simply toggle the monitored status back on in Sonarr
+                and Bazarr will sync any changes. This setting is especially
+                helpful for long running TV series with many seasons and many
+                episodes, but that are still actively producing new episodes
+                (e.g. Saturday Night Live).
+              </Message>
+            </CollapseBox>
+          </CollapseBox>
           <Check
             label="Defer searching of subtitles until scheduled task execution"
             settingKey="settings-sonarr-defer_search_signalr"

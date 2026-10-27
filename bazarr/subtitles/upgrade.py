@@ -3,25 +3,27 @@
 
 import logging
 import operator
-import ast
 
 from datetime import datetime, timedelta
 from functools import reduce
 from sqlalchemy import and_, or_
 
 from app.config import settings
+from constants import HI_EXCLUDED
 from app.database import (get_exclusion_clause, get_audio_profile_languages, TableShows, TableEpisodes, TableMovies,
      TableHistory, TableHistoryMovie, database, select, func, get_profiles_list, TableEpisodesSubtitles,
      TableMoviesSubtitles)
-from app.jobs_queue import jobs_queue
+from app.jobs_queue import jobs_queue, JobCanceled
 from app.get_providers import get_providers
 from app.notifier import send_notifications, send_notifications_movie
 from radarr.history import history_log_movie
 from sonarr.history import history_log
+from subliminal_patch.score import MAX_SCORES
 from subtitles.indexer.movies import store_subtitles_movie
 from subtitles.indexer.series import store_subtitles
 from utilities.path_mappings import path_mappings
 from .download import generate_subtitles
+from .language_utils import format_episode_part, resolve_audio_language
 from app.event_handler import event_stream
 
 
@@ -41,8 +43,10 @@ def upgrade_subtitles(wait_for_completion=False):
 def upgrade_episodes_subtitles(job_id=None, wait_for_completion=False):
     if not job_id:
         jobs_queue.add_job_from_function("Trying to upgrade episodes subtitles", is_progress=True,
-                                         wait_for_completion=wait_for_completion)
+                                         wait_for_completion=wait_for_completion, is_cancellable=True)
         return
+    else:
+        job = jobs_queue.get_job(job_id=job_id)
 
     episodes_to_upgrade = get_upgradable_episode_subtitles()
     episodes_data = [{
@@ -56,6 +60,7 @@ def upgrade_episodes_subtitles(job_id=None, wait_for_completion=False):
         'video_path': x.video_path,
         'sceneName': x.sceneName,
         'score': x.score,
+        'score_out_of': x.score_out_of,
         'sonarrEpisodeId': x.sonarrEpisodeId,
         'sonarrSeriesId': x.sonarrSeriesId,
         'subtitles_path': x.subtitles_path,
@@ -73,6 +78,7 @@ def upgrade_episodes_subtitles(job_id=None, wait_for_completion=False):
                TableHistory.video_path,
                TableEpisodes.sceneName,
                TableHistory.score,
+               TableHistory.score_out_of,
                TableHistory.sonarrEpisodeId,
                TableHistory.sonarrSeriesId,
                TableHistory.subtitles_path,
@@ -82,7 +88,7 @@ def upgrade_episodes_subtitles(job_id=None, wait_for_completion=False):
         .select_from(TableHistory)
         .join(TableShows, onclause=TableHistory.sonarrSeriesId == TableShows.sonarrSeriesId)
         .join(TableEpisodes, onclause=TableHistory.sonarrEpisodeId == TableEpisodes.sonarrEpisodeId)
-        .join(TableEpisodesSubtitles, onclause=TableHistory.sonarrEpisodeId == TableEpisodesSubtitles.sonarrEpisodeId)
+        .join(TableEpisodesSubtitles, onclause=TableHistory.sonarrEpisodeId == TableEpisodesSubtitles.sonarrEpisodeId, isouter=True)
         .where(TableEpisodesSubtitles.path.is_not(None)))
     .all() if _language_still_desired(x.language, x.profileId) and x.video_path == x.path]
 
@@ -109,34 +115,41 @@ def upgrade_episodes_subtitles(job_id=None, wait_for_completion=False):
         jobs_queue.update_job_progress(job_id=job_id, progress_value='max')
 
     for i, episode in enumerate(episodes_data, start=1):
+        if job.cancel_event.is_set():
+            raise JobCanceled
+
         providers_list = get_providers()
 
+        season_part = format_episode_part(episode["season"])
+        episode_part = format_episode_part(episode["episode"])
         jobs_queue.update_job_progress(job_id=job_id, progress_value=i,
-                                       progress_message=f'{episode["seriesTitle"]} - S{episode["season"]:02d}E'
-                                                        f'{episode["episode"]:02d} - {episode["title"]}')
+                                       progress_message=f'{episode["seriesTitle"]} - S{season_part}E'
+                                                        f'{episode_part} - {episode["title"]}')
 
         if not providers_list:
             logging.info("BAZARR All providers are throttled")
             return
 
         language, is_forced, is_hi = parse_language_string(episode['language'])
+        if not language:
+            continue
         if is_hi and not _is_hi_required(language, episode['profileId']):
             is_hi = 'False'
 
-        audio_language_list = get_audio_profile_languages(episode['audio_language'])
-        if len(audio_language_list) > 0:
-            audio_language = audio_language_list[0]['name']
-        else:
-            audio_language = 'None'
+        audio_language = resolve_audio_language(get_audio_profile_languages(episode['audio_language']), fallback=None)
+
+        minimum_score = _upgrade_minimum_score(
+            episode['score'], settings.general.minimum_score, episode['score_out_of'] or MAX_SCORES['episode']
+        )
 
         result = list(generate_subtitles(path_mappings.path_replace(episode['video_path']),
                                          [(language, is_hi, is_forced)],
                                          audio_language,
-                                         str(episode['sceneName']),
+                                         episode['sceneName'],
                                          episode['seriesTitle'],
                                          'series',
                                          episode['profileId'],
-                                         forced_minimum_score=int(episode['score']) + 1,
+                                         forced_minimum_score=minimum_score,
                                          is_upgrade=True,
                                          previous_subtitles_to_delete=path_mappings.path_replace(
                                              episode['subtitles_path']),
@@ -148,7 +161,8 @@ def upgrade_episodes_subtitles(job_id=None, wait_for_completion=False):
             store_subtitles(episode['sonarrEpisodeId'])
             history_log(3, episode['sonarrSeriesId'], episode['sonarrEpisodeId'], result,
                         upgraded_from_id=episode['original_id'] or episode['id'])  # we use or to handle None values on initial upgrade
-            send_notifications(episode['sonarrSeriesId'], episode['sonarrEpisodeId'], result.message)
+            if hasattr(result, 'message'):
+                send_notifications(episode['sonarrSeriesId'], episode['sonarrEpisodeId'], result.message)
             event_stream(type="episode-history")
     jobs_queue.update_job_name(job_id=job_id, new_job_name='Tried to upgrade episodes subtitles')
 
@@ -156,8 +170,10 @@ def upgrade_episodes_subtitles(job_id=None, wait_for_completion=False):
 def upgrade_movies_subtitles(job_id=None, wait_for_completion=False):
     if not job_id:
         jobs_queue.add_job_from_function("Trying to upgrade movies subtitles", is_progress=True,
-                                         wait_for_completion=wait_for_completion)
+                                         wait_for_completion=wait_for_completion, is_cancellable=True)
         return
+    else:
+        job = jobs_queue.get_job(job_id=job_id)
 
     movies_to_upgrade = get_upgradable_movies_subtitles()
     movies_data = [{
@@ -168,6 +184,7 @@ def upgrade_movies_subtitles(job_id=None, wait_for_completion=False):
         'video_path': x.video_path,
         'sceneName': x.sceneName,
         'score': x.score,
+        'score_out_of': x.score_out_of,
         'radarrId': x.radarrId,
         'path': x.path,
         'profileId': x.profileId,
@@ -181,6 +198,7 @@ def upgrade_movies_subtitles(job_id=None, wait_for_completion=False):
                TableHistoryMovie.video_path,
                TableMovies.sceneName,
                TableHistoryMovie.score,
+               TableHistoryMovie.score_out_of,
                TableHistoryMovie.radarrId,
                TableHistoryMovie.subtitles_path,
                TableMovies.path,
@@ -188,7 +206,7 @@ def upgrade_movies_subtitles(job_id=None, wait_for_completion=False):
                TableMoviesSubtitles.path.label('external_subtitles'))
         .select_from(TableHistoryMovie)
         .join(TableMovies, onclause=TableHistoryMovie.radarrId == TableMovies.radarrId)
-        .join(TableMoviesSubtitles, onclause=TableHistoryMovie.radarrId == TableMoviesSubtitles.radarrId)
+        .join(TableMoviesSubtitles, onclause=TableHistoryMovie.radarrId == TableMoviesSubtitles.radarrId, isouter=True)
         .where(TableMoviesSubtitles.path.is_not(None)))
     .all() if _language_still_desired(x.language, x.profileId) and x.video_path == x.path]
 
@@ -215,6 +233,9 @@ def upgrade_movies_subtitles(job_id=None, wait_for_completion=False):
         jobs_queue.update_job_progress(job_id=job_id, progress_value='max')
 
     for i, movie in enumerate(movies_data, start=1):
+        if job.cancel_event.is_set():
+            raise JobCanceled
+
         providers_list = get_providers()
 
         jobs_queue.update_job_progress(job_id=job_id, progress_value=i, progress_message=movie['title'])
@@ -224,23 +245,25 @@ def upgrade_movies_subtitles(job_id=None, wait_for_completion=False):
             return
 
         language, is_forced, is_hi = parse_language_string(movie['language'])
+        if not language:
+            continue
         if is_hi and not _is_hi_required(language, movie['profileId']):
             is_hi = 'False'
 
-        audio_language_list = get_audio_profile_languages(movie['audio_language'])
-        if len(audio_language_list) > 0:
-            audio_language = audio_language_list[0]['name']
-        else:
-            audio_language = 'None'
+        audio_language = resolve_audio_language(get_audio_profile_languages(movie['audio_language']), fallback=None)
+
+        minimum_score = _upgrade_minimum_score(
+            movie['score'], settings.general.minimum_score_movie, movie['score_out_of'] or MAX_SCORES['movie']
+        )
 
         result = list(generate_subtitles(path_mappings.path_replace_movie(movie['video_path']),
                                          [(language, is_hi, is_forced)],
                                          audio_language,
-                                         str(movie['sceneName']),
+                                         movie['sceneName'],
                                          movie['title'],
                                          'movie',
                                          movie['profileId'],
-                                         forced_minimum_score=int(movie['score']) + 1,
+                                         forced_minimum_score=minimum_score,
                                          is_upgrade=True,
                                          previous_subtitles_to_delete=path_mappings.path_replace_movie(
                                              movie['subtitles_path']),
@@ -250,7 +273,8 @@ def upgrade_movies_subtitles(job_id=None, wait_for_completion=False):
                 result = result[0]
             store_subtitles_movie(movie['radarrId'])
             history_log_movie(3, movie['radarrId'], result, upgraded_from_id=movie['original_id'] or movie['id'])  # we use or to handle None values on initial upgrade
-            send_notifications_movie(movie['radarrId'], result.message)
+            if hasattr(result, 'message'):
+                send_notifications_movie(movie['radarrId'], result.message)
             event_stream(type="movie-history")
     jobs_queue.update_job_name(job_id=job_id, new_job_name='Tried to upgrade movies subtitles')
 
@@ -268,6 +292,13 @@ def get_queries_condition_parameters():
 
 
 def parse_language_string(language_string):
+    if not isinstance(language_string, str):
+        return ['', "False", "False"]
+
+    language_string = language_string.strip()
+    if not language_string:
+        return ['', "False", "False"]
+
     if language_string.endswith('forced'):
         language = language_string.split(':')[0]
         is_forced = "True"
@@ -282,6 +313,13 @@ def parse_language_string(language_string):
         is_hi = "False"
 
     return [language, is_forced, is_hi]
+
+
+def _upgrade_minimum_score(score, minimum_score, score_out_of):
+    try:
+        return max(int(score), int(round(minimum_score * score_out_of / 100, 0)))
+    except (TypeError, ValueError):
+        return None
 
 
 def get_upgradable_episode_subtitles(history_id_list=None):
@@ -453,7 +491,10 @@ def _language_still_desired(language, profile_id):
         return False
 
     profile = get_profiles_list(profile_id)
-    if profile and language in _language_from_items(profile['items']):
+    if not isinstance(profile, dict):
+        return False
+
+    if language in _language_from_items(profile.get('items', [])):
         return True
     else:
         return False
@@ -461,20 +502,44 @@ def _language_still_desired(language, profile_id):
 
 def _language_from_items(items):
     results = []
+    if not isinstance(items, list):
+        return results
+
     for item in items:
-        if item['forced'] == 'True':
-            results.append(f'{item["language"]}:forced')
-        elif item['hi'] == 'True':
-            results.append(f'{item["language"]}:hi')
+        if not isinstance(item, dict):
+            continue
+
+        language = item.get('language')
+        if not isinstance(language, str) or not language.strip():
+            continue
+
+        if str(item.get('forced')) == 'True':
+            results.append(f'{language}:forced')
+        elif str(item.get('hi')) == 'True':
+            results.append(f'{language}:hi')
+        elif item.get('hi') == HI_EXCLUDED:
+            results.append(language)
         else:
-            results.append(item['language'])
-            results.append(f'{item["language"]}:hi')
+            results.append(language)
+            results.append(f'{language}:hi')
     return results
 
 
 def _is_hi_required(language, profile_id):
     profile = get_profiles_list(profile_id=profile_id)
-    for item in profile['items']:
-        if language.split(':')[0] == item['language'] and item['hi'] == 'True':
+    if not isinstance(language, str):
+        return False
+    if not isinstance(profile, dict):
+        return False
+
+    items = profile.get('items')
+    if not isinstance(items, list):
+        return False
+
+    base_language = language.split(':')[0]
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        if base_language == item.get('language') and str(item.get('hi')) == 'True':
             return True
     return False

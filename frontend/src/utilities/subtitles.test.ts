@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { assToHtml, toRenderable } from "./subtitles";
 
 describe("assToHtml", () => {

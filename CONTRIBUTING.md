@@ -104,7 +104,7 @@ This is our absolute baseline requirement: **never submit code you do not fully 
 
 We operate as a team. To prevent redundant efforts and ensure your approach aligns with the project's roadmap, you must coordinate with us before diving into a new feature.
 
-* **Action Item:** Drop into our Discord server to discuss your ideas and get greenlit before you start working. You can find the Bazarr development community at https://discord.gg/BDCyJPTjx
+* **Action Item:** Drop into our Discord server to discuss your ideas and get greenlit before you start working. You can find the Bazarr development community at https://discord.gg/MH2e2eb
 
 ### 3. Maintain Complete Transparency (Disclosure)
 

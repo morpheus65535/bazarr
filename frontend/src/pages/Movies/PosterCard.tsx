@@ -34,10 +34,13 @@ const MoviePosterCard: FunctionComponent<Props> = ({
       poster={poster}
       to={`/movies/${radarrId}`}
       header={
-        <FontAwesomeIcon
-          title={monitored ? "Monitored in Radarr" : "Unmonitored in Radarr"}
-          icon={monitored ? faBookmark : farBookmark}
-        ></FontAwesomeIcon>
+        <Tooltip
+          label={monitored ? "Monitored in Radarr" : "Unmonitored in Radarr"}
+        >
+          <FontAwesomeIcon
+            icon={monitored ? faBookmark : farBookmark}
+          ></FontAwesomeIcon>
+        </Tooltip>
       }
       actions={
         selection ? undefined : (

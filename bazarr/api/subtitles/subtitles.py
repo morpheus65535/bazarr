@@ -6,10 +6,11 @@ import logging
 
 from flask_restx import Resource, Namespace, reqparse, fields, marshal
 
-from app.database import TableShows, TableEpisodes, TableMovies, database, select, get_subtitles
+from app.database import (TableShows, TableEpisodes, TableMovies, database, select, get_subtitles,
+                          is_indexed_subtitle_path)
 from utilities.path_mappings import path_mappings
 from utilities.video_analyzer import subtitles_sync_references
-from subtitles.tools.translate.main import translate_subtitles_file
+from subtitles.tools.translate.main import translate_subtitles_file, extract_and_translate_embedded
 from subtitles.tools.translate.core.translator_utils import resolve_translation_source
 from subtitles.tools.mods import subtitles_apply_mods
 from subtitles.indexer.series import store_subtitles
@@ -66,7 +67,7 @@ class Subtitles(Resource):
     @authenticate
     @api_ns_subtitles.response(200, 'Success')
     @api_ns_subtitles.response(401, 'Not Authenticated')
-    @api_ns_subtitles.doc(parser=get_request_parser)
+    @api_ns_subtitles.expect(get_request_parser)
     def get(self):
         """Return available audio and embedded subtitles tracks with external subtitles. Used for manual subsync
         modal"""
@@ -101,11 +102,17 @@ class Subtitles(Resource):
                                       help='Don\'t try to fix framerate from ["True", "False"]')
     patch_request_parser.add_argument('gss', type=str, required=False,
                                       help='Use Golden-Section Search from ["True", "False"]')
+    patch_request_parser.add_argument('quality_min_score', type=str, required=False,
+                                      help='Minimum quality score for sync (0.0-1.0)')
+    patch_request_parser.add_argument('quality_max_offset_seconds', type=str, required=False,
+                                      help='Maximum offset in seconds for quality checks')
+    patch_request_parser.add_argument('quality_max_framerate_deviation', type=str, required=False,
+                                      help='Maximum framerate deviation (0.0-1.0)')
     patch_request_parser.add_argument('subtitles_id', type=int, required=False,
                                       help='Subtitles database ID (required for the "extract" action)')
 
     @authenticate
-    @api_ns_subtitles.doc(parser=patch_request_parser)
+    @api_ns_subtitles.expect(patch_request_parser)
     @api_ns_subtitles.response(204, 'Success')
     @api_ns_subtitles.response(400, 'Subtitles ID is required for extraction')
     @api_ns_subtitles.response(401, 'Not Authenticated')
@@ -128,6 +135,10 @@ class Subtitles(Resource):
         hi = True if args.get('hi') == 'True' else False
 
         subtitles_id = args.get('subtitles_id')
+
+        if subtitles_path and not is_indexed_subtitle_path(path_mappings.path_replace_reverse(subtitles_path),
+                                                           path_mappings.path_replace_reverse_movie(subtitles_path)):
+            return 'Subtitles file is not indexed by Bazarr', 404
 
         if action not in ('extract', 'translate'):
             if subtitles_path and not os.path.exists(subtitles_path):
@@ -165,6 +176,13 @@ class Subtitles(Resource):
 
             video_path = path_mappings.path_replace_movie(metadata.path)
 
+        reference = args.get('reference')
+        # A reference is either an audio track (a:N), the video itself, or a subtitles file that sync reads
+        if action == 'sync' and reference and reference not in empty_values and not reference.startswith('a:') \
+                and reference != video_path and not is_indexed_subtitle_path(
+                    path_mappings.path_replace_reverse(reference), path_mappings.path_replace_reverse_movie(reference)):
+            return 'Reference subtitles file is not indexed by Bazarr', 404
+
         if action == 'sync':
             try:
                 postprocess_callback = lambda: postprocess_subtitles(subtitles_path, media_type, metadata, id)
@@ -177,6 +195,12 @@ class Subtitles(Resource):
                                str(settings.subsync.max_offset_seconds),
                                no_fix_framerate=args.get('no_fix_framerate') == 'True',
                                gss=args.get('gss') == 'True',
+                               quality_min_score=args.get('quality_min_score') if
+                               args.get('quality_min_score') not in empty_values else None,
+                               quality_max_offset_seconds=args.get('quality_max_offset_seconds') if
+                               args.get('quality_max_offset_seconds') not in empty_values else None,
+                               quality_max_framerate_deviation=args.get('quality_max_framerate_deviation') if
+                               args.get('quality_max_framerate_deviation') not in empty_values else None,
                                sonarr_series_id=metadata.sonarrSeriesId if media_type == "episode" else None,
                                sonarr_episode_id=id if media_type == "episode" else None,
                                radarr_id=id if media_type == "movie" else None,
@@ -197,29 +221,37 @@ class Subtitles(Resource):
             except ValueError as e:
                 return str(e), 400
 
-            # Translating an embedded track requires extracting it to an external file first.
-            # extract_embedded_subtitle returns the path of the newly created external file.
+            # Translating an embedded track requires extracting it to an external file first. Both steps must run
+            # inside the same job: called outside a job context, extract_embedded_subtitle self-enqueues and
+            # returns False, so handling them separately would enqueue the translation with an invalid source
+            # path before the extraction job has even started.
             if embedded_subtitle_id is not None:
                 try:
-                    subtitles_path = extract_embedded_subtitle(
-                        subtitles_id=embedded_subtitle_id, media_type=media_type)
+                    extract_and_translate_embedded(
+                        subtitles_id=embedded_subtitle_id, media_type=media_type, video_path=video_path,
+                        from_lang=from_language, to_lang=dest_language, forced=forced, hi=hi,
+                        sonarr_series_id=metadata.sonarrSeriesId if media_type == "episode" else None,
+                        sonarr_episode_id=id if media_type == "episode" else None,
+                        radarr_id=id if media_type == "movie" else None,
+                        metadata=metadata,
+                        original_format=args.get('original_format') == 'True')
                 except BitmapSubtitlesNotSupportedError:
                     return 'Image based embedded subtitles cannot be extracted', 415
                 except (EmbeddedSubtitlesExtractionError, OSError):
                     return 'Unable to take action on subtitles file. Check logs.', 409
+            else:
+                try:
+                    translate_subtitles_file(video_path=video_path, source_srt_file=subtitles_path,
+                                             from_lang=from_language, to_lang=dest_language, forced=forced, hi=hi,
+                                             media_type=media_type,
+                                             original_format=args.get('original_format') == 'True',
+                                             sonarr_series_id=metadata.sonarrSeriesId if media_type == "episode" else None,
+                                             sonarr_episode_id=id,
+                                             radarr_id=id,
+                                             metadata=metadata)
 
-            try:
-                translate_subtitles_file(video_path=video_path, source_srt_file=subtitles_path,
-                                         from_lang=from_language, to_lang=dest_language, forced=forced, hi=hi,
-                                         media_type=media_type,
-                                         original_format=args.get('original_format') == 'True',
-                                         sonarr_series_id=metadata.sonarrSeriesId if media_type == "episode" else None,
-                                         sonarr_episode_id=id,
-                                         radarr_id=id,
-                                         metadata=metadata)
-
-            except OSError:
-                return 'Unable to edit subtitles file. Check logs.', 409
+                except OSError:
+                    return 'Unable to edit subtitles file. Check logs.', 409
         elif action == 'extract':
             if not subtitles_id:
                 return 'Subtitles ID is required for extraction', 400
@@ -234,9 +266,10 @@ class Subtitles(Resource):
                 if os.path.splitext(subtitles_path)[1] != '.srt':
                     logging.debug(f"BAZARR can't apply mods on unsupported subtitles file (not srt): {subtitles_path}")
                     return 'Unable to take action on subtitles file. Check logs.', 409
-                subtitles_apply_mods(language=language, subtitle_path=subtitles_path, mods=[action],
-                                     video_path=video_path)
-                postprocess_subtitles(subtitles_path, media_type, metadata, id)
+                modded_subtitles_path = subtitles_apply_mods(language=language, subtitle_path=subtitles_path, mods=[action],
+                                                             video_path=video_path)
+                if modded_subtitles_path:
+                    postprocess_subtitles(modded_subtitles_path, media_type, metadata, id)
             except OSError:
                 return 'Unable to edit subtitles file. Check logs.', 409
 
@@ -249,25 +282,25 @@ def postprocess_subtitles(subtitles_path, media_type, metadata, id):
     if chmod:
         os.chmod(subtitles_path, chmod)
 
-        if media_type == 'episode':
-            store_subtitles(id)
-            event_stream(type='series', payload=metadata.sonarrSeriesId)
-            event_stream(type='episode', payload=id)
+    if media_type == 'episode':
+        store_subtitles(id)
+        event_stream(type='series', payload=metadata.sonarrSeriesId)
+        event_stream(type='episode', payload=id)
 
-            if settings.general.use_plex and settings.plex.update_series_library:
-                plex_refresh_item(metadata.imdbId, is_movie=False, season=metadata.season,
-                                  episode=metadata.episode)
-            if settings.general.use_jellyfin and settings.jellyfin.update_series_library:
-                jellyfin_refresh_item(metadata.imdbId, is_movie=False, season=metadata.season,
-                                      episode=metadata.episode, tvdb_id=metadata.tvdbId)
-        else:
-            store_subtitles_movie(id)
-            event_stream(type='movie', payload=id)
+        if settings.general.use_plex and settings.plex.update_series_library:
+            plex_refresh_item(metadata.imdbId, is_movie=False, season=metadata.season,
+                              episode=metadata.episode)
+        if settings.general.use_jellyfin and settings.jellyfin.update_series_library:
+            jellyfin_refresh_item(metadata.imdbId, is_movie=False, season=metadata.season,
+                                  episode=metadata.episode, tvdb_id=metadata.tvdbId)
+    else:
+        store_subtitles_movie(id)
+        event_stream(type='movie', payload=id)
 
-            if settings.general.use_plex and settings.plex.update_movie_library:
-                plex_refresh_item(metadata.imdbId, is_movie=True)
-            if settings.general.use_jellyfin and settings.jellyfin.update_movie_library:
-                jellyfin_refresh_item(metadata.imdbId, is_movie=True,
-                                      tmdb_id=metadata.tmdbId)
+        if settings.general.use_plex and settings.plex.update_movie_library:
+            plex_refresh_item(metadata.imdbId, is_movie=True)
+        if settings.general.use_jellyfin and settings.jellyfin.update_movie_library:
+            jellyfin_refresh_item(metadata.imdbId, is_movie=True,
+                                  tmdb_id=metadata.tmdbId)
 
-        return '', 204
+    return '', 204

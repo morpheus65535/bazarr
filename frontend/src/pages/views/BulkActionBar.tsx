@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from "react";
-import { Button, Group, Text, useCombobox } from "@mantine/core";
+import { Box, Button, Group, Text, useCombobox } from "@mantine/core";
 import { faCheck } from "@fortawesome/free-solid-svg-icons";
 import { UseMutationResult } from "@tanstack/react-query";
 import { chunk } from "lodash";
@@ -7,6 +7,10 @@ import { useIsAnyMutationRunning, useLanguageProfiles } from "@/apis/hooks";
 import { GroupedSelector, GroupedSelectorOptions, Toolbox } from "@/components";
 import { useSelectorOptions } from "@/utilities";
 import { BulkSelection } from "@/utilities/bulkSelection";
+
+// Module-scoped so useSelectorOptions stays referentially stable across
+// renders (this component re-renders on every selection change).
+const profileName = (v: Language.Profile) => v.name;
 
 interface ControlsProps {
   selection: BulkSelection;
@@ -31,7 +35,7 @@ export const BulkActionBarControls = (props: ControlsProps) => {
   const { selectedIds, dirties } = selection;
 
   const { data: profiles } = useLanguageProfiles();
-  const profileOptions = useSelectorOptions(profiles ?? [], (v) => v.name);
+  const profileOptions = useSelectorOptions(profiles ?? [], profileName);
 
   const profileOptionsWithAction = useMemo<GroupedSelectorOptions<string>[]>(
     () => [
@@ -54,7 +58,9 @@ export const BulkActionBarControls = (props: ControlsProps) => {
   const combobox = useCombobox();
 
   return (
-    <Group gap="sm" wrap="wrap" align="center">
+    <Group gap="sm" wrap="wrap" align="center" data-onboarding="media-bulk">
+      {dirties.size > 0 && <span data-onboarding="profile-staged" hidden />}
+      {selectedIds.size > 0 && <span data-onboarding="media-selected" hidden />}
       <Text size="sm">
         {selectedIds.size} selected
         {dirties.size > 0 && ` · ${dirties.size} pending`}
@@ -85,20 +91,22 @@ export const BulkActionBarControls = (props: ControlsProps) => {
           </Button>
         ))}
 
-      <GroupedSelector
-        onClick={() => combobox.openDropdown()}
-        onDropdownClose={() => combobox.resetSelectedOption()}
-        placeholder="Change Profile"
-        withCheckIcon={false}
-        options={profileOptionsWithAction}
-        disabled={selectedIds.size === 0}
-        comboboxProps={{
-          store: combobox,
-          onOptionSubmit: (value) => {
-            selection.stage(value ? +value : null);
-          },
-        }}
-      ></GroupedSelector>
+      <Box data-onboarding="media-profile">
+        <GroupedSelector
+          onClick={() => combobox.openDropdown()}
+          onDropdownClose={() => combobox.resetSelectedOption()}
+          placeholder="Change Profile"
+          withCheckIcon={false}
+          options={profileOptionsWithAction}
+          disabled={selectedIds.size === 0}
+          comboboxProps={{
+            store: combobox,
+            onOptionSubmit: (value) => {
+              selection.stage(value ? +value : null);
+            },
+          }}
+        ></GroupedSelector>
+      </Box>
     </Group>
   );
 };
@@ -131,6 +139,7 @@ export const BulkActionBarSaveButton = (props: SaveButtonProps) => {
   return (
     <Toolbox.MutateButton
       icon={faCheck}
+      data-onboarding="media-save"
       disabled={dirties.size === 0 || hasTask}
       promise={save}
       onSuccess={selection.deactivate}

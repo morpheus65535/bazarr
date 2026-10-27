@@ -7,6 +7,7 @@ import os
 import zipfile
 import re
 import copy
+from py7zr import SevenZipFile, is_7zfile
 from PIL import Image
 
 try:
@@ -90,6 +91,161 @@ def string_to_hex(s):
     return val
 
 
+class SevenZipArchive(object):
+    def __init__(self, stream_or_bytes):
+        if isinstance(stream_or_bytes, (bytes, bytearray)):
+            stream = io.BytesIO(stream_or_bytes)
+        else:
+            stream = stream_or_bytes
+            stream.seek(0)
+        self._archive = SevenZipFile(stream, mode="r")
+        self._files = self._archive.readall()
+
+    def namelist(self):
+        return list(self._files.keys())
+
+    def read(self, name):
+        bio = self._files.get(name)
+        if bio is not None:
+            bio.seek(0)
+            return bio.read()
+        return None
+
+    def close(self):
+        try:
+            self._archive.close()
+        except Exception:
+            pass
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+
+
+# ---------------------------------------------------------------------------
+# Yunsuo WAF CAPTCHA Solver Constants
+# ---------------------------------------------------------------------------
+# Yunsuo CAPTCHA always renders exactly 5 digits
+_CAPTCHA_DIGIT_COUNT = 5
+
+# Horizontal width (in pixels) allocated for each digit slot (e.g. 0-19, 20-39, etc.)
+_CAPTCHA_SLOT_WIDTH = 20
+
+# Minimum expected image width (standard Yunsuo CAPTCHA is ~100px)
+_CAPTCHA_MIN_WIDTH = 90
+
+# Minimum expected image height (standard Yunsuo CAPTCHA is ~30px)
+_CAPTCHA_MIN_HEIGHT = 22
+
+# Vertical pixel row range [6, 22) scanned for digit strokes, avoiding top/bottom border noise
+_CAPTCHA_SCAN_Y_RANGE = range(6, 22)
+
+# Minimum green channel value (0-255) required for a pixel to be considered foreground
+_GREEN_MIN_INTENSITY = 80
+
+# Minimum difference (G - R and G - B) required to filter out neutral/gray noise lines
+_GREEN_DOMINANCE_THRESHOLD = 30
+
+# Maximum allowed bitwise pixel mismatches across a 14-row template before rejecting a digit
+_MAX_PIXEL_MISMATCH_THRESHOLD = 15
+
+# Maximum number of challenge attempts in the bypass loop to prevent hanging
+_MAX_YUNSUO_RETRIES = 6
+
+# ---------------------------------------------------------------------------
+# Yunsuo BMP CAPTCHA Digit Bitmaps (14 rows high, 7-9 cols wide)
+# ---------------------------------------------------------------------------
+# Each digit is mapped to (width, [14 row bitmasks]) where the most significant
+# bit (w - 1) is the leftmost pixel and bit 0 is the rightmost.
+#
+# To inspect or visualize these bitmasks as ASCII art, run in terminal:
+#
+#   python3 -c '
+#   from subliminal_patch.providers.zimuku import _DIGIT_TEMPLATES
+#   for digit, (w, rows) in _DIGIT_TEMPLATES.items():
+#       print(f"=== Digit {digit} ===")
+#       for r in rows:
+#           print("".join("#" if (r >> (w - 1 - x)) & 1 else " " for x in range(w)))
+#       print()
+#   '
+# ---------------------------------------------------------------------------
+_DIGIT_TEMPLATES = {
+    "0": (8, (0x3C, 0x7E, 0x66, 0xC3, 0xC3, 0xC3, 0xDB, 0xCB, 0xC3, 0xC3, 0xC3, 0x66, 0x7E, 0x3C)),
+    "1": (7, (0x18, 0x78, 0x68, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x7F, 0x7F)),
+    "2": (8, (0x7C, 0xFE, 0x87, 0x03, 0x03, 0x03, 0x07, 0x06, 0x0C, 0x18, 0x30, 0x60, 0xFF, 0xFF)),
+    "3": (8, (0x7C, 0xFE, 0x87, 0x03, 0x03, 0x07, 0x1E, 0x1E, 0x03, 0x03, 0x03, 0x87, 0xFE, 0x7C)),
+    "4": (9, (0x01C, 0x01C, 0x01C, 0x03C, 0x02C, 0x06C, 0x0CC, 0x0CC, 0x18C, 0x1FF, 0x1FF, 0x00E, 0x00C, 0x00C)),
+    "5": (8, (0x7E, 0x7E, 0x60, 0x60, 0x60, 0x7E, 0x7F, 0x03, 0x03, 0x03, 0x03, 0x82, 0xFE, 0x7C)),
+    "6": (8, (0x3C, 0x3E, 0x62, 0x60, 0xC0, 0xC0, 0xFE, 0xFF, 0xC3, 0xC3, 0xC3, 0x43, 0x7E, 0x3C)),
+    "7": (8, (0xFF, 0xFF, 0x06, 0x06, 0x06, 0x0C, 0x0C, 0x0C, 0x08, 0x08, 0x18, 0x10, 0x18, 0x30)),
+    "8": (8, (0x3C, 0x7E, 0xE7, 0xC3, 0xC3, 0x66, 0x7E, 0x7E, 0xC3, 0xC3, 0xC3, 0xC3, 0x7E, 0x3C)),
+    "9": (8, (0x3C, 0x7E, 0xE6, 0xC3, 0xC3, 0xC3, 0xFF, 0x7F, 0x3B, 0x03, 0x06, 0x46, 0x7E, 0x3C)),
+}
+
+
+def _is_green_stroke(r, g, b):
+    return (
+        g > _GREEN_MIN_INTENSITY
+        and (g - r > _GREEN_DOMINANCE_THRESHOLD)
+        and (g - b > _GREEN_DOMINANCE_THRESHOLD)
+    )
+
+
+def solve_bmp_captcha(bmp_bytes):
+    """Solves the 5-digit Yunsuo BMP captcha locally using template matching."""
+    try:
+        img = Image.open(io.BytesIO(bmp_bytes)).convert("RGB")
+        width, height = img.size
+        if width < _CAPTCHA_MIN_WIDTH or height < _CAPTCHA_MIN_HEIGHT:
+            return None
+
+        pixels = img.load()
+        grid = [
+            [_is_green_stroke(r, g, b) for r, g, b in (pixels[x, y] for x in range(width))]
+            for y in range(height)
+        ]
+
+        digits = []
+        for d in range(_CAPTCHA_DIGIT_COUNT):
+            slot_start = d * _CAPTCHA_SLOT_WIDTH
+            slot_end = (d + 1) * _CAPTCHA_SLOT_WIDTH
+            pts = [(x, y) for y in _CAPTCHA_SCAN_Y_RANGE for x in range(slot_start, slot_end) if grid[y][x]]
+            if not pts:
+                return None
+            min_x = min(x for x, _ in pts)
+            min_y = min(y for _, y in pts)
+
+            best_digit, best_diff = "?", float("inf")
+            for digit, (w, rows) in _DIGIT_TEMPLATES.items():
+                diff = 0
+                for dy, row_mask in enumerate(rows):
+                    py = min_y + dy
+                    if py >= height:
+                        diff += row_mask.bit_count()
+                        continue
+                    row_slice = grid[py][min_x:min_x + w]
+                    val = 0
+                    for b in row_slice:
+                        val = (val << 1) | b
+                    if len(row_slice) < w:
+                        val <<= (w - len(row_slice))
+                    diff += (val ^ row_mask).bit_count()
+                if diff < best_diff:
+                    best_diff = diff
+                    best_digit = digit
+
+            if best_diff > _MAX_PIXEL_MISMATCH_THRESHOLD:
+                return None
+            digits.append(best_digit)
+
+        return "".join(digits) if len(digits) == _CAPTCHA_DIGIT_COUNT else None
+    except Exception as e:
+        logger.debug("Failed to solve BMP captcha locally: %s", e)
+        return None
+
+
 class ZimukuProvider(Provider):
     """Zimuku Provider."""
 
@@ -97,7 +253,7 @@ class ZimukuProvider(Provider):
     video_types = (Episode, Movie)
     logger.info(str(supported_languages))
 
-    server_url = "https://srtku.com"
+    server_url = "https://zimuku.org"
     search_url = "/search?q={}"
 
     subtitle_class = ZimukuSubtitle
@@ -113,50 +269,54 @@ class ZimukuProvider(Provider):
 
     def yunsuo_bypass(self, url, *args, **kwargs):
         def parse_verification_image(image_content: str):
+            try:
+                raw_bytes = base64.b64decode(image_content)
+                solved = solve_bmp_captcha(raw_bytes)
+                if solved:
+                    logger.debug("Zimuku Yunsuo captcha solved locally: %s", solved)
+                    return solved
+            except Exception as e:
+                logger.debug("Local captcha solver error: %s", e)
 
-            def bmp_to_image(base64_str, img_type='png'):
-                img_data = base64.b64decode(base64_str)
-                img = Image.open(io.BytesIO(img_data))
-                img = img.convert("RGB")
-                img_fp = io.BytesIO()
-                img.save(img_fp, img_type)
-                img_fp.seek(0)
-                return img_fp
+            anticaptcha_class = os.environ.get("ANTICAPTCHA_CLASS")
+            if anticaptcha_class:
+                pitcher_names = {
+                    "AntiCaptchaProxyLess": "AntiCaptchaImageToText",
+                    "CaptchaAIProxyLess": "CaptchaAIImageToText",
+                }
+                image_pitcher = pitcher_names.get(anticaptcha_class, "DeathByCaptchaImageToText")
+                try:
+                    img_fp = io.BytesIO()
+                    Image.open(io.BytesIO(raw_bytes)).convert("RGB").save(img_fp, "PNG")
+                    img_fp.seek(0)
+                    pitcher = pitchers.get_pitcher(image_pitcher)("Zimuku", img_fp)
+                    return pitcher.throw()
+                except Exception as e:
+                    logger.warning("External anti-captcha pitcher failed: %s", e)
 
-            fp = bmp_to_image(image_content)
-            anticaptcha_class = os.environ["ANTICAPTCHA_CLASS"]
-            if anticaptcha_class == 'AntiCaptchaProxyLess':
-                image_pitcher = "AntiCaptchaImageToText"
-            elif anticaptcha_class == 'CaptchaAIProxyLess':
-                image_pitcher = "CaptchaAIImageToText"
-            else:
-                image_pitcher = "DeathByCaptchaImageToText"
-            pitcher = pitchers.get_pitcher(image_pitcher)("Zimuku", fp)
-            return pitcher.throw()
+            return f"{randrange(800, 1920)},{randrange(600, 1080)}"
 
-        i = -1
-        while True:
-            i += 1
+        for _ in range(_MAX_YUNSUO_RETRIES):
             r = self.session.get(url, *args, **kwargs)
             if r.status_code == 404:
                 # mock js script logic
                 tr = self.location_re.findall(r.text)
                 verification_image = self.verification_image_re.findall(r.text)
-                if len(verification_image):
+                if verification_image:
                     self.code = parse_verification_image(verification_image[0])
                 else:
                     self.code = f"{randrange(800, 1920)},{randrange(600, 1080)}"
-                self.session.cookies.set("srcurl", string_to_hex(r.url))
+                self.session.cookies.set("srcurl", string_to_hex(r.url), path="/")
                 if tr:
-                    verify_resp = self.session.get(
-                        urljoin(self.server_url, tr[0] + string_to_hex(self.code)), allow_redirects=False)
-                    if verify_resp.status_code == 302 \
-                            and self.session.cookies.get("security_session_verify") is not None:
-                        pass
+                    verify_url = urljoin(self.server_url, tr[0] + string_to_hex(self.code))
+                    self.session.get(verify_url, allow_redirects=False, headers={"Referer": r.url})
                     continue
-            if len(self.location_re.findall(r.text)) == 0:
+            if not self.location_re.findall(r.text):
                 self.verify_token = string_to_hex(self.code)
                 return r
+
+        logger.warning("Zimuku Yunsuo bypass exceeded max retries for %s", url)
+        return r
 
     def initialize(self):
         self.session = Session()
@@ -166,45 +326,60 @@ class ZimukuProvider(Provider):
         self.session.close()
 
     def _parse_episode_page(self, link, year):
+        if link.startswith("//"):
+            link = "https:" + link
         r = self.yunsuo_bypass(link)
         bs_obj = ParserBeautifulSoup(
             r.content.decode("utf-8", "ignore"), ["html.parser"]
         )
         subs_body = bs_obj.find("tbody")
+        if not subs_body:
+            return []
         subs = []
         for sub in subs_body.find_all("tr"):
             a = sub.find("a")
+            if not a:
+                continue
+
+            # Format check: ignore SUP subtitles (Bazarr only supports text subtitles)
+            fmt_span = sub.find("span", class_="label-info")
+            if fmt_span and fmt_span.get_text(strip=True).upper() == "SUP":
+                logger.debug("Zimuku skipping SUP subtitle %r", a.text.strip())
+                continue
+            if re.search(r'\.sup(?:\.|$|\s)', a.text, re.IGNORECASE) and not any(ext in a.text.lower() for ext in ['.srt', '.ass', '.ssa']):
+                logger.debug("Zimuku skipping .sup in title %r", a.text.strip())
+                continue
+
             name = _extract_name(a.text)
             name = os.path.splitext(name)[
                 0
             ]  # remove ext because it can be an archive type
 
-            language = Language("eng")
+            lang_td = sub.find("td", class_="tac lang")
+            if not lang_td:
+                continue
+            lang_imgs = [img.attrs.get("src", "") for img in lang_td.find_all("img")]
+            has_china = any("china" in src or "jollyroger" in src for src in lang_imgs)
+            has_hk = any("hongkong" in src for src in lang_imgs)
+            has_en = any("uk" in src or "en" in src for src in lang_imgs)
+
             language_list = []
+            if has_china and has_hk:
+                language_list.append(Language("zho"))
+                language_list.append(Language("zho", "TW", None))
+            elif has_china:
+                language_list.append(Language("zho"))
+            elif has_hk:
+                language_list.append(Language("zho", "TW", None))
 
-            for img in sub.find("td", class_="tac lang").find_all("img"):
-                if (
-                        "china" in img.attrs["src"]
-                        and "hongkong" in img.attrs["src"]
-                ):
-                    logger.debug("language:" + str(language))
-                    
-                    language = Language("zho").add(Language('zho', 'TW', None))
-                    language_list.append(language)
-                elif (
-                        "china" in img.attrs["src"]
-                        or "jollyroger" in img.attrs["src"]
-                ):
-                    logger.debug("language chinese simplified found: " + str(language))
+            if has_en:
+                language_list.append(Language("eng"))
 
-                    language = Language("zho")
-                    language_list.append(language)
-                elif "hongkong" in img.attrs["src"]:
-                    logger.debug("language chinese traditional found: " + str(language))
-
-                    language = Language('zho', 'TW', None)
-                    language_list.append(language)
+            if not language_list:
+                language_list.append(Language("zho"))
             sub_page_link = urljoin(self.server_url, a.attrs["href"])
+            if sub_page_link.startswith("//"):
+                sub_page_link = "https:" + sub_page_link
             backup_session = copy.deepcopy(self.session)
             backup_session.headers["Referer"] = link
 
@@ -257,7 +432,12 @@ class ZimukuProvider(Provider):
         if soup.find("div", {"class": "item"}):
             logger.debug("enter a non-shooter page")
             for item in soup.find_all("div", {"class": "item"}):
-                title_a = item.find("p", class_="tt clearfix").find("a")
+                tt = item.find("p", class_="tt clearfix")
+                if not tt:
+                    continue
+                title_a = tt.find("a")
+                if not title_a:
+                    continue
                 subs_year = year
                 if season:
                     # episode year in zimuku is the season's year not show's year
@@ -265,7 +445,7 @@ class ZimukuProvider(Provider):
                     if actual_subs_year:
                         subs_year = int(actual_subs_year[0]) - season + 1
                     title = title_a.text
-                    season_cn1 = re.search("第(.*)季", title)
+                    season_cn1 = re.search(r"第(.*)季", title)
                     if not season_cn1:
                         season_cn1 = "一"
                     else:
@@ -274,6 +454,8 @@ class ZimukuProvider(Provider):
                     if season_cn1 != season_cn2:
                         continue
                 episode_link = urljoin(self.server_url, title_a.attrs["href"])
+                if episode_link.startswith("//"):
+                    episode_link = "https:" + episode_link
                 new_subs = self._parse_episode_page(episode_link, subs_year)
                 subtitles += new_subs
 
@@ -318,24 +500,40 @@ class ZimukuProvider(Provider):
             bs_obj = ParserBeautifulSoup(
                 res.content.decode("utf-8", "ignore"), ["html.parser"]
             )
-            down_page_link = bs_obj.find("a", {"id": "down1"}).attrs["href"]
-            down_page_link = urljoin(sub_page_link, down_page_link)
+            down1 = bs_obj.find("a", {"id": "down1"})
+            if not down1 or "href" not in down1.attrs:
+                logger.error("Zimuku could not find #down1 link on page %s", sub_page_link)
+                return None, None
+            down_page_link = urljoin(sub_page_link, down1.attrs["href"])
+            if down_page_link.startswith("//"):
+                down_page_link = "https:" + down_page_link
+
             res = yunsuopass(down_page_link)
             bs_obj = ParserBeautifulSoup(
                 res.content.decode("utf-8", "ignore"), ["html.parser"]
             )
-            return urljoin(sub_page_link, bs_obj.find("a", {"rel": "nofollow"}).attrs["href"])
+            rel_a = bs_obj.find("a", {"rel": "nofollow"})
+            if not rel_a or "href" not in rel_a.attrs:
+                logger.error("Zimuku could not find rel=nofollow download link on %s", down_page_link)
+                return None, None
+            final_down_link = urljoin(down_page_link, rel_a.attrs["href"])
+            if final_down_link.startswith("//"):
+                final_down_link = "https:" + final_down_link
+            return final_down_link, down_page_link
 
         # download the subtitle
         logger.info("Downloading subtitle %r", subtitle)
-        download_link = _get_archive_download_link(self.yunsuo_bypass, subtitle.page_link)
-        r = self.yunsuo_bypass(download_link, headers={'Referer': subtitle.page_link}, timeout=30)
-        r.raise_for_status()
-        try:
-            filename = r.headers["Content-Disposition"].lower()
-        except KeyError:
-            logger.debug("Unable to parse subtitles filename. Dropping this subtitles.")
+        download_link, down_page_link = _get_archive_download_link(self.yunsuo_bypass, subtitle.page_link)
+        if not download_link:
+            logger.debug("Unable to resolve download link for %r", subtitle)
             return
+
+        referer = down_page_link or subtitle.page_link
+        r = self.yunsuo_bypass(download_link, headers={'Referer': referer}, timeout=30)
+        r.raise_for_status()
+
+        cd = r.headers.get("Content-Disposition", "")
+        filename = cd.lower()
 
         if not r.content:
             logger.debug("Unable to download subtitle. No data returned from provider")
@@ -345,22 +543,23 @@ class ZimukuProvider(Provider):
         archive = None
         if rarfile.is_rarfile(archive_stream):
             logger.debug("Identified rar archive")
-            if ".rar" not in filename:
-                logger.debug(
-                    ".rar should be in the downloaded file name: {}".format(filename)
-                )
-                return
             archive = rarfile.RarFile(archive_stream)
             subtitle_content = _get_subtitle_from_archive(archive)
         elif zipfile.is_zipfile(archive_stream):
             logger.debug("Identified zip archive")
-            if ".zip" not in filename:
-                logger.debug(
-                    ".zip should be in the downloaded file name: {}".format(filename)
-                )
-                return
             archive = zipfile.ZipFile(archive_stream)
             subtitle_content = _get_subtitle_from_archive(archive)
+        elif archive_stream.seek(0) == 0 and is_7zfile(archive_stream) or ".7z" in filename:
+            logger.debug("Identified 7z archive")
+            try:
+                archive = SevenZipArchive(archive_stream)
+                try:
+                    subtitle_content = _get_subtitle_from_archive(archive)
+                finally:
+                    archive.close()
+            except Exception as e:
+                logger.warning("Failed to extract 7z archive: %s", e)
+                subtitle_content = None
         else:
             is_sub = ""
             for sub_ext in SUBTITLE_EXTENSIONS:
@@ -368,8 +567,11 @@ class ZimukuProvider(Provider):
                     is_sub = sub_ext
                     break
             if not is_sub:
+                if filename.endswith(".sup") or r.content.startswith(b"PG"):
+                    logger.debug("Zimuku downloaded file is unsupported .sup format: %s", filename)
+                    return
                 logger.debug(
-                    "unknown subtitle ext int downloaded file name: {}".format(filename)
+                    "unknown subtitle ext in downloaded file name: {}".format(filename)
                 )
                 return
             logger.debug("Identified {} file".format(is_sub))
@@ -393,22 +595,35 @@ def _get_subtitle_from_archive(archive):
         if not subname.lower().endswith(SUBTITLE_EXTENSIONS):
             continue
 
+        # try to decode subname for score matching if gbk encoded
+        name_lower = subname.lower()
+        try:
+            decoded_name = subname.encode('cp437').decode('gbk', 'ignore').lower()
+        except Exception:
+            decoded_name = name_lower
+
         # prefer ass/ssa/srt subtitles with double languages or simplified/traditional chinese
-        score = ("ass" in subname or "ssa" in subname or "srt" in subname) * 1
-        if "简体" in subname or "chs" in subname or ".gb." in subname:
+        score = ("ass" in name_lower or "ssa" in name_lower or "srt" in name_lower) * 1
+        if "简体" in decoded_name or "chs" in name_lower or ".gb." in name_lower:
             score += 2
-        if "繁体" in subname or "cht" in subname or ".big5." in subname:
+        if "繁体" in decoded_name or "cht" in name_lower or ".big5." in name_lower:
             score += 2
-        if "chs.eng" in subname or "chs&eng" in subname or "cht.eng" in subname or "cht&eng" in subname:
+        if "chs.eng" in name_lower or "chs&eng" in name_lower or "cht.eng" in name_lower or "cht&eng" in name_lower:
             score += 2
-        if "中英" in subname or "简英" in subname or "繁英" in subname or "双语" in subname or "简体&英文" in subname or "繁体&英文" in subname:
+        if any(w in decoded_name for w in ["中英", "简英", "繁英", "双语", "简体&英文", "繁体&英文"]):
             score += 4
         logger.debug("subtitle {}, score: {}".format(subname, score))
         if score > max_score:
             max_score = score
             extract_subname = subname
 
-    return archive.read(extract_subname) if max_score != -1 else None
+    if max_score != -1:
+        return archive.read(extract_subname)
+
+    sup_files = [subname for subname in archive.namelist() if subname.lower().endswith(".sup")]
+    if sup_files:
+        logger.debug("Zimuku archive only contains unsupported SUP/PGS files: %r", sup_files)
+    return None
 
 
 def _extract_name(name):

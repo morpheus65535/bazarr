@@ -1,17 +1,45 @@
-import { http } from "msw";
-import { HttpResponse } from "msw";
+import { http, HttpResponse } from "msw/http";
 import server from "@/tests/mocks/node";
 import { renderTest, RenderTestCase } from "@/tests/render";
+import SettingsLanguagesGeneralView from "./Languages/General";
+import SettingsLanguageMappingsView from "./Languages/Mappings";
+import SettingsLanguageProfilesView from "./Languages/Profiles";
+import SettingsProvidersAdvancedView from "./Providers/Advanced";
+import SettingsProvidersMetadataView from "./Providers/Metadata";
+import SettingsProvidersProtectionView from "./Providers/Protection";
+import SettingsProvidersSubtitlesView from "./Providers/Subtitles";
+import SettingsProvidersTranslationView from "./Providers/Translation";
+import SettingsSubtitlesFilesView from "./Subtitles/Files";
+import SettingsSubtitlesSearchView from "./Subtitles/Search";
 import SettingsGeneralView from "./General";
 import SettingsJellyfinView from "./Jellyfin";
-import SettingsLanguagesView from "./Languages";
+import SettingsMaintenanceView from "./Maintenance";
 import SettingsNotificationsView from "./Notifications";
-import SettingsProvidersView from "./Providers";
 import SettingsRadarrView from "./Radarr";
 import SettingsSchedulerView from "./Scheduler";
 import SettingsSonarrView from "./Sonarr";
-import SettingsSubtitlesView from "./Subtitles";
+import SettingsSubtitleProcessingView from "./SubtitleProcessing";
 import SettingsUIView from "./UI";
+
+const languagesSetup = () => {
+  server.use(
+    http.get("/api/system/languages", () => {
+      return HttpResponse.json({});
+    }),
+  );
+  server.use(
+    http.get("/api/system/languages/profiles", () => {
+      return HttpResponse.json({
+        data: [],
+      });
+    }),
+  );
+  server.use(
+    http.get("/api/system/status", () => {
+      return HttpResponse.json({ data: {} });
+    }),
+  );
+};
 
 const cases: RenderTestCase[] = [
   {
@@ -20,33 +48,25 @@ const cases: RenderTestCase[] = [
     setupEach: () => {
       server.use(
         http.get("/api/system/status", () => {
-          return HttpResponse.json({});
+          return HttpResponse.json({ data: {} });
         }),
       );
     },
   },
   {
-    name: "languages page",
-    ui: SettingsLanguagesView,
-    setupEach: () => {
-      server.use(
-        http.get("/api/system/languages", () => {
-          return HttpResponse.json({});
-        }),
-      );
-      server.use(
-        http.get("/api/system/languages/profiles", () => {
-          return HttpResponse.json({
-            data: [],
-          });
-        }),
-      );
-      server.use(
-        http.get("/api/system/status", () => {
-          return HttpResponse.json({});
-        }),
-      );
-    },
+    name: "languages general page",
+    ui: SettingsLanguagesGeneralView,
+    setupEach: languagesSetup,
+  },
+  {
+    name: "languages mappings page",
+    ui: SettingsLanguageMappingsView,
+    setupEach: languagesSetup,
+  },
+  {
+    name: "languages profiles page",
+    ui: SettingsLanguageProfilesView,
+    setupEach: languagesSetup,
   },
   {
     name: "notifications page",
@@ -67,8 +87,24 @@ const cases: RenderTestCase[] = [
     },
   },
   {
-    name: "providers page",
-    ui: SettingsProvidersView,
+    name: "providers subtitles page",
+    ui: SettingsProvidersSubtitlesView,
+  },
+  {
+    name: "providers translation page",
+    ui: SettingsProvidersTranslationView,
+  },
+  {
+    name: "providers protection page",
+    ui: SettingsProvidersProtectionView,
+  },
+  {
+    name: "providers metadata page",
+    ui: SettingsProvidersMetadataView,
+  },
+  {
+    name: "providers advanced page",
+    ui: SettingsProvidersAdvancedView,
   },
   {
     name: "radarr page",
@@ -93,6 +129,10 @@ const cases: RenderTestCase[] = [
     ui: SettingsJellyfinView,
   },
   {
+    name: "maintenance page",
+    ui: SettingsMaintenanceView,
+  },
+  {
     name: "scheduler page",
     ui: SettingsSchedulerView,
   },
@@ -115,8 +155,16 @@ const cases: RenderTestCase[] = [
     },
   },
   {
-    name: "subtitles page",
-    ui: SettingsSubtitlesView,
+    name: "subtitles files page",
+    ui: SettingsSubtitlesFilesView,
+  },
+  {
+    name: "subtitles search page",
+    ui: SettingsSubtitlesSearchView,
+  },
+  {
+    name: "subtitle processing page",
+    ui: SettingsSubtitleProcessingView,
   },
   {
     name: "ui page",

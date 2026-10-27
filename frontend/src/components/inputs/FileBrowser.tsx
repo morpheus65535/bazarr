@@ -44,7 +44,7 @@ export const FileBrowser: FunctionComponent<FileBrowserProps> = ({
 }) => {
   const [isShow, setIsShow] = useState(false);
   const [value, setValue] = useState(defaultValue ?? "");
-  const [path, setPath] = useState(() => extractPath(value));
+  const path = useMemo(() => extractPath(value), [value]);
 
   const { data: tree } = useFileSystem(type, path, isShow);
 
@@ -64,19 +64,16 @@ export const FileBrowser: FunctionComponent<FileBrowserProps> = ({
     return path.slice(0, idx + 1);
   }, [path]);
 
-  useEffect(() => {
-    if (value === path) {
-      return;
-    }
+  const prevPathRef = useRef(path);
 
-    const newPath = extractPath(value);
-    if (newPath !== path) {
-      setPath(newPath);
+  useEffect(() => {
+    if (prevPathRef.current !== path) {
+      prevPathRef.current = path;
       if (onChange) {
-        onChange(newPath);
+        onChange(path);
       }
     }
-  }, [path, value, onChange]);
+  }, [path, onChange]);
 
   const ref = useRef<HTMLInputElement>(null);
 

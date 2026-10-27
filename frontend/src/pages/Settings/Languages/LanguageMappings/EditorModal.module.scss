@@ -1,0 +1,10 @@
+@use "sass:color";
+
+@layer mantine {
+  .purposeCard {
+    &[data-checked] {
+      border-color: var(--mantine-color-brand-5);
+      background-color: color.adjust(bazarr.$color-brand-6, $alpha: -0.9);
+    }
+  }
+}

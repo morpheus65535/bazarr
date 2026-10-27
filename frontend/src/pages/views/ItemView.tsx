@@ -22,7 +22,6 @@ import {
   Table,
   Tooltip,
 } from "@mantine/core";
-import { useMergedRef, useResizeObserver } from "@mantine/hooks";
 import { IconDefinition } from "@fortawesome/fontawesome-common-types";
 import {
   faCaretDown,
@@ -109,6 +108,7 @@ interface FilterConfig {
     profile?: boolean;
     audio?: boolean;
     tags?: boolean;
+    ended?: boolean;
   };
 }
 
@@ -359,6 +359,16 @@ const ItemViewFilterControls = ({
         />
       )}
 
+      {filterConfig.filters?.ended && (
+        <TriStateFilter
+          ariaLabel="Series status"
+          trueLabel="Ended"
+          falseLabel="Continuing"
+          value={query.filters?.ended}
+          onChange={(value) => setFilter("ended", value)}
+        />
+      )}
+
       {filterConfig.filters?.missing && (
         <TriStateFilter
           ariaLabel="Missing subtitles"
@@ -462,10 +472,13 @@ const ItemViewToolbox = ({
   // longer fit next to the Select button. Records the width at which the
   // controls overflowed so they only expand again when there is room.
   const [groupEl, setGroupEl] = useState<HTMLDivElement | null>(null);
-  const [resizeRef, groupRect] = useResizeObserver();
-  const groupRef = useMergedRef(setGroupEl, resizeRef);
   const controlsWidth = useRef(0);
   const [collapsed, setCollapsed] = useState(false);
+  const collapsedRef = useRef(collapsed);
+
+  useEffect(() => {
+    collapsedRef.current = collapsed;
+  }, [collapsed]);
 
   useEffect(() => {
     if (!groupEl) {
@@ -473,15 +486,23 @@ const ItemViewToolbox = ({
     }
 
     const epsilon = 8;
-    if (!collapsed && groupEl.scrollWidth > groupEl.clientWidth + epsilon) {
-      controlsWidth.current = groupEl.scrollWidth;
-      setCollapsed(true);
-      return;
-    }
-    if (collapsed && groupEl.clientWidth >= controlsWidth.current + epsilon) {
-      setCollapsed(false);
-    }
-  }, [groupEl, groupRect, collapsed]);
+    const observer = new ResizeObserver(() => {
+      if (
+        !collapsedRef.current &&
+        groupEl.scrollWidth > groupEl.clientWidth + epsilon
+      ) {
+        controlsWidth.current = groupEl.scrollWidth;
+        setCollapsed(true);
+      } else if (
+        collapsedRef.current &&
+        groupEl.clientWidth >= controlsWidth.current + epsilon
+      ) {
+        setCollapsed(false);
+      }
+    });
+    observer.observe(groupEl);
+    return () => observer.disconnect();
+  }, [groupEl]);
 
   const activeFilterCount = Object.keys(query.filters ?? {}).length;
 
@@ -535,7 +556,7 @@ const ItemViewToolbox = ({
   return (
     <Toolbox>
       <Group
-        ref={groupRef}
+        ref={setGroupEl}
         gap="sm"
         wrap="nowrap"
         align="center"
@@ -547,6 +568,7 @@ const ItemViewToolbox = ({
           disabled={totalCount === 0}
           icon={faSquareCheck}
           style={{ flexShrink: 0 }}
+          data-onboarding="media-select"
           onClick={bulkSelection.toggleActive}
         >
           Select
@@ -678,25 +700,17 @@ const ItemTableView = <T extends Item.Base>({
     [tableQuery.data],
   );
 
-  // Read through refs instead of useMemo deps so selectionColumn stays
-  // referentially stable across selection changes.
-  const bulkSelectionRef = useRef(bulkSelection);
-  bulkSelectionRef.current = bulkSelection;
-  const loadedIdsRef = useRef(loadedIds);
-  loadedIdsRef.current = loadedIds;
-
   const selectionColumn = useMemo<ColumnDef<T>>(
     () => ({
       id: "__selection",
       header: () => {
-        const bulkSelection = bulkSelectionRef.current;
-        const loadedIds = loadedIdsRef.current;
         const selectedCount = loadedIds.filter(bulkSelection.isSelected).length;
         const allSelected =
           loadedIds.length > 0 && selectedCount === loadedIds.length;
         const someSelected = selectedCount > 0;
         return (
           <Checkbox
+            data-onboarding="media-checkbox"
             indeterminate={someSelected && !allSelected}
             checked={allSelected}
             onChange={() => bulkSelection.setMany(loadedIds, !allSelected)}
@@ -704,7 +718,6 @@ const ItemTableView = <T extends Item.Base>({
         );
       },
       cell: ({ row }) => {
-        const bulkSelection = bulkSelectionRef.current;
         const id = GetItemId(row.original);
         if (id === undefined) {
           return null;
@@ -713,6 +726,7 @@ const ItemTableView = <T extends Item.Base>({
         return (
           <Group gap="xs" wrap="nowrap">
             <Checkbox
+              data-onboarding="media-checkbox"
               checked={bulkSelection.isSelected(id)}
               onChange={() => bulkSelection.toggle(id)}
             ></Checkbox>
@@ -738,7 +752,7 @@ const ItemTableView = <T extends Item.Base>({
         );
       },
     }),
-    [],
+    [bulkSelection, loadedIds],
   );
 
   const tableColumns = useMemo(
@@ -911,23 +925,16 @@ const ItemView = <T extends Item.Base>({
 
   const allItemsQuery = useAllItems(query, { enabled: selectAllRequested });
 
-  useEffect(() => {
-    if (!selectAllRequested) {
-      return;
-    }
+  // Apply the "select all matching" result as soon as it arrives. Adjusting
+  // state during render avoids an effect-driven render cascade.
+  if (selectAllRequested) {
     if (allItemsQuery.isSuccess && allItemsQuery.data) {
       bulkSelection.setMany(GetItemIds(allItemsQuery.data), true);
       setSelectAllRequested(false);
     } else if (allItemsQuery.isError) {
       setSelectAllRequested(false);
     }
-  }, [
-    selectAllRequested,
-    allItemsQuery.isSuccess,
-    allItemsQuery.data,
-    allItemsQuery.isError,
-    bulkSelection,
-  ]);
+  }
 
   const onSelectAllMatching = useCallback(
     () => setSelectAllRequested(true),
