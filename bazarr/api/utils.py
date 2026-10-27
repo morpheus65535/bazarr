@@ -13,8 +13,8 @@ from subliminal_patch import core
 
 from app.config import settings, base_url
 from languages.get_languages import language_from_alpha2, alpha3_from_alpha2
-from app.database import (get_audio_profile_languages, get_desired_languages, get_subtitles, database, TableEpisodes,
-                          TableShows, select)
+from app.database import (get_audio_profile_languages, get_desired_languages, get_subtitles, get_sports_subtitles,
+                          database, TableEpisodes, TableShows, select)
 from subtitles.pool import get_language_equals
 from utilities.helper import bool_map
 from subtitles.serialization import parse_missing_subtitles
@@ -139,6 +139,8 @@ def postprocess(item, subtitles=None):
     # Remove ffprobe_cache
     if item.get('radarrId'):
         path_replace = path_mappings.path_replace_movie
+    elif item.get('sportarrLeagueId') or item.get('sportsEventId'):
+        path_replace = path_mappings.path_replace_sports
     else:
         path_replace = path_mappings.path_replace
     if item.get('ffprobe_cache'):
@@ -184,11 +186,11 @@ def postprocess(item, subtitles=None):
         item['alternativeTitles'] = []
 
     # Add subtitles
-    if subtitles is None:
+    if item.get('sportsEventId'):
+        item['subtitles'] = get_sports_subtitles(sports_event_id=item['sportsEventId'])
+    else:
         item['subtitles'] = get_subtitles(sonarr_episode_id=item.get('sonarrEpisodeId'),
                                           radarr_id=item.get('radarrId'))
-    else:
-        item['subtitles'] = subtitles
 
     if settings.general.embedded_subs_show_desired:
         if item.get('profileId'):
