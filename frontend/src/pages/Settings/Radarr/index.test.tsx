@@ -2,6 +2,7 @@ import userEvent from "@testing-library/user-event";
 import { Mock, vi, vitest } from "vitest";
 import { useSettingsMutation, useSystemSettings } from "@/apis/hooks/system";
 import api from "@/apis/raw";
+import { SignalRHelpUrl } from "@/constants";
 import { customRender, screen } from "@/tests";
 import SettingsRadarrView from "./index";
 
@@ -90,6 +91,14 @@ describe("SettingsRadarrView", () => {
     expect(
       screen.queryByRole("button", { name: "Test" }),
     ).not.toBeInTheDocument();
+  });
+
+  it("should link to the connection documentation", () => {
+    renderPage(true);
+
+    expect(
+      screen.getByRole("link", { name: "How this connection works" }),
+    ).toHaveAttribute("href", SignalRHelpUrl);
   });
 
   it("should strip leading slash from base URL on load", () => {

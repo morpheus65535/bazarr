@@ -46,6 +46,9 @@ class SonarrSignalrClientLegacy:
         self.connected = False
 
     def start(self):
+        if args.no_signalr or not settings.general.use_sonarr:
+            self.connected = False
+            return
         if get_sonarr_info.is_legacy():
             logging.warning(
                 f'BAZARR can only sync from Sonarr v3 SignalR feed to get real-time update. You should consider '
@@ -78,6 +81,7 @@ class SonarrSignalrClientLegacy:
                         scheduler.execute_job_now(taskid="update_series")
 
     def stop(self, log=True):
+        self.connected = False
         try:
             self.connection.close()
         except Exception:
@@ -89,8 +93,10 @@ class SonarrSignalrClientLegacy:
         if self.connection:
             if self.connection.started:
                 self.stop(log=False)
-        if settings.general.use_sonarr:
+        if settings.general.use_sonarr and not args.no_signalr:
             self.start()
+        else:
+            self.connected = False
 
     def exception_handler(self):
         sonarr_queue.clear()
@@ -120,6 +126,9 @@ class SonarrSignalrClient:
         self.connected = False
 
     def start(self):
+        if args.no_signalr or not settings.general.use_sonarr:
+            self.connected = False
+            return
         self.configure()
         logging.info('BAZARR trying to connect to Sonarr SignalR feed...')
         while self.connection.transport.state.value not in [0, 1, 2]:
@@ -129,6 +138,7 @@ class SonarrSignalrClient:
                 time.sleep(5)
 
     def stop(self):
+        self.connected = False
         logging.info('BAZARR SignalR client for Sonarr is now disconnected.')
         self.connection.stop()
 
@@ -136,8 +146,10 @@ class SonarrSignalrClient:
         if self.connection:
             if self.connection.transport.state.value in [0, 1, 2]:
                 self.stop()
-        if settings.general.use_sonarr:
+        if settings.general.use_sonarr and not args.no_signalr:
             self.start()
+        else:
+            self.connected = False
 
     def exception_handler(self):
         sonarr_queue.clear()
@@ -187,6 +199,9 @@ class RadarrSignalrClient:
         self.connected = False
 
     def start(self):
+        if args.no_signalr or not settings.general.use_radarr:
+            self.connected = False
+            return
         self.configure()
         logging.info('BAZARR trying to connect to Radarr SignalR feed...')
         while self.connection.transport.state.value not in [0, 1, 2]:
@@ -196,6 +211,7 @@ class RadarrSignalrClient:
                 time.sleep(5)
 
     def stop(self):
+        self.connected = False
         logging.info('BAZARR SignalR client for Radarr is now disconnected.')
         self.connection.stop()
 
@@ -203,8 +219,10 @@ class RadarrSignalrClient:
         if self.connection:
             if self.connection.transport.state.value in [0, 1, 2]:
                 self.stop()
-        if settings.general.use_radarr:
+        if settings.general.use_radarr and not args.no_signalr:
             self.start()
+        else:
+            self.connected = False
 
     def exception_handler(self):
         radarr_queue.clear()
