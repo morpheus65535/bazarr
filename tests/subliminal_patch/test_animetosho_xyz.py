@@ -544,3 +544,54 @@ def test_forced_languages_are_declared():
     # subtitles would never reach AnimeTosho at all.
     assert Language("eng", forced=True) in AnimeToshoXYZProvider.languages
     assert Language("por", "BR", forced=True) in AnimeToshoXYZProvider.languages
+
+
+def _mashle_response(release_id, release_name):
+    return {
+        "id": release_id,
+        "torrent_name": release_name,
+        "attachments": [
+            {
+                "id": 1,
+                "type": "subtitle",
+                "url": f"https://storage.animetosho.xyz/releases/{release_id}/subtitles/track1.eng.ass.xz",
+                "info": {"language": "English", "language_code": "eng", "forced": False},
+            }
+        ],
+        "files": [{"id": 1, "filename": f"{release_name}.mkv"}],
+    }
+
+
+_MASHLE_S01E11 = Episode(
+    "[SubsNoJutsu] MASHLE - MAGIC AND MUSCLES - S01E11 (1080p AAC x265 BD) [95071266].mkv",
+    "MASHLE: MAGIC AND MUSCLES",
+    1,
+    11,
+    series_anidb_id=17478,
+    series_anidb_episode_id=267727,
+    series_tvdb_id=421737,
+)
+
+
+@pytest.mark.parametrize(
+    "release_name, season_matches",
+    [
+        # AnimeTosho files these second season releases under the first season's episode id.
+        ("[EMBER] Mashle: Magic and Muscles S02E11 [1080p] [HEVC WEBRip] (Mashle 2nd Season)", False),
+        ("Mashle - S02E11 - MULTi 1080p WEB x264 -NanDesuKa (CR)", False),
+        ("[SubsNoJutsu] MASHLE - MAGIC AND MUSCLES - S01E11 (1080p AAC x265 BD) [95071266]", True),
+        # No season in the name: the AniDB episode id is the only signal, so the season is assumed.
+        ("[Retr0] Mashle Magic And Muscles - 11 (1080p AV1 10bit Webrip AAC)", True),
+    ],
+)
+def test_release_naming_another_season_does_not_match_season(requests_mock, release_name, season_matches):
+    _mock_feed(requests_mock, _mashle_response(700001, release_name), eid=267727, entry_id=700001,
+               title=release_name)
+
+    with AnimeToshoXYZProvider() as provider:
+        subtitles = provider.list_subtitles(_MASHLE_S01E11, languages={Language("eng")})
+
+    assert len(subtitles) == 1
+    matches = subtitles[0].get_matches(_MASHLE_S01E11)
+    assert ("season" in matches) is season_matches
+    assert {"series", "episode"}.issubset(matches)
