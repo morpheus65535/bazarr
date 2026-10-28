@@ -1,6 +1,11 @@
+import { notifications } from "@mantine/notifications";
 import userEvent from "@testing-library/user-event";
 import { Mock, vi, vitest } from "vitest";
-import { useSettingsMutation, useSystemSettings } from "@/apis/hooks";
+import {
+  useOpenAICompatibleTranslatorTestMutation,
+  useSettingsMutation,
+  useSystemSettings,
+} from "@/apis/hooks";
 import { customRender, screen } from "@/tests";
 import SettingsProvidersTranslationView from "./Translation";
 
@@ -10,11 +15,27 @@ vi.mock("@/apis/hooks", async (importOriginal) => {
     ...actual,
     useSystemSettings: vitest.fn(),
     useSettingsMutation: vitest.fn(),
+    useOpenAICompatibleTranslatorTestMutation: vitest.fn(),
+  };
+});
+
+vi.mock("@mantine/notifications", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("@mantine/notifications")>();
+  return {
+    ...actual,
+    notifications: {
+      ...actual.notifications,
+      show: vitest.fn(),
+    },
   };
 });
 
 const mockedUseSystemSettings = useSystemSettings as Mock;
 const mockedUseSettingsMutation = useSettingsMutation as Mock;
+const mockedUseOpenAICompatibleTranslatorTestMutation =
+  useOpenAICompatibleTranslatorTestMutation as Mock;
+const mockedNotificationsShow = notifications.show as Mock;
 
 const baseSettings = {
   general: {
@@ -27,9 +48,23 @@ const baseSettings = {
   },
 } as unknown as Settings;
 
-const setupMocks = () => {
+const openAISettings = {
+  ...baseSettings,
+  translator: {
+    ...baseSettings.translator,
+    translator_type: "openai_compatible",
+    openai_base_url: "http://localhost:1234/v1",
+    openai_model: "local-model",
+    openai_api_key: "test-key",
+    openai_timeout: 45,
+  },
+} as unknown as Settings;
+
+const mockTestTranslator = vitest.fn();
+
+const setupMocks = (settings: Settings = baseSettings) => {
   mockedUseSystemSettings.mockReturnValue({
-    data: baseSettings,
+    data: settings,
     isLoading: false,
     isRefetching: false,
   });
@@ -37,10 +72,14 @@ const setupMocks = () => {
     mutate: vi.fn(),
     isPending: false,
   });
+  mockedUseOpenAICompatibleTranslatorTestMutation.mockReturnValue({
+    mutateAsync: mockTestTranslator,
+    isPending: false,
+  });
 };
 
-const renderPage = () => {
-  setupMocks();
+const renderPage = (settings: Settings = baseSettings) => {
+  setupMocks(settings);
   return customRender(<SettingsProvidersTranslationView />);
 };
 
@@ -81,5 +120,65 @@ describe("SettingsProvidersTranslationView", () => {
     await userEvent.keyboard("{Enter}");
 
     expect(screen.getByText("key2")).toBeInTheDocument();
+  });
+
+  it("tests the OpenAI-compatible translator with the current settings", async () => {
+    mockTestTranslator.mockResolvedValueOnce({
+      success: true,
+      message: "Connection successful. Test translation: Bonjour",
+    });
+    renderPage(openAISettings);
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Test Connection" }),
+    );
+
+    expect(mockTestTranslator).toHaveBeenCalledWith({
+      baseUrl: "http://localhost:1234/v1",
+      model: "local-model",
+      apiKey: "test-key",
+      timeout: 45,
+    });
+    expect(mockedNotificationsShow).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "Connection successful",
+        message: "Connection successful. Test translation: Bonjour",
+        color: "success",
+      }),
+    );
+  });
+
+  it("shows the endpoint error returned by the connection test", async () => {
+    mockTestTranslator.mockResolvedValueOnce({
+      success: false,
+      message: "Authentication failed; check the API key",
+    });
+    renderPage(openAISettings);
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Test Connection" }),
+    );
+
+    expect(mockedNotificationsShow).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "Connection failed",
+        message: "Authentication failed; check the API key",
+        color: "danger",
+      }),
+    );
+  });
+
+  it("disables the connection test when its URL or model is missing", () => {
+    renderPage({
+      ...openAISettings,
+      translator: {
+        ...openAISettings.translator,
+        openai_base_url: "",
+      },
+    } as Settings);
+
+    expect(
+      screen.getByRole("button", { name: "Test Connection" }),
+    ).toBeDisabled();
   });
 });
