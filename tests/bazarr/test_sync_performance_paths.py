@@ -1,5 +1,9 @@
+from tests.helpers.arr_fixtures import episode_payload, episode_record, movie_payload, series_payload, series_record, stub_arr_api
 # -*- coding: utf-8 -*-
 import datetime
+
+from sqlalchemy.sql import Executable
+from sonarr.episode_snapshot import Episode
 
 from types import SimpleNamespace
 
@@ -55,7 +59,7 @@ def test_update_one_series_fetches_and_inserts_for_standalone_call(monkeypatch):
     monkeypatch.setattr(series_sync, "get_profile_list", lambda: [])
     monkeypatch.setattr(series_sync, "get_tags", lambda: {})
     monkeypatch.setattr(series_sync, "get_language_profiles", lambda: [])
-    monkeypatch.setattr(series_sync, "get_series_from_sonarr_api", lambda **kwargs: [{"id": 123}])
+    stub_arr_api(monkeypatch, series_sync, "get_series_from_sonarr_api", lambda **kwargs: [series_payload()])
     monkeypatch.setattr(
         series_sync,
         "seriesParser",
@@ -98,7 +102,7 @@ def test_update_series_runs_one_explicit_episode_sync(monkeypatch):
         ),
     )
     monkeypatch.setattr(series_sync, "check_sonarr_rootfolder", lambda: None)
-    monkeypatch.setattr(series_sync, "get_series_from_sonarr_api", lambda **kwargs: [{"id": 123, "title": "Series"}])
+    stub_arr_api(monkeypatch, series_sync, "get_series_from_sonarr_api", lambda **kwargs: [series_payload()])
     monkeypatch.setattr(series_sync, "get_profile_list", lambda: [])
     monkeypatch.setattr(series_sync, "get_tags", lambda: {})
     monkeypatch.setattr(series_sync, "get_language_profiles", lambda: [])
@@ -119,7 +123,7 @@ def test_update_series_runs_one_explicit_episode_sync(monkeypatch):
         ),
     )
 
-    series_sync.update_series(job_id="job")
+    series_sync.update_series(job_id=1)
 
     assert episode_sync_calls == [123]
     assert len(update_calls) == 1
@@ -161,8 +165,8 @@ def test_update_series_returns_early_when_sonarr_api_returns_none(monkeypatch):
     )
     monkeypatch.setattr(series_sync, "check_sonarr_rootfolder", lambda: None)
     # The API helper swallows ConnectionError/Timeout errors and returns None.
-    monkeypatch.setattr(
-        series_sync,
+    stub_arr_api(
+        monkeypatch, series_sync,
         "get_series_from_sonarr_api",
         lambda **kwargs: None,
     )
@@ -192,12 +196,12 @@ def test_update_series_returns_early_when_sonarr_api_returns_none(monkeypatch):
         ),
     )
 
-    series_sync.update_series(job_id="job")
+    series_sync.update_series(job_id=1)
 
     assert execute_calls == []
     assert episode_sync_calls == []
     assert update_one_series_calls == []
-    assert job_name_updates == [((), {"job_id": "job", "new_job_name": "Synced series with Sonarr"})]
+    assert job_name_updates == [((), {"job_id": 1, "new_job_name": "Synced series with Sonarr"})]
 
 
 def test_unchanged_series_skips_update_but_manual_call_syncs_episodes(monkeypatch):
@@ -234,7 +238,7 @@ def test_unchanged_series_skips_update_but_manual_call_syncs_episodes(monkeypatc
     series_sync.update_one_series(
         123,
         action="updated",
-        series_data=[{"id": 123}],
+        series_data=[series_record(series_payload())],
         sync_episodes_after_update=True,
     )
 
@@ -254,7 +258,7 @@ def test_episode_parser_uses_reported_size_before_filesystem_stat(monkeypatch):
     monkeypatch.setattr(parser, "audio_language_from_name", lambda name: name)
 
     parsed = parser.episodeParser(
-        {
+        episode_record({
             "hasFile": True,
             "seriesId": 123,
             "id": 456,
@@ -270,10 +274,11 @@ def test_episode_parser_uses_reported_size_before_filesystem_stat(monkeypatch):
                 "mediaInfo": {},
                 "quality": {"quality": {"name": "HDTV-1080p"}},
             },
-        },
+        }),
         parse_embedded_audio_track=False,
     )
 
+    assert parsed is not None
     assert parsed["sonarrEpisodeId"] == 456
     assert parsed["file_size"] == MINIMUM_VIDEO_SIZE + 1
 
@@ -283,8 +288,8 @@ def test_update_movies_compares_against_matching_radarr_id(monkeypatch):
     from radarr.sync import movies as movies_sync
 
     movie_rows = [
-        (_model(radarrId=1, title="Movie 1", path="/movies/one.mkv"),),
-        (_model(radarrId=2, title="Old Movie 2", path="/movies/two.mkv"),),
+        (_model(radarrId=1, title="Movie 1", path="/movies/one.mkv", movie_file_id=101, monitored="True"),),
+        (_model(radarrId=2, title="Old Movie 2", path="/movies/two.mkv", movie_file_id=102, monitored="True"),),
     ]
     updated_movies = []
 
@@ -302,9 +307,11 @@ def test_update_movies_compares_against_matching_radarr_id(monkeypatch):
 
     def _movie_parser(movie, **kwargs):
         return {
-            "radarrId": movie["id"],
-            "title": movie["title"],
-            "path": movie["movieFile"]["path"],
+            "radarrId": movie.id,
+            "title": movie.title,
+            "path": movie.movieFile.path,
+            "movie_file_id": movie.movieFile.id,
+            "monitored": str(movie.monitored),
         }
 
     monkeypatch.setattr(movies_sync, "database", _Database())
@@ -321,7 +328,7 @@ def test_update_movies_compares_against_matching_radarr_id(monkeypatch):
     monkeypatch.setattr(movies_sync, "get_tags", lambda: {})
     monkeypatch.setattr(movies_sync, "get_language_profiles", lambda: [])
     monkeypatch.setattr(movies_sync, "movieParser", _movie_parser)
-    monkeypatch.setattr(movies_sync, "update_movie", lambda movie: updated_movies.append(movie))
+    monkeypatch.setattr(movies_sync, "update_movie", lambda previous_file, movie: updated_movies.append(movie) or True)
     monkeypatch.setattr(movies_sync, "event_stream", lambda **kwargs: None)
     monkeypatch.setattr(
         movies_sync,
@@ -333,30 +340,19 @@ def test_update_movies_compares_against_matching_radarr_id(monkeypatch):
             get_job=lambda *args, **kwargs: _MockJob(),
         ),
     )
-    monkeypatch.setattr(
-        movies_sync,
+    stub_arr_api(
+        monkeypatch, movies_sync,
         "get_movies_from_radarr_api",
         lambda apikey_radarr: [
-            {
-                "id": 1,
-                "title": "Movie 1",
-                "hasFile": True,
-                "monitored": True,
-                "movieFile": {"id": 101, "path": "/movies/one.mkv", "size": MINIMUM_VIDEO_SIZE + 1},
-            },
-            {
-                "id": 2,
-                "title": "New Movie 2",
-                "hasFile": True,
-                "monitored": True,
-                "movieFile": {"id": 102, "path": "/movies/two.mkv", "size": MINIMUM_VIDEO_SIZE + 1},
-            },
+            movie_payload(movie_id=1, title='Movie 1', path='/movies/one.mkv', file_id=101, size=MINIMUM_VIDEO_SIZE + 1),
+            movie_payload(movie_id=2, title='New Movie 2', path='/movies/two.mkv', file_id=102, size=MINIMUM_VIDEO_SIZE + 1),
         ],
     )
 
-    movies_sync.update_movies(job_id="job")
+    movies_sync.update_movies(job_id=1)
 
-    assert updated_movies == [{"radarrId": 2, "title": "New Movie 2", "path": "/movies/two.mkv"}]
+    assert updated_movies == [{"radarrId": 2, "title": "New Movie 2", "path": "/movies/two.mkv",
+                               "movie_file_id": 102, "monitored": "True"}]
 
 
 def test_get_providers_expired_throttle_cleanup_is_idempotent(monkeypatch):
@@ -383,3 +379,42 @@ def test_get_providers_expired_throttle_cleanup_is_idempotent(monkeypatch):
     monkeypatch.setattr(providers, "set_throttled_providers", lambda data: None)
 
     assert providers.get_providers() == [provider]
+
+
+@pytest.mark.parametrize('existing', [False, True])
+def test_episode_parser_rejection_skips_writes_and_keeps_existing_id(
+    existing: bool, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from sonarr.sync import episodes as episode_sync
+
+    reads: list[Executable] = []
+    parsed: list[Episode] = []
+    episode = episode_record(episode_payload())
+    row = SimpleNamespace(sonarrEpisodeId=episode.id, to_dict=lambda: {'sonarrEpisodeId': episode.id})
+
+    class Database:
+        def execute(self, statement: Executable) -> _Result:
+            assert str(statement).startswith('SELECT')
+            reads.append(statement)
+            return _Result(all_value=[(row,)] if existing and len(reads) == 1 else [])
+
+    def reject(record: Episode, *, parse_embedded_audio_track: bool,
+               audio_languages: dict[int, str | None], file_size: int) -> None:
+        parsed.append(record)
+        return None
+
+    monkeypatch.setattr(episode_sync, 'database', Database())
+    monkeypatch.setattr(episode_sync, 'settings', SimpleNamespace(
+        sonarr=SimpleNamespace(apikey='key', sync_only_monitored_series=False),
+        general=SimpleNamespace(parse_embedded_audio_track=False),
+    ))
+    monkeypatch.setattr(episode_sync, 'get_episodes_from_sonarr_api', lambda **kwargs: [episode])
+    monkeypatch.setattr(episode_sync, '_validated_episodes', lambda records, **kwargs: records)
+    monkeypatch.setattr(episode_sync, 'episodeParser', reject)
+    monkeypatch.setattr(episode_sync, 'delete_media_and_wanted_search_state',
+                        lambda *args: pytest.fail('A rejected parse must not delete an existing episode'))
+
+    episode_sync.sync_episodes(7)
+
+    assert parsed == [episode]
+    assert len(reads) == 2
