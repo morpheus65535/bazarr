@@ -111,6 +111,7 @@ At the request of some users, here is a way to show appreciation for the efforts
 - Turkcealtyazi.org
 - TuSubtitulo
 - TVSubtitles
+- UNIT3D (private trackers running a UNIT3D version with the subtitle API, see its [Subtitle API documentation](https://github.com/HDInnovations/UNIT3D/blob/master/book/src/subtitle_api.md))
 - Whisper (requires [ahmetoner/whisper-asr-webservice](https://github.com/ahmetoner/whisper-asr-webservice))
 - Wizdom
 - XSubs
