@@ -254,9 +254,7 @@ class TsukiHimeProvider(Provider):
             if video.year and anime.get("release_year") == video.year:
                 verified_matches.add("year")
         else:
-            # The anime comes from the AniDB id mapped from the TVDB id of the series, so the series is
-            # verified by id. AniDB keeps each season as a separate anime with its own release year,
-            # which differs from the series year for later seasons, so do not compare the years.
+            # Found by the TVDB id of the series. AniDB years are per season, not per series.
             verified_matches = {"series", "season", "episode", "year"}
 
         release_info = entry.get("name") or file_data.get("filename", "")
