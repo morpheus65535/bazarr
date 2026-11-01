@@ -249,9 +249,15 @@ class TsukiHimeProvider(Provider):
             f"{STORAGE_URL}/{storage_path}/{int(attachment_id):08X}/{int(attachment_id)}.xz"
         )
 
-        verified_matches = {"title"} if isinstance(video, Movie) else {"series", "season", "episode"}
-        if video.year and anime.get("release_year") == video.year:
-            verified_matches.add("year")
+        if isinstance(video, Movie):
+            verified_matches = {"title"}
+            if video.year and anime.get("release_year") == video.year:
+                verified_matches.add("year")
+        else:
+            # The anime comes from the AniDB id mapped from the TVDB id of the series, so the series is
+            # verified by id. AniDB keeps each season as a separate anime with its own release year,
+            # which differs from the series year for later seasons, so do not compare the years.
+            verified_matches = {"series", "season", "episode", "year"}
 
         release_info = entry.get("name") or file_data.get("filename", "")
         difference = self._streaming_service(video, release_info) or self._track_label(info.get("name"))

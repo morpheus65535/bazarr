@@ -99,6 +99,71 @@ def test_list_episode_subtitles_uses_native_storage(episode, requests_mock):
     assert {"series", "season", "episode", "year"} <= subtitle.get_matches(episode)
 
 
+def test_later_season_matches_year_of_the_series(requests_mock):
+    # AniDB keeps each season as a separate anime with its own release year, but the video
+    # carries the year of the series (first season), here also in the file name. The AniDB id
+    # comes from the TVDB mapping of the series, so a later season must still match the year.
+    video = Episode(
+        "The Apothecary Diaries (2023) - S03E05 - The White-Snake Immortal [WEBDL-1080p].mkv",
+        "The Apothecary Diaries",
+        3,
+        5,
+        year=2023,
+        original_series=False,
+        series_anidb_id=19444,
+    )
+    video.series_anidb_episode_no = 5
+    release = "[Erai-raws] Kusuriya no Hitorigoto 3rd Season - 05 [1080p CR WEB-DL AVC AAC][MultiSub]"
+    requests_mock.get(f"{API}/animes/anidb/19444", json={"id": 9779, "release_year": 2026})
+    requests_mock.get(
+        f"{API}/animes/9779/episodes/5",
+        json={
+            "results": [
+                {"id": 401, "name": release, "state": "completed", "sublangs": ["es-ES"], "source_date": 1},
+            ],
+        },
+    )
+    requests_mock.get(
+        f"{API}/torrents/401",
+        json={
+            "files": [
+                {
+                    "filename": f"{release}.mkv",
+                    "attachments": [_attachment(325935, "es-ES", "ass", name="Spanish (Spain)")],
+                },
+            ],
+        },
+    )
+
+    with TsukiHimeProvider() as provider:
+        subtitles = provider.list_subtitles(video, {Language("spa")})
+
+    assert len(subtitles) == 1
+    assert {"series", "season", "episode", "year"} <= subtitles[0].get_matches(video)
+
+
+def test_movie_with_other_release_year_does_not_match_year(movie, requests_mock):
+    requests_mock.get(f"{API}/animes/anilist/195230", json={"id": 400, "release_year": 2024})
+    requests_mock.get(
+        f"{API}/animes/400",
+        json={
+            "results": [
+                {"id": 402, "name": "Summer Pockets Omnibus", "state": "completed", "sublangs": ["en"], "source_date": 1},
+            ],
+        },
+    )
+    requests_mock.get(
+        f"{API}/torrents/402",
+        json={"files": [{"filename": "Summer Pockets Omnibus.mkv", "attachments": [_attachment(1, "en", "ass")]}]},
+    )
+
+    with TsukiHimeProvider() as provider:
+        subtitles = provider.list_subtitles(movie, {Language("eng")})
+
+    assert len(subtitles) == 1
+    assert "year" not in subtitles[0].get_matches(movie)
+
+
 def test_list_movie_subtitles_uses_animetosho_storage_and_best_file(movie, requests_mock):
     _mock_anime(requests_mock, movie)
     requests_mock.get(
