@@ -100,9 +100,7 @@ def test_list_episode_subtitles_uses_native_storage(episode, requests_mock):
 
 
 def test_later_season_matches_year_of_the_series(requests_mock):
-    # AniDB keeps each season as a separate anime with its own release year, but the video
-    # carries the year of the series (first season), here also in the file name. The AniDB id
-    # comes from the TVDB mapping of the series, so a later season must still match the year.
+    # AniDB release year 2026 (season 3), series year 2023 also in the file name.
     video = Episode(
         "The Apothecary Diaries (2023) - S03E05 - The White-Snake Immortal [WEBDL-1080p].mkv",
         "The Apothecary Diaries",
