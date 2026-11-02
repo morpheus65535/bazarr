@@ -67,7 +67,7 @@ def _language_from_alpha2(code2):
     return custom.subzero_language()
 
 
-def extract_embedded_subtitle(subtitles_id, media_type, job_id=None):
+def extract_embedded_subtitle(subtitles_id, media_type, job_id=None, filename_suffix=''):
     """Extract an embedded subtitles track to an external subtitles file.
 
     Look up the subtitles record identified by ``subtitles_id`` (the primary key of the row in
@@ -78,6 +78,7 @@ def extract_embedded_subtitle(subtitles_id, media_type, job_id=None):
     :param subtitles_id: primary key of the subtitles record to extract
     :param media_type: "episode" or "movie"
     :param job_id: the job id of the job that is extracting the subtitles
+    :param filename_suffix: optional suffix to add before the extracted file extension
     :returns: the path of the extracted subtitles file
     :raises SubtitlesNotFoundError: no matching subtitles record was found
     :raises NotAnEmbeddedSubtitlesError: the record points to an external subtitles file
@@ -193,6 +194,9 @@ def extract_embedded_subtitle(subtitles_id, media_type, job_id=None):
     target_folder = get_target_folder(video_path)
     if target_folder:
         subtitles_path = os.path.join(target_folder, os.path.basename(subtitles_path))
+    if filename_suffix:
+        filename, extension = os.path.splitext(subtitles_path)
+        subtitles_path = f'{filename}{filename_suffix}{extension}'
 
     # Extract the track with ffmpeg, copying the stream to preserve its original format
     command = [container.FFMPEG_PATH, "-y", "-v", "error", "-i", video_path] + stream.copy_args(subtitles_path)

@@ -32,6 +32,7 @@ def _run_search(profile, languages, reload_side_effect=None, on_download=None):
     settings = mock.MagicMock()
     settings.general.utf8_encode = False
     settings.embeddedsubtitles.prefer_embedded = False
+    settings.translator.translate_fallback_enabled = False
 
     searched = []
 

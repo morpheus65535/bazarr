@@ -19,6 +19,7 @@ def _hi_modes_searched(items, languages):
     settings = mock.MagicMock()
     settings.general.utf8_encode = False
     settings.embeddedsubtitles.prefer_embedded = False
+    settings.translator.translate_fallback_enabled = False
 
     modes = {}
 

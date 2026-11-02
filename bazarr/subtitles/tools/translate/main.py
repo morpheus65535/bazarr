@@ -109,9 +109,12 @@ def translate_subtitles_file(video_path, source_srt_file, from_lang, to_lang, fo
         if result is False:
             raise RuntimeError(f'{translator.__class__.__name__} returned a failed translation result')
         logging.debug(f'BAZARR saved translated subtitles to {dest_srt_file}')
-        from api.subtitles.subtitles import postprocess_subtitles
-        # Call postprocess_subtitles after translation
-        postprocess_subtitles(dest_srt_file, media_type, metadata, sonarr_episode_id if media_type == 'episode' else radarr_id)
+        if metadata is not None:
+            from api.subtitles.subtitles import postprocess_subtitles
+            # Manual API translations include metadata for library refresh; automated fallback
+            # re-indexes the translated sidecar in the download workflow instead.
+            postprocess_subtitles(dest_srt_file, media_type, metadata,
+                                  sonarr_episode_id if media_type == 'episode' else radarr_id)
         return result
 
     except Exception as e:

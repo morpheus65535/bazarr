@@ -354,3 +354,13 @@ export const useSystemWebhookTestMutation = () =>
   useMutation({
     mutationFn: () => api.system.testWebhook(),
   });
+
+export const useOpenAICompatibleTranslatorTestMutation = () =>
+  useMutation({
+    mutationFn: (data: {
+      baseUrl: string;
+      model: string;
+      apiKey: string;
+      timeout: number;
+    }) => api.system.testOpenAICompatibleTranslator(data),
+  });
