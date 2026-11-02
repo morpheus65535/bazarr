@@ -16,6 +16,10 @@ def test_settings_exposes_general_defaults():
     assert config.settings.general.minimum_score == 90
 
 
+def test_settings_exposes_yavkanet_defaults():
+    assert config.settings.yavkanet.flaresolverr_url == ""
+
+
 def test_get_args_rejects_unknown_cli_arguments(monkeypatch, request):
     monkeypatch.setenv("NO_CLI", "false")
     monkeypatch.setattr(sys, "argv", ["pytest", "--unknown-flag", "value"])

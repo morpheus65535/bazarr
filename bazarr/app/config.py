@@ -386,6 +386,8 @@ validators = [
     Validator('xsubs.username', must_exist=True, default='', is_type_of=str, cast=str),
     Validator('xsubs.password', must_exist=True, default='', is_type_of=str, cast=str),
 
+    Validator('yavkanet.flaresolverr_url', must_exist=True, default='', is_type_of=str),
+
     # assrt section
     Validator('assrt.token', must_exist=True, default='', is_type_of=str, cast=str),
 

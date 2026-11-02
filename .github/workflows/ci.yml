@@ -111,7 +111,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg mediainfo
 
       - name: Test with pytest
-        run: pytest tests/bazarr/ tests/helpers/ --junitxml report.xml
+        run: pytest tests/bazarr/ tests/helpers/ tests/subliminal_patch/test_yavkanet.py --junitxml report.xml
 
       - name: Test report generation
         uses: dorny/test-reporter@v3

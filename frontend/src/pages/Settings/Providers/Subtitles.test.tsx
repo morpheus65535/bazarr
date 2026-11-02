@@ -94,6 +94,26 @@ describe("SettingsProvidersSubtitlesView", () => {
     expect(modalScope.getByRole("switch", { name: "VIP" })).toBeInTheDocument();
   });
 
+  it("should load the optional Yavka FlareSolverr URL", async () => {
+    renderPage({
+      general: {
+        ...baseSettings.general,
+        enabled_providers: ["yavkanet"],
+      },
+      yavkanet: {
+        flaresolverr_url: "http://flaresolverr:8191",
+      },
+    } as unknown as Partial<typeof baseSettings>);
+
+    await userEvent.click(screen.getByRole("button", { name: /Yavka.net/i }));
+
+    const modal = await screen.findByRole("dialog");
+
+    expect(
+      within(modal).getByRole("textbox", { name: "FlareSolverr URL" }),
+    ).toHaveValue("http://flaresolverr:8191");
+  });
+
   it("should add a new provider from the modal", async () => {
     renderPage();
 

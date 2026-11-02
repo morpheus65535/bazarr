@@ -11,9 +11,11 @@ from random import randint
 from bs4 import BeautifulSoup
 from zipfile import ZipFile, is_zipfile
 from rarfile import RarFile, is_rarfile
+from urllib.parse import urlparse
 from requests import Session
 from guessit import guessit
 from dogpile.cache.api import NO_VALUE
+from subliminal.exceptions import ConfigurationError, ProviderError
 from subliminal_patch.providers import Provider
 from subliminal_patch.subtitle import Subtitle, guess_matches
 from subliminal_patch.utils import sanitize, fix_inconsistent_naming
@@ -103,6 +105,16 @@ class YavkaNetProvider(Provider):
     ]}
     video_types = (Episode, Movie)
 
+    def __init__(self, flaresolverr_url=None):
+        self.flaresolverr_url = (flaresolverr_url or '').strip().rstrip('/')
+        if self.flaresolverr_url:
+            parsed_url = urlparse(self.flaresolverr_url)
+            if (parsed_url.scheme not in ('http', 'https') or not parsed_url.netloc
+                    or parsed_url.query or parsed_url.fragment):
+                raise ConfigurationError('FlareSolverr URL must be an HTTP or HTTPS base URL')
+            if not self.flaresolverr_url.endswith('/v1'):
+                self.flaresolverr_url += '/v1'
+
     def initialize(self):
         self.session = Session()
         self.session.headers['User-Agent'] = AGENT_LIST[randint(0, len(AGENT_LIST) - 1)]
@@ -117,6 +129,55 @@ class YavkaNetProvider(Provider):
     def terminate(self):
         self.session.close()
 
+    @staticmethod
+    def _is_cloudflare_challenge(response):
+        return response.headers.get('cf-mitigated') == 'challenge' or (
+            response.status_code in (403, 503)
+            and 'cloudflare' in response.headers.get('Server', '').lower()
+            and ('/cdn-cgi/challenge-platform/' in response.text or 'Just a moment...' in response.text)
+        )
+
+    def _solve_cloudflare(self, url):
+        logger.info('Solving Yavka.net Cloudflare challenge with FlareSolverr')
+        with Session() as solver_session:
+            response = solver_session.request('POST', self.flaresolverr_url, json={
+                'cmd': 'request.get',
+                'url': url,
+                'maxTimeout': 60000,
+            }, timeout=70)
+        response.raise_for_status()
+
+        try:
+            result = response.json()
+            solution = result['solution']
+            if result['status'] != 'ok' or solution['status'] != 200:
+                raise ValueError('Challenge not solved')
+            user_agent = solution['userAgent']
+            cookies = solution['cookies']
+            if not isinstance(user_agent, str) or not user_agent or not isinstance(cookies, list):
+                raise ValueError('Missing browser session')
+            for cookie in cookies:
+                domain = cookie.get('domain') or 'yavka.net'
+                if domain.lstrip('.') != 'yavka.net':
+                    continue
+                self.session.cookies.set(cookie['name'], cookie['value'], domain=domain,
+                                         path=cookie.get('path') or '/', secure=cookie.get('secure', True))
+        except (ValueError, KeyError, TypeError, AttributeError) as error:
+            raise ProviderError('FlareSolverr could not solve the Yavka.net Cloudflare challenge') from error
+
+        self.session.headers['User-Agent'] = user_agent
+
+    def _request(self, method, url, **kwargs):
+        kwargs.setdefault('timeout', 10)
+        response = self.session.request(method, url, **kwargs)
+        if self.flaresolverr_url and self._is_cloudflare_challenge(response):
+            self._solve_cloudflare(url)
+            response = self.session.request(method, url, **kwargs)
+        response.raise_for_status()
+        if self._is_cloudflare_challenge(response):
+            raise ProviderError('Yavka.net returned a Cloudflare challenge; configure or check FlareSolverr')
+        return response
+
     def query(self, language, video):
         subtitles = []
         isEpisode = isinstance(video, Episode)
@@ -127,11 +188,10 @@ class YavkaNetProvider(Provider):
             imdb_id = video.imdb_id
 
         logger.info(f'Searching subtitle for {imdb_id}')
-        response = self.retry(self.session.get(f'https://yavka.net/imdb/{imdb_id}', timeout=10,
-                                               headers={'Referer': 'https://yavka.net/'}))
-        if not response:
+        response = self.retry(lambda: self._request('GET', f'https://yavka.net/imdb/{imdb_id}',
+                                                    headers={'Referer': 'https://yavka.net/'}))
+        if response is None:
             return subtitles
-        response.raise_for_status()
 
         if response.status_code != 200:
             logger.debug('No subtitles found')
@@ -168,8 +228,8 @@ class YavkaNetProvider(Provider):
                 if request is NO_VALUE:
                     # slow down to prevent being throttled
                     time.sleep(randint(0, 1))
-                    response = self.retry(self.session.get('https://yavka.net' + link))
-                    if not response:
+                    response = self.retry(lambda: self._request('GET', 'https://yavka.net' + link))
+                    if response is None:
                         logger.info('Subtitle page did not load: %s', link)
                         continue
 
@@ -234,12 +294,11 @@ class YavkaNetProvider(Provider):
         request = region.get(cache_key)
         if request is NO_VALUE:
             time.sleep(1)
-            request = self.retry(self.session.post(link, data=subs_form_data, headers={
+            request = self.retry(lambda: self._request('POST', link, data=subs_form_data, headers={
                 'referer': link
             }, allow_redirects=False))
-            if not request:
+            if request is None:
                 return []
-            request.raise_for_status()
             region.set(cache_key, request)
             logger.info('Writing caching file %s for %s', codecs.encode(cache_key, 'hex_codec').decode('utf-8'), link)
         else:
@@ -262,11 +321,11 @@ class YavkaNetProvider(Provider):
 
     @staticmethod
     def retry(func, limit=5, delay=5):
-        for i in range(limit):
-            response = func
+        for attempt in range(limit):
+            response = func()
             if response.content:
                 return response
-            else:
+            elif attempt + 1 < limit:
                 logging.debug('Slowing down because we are getting throttled. Iteration {0} of {1}.Waiting {2} seconds '
-                              'to retry...'.format(i + 1, limit, delay))
+                              'to retry...'.format(attempt + 1, limit, delay))
                 time.sleep(delay)
