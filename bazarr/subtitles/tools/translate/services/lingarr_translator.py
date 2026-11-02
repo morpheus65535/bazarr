@@ -136,7 +136,7 @@ class LingarrTranslatorService:
 
             if self.media_type == 'episode':
                 api_media_type = "Episode"
-                arr_media_id = self.sonarr_series_id or 0
+                arr_media_id = self.sonarr_episode_id or 0
             else:
                 api_media_type = "Movie"
                 arr_media_id = self.radarr_id or 0
