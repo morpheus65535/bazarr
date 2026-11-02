@@ -4,7 +4,9 @@ import json
 import logging
 import os
 import re
-from urllib.parse import urlsplit, urlunsplit
+import socket
+from ipaddress import ip_address, ip_network
+from urllib.parse import urljoin, urlsplit, urlunsplit
 
 import pysubs2
 import requests
@@ -18,6 +20,11 @@ from sonarr.history import history_log
 from ..core.translator_utils import add_translator_info, create_process_result
 
 logger = logging.getLogger(__name__)
+
+# Blocked even where ipaddress classifies them as private: "this network", link-local (cloud metadata
+# on IPv4 and IPv6), and the AWS IPv6 metadata range.
+_BLOCKED_NETWORKS = tuple(ip_network(network) for network in (
+    '0.0.0.0/8', '169.254.0.0/16', 'fe80::/10', 'fd00:ec2::/32'))
 
 
 class InvalidTranslationResponseError(RuntimeError):
@@ -55,12 +62,67 @@ def _chat_completions_url(base_url):
     return urlunsplit(parsed_url._replace(path=endpoint_path))
 
 
+def _is_allowed_address(address: str) -> bool:
+    """Return whether a resolved IP address may be used as a translator endpoint.
+
+    Loopback and private addresses are allowed because self-hosted models usually run on the LAN.
+    Link-local, multicast, unspecified, and carrier-grade NAT addresses are not.
+
+    :param address: IP address string as returned by ``socket.getaddrinfo``.
+    :return: ``True`` if the address is allowed.
+    """
+    ip = ip_address(address)
+    if ip.version == 6 and ip.ipv4_mapped:
+        ip = ip.ipv4_mapped
+    if ip.is_multicast or any(ip in network for network in _BLOCKED_NETWORKS):
+        return False
+    return ip.is_loopback or ip.is_private or ip.is_global
+
+
+def _validate_endpoint_url(url: str) -> None:
+    """Ensure an endpoint URL uses http(s) and that every address its host resolves to is allowed.
+
+    Hostnames and IP literals are both accepted; ``socket.getaddrinfo`` resolves either one.
+
+    :param url: Absolute URL to validate.
+    :raises ValueError: If the URL is unsupported or resolves to a disallowed address.
+    """
+    parsed_url = urlsplit(url)
+    if parsed_url.scheme not in ('http', 'https'):
+        raise ValueError('API base URL must start with http:// or https://')
+    if not parsed_url.hostname:
+        raise ValueError('API base URL must include a host')
+    if parsed_url.username is not None or parsed_url.password is not None:
+        raise ValueError('API base URL must not include credentials')
+
+    port = parsed_url.port or (443 if parsed_url.scheme == 'https' else 80)
+    try:
+        addresses = socket.getaddrinfo(parsed_url.hostname, port, type=socket.SOCK_STREAM)
+    except socket.gaierror:
+        raise ValueError('Could not resolve the API host') from None
+    for *_, sockaddr in addresses:
+        if not _is_allowed_address(sockaddr[0]):
+            raise ValueError('API host resolves to a disallowed address')
+
+
+def _validate_redirect(response: requests.Response, **kwargs: object) -> requests.Response:
+    """Validate the target of a redirect before requests follows it.
+
+    :param response: Response delivered for each hop of the request.
+    :return: The unchanged response.
+    """
+    if response.is_redirect:
+        _validate_endpoint_url(urljoin(response.url, response.headers['Location']))
+    return response
+
+
 def _request_translation(cues, base_url, model, api_key, timeout, from_lang, to_lang, retry_instruction=None):
     base_url = base_url.strip()
     model = model.strip()
     if not base_url or not model:
         raise ValueError('OpenAI-compatible translator requires a base URL and model')
     url = _chat_completions_url(base_url)
+    _validate_endpoint_url(url)
 
     target = language_from_alpha3(to_lang)
     if not target:
@@ -92,7 +154,8 @@ def _request_translation(cues, base_url, model, api_key, timeout, from_lang, to_
     token = (api_key or '').strip()
     if token:
         headers['Authorization'] = f'Bearer {token}'
-    response = requests.post(url, json=payload, headers=headers, timeout=int(timeout))
+    response = requests.post(url, json=payload, headers=headers, timeout=int(timeout),
+                             hooks={'response': [_validate_redirect]})
     response.raise_for_status()
     try:
         choice = response.json()['choices'][0]
@@ -250,7 +313,8 @@ class OpenAICompatibleTranslatorService:
             os.makedirs(os.path.dirname(self.dest_srt_file) or '.', exist_ok=True)
             subs.save(self.dest_srt_file)
             add_translator_info(self.dest_srt_file,
-                                f'# Subtitles translated with {self._setting("openai_model", "OpenAI-compatible model")} # ')
+                                f'# Subtitles translated with '
+                                f'{self._setting("openai_model", "OpenAI-compatible model")} # ')
             message = (f'{language_from_alpha2(self.from_lang)} subtitles translated to '
                        f'{language_from_alpha3(self.to_lang)} using OpenAI-compatible translator.')
             result = create_process_result(message, self.video_path, self.orig_to_lang, self.forced, self.hi,
