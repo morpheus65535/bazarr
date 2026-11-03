@@ -5,8 +5,7 @@ import requests
 import mimetypes
 
 from pathlib import Path
-from flask import (request, abort, render_template, Response, session, send_file, stream_with_context, Blueprint,
-                   redirect)
+from flask import request, abort, render_template, Response, send_file, stream_with_context, Blueprint, redirect
 from functools import wraps
 from urllib.parse import unquote, urlparse, urljoin
 
@@ -19,6 +18,7 @@ from utilities.central import get_log_file_path
 
 from .config import settings, base_url
 from .database import database, System, select
+from .form_sessions import is_form_session_active
 from .get_args import args
 
 frontend_build_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'frontend', 'build')
@@ -62,7 +62,7 @@ def check_login(actual_method):
                     'WWW-Authenticate': 'Basic realm="Login Required"'
                 })
         elif settings.auth.type == 'form':
-            if not session.get('logged_in'):
+            if not is_form_session_active():
                 return abort(401)
         return actual_method(*args, **kwargs)
     return wrapper
@@ -91,7 +91,7 @@ def catch_all(path):
                 'WWW-Authenticate': 'Basic realm="Login Required"'
             })
     elif settings.auth.type == 'form':
-        if not session.get('logged_in'):
+        if not is_form_session_active():
             auth = False
 
     try:

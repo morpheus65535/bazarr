@@ -30,6 +30,7 @@ from shutil import move
 
 from utilities.text_list import parse_text_list_or_default
 
+from .form_sessions import revoke_all_form_sessions
 from .get_args import args
 
 NoneType = type(None)
@@ -719,6 +720,7 @@ def save_settings(settings_items):
     audio_tracks_parsing_changed = False
     reset_providers = False
     language_equals_changed = False
+    revoke_form_sessions = False
 
     # Subzero Mods
     update_subzero = False
@@ -783,6 +785,15 @@ def save_settings(settings_items):
 
         if key == 'settings-general-instance_name' and value == '':
             value = None
+
+        # Credential or auth type changes invalidate every form login session. The UI only submits
+        # fields the user edited, so a submitted value that differs from the stored one is a real change.
+        if key == 'settings-auth-username' and value != settings.auth.username:
+            revoke_form_sessions = True
+        elif key == 'settings-auth-type' and value != settings.auth.type:
+            revoke_form_sessions = True
+        elif key == 'settings-auth-password' and value is not None and value != settings.auth.password:
+            revoke_form_sessions = True
 
         if key == 'settings-auth-password':
             if value != settings.auth.password and value is not None:
@@ -973,6 +984,9 @@ def save_settings(settings_items):
         raise
     else:
         write_config()
+
+        if revoke_form_sessions:
+            revoke_all_form_sessions()
 
         # Set the configured state based on config.yaml file existence
         from .database import database, update, System
