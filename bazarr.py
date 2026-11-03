@@ -27,8 +27,8 @@ def check_python_version():
         print("Python " + minimum_py3_str + " or greater required. "
               "Current version is " + platform.python_version() + ". Please upgrade Python.")
         exit_program(EXIT_PYTHON_UPGRADE_NEEDED)
-    elif int(python_version[0]) == 3 and int(python_version[1]) > 13:
-        print("Python version greater than 3.13.x is unsupported. Current version is " + platform.python_version() +
+    elif int(python_version[0]) == 3 and int(python_version[1]) > 14:
+        print("Python version greater than 3.14.x is unsupported. Current version is " + platform.python_version() +
               ". Keep in mind that even if it works, you're on your own.")
     elif (int(python_version[0]) == minimum_py3_tuple[0] and int(python_version[1]) < minimum_py3_tuple[1]) or \
             (int(python_version[0]) != minimum_py3_tuple[0]):
