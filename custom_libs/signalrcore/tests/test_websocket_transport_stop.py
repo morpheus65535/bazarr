@@ -5,6 +5,7 @@ leaking the file descriptor in all other states. The fix ensures _ws.close()
 runs regardless of state.
 """
 import sys
+import threading
 import unittest
 from unittest.mock import MagicMock, patch
 
@@ -22,6 +23,8 @@ def _make_transport(**overrides):
     """Create a WebsocketTransport with mocked internals."""
     with patch.object(WebsocketTransport, '__init__', lambda self, **kw: None):
         t = WebsocketTransport()
+    t._reconnect_lock = threading.RLock()
+    t._stopped = False
     t.state = overrides.get('state', ConnectionState.disconnected)
     t._ws = overrides.get('ws', MagicMock())
     t.handshake_received = overrides.get('handshake', False)
@@ -45,7 +48,7 @@ class TestStopClosesWebSocket(unittest.TestCase):
     def test_stop_when_connecting(self):
         t = _make_transport(state=ConnectionState.connecting, handshake=False)
         t.stop()
-        t.connection_checker.stop.assert_not_called()
+        t.connection_checker.stop.assert_called_once()
         t._ws.close.assert_called_once()
         self.assertEqual(t.state, ConnectionState.disconnected)
         self.assertFalse(t.handshake_received)
@@ -53,7 +56,7 @@ class TestStopClosesWebSocket(unittest.TestCase):
     def test_stop_when_reconnecting(self):
         t = _make_transport(state=ConnectionState.reconnecting, handshake=False)
         t.stop()
-        t.connection_checker.stop.assert_not_called()
+        t.connection_checker.stop.assert_called_once()
         t._ws.close.assert_called_once()
         self.assertEqual(t.state, ConnectionState.disconnected)
         self.assertFalse(t.handshake_received)
@@ -61,7 +64,7 @@ class TestStopClosesWebSocket(unittest.TestCase):
     def test_stop_when_disconnected(self):
         t = _make_transport(state=ConnectionState.disconnected, handshake=False)
         t.stop()
-        t.connection_checker.stop.assert_not_called()
+        t.connection_checker.stop.assert_called_once()
         t._ws.close.assert_called_once()
         self.assertEqual(t.state, ConnectionState.disconnected)
 
@@ -87,8 +90,8 @@ class TestStopClosesWebSocket(unittest.TestCase):
         t = _make_transport(state=ConnectionState.connected, handshake=True)
         t.stop()
         t.stop()
-        # Second call: state is already disconnected, checker not called again
-        t.connection_checker.stop.assert_called_once()
+        # Stopping is safe even when the transport is already disconnected.
+        self.assertEqual(t.connection_checker.stop.call_count, 2)
         self.assertEqual(t._ws.close.call_count, 2)
         self.assertFalse(t.handshake_received)
 
