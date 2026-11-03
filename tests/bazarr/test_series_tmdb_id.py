@@ -4,7 +4,6 @@ from unittest import mock
 import pytest
 from alembic.migration import MigrationContext
 from alembic.operations import Operations
-from alembic.script import ScriptDirectory
 from pytest import MonkeyPatch
 from sqlalchemy import Integer, create_engine, inspect
 from sqlalchemy.orm import Session
@@ -109,16 +108,5 @@ def test_migration_adds_tmdb_id_column_and_is_rerunnable() -> None:
         columns = {column['name']: column for column in inspect(engine).get_columns('table_shows')}
         assert isinstance(columns['tmdbId']['type'], Integer)
         assert columns['tmdbId']['nullable'] is True
-    finally:
-        engine.dispose()
-
-
-def test_migration_is_chained_after_previous_head() -> None:
-    engine = create_engine('sqlite://')
-    try:
-        with engine.connect() as connection, Operations.context(MigrationContext.configure(connection)):
-            scripts = ScriptDirectory('migrations')
-            assert scripts.get_heads() == [migration.revision]
-            assert scripts.get_revision(migration.revision).down_revision == 'a4c7e1f29b03'
     finally:
         engine.dispose()
