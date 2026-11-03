@@ -1,7 +1,7 @@
-import { FunctionComponent, ReactNode, useMemo } from "react";
+import { FunctionComponent, ReactNode, useMemo, useState } from "react";
 import { Badge, Container, Group, LoadingOverlay } from "@mantine/core";
 import { useForm } from "@mantine/form";
-import { useDocumentTitle } from "@mantine/hooks";
+import { useDidUpdate, useDocumentTitle } from "@mantine/hooks";
 import { faRotateLeft, faSave } from "@fortawesome/free-solid-svg-icons";
 import { isEqual } from "lodash";
 import { useSettingsMutation, useSystemSettings } from "@/apis/hooks";
@@ -36,6 +36,7 @@ const Layout: FunctionComponent<Props> = (props) => {
 
   const { data: settings, isLoading } = useSystemSettings();
   const { mutate, isPending: isMutating } = useSettingsMutation();
+  const [isAuthReloadPending, setIsAuthReloadPending] = useState(false);
 
   const form = useForm<FormValues>({
     initialValues: {
@@ -80,6 +81,16 @@ const Layout: FunctionComponent<Props> = (props) => {
               hooks: nextHooks,
             };
           });
+
+          const isAuthenticationChanged = [
+            "settings-auth-type",
+            "settings-auth-username",
+            "settings-auth-password",
+          ].some((key) => Object.hasOwn(submittedSettings, key));
+
+          if (isAuthenticationChanged) {
+            setIsAuthReloadPending(true);
+          }
         },
       });
     }
@@ -98,6 +109,15 @@ const Layout: FunctionComponent<Props> = (props) => {
       ? `You have ${totalStagedCount} unsaved changes, are you sure you want to leave?`
       : "You have an unsaved profile edit, are you sure you want to leave?",
   );
+
+  // Wait for the unsaved-changes unload listener to be removed before reloading.
+  useDidUpdate(() => {
+    if (!isAuthReloadPending || isLeaveBlocked) {
+      return;
+    }
+
+    window.location.reload();
+  }, [isAuthReloadPending, isLeaveBlocked]);
 
   useDocumentTitle(`${name} - ${useInstanceName()} (Settings)`);
 
