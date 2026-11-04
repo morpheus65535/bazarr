@@ -18,6 +18,7 @@ interface Settings {
   addic7ed: Settings.Addic7ed;
   legendasdivx: Settings.Legandasdivx;
   xsubs: Settings.XSubs;
+  yavkanet: Settings.YavkaNet;
   assrt: Settings.Assrt;
   napisy24: Settings.Napisy24;
   betaseries: Settings.Betaseries;
@@ -252,6 +253,10 @@ declare namespace Settings {
   }
 
   interface XSubs extends BaseProvider {}
+
+  interface YavkaNet {
+    flaresolverr_url: string;
+  }
 
   interface Napisy24 extends BaseProvider {}
 

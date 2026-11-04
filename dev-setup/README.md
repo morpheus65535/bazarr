@@ -222,6 +222,32 @@ docker compose up --build
 
 ## Optional Services
 
+### Yavka.net and FlareSolverr
+
+Yavka.net may require a browser to solve its Cloudflare challenge. Start the optional
+[FlareSolverr](https://github.com/FlareSolverr/FlareSolverr) service alongside Bazarr:
+
+```bash
+docker compose --profile flaresolverr up --build
+```
+
+In **Settings > Providers > Yavka.net**, set **FlareSolverr URL** to
+`http://flaresolverr:8191` and save. Leave the field empty to disable this fallback.
+For a native Bazarr installation, use the URL of your separately installed
+FlareSolverr service, such as `http://127.0.0.1:8191`. A URL ending in `/v1` also works.
+
+Bazarr contacts FlareSolverr only after detecting a Cloudflare challenge, then
+retries the original request with the returned cookies and matching User-Agent.
+Subtitle archives are still downloaded directly, preserving their binary content.
+The solver has up to 60 seconds per challenge; failures are reported rather than
+silently treated as missing subtitles. FlareSolverr cannot solve every challenge
+or CAPTCHA, so this is not a guarantee of access.
+
+Bazarr and FlareSolverr must reach Yavka.net through the **same public IP address**,
+including any VPN or proxy routing. Do not expose FlareSolverr to the internet.
+The optional Compose service is available only on the private development network
+and publishes no host port.
+
 ### 🔗 **Autopulse Integration**
 For testing Plex integration and webhook features, you can optionally enable the Autopulse service:
 

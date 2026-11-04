@@ -289,6 +289,9 @@ def get_providers_auth():
             'username': settings.xsubs.username,
             'password': settings.xsubs.password,
         },
+        'yavkanet': {
+            'flaresolverr_url': settings.yavkanet.flaresolverr_url,
+        },
         'assrt': {
             'token': settings.assrt.token,
         },

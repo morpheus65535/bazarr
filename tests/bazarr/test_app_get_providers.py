@@ -48,6 +48,16 @@ def test_get_providers_auth_karagarga():
     assert item["f_password"] is not None
 
 
+@pytest.mark.parametrize("url", ["", "http://flaresolverr:8191"])
+def test_get_providers_auth_yavkanet(url):
+    original = get_providers.settings.yavkanet.flaresolverr_url
+    get_providers.settings.set("yavkanet.flaresolverr_url", url)
+    try:
+        assert get_providers.get_providers_auth()["yavkanet"] == {"flaresolverr_url": url}
+    finally:
+        get_providers.settings.set("yavkanet.flaresolverr_url", original)
+
+
 @pytest.fixture(autouse=True)
 def _restore_language_equals():
     """Tests below mutate the process-wide settings object; restore it afterwards."""

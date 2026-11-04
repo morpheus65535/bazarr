@@ -801,6 +801,13 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     key: "yavkanet",
     name: "Yavka.net",
     description: "Bulgarian Subtitles Provider",
+    inputs: [
+      {
+        type: "text",
+        key: "flaresolverr_url",
+        name: "FlareSolverr URL",
+      },
+    ],
   },
   { key: "yifysubtitles", name: "YIFY Subtitles" },
   {
