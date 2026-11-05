@@ -12,7 +12,7 @@ vi.mock("@/apis/hooks/system", async (importOriginal) => {
   };
 });
 
-it("shows Sportarr sync and disk scan schedules when Sportarr is enabled", () => {
+const renderPage = () => {
   (useSystemSettings as Mock).mockReturnValue({
     data: {
       general: { theme: "auto", instance_name: "Bazarr", use_sportarr: true },
@@ -32,6 +32,10 @@ it("shows Sportarr sync and disk scan schedules when Sportarr is enabled", () =>
   });
 
   customRender(<SettingsSchedulerView />);
+};
+
+it("shows Sportarr sync and disk scan schedules when Sportarr is enabled", () => {
+  renderPage();
 
   expect(
     screen.getByRole("combobox", { name: "Sync with Sportarr" }),
@@ -41,4 +45,12 @@ it("shows Sportarr sync and disk scan schedules when Sportarr is enabled", () =>
       name: "Update All Sports Subtitles from Disk",
     }),
   ).toBeInTheDocument();
+});
+
+it("leaves the monitored movies sync option to the Radarr settings", () => {
+  renderPage();
+
+  expect(
+    screen.queryByText("Sync Only Monitored Movies"),
+  ).not.toBeInTheDocument();
 });

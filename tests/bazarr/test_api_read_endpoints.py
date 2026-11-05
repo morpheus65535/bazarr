@@ -29,6 +29,27 @@ def test_system_health_returns_issue_list(api_client, api_key):
         assert set(issue) == {"object", "issue"}
 
 
+def test_badges_returns_counts(api_client, api_key):
+    from app.database import TableSportsEvents, TableSportsLeagues, database, delete, insert
+
+    # One event wants two languages, so the sports count reads its missing list.
+    database.execute(insert(TableSportsLeagues).values(
+        sportarrLeagueId=9001, title="UFC", path="/sports/UFC", monitored="True", tags="[]"))
+    database.execute(insert(TableSportsEvents).values(
+        sportarrLeagueId=9001, sportarrEventId=9001, title="UFC 318", path="/sports/UFC/UFC 318.mkv",
+        season=2026, episode=1, monitored="True", missing_subtitles="['en', 'es']"))
+    try:
+        response = api_client.get("/api/badges", headers={"X-API-KEY": api_key})
+    finally:
+        database.execute(delete(TableSportsEvents).where(TableSportsEvents.sportarrLeagueId == 9001))
+        database.execute(delete(TableSportsLeagues).where(TableSportsLeagues.sportarrLeagueId == 9001))
+
+    assert response.status_code == 200
+    for key in ("episodes", "movies", "sports", "providers", "status", "announcements"):
+        assert isinstance(response.json[key], int)
+    assert response.json["sports"] >= 2
+
+
 def test_subtitles_requires_subtitles_path(api_client, api_key):
     response = api_client.get("/api/subtitles", headers={"X-API-KEY": api_key})
 

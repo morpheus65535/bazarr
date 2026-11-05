@@ -14,14 +14,16 @@ from subliminal_patch.core import Language
         ("False", "en", True, False, "en", [], False, None, "[]", False),
         ("False", "es", False, False, "en", [], False, None, "['en']", False),
         ("False", "es", False, False, "en", [(Language("spa"), Language("eng"))], False, None, "[]", False),
-        ("Excluded", "es", False, False, "en", [(Language("spa"), Language("eng"))], False, None, "[]", False),
+        # Language equals do not satisfy a non-HI item. This is the series and movies rule.
+        ("Excluded", "es", False, False, "en", [(Language("spa"), Language("eng"))], False, None, "['en']", False),
         ("Excluded", "en", False, False, "en", [], True, "es", "[]", False),
         ("Excluded", "en", True, False, "en", [], True, "es", "['en', 'es']", False),
         ("Excluded", "en", False, True, "en", [], True, "es", "['en', 'es']", False),
-        ("Excluded", "es", False, False, "en", [(Language("spa"), Language("eng"))], True, "fr", "[]", False),
-        ("Excluded", "en", False, True, "en", [], False, None, "[]", True),
+        ("Excluded", "es", False, False, "en", [(Language("spa"), Language("eng"))], True, "fr", "['en', 'fr']",
+         False),
         ("Excluded", "en", False, False, "en", [], False, None, "['en:forced']", True),
-        ("False", "en", True, True, "en", [], False, None, "[]", True),
+        # A forced item is not met by a forced HI subtitle. This is the series and movies rule.
+        ("False", "en", True, True, "en", [], False, None, "['en:forced']", True),
     ],
 )
 def test_sports_missing_subtitles_respects_hi_profile(

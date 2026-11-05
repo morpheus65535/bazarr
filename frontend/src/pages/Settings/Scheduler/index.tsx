@@ -45,18 +45,6 @@ const SettingsSchedulerView: FunctionComponent = () => {
           options={moviesSyncOptions}
           settingKey="settings-radarr-movies_sync"
         ></Selector>
-        <Check
-          label="Sync Only Monitored Movies"
-          settingKey={"settings-radarr-sync_only_monitored_movies"}
-        ></Check>
-        <CollapseBox settingKey={"settings-radarr-sync_only_monitored_movies"}>
-          <Message>
-            If enabled, only movies with a monitored status in Radarr will be
-            synced. If you make changes to a specific unmonitored Radarr movie
-            and you want Bazarr to know about those changes, simply toggle the
-            monitored status back on in Radarr and Bazarr will sync any changes.
-          </Message>
-        </CollapseBox>
         {settings?.general.use_sportarr && (
           <Selector
             label="Sync with Sportarr"
