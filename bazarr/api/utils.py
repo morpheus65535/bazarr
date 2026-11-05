@@ -186,7 +186,9 @@ def postprocess(item, subtitles=None):
         item['alternativeTitles'] = []
 
     # Add subtitles
-    if item.get('sportsEventId'):
+    if subtitles is not None:
+        item['subtitles'] = subtitles
+    elif item.get('sportsEventId'):
         item['subtitles'] = get_sports_subtitles(sports_event_id=item['sportsEventId'])
     else:
         item['subtitles'] = get_subtitles(sonarr_episode_id=item.get('sonarrEpisodeId'),

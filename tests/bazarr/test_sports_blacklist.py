@@ -6,6 +6,7 @@ import sys
 
 
 def test_sports_blacklist_only_deletes_indexed_subtitle_for_its_league(monkeypatch):
+    # The flow mirrors episodes. It blacklists only after a successful delete.
     api_path = Path(__file__).resolve().parents[2] / 'bazarr' / 'api'
     api_package = ModuleType('api')
     api_package.__path__ = [str(api_path)]
@@ -23,7 +24,9 @@ def test_sports_blacklist_only_deletes_indexed_subtitle_for_its_league(monkeypat
     subtitle_path = f'/tmp/bazarr-sports-blacklist-{token}.en.srt'
     calls = []
     monkeypatch.setattr(module, 'blacklist_log_sports', lambda **kwargs: calls.append(('log', kwargs)))
-    monkeypatch.setattr(module, 'delete_subtitles', lambda **kwargs: calls.append(('delete', kwargs)) or True)
+    delete_result = {'value': True}
+    monkeypatch.setattr(module, 'delete_subtitles',
+                        lambda **kwargs: calls.append(('delete', kwargs)) or delete_result['value'])
     monkeypatch.setattr(module, 'sports_event_download_subtitles', lambda **kwargs: None)
     monkeypatch.setattr(module, 'event_stream', lambda **kwargs: None)
     monkeypatch.setattr(module.path_mappings, 'path_replace_sports', lambda path: path)
@@ -47,12 +50,18 @@ def test_sports_blacklist_only_deletes_indexed_subtitle_for_its_league(monkeypat
             return module.SportsBlacklist.post.__wrapped__(module.SportsBlacklist())
 
         assert invoke(league_id + 1, subtitle_path)[1] == 404
-        assert invoke(league_id, subtitle_path + '.other')[1] == 404
+        assert invoke(league_id, subtitle_path + '.other')[1] == 500
         assert calls == []
 
+        delete_result['value'] = False
+        assert invoke(league_id, subtitle_path)[1] == 500
+        assert [call[0] for call in calls] == ['delete']
+
+        calls.clear()
+        delete_result['value'] = True
         assert invoke(league_id, subtitle_path) == ('', 200)
-        assert [call[0] for call in calls] == ['log', 'delete']
-        assert calls[1][1]['subtitles_path'] == subtitle_path
+        assert [call[0] for call in calls] == ['delete', 'log']
+        assert calls[0][1]['subtitles_path'] == subtitle_path
     finally:
         database.execute(delete(TableSportsEventsSubtitles)
                          .where(TableSportsEventsSubtitles.sportsEventId == event_id))
