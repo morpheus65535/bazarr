@@ -13,7 +13,8 @@ from subtitles.indexer.sports import store_subtitles_sports, list_missing_subtit
 from sportarr.history import history_log_sports
 from app.get_providers import get_providers
 from app.database import (get_exclusion_clause, get_audio_profile_languages, TableSportsLeagues, TableSportsEvents,
-                          database, select, get_sports_subtitles)
+                          database, select, get_sports_subtitles, get_profile_id)
+from app.event_handler import event_stream
 from app.jobs_queue import jobs_queue
 from app.config import settings
 
@@ -184,3 +185,69 @@ def sports_event_download_subtitles(no, job_id=None, job_sub_function=False, pro
         jobs_queue.update_job_progress(job_id=job_id, progress_value='max',
                                        progress_message=outcome_msg)
         jobs_queue.update_job_name(job_id=job_id, new_job_name=f"Downloaded missing subtitles for {event.title}")
+
+
+def sports_event_download_specific_subtitles(sportarr_league_id, sports_event_id, language, hi, forced, job_id=None):
+    if not job_id:
+        return jobs_queue.add_job_from_function("Searching subtitles", progress_max=1, is_progress=False)
+
+    eventInfo = database.execute(
+        select(TableSportsEvents.path,
+               TableSportsEvents.sceneName,
+               TableSportsEvents.audio_language,
+               TableSportsEvents.partName,
+               TableSportsEvents.title.label('eventTitle'),
+               TableSportsLeagues.title)
+        .select_from(TableSportsEvents)
+        .join(TableSportsLeagues)
+        .where(TableSportsEvents.id == sports_event_id)) \
+        .first()
+
+    if not eventInfo:
+        return 'Sports event not found', 404
+
+    eventPath = path_mappings.path_replace_sports(eventInfo.path)
+
+    if not os.path.exists(eventPath):
+        return 'Sports event file not found. Path mapping issue?', 500
+
+    sceneName = eventInfo.sceneName or "None"
+
+    title = eventInfo.title
+
+    event_long_title = _event_label(eventInfo)
+
+    if hi == 'True':
+        language_str = f'{language}:hi'
+    elif forced == 'True':
+        language_str = f'{language}:forced'
+    else:
+        language_str = language
+
+    jobs_queue.update_job_name(job_id=job_id,
+                               new_job_name=f"Searching {language_str.upper()} for {event_long_title}")
+
+    audio_language_list = get_audio_profile_languages(eventInfo.audio_language)
+    if len(audio_language_list) > 0:
+        audio_language = audio_language_list[0]['name']
+    else:
+        audio_language = None
+
+    try:
+        result = list(generate_subtitles(eventPath, [(language, hi, forced)], audio_language, sceneName,
+                                         title, 'sports',
+                                         profile_id=get_profile_id(sports_event_id=sports_event_id),
+                                         job_id=job_id))
+        if isinstance(result, list) and len(result):
+            result = result[0]
+            store_subtitles_sports(sports_event_id)
+            history_log_sports(1, sportarr_league_id, sports_event_id, result)
+        else:
+            event_stream(type='sports-event', payload=sports_event_id)
+            return '', 204
+    except OSError:
+        return 'Unable to save subtitles file. Permission or path mapping issue?', 409
+    else:
+        jobs_queue.update_job_name(job_id=job_id,
+                                   new_job_name=f"Searched {language_str.upper()} for {event_long_title}")
+        return '', 204

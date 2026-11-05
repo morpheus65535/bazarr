@@ -2,7 +2,7 @@
 
 from flask_restx import Resource, Namespace, reqparse, fields, marshal
 
-from app.database import TableSportsEvents, database, select
+from app.database import TableSportsEvents, TableSportsLeagues, database, select
 from api.swaggerui import subtitles_model, subtitles_language_model, audio_language_model
 
 from ..utils import authenticate, postprocess
@@ -65,7 +65,8 @@ class SportsEvents(Resource):
                 TableSportsEvents.partNumber,
                 TableSportsEvents.sceneName,
                 TableSportsEvents.broadcastDate,
-            )
+                TableSportsLeagues.profileId,
+            ).join(TableSportsLeagues)
 
         if len(eventId) > 0:
             stmt_query = database.execute(
@@ -98,4 +99,5 @@ class SportsEvents(Resource):
                 'partNumber': x.partNumber,
                 'sceneName': x.sceneName,
                 'broadcastDate': x.broadcastDate,
+                'profileId': x.profileId,  # required to filter desired subtitles when settings.general.embedded_subs_show_desired
                 }) for x in stmt_query], self.get_response_model, envelope='data')

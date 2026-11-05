@@ -26,12 +26,22 @@ export const useSportsLeagueById = (id: number) => {
   });
 };
 
-export const useSportsLeagues = (options: { enabled?: boolean } = {}) => {
+export const useSportsLeagues = (
+  state: Parameter.ListState = {},
+  options: { enabled?: boolean } = {},
+) => {
   const client = useQueryClient();
 
   const query = useQuery({
-    queryKey: [QueryKeys.SportsLeagues, QueryKeys.All],
-    queryFn: () => api.sports.leagues(),
+    queryKey: [QueryKeys.SportsLeagues, QueryKeys.All, state],
+    queryFn: async () => {
+      const response = await api.sports.leaguesBy({
+        start: 0,
+        length: -1,
+        ...state,
+      });
+      return response.data;
+    },
     enabled: options.enabled ?? true,
   });
 
@@ -50,6 +60,12 @@ export const useSportsLeagueTags = () =>
     queryFn: () => api.sports.leagueTags(),
     staleTime: Infinity,
   });
+
+export const sportsLeaguesPaginationKey = [QueryKeys.SportsLeagues];
+
+export const sportsLeaguesPaginationQuery: RangeQuery<Item.SportsLeague> = (
+  param,
+) => api.sports.leaguesBy(param);
 
 export const useSportsLeagueModification = () => {
   const client = useQueryClient();
@@ -144,6 +160,14 @@ export const useSportsAddBlacklist = () => {
           QueryKeys.SportsLeagues,
           QueryKeys.SportsEvents,
           QueryKeys.Blacklist,
+        ],
+      });
+
+      void client.invalidateQueries({
+        queryKey: [
+          QueryKeys.SportsLeagues,
+          QueryKeys.SportsEvents,
+          QueryKeys.History,
         ],
       });
 
