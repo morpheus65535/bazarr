@@ -131,8 +131,8 @@ const SettingsSportarrView: FunctionComponent = () => {
         </Section>
         <Section header="League Profiles">
           <Message>
-            Set the default league profile under Languages. Apply it here to
-            leagues that do not have a profile yet.
+            Set the default league profile under Languages, on the Profiles tab.
+            Apply it here to leagues that do not have a profile yet.
           </Message>
           <Button
             disabled={

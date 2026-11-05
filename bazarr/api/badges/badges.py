@@ -1,12 +1,13 @@
 # coding=utf-8
 
+import ast
 import operator
 
 from functools import reduce
 from flask_restx import Resource, Namespace, fields, marshal
 
-from app.database import (get_exclusion_clause, TableEpisodes, TableShows, TableMovies, TableSportsEvents,
-                          TableSportsLeagues, database, select, func)
+from app.database import (get_exclusion_clause, TableEpisodes, TableShows, TableMovies, TableMissingSubtitles,
+                          TableSportsEvents, TableSportsLeagues, database, select, func)
 from app.config import settings
 
 from app.get_providers import get_throttled_providers

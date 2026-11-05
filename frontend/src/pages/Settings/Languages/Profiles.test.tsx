@@ -584,6 +584,54 @@ describe("SettingsLanguageProfilesView", () => {
     expect(submitted["settings-general-serie_default_profile"]).toBe(1);
   });
 
+  it("should hide the league default profile when Sportarr is disabled", () => {
+    renderPage({
+      settings: {
+        general: {
+          ...baseSettings.general,
+          league_default_enabled: true,
+        },
+      },
+      languages: baseLanguages,
+    });
+
+    expect(screen.queryByText("Leagues")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("combobox", { name: "Profile" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("should save a default language profile for new Sportarr leagues", async () => {
+    const mutate = vitest.fn();
+
+    renderPage(
+      {
+        languages: baseLanguages,
+        profiles: baseProfiles,
+        settings: {
+          general: {
+            ...baseSettings.general,
+            use_sportarr: true,
+            league_default_enabled: true,
+          },
+        },
+      },
+      mutate,
+    );
+
+    expect(screen.getByText("Leagues")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("combobox", { name: "Profile" }));
+    fireEvent.click(
+      screen.getByRole("option", { hidden: true, name: "My Profile" }),
+    );
+    await userEvent.click(saveButton());
+
+    const submitted = mutate.mock.calls[0][0] as Record<string, unknown>;
+
+    expect(submitted["settings-general-league_default_profile"]).toBe(1);
+  });
+
   it("should sanitize remove profile tags when saving", async () => {
     const mutate = vitest.fn();
 
