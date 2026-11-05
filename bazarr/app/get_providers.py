@@ -354,7 +354,7 @@ def get_providers_auth():
         "animetosho": {
             'search_threshold': settings.animetosho.search_threshold,
         },
-        "animetosho_xyz": {},
+        "animetosho_net": {},
         "tsukihime": {},
         "subdl": {
             'api_key': settings.subdl.api_key,

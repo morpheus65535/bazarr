@@ -96,10 +96,10 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     requiredIntegration: "anidb",
   },
   {
-    key: "animetosho_xyz",
-    name: "AnimeTosho.xyz",
+    key: "animetosho_net",
+    name: "AnimeTosho.net",
     description:
-      "AnimeTosho.xyz is a free, completely automated service which mirrors most torrents posted on TokyoTosho's anime category, Nyaa.si's English translated anime category and AniDex's anime category.",
+      "AnimeTosho.net is a free, completely automated service which mirrors most torrents posted on TokyoTosho's anime category, Nyaa.si's English translated anime category and AniDex's anime category.",
     requiredIntegration: "anidb",
   },
   {
