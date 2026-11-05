@@ -1,6 +1,7 @@
 import { FunctionComponent } from "react";
-import { Alert, MultiSelect, Stack } from "@mantine/core";
+import { MultiSelect, Stack } from "@mantine/core";
 import { useJellyfinLibrariesQuery } from "@/apis/hooks/jellyfin";
+import { Message } from "@/pages/Settings/components";
 import { BaseInput, useBaseInput } from "@/pages/Settings/utilities/hooks";
 import { useSettingValue } from "@/pages/Settings/utilities/hooks";
 import styles from "./LibrarySelector.module.scss";
@@ -68,9 +69,9 @@ const LibrarySelector: FunctionComponent<LibrarySelectorProps> = (props) => {
 
   if (!isConfigured) {
     return (
-      <Alert color="brand" variant="light" className={styles.alertMessage}>
+      <Message type="warning">
         Configure Jellyfin URL and API Key above to discover libraries.
-      </Alert>
+      </Message>
     );
   }
 
@@ -86,26 +87,17 @@ const LibrarySelector: FunctionComponent<LibrarySelectorProps> = (props) => {
           onChange={handleChange}
           searchable
           clearable
-          className={styles.selectField}
         />
-        {isLoading && (
-          <Alert color="brand" variant="light" className={styles.alertMessage}>
-            Fetching libraries from Jellyfin...
-          </Alert>
-        )}
+        {isLoading && <Message>Fetching libraries from Jellyfin...</Message>}
         {error && !isLoading && (
-          <Alert color="danger" variant="light" className={styles.alertMessage}>
+          <Message type="warning">
             Failed to load libraries from Jellyfin.
-          </Alert>
+          </Message>
         )}
         {!error && !isLoading && selectData.length === 0 && (
-          <Alert
-            color="secondary"
-            variant="light"
-            className={styles.alertMessage}
-          >
+          <Message>
             No {libraryType === "movies" ? "movie" : "TV show"} libraries found.
-          </Alert>
+          </Message>
         )}
       </Stack>
     </div>

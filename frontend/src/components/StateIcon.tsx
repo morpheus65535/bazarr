@@ -41,19 +41,13 @@ const StateIcon: FunctionComponent<StateIconProps> = ({
 
   const titleSize = isMobile ? "md" : "lg";
 
-  const PopoverTarget: FunctionComponent = () => {
-    if (isHistory) {
-      return <FontAwesomeIcon icon={faListCheck} />;
-    } else {
-      return (
-        <Text size={itemSize} c={hasIssues ? "warning" : "success"} span>
-          <FontAwesomeIcon
-            icon={hasIssues ? faExclamationCircle : faCheckCircle}
-          />
-        </Text>
-      );
-    }
-  };
+  const popoverTarget = isHistory ? (
+    <FontAwesomeIcon icon={faListCheck} />
+  ) : (
+    <Text size={itemSize} c={hasIssues ? "warning" : "success"} span>
+      <FontAwesomeIcon icon={hasIssues ? faExclamationCircle : faCheckCircle} />
+    </Text>
+  );
 
   return (
     <Popover
@@ -69,7 +63,7 @@ const StateIcon: FunctionComponent<StateIconProps> = ({
           onMouseLeave={close}
           onClick={opened ? close : open}
         >
-          <PopoverTarget />
+          {popoverTarget}
         </Text>
       </Popover.Target>
       <Popover.Dropdown>

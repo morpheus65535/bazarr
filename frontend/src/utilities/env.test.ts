@@ -48,6 +48,7 @@ describe("env utilities", () => {
         apiKey: "prod-key",
         canUpdate: true,
         hasUpdate: true,
+        isConfigured: true,
       };
 
       const { Environment: dynamicEnv } = await import("@/utilities/env");
@@ -66,6 +67,7 @@ describe("env utilities", () => {
         apiKey: undefined,
         canUpdate: false,
         hasUpdate: false,
+        isConfigured: false,
       };
 
       const { Environment: dynamicEnv } = await import("@/utilities/env");

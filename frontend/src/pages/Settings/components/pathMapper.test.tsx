@@ -50,6 +50,30 @@ const renderTable = (
 };
 
 describe("PathMappingTable", () => {
+  it("renders the help explanation when enabled", () => {
+    renderTable("sonarr", sonarrSettings);
+
+    expect(screen.getByTestId("path-mapping-help")).toBeDefined();
+    expect(screen.getByText(/Use path mappings when/)).toBeDefined();
+    expect(screen.getByText(/Don.*t use path mappings when/)).toBeDefined();
+  });
+
+  it("renders the help explanation even when the feature is disabled", () => {
+    renderTable("sonarr", disabledSonarrSettings);
+
+    expect(screen.getByTestId("path-mapping-help")).toBeDefined();
+  });
+
+  it("uses movie wording for the radarr table", () => {
+    renderTable("radarr", {
+      general: { use_radarr: true, path_mappings_movie: [] },
+    } as unknown as Settings);
+
+    expect(screen.getByText(/open your movies/)).toBeDefined();
+    expect(screen.getByText("D:\\Movies")).toBeDefined();
+    expect(screen.getByText("/data/movies")).toBeDefined();
+  });
+
   it("renders a message when the feature is disabled", () => {
     renderTable("sonarr", disabledSonarrSettings);
 

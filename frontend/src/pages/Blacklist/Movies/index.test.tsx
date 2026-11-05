@@ -1,5 +1,4 @@
-import { http } from "msw";
-import { HttpResponse } from "msw";
+import { http, HttpResponse } from "msw/http";
 import { customRender, screen, waitFor } from "@/tests";
 import server from "@/tests/mocks/node";
 import BlacklistMoviesView from ".";

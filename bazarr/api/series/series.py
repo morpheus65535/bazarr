@@ -5,7 +5,8 @@ import operator
 from flask_restx import Resource, Namespace, reqparse, fields, marshal
 from functools import reduce
 
-from app.database import get_exclusion_clause, TableEpisodes, TableShows, database, select, update, func
+from app.database import get_exclusion_clause, TableEpisodes, TableShows, TableMissingSubtitles, database, select, \
+    update, func
 from sonarr.sync.series import update_one_series
 from subtitles.indexer.series import list_missing_subtitles, series_scan_subtitles
 from subtitles.mass_download import series_download_subtitles
@@ -14,7 +15,7 @@ from app.event_handler import event_stream
 from api.swaggerui import subtitles_model, subtitles_language_model, audio_language_model
 
 from api.utils import authenticate, None_Keys, postprocess, add_list_query_args, profile_filter_clause, \
-    monitored_filter_clause, tags_filter_clause, series_audio_language_filter_clause, apply_sort
+    monitored_filter_clause, tags_filter_clause, series_audio_language_filter_clause, apply_sort, ended_filter_clause
 
 api_ns_series = Namespace('Series', description='List series metadata, update series languages profile or run actions '
                                                 'for specific series.')
@@ -62,7 +63,7 @@ class Series(Resource):
     })
 
     @authenticate
-    @api_ns_series.doc(parser=get_request_parser)
+    @api_ns_series.expect(get_request_parser)
     @api_ns_series.response(200, 'Success')
     @api_ns_series.response(401, 'Not Authenticated')
     def get(self):
@@ -76,6 +77,7 @@ class Series(Resource):
         monitored = args.get('monitored')
         profile_id = args.get('profileid')
         missing = args.get('missing')
+        ended = args.get('ended')
         audio_language = args.get('audio_language')
         tags = args.get('tags[]')
 
@@ -86,14 +88,16 @@ class Series(Resource):
             .group_by(TableShows.sonarrSeriesId)\
             .subquery()
 
-        episodes_missing_conditions = [(TableEpisodes.missing_subtitles.is_not(None)),
-                                       (TableEpisodes.missing_subtitles != '[]')]
+        episodes_missing_conditions = [(TableMissingSubtitles.media_type == 'series'),
+                                       (TableMissingSubtitles.media_id == TableEpisodes.sonarrEpisodeId)]
         episodes_missing_conditions += get_exclusion_clause('series')
 
         episodeMissingCount = select(TableShows.sonarrSeriesId,
-                                     func.count(TableEpisodes.sonarrSeriesId).label('episodeMissingCount')) \
+                                     func.count(func.distinct(TableEpisodes.sonarrEpisodeId))
+                                     .label('episodeMissingCount')) \
             .select_from(TableEpisodes) \
             .join(TableShows) \
+            .join(TableMissingSubtitles, TableMissingSubtitles.media_id == TableEpisodes.sonarrEpisodeId) \
             .where(reduce(operator.and_, episodes_missing_conditions)) \
             .group_by(TableShows.sonarrSeriesId)\
             .subquery()
@@ -135,6 +139,8 @@ class Series(Resource):
             if missing != 'true':
                 missing_clause = func.coalesce(episodeMissingCount.c.episodeMissingCount, 0) == 0
             where_clauses.append(missing_clause)
+        if ended is not None:
+            where_clauses.append(ended_filter_clause(TableShows.ended, ended))
         if audio_language is not None:
             where_clauses.append(series_audio_language_filter_clause(audio_language))
         if tags:
@@ -196,7 +202,7 @@ class Series(Resource):
                                      help='Languages profile(s) ID or "none"')
 
     @authenticate
-    @api_ns_series.doc(parser=post_request_parser)
+    @api_ns_series.expect(post_request_parser)
     @api_ns_series.response(204, 'Success')
     @api_ns_series.response(401, 'Not Authenticated')
     @api_ns_series.response(404, 'Languages profile not found')
@@ -245,7 +251,7 @@ class Series(Resource):
                                                                                '"search-missing", "search-wanted", "sync"]')
 
     @authenticate
-    @api_ns_series.doc(parser=patch_request_parser)
+    @api_ns_series.expect(patch_request_parser)
     @api_ns_series.response(204, 'Success')
     @api_ns_series.response(400, 'Unknown action')
     @api_ns_series.response(401, 'Not Authenticated')

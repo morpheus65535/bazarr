@@ -1,0 +1,21 @@
+.tabsList {
+  display: flex;
+}
+
+.tab {
+  flex: 1;
+  justify-content: center;
+  font-weight: 500;
+  border-radius: calc(var(--mantine-radius-md) - 0.25rem)
+    calc(var(--mantine-radius-md) - 0.25rem) 0 0;
+  transition: background-color 120ms ease;
+
+  &:hover:not([data-active]) {
+    background-color: var(--mantine-color-default-hover);
+  }
+
+  &[data-active] {
+    background-color: var(--mantine-color-brand-filled);
+    color: var(--mantine-color-white);
+  }
+}

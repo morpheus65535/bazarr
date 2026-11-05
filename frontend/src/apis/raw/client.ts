@@ -10,11 +10,17 @@ const GetErrorMessage = (
   data: unknown,
   defaultMsg = "Unknown error",
 ): string => {
-  if (typeof data === "string") {
+  if (typeof data === "string" && data.length > 0) {
     return data;
-  } else {
-    return defaultMsg;
   }
+  if (data && typeof data === "object") {
+    const record = data as Record<string, unknown>;
+    const error = record.error ?? record.message;
+    if (typeof error === "string" && error.length > 0) {
+      return error;
+    }
+  }
+  return defaultMsg;
 };
 
 class BazarrClient {

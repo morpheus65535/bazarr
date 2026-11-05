@@ -3,6 +3,7 @@ import {
   FunctionComponent,
   JSX,
   useCallback,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -235,8 +236,7 @@ const RequiredIntegrationAlert: FunctionComponent<{
             integration?.inputs?.[0]?.name ?? "API credentials"
           }. `
         : `This provider requires the ${integrationName} integration, which is not enabled yet. `}
-      Enable and configure it in the Integrations section below for this
-      provider to work.
+      Enable and configure it in the Metadata tab for this provider to work.
     </Alert>
   );
 };
@@ -253,7 +253,10 @@ const ProviderTool: FunctionComponent<ProviderToolProps> = ({
   const modals = useModals();
 
   const onChangeRef = useRef(onChange);
-  onChangeRef.current = onChange;
+
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  });
 
   const [info, setInfo] = useState<Nullable<ProviderInfo>>(payload);
 

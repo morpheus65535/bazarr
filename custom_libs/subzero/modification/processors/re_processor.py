@@ -16,15 +16,22 @@ class ReProcessor(Processor):
     pattern = None
     replace_with = None
 
-    def __init__(self, pattern, replace_with, name=None, supported=None, entry=False, **kwargs):
+    def __init__(self, pattern, replace_with, name=None, supported=None, entry=False, precheck=None, **kwargs):
         super(ReProcessor, self).__init__(name=name, supported=supported)
         self.pattern = pattern
         self.replace_with = replace_with
         self.use_entry = entry
+        # cheap pattern that must match for `pattern` to be able to match; lets us skip expensive patterns
+        self.precheck = precheck
 
     def process(self, content, debug=False, entry=None, **kwargs):
         if not self.use_entry:
+            if self.precheck and not self.precheck.search(content):
+                return content
             return self.pattern.sub(self.replace_with, content)
+
+        if self.precheck and not self.precheck.search(entry):
+            return content
 
         ret = self.pattern.sub(self.replace_with, entry)
         if not ret:

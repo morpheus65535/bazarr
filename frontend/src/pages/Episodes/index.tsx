@@ -7,7 +7,6 @@ import {
 } from "react";
 import { Navigate, useParams } from "react-router";
 import { Container, Group, Stack } from "@mantine/core";
-import { Dropzone } from "@mantine/dropzone";
 import { useDocumentTitle } from "@mantine/hooks";
 import { showNotification } from "@mantine/notifications";
 import {
@@ -34,7 +33,7 @@ import {
   useSeriesModification,
 } from "@/apis/hooks";
 import { useInstanceName } from "@/apis/hooks/site";
-import { DropContent, Toolbox } from "@/components";
+import { Toolbox, UploadDropzone } from "@/components";
 import { QueryOverlay } from "@/components/async";
 import { ItemEditModal } from "@/components/forms/ItemEditForm";
 import { SeriesUploadModal } from "@/components/forms/SeriesUploadForm";
@@ -119,9 +118,7 @@ const SeriesEpisodesView: FunctionComponent = () => {
 
   const tableRef = useRef<TableInstance<Item.Episode> | null>(null);
 
-  const [isAllRowExpanded, setIsAllRowExpanded] = useState(
-    tableRef?.current?.getIsAllRowsExpanded(),
-  );
+  const [isAllRowExpanded, setIsAllRowExpanded] = useState(false);
 
   const openDropzone = useRef<VoidFunction>(null);
 
@@ -132,13 +129,11 @@ const SeriesEpisodesView: FunctionComponent = () => {
   return (
     <Container px={0} fluid>
       <QueryOverlay result={seriesQuery}>
-        <Dropzone.FullScreen
+        <UploadDropzone
           openRef={openDropzone}
           active={profile !== undefined}
           onDrop={onDrop}
-        >
-          <DropContent></DropContent>
-        </Dropzone.FullScreen>
+        ></UploadDropzone>
         <Toolbox>
           <Group gap="xs">
             <Toolbox.Button
@@ -258,7 +253,6 @@ const SeriesEpisodesView: FunctionComponent = () => {
             <Table
               ref={tableRef}
               episodes={episodes ?? null}
-              profile={profile}
               disabled={hasTask || !series || series.profileId === null}
               onAllRowsExpandedChanged={setIsAllRowExpanded}
             ></Table>

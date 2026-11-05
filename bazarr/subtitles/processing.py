@@ -58,9 +58,11 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
     audio_language_code3 = alpha3_from_language(audio_language)
     downloaded_path = subtitle.storage_path
     subtitle_id = subtitle.id
-    if subtitle.language.hi:
+    language_forced = subtitle.language.forced if subtitle.language else False
+    language_hi = subtitle.language.hi if subtitle.language else False
+    if language_hi:
         modifier_string = " HI"
-    elif subtitle.language.forced:
+    elif language_forced:
         modifier_string = " forced"
     else:
         modifier_string = ""
@@ -72,7 +74,10 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
     else:
         action = "downloaded"
 
-    percent_score = round(subtitle.score * 100 / max_score, 2)
+    if max_score and max_score > 0:
+        percent_score = round(subtitle.score * 100 / max_score, 2)
+    else:
+        percent_score = 0
     message = (f"{downloaded_language}{modifier_string} subtitles {action} from {downloaded_provider} with a score of "
                f"{percent_score}%.")
 
@@ -94,8 +99,8 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
         if sync_checker(subtitle) is True:
             from .sync import sync_subtitles
             sync_subtitles(video_path=path, srt_path=downloaded_path,
-                           forced=subtitle.language.forced,
-                           hi=subtitle.language.hi,
+                           forced=language_forced,
+                           hi=language_hi,
                            srt_lang=downloaded_language_code2,
                            percent_score=percent_score,
                            sonarr_series_id=episode_metadata.sonarrSeriesId,
@@ -133,15 +138,15 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
         if sync_checker(subtitle) is True:
             from .sync import sync_subtitles
             sync_subtitles(video_path=path, srt_path=downloaded_path,
-                           forced=subtitle.language.forced,
-                           hi=subtitle.language.hi,
+                           forced=language_forced,
+                           hi=language_hi,
                            srt_lang=downloaded_language_code2,
                            percent_score=percent_score,
                            radarr_id=movie_metadata.radarrId,
                            job_id=job_id)
 
     if use_postprocessing is True:
-        command = pp_replace(postprocessing_cmd, path, downloaded_path, downloaded_language, downloaded_language_code2,
+        args = pp_replace(postprocessing_cmd, path, downloaded_path, downloaded_language, downloaded_language_code2,
                              downloaded_language_code3, audio_language, audio_language_code2, audio_language_code3,
                              percent_score, subtitle_id, downloaded_provider, uploader, release_info, series_id,
                              episode_id)
@@ -156,8 +161,8 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
             pp_threshold = int(settings.general.postprocessing_threshold_movie)
 
         if not use_pp_threshold or (use_pp_threshold and percent_score < pp_threshold):
-            logging.debug(f"BAZARR Using post-processing command: {command}")
-            postprocessing(command, path)
+            logging.debug(f"BAZARR Using post-processing command: {args}")
+            postprocessing(args, path)
             set_chmod(subtitles_path=downloaded_path)
         else:
             logging.debug(f"BAZARR post-processing skipped because subtitles score isn't below this "
@@ -174,7 +179,7 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
         if settings.general.use_plex is True:
             if settings.plex.update_series_library is True:
                 # Use specific item refresh instead of full library scan
-                plex_refresh_item(episode_metadata.imdbId, is_movie=False, 
+                plex_refresh_item(episode_metadata.imdbId, is_movie=False,
                                 season=episode_metadata.season, episode=episode_metadata.episode)
             if settings.plex.set_episode_added is True:
                 plex_set_episode_added_date_now(episode_metadata)
@@ -214,7 +219,8 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
         subtitle_path=downloaded_path,
         media_path=path,
         language=downloaded_language,
-        media_type=media_type
+        media_type=media_type,
+        action_type='add'
     )
 
     event_tracker.track_subtitles(provider=downloaded_provider, action=action, language=downloaded_language)
@@ -224,10 +230,10 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
                                   downloaded_language_code2=downloaded_language_code2,
                                   downloaded_provider=downloaded_provider,
                                   score=subtitle.score,
-                                  forced=subtitle.language.forced,
+                                  forced=language_forced,
                                   subtitle_id=subtitle.id,
                                   reversed_subtitles_path=reversed_subtitles_path,
-                                  hearing_impaired=subtitle.language.hi,
+                                  hearing_impaired=language_hi,
                                   matched=list(subtitle.matches or []),
                                   not_matched=_get_not_matched(subtitle, media_type))
 

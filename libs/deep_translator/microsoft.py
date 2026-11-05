@@ -11,7 +11,11 @@ import requests
 
 from deep_translator.base import BaseTranslator
 from deep_translator.constants import BASE_URLS, MSFT_ENV_VAR
-from deep_translator.exceptions import ApiKeyException, MicrosoftAPIerror
+from deep_translator.exceptions import (
+    ApiKeyException,
+    MicrosoftAPIerror,
+    TranslationNotFound,
+)
 from deep_translator.validate import is_input_valid
 
 
@@ -99,6 +103,9 @@ class MicrosoftTranslator(BaseTranslator):
             except requests.exceptions.RequestException:
                 exc_type, value, traceback = sys.exc_info()
                 logging.warning(f"Returned error: {exc_type.__name__}")
+
+            if response is None:
+                raise TranslationNotFound(text)
 
             # Where Microsoft API responds with an api error, it returns a dict in response.json()
             if type(response.json()) is dict:

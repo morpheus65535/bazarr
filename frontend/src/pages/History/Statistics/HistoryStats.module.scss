@@ -1,9 +1,14 @@
 .container {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - bazarr.$header-height);
+  min-height: calc(100dvh - bazarr.$header-height);
 }
 
 .chart {
-  height: 90%;
+  flex: 1;
+  min-height: 0;
+
+  @media (width <= 750px) {
+    min-height: 300px;
+  }
 }

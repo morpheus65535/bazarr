@@ -19,7 +19,7 @@ class SystemBackups(Resource):
     })
 
     @authenticate
-    @api_ns_system_backups.doc(parser=None)
+    @api_ns_system_backups.expect(None)
     @api_ns_system_backups.response(204, 'Success')
     @api_ns_system_backups.response(401, 'Not Authenticated')
     def get(self):
@@ -28,7 +28,7 @@ class SystemBackups(Resource):
         return marshal(backups, self.get_response_model, envelope='data')
 
     @authenticate
-    @api_ns_system_backups.doc(parser=None)
+    @api_ns_system_backups.expect(None)
     @api_ns_system_backups.response(204, 'Success')
     @api_ns_system_backups.response(401, 'Not Authenticated')
     def post(self):
@@ -40,7 +40,7 @@ class SystemBackups(Resource):
     patch_request_parser.add_argument('filename', type=str, required=True, help='Backups to restore filename')
 
     @authenticate
-    @api_ns_system_backups.doc(parser=patch_request_parser)
+    @api_ns_system_backups.expect(patch_request_parser)
     @api_ns_system_backups.response(204, 'Success')
     @api_ns_system_backups.response(400, 'Filename not provided')
     @api_ns_system_backups.response(401, 'Not Authenticated')
@@ -62,7 +62,7 @@ class SystemBackups(Resource):
     delete_request_parser.add_argument('filename', type=str, required=True, help='Backups to delete filename')
 
     @authenticate
-    @api_ns_system_backups.doc(parser=delete_request_parser)
+    @api_ns_system_backups.expect(delete_request_parser)
     @api_ns_system_backups.response(204, 'Success')
     @api_ns_system_backups.response(400, 'Filename not provided')
     @api_ns_system_backups.response(401, 'Not Authenticated')

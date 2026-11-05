@@ -5,7 +5,10 @@ import hashlib
 import os
 import re
 import struct
+import unicodedata
 from six.moves import range
+
+DEFAULT_CHARACTERS = {'-', ':', '(', ')', '.', '!', '?', ',', ';', '/', '¡', '¿'}
 
 
 def hash_opensubtitles(video_path):
@@ -93,7 +96,7 @@ def hash_shooter(video_path):
 
 
 def sanitize(string, ignore_characters=None):
-    """Sanitize a string to strip special characters.
+    """Sanitize a string to strip special characters and normalize accents.
 
     :param str string: the string to sanitize.
     :param set ignore_characters: characters to ignore.
@@ -102,25 +105,36 @@ def sanitize(string, ignore_characters=None):
 
     """
     # only deal with strings
-    if string is None:
+    if not isinstance(string, str):
         return
 
     ignore_characters = ignore_characters or set()
 
-    # replace some characters with one space
-    characters = {'-', ':', '(', ')', '.'} - ignore_characters
+    # 1. Normalize unicode characters (NFKD decomposes accents and normalizes full-width forms)
+    decomposed = unicodedata.normalize('NFKD', string)
+    result = []
+    for c in decomposed:
+        if unicodedata.category(c) == 'Mn':
+            # Strip combining diacritical marks from Latin characters (e.g. é -> e, ñ -> n, ä -> a)
+            if result and (('a' <= result[-1].lower() <= 'z') or result[-1] in 'œæ'):
+                continue
+        result.append(c)
+    string = unicodedata.normalize('NFC', ''.join(result))
+
+    # 2. Replace punctuation with one space
+    characters = DEFAULT_CHARACTERS - ignore_characters
     if characters:
         string = re.sub(r'[%s]' % re.escape(''.join(characters)), ' ', string)
 
-    # remove some characters
-    characters = {'\''} - ignore_characters
+    # 3. Remove quotes / apostrophes
+    characters = {'\'', '´', '`', '’'} - ignore_characters
     if characters:
         string = re.sub(r'[%s]' % re.escape(''.join(characters)), '', string)
 
-    # replace multiple spaces with one
+    # 4. Replace multiple spaces with one
     string = re.sub(r'\s+', ' ', string)
 
-    # strip and lower case
+    # 5. Strip and lower case
     return string.strip().lower()
 
 

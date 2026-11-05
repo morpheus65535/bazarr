@@ -33,9 +33,11 @@ const PageTable = <T extends RowData>(props: Props<T>) => {
     },
   });
 
-  if (instanceRef) {
-    instanceRef.current = instance;
-  }
+  useEffect(() => {
+    if (instanceRef) {
+      instanceRef.current = instance;
+    }
+  });
 
   const state = instance.state;
   const pageIndex = state.pagination.pageIndex;

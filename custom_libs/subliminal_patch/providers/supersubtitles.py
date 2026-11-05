@@ -90,8 +90,8 @@ class SuperSubtitlesSubtitle(Subtitle):
 
     def __get_name(self):
         ep_addon = f"S{self.season:02}E{self.episode:02}" if self.episode else ""
-        year_str = f" ({self.year})"
-        return f"{self.series}{year_str or ''} {ep_addon}".strip()
+        year_str = f" ({self.year})" if self.year else ""
+        return f"{self.series}{year_str} {ep_addon}".strip()
 
     def get_matches(self, video):
         matches = set()
@@ -469,15 +469,16 @@ class SuperSubtitlesProvider(Provider, ProviderSubtitleArchiveMixin):
                 asked_for_episode = None
                 sub_season = None
                 sub_episode = None
-                sub_english = table.findAll("div", {"class": "eredeti"})
-                sub_english_name = re.search(r'(?<=<div class="eredeti">).*?(?=</div>)', str(sub_english))
-                sub_english_name = sub_english_name.group() if sub_english_name else ''
+                sub_english = table.find("div", {"class": "eredeti"})
+                sub_english_name = sub_english.get_text(strip=True) if sub_english else ''
+                sub_year_match = re.search(r'\(((?:19|20)\d{2})\)', sub_english_name)
+                sub_year = int(sub_year_match.group(1)) if sub_year_match else None
                 sub_english_name = sub_english_name.split(' (')[0]
 
                 sub_english_name = sub_english_name.replace('&amp;', '&')
                 sub_version = 'n/a'
-                if len(str(sub_english).split('(')) > 1:
-                    sub_version = (str(sub_english).split('(')[len(str(sub_english).split('(')) - 1]).split(')')[0]
+                if sub_english and len(sub_english.get_text().split('(')) > 1:
+                    sub_version = sub_english.get_text().rsplit('(', 1)[1].split(')', 1)[0]
                 # <small>Angol</small>
                 lang = table.find("small")
                 sub_language = re.search(r"(?<=<small>).*(?=</small>)", str(lang))
@@ -501,7 +502,6 @@ class SuperSubtitlesProvider(Provider, ProviderSubtitleArchiveMixin):
 
                 sub_id = re.search(r"(?<=felirat=).*(?=\">)", link)
                 sub_id = sub_id.group() if sub_id else ''
-                sub_year = video.year
                 sub_releases = [s.strip() for s in sub_version.split(',')]
 
                 uploader = ''

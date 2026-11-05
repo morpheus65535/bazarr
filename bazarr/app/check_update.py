@@ -81,15 +81,17 @@ def check_if_new_update():
         release = None
         if use_prerelease:
             if deprecated_python_version():
-                release = next((item['name'].lstrip('v') for item in data if
-                                semver.VersionInfo.parse('1.3.1') > semver.VersionInfo.parse(item['name'].lstrip('v'))))
+                release = next((item for item in data if
+                                semver.VersionInfo.parse('1.3.1') > semver.VersionInfo.parse(item['name'].lstrip('v'))),
+                               None)
             else:
                 release = next((item for item in data), None)
         else:
             if deprecated_python_version():
-                next((item['name'].lstrip('v') for item in data if
-                      not item['prerelease'] and semver.VersionInfo.parse('1.3.1') > semver.VersionInfo.parse(
-                          item['name'].lstrip('v'))))
+                release = next((item for item in data if
+                                not item['prerelease'] and
+                                semver.VersionInfo.parse('1.3.1') > semver.VersionInfo.parse(item['name'].lstrip('v'))),
+                               None)
             else:
                 release = next((item for item in data if not item["prerelease"]), None)
 
@@ -106,7 +108,7 @@ def check_if_new_update():
             except ValueError:
                 new_version = True
             else:
-                new_version = True if semver.compare(release['name'].lstrip('v'), os.environ["BAZARR_VERSION"]) > 0 \
+                new_version = True if semver.Version.parse(release['name'].lstrip('v')).compare(os.environ["BAZARR_VERSION"]) > 0 \
                     else False
 
             # skip update process if latest release is v0.9.1.1 which is the latest pre-semver compatible release

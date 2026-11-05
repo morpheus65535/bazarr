@@ -14,7 +14,7 @@ class JellyfinTestConnection(Resource):
     post_request_parser.add_argument('apikey', type=str, required=True, help='Jellyfin API key')
 
     @authenticate
-    @api_ns_jellyfin.doc(parser=post_request_parser)
+    @api_ns_jellyfin.expect(post_request_parser)
     @api_ns_jellyfin.response(200, 'Success')
     @api_ns_jellyfin.response(401, 'Not Authenticated')
     def post(self):
@@ -32,7 +32,7 @@ class JellyfinLibraries(Resource):
     get_request_parser.add_argument('apikey', type=str, required=False, location='args', help='Jellyfin API key')
 
     @authenticate
-    @api_ns_jellyfin.doc(parser=get_request_parser)
+    @api_ns_jellyfin.expect(get_request_parser)
     @api_ns_jellyfin.response(200, 'Success')
     @api_ns_jellyfin.response(401, 'Not Authenticated')
     def get(self):

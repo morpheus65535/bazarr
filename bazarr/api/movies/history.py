@@ -54,7 +54,7 @@ class MoviesHistory(Resource):
 
     @authenticate
     @api_ns_movies_history.response(401, 'Not Authenticated')
-    @api_ns_movies_history.doc(parser=get_request_parser)
+    @api_ns_movies_history.expect(get_request_parser)
     def get(self):
         """List movies history events"""
         args = self.get_request_parser.parse_args()
@@ -65,6 +65,11 @@ class MoviesHistory(Resource):
         blacklisted_subtitles = select(TableBlacklistMovie.provider,
                                        TableBlacklistMovie.subs_id) \
             .subquery()
+
+        external_subtitles_sq = select(
+            TableMoviesSubtitles.radarrId,
+            func.min(TableMoviesSubtitles.path).label('path')
+        ).group_by(TableMoviesSubtitles.radarrId).subquery()
 
         query_conditions = [(TableMovies.title.is_not(None))]
         if radarrid:
@@ -89,16 +94,15 @@ class MoviesHistory(Resource):
                       TableHistoryMovie.matched,
                       TableHistoryMovie.not_matched,
                       TableMovies.profileId,
-                      TableMoviesSubtitles.path.label('external_subtitles'),
+                      external_subtitles_sq.c.path.label('external_subtitles'),
                       blacklisted_subtitles.c.subs_id.label('blacklisted')) \
             .select_from(TableHistoryMovie) \
             .join(TableMovies) \
-            .join(TableMoviesSubtitles,
-                  onclause=TableHistoryMovie.radarrId == TableMoviesSubtitles.radarrId) \
+            .join(external_subtitles_sq,
+                  onclause=TableHistoryMovie.radarrId == external_subtitles_sq.c.radarrId, isouter=True) \
             .join(blacklisted_subtitles, onclause=TableHistoryMovie.subs_id == blacklisted_subtitles.c.subs_id,
                   isouter=True) \
             .where(reduce(operator.and_, query_conditions)) \
-            .where(TableMoviesSubtitles.path.is_not(None)) \
             .order_by(TableHistoryMovie.timestamp.desc())
         if length > 0:
             stmt = stmt.limit(length).offset(start)

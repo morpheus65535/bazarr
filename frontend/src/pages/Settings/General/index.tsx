@@ -1,5 +1,5 @@
 import { FunctionComponent, useState } from "react";
-import { Box, Group as MantineGroup, Text as MantineText } from "@mantine/core";
+import { Group as MantineGroup } from "@mantine/core";
 import { useClipboard } from "@mantine/hooks";
 import {
   faCheck,
@@ -13,7 +13,6 @@ import {
   Check,
   Chips,
   CollapseBox,
-  File,
   Layout,
   Message,
   Number,
@@ -22,9 +21,9 @@ import {
   Selector,
   Text,
 } from "@/pages/Settings/components";
-import { Environment, toggleState } from "@/utilities";
+import { toggleState } from "@/utilities";
 import ExternalWebhookSelector from "./ExternalWebhookSelector";
-import { branchOptions, proxyOptions, securityOptions } from "./options";
+import { proxyOptions, securityOptions } from "./options";
 
 const characters = "abcdef0123456789";
 const settingApiKey = "settings-auth-apikey";
@@ -75,16 +74,6 @@ const SettingsGeneralView: FunctionComponent = () => {
         <Message>
           Hostname or IP address to access Bazarr (ie: bazarr.mydomain.local or
           192.168.0.100). Required for webhook security.
-        </Message>
-      </Section>
-      <Section header="Media">
-        <Check
-          label="Enable .strm Support"
-          settingKey="settings-general-enable_strm_support"
-        ></Check>
-        <Message>
-          Enable support for .strm files. Bazarr will read the stream URL from
-          the file and analyze it for embedded tracks.
         </Message>
       </Section>
       <Section header="Security">
@@ -172,7 +161,7 @@ const SettingsGeneralView: FunctionComponent = () => {
           too long.
         </Message>
       </Section>
-      <Section header="External Integrations">
+      <Section header="Incoming Webhooks">
         <ExternalWebhookSelector />
       </Section>
       <Section header="Proxy">
@@ -207,57 +196,6 @@ const SettingsGeneralView: FunctionComponent = () => {
             subdomains.
           </Message>
         </CollapseBox>
-      </Section>
-      <Section header="Updates" hidden={!Environment.canUpdate}>
-        <Check
-          label="Automatic"
-          settingKey="settings-general-auto_update"
-        ></Check>
-        <Message>Automatically download and install updates</Message>
-        <Selector
-          options={branchOptions}
-          settingKey="settings-general-branch"
-        ></Selector>
-        <Message>Branch used by update mechanism</Message>
-      </Section>
-      <Section header="Logging">
-        <Check label="Debug" settingKey="settings-general-debug"></Check>
-        <Message>Debug logging should only be enabled temporarily</Message>
-        <Text
-          label="Include Filter"
-          settingKey="settings-log-include_filter"
-        ></Text>
-        <Text
-          label="Exclude Filter"
-          settingKey="settings-log-exclude_filter"
-        ></Text>
-        <Check
-          label="Use Regular Expressions (Regex)"
-          settingKey="settings-log-use_regex"
-        ></Check>
-        <Check
-          label="Ignore Case"
-          settingKey="settings-log-ignore_case"
-        ></Check>
-      </Section>
-      <Section header="Backups">
-        <File
-          label="Folder"
-          settingKey="settings-backup-folder"
-          type="bazarr"
-        ></File>
-        <Message>Absolute path to the backup directory</Message>
-        <Number
-          label="Retention"
-          settingKey="settings-backup-retention"
-          rightSection={
-            <Box w="4rem" style={{ justifyContent: "flex-end" }}>
-              <MantineText size="xs" px="sm" c="dimmed">
-                Days
-              </MantineText>
-            </Box>
-          }
-        ></Number>
       </Section>
       <Section header="Analytics">
         <Check label="Enable" settingKey="settings-analytics-enabled"></Check>

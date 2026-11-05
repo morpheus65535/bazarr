@@ -38,6 +38,7 @@
     "no-useless-rename": "error",
     "bazarr-custom/no-let": "error",
     "bazarr-custom/no-function-declaration": "error",
+    "bazarr-custom/no-cross-module-scss-import": "error",
     "simple-import-sort/imports": [
       "error",
       {

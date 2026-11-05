@@ -92,10 +92,6 @@ const getLocalisedValues = (item: SupportType): LocalisedType => {
   }
 };
 
-const CanSelectSubtitle = (item: TableColumnType) => {
-  return item.path.endsWith(".srt");
-};
-
 const getFilterKey = (filter: SubtitleFilter) =>
   `${filter.category}:${filter.value}`;
 
@@ -362,7 +358,7 @@ export const SubtitleToolView: FunctionComponent<SubtitleToolViewProps> = ({
           emptyText: "No external subtitles found",
           headersRenderer: renderHeaders,
         }}
-        enableRowSelection={(row) => CanSelectSubtitle(row.original)}
+        enableRowSelection={true}
         enableSorting
         enableGlobalFilter
         globalFilterFn={(row, _columnId, value) => {

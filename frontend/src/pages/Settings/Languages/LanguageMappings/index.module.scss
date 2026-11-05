@@ -1,0 +1,26 @@
+@layer mantine {
+  .helpItem {
+    border-radius: var(--mantine-radius-sm);
+  }
+
+  // Make the disclosure read as an interactive control: full-width row with a
+  // rounded hover surface, like the table rows and action icons elsewhere.
+  .helpControl {
+    border-radius: var(--mantine-radius-sm);
+    padding: var(--mantine-spacing-xs) var(--mantine-spacing-sm);
+    transition: background-color 0.15s ease;
+
+    &:hover {
+      background-color: var(--mantine-color-default-hover);
+    }
+  }
+
+  // Indent the panel content so it lines up under the control label (past the
+  // leading icon) and reads as belonging to the disclosure.
+  .helpPanel {
+    margin-left: var(--mantine-spacing-sm);
+    padding-left: var(--mantine-spacing-md);
+    border-left: calc(0.125rem * var(--mantine-scale)) solid
+      var(--mantine-color-default-border);
+  }
+}

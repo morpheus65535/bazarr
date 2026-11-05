@@ -24,7 +24,8 @@ class AnimesubinfoSubtitle(Subtitle):
     provider_name = 'animesubinfo'
 
     def __init__(self, language, video, subtitle_id, title_org, title_eng, title_alt,
-                 author, format_type, size, download_hash, download_count=0, description=''):
+                 author, format_type, size, download_hash, download_count=0, description='',
+                 search_title_type=None, search_title=None):
         super(AnimesubinfoSubtitle, self).__init__(language)
         self.video = video
         self.subtitle_id = subtitle_id
@@ -41,6 +42,8 @@ class AnimesubinfoSubtitle(Subtitle):
         self.page_link = f'http://animesub.info/'
         self.release_info = f'{title_org} - {title_eng}'
         self.matches = set()
+        self.search_title_type = search_title_type  # Type of search that found this: 'org', 'en', 'pl'
+        self.search_title = search_title  # Exact title string used in search
 
         # Parse episode and season from titles
         self.season = None
@@ -434,14 +437,50 @@ class AnimesubinfoProvider(Provider):
                 results = self._parse_search_results(html, video)
                 for sub in results:
                     if sub.subtitle_id not in seen_ids:
+                        # Store search strategy for hash refresh later
+                        sub.search_title_type = title_type
+                        sub.search_title = title
                         all_subtitles.append(sub)
                         seen_ids.add(sub.subtitle_id)
 
         logger.debug(f'Returning {len(all_subtitles)} subtitles')
         return all_subtitles
 
+    def _get_fresh_hash(self, subtitle):
+        """Fetch current download hash for a subtitle by re-searching.
+
+        This prevents hash invalidation when multiple searches are performed,
+        as the provider invalidates hashes after each HTTP request.
+        Uses the same search strategy that originally found the subtitle.
+        """
+        if not subtitle.search_title or not subtitle.search_title_type:
+            logger.warning(f'No search strategy stored for subtitle {subtitle.subtitle_id}')
+            return None
+
+        logger.debug(f'Refreshing hash for subtitle {subtitle.subtitle_id} using strategy: '
+                    f'{subtitle.search_title_type}:{subtitle.search_title}')
+
+        html = self._search_titles(subtitle.search_title, subtitle.search_title_type)
+        if html:
+            results = self._parse_search_results(html, subtitle.video)
+            for result in results:
+                if result.subtitle_id == subtitle.subtitle_id:
+                    logger.debug(f'Successfully refreshed hash for subtitle {subtitle.subtitle_id}')
+                    return result.download_hash
+
+        logger.warning(f'Could not refresh hash for subtitle {subtitle.subtitle_id}, using cached hash')
+        return None
+
     def download_subtitle(self, subtitle):
         """Download the subtitle content."""
+        # Refresh hash before download to handle provider-side hash invalidation
+        fresh_hash = self._get_fresh_hash(subtitle)
+        if fresh_hash:
+            subtitle.download_hash = fresh_hash
+        elif not subtitle.download_hash:
+            logger.error(f'No valid download hash for subtitle {subtitle.subtitle_id}')
+            return
+
         try:
             data = {
                 'id': subtitle.subtitle_id,

@@ -10,7 +10,6 @@ import {
   useSystemWebhookTestMutation,
 } from "@/apis/hooks/system";
 import { customRender, screen } from "@/tests";
-import { Environment } from "@/utilities/env";
 import SettingsGeneralView from "./index";
 
 vi.mock("@/apis/hooks/system", async (importOriginal) => {
@@ -158,7 +157,6 @@ describe("SettingsGeneralView", () => {
     renderPage();
 
     expect(screen.getByRole("heading", { name: "Host" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Media" })).toBeInTheDocument();
     expect(
       screen.getByRole("heading", { name: "Security" }),
     ).toBeInTheDocument();
@@ -166,35 +164,12 @@ describe("SettingsGeneralView", () => {
       screen.getByRole("heading", { name: "Jobs Manager" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("heading", { name: "External Integrations" }),
+      screen.getByRole("heading", { name: "Incoming Webhooks" }),
     ).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Proxy" })).toBeInTheDocument();
     expect(
-      screen.getByRole("heading", { name: "Logging" }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("heading", { name: "Backups" }),
-    ).toBeInTheDocument();
-    expect(
       screen.getByRole("heading", { name: "Analytics" }),
     ).toBeInTheDocument();
-    expect(
-      screen.queryByRole("heading", { name: "Updates" }),
-    ).not.toBeInTheDocument();
-  });
-
-  it("should show updates section when updates are enabled", () => {
-    const canUpdateSpy = vi
-      .spyOn(Environment, "canUpdate", "get")
-      .mockReturnValue(true);
-
-    renderPage();
-
-    expect(
-      screen.getByRole("heading", { name: "Updates" }),
-    ).toBeInTheDocument();
-
-    canUpdateSpy.mockRestore();
   });
 
   it("should expand authentication fields when selecting a security type", async () => {
@@ -362,6 +337,7 @@ describe("SettingsGeneralView", () => {
       expect.objectContaining({
         "settings-general-base_url": "/newbase",
       }),
+      expect.objectContaining({ onSuccess: expect.any(Function) }),
     );
   });
 });

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import functools
 import logging
 import lzma
 import os
@@ -40,25 +41,46 @@ supported_languages = [
 _BRAZILIAN_PORTUGUESE_RE = re.compile(r'brazil|\bbr\b', re.IGNORECASE)
 
 
+@functools.lru_cache(2048)
+def _memoized_release_guess(release_name):
+    # Guessit takes milliseconds per call and releases are re-parsed on every search of an episode,
+    # while the same batch release is listed for every episode it contains.
+    return guessit(release_name)
+
+
 class AnimeToshoXYZSubtitle(Subtitle):
     provider_name = 'animetosho_xyz'
 
-    def __init__(self, language, download_link, meta, release_info):
+    def __init__(self, language, download_link, release_guesses, release_info, release_id, forced=False):
+        # AnimeTosho reports the forced disposition flag of the subtitle track. Keep it on the
+        # language so a forced (signs only) track is never offered as a normal subtitle.
+        language = Language.rebuild(language, forced=forced)
+
         super(AnimeToshoXYZSubtitle, self).__init__(
             language,
             page_link=download_link,
         )
-        self.meta = meta
+        # Parsed once per release and shared by all its subtitles so guessit runs once no matter
+        # how many subtitle tracks a release carries.
+        self.release_guesses = release_guesses
         self.download_link = download_link
         self.release_info = release_info
+        self.release_id = release_id
+        self.forced = forced
         self.matches = set()
 
     @property
     def id(self):
-        return self.download_link
+        # AnimeTosho may reuse the same attachment URL across releases; keep each
+        # release association distinct so scoring can use release-specific metadata.
+        return f'{self.release_id}:{self.download_link}'
 
     def get_matches(self, video):
-        self.matches |= guess_matches(video, guessit(self.meta.get('torrent_name', '')))
+        # AnimeTosho torrent names frequently append the Japanese or alternate title in parentheses
+        # or after a pipe, which guessit mistakes for the release group. The file names of a release
+        # are scene-style and carry the real metadata, so every parsed name has to be matched. #3612
+        for release_guess in self.release_guesses:
+            self.matches |= guess_matches(video, release_guess)
 
         # Add these data are explicit extracted from the API and they always have to match otherwise they wouldn't
         # arrive at this point and would stop on list_subtitles.
@@ -71,6 +93,10 @@ class AnimeToshoXYZProvider(Provider, ProviderSubtitleArchiveMixin):
     provider_name = 'animetosho_xyz'
     subtitle_class = AnimeToshoXYZSubtitle
     languages = {Language('por', 'BR')} | {Language(sl) for sl in supported_languages}
+    # The provider pool intersects the requested languages with the languages declared here before
+    # calling list_subtitles, so the forced variants have to be declared as well or a profile
+    # asking for forced subtitles would never reach this provider.
+    languages.update(set(Language.rebuild(lang, forced=True) for lang in languages))
     video_types = Episode
 
     def __init__(self):
@@ -158,11 +184,11 @@ class AnimeToshoXYZProvider(Provider, ProviderSubtitleArchiveMixin):
             )
 
             torrent_data = r.json()
-            attachments = torrent_data.get('attachments', [])
+            # Copy the memoized guesses because guess_matches uses them as scratch space.
+            release_guesses = [dict(_memoized_release_guess(release_name))
+                               for release_name in self._release_names(torrent_data)]
 
-            subtitle_files = list(filter(lambda a: a.get('type') == 'subtitle', attachments))
-
-            for subtitle_file in subtitle_files:
+            for subtitle_file in self._iter_subtitle_attachments(torrent_data):
                 info = subtitle_file.get('info', {})
                 lang_code = info.get('language_code', 'eng')
                 lang = Language.fromalpha3b(lang_code)
@@ -176,14 +202,66 @@ class AnimeToshoXYZProvider(Provider, ProviderSubtitleArchiveMixin):
                 subtitle = self.subtitle_class(
                     lang,
                     subtitle_file['url'],
-                    meta=torrent_data,
+                    release_guesses=release_guesses,
                     release_info=entry.get('title'),
+                    release_id=torrent_data['id'],
+                    # AnimeTosho exposes the forced disposition flag of the track as a boolean.
+                    forced=bool(info.get('forced', False)),
                 )
 
                 logger.debug('Found subtitle %r', subtitle)
                 subtitles.append(subtitle)
 
         return subtitles
+
+    @staticmethod
+    def _release_names(torrent_data):
+        """Return the names carrying matchable release metadata.
+
+        Only the primary file name is parsed: every file of a release carries the same metadata and
+        running guessit over all the files of a large batch is expensive. The torrent name is kept
+        as well because some releases do not list any file at all.
+        """
+        release_names = []
+        files = [file for file in torrent_data.get('files') or [] if file.get('filename')]
+        if files:
+            primary_file_id = torrent_data.get('primary_file_id')
+            primary_file = next((file for file in files if file.get('id') == primary_file_id), None)
+            release_names.append((primary_file or files[0])['filename'])
+
+        torrent_name = torrent_data.get('torrent_name')
+        if torrent_name:
+            release_names.append(torrent_name)
+
+        return release_names
+
+    @staticmethod
+    def _iter_subtitle_attachments(torrent_data):
+        """Yield the subtitle attachments of a release.
+
+        AnimeTosho.xyz lists them either at the top level of the release ("attachments") or nested
+        under each of its files ("files[].attachments"), depending on the release, so both shapes
+        have to be collected. A release only ever uses one of them but the same attachment is
+        still guarded against being yielded twice.
+        """
+        seen = set()
+
+        def collect(attachments):
+            for attachment in attachments or []:
+                if attachment.get('type') != 'subtitle':
+                    continue
+
+                key = (attachment.get('id'), attachment.get('url'))
+                if key in seen:
+                    continue
+
+                seen.add(key)
+                yield attachment
+
+        yield from collect(torrent_data.get('attachments'))
+
+        for file in torrent_data.get('files') or []:
+            yield from collect(file.get('attachments'))
 
     def _get_series_entries(self, episode_id):
         api_url = 'https://feed.animetosho.xyz/feed/json'

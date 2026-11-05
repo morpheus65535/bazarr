@@ -3,6 +3,7 @@ import logging
 
 from flask_restx import Resource, Namespace, fields
 
+from app.config import settings
 from app.database import TableEpisodes, TableShows, database, select
 from sonarr.sync.episodes import sync_one_episode
 from subtitles.mass_download import episode_download_subtitles
@@ -116,6 +117,10 @@ class WebHooksSonarr(Resource):
                 continue
 
             store_subtitles(episode.sonarrEpisodeId)
-            episode_download_subtitles(no=episode.sonarrEpisodeId)
+            episode_download_subtitles(
+                no=episode.sonarrEpisodeId,
+                fallback_allowed=settings.general.use_whisper_fallback
+                and settings.general.use_whisper_fallback_on_import,
+            )
 
         return "Finished processing subtitles.", 200

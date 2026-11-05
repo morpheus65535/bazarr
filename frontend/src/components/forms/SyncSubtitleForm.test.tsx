@@ -1,4 +1,4 @@
-import userEvent from "@testing-library/user-event";
+import { act } from "@testing-library/react";
 import { describe, expect, it, vitest } from "vitest";
 import {
   useRefTracksByEpisodeId,
@@ -80,9 +80,11 @@ describe("SyncSubtitleForm", () => {
     } as unknown as ReturnType<typeof useSubtitleAction>);
     const onSubmit = vitest.fn();
     const { closeSelf } = renderForm({ onSubmit });
-    const user = userEvent.setup();
 
-    await user.click(screen.getByText("Sync"));
+    const submitButton = screen.getByRole("button", { name: "Sync" });
+    await act(async () => {
+      submitButton.click();
+    });
 
     await waitFor(() => {
       expect(mutateAsync).toHaveBeenCalled();

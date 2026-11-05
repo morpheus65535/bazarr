@@ -40,7 +40,7 @@ describe("Search", () => {
 
     customRender(<Search />);
 
-    await userEvent.click(screen.getByRole("button", { name: "Search" }));
+    await userEvent.click(screen.getByPlaceholderText("Search"));
 
     expect(openSpy).toHaveBeenCalledTimes(1);
 

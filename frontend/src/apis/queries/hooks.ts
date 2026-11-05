@@ -105,18 +105,13 @@ export const usePaginationQuery = <
     [pageCount],
   );
 
-  // Reset page index if we out of bound
-  useEffect(() => {
-    if (pageCount === 0) return;
-
-    if (page >= pageCount) {
-      setIndex(pageCount - 1);
-      return;
-    }
-    if (page < 0) {
-      setIndex(0);
-    }
-  }, [page, pageCount]);
+  // Reset page index if we are out of bounds (adjusting state during render
+  // avoids an effect-driven render cascade).
+  if (pageCount > 0 && page >= pageCount) {
+    setIndex(pageCount - 1);
+  } else if (page < 0) {
+    setIndex(0);
+  }
 
   return {
     ...results,

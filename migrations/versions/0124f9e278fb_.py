@@ -30,7 +30,7 @@ def parse_language(language):
     )
 
 
-def upgrade():
+def upgrade() -> None:
     if bind.engine.name == 'postgresql':
         episodes_subtitles_column_exists = bind.exec_driver_sql('SELECT count(*) '
                                                                 'FROM information_schema.columns '
@@ -142,11 +142,13 @@ def upgrade():
 
     with op.batch_alter_table('table_episodes', schema=None) as batch_op:
         # Critical for "wanted" subtitle queries
-        batch_op.create_index(
-            'ix_episodes_missing_subtitles',
-            ['missing_subtitles'],
-            unique=False
-        )
+        if any(column['name'] == 'missing_subtitles'
+               for column in sa.inspect(bind).get_columns('table_episodes')):
+            batch_op.create_index(
+                'ix_episodes_missing_subtitles',
+                ['missing_subtitles'],
+                unique=False
+            )
 
         # Most common JOIN column for episodes
         batch_op.create_index(
@@ -229,11 +231,13 @@ def upgrade():
 
     with op.batch_alter_table('table_movies', schema=None) as batch_op:
         # Critical for "wanted" movie subtitle queries
-        batch_op.create_index(
-            'ix_movies_missing_subtitles',
-            ['missing_subtitles'],
-            unique=False
-        )
+        if any(column['name'] == 'missing_subtitles'
+               for column in sa.inspect(bind).get_columns('table_movies')):
+            batch_op.create_index(
+                'ix_movies_missing_subtitles',
+                ['missing_subtitles'],
+                unique=False
+            )
 
         # Primary sorting column for movie lists
         batch_op.create_index(

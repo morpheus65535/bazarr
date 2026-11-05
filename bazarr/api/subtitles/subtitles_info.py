@@ -26,7 +26,7 @@ class SubtitleNameInfo(Resource):
     @authenticate
     @api_ns_subtitles_info.response(200, 'Success')
     @api_ns_subtitles_info.response(401, 'Not Authenticated')
-    @api_ns_subtitles_info.doc(parser=get_request_parser)
+    @api_ns_subtitles_info.expect(get_request_parser)
     def get(self):
         """Guessit over subtitles filename"""
         args = self.get_request_parser.parse_args()

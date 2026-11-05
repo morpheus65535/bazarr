@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useMemo } from "react";
 import {
   ComboboxItem,
   ComboboxItemGroup,
@@ -79,35 +79,32 @@ export const Selector = <T,>({
   getkey = DefaultKeyBuilder,
   ...select
 }: SelectorProps<T>) => {
-  const keyRef = useRef(getkey);
-  keyRef.current = getkey;
-
   const data = useMemo(
     () =>
       options.map<SelectItemWithPayload<T>>(({ value, label, ...option }) => ({
         label,
-        value: keyRef.current(value),
+        value: getkey(value),
         payload: value,
         ...option,
       })),
-    [keyRef, options],
+    [getkey, options],
   );
 
   const wrappedValue = useMemo(() => {
     if (isNull(value) || isUndefined(value)) {
       return value;
     } else {
-      return keyRef.current(value);
+      return getkey(value);
     }
-  }, [keyRef, value]);
+  }, [getkey, value]);
 
   const wrappedDefaultValue = useMemo(() => {
     if (isNull(defaultValue) || isUndefined(defaultValue)) {
       return defaultValue;
     } else {
-      return keyRef.current(defaultValue);
+      return getkey(defaultValue);
     }
-  }, [defaultValue, keyRef]);
+  }, [defaultValue, getkey]);
 
   const wrappedOnChange = useCallback(
     (value: string | null) => {
@@ -152,30 +149,24 @@ export const MultiSelector = <T,>({
   hidePickedOptions = true,
   ...select
 }: MultiSelectorProps<T>) => {
-  const labelRef = useRef(getkey);
-  labelRef.current = getkey;
-
-  const buildRef = useRef(buildOption);
-  buildRef.current = buildOption;
-
   const data = useMemo(
     () =>
       options.map<SelectItemWithPayload<T>>(({ value, ...option }) => ({
-        value: labelRef.current(value),
+        value: getkey(value),
         payload: value,
         ...option,
       })),
-    [options],
+    [options, getkey],
   );
 
   const wrappedValue = useMemo(
-    () => value && value.map(labelRef.current),
-    [value],
+    () => value && value.map(getkey),
+    [value, getkey],
   );
 
   const wrappedDefaultValue = useMemo(
-    () => defaultValue && defaultValue.map(labelRef.current),
-    [defaultValue],
+    () => defaultValue && defaultValue.map(getkey),
+    [defaultValue, getkey],
   );
 
   const wrappedOnChange = useCallback(
@@ -185,13 +176,13 @@ export const MultiSelector = <T,>({
         const payload = data.find((v) => v.value === value)?.payload;
         if (payload) {
           payloads.push(payload);
-        } else if (buildRef.current) {
-          payloads.push(buildRef.current(value));
+        } else if (buildOption) {
+          payloads.push(buildOption(value));
         }
       }
       onChange?.(payloads);
     },
-    [data, onChange],
+    [data, onChange, buildOption],
   );
 
   return (

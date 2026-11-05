@@ -1,13 +1,16 @@
 # coding=utf-8
 
-from flask_restx import Resource, Namespace, reqparse, fields, marshal
-from sqlalchemy import or_
+from typing import cast
 
-from app.database import TableMovies, database, update, select, func
+from api.utils import JsonObject
+
+from flask_restx import Resource, Namespace, reqparse, fields, marshal
+from app.database import TableMissingSubtitles, TableMovies, database, update, select, func, get_subtitles_map
 from radarr.sync.movies import update_one_movie
 from subtitles.indexer.movies import list_missing_subtitles_movies, movies_scan_subtitles
 from app.event_handler import event_stream
 from subtitles.wanted import wanted_search_missing_subtitles_movies
+from subtitles.wanted_state import get_missing_languages_map
 from subtitles.mass_download import movies_download_subtitles
 from api.swaggerui import subtitles_model, subtitles_language_model, audio_language_model
 
@@ -57,10 +60,10 @@ class Movies(Resource):
     })
 
     @authenticate
-    @api_ns_movies.doc(parser=get_request_parser)
+    @api_ns_movies.expect(get_request_parser)
     @api_ns_movies.response(200, 'Success')
     @api_ns_movies.response(401, 'Not Authenticated')
-    def get(self):
+    def get(self) -> JsonObject:
         """List movies metadata for specific movies"""
         args = self.get_request_parser.parse_args()
         start = args.get('start')
@@ -79,7 +82,6 @@ class Movies(Resource):
                       TableMovies.created_at_timestamp,
                       TableMovies.fanart,
                       TableMovies.imdbId,
-                      TableMovies.missing_subtitles,
                       TableMovies.monitored,
                       TableMovies.overview,
                       TableMovies.path,
@@ -101,12 +103,11 @@ class Movies(Resource):
         if profile_id is not None:
             where_clauses.append(profile_filter_clause(TableMovies.profileId, profile_id))
         if missing is not None:
-            if missing == 'true':
-                where_clauses.append(TableMovies.missing_subtitles.is_not(None))
-                where_clauses.append(TableMovies.missing_subtitles != '[]')
-            else:
-                where_clauses.append(or_(TableMovies.missing_subtitles.is_(None),
-                                         TableMovies.missing_subtitles == '[]'))
+            has_missing = select(TableMissingSubtitles.id).where(
+                TableMissingSubtitles.media_type == 'movie',
+                TableMissingSubtitles.media_id == TableMovies.radarrId,
+            ).exists()
+            where_clauses.append(has_missing if missing == 'true' else ~has_missing)
         if audio_language is not None:
             where_clauses.append(audio_language_filter_clause(TableMovies.audio_language, audio_language))
         if tags:
@@ -127,13 +128,17 @@ class Movies(Resource):
         if length > 0:
             stmt = stmt.limit(length).offset(start)
 
+        movies = database.execute(stmt).all()
+        missing_languages = get_missing_languages_map('movie', [x.radarrId for x in movies])
+        subtitles_map = get_subtitles_map('movie', [x.radarrId for x in movies])
+
         results = [postprocess({
             'alternativeTitles': x.alternativeTitles,
             'audio_language': x.audio_language,
             'created_at_timestamp': x.created_at_timestamp,
             'fanart': x.fanart,
             'imdbId': x.imdbId,
-            'missing_subtitles': x.missing_subtitles,
+            'missing_subtitles': missing_languages[x.radarrId],
             'monitored': x.monitored,
             'overview': x.overview,
             'path': x.path,
@@ -144,7 +149,7 @@ class Movies(Resource):
             'tags': x.tags,
             'title': x.title,
             'year': x.year,
-        }) for x in database.execute(stmt).all()]
+        }, subtitles=subtitles_map.get(x.radarrId, [])) for x in movies]
 
         count_stmt = select(func.count()).select_from(TableMovies)
         if where_clauses:
@@ -152,7 +157,7 @@ class Movies(Resource):
 
         count = database.execute(count_stmt).scalar()
 
-        return marshal({'data': results, 'total': count}, self.get_response_model)
+        return cast(JsonObject, marshal({'data': results, 'total': count}, self.get_response_model))
 
     post_request_parser = reqparse.RequestParser()
     post_request_parser.add_argument('radarrid', type=int, action='append', required=False, default=[],
@@ -161,7 +166,7 @@ class Movies(Resource):
                                      help='Languages profile(s) ID or "none"')
 
     @authenticate
-    @api_ns_movies.doc(parser=post_request_parser)
+    @api_ns_movies.expect(post_request_parser)
     @api_ns_movies.response(204, 'Success')
     @api_ns_movies.response(401, 'Not Authenticated')
     @api_ns_movies.response(404, 'Languages profile not found')
@@ -202,7 +207,7 @@ class Movies(Resource):
                                                                                '"search-missing", "search-wanted", "sync"]')
 
     @authenticate
-    @api_ns_movies.doc(parser=patch_request_parser)
+    @api_ns_movies.expect(patch_request_parser)
     @api_ns_movies.response(204, 'Success')
     @api_ns_movies.response(400, 'Unknown action')
     @api_ns_movies.response(401, 'Not Authenticated')

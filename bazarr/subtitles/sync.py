@@ -6,7 +6,6 @@ import gc
 
 from app.config import settings
 from app.jobs_queue import jobs_queue
-from subtitles.tools.subsyncer import SubSyncer
 
 
 def sync_subtitles(video_path,
@@ -24,7 +23,10 @@ def sync_subtitles(video_path,
                    no_fix_framerate=None,
                    reference=None,
                    force_sync=False,
-                   callback=None):
+                   callback=None,
+                   quality_min_score=None,
+                   quality_max_offset_seconds=None,
+                   quality_max_framerate_deviation=None):
     if not settings.subsync.use_subsync and not force_sync:
         logging.debug('BAZARR automatic syncing is disabled in settings. Skipping sync routine.')
         return False
@@ -47,15 +49,32 @@ def sync_subtitles(video_path,
             use_subsync_threshold = settings.subsync.use_subsync_movie_threshold
             subsync_threshold = settings.subsync.subsync_movie_threshold
 
-        if not use_subsync_threshold or (use_subsync_threshold and percent_score <= float(subsync_threshold)):
+        threshold_float = _float_or_default(
+            subsync_threshold,
+            default=100.0,
+            warning_label="subsync threshold",
+        )
+        percent_score_float = _float_or_default(
+            percent_score,
+            default=0.0,
+            warning_label="subtitles score",
+        )
+
+        if not use_subsync_threshold or percent_score_float <= threshold_float:
             if max_offset_seconds is None:
                 max_offset_seconds = str(settings.subsync.max_offset_seconds)
             if no_fix_framerate is None:
                 no_fix_framerate = settings.subsync.no_fix_framerate
             if gss is None:
                 gss = settings.subsync.gss
+            if quality_min_score is None:
+                quality_min_score = settings.subsync.quality_min_score
+            if quality_max_offset_seconds is None:
+                quality_max_offset_seconds = settings.subsync.quality_max_offset_seconds
+            if quality_max_framerate_deviation is None:
+                quality_max_framerate_deviation = settings.subsync.quality_max_framerate_deviation
 
-            subsync = SubSyncer()
+            subsync = _create_subsyncer()
             sync_kwargs = {
                 'video_path': video_path,
                 'srt_path': srt_path,
@@ -71,10 +90,13 @@ def sync_subtitles(video_path,
                 'radarr_id': radarr_id,
                 'job_id': job_id,
                 'force_sync': force_sync,
+                'quality_min_score': quality_min_score,
+                'quality_max_offset_seconds': quality_max_offset_seconds,
+                'quality_max_framerate_deviation': quality_max_framerate_deviation,
             }
             try:
                 subsync.sync(**sync_kwargs)
-                if callback:
+                if callback and callable(callback):
                     callback()
             except Exception:
                 logging.exception(f'BAZARR an unhandled exception occurs during the synchronization process for this '
@@ -83,8 +105,9 @@ def sync_subtitles(video_path,
             else:
                 return True
             finally:
-                jobs_queue.update_job_progress(job_id=job_id, progress_value="max")
-                jobs_queue.update_job_name(job_id=job_id, new_job_name=f"Synced {srt_path}")
+                if job_id:
+                    jobs_queue.update_job_progress(job_id=job_id, progress_value="max")
+                    jobs_queue.update_job_name(job_id=job_id, new_job_name=f"Synced {srt_path}")
                 del subsync
                 gc.collect()
         else:
@@ -92,3 +115,17 @@ def sync_subtitles(video_path,
                           f"threshold value: {subsync_threshold}%")
 
     return False
+
+
+def _float_or_default(value, default, warning_label):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        logging.warning(f"BAZARR invalid {warning_label} value: {value}, using default {default}")
+        return default
+
+
+def _create_subsyncer():
+    from subtitles.tools.subsyncer import SubSyncer
+
+    return SubSyncer()

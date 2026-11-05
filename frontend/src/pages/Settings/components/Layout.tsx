@@ -1,8 +1,9 @@
-import { FunctionComponent, ReactNode, useCallback, useMemo } from "react";
+import { FunctionComponent, ReactNode, useMemo } from "react";
 import { Badge, Container, Group, LoadingOverlay } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { useDocumentTitle } from "@mantine/hooks";
-import { faSave } from "@fortawesome/free-solid-svg-icons";
+import { faRotateLeft, faSave } from "@fortawesome/free-solid-svg-icons";
+import { isEqual } from "lodash";
 import { useSettingsMutation, useSystemSettings } from "@/apis/hooks";
 import { useInstanceName } from "@/apis/hooks/site";
 import { Toolbox } from "@/components";
@@ -13,19 +14,27 @@ import {
   runHooks,
 } from "@/pages/Settings/utilities/FormValues";
 import { SettingsProvider } from "@/pages/Settings/utilities/SettingsProvider";
-import { useOnValueChange } from "@/utilities";
 import { LOG } from "@/utilities/console";
 import { usePrompt } from "@/utilities/routers";
 
 interface Props {
   name: string;
   children: ReactNode;
+  /** True while an in-page editor owns the content (e.g. a profile editor). */
+  isEditorActive?: boolean;
+  /** True when that editor holds changes that have not been applied yet. */
+  isDraftDirty?: boolean;
 }
 
 const Layout: FunctionComponent<Props> = (props) => {
-  const { children, name } = props;
+  const {
+    children,
+    name,
+    isEditorActive = false,
+    isDraftDirty = false,
+  } = props;
 
-  const { data: settings, isLoading, isRefetching } = useSystemSettings();
+  const { data: settings, isLoading } = useSystemSettings();
   const { mutate, isPending: isMutating } = useSettingsMutation();
 
   const form = useForm<FormValues>({
@@ -35,33 +44,59 @@ const Layout: FunctionComponent<Props> = (props) => {
     },
   });
 
-  useOnValueChange(isRefetching, (value) => {
-    if (!value) {
-      form.reset();
+  const submit = (values: FormValues) => {
+    // An in-page editor must be applied or cancelled before settings are saved.
+    if (isEditorActive) {
+      return;
     }
-  });
 
-  const submit = useCallback(
-    (values: FormValues) => {
-      const { settings, hooks } = values;
+    const { settings, hooks } = values;
 
-      if (Object.keys(settings).length > 0) {
-        const settingsToSubmit = { ...settings };
-        runHooks(hooks, settingsToSubmit);
-        LOG("info", "submitting settings", settingsToSubmit);
-        mutate(settingsToSubmit);
-      }
-    },
-    [mutate],
-  );
+    if (Object.keys(settings).length > 0) {
+      const submittedSettings = { ...settings };
+      const settingsToSubmit = { ...settings };
+      runHooks(hooks, settingsToSubmit);
+      LOG("info", "submitting settings", settingsToSubmit);
+      mutate(settingsToSubmit, {
+        onSuccess: () => {
+          // Clear only successfully saved values that have not changed again
+          // since submission. External refetches never discard local edits.
+          form.setValues((current) => {
+            const nextSettings = { ...current.settings };
+            const nextHooks = { ...current.hooks };
+
+            for (const [key, submittedValue] of Object.entries(
+              submittedSettings,
+            )) {
+              if (isEqual(current.settings?.[key], submittedValue)) {
+                delete nextSettings[key];
+                delete nextHooks[key];
+              }
+            }
+
+            return {
+              ...current,
+              settings: nextSettings,
+              hooks: nextHooks,
+            };
+          });
+        },
+      });
+    }
+  };
 
   const totalStagedCount = useMemo(() => {
     return Object.keys(form.values.settings).length;
   }, [form.values.settings]);
 
+  const isLeaveBlocked =
+    totalStagedCount > 0 || (isEditorActive && isDraftDirty);
+
   usePrompt(
-    totalStagedCount > 0,
-    `You have ${totalStagedCount} unsaved changes, are you sure you want to leave?`,
+    isLeaveBlocked,
+    totalStagedCount > 0
+      ? `You have ${totalStagedCount} unsaved changes, are you sure you want to leave?`
+      : "You have an unsaved profile edit, are you sure you want to leave?",
   );
 
   useDocumentTitle(`${name} - ${useInstanceName()} (Settings)`);
@@ -76,8 +111,9 @@ const Layout: FunctionComponent<Props> = (props) => {
               <Toolbox.Button
                 type="submit"
                 icon={faSave}
+                data-onboarding="settings-save"
                 loading={isMutating}
-                disabled={totalStagedCount === 0}
+                disabled={isEditorActive || totalStagedCount === 0}
                 rightSection={
                   <Badge size="xs" radius="sm" hidden={totalStagedCount === 0}>
                     {totalStagedCount}
@@ -85,6 +121,18 @@ const Layout: FunctionComponent<Props> = (props) => {
                 }
               >
                 Save
+              </Toolbox.Button>
+              <Toolbox.Button
+                type="button"
+                icon={faRotateLeft}
+                disabled={
+                  isEditorActive || totalStagedCount === 0 || isMutating
+                }
+                onClick={() => {
+                  form.reset();
+                }}
+              >
+                Discard
               </Toolbox.Button>
             </Group>
           </Toolbox>

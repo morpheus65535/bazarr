@@ -1,4 +1,4 @@
-import { FunctionComponent, useMemo } from "react";
+import { FunctionComponent, ReactNode, useMemo } from "react";
 import {
   Badge,
   Card,
@@ -14,6 +14,26 @@ import { useSystemReleases } from "@/apis/hooks";
 import { useInstanceName } from "@/apis/hooks/site";
 import { QueryOverlay } from "@/components/async";
 import { BuildKey } from "@/utilities";
+
+const parseIssueLinks = (text: string): ReactNode[] => {
+  const parts = text.split(/(#\d+)/);
+  return parts.map((part, idx) => {
+    if (/^#\d+$/.test(part)) {
+      const issueNumber = part.slice(1);
+      return (
+        <a
+          key={idx}
+          href={`https://github.com/morpheus65535/bazarr/issues/${issueNumber}`}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {part}
+        </a>
+      );
+    }
+    return part;
+  });
+};
 
 const SystemReleasesView: FunctionComponent = () => {
   const releases = useSystemReleases();
@@ -59,7 +79,7 @@ const ReleaseCard: FunctionComponent<ReleaseInfo> = ({
       <Text>From newest to oldest:</Text>
       <List>
         {infos.map((v, idx) => (
-          <List.Item key={idx}>{v}</List.Item>
+          <List.Item key={idx}>{parseIssueLinks(v)}</List.Item>
         ))}
       </List>
     </Card>

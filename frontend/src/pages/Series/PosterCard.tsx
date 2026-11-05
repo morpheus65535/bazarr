@@ -49,14 +49,14 @@ const SeriesPosterCard: FunctionComponent<Props> = ({
       to={`/series/${sonarrSeriesId}`}
       header={
         <Group gap="xs" wrap="nowrap">
-          <FontAwesomeIcon
-            title={monitored ? "monitored" : "unmonitored"}
-            icon={monitored ? faBookmark : farBookmark}
-          ></FontAwesomeIcon>
-          <FontAwesomeIcon
-            title={ended ? "Ended" : "Continuing"}
-            icon={ended ? faStop : faPlay}
-          ></FontAwesomeIcon>
+          <Tooltip label={monitored ? "Monitored" : "Unmonitored"}>
+            <FontAwesomeIcon
+              icon={monitored ? faBookmark : farBookmark}
+            ></FontAwesomeIcon>
+          </Tooltip>
+          <Tooltip label={ended ? "Ended" : "Continuing"}>
+            <FontAwesomeIcon icon={ended ? faStop : faPlay}></FontAwesomeIcon>
+          </Tooltip>
         </Group>
       }
       actions={

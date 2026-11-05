@@ -142,6 +142,7 @@ describe("SettingsRadarrView", () => {
       expect.objectContaining({
         "settings-radarr-base_url": "/newbase",
       }),
+      expect.objectContaining({ onSuccess: expect.any(Function) }),
     );
   });
 });

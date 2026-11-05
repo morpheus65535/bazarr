@@ -52,6 +52,57 @@ describe("Settings hooks", () => {
       expect(result.current.value).toBe("staged");
       expect(result.current.rest).toEqual({});
     });
+
+    it("update stages a value that differs from the original", () => {
+      const setValues = vitest.fn();
+      const form = createForm({ settings: {}, hooks: {} }, setValues);
+      const { result } = renderHook(
+        () => useBaseInput({ settingKey: "settings-test-key" }),
+        {
+          wrapper: createWrapper(form, settings),
+        },
+      );
+
+      result.current.update("changed");
+
+      const updater = setValues.mock.calls[0][0] as (
+        values: FormValues,
+      ) => FormValues;
+      expect(updater({ settings: {}, hooks: {} })).toEqual({
+        settings: { "settings-test-key": "changed" },
+        hooks: {},
+      });
+    });
+
+    it("update unstages a value reverted back to the original", () => {
+      const setValues = vitest.fn();
+      const form = createForm(
+        {
+          settings: { "settings-test-key": "staged" },
+          hooks: { "settings-test-key": (v) => v },
+        },
+        setValues,
+      );
+      const { result } = renderHook(
+        () => useBaseInput({ settingKey: "settings-test-key" }),
+        {
+          wrapper: createWrapper(form, settings),
+        },
+      );
+
+      result.current.update("original");
+
+      expect(setValues).toHaveBeenCalled();
+      const updater = setValues.mock.calls.at(-1)![0] as (
+        values: FormValues,
+      ) => FormValues;
+      expect(
+        updater({
+          settings: { "settings-test-key": "staged", other: 1 },
+          hooks: { "settings-test-key": (v) => v },
+        }),
+      ).toEqual({ settings: { other: 1 }, hooks: {} });
+    });
   });
 
   describe("useSettingValue", () => {

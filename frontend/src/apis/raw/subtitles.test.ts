@@ -1,4 +1,4 @@
-import { http, HttpResponse } from "msw";
+import { http, HttpResponse } from "msw/http";
 import { describe, expect, it } from "vitest";
 import api from "@/apis/raw";
 import server from "@/tests/mocks/node";

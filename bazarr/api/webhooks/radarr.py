@@ -3,6 +3,7 @@ import logging
 
 from flask_restx import Resource, Namespace, fields
 
+from app.config import settings
 from app.database import TableMovies, database, select
 from radarr.sync.movies import update_one_movie
 from subtitles.mass_download import movies_download_subtitles
@@ -103,6 +104,10 @@ class WebHooksRadarr(Resource):
             return message, 200
 
         store_subtitles_movie(movie.radarrId)
-        movies_download_subtitles(no=movie.radarrId)
+        movies_download_subtitles(
+            no=movie.radarrId,
+            fallback_allowed=settings.general.use_whisper_fallback
+            and settings.general.use_whisper_fallback_on_import,
+        )
 
         return "Finished processing subtitles.", 200

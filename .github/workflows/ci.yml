@@ -7,10 +7,12 @@ on:
       - frontend/**
       - bazarr/**
       - libs/**
+      - typings/**
       - migrations/**
       - bazarr.py
       - requirements.txt
       - dev-requirements.txt
+      - pyproject.toml
       - .github/workflows/ci.yml
   pull_request:
     branches: [development]
@@ -28,21 +30,18 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
 
-      - name: Cache node_modules
-        uses: actions/cache@v6
-        with:
-          path: "${{ env.UI_DIRECTORY }}/node_modules"
-          key: ${{ runner.os }}-modules-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: ${{ runner.os }}-modules-
-
       - name: Setup NodeJS
         uses: actions/setup-node@v7
         with:
           node-version-file: "${{ env.UI_DIRECTORY }}/.nvmrc"
+          cache: npm
+          cache-dependency-path: "${{ env.UI_DIRECTORY }}/package-lock.json"
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci --no-audit --no-fund
         working-directory: ${{ env.UI_DIRECTORY }}
+        env:
+          HUSKY: 0
 
       - name: Check Types
         run: npm run check:ts
@@ -104,11 +103,15 @@ jobs:
       - name: Install test dependencies
         run: pip install -r dev-requirements.txt
 
+      - name: Check utility types
+        if: matrix.python-version == '3.14'
+        run: basedpyright
+
       - name: Install media binaries
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg mediainfo
 
       - name: Test with pytest
-        run: pytest tests/bazarr/ --junitxml report.xml
+        run: pytest tests/bazarr/ tests/helpers/ --junitxml report.xml
 
       - name: Test report generation
         uses: dorny/test-reporter@v3

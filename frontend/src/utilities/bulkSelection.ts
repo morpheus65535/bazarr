@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useResetOnChange } from "@/utilities/resetOnChange";
 
 export interface BulkSelection {
@@ -35,7 +35,10 @@ export const useBulkSelection = (resetKey: string): BulkSelection => {
   // Read via ref (not the closed-over value) so setActive's updater stays
   // pure; safe since toggleActive is only ever a live, synchronous click.
   const activeRef = useRef(active);
-  activeRef.current = active;
+
+  useEffect(() => {
+    activeRef.current = active;
+  }, [active]);
 
   const toggleActive = useCallback(() => {
     if (activeRef.current) {

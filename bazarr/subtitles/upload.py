@@ -48,6 +48,21 @@ def _get_profile_original_format(profile_id):
     return bool(profile.get("originalFormat", 0))
 
 
+def _get_audio_language_payload(audio_languages):
+    empty_audio_language = {'name': '', 'code2': '', 'code3': ''}
+    if not isinstance(audio_languages, list) or not audio_languages:
+        return empty_audio_language
+
+    first_audio_language = audio_languages[0]
+    if not isinstance(first_audio_language, dict):
+        return empty_audio_language
+
+    return {
+        key: value if isinstance(value := first_audio_language.get(key), str) else ''
+        for key in empty_audio_language
+    }
+
+
 def manual_upload_subtitle(path, language, forced, hi, media_type, subtitle, filename, audio_language, job_id=None,
                            sonarrSeriesId=None, sonarrEpisodeId=None, radarrId=None, sportarrLeagueId=None,
                            sportsEventId=None):
@@ -122,11 +137,7 @@ def manual_upload_subtitle(path, language, forced, hi, media_type, subtitle, fil
         else:
             return
 
-    audio_language = get_audio_profile_languages(audio_language)
-    if len(audio_language) and isinstance(audio_language[0], dict):
-        audio_language = audio_language[0]
-    else:
-        audio_language = {'name': '', 'code2': '', 'code3': ''}
+    audio_language = _get_audio_language_payload(get_audio_profile_languages(audio_language))
 
     sub = Subtitle(
         lang_obj,
@@ -160,7 +171,7 @@ def manual_upload_subtitle(path, language, forced, hi, media_type, subtitle, fil
                                          formats=sub_format if use_original_format else ("srt",),
                                          path_decoder=force_unicode)
     except Exception as e:
-        logging.exception(f'BAZARR Error saving Subtitles file to disk for this file {path}: {repr(e)}')
+        logging.exception(f'BAZARR Error saving Subtitles file to disk for this file {path}: {str(e)}')
         return
 
     if len(saved_subtitles) < 1:
@@ -189,12 +200,12 @@ def manual_upload_subtitle(path, language, forced, hi, media_type, subtitle, fil
     if use_postprocessing:
         # A league takes the series slot and an event takes the episode slot. A
         # sports event is the equivalent of an episode.
-        command = pp_replace(postprocessing_cmd, path, subtitle_path, uploaded_language, uploaded_language_code2,
-                             uploaded_language_code3, audio_language['name'], audio_language['code2'],
-                             audio_language['code3'], 100, "1", "manual", "user", "unknown",
-                             sonarrSeriesId or sportarrLeagueId,
-                             sonarrEpisodeId or sportsEventId or radarrId,)
-        postprocessing(command, path)
+        args = pp_replace(postprocessing_cmd, path, subtitle_path, uploaded_language, uploaded_language_code2,
+                          uploaded_language_code3, audio_language['name'], audio_language['code2'],
+                          audio_language['code3'], 100, "1", "manual", "user", "unknown",
+                          sonarrSeriesId or sportarrLeagueId,
+                          sonarrEpisodeId or sportsEventId or radarrId,)
+        postprocessing(args, path)
         set_chmod(subtitles_path=subtitle_path)
 
     if media_type == 'series':

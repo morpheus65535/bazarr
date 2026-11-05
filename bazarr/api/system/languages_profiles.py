@@ -12,7 +12,7 @@ api_ns_system_languages_profiles = Namespace('System Languages Profiles', descri
 @api_ns_system_languages_profiles.route('system/languages/profiles')
 class LanguagesProfiles(Resource):
     @authenticate
-    @api_ns_system_languages_profiles.doc(parser=None)
+    @api_ns_system_languages_profiles.expect(None)
     @api_ns_system_languages_profiles.response(200, 'Success')
     @api_ns_system_languages_profiles.response(401, 'Not Authenticated')
     def get(self):

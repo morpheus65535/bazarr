@@ -16,12 +16,14 @@ import { faListCheck } from "@fortawesome/free-solid-svg-icons";
 import {
   faArrowRotateLeft,
   faGear,
+  faGraduationCap,
   faPowerOff,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useSystem, useSystemJobs, useSystemSettings } from "@/apis/hooks";
 import { Action, Search } from "@/components";
 import { useNavbar } from "@/contexts/Navbar";
+import { useOnboarding } from "@/contexts/Onboarding";
 import { useIsOnline } from "@/contexts/Online";
 import { Environment, useGotoHomepage } from "@/utilities";
 import JobsManager from "./JobsManager";
@@ -38,6 +40,8 @@ const AppHeader: FunctionComponent = () => {
   const offline = !online;
 
   const { shutdown, restart, logout } = useSystem();
+
+  const { startTour } = useOnboarding();
 
   const goHome = useGotoHomepage();
 
@@ -106,6 +110,13 @@ const AppHeader: FunctionComponent = () => {
                 ></Action>
               </Menu.Target>
               <Menu.Dropdown>
+                <Menu.Item
+                  leftSection={<FontAwesomeIcon icon={faGraduationCap} />}
+                  onClick={() => startTour()}
+                >
+                  Guided setup
+                </Menu.Item>
+                <Divider></Divider>
                 <Menu.Item
                   leftSection={<FontAwesomeIcon icon={faArrowRotateLeft} />}
                   onClick={() => restart()}

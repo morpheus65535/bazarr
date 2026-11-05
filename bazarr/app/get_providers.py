@@ -236,6 +236,15 @@ _FFPROBE_BINARY = get_binary("ffprobe")
 _FFMPEG_BINARY = get_binary("ffmpeg")
 
 
+def _get_mediainfo_binary():
+    try:
+        return get_binary("mediainfo")
+    except Exception:
+        logging.warning("BAZARR could not find the mediainfo binary; embedded subtitles "
+                        "language detection will fall back to ffprobe.")
+        return None
+
+
 def get_providers_auth():
     return {
         'addic7ed': {
@@ -260,7 +269,8 @@ def get_providers_auth():
                              'include_machine_translated': settings.opensubtitlescom.include_machine_translated,
                              'api_key': 's38zmzVlW7IlYruWi7mHwDYl2SfMQoC1'
                              },
-        'napiprojekt': {'only_authors': settings.napiprojekt.only_authors,
+        'napiprojekt': {'hash_only': settings.napiprojekt.hash_only,
+                        'only_authors': settings.napiprojekt.only_authors,
                         'only_real_names': settings.napiprojekt.only_real_names},
         'legendasdivx': {
             'username': settings.legendasdivx.username,
@@ -316,6 +326,7 @@ def get_providers_auth():
             'timeout': settings.embeddedsubtitles.timeout,
             'unknown_as_fallback': settings.embeddedsubtitles.unknown_as_fallback,
             'fallback_lang': settings.embeddedsubtitles.fallback_lang,
+            'mediainfo_path': _get_mediainfo_binary() if settings.embeddedsubtitles.use_mediainfo else None,
         },
         'karagarga': {
             'username': settings.karagarga.username,
@@ -344,6 +355,7 @@ def get_providers_auth():
             'search_threshold': settings.animetosho.search_threshold,
         },
         "animetosho_xyz": {},
+        "tsukihime": {},
         "subdl": {
             'api_key': settings.subdl.api_key,
             'ai_translate': settings.subdl.ai_translate,
@@ -359,6 +371,10 @@ def get_providers_auth():
         'subsarr': {
             'base_url': settings.subsarr.base_url,
         },
+        'subsdump': {
+            'base_url': settings.subsdump.base_url,
+            'api_key': settings.subsdump.api_key,
+        },
         'animesubinfo': {},
         'subx':
             {
@@ -366,11 +382,16 @@ def get_providers_auth():
             },
         'subsro': {
             'api_key': settings.subsro.api_key,
-        }
+        },
+        'subtitlecat': {
+            'include_machine_translated': settings.subtitlecat.include_machine_translated,
+        },
     }
 
 
-def _handle_mgb(name, exception, ids, language):
+# download.py doesn't have an exception with the id and media type on it, so can't take an exception 
+# as _handle_mgb() does. 
+def blacklist_subtitle(name, subs_id, media_type, ids, language):
     if language.forced:
         language_str = f'{language.basename}:forced'
     elif language.hi:
@@ -379,11 +400,20 @@ def _handle_mgb(name, exception, ids, language):
         language_str = language.basename
 
     if ids:
-        if exception.media_type == "series":
-            if 'sonarrSeriesId' in ids and 'sonarrEpsiodeId' in ids:
-                blacklist_log(ids['sonarrSeriesId'], ids['sonarrEpisodeId'], name, exception.id, language_str)
+        if media_type == "series":
+            if ids.get('sonarrSeriesId') and ids.get('sonarrEpisodeId'):
+                blacklist_log(ids['sonarrSeriesId'], ids['sonarrEpisodeId'], name, subs_id, language_str)
+            else:
+                logging.debug(f'BAZARR cannot blacklist subtitle {subs_id} from {name}: unknown series or '
+                              f'episode id')
+        elif ids.get('radarrId'):
+            blacklist_log_movie(ids['radarrId'], name, subs_id, language_str)
         else:
-            blacklist_log_movie(ids['radarrId'], name, exception.id, language_str)
+            logging.debug(f'BAZARR cannot blacklist subtitle {subs_id} from {name}: unknown id')
+
+
+def _handle_mgb(name, exception, ids, language):
+    blacklist_subtitle(name, exception.id, exception.media_type, ids, language)
 
 
 def provider_throttle(name, exception, ids=None, language=None):

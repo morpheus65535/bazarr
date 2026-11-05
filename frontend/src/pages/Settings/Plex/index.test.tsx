@@ -92,6 +92,15 @@ const mockedNotificationsShow = notifications.show as Mock;
 const mockLogoutMutate = vitest.fn((_, options) => {
   options?.onSuccess?.();
 });
+
+const availableServer = {
+  machineIdentifier: "server-1",
+  name: "My Server",
+  platform: "Plex",
+  version: "1.0",
+  bestConnection: { uri: "http://localhost:32400", local: true },
+  connections: [{ uri: "http://localhost:32400", local: true }],
+};
 const mockCreateWebhook = vitest.fn();
 const mockDeleteWebhook = vitest.fn();
 const mockServerSelectionMutate = vitest.fn();
@@ -248,7 +257,17 @@ describe("SettingsPlexView", async () => {
   });
 
   it("should render Plex settings when Plex is enabled", async () => {
-    await renderPage();
+    await renderPage(undefined, {
+      auth: {
+        data: { valid: true, authMethod: "oauth" },
+        isLoading: false,
+        error: null,
+      },
+      servers: {
+        data: [availableServer],
+        error: null,
+      },
+    });
 
     expect(
       screen.getByRole("heading", { name: "Movie Library" }),
@@ -259,6 +278,21 @@ describe("SettingsPlexView", async () => {
     expect(
       screen.getByRole("heading", { name: "Automation" }),
     ).toBeInTheDocument();
+  });
+
+  it("should hide library and automation settings until connected to Plex", async () => {
+    // Enabled but not authenticated (default mocks)
+    await renderPage();
+
+    expect(
+      screen.queryByRole("heading", { name: "Movie Library" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Series Library" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Automation" }),
+    ).not.toBeInTheDocument();
   });
 
   it("should show Plex OAuth connect state when not authenticated", async () => {
@@ -283,9 +317,8 @@ describe("SettingsPlexView", async () => {
       },
     });
 
-    expect(
-      screen.getByText("Connected as testuser (test@example.com)"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("testuser")).toBeInTheDocument();
+    expect(screen.getByText("(test@example.com)")).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Disconnect from Plex" }),
     ).toBeInTheDocument();
@@ -305,18 +338,58 @@ describe("SettingsPlexView", async () => {
     ).toBeInTheDocument();
   });
 
-  it("should show server connection status when authenticated", async () => {
+  it("should show a testing indicator only while fetching servers", async () => {
     await renderPage(undefined, {
       auth: {
         data: { valid: true, authMethod: "oauth" },
         isLoading: false,
         error: null,
       },
+      servers: {
+        isFetching: true,
+      },
     });
 
     expect(
       screen.getByText("Testing server connections..."),
     ).toBeInTheDocument();
+  });
+
+  it("should offer a refresh action when no servers were found", async () => {
+    const refetchServers = vitest.fn();
+
+    await renderPage(undefined, {
+      auth: {
+        data: { valid: true, authMethod: "oauth" },
+        isLoading: false,
+        error: null,
+      },
+      servers: {
+        data: [],
+        error: null,
+        refetch: refetchServers,
+        isFetching: false,
+      },
+    });
+
+    expect(screen.getByText("No servers found.")).toBeInTheDocument();
+
+    // Server-dependent settings stay hidden until a server is available
+    expect(
+      screen.queryByRole("heading", { name: "Movie Library" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Series Library" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Generate Configuration" }),
+    ).not.toBeInTheDocument();
+
+    const refreshButton = screen.getByRole("button", { name: "Refresh" });
+
+    await userEvent.click(refreshButton);
+
+    expect(refetchServers).toHaveBeenCalledTimes(1);
   });
 
   it("should show a single server without manual selection", async () => {
@@ -551,6 +624,10 @@ describe("SettingsPlexView", async () => {
         isLoading: false,
         error: null,
       },
+      servers: {
+        data: [availableServer],
+        error: null,
+      },
       autopulse: {
         data: null,
         refetch: mockRefetchAutopulse,
@@ -765,6 +842,10 @@ describe("SettingsPlexView", async () => {
         isLoading: false,
         error: null,
       },
+      servers: {
+        data: [availableServer],
+        error: null,
+      },
       autopulse: {
         data: null,
         refetch: mockRefetchAutopulse,
@@ -818,6 +899,65 @@ describe("SettingsPlexView", async () => {
 
     expect(windowOpen).toHaveBeenCalledTimes(1);
     expect(closeMock).toHaveBeenCalledTimes(1);
+
+    Object.defineProperty(window, "open", {
+      value: window.open,
+      configurable: true,
+    });
+  });
+
+  it("should complete OAuth again on a subsequent authentication attempt", async () => {
+    const closeMock = vitest.fn();
+    const windowOpen = vitest.fn(
+      () => ({ close: closeMock }) as unknown as Window,
+    );
+    Object.defineProperty(window, "open", {
+      value: windowOpen,
+      configurable: true,
+    });
+
+    mockedUsePlexPinMutation.mockReturnValue({
+      mutateAsync: vitest.fn().mockResolvedValue({
+        data: { pinId: "123", code: "ABC", authUrl: "http://plex.test/auth" },
+      }),
+    });
+
+    const { rerender } = await renderPage();
+
+    // The pin check only reports authenticated once the "server" flips it,
+    // mirroring the real polling flow. Set after renderPage, whose
+    // setupMocks would otherwise clobber the implementation.
+    const pinState = { authenticated: false };
+    mockedUsePlexPinCheckQuery.mockImplementation(() => ({
+      data: pinState.authenticated ? { authenticated: true } : null,
+    }));
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Connect to Plex" }),
+    );
+    expect(windowOpen).toHaveBeenCalledTimes(1);
+
+    pinState.authenticated = true;
+    rerender(<SettingsPlexView />);
+    await waitFor(() => expect(closeMock).toHaveBeenCalledTimes(1));
+
+    // Second attempt (e.g. after logging out and reconnecting): the
+    // one-shot success handling must rearm and close the new window too.
+    pinState.authenticated = false;
+    mockedUsePlexPinMutation.mockReturnValue({
+      mutateAsync: vitest.fn().mockResolvedValue({
+        data: { pinId: "456", code: "DEF", authUrl: "http://plex.test/auth2" },
+      }),
+    });
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Connect to Plex" }),
+    );
+    expect(windowOpen).toHaveBeenCalledTimes(2);
+
+    pinState.authenticated = true;
+    rerender(<SettingsPlexView />);
+    await waitFor(() => expect(closeMock).toHaveBeenCalledTimes(2));
 
     Object.defineProperty(window, "open", {
       value: window.open,
@@ -1126,8 +1266,10 @@ describe("SettingsPlexView", async () => {
 
   it("should copy the Autopulse configuration in a secure context", async () => {
     const writeText = vitest.fn().mockResolvedValue(undefined);
-    Object.assign(navigator, {
-      clipboard: { writeText },
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText },
+      configurable: true,
+      writable: true,
     });
     Object.defineProperty(window, "isSecureContext", {
       value: true,
@@ -1138,6 +1280,10 @@ describe("SettingsPlexView", async () => {
       auth: {
         data: { valid: true, authMethod: "oauth" },
         isLoading: false,
+        error: null,
+      },
+      servers: {
+        data: [availableServer],
         error: null,
       },
       autopulse: {
@@ -1176,6 +1322,10 @@ describe("SettingsPlexView", async () => {
       auth: {
         data: { valid: true, authMethod: "oauth" },
         isLoading: false,
+        error: null,
+      },
+      servers: {
+        data: [availableServer],
         error: null,
       },
       autopulse: {
@@ -1221,6 +1371,10 @@ describe("SettingsPlexView", async () => {
         isLoading: false,
         error: null,
       },
+      servers: {
+        data: [availableServer],
+        error: null,
+      },
       autopulse: {
         data: {
           configYaml: "",
@@ -1254,10 +1408,12 @@ describe("SettingsPlexView", async () => {
   });
 
   it("should show an error when copying the Autopulse configuration fails", async () => {
-    Object.assign(navigator, {
-      clipboard: {
+    Object.defineProperty(navigator, "clipboard", {
+      value: {
         writeText: vitest.fn().mockRejectedValue(new Error("copy failed")),
       },
+      configurable: true,
+      writable: true,
     });
     Object.defineProperty(window, "isSecureContext", {
       value: true,
@@ -1268,6 +1424,10 @@ describe("SettingsPlexView", async () => {
       auth: {
         data: { valid: true, authMethod: "oauth" },
         isLoading: false,
+        error: null,
+      },
+      servers: {
+        data: [availableServer],
         error: null,
       },
       autopulse: {

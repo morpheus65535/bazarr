@@ -113,8 +113,10 @@ class HearingImpaired(SubtitleTextModification):
                      "", name="HI_music_symbols_only"),
 
         # remove music entries
+        # the pattern is quadratic in the entry length (DOTALL .+), which freezes everything on long entries such as
+        # ASS drawings; every alternative needs a music symbol, so skip it when there is none
         NReProcessor(re.compile(r'(?ums)(^[-\s>~]*[*#¶♫♪]+\s*.+|.+\s*[*#¶♫♪]+\s*$|.+\s*[*#¶♫♪]+[)\]])'),
-                     "", name="HI_music", entry=True),
+                     "", name="HI_music", entry=True, precheck=re.compile(r'[*#¶♫♪]')),
     ]
 
 

@@ -111,35 +111,34 @@ class SportsBlacklist(Resource):
         if not eventInfo:
             return 'Sports event not found', 404
 
-        media_path = eventInfo.path
         subtitles_path = path_mappings.path_replace_reverse_sports(args.get('subtitles_path'))
-        indexed_subtitle = database.execute(
-            select(TableSportsEventsSubtitles.id)
-            .where(TableSportsEventsSubtitles.sportsEventId == sports_event_id)
-            .where(TableSportsEventsSubtitles.sportarrLeagueId == sportarr_league_id)
-            .where(TableSportsEventsSubtitles.path == subtitles_path)) \
-            .first()
-        if not indexed_subtitle:
-            return 'Subtitle not found for sports event', 404
 
-        blacklist_log_sports(sportarr_league_id=sportarr_league_id,
-                             sports_event_id=sports_event_id,
-                             provider=provider,
-                             subs_id=subs_id,
-                             language=language)
-        if delete_subtitles(media_type='sports',
-                            language=language,
-                            forced=False,
-                            hi=False,
-                            media_path=path_mappings.path_replace_sports(media_path),
-                            subtitles_path=subtitles_path,
-                            sportarr_league_id=sportarr_league_id,
-                            sports_event_id=sports_event_id):
-            sports_event_download_subtitles(no=sports_event_id)
-            event_stream(type='sports-event-history')
-            return '', 200
-        else:
-            return 'Subtitles file not found or permission issue.', 500
+        subtitles_path_found = database.execute(
+            select(TableSportsEventsSubtitles)
+            .where(TableSportsEventsSubtitles.path == subtitles_path)
+            .where(TableSportsEventsSubtitles.sportarrLeagueId == sportarr_league_id)
+            .where(TableSportsEventsSubtitles.sportsEventId == sports_event_id)
+        ).first()
+
+        if subtitles_path_found:
+            if delete_subtitles(media_type='sports',
+                                language=language,
+                                forced=False,
+                                hi=False,
+                                media_path=path_mappings.path_replace_sports(eventInfo.path),
+                                subtitles_path=subtitles_path,
+                                sportarr_league_id=sportarr_league_id,
+                                sports_event_id=sports_event_id):
+                blacklist_log_sports(sportarr_league_id=sportarr_league_id,
+                                     sports_event_id=sports_event_id,
+                                     provider=provider,
+                                     subs_id=subs_id,
+                                     language=language)
+                sports_event_download_subtitles(no=sports_event_id)
+                event_stream(type='sports-event-history')
+                return '', 200
+
+        return 'Subtitles file not found or permission issue.', 500
 
     delete_request_parser = reqparse.RequestParser()
     delete_request_parser.add_argument('all', type=str, required=False, help='Empty sports events subtitles blacklist')

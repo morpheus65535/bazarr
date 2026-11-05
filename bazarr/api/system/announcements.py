@@ -12,7 +12,7 @@ api_ns_system_announcements = Namespace('System Announcements', description='Lis
 @api_ns_system_announcements.route('system/announcements')
 class SystemAnnouncements(Resource):
     @authenticate
-    @api_ns_system_announcements.doc(parser=None)
+    @api_ns_system_announcements.expect(None)
     @api_ns_system_announcements.response(200, 'Success')
     @api_ns_system_announcements.response(401, 'Not Authenticated')
     def get(self):
@@ -23,7 +23,7 @@ class SystemAnnouncements(Resource):
     post_request_parser.add_argument('hash', type=str, required=True, help='hash of the announcement to dismiss')
 
     @authenticate
-    @api_ns_system_announcements.doc(parser=post_request_parser)
+    @api_ns_system_announcements.expect(post_request_parser)
     @api_ns_system_announcements.response(204, 'Success')
     @api_ns_system_announcements.response(401, 'Not Authenticated')
     def post(self):

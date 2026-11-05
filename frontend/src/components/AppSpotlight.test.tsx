@@ -7,6 +7,7 @@ import { useRouteItems } from "@/Router/useRouteItems";
 import { customRender } from "@/tests";
 import { useDebouncedValue } from "@/utilities";
 import AppSpotlight from "./AppSpotlight";
+import { buildNavActions } from "./buildNavActions";
 
 vitest.mock("react-router", async (importOriginal) => {
   const actual = await importOriginal<typeof import("react-router")>();
@@ -75,6 +76,42 @@ describe("AppSpotlight", () => {
     customRender(<AppSpotlight />);
 
     expect(mockUseServerSearch).toHaveBeenCalledWith("", false);
+  });
+
+  it("indexes hidden settings tab pages but skips redirects and disabled sections", () => {
+    const navigate = vitest.fn();
+    const routes = [
+      {
+        path: "settings",
+        name: "Settings",
+        children: [
+          {
+            path: "integrations",
+            name: "Integrations",
+            element: () => null,
+            children: [
+              { index: true, element: null },
+              {
+                path: "sonarr",
+                name: "Sonarr",
+                hidden: true,
+                element: () => null,
+              },
+              { path: "general", hidden: true, element: () => null },
+            ],
+          },
+        ],
+      },
+      { path: "series", name: "Series", hidden: true, element: () => null },
+    ] as unknown as CustomRouteObject[];
+
+    const actions = buildNavActions(routes, navigate);
+    const ids = actions.map((a) => a.id);
+
+    expect(ids).toContain("/settings/integrations");
+    expect(ids).toContain("/settings/integrations/sonarr");
+    expect(ids).not.toContain("/settings/integrations/general");
+    expect(ids).not.toContain("/series");
   });
 
   it("renders search actions for series and movies", () => {

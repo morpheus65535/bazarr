@@ -5,7 +5,45 @@ interface RuleNode {
 
 interface RuleContext {
   report(descriptor: { message: string; node: RuleNode }): void;
+  filename: string;
 }
+
+const dirName = (path: string): string => path.slice(0, path.lastIndexOf("/"));
+
+const resolveRelative = (fromDir: string, relative: string): string => {
+  const stack: string[] = [];
+  for (const part of `${fromDir}/${relative}`.split("/")) {
+    if (part === "" || part === ".") {
+      continue;
+    }
+    if (part === "..") {
+      stack.pop();
+    } else {
+      stack.push(part);
+    }
+  }
+  return `/${stack.join("/")}`;
+};
+
+const resolveModuleScssImport = (
+  filename: string,
+  source: string,
+): string | null => {
+  if (source.startsWith("./") || source.startsWith("../")) {
+    return resolveRelative(dirName(filename), source);
+  }
+
+  if (source.startsWith("@/")) {
+    const srcIndex = filename.indexOf("/src/");
+    if (srcIndex === -1) {
+      return null;
+    }
+    const srcRoot = filename.slice(0, srcIndex + 4);
+    return `${srcRoot}/${source.slice(2)}`;
+  }
+
+  return null;
+};
 
 const isUnderscored = (name: string): boolean => {
   const trimmed = name.replace(/^_+|_+$/g, "");
@@ -90,6 +128,43 @@ const plugin = {
           FunctionDeclaration(node: RuleNode) {
             context.report({
               message: "Use const instead of function declaration.",
+              node,
+            });
+          },
+        };
+      },
+    },
+    "no-cross-module-scss-import": {
+      create(context: RuleContext) {
+        return {
+          ImportDeclaration(node: RuleNode) {
+            const source = node.source as RuleNode;
+            const value = source.value as string;
+
+            if (!/\.module\.(scss|css)$/.test(value)) {
+              return;
+            }
+
+            const resolved = resolveModuleScssImport(context.filename, value);
+            if (resolved === null) {
+              return;
+            }
+
+            const srcIndex = context.filename.indexOf("/src/");
+            const srcRoot =
+              srcIndex === -1 ? null : context.filename.slice(0, srcIndex + 4);
+
+            if (srcRoot !== null && resolved.startsWith(`${srcRoot}/assets/`)) {
+              return;
+            }
+
+            if (dirName(resolved) === dirName(context.filename)) {
+              return;
+            }
+
+            context.report({
+              message:
+                "Don't import another component's own .module.scss/.css across directories. Co-locate the class with its component, or share tokens via '@/assets'.",
               node,
             });
           },

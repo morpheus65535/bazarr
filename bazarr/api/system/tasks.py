@@ -24,7 +24,7 @@ class SystemTasks(Resource):
     get_request_parser.add_argument('taskid', type=str, required=False, help='List tasks or a single task properties')
 
     @authenticate
-    @api_ns_system_tasks.doc(parser=None)
+    @api_ns_system_tasks.expect(None)
     @api_ns_system_tasks.response(200, 'Success')
     @api_ns_system_tasks.response(401, 'Not Authenticated')
     def get(self):
@@ -46,7 +46,7 @@ class SystemTasks(Resource):
     post_request_parser.add_argument('taskid', type=str, required=True, help='Task id of the task to run')
 
     @authenticate
-    @api_ns_system_tasks.doc(parser=post_request_parser)
+    @api_ns_system_tasks.expect(post_request_parser)
     @api_ns_system_tasks.response(204, 'Success')
     @api_ns_system_tasks.response(401, 'Not Authenticated')
     def post(self):

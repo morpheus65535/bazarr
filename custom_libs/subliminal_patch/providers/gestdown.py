@@ -24,7 +24,7 @@ class GestdownSubtitle(Subtitle):
     hash_verifiable = False
     hearing_impaired_verifiable = True
 
-    def __init__(self, language, data: dict):
+    def __init__(self, language, data: dict, tvdbid_matching: bool = False):
         super().__init__(language, hearing_impaired=data["hearingImpaired"])
         self.page_link = _BASE_URL + data["downloadUri"]
         self._id = data["subtitleId"]
@@ -32,6 +32,7 @@ class GestdownSubtitle(Subtitle):
         self.qualities = data.get("qualities") or []
         self.release_info = "\n".join(self.releases)
         self.matches = set()
+        self.tvDbId_matching = tvdbid_matching
 
     def get_matches(self, video):
         self.matches = {"title", "series", "season", "episode", "tvdb_id"}
@@ -57,6 +58,10 @@ class GestdownSubtitle(Subtitle):
         # resolution
         if video.resolution and self.qualities and video.resolution in self.qualities:
             self.matches.add("resolution")
+
+        # year
+        if self.tvDbId_matching:
+            self.matches.add("year")
 
         return self.matches
 
@@ -109,7 +114,7 @@ class GestdownProvider(Provider):
     def terminate(self):
         self._session.close()
 
-    def _subtitles_search(self, video, language: Language, show_id):
+    def _subtitles_search(self, video, language: Language, show_id, tvdbid: None):
         lang = self._converter.convert(language.alpha3)
         response = self._session.get(
             f"{_BASE_URL}/subtitles/get/{show_id}/{video.season}/{video.episode}/{lang}"
@@ -131,11 +136,13 @@ class GestdownProvider(Provider):
             logger.debug("No episodes found for '%s' language", language)
             return None
 
+        tvdbid_matching = video.series_tvdb_id and tvdbid == video.series_tvdb_id
+
         for subtitle_dict in matching_subtitles:
             if not subtitle_dict["completed"]:
                 continue
 
-            sub = GestdownSubtitle(language, subtitle_dict)
+            sub = GestdownSubtitle(language, subtitle_dict, tvdbid_matching)
             logger.debug("Found subtitle: %s", sub)
             yield sub
 
@@ -171,7 +178,7 @@ class GestdownProvider(Provider):
         for language in languages:
             try:
                 for show in shows:
-                    subs = list(self._subtitles_search(video, language, show["id"]))
+                    subs = list(self._subtitles_search(video, language, show["id"], show['tvDbId']))
                     if len(subs) > 0:
                         subtitles += subs
                         continue
