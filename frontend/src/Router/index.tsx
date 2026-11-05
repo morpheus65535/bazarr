@@ -8,6 +8,7 @@ import {
   faFilm,
   faLaptop,
   faPlay,
+  faTrophy,
 } from "@fortawesome/free-solid-svg-icons";
 import { useBadges } from "@/apis/hooks";
 import { useEnabledStatus } from "@/apis/hooks/site";
@@ -20,6 +21,7 @@ import Episodes from "@/pages/Episodes";
 import NotFound from "@/pages/errors/NotFound";
 import MoviesHistoryView from "@/pages/History/Movies";
 import SeriesHistoryView from "@/pages/History/Series";
+import SportsHistoryView from "@/pages/History/Sports";
 import MovieView from "@/pages/Movies";
 import MovieDetailView from "@/pages/Movies/Details";
 import SeriesView from "@/pages/Series";
@@ -50,6 +52,7 @@ import SettingsSubtitlesFilesView from "@/pages/Settings/Subtitles/Files";
 import SettingsSubtitlesLayout from "@/pages/Settings/Subtitles/Layout";
 import SettingsSubtitlesSearchView from "@/pages/Settings/Subtitles/Search";
 import SettingsUIView from "@/pages/Settings/UI";
+import SportsView from "@/pages/Sports";
 import SystemAnnouncementsView from "@/pages/System/Announcements";
 import SystemBackupsView from "@/pages/System/Backups";
 import SystemLogsView from "@/pages/System/Logs";
@@ -119,10 +122,23 @@ const useRoutes = (): CustomRouteObject[] => {
             ],
           },
           {
+            icon: faTrophy,
+            name: "Sports",
+            path: "sports",
+            badge: data?.sportarr_sse,
+            hidden: !sportarr,
+            children: [
+              {
+                index: true,
+                element: <SportsView></SportsView>,
+              },
+            ],
+          },
+          {
             icon: faClock,
             name: "History",
             path: "history",
-            hidden: !sonarr && !radarr,
+            hidden: !sonarr && !radarr && !sportarr,
             children: [
               {
                 path: "series",
@@ -137,8 +153,15 @@ const useRoutes = (): CustomRouteObject[] => {
                 element: <MoviesHistoryView></MoviesHistoryView>,
               },
               {
+                path: "sports",
+                name: "Sports",
+                hidden: !sportarr,
+                element: <SportsHistoryView></SportsHistoryView>,
+              },
+              {
                 path: "stats",
                 name: "Statistics",
+                hidden: !sonarr && !radarr,
                 element: (
                   <Lazy>
                     <HistoryStats></HistoryStats>
