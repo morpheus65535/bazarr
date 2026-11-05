@@ -13,7 +13,7 @@ from subtitles.upload import manual_upload_subtitle
 from subtitles.mass_download.sports import sports_event_download_specific_subtitles
 from subtitles.tools.delete import delete_subtitles
 
-from ..utils import authenticate
+from ..utils import authenticate, normalize_flag_token
 
 api_ns_sports_subtitles = Namespace('Sports Subtitles', description='Download, upload or delete sports events '
                                                                     'subtitles')
@@ -52,8 +52,8 @@ class SportsSubtitles(Resource):
 
         sports_event_download_specific_subtitles(sportarr_league_id=args.get('leagueid'),
                                                  sports_event_id=args.get('eventid'),
-                                                 language=args.get('language'), hi=args.get('hi').capitalize(),
-                                                 forced=args.get('forced').capitalize(), job_id=None)
+                                                 language=args.get('language'), hi=normalize_flag_token(args.get('hi')),
+                                                 forced=normalize_flag_token(args.get('forced')), job_id=None)
 
         return '', 204
 

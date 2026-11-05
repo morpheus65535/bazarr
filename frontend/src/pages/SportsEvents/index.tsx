@@ -1,10 +1,18 @@
-import { FunctionComponent, useMemo, useRef, useState } from "react";
+import {
+  FunctionComponent,
+  useCallback,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Navigate, useParams } from "react-router";
 import { Container, Group, Stack } from "@mantine/core";
 import { useDocumentTitle } from "@mantine/hooks";
+import { showNotification } from "@mantine/notifications";
 import {
   faCircleChevronDown,
   faCircleChevronRight,
+  faCloudUploadAlt,
   faHardDrive,
   faHdd,
   faSearch,
@@ -21,12 +29,13 @@ import {
   useSportsLeagueModification,
 } from "@/apis/hooks";
 import { useInstanceName } from "@/apis/hooks/site";
-import { Toolbox } from "@/components";
+import { Toolbox, UploadDropzone } from "@/components";
 import { QueryOverlay } from "@/components/async";
 import { ItemEditModal } from "@/components/forms/ItemEditForm";
+import { SportsUploadModal } from "@/components/forms/SportsUploadForm";
 import { type AppTable as TableInstance } from "@/components/tables/features";
 import { useModals } from "@/modules/modals";
-import { task, TaskGroup } from "@/modules/task";
+import { notification, task, TaskGroup } from "@/modules/task";
 import ItemOverview from "@/pages/views/ItemOverview";
 import { RouterNames } from "@/Router/RouterNames";
 import { useLanguageProfileBy } from "@/utilities/languages";
@@ -71,15 +80,34 @@ const SportsEventsView: FunctionComponent = () => {
 
   const hasTask = useIsAnyActionRunning();
 
+  const onDrop = useCallback(
+    (files: File[]) => {
+      if (league && profile) {
+        modals.openContextModal(SportsUploadModal, {
+          files,
+          league,
+        });
+      } else {
+        showNotification(
+          notification.warn(
+            "Cannot Upload Files",
+            "league or language profile is not ready",
+          ),
+        );
+      }
+    },
+    [modals, profile, league],
+  );
+
   useDocumentTitle(
     `${league?.title ?? "Unknown League"} - ${useInstanceName()} (Sports)`,
   );
 
   const tableRef = useRef<TableInstance<Item.SportsEvent> | null>(null);
 
-  const [isAllRowExpanded, setIsAllRowExpanded] = useState(
-    tableRef?.current?.getIsAllRowsExpanded(),
-  );
+  const [isAllRowExpanded, setIsAllRowExpanded] = useState(false);
+
+  const openDropzone = useRef<VoidFunction>(null);
 
   if (isNaN(id) || (isFetched && !league)) {
     return <Navigate to={RouterNames.NotFound}></Navigate>;
@@ -88,6 +116,11 @@ const SportsEventsView: FunctionComponent = () => {
   return (
     <Container px={0} fluid>
       <QueryOverlay result={leagueQuery}>
+        <UploadDropzone
+          openRef={openDropzone}
+          active={profile !== undefined}
+          onDrop={onDrop}
+        ></UploadDropzone>
         <Toolbox>
           <Group gap="xs">
             <Toolbox.Button
@@ -141,6 +174,19 @@ const SportsEventsView: FunctionComponent = () => {
           </Group>
           <Group gap="xs">
             <Toolbox.Button
+              disabled={
+                league === undefined ||
+                league.episodeFileCount === 0 ||
+                league.profileId === null ||
+                !available ||
+                hasTask
+              }
+              icon={faCloudUploadAlt}
+              onClick={() => openDropzone.current?.()}
+            >
+              Upload
+            </Toolbox.Button>
+            <Toolbox.Button
               icon={faWrench}
               disabled={hasTask}
               onClick={() => {
@@ -176,7 +222,6 @@ const SportsEventsView: FunctionComponent = () => {
             <Table
               ref={tableRef}
               events={events ?? null}
-              profile={profile}
               disabled={hasTask || !league}
               onAllRowsExpandedChanged={setIsAllRowExpanded}
             ></Table>

@@ -61,6 +61,10 @@ def test_sports_subtitle_actions_check_league_and_indexed_path(monkeypatch):
         assert invoke('delete', base) == ('', 204)
         assert calls[1]['subtitles_path'] == subtitle_path
         assert calls[1]['sports_event_id'] == event_id
+        assert (calls[0]['hi'], calls[0]['forced']) == ('False', 'False')
+
+        assert invoke('patch', {**base, 'hi': 'TRUE', 'forced': 'yes'}) == ('', 204)
+        assert (calls[2]['hi'], calls[2]['forced']) == ('True', 'False')
     finally:
         database.execute(delete(TableSportsEventsSubtitles)
                          .where(TableSportsEventsSubtitles.sportsEventId == event_id))
@@ -100,3 +104,44 @@ def test_sports_upload_works_without_a_league_profile(monkeypatch):
         sportarrLeagueId=5, sportsEventId=11)
 
     assert result == ('', 204)
+
+
+def test_sports_events_list_carries_the_league_profile(monkeypatch):
+    api_path = Path(__file__).resolve().parents[2] / 'bazarr' / 'api'
+    api_package = ModuleType('api')
+    api_package.__path__ = [str(api_path)]
+    sports_package = ModuleType('api.sports')
+    sports_package.__path__ = [str(api_path / 'sports')]
+    monkeypatch.setitem(sys.modules, 'api', api_package)
+    monkeypatch.setitem(sys.modules, 'api.sports', sports_package)
+    module = import_module('api.sports.events')
+    from app.database import TableSportsEvents, TableSportsLeagues, TableLanguagesProfiles, database, delete, insert
+
+    token = uuid4().hex[:8]
+    league_id = int(token, 16)
+    event_id = league_id * 10
+    items = []
+    monkeypatch.setattr(module, 'postprocess', lambda item: items.append(item) or item)
+    monkeypatch.setattr(module.SportsEvents, 'get_request_parser',
+                        SimpleNamespace(parse_args=lambda: {'leagueid[]': [league_id], 'eventid[]': []}))
+
+    try:
+        database.execute(insert(TableLanguagesProfiles).values(
+            profileId=league_id, name='English', items='[]'))
+        database.execute(insert(TableSportsLeagues).values(
+            sportarrLeagueId=league_id, title='League', path=f'/tmp/bazarr-sports-events-{token}',
+            profileId=league_id))
+        database.execute(insert(TableSportsEvents).values(
+            id=event_id, sportarrEventId=event_id, sportarrLeagueId=league_id,
+            season=2026, episode=1, title='Event', path=f'/tmp/bazarr-sports-events-{token}.mkv'))
+
+        module.SportsEvents.get.__wrapped__(module.SportsEvents())
+
+        # postprocess needs the profile to keep only the desired embedded subtitles.
+        assert [(item['sportsEventId'], item['profileId']) for item in items] == [(event_id, league_id)]
+    finally:
+        database.execute(delete(TableSportsEvents).where(TableSportsEvents.id == event_id))
+        database.execute(delete(TableSportsLeagues).where(TableSportsLeagues.sportarrLeagueId == league_id))
+        database.execute(delete(TableLanguagesProfiles)
+                         .where(TableLanguagesProfiles.profileId == league_id))
+        database.commit()

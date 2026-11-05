@@ -218,10 +218,9 @@ def manual_upload_subtitle(path, language, forced, hi, media_type, subtitle, fil
         event_stream(type='series', action='update', payload=episode_metadata.sonarrSeriesId)
         event_stream(type='episode-wanted', action='delete', payload=episode_metadata.sonarrEpisodeId)
     elif media_type == 'sports':
-        # Syncing takes no sports id. It only uses the ids to find a reference
-        # audio track, which sports events do not have.
         sync_subtitles(video_path=path, srt_path=subtitle_path, srt_lang=uploaded_language_code2, percent_score=100,
-                       forced=forced, hi=hi, job_id=job_id)
+                       sportarr_league_id=sports_metadata.sportarrLeagueId, forced=forced, hi=hi,
+                       sports_event_id=sports_metadata.id, job_id=job_id)
         reversed_path = path_mappings.path_replace_reverse_sports(path)
         reversed_subtitles_path = path_mappings.path_replace_reverse_sports(subtitle_path)
         # Sportarr rescans the league folder, which is how it learns the file is

@@ -3,7 +3,6 @@ import { Group, Text, Tooltip } from "@mantine/core";
 import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
 import { faBookmark, faHistory } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useShowOnlyDesired } from "@/apis/hooks/site";
 import { Action, GroupTable } from "@/components";
 import { AudioList } from "@/components/bazarr";
 import { SportsEventHistoryModal } from "@/components/modals";
@@ -13,25 +12,19 @@ import {
 } from "@/components/tables/features";
 import TextPopover from "@/components/TextPopover";
 import { useModals } from "@/modules/modals";
-import { BuildKey, filterSubtitleBy } from "@/utilities";
-import { useProfileItemsToLanguages } from "@/utilities/languages";
+import { BuildKey } from "@/utilities";
 import { SportsSubtitle } from "./components";
 
 interface Props {
   events: Item.SportsEvent[] | null;
   disabled?: boolean;
-  profile?: Language.Profile;
   onAllRowsExpandedChanged: (isAllRowsExpanded: boolean) => void;
 }
 
 const Table = forwardRef<TableInstance<Item.SportsEvent> | null, Props>(
-  ({ events, profile, disabled, onAllRowsExpandedChanged }, ref) => {
-    const onlyDesired = useShowOnlyDesired();
-
+  ({ events, disabled, onAllRowsExpandedChanged }, ref) => {
     const tableRef =
       ref as React.MutableRefObject<TableInstance<Item.SportsEvent> | null>;
-
-    const profileItems = useProfileItemsToLanguages(profile);
 
     const modals = useModals();
 
@@ -52,11 +45,7 @@ const Table = forwardRef<TableInstance<Item.SportsEvent> | null, Props>(
             ></SportsSubtitle>
           ));
 
-          const rawSubtitles = onlyDesired
-            ? filterSubtitleBy(event.subtitles, profileItems)
-            : event.subtitles;
-
-          const subtitles = rawSubtitles.map((val, idx) => (
+          const subtitles = event.subtitles.map((val, idx) => (
             <SportsSubtitle
               key={BuildKey(idx, val.code2, "valid")}
               leagueId={leagueId}
