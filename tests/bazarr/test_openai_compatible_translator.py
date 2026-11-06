@@ -310,3 +310,65 @@ def test_redirect_to_disallowed_address_is_refused(serve_redirecting_endpoint):
         openai_compatible_translator._request_translation(
             cues=['Hello'], base_url=base_url, model='local-model', api_key='', timeout=5,
             from_lang='en', to_lang='fra')
+
+
+@pytest.fixture
+def serve_strict_endpoint():
+    """Serve a Chat Completions endpoint that rejects unknown body fields, like Groq does."""
+    requests_seen = []
+    servers = []
+
+    def serve():
+        class Handler(BaseHTTPRequestHandler):
+            def do_POST(self):
+                payload = json.loads(self.rfile.read(int(self.headers['Content-Length'])))
+                requests_seen.append(payload)
+                if 'chat_template_kwargs' in payload:
+                    status = 400
+                    body = {'error': {'message': "property 'chat_template_kwargs' is unsupported",
+                                      'type': 'invalid_request_error'}}
+                else:
+                    status = 200
+                    body = {'choices': [{'finish_reason': 'stop',
+                                         'message': {'content': '[{"id":1,"text":"Bonjour"}]'}}]}
+                encoded = json.dumps(body).encode()
+                self.send_response(status)
+                self.send_header('Content-Type', 'application/json')
+                self.send_header('Content-Length', str(len(encoded)))
+                self.end_headers()
+                self.wfile.write(encoded)
+
+            def log_message(self, format, *args):
+                pass
+
+        server = ThreadingHTTPServer(('127.0.0.1', 0), Handler)
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+        servers.append(server)
+        return f'http://127.0.0.1:{server.server_port}/v1'
+
+    yield serve, requests_seen
+    for server in servers:
+        server.shutdown()
+        server.server_close()
+
+
+def test_strict_endpoint_is_retried_without_chat_template_kwargs(serve_strict_endpoint):
+    serve, requests_seen = serve_strict_endpoint
+    base_url = serve()
+
+    assert openai_compatible_translator.test_openai_compatible_connection(
+        base_url=base_url, model='strict-model', api_key='', timeout=5) == 'Bonjour'
+    assert [('chat_template_kwargs' in payload) for payload in requests_seen] == [True, False]
+    assert requests_seen[0]['messages'] == requests_seen[1]['messages']
+
+
+def test_other_bad_requests_are_not_retried(mocker):
+    response = mocker.Mock(status_code=400, text='{"error": {"message": "model not found"}}')
+    response.raise_for_status.side_effect = openai_compatible_translator.requests.exceptions.HTTPError(
+        response=response)
+    post = mocker.patch.object(openai_compatible_translator.requests, 'post', return_value=response)
+
+    with pytest.raises(RuntimeError, match='HTTP 400'):
+        openai_compatible_translator.test_openai_compatible_connection(
+            base_url='http://127.0.0.1/v1', model='missing-model', api_key='', timeout=5)
+    assert post.call_count == 1
