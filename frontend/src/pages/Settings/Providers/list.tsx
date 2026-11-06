@@ -538,6 +538,19 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     message: "Make sure to use a unique and credible user agent.",
   },
   {
+    key: "subhd",
+    name: "SubHD",
+    description: "Chinese Subtitles Provider (subhd.tv)",
+    inputs: [
+      {
+        type: "text",
+        key: "base_url",
+        name: "Base URL",
+        defaultValue: "https://subhd.tv",
+      },
+    ],
+  },
+  {
     key: "subsource",
     name: "subsource.net",
     message:
