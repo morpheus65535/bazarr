@@ -156,6 +156,13 @@ def _request_translation(cues, base_url, model, api_key, timeout, from_lang, to_
         headers['Authorization'] = f'Bearer {token}'
     response = requests.post(url, json=payload, headers=headers, timeout=int(timeout),
                              hooks={'response': [_validate_redirect]})
+    if response.status_code == 400 and 'chat_template_kwargs' in response.text:
+        # chat_template_kwargs is a vLLM/Ollama extension. Endpoints that validate the request body
+        # against the OpenAI schema (Groq, Mistral, OpenAI) reject it, so send the request again without it.
+        logger.debug('Translator endpoint rejected chat_template_kwargs; retrying without it')
+        del payload['chat_template_kwargs']
+        response = requests.post(url, json=payload, headers=headers, timeout=int(timeout),
+                                 hooks={'response': [_validate_redirect]})
     response.raise_for_status()
     try:
         choice = response.json()['choices'][0]
