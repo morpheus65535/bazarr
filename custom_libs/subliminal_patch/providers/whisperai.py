@@ -292,7 +292,7 @@ class WhisperAISubtitle(Subtitle):
         if isinstance(video, Episode):
             self.matches.update(["series", "season", "episode"])
         elif isinstance(video, Movie):
-            self.matches.update(["title"])
+            self.matches.update(["title", "year"])  # year added explicitly to increase the score over 50%
 
         return self.matches
 
