@@ -48,15 +48,15 @@ def _memoized_release_guess(release_name):
     return guessit(release_name)
 
 
-class AnimeToshoXYZSubtitle(Subtitle):
-    provider_name = 'animetosho_xyz'
+class AnimeToshoNETSubtitle(Subtitle):
+    provider_name = 'animetosho_net'
 
     def __init__(self, language, download_link, release_guesses, release_info, release_id, forced=False):
         # AnimeTosho reports the forced disposition flag of the subtitle track. Keep it on the
         # language so a forced (signs only) track is never offered as a normal subtitle.
         language = Language.rebuild(language, forced=forced)
 
-        super(AnimeToshoXYZSubtitle, self).__init__(
+        super(AnimeToshoNETSubtitle, self).__init__(
             language,
             page_link=download_link,
         )
@@ -105,9 +105,9 @@ class AnimeToshoXYZSubtitle(Subtitle):
         return bool(video.season is not None and guessed_seasons and video.season not in guessed_seasons)
 
 
-class AnimeToshoXYZProvider(Provider, ProviderSubtitleArchiveMixin):
-    provider_name = 'animetosho_xyz'
-    subtitle_class = AnimeToshoXYZSubtitle
+class AnimeToshoNETProvider(Provider, ProviderSubtitleArchiveMixin):
+    provider_name = 'animetosho_net'
+    subtitle_class = AnimeToshoNETSubtitle
     languages = {Language('por', 'BR')} | {Language(sl) for sl in supported_languages}
     # The provider pool intersects the requested languages with the languages declared here before
     # calling list_subtitles, so the forced variants have to be declared as well or a profile
@@ -182,7 +182,7 @@ class AnimeToshoXYZProvider(Provider, ProviderSubtitleArchiveMixin):
         return content.startswith(b'\xFD\x37\x7A\x58\x5A\x00')
 
     def _get_series(self, episode_id):
-        detail_api_url = 'https://feed.animetosho.xyz/json'
+        detail_api_url = 'https://feed.animetosho.net/json'
 
         subtitles = []
         entries = self._get_series_entries(episode_id)
@@ -255,7 +255,7 @@ class AnimeToshoXYZProvider(Provider, ProviderSubtitleArchiveMixin):
     def _iter_subtitle_attachments(torrent_data):
         """Yield the subtitle attachments of a release.
 
-        AnimeTosho.xyz lists them either at the top level of the release ("attachments") or nested
+        AnimeTosho.net lists them either at the top level of the release ("attachments") or nested
         under each of its files ("files[].attachments"), depending on the release, so both shapes
         have to be collected. A release only ever uses one of them but the same attachment is
         still guarded against being yielded twice.
@@ -280,7 +280,7 @@ class AnimeToshoXYZProvider(Provider, ProviderSubtitleArchiveMixin):
             yield from collect(file.get('attachments'))
 
     def _get_series_entries(self, episode_id):
-        api_url = 'https://feed.animetosho.xyz/feed/json'
+        api_url = 'https://feed.animetosho.net/feed/json'
 
         r = self.checked(
             lambda: self.session.get(

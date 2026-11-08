@@ -10,7 +10,7 @@ import rarfile
 
 from dogpile.cache.region import register_backend as register_cache_backend
 
-from app.config import settings, configure_captcha_func, write_config
+from app.config import settings, configure_captcha_func, write_config, migrate_renamed_providers
 from app.get_args import args
 from app.logger import configure_logging
 from utilities.binaries import get_binary, BinaryNotFound
@@ -172,6 +172,9 @@ settings['general'].pop('throtteled_providers', None)
 settings['general'].pop('update_restart', None)
 write_config()
 
+
+# Migrate renamed providers in enabled providers, before deprecated providers are removed
+migrate_renamed_providers()
 
 # Remove deprecated providers from enabled providers in config
 from subliminal_patch.extensions import provider_registry  # noqa E401
