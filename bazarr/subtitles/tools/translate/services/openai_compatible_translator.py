@@ -116,7 +116,8 @@ def _validate_redirect(response: requests.Response, **kwargs: object) -> request
     return response
 
 
-def _request_translation(cues, base_url, model, api_key, timeout, from_lang, to_lang, retry_instruction=None):
+def _request_translation(cues, base_url, model, api_key, timeout, from_lang, to_lang, retry_instruction=None,
+                         capabilities=None):
     base_url = base_url.strip()
     model = model.strip()
     if not base_url or not model:
@@ -148,18 +149,23 @@ def _request_translation(cues, base_url, model, api_key, timeout, from_lang, to_
         ],
         'temperature': 0.1,
         'max_tokens': max(512, len(cues) * 128),
-        'chat_template_kwargs': {'enable_thinking': False},
     }
+    if capabilities is None:
+        capabilities = {}
+    if capabilities.get('chat_template_kwargs', True):
+        payload['chat_template_kwargs'] = {'enable_thinking': False}
     headers = {'Content-Type': 'application/json'}
     token = (api_key or '').strip()
     if token:
         headers['Authorization'] = f'Bearer {token}'
     response = requests.post(url, json=payload, headers=headers, timeout=int(timeout),
                              hooks={'response': [_validate_redirect]})
-    if response.status_code == 400 and 'chat_template_kwargs' in response.text:
+    if response.status_code == 400 and 'chat_template_kwargs' in payload and 'chat_template_kwargs' in response.text:
         # chat_template_kwargs is a vLLM/Ollama extension. Endpoints that validate the request body
         # against the OpenAI schema (Groq, Mistral, OpenAI) reject it, so send the request again without it.
+        # The rejection is recorded in ``capabilities`` so later requests skip the failing attempt.
         logger.debug('Translator endpoint rejected chat_template_kwargs; retrying without it')
+        capabilities['chat_template_kwargs'] = False
         del payload['chat_template_kwargs']
         response = requests.post(url, json=payload, headers=headers, timeout=int(timeout),
                                  hooks={'response': [_validate_redirect]})
@@ -249,6 +255,8 @@ class OpenAICompatibleTranslatorService:
         self.video_path = video_path
         self.from_lang = from_lang
         self.orig_to_lang = orig_to_lang
+        # Endpoint features learned from earlier batches of this job, so each batch does not re-probe them.
+        self._endpoint_capabilities: dict[str, bool] = {}
 
     @staticmethod
     def _setting(name, default):
@@ -271,6 +279,7 @@ class OpenAICompatibleTranslatorService:
             from_lang=self.from_lang,
             to_lang=self.to_lang,
             retry_instruction=retry_instruction,
+            capabilities=self._endpoint_capabilities,
         )
 
     def _translate_batch(self, cues: list[str]) -> list[str]:

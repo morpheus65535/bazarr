@@ -372,3 +372,21 @@ def test_other_bad_requests_are_not_retried(mocker):
         openai_compatible_translator.test_openai_compatible_connection(
             base_url='http://127.0.0.1/v1', model='missing-model', api_key='', timeout=5)
     assert post.call_count == 1
+
+
+def test_rejected_chat_template_kwargs_is_not_resent_for_later_batches(serve_strict_endpoint, mocker):
+    serve, requests_seen = serve_strict_endpoint
+    base_url = serve()
+    service = openai_compatible_translator.OpenAICompatibleTranslatorService(
+        source_srt_file='', dest_srt_file='', to_lang='fra', media_type='episode', sonarr_series_id=None,
+        sonarr_episode_id=None, radarr_id=None, forced=False, hi=False, video_path='', from_lang='en',
+        orig_to_lang='en')
+    settings_values = {'openai_base_url': base_url, 'openai_model': 'strict-model', 'openai_api_key': '',
+                       'openai_timeout': 5}
+    mocker.patch.object(openai_compatible_translator.OpenAICompatibleTranslatorService, '_setting',
+                        staticmethod(lambda name, default: settings_values.get(name, default)))
+
+    assert service._request_with_retry(['Hello']) == ['Bonjour']
+    assert service._request_with_retry(['Hello']) == ['Bonjour']
+    assert service._request_with_retry(['Hello']) == ['Bonjour']
+    assert [('chat_template_kwargs' in payload) for payload in requests_seen] == [True, False, False, False]
