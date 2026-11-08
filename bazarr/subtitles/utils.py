@@ -5,6 +5,7 @@ import logging
 import os
 import json
 
+from subliminal import Video
 from subzero.language import Language
 from subzero.video import parse_video
 from guessit.jsonutils import GuessitEncoder
@@ -44,6 +45,8 @@ def get_video(path, title, sceneName, providers=None, media_type="movie"):
             logging.debug(f'BAZARR guessing video object using scene name: {scenename_with_extension}')
             scenename_video = parse_video(scenename_with_extension, hints=hints, dry_run=True)
             refine_video_with_scenename(initial_video=video, scenename_video=scenename_video)
+            sync_original_series_from_scenename(initial_video=video, scenename_video=scenename_video,
+                                                media_type=media_type)
             logging.debug('BAZARR resulting video object once refined using scene name: %s',
                           json.dumps(vars(video), cls=GuessitEncoder, indent=4, ensure_ascii=False))
 
@@ -117,4 +120,25 @@ def refine_video_with_scenename(initial_video, scenename_video):
     for key, value in vars(scenename_video).items():
         if value and getattr(initial_video, key, None) in [None, (), {}, []]:
             setattr(initial_video, key, value)
+    return initial_video
+
+
+def sync_original_series_from_scenename(initial_video: Video, scenename_video: Video, media_type: str) -> Video:
+    """Take ``original_series`` from the scene name for episodes.
+
+    ``original_series`` is ``False`` whenever the file name carries a year, so a year found in a renamed path
+    (for example ``Series (2025) - S01E01``) disables the year-less release match even though the release name
+    has no year. The scene name is the release name, so it decides this flag. ``year`` itself is left untouched
+    and keeps coming from the path or database.
+
+    :param initial_video: video built from the file path, updated in place.
+    :param scenename_video: video built from the scene name.
+    :param media_type: ``"movie"`` or ``"series"``. Movies are not changed.
+    :return: the updated ``initial_video``.
+    """
+    if media_type == "movie" or not initial_video or not scenename_video:
+        return initial_video
+    if not hasattr(scenename_video, "original_series"):
+        return initial_video
+    initial_video.original_series = scenename_video.original_series
     return initial_video
