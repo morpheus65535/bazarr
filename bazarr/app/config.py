@@ -1117,6 +1117,53 @@ def sync_checker(subtitle):
 
 
 # Plex OAuth Migration Functions
+# Providers renamed upstream, mapping previous key to new key. Enabled providers matching a key are
+# replaced by the value at startup so users keep their selection after a rename.
+RENAMED_PROVIDERS: dict[str, str] = {
+    'animetosho_xyz': 'animetosho_net',
+}
+
+
+def rename_enabled_providers(enabled_providers: list[str], renamed_providers: dict[str, str]) -> list[str]:
+    """
+    Return the enabled providers list with renamed provider keys replaced by their new names.
+
+    Order is preserved. If a renamed provider and its new name are both present, the new name is kept once.
+
+    :param enabled_providers: Current list of enabled provider keys.
+    :param renamed_providers: Mapping of previous provider key to new provider key.
+    :return: A new list with renamed keys replaced and duplicates removed.
+    """
+    result: list[str] = []
+    for name in enabled_providers:
+        new_name = renamed_providers.get(name, name)
+        if new_name not in result:
+            result.append(new_name)
+    return result
+
+
+def migrate_renamed_providers() -> None:
+    """
+    Replace renamed providers in ``settings.general.enabled_providers`` using ``RENAMED_PROVIDERS``.
+
+    The configuration is only written when the list actually changes. This must run before the
+    deprecated providers filter at startup, otherwise renamed providers are dropped instead of migrated.
+
+    :return: None
+    """
+    enabled_providers = settings.general.enabled_providers
+    if not isinstance(enabled_providers, list):
+        return
+
+    updated_providers = rename_enabled_providers(enabled_providers, RENAMED_PROVIDERS)
+    if updated_providers == enabled_providers:
+        return
+
+    settings.general.enabled_providers = updated_providers
+    write_config()
+    logging.debug('BAZARR renamed enabled providers: %s -> %s', enabled_providers, updated_providers)
+
+
 def migrate_plex_config():
     # Generate encryption key if not exists or is empty
     existing_key = settings.plex.get('encryption_key')
