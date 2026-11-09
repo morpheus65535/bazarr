@@ -120,8 +120,8 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
         if sync_checker(subtitle) is True:
             from .sync import sync_subtitles
             sync_subtitles(video_path=path, srt_path=downloaded_path,
-                           forced=subtitle.language.forced,
-                           hi=subtitle.language.hi,
+                           forced=language_forced,
+                           hi=language_hi,
                            srt_lang=downloaded_language_code2,
                            percent_score=percent_score,
                            job_id=job_id)

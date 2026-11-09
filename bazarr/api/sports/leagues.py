@@ -5,7 +5,8 @@ import operator
 from flask_restx import Resource, Namespace, reqparse, fields, marshal
 from functools import reduce
 
-from app.database import get_exclusion_clause, TableSportsEvents, TableSportsLeagues, database, select, update, func
+from app.database import get_exclusion_clause, TableSportsEvents, TableSportsLeagues, TableMissingSubtitles, database, \
+    select, update, func
 from subtitles.indexer.sports import list_missing_subtitles_sports, sports_scan_subtitles
 from subtitles.mass_download import league_download_subtitles
 from subtitles.wanted import wanted_search_missing_subtitles_sports
@@ -43,8 +44,8 @@ class SportsLeagues(Resource):
         'profileId': fields.Integer(),
         'tags': fields.List(fields.String),
         'audio_language': fields.Nested(get_subtitles_language_model),
-        'episodeFileCount': fields.Integer(),
-        'episodeMissingCount': fields.Integer(),
+        'episodeFileCount': fields.Integer(default=0),
+        'episodeMissingCount': fields.Integer(default=0),
     })
 
     get_response_model = api_ns_sports_leagues.model('SportsLeaguesGetResponse', {
@@ -62,6 +63,29 @@ class SportsLeagues(Resource):
         length = args.get('length')
         leagueId = args.get('leagueid[]')
 
+        # Counted per playable file, because a row is one part. An event with
+        # two parts needs subtitles for both.
+        episodeFileCount = select(TableSportsLeagues.sportarrLeagueId,
+                                  func.count(TableSportsEvents.sportarrLeagueId).label('episodeFileCount')) \
+            .select_from(TableSportsEvents) \
+            .join(TableSportsLeagues) \
+            .group_by(TableSportsLeagues.sportarrLeagueId)\
+            .subquery()
+
+        events_missing_conditions = [(TableMissingSubtitles.media_type == 'sports'),
+                                     (TableMissingSubtitles.media_id == TableSportsEvents.id)]
+        events_missing_conditions += get_exclusion_clause('sports')
+
+        episodeMissingCount = select(TableSportsLeagues.sportarrLeagueId,
+                                     func.count(func.distinct(TableSportsEvents.id))
+                                     .label('episodeMissingCount')) \
+            .select_from(TableSportsEvents) \
+            .join(TableSportsLeagues) \
+            .join(TableMissingSubtitles, TableMissingSubtitles.media_id == TableSportsEvents.id) \
+            .where(reduce(operator.and_, events_missing_conditions)) \
+            .group_by(TableSportsLeagues.sportarrLeagueId)\
+            .subquery()
+
         stmt = select(TableSportsLeagues.sportarrLeagueId,
                       TableSportsLeagues.externalId,
                       TableSportsLeagues.title,
@@ -74,7 +98,14 @@ class SportsLeagues(Resource):
                       TableSportsLeagues.monitored,
                       TableSportsLeagues.profileId,
                       TableSportsLeagues.tags,
-                      TableSportsLeagues.audio_language) \
+                      TableSportsLeagues.audio_language,
+                      episodeFileCount.c.episodeFileCount,
+                      episodeMissingCount.c.episodeMissingCount) \
+            .select_from(TableSportsLeagues) \
+            .join(episodeFileCount, TableSportsLeagues.sportarrLeagueId == episodeFileCount.c.sportarrLeagueId,
+                  isouter=True) \
+            .join(episodeMissingCount, TableSportsLeagues.sportarrLeagueId == episodeMissingCount.c.sportarrLeagueId,
+                  isouter=True) \
             .order_by(TableSportsLeagues.sortTitle)
 
         if len(leagueId) > 0:
@@ -84,25 +115,6 @@ class SportsLeagues(Resource):
 
         results = []
         for x in database.execute(stmt).all():
-            # Counted per playable file, because a row is one part. An event with
-            # two parts needs subtitles for both.
-            file_count = database.execute(
-                select(func.count())
-                .select_from(TableSportsEvents)
-                .where(TableSportsEvents.sportarrLeagueId == x.sportarrLeagueId)) \
-                .scalar()
-
-            missing_conditions = [(TableSportsEvents.sportarrLeagueId == x.sportarrLeagueId),
-                                  (TableSportsEvents.missing_subtitles.is_not(None)),
-                                  (TableSportsEvents.missing_subtitles != '[]')]
-            missing_conditions += get_exclusion_clause('sports')
-            missing_count = database.execute(
-                select(func.count())
-                .select_from(TableSportsEvents)
-                .join(TableSportsLeagues)
-                .where(reduce(operator.and_, missing_conditions))) \
-                .scalar()
-
             results.append(postprocess({
                 'sportarrLeagueId': x.sportarrLeagueId,
                 'externalId': x.externalId,
@@ -117,8 +129,8 @@ class SportsLeagues(Resource):
                 'profileId': x.profileId,
                 'tags': x.tags,
                 'audio_language': x.audio_language,
-                'episodeFileCount': file_count,
-                'episodeMissingCount': missing_count,
+                'episodeFileCount': x.episodeFileCount,
+                'episodeMissingCount': x.episodeMissingCount,
             }))
 
         count = database.execute(

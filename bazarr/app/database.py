@@ -314,6 +314,8 @@ class TableMissingSubtitles(Base):
     # This table intentionally stays polymorphic across movies and episodes.
     # The branch relies on media_type/media_id cleanup helpers instead of FK-enforced
     # cascades so the same normalized shape can serve both media kinds.
+    # Sports events use media_type 'sports' and the table_sports_events row id,
+    # because the Sportarr event id is shared by all parts of an event.
     id = mapped_column(Integer, primary_key=True)
     media_type = mapped_column(Text, nullable=False)
     media_id = mapped_column(Integer, nullable=False)
@@ -467,14 +469,14 @@ class TableSportsEvents(Base):
     created_at_timestamp = mapped_column(DateTime)
     episode = mapped_column(Integer, nullable=False)
     externalId = mapped_column(Text)
-    failedAttempts = mapped_column(Text)
     ffprobe_cache = mapped_column(LargeBinary)
     # Sportarr's id for the file itself. It changes when a file is replaced, so
     # a change here means the media changed even when the path did not.
     file_id = mapped_column(Integer)
     file_size = mapped_column(BigInteger)
     format = mapped_column(Text)
-    missing_subtitles = mapped_column(Text)
+    missing_subtitles_calculated: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False,
+                                                           server_default=text('false'))
     monitored = mapped_column(Text)
     id = mapped_column(Integer, primary_key=True)
     # Prelims, Main Card, Qualifying. Null when the event has a single file.

@@ -194,15 +194,6 @@ class _FakeDatabase:
         self.missing = ast.literal_eval(missing_subtitles)
 
 
-class _FakeSportsDatabase(_FakeDatabase):
-    """Sports events keep the missing list on the event row, so the indexer writes it with an update statement."""
-
-    def execute(self, statement):
-        if statement.is_select:
-            return SimpleNamespace(all=lambda: [self.row])
-        self.missing = ast.literal_eval(statement.compile().params['missing_subtitles'])
-
-
 def _missing(monkeypatch, indexer, profile, subtitles, audio_language='[]', use_embedded_subs=True,
              language_equals=()):
     """Run the indexer for one media item and return the sorted missing list it stored."""
@@ -216,15 +207,12 @@ def _missing(monkeypatch, indexer, profile, subtitles, audio_language='[]', use_
         row = SimpleNamespace(radarrId=1, profileId=1, audio_language=audio_language)
         run = indexer.list_missing_subtitles_movies
 
-    if indexer is sports_indexer:
-        fake_database = _FakeSportsDatabase(row)
-        monkeypatch.setattr(indexer, 'get_sports_subtitles', lambda *args, **kwargs: [dict(x) for x in subtitles])
-    else:
-        fake_database = _FakeDatabase(row)
-        monkeypatch.setattr(indexer, 'store_missing_subtitles', fake_database.store_missing_subtitles)
-        monkeypatch.setattr(indexer, 'get_subtitles', lambda *args, **kwargs: [dict(x) for x in subtitles])
+    fake_database = _FakeDatabase(row)
     monkeypatch.setattr(app_database, 'update_profile_id_list', lambda: [profile])
     monkeypatch.setattr(indexer, 'database', fake_database)
+    monkeypatch.setattr(indexer, 'store_missing_subtitles', fake_database.store_missing_subtitles)
+    subtitles_getter = 'get_sports_subtitles' if indexer is sports_indexer else 'get_subtitles'
+    monkeypatch.setattr(indexer, subtitles_getter, lambda *args, **kwargs: [dict(x) for x in subtitles])
     monkeypatch.setattr(indexer, 'get_audio_profile_languages',
                         lambda audio: [{'name': 'English', 'code2': 'en', 'code3': 'eng'}]
                         if audio == "['en']"

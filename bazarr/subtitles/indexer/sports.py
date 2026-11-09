@@ -9,8 +9,7 @@ from sqlalchemy import not_, tuple_
 
 from languages.custom_lang import CustomLanguage
 from app.database import get_profiles_list, get_profile_cutoff, TableSportsEvents, TableSportsLeagues, \
-    TableSportsEventsSubtitles, get_audio_profile_languages, get_sports_subtitles, database, update, select, insert, \
-    delete
+    TableSportsEventsSubtitles, get_audio_profile_languages, get_sports_subtitles, database, select, insert, delete
 from languages.get_languages import alpha2_from_alpha3, get_language_set
 from app.config import settings
 from utilities.helper import get_subtitle_destination_folder
@@ -21,6 +20,7 @@ from subtitles.indexer.utils import guess_external_subtitles, get_external_subti
 from subtitles.pool import get_language_equals
 from subtitles.indexer.profile_requirements import calculate_missing_subtitles, \
     calculate_enhanced_missing_subtitles
+from subtitles.wanted_state import store_missing_subtitles
 from app.jobs_queue import jobs_queue
 
 gc.enable()
@@ -204,7 +204,11 @@ def store_subtitles_sports(sports_event_id, use_cache=True):
     logging.debug(f'BAZARR ended subtitles indexing for this file: {mapped_path}')
 
 
-def list_missing_subtitles_sports(no=None, evno=None):
+def list_missing_subtitles_sports(
+    no: int | None = None,
+    evno: int | None = None,
+    job_id: int | None = None,
+) -> None:
     stmt = select(TableSportsLeagues.sportarrLeagueId,
                   TableSportsEvents.id.label("sportsEventId"),
                   TableSportsLeagues.profileId,
@@ -213,11 +217,11 @@ def list_missing_subtitles_sports(no=None, evno=None):
         .join(TableSportsLeagues)
 
     if evno is not None:
-        events_subtitles = database.execute(stmt.where(TableSportsEvents.id == evno)).all()
+        events_subtitles = database.execute(stmt.where(TableSportsEvents.id == evno))
     elif no is not None:
-        events_subtitles = database.execute(stmt.where(TableSportsEvents.sportarrLeagueId == no)).all()
+        events_subtitles = database.execute(stmt.where(TableSportsEvents.sportarrLeagueId == no))
     else:
-        events_subtitles = database.execute(stmt).all()
+        events_subtitles = database.execute(stmt)
 
     use_embedded_subs = settings.general.use_embedded_subs
 
@@ -255,10 +259,10 @@ def list_missing_subtitles_sports(no=None, evno=None):
                     matches_audio, lang_equals)
             missing_subtitles_text = str(missing_subtitles_list)
 
-        database.execute(
-            update(TableSportsEvents)
-            .values(missing_subtitles=missing_subtitles_text)
-            .where(TableSportsEvents.id == event_subtitles.sportsEventId))
+        store_missing_subtitles(
+            TableSportsEvents.__table__, 'id', 'sports', event_subtitles.sportsEventId,
+            missing_subtitles_text,
+        )
 
         event_stream(type='sports-event', payload=event_subtitles.sportsEventId)
         event_stream(type='sports-event-wanted', action='update', payload=event_subtitles.sportsEventId)

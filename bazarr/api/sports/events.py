@@ -4,6 +4,7 @@ from flask_restx import Resource, Namespace, reqparse, fields, marshal
 
 from app.database import TableSportsEvents, database, select
 from api.swaggerui import subtitles_model, subtitles_language_model, audio_language_model
+from subtitles.wanted_state import get_missing_languages_map
 
 from ..utils import authenticate, postprocess
 
@@ -54,7 +55,6 @@ class SportsEvents(Resource):
         stmt = select(
                 TableSportsEvents.audio_language,
                 TableSportsEvents.episode,
-                TableSportsEvents.missing_subtitles,
                 TableSportsEvents.monitored,
                 TableSportsEvents.path,
                 TableSportsEvents.season,
@@ -84,10 +84,12 @@ class SportsEvents(Resource):
         else:
             return "League or Sports event ID not provided", 404
 
+        missing_languages = get_missing_languages_map('sports', [x.id for x in stmt_query])
+
         return marshal([postprocess({
                 'audio_language': x.audio_language,
                 'episode': x.episode,
-                'missing_subtitles': x.missing_subtitles,
+                'missing_subtitles': missing_languages[x.id],
                 'monitored': x.monitored,
                 'path': x.path,
                 'season': x.season,
