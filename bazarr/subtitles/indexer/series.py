@@ -249,19 +249,27 @@ def list_missing_subtitles(
     epno: int | None = None,
     job_id: int | None = None,
 ) -> None:
+    if not job_id and no is None and epno is None:
+        jobs_queue.add_job_from_function("Computing missing episodes subtitles", is_progress=True)
+        return
+
     stmt = select(TableShows.sonarrSeriesId,
+                  TableShows.title,
                   TableEpisodes.sonarrEpisodeId,
+                  TableEpisodes.season,
+                  TableEpisodes.episode,
+                  TableEpisodes.title.label("episodeTitle"),
                   TableShows.profileId,
                   TableEpisodes.audio_language) \
         .select_from(TableEpisodes) \
         .join(TableShows)
 
     if epno is not None:
-        episodes_subtitles = database.execute(stmt.where(TableEpisodes.sonarrEpisodeId == epno))
+        episodes_subtitles = database.execute(stmt.where(TableEpisodes.sonarrEpisodeId == epno)).all()
     elif no is not None:
-        episodes_subtitles = database.execute(stmt.where(TableEpisodes.sonarrSeriesId == no))
+        episodes_subtitles = database.execute(stmt.where(TableEpisodes.sonarrSeriesId == no)).all()
     else:
-        episodes_subtitles = database.execute(stmt)
+        episodes_subtitles = database.execute(stmt).all()
 
     use_embedded_subs = settings.general.use_embedded_subs
 
@@ -271,7 +279,10 @@ def list_missing_subtitles(
     matches_audio = lambda language: any(x['code2'] == language['language'] for x in get_audio_profile_languages(
                                 episode_subtitles.audio_language))
 
-    for episode_subtitles in episodes_subtitles:
+    if job_id is not None:
+        jobs_queue.update_job_progress(job_id=job_id, progress_max=len(episodes_subtitles), progress_message='Indexing')
+
+    for i, episode_subtitles in enumerate(episodes_subtitles, start=1):
         missing_subtitles_text = '[]'
         if episode_subtitles.profileId:
             audio_language_codes = {
@@ -308,6 +319,15 @@ def list_missing_subtitles(
         )
         event_stream(type='episode', payload=episode_subtitles.sonarrEpisodeId)
         event_stream(type='episode-wanted', action='update', payload=episode_subtitles.sonarrEpisodeId)
+        if job_id is not None:
+            jobs_queue.update_job_progress(
+                job_id=job_id, progress_value=i,
+                progress_message=f"{episode_subtitles.title} - S{episode_subtitles.season:02d}E"
+                                 f"{episode_subtitles.episode:02d} - {episode_subtitles.episodeTitle}")
+
+    if job_id is not None:
+        jobs_queue.update_job_name(job_id=job_id, new_job_name="Computed missing episodes subtitles")
+
     event_stream(type='badges')
 
 

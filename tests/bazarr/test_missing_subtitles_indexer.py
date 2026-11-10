@@ -178,32 +178,69 @@ def _profile(items, cutoff=None):
             'mustContain': [], 'mustNotContain': [], 'originalFormat': False, 'tag': None}
 
 
+JOB_ID = 1
+
+
+class _FakeResult:
+    """Mimics the SQLAlchemy result object returned by database.execute() for the indexer query."""
+
+    def __init__(self, rows):
+        self._rows = rows
+
+    def all(self):
+        return list(self._rows)
+
+
 class _FakeDatabase:
     """Returns the single media row to the indexer and records the missing_subtitles value it writes."""
 
     def __init__(self, row):
         self.row = row
         self.missing = None
+        self.executed = False
 
     def execute(self, statement):
-        return [self.row]
+        self.executed = True
+        return _FakeResult([self.row])
 
     def store_missing_subtitles(self, table, id_column_name, media_type, media_id, missing_subtitles):
         self.missing = ast.literal_eval(missing_subtitles)
 
 
-def _missing(monkeypatch, indexer, profile, subtitles, audio_language='[]', use_embedded_subs=True):
-    """Run the indexer for one media item and return the sorted missing list it stored."""
+class _FakeJobsQueue:
+    """Records the job manager calls made by the indexer."""
+
+    def __init__(self):
+        self.added = []
+        self.progress = []
+        self.names = []
+
+    def add_job_from_function(self, job_name, is_progress, **kwargs):
+        self.added.append((job_name, is_progress, kwargs))
+        return JOB_ID
+
+    def update_job_progress(self, job_id, progress_value=None, progress_max=None, progress_message=""):
+        self.progress.append((job_id, progress_value, progress_max, progress_message))
+
+    def update_job_name(self, job_id, new_job_name):
+        self.names.append((job_id, new_job_name))
+
+
+def _setup(monkeypatch, indexer, profile, subtitles, audio_language='[]', use_embedded_subs=True):
+    """Patch the indexer's dependencies and return the indexer entry point, fake database and fake job queue."""
     if indexer is series_indexer:
-        row = SimpleNamespace(sonarrSeriesId=1, sonarrEpisodeId=1, profileId=1, audio_language=audio_language)
+        row = SimpleNamespace(sonarrSeriesId=1, sonarrEpisodeId=1, profileId=1, audio_language=audio_language,
+                              title='Show', season=1, episode=1, episodeTitle='Pilot')
         run = indexer.list_missing_subtitles
     else:
-        row = SimpleNamespace(radarrId=1, profileId=1, audio_language=audio_language)
+        row = SimpleNamespace(radarrId=1, profileId=1, audio_language=audio_language, title='Movie')
         run = indexer.list_missing_subtitles_movies
 
     fake_database = _FakeDatabase(row)
+    fake_jobs_queue = _FakeJobsQueue()
     monkeypatch.setattr(app_database, 'update_profile_id_list', lambda: [profile])
     monkeypatch.setattr(indexer, 'database', fake_database)
+    monkeypatch.setattr(indexer, 'jobs_queue', fake_jobs_queue)
     monkeypatch.setattr(indexer, 'store_missing_subtitles', fake_database.store_missing_subtitles)
     monkeypatch.setattr(indexer, 'get_audio_profile_languages',
                         lambda audio: [{'name': 'English', 'code2': 'en', 'code3': 'eng'}]
@@ -214,9 +251,13 @@ def _missing(monkeypatch, indexer, profile, subtitles, audio_language='[]', use_
     monkeypatch.setattr(indexer, 'get_subtitles', lambda *args, **kwargs: [dict(x) for x in subtitles])
     monkeypatch.setattr(indexer, 'get_language_equals', lambda: [])
     monkeypatch.setattr(indexer, 'event_stream', lambda **kwargs: None)
+    return run, fake_database, fake_jobs_queue
 
-    run()
 
+def _missing(monkeypatch, indexer, profile, subtitles, audio_language='[]', use_embedded_subs=True):
+    """Run the indexer for one media item as a job and return the sorted missing list it stored."""
+    run, fake_database, _ = _setup(monkeypatch, indexer, profile, subtitles, audio_language, use_embedded_subs)
+    run(job_id=JOB_ID)
     return sorted(fake_database.missing)
 
 
@@ -397,3 +438,50 @@ def test_embedded_subtitles_without_path_are_ignored_when_embedded_disabled(monk
 
     assert _missing(monkeypatch, indexer, profile, no_path, use_embedded_subs=False) == ['en']
     assert _missing(monkeypatch, indexer, profile, no_path, use_embedded_subs=True) == []
+
+
+JOB_NAMES = {
+    'series': 'Computing missing episodes subtitles',
+    'movies': 'Computing missing movies subtitles',
+}
+
+
+@pytest.mark.parametrize('indexer', INDEXERS)
+def test_calling_without_arguments_adds_a_progress_job(monkeypatch, indexer):
+    """Calling the indexer without a media id or job id must enqueue a progress job and not index inline."""
+    run, fake_database, fake_jobs_queue = _setup(monkeypatch, indexer, _profile([_profile_item(1, 'normal')]),
+                                                 ACTUAL['none'])
+    run()
+
+    job_name = JOB_NAMES['series'] if indexer is series_indexer else JOB_NAMES['movies']
+    assert fake_jobs_queue.added == [(job_name, True, {})]
+    assert fake_database.executed is False
+    assert fake_database.missing is None
+
+
+@pytest.mark.parametrize('indexer', INDEXERS)
+def test_job_reports_progress_for_each_media_item(monkeypatch, indexer):
+    """A job run must report the item total and then the processed position with a message."""
+    run, _, fake_jobs_queue = _setup(monkeypatch, indexer, _profile([_profile_item(1, 'normal')]), ACTUAL['none'])
+    run(job_id=JOB_ID)
+
+    assert fake_jobs_queue.progress[0] == (JOB_ID, None, 1, 'Indexing')
+    assert fake_jobs_queue.progress[1][:3] == (JOB_ID, 1, None)
+    assert fake_jobs_queue.names == [(JOB_ID, 'Computed missing episodes subtitles' if indexer is series_indexer
+                                      else 'Computed missing movies subtitles')]
+
+
+@pytest.mark.parametrize('indexer', INDEXERS)
+def test_calling_without_job_id_does_not_touch_the_job_queue(monkeypatch, indexer):
+    """A direct call with a media id runs inline and must not report progress to the job queue."""
+    run, fake_database, fake_jobs_queue = _setup(monkeypatch, indexer, _profile([_profile_item(1, 'normal')]),
+                                                 ACTUAL['none'])
+    if indexer is series_indexer:
+        run(epno=1)
+    else:
+        run(no=1)
+
+    assert fake_database.missing == ['en']
+    assert fake_jobs_queue.added == []
+    assert fake_jobs_queue.progress == []
+    assert fake_jobs_queue.names == []
