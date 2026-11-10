@@ -288,6 +288,14 @@ def reload_missing_languages_from_db(path, media_type):
         logging.debug(f"BAZARR no media with this path have been found in database: {reversed_path}")
         return []
 
+    if media_type == 'sports':
+        # Sports events keep missing languages on the event row, not in TableMissingSubtitles.
+        languages = [
+            missing_subtitle_to_language_tuple(language)
+            for language in parse_missing_subtitles(confirmed_missing_subs.missing_subtitles)
+        ]
+        return _get_language_obj(languages=languages)
+
     languages = [
         missing_subtitle_to_language_tuple(language)
         for language in database.execute(
