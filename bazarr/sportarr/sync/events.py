@@ -102,11 +102,11 @@ def sync_events(league_id):
         if not isinstance(event, dict) or type(event.get('id')) is not int or event['id'] <= 0:
             complete_event_list = False
             continue
-        if event.get('hasFile') is False:
-            continue
+        # Sportarr sets hasFile only when every monitored part has a file. A
+        # partly downloaded card still has files on disk, so each file decides
+        # its row.
         files = event.get('files')
-        if event.get('hasFile') is not True or not isinstance(files, list) or \
-                not all(_has_part_number(file) for file in files):
+        if not isinstance(files, list) or not all(_has_part_number(file) for file in files):
             # The parts cannot be identified, so keep this event's rows as they are.
             current_events_sportarr.extend(key for key in current_events_id_db_list if key[0] == event['id'])
             continue
