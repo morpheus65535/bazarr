@@ -642,6 +642,7 @@ const useRoutes = (): CustomRouteObject[] => {
       data?.providers,
       data?.sonarr_signalr,
       data?.radarr_signalr,
+      data?.sportarr_sse,
       data?.announcements,
       data?.status,
       radarr,
