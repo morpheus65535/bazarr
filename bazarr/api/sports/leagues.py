@@ -14,7 +14,8 @@ from sportarr.sync.leagues import update_one_league
 from app.event_handler import event_stream
 from api.swaggerui import subtitles_language_model
 
-from ..utils import authenticate, None_Keys, postprocess
+from ..utils import authenticate, None_Keys, postprocess, add_list_query_args, profile_filter_clause, \
+    monitored_filter_clause, tags_filter_clause, audio_language_filter_clause, apply_sort
 
 api_ns_sports_leagues = Namespace('Sports Leagues', description='List sports leagues metadata, update languages '
                                                                 'profile or run actions on specific leagues.')
@@ -27,6 +28,7 @@ class SportsLeagues(Resource):
     get_request_parser.add_argument('length', type=int, required=False, default=-1, help='Paging length integer')
     get_request_parser.add_argument('leagueid[]', type=int, action='append', required=False, default=[],
                                     help='Sportarr league IDs to get')
+    add_list_query_args(get_request_parser)
 
     get_subtitles_language_model = api_ns_sports_leagues.model('subtitles_language_model', subtitles_language_model)
 
@@ -44,8 +46,9 @@ class SportsLeagues(Resource):
         'profileId': fields.Integer(),
         'tags': fields.List(fields.String),
         'audio_language': fields.Nested(get_subtitles_language_model),
-        'episodeFileCount': fields.Integer(default=0),
-        'episodeMissingCount': fields.Integer(default=0),
+        'created_at_timestamp': fields.String(),
+        'episodeFileCount': fields.Integer(),
+        'episodeMissingCount': fields.Integer(),
     })
 
     get_response_model = api_ns_sports_leagues.model('SportsLeaguesGetResponse', {
@@ -65,26 +68,19 @@ class SportsLeagues(Resource):
 
         # Counted per playable file, because a row is one part. An event with
         # two parts needs subtitles for both.
-        episodeFileCount = select(TableSportsLeagues.sportarrLeagueId,
-                                  func.count(TableSportsEvents.sportarrLeagueId).label('episodeFileCount')) \
-            .select_from(TableSportsEvents) \
-            .join(TableSportsLeagues) \
-            .group_by(TableSportsLeagues.sportarrLeagueId)\
-            .subquery()
+        file_count = select(TableSportsEvents.sportarrLeagueId,
+                            func.count().label('episodeFileCount')) \
+            .group_by(TableSportsEvents.sportarrLeagueId).subquery()
 
-        events_missing_conditions = [(TableMissingSubtitles.media_type == 'sports'),
-                                     (TableMissingSubtitles.media_id == TableSportsEvents.id)]
-        events_missing_conditions += get_exclusion_clause('sports')
-
-        episodeMissingCount = select(TableSportsLeagues.sportarrLeagueId,
-                                     func.count(func.distinct(TableSportsEvents.id))
-                                     .label('episodeMissingCount')) \
+        missing_conditions = [TableMissingSubtitles.media_type == 'sports']
+        missing_conditions += get_exclusion_clause('sports')
+        missing_count = select(TableSportsEvents.sportarrLeagueId,
+                               func.count(func.distinct(TableSportsEvents.id)).label('episodeMissingCount')) \
             .select_from(TableSportsEvents) \
             .join(TableSportsLeagues) \
             .join(TableMissingSubtitles, TableMissingSubtitles.media_id == TableSportsEvents.id) \
-            .where(reduce(operator.and_, events_missing_conditions)) \
-            .group_by(TableSportsLeagues.sportarrLeagueId)\
-            .subquery()
+            .where(reduce(operator.and_, missing_conditions)) \
+            .group_by(TableSportsEvents.sportarrLeagueId).subquery()
 
         stmt = select(TableSportsLeagues.sportarrLeagueId,
                       TableSportsLeagues.externalId,
@@ -99,23 +95,46 @@ class SportsLeagues(Resource):
                       TableSportsLeagues.profileId,
                       TableSportsLeagues.tags,
                       TableSportsLeagues.audio_language,
-                      episodeFileCount.c.episodeFileCount,
-                      episodeMissingCount.c.episodeMissingCount) \
+                      TableSportsLeagues.created_at_timestamp,
+                      func.coalesce(file_count.c.episodeFileCount, 0).label('episodeFileCount'),
+                      func.coalesce(missing_count.c.episodeMissingCount, 0).label('episodeMissingCount')) \
             .select_from(TableSportsLeagues) \
-            .join(episodeFileCount, TableSportsLeagues.sportarrLeagueId == episodeFileCount.c.sportarrLeagueId,
-                  isouter=True) \
-            .join(episodeMissingCount, TableSportsLeagues.sportarrLeagueId == episodeMissingCount.c.sportarrLeagueId,
-                  isouter=True) \
-            .order_by(TableSportsLeagues.sortTitle)
+            .join(file_count, TableSportsLeagues.sportarrLeagueId == file_count.c.sportarrLeagueId, isouter=True) \
+            .join(missing_count, TableSportsLeagues.sportarrLeagueId == missing_count.c.sportarrLeagueId, isouter=True)
 
-        if len(leagueId) > 0:
-            stmt = stmt.where(TableSportsLeagues.sportarrLeagueId.in_(leagueId))
-        elif length > 0:
+        where_clauses = []
+        if leagueId:
+            where_clauses.append(TableSportsLeagues.sportarrLeagueId.in_(leagueId))
+        if args.get('monitored') is not None:
+            where_clauses.append(monitored_filter_clause(TableSportsLeagues.monitored, args['monitored']))
+        if args.get('profileid') is not None:
+            where_clauses.append(profile_filter_clause(TableSportsLeagues.profileId, args['profileid']))
+        if args.get('missing') is not None:
+            missing_clause = func.coalesce(missing_count.c.episodeMissingCount, 0) > 0
+            if args['missing'] == 'false':
+                missing_clause = func.coalesce(missing_count.c.episodeMissingCount, 0) == 0
+            where_clauses.append(missing_clause)
+        if args.get('audio_language') is not None:
+            where_clauses.append(audio_language_filter_clause(TableSportsLeagues.audio_language,
+                                                               args['audio_language']))
+        if args.get('tags[]'):
+            where_clauses.append(tags_filter_clause(TableSportsLeagues.tags, args['tags[]']))
+        if where_clauses:
+            stmt = stmt.where(reduce(operator.and_, where_clauses))
+
+        stmt = apply_sort(stmt, {
+            'title': TableSportsLeagues.sortTitle,
+            'sport': TableSportsLeagues.sport,
+            'episodeFileCount': file_count.c.episodeFileCount,
+            'episodeMissingCount': missing_count.c.episodeMissingCount,
+            'profileId': TableSportsLeagues.profileId,
+            'createdAtTimestamp': TableSportsLeagues.created_at_timestamp,
+        }, TableSportsLeagues.sortTitle, args.get('sort_by'), args.get('sort_order'))
+
+        if length > 0:
             stmt = stmt.limit(length).offset(start)
 
-        results = []
-        for x in database.execute(stmt).all():
-            results.append(postprocess({
+        results = [postprocess({
                 'sportarrLeagueId': x.sportarrLeagueId,
                 'externalId': x.externalId,
                 'title': x.title,
@@ -129,14 +148,16 @@ class SportsLeagues(Resource):
                 'profileId': x.profileId,
                 'tags': x.tags,
                 'audio_language': x.audio_language,
+                'created_at_timestamp': x.created_at_timestamp,
                 'episodeFileCount': x.episodeFileCount,
                 'episodeMissingCount': x.episodeMissingCount,
-            }))
+            }) for x in database.execute(stmt).all()]
 
-        count = database.execute(
-            select(func.count())
-            .select_from(TableSportsLeagues)) \
-            .scalar()
+        count_stmt = select(func.count()).select_from(TableSportsLeagues) \
+            .join(missing_count, TableSportsLeagues.sportarrLeagueId == missing_count.c.sportarrLeagueId, isouter=True)
+        if where_clauses:
+            count_stmt = count_stmt.where(reduce(operator.and_, where_clauses))
+        count = database.execute(count_stmt).scalar()
 
         return marshal({'data': results, 'total': count}, self.get_response_model)
 
