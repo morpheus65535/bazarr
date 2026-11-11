@@ -130,6 +130,14 @@ def provider_throttle_map():
             ForbiddenError: (datetime.timedelta(minutes=15), "15 minutes"),
             TooManyRequests: (datetime.timedelta(hours=1), "1 hour"),
         },
+        "prijevodionline": {
+            # A missing or rejected API key will not fix itself, so keep the provider off until the key is changed
+            # (the throttle is cleared when the API key setting is saved with a new value).
+            AuthenticationError: (datetime.timedelta(hours=24), "24 hours"),
+            ConfigurationError: (datetime.timedelta(hours=24), "24 hours"),
+            ForbiddenError: (datetime.timedelta(hours=1), "1 hour"),
+            IPAddressBlocked: (datetime.timedelta(hours=6), "6 hours"),
+        },
         "subdl": {
             ProviderError: (datetime.timedelta(hours=1), "1 hour"),
             DownloadLimitExceeded: (
@@ -257,6 +265,10 @@ def get_providers_auth():
         'avistaz': {
             'cookies': settings.avistaz.cookies,
             'user_agent': settings.avistaz.user_agent,
+        },
+        'prijevodionline': {
+            'api_key': settings.prijevodionline.api_key,
+            'allow_paid_translations': settings.prijevodionline.allow_paid_translations,
         },
         'cinemaz': {
             'cookies': settings.cinemaz.cookies,
@@ -554,7 +566,7 @@ def list_throttled_providers():
 def reset_throttled_providers(only_auth_or_conf_error=False):
     for provider in list(tp):
         if only_auth_or_conf_error and tp[provider][0] not in ['AuthenticationError', 'ConfigurationError',
-                                                               'PaymentRequired']:
+                                                               'ForbiddenError', 'PaymentRequired']:
             continue
         tp.pop(provider, None)
         # the reset hands back a clean slate, including strikes not yet spent on a throttle
@@ -562,8 +574,8 @@ def reset_throttled_providers(only_auth_or_conf_error=False):
     set_throttled_providers(str(tp))
     update_throttled_provider()
     if only_auth_or_conf_error:
-        logging.info('BAZARR throttled providers have been reset (only AuthenticationError, ConfigurationError and '
-                     'PaymentRequired).')
+        logging.info('BAZARR throttled providers have been reset (only AuthenticationError, ConfigurationError, '
+                     'ForbiddenError and PaymentRequired).')
     else:
         logging.info('BAZARR throttled providers have been reset.')
 

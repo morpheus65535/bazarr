@@ -1,0 +1,40 @@
+{
+ "movies": {
+  "items": [
+   {
+    "id": 324,
+    "title": "Inception",
+    "originalTitle": "Inception",
+    "slug": "inception-2010",
+    "letter": "i",
+    "releaseDate": "2010-07-15",
+    "runtime": 148,
+    "type": "movie",
+    "updatedAt": "2026-11-11T05:00:49.000Z",
+    "published": true,
+    "restricted": false,
+    "tmdbId": 27205,
+    "imdbId": "tt1375666",
+    "genres": [
+     {
+      "id": 3,
+      "name": "Kriminalistički"
+     },
+     {
+      "id": 17,
+      "name": "Akcija"
+     },
+     {
+      "id": 24,
+      "name": "Znanstvena fantastika"
+     }
+    ],
+    "translationCount": 2,
+    "posterUrl": "https://www.prijevodi-online.org/api/v1/movies/324/poster?v=901",
+    "copyrightNoticeAt": null,
+    "copyrightNotice": null
+   }
+  ],
+  "total": 1
+ }
+}

@@ -463,7 +463,20 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
   {
     key: "prijevodionline",
     name: "Prijevodi Online",
-    description: "Prijevodi Online website. No need for login or cookies.",
+    message:
+      "API key required, in the form po_... Paid translations spend tokens from your account when downloaded.",
+    inputs: [
+      {
+        type: "password",
+        key: "api_key",
+        name: "API key",
+      },
+      {
+        type: "switch",
+        key: "allow_paid_translations",
+        name: "Allow paid translations (downloading one spends tokens from your account)",
+      },
+    ],
   },
   {
     key: "regielive",
