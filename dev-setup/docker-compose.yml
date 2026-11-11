@@ -86,6 +86,16 @@ services:
       retries: 30
       start_period: 60s
 
+  flaresolverr:
+    image: ghcr.io/flaresolverr/flaresolverr:v3.5.2
+    environment:
+      - LOG_LEVEL=info
+    restart: unless-stopped
+    networks:
+      - bazarr-network
+    profiles:
+      - flaresolverr
+
   # Autopulse service - configurable branch/PR
   autopulse:
     build:
