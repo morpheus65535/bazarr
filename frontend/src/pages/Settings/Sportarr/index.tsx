@@ -25,9 +25,10 @@ import { timeoutOptions } from "./options";
 
 const SettingsSportarrView: FunctionComponent = () => {
   const { data: settings } = useSystemSettings();
-  const { data: leagues } = useSportsLeagues({
-    enabled: settings?.general.use_sportarr ?? false,
-  });
+  const { data: leagues } = useSportsLeagues(
+    {},
+    { enabled: settings?.general.use_sportarr ?? false },
+  );
   const updateLeagues = useSportsLeagueModification();
   const { data: leagueTags } = useSportsLeagueTags();
   const unassignedLeagues =
