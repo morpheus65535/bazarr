@@ -13,10 +13,11 @@ from subtitles.indexer.sports import store_subtitles_sports, list_missing_subtit
 from sportarr.history import history_log_sports
 from app.get_providers import get_providers
 from app.database import (get_exclusion_clause, get_audio_profile_languages, TableSportsLeagues, TableSportsEvents,
-                          database, select, get_sports_subtitles, get_profile_id)
-from app.event_handler import event_stream
+                          database, select, get_sports_subtitles)
 from app.jobs_queue import jobs_queue
 from app.config import settings
+from app.database import get_profile_id
+from app.event_handler import event_stream
 
 from ..download import generate_subtitles
 
