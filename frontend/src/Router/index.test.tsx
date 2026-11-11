@@ -34,7 +34,11 @@ const getSettingsRoutes = (): CustomRouteObject[] => {
   mockedUseBadges.mockReturnValue({ data: undefined } as ReturnType<
     typeof useBadges
   >);
-  mockedUseEnabledStatus.mockReturnValue({ sonarr: true, radarr: true });
+  mockedUseEnabledStatus.mockReturnValue({
+    sonarr: true,
+    radarr: true,
+    sportarr: true,
+  });
 
   rawRender(<Router />);
 
@@ -61,6 +65,7 @@ describe("Settings routes", () => {
   it.each([
     ["sonarr", "/settings/library/sonarr"],
     ["radarr", "/settings/library/radarr"],
+    ["sportarr", "/settings/library/sportarr"],
     ["plex", "/settings/integrations/plex"],
     ["jellyfin", "/settings/integrations/jellyfin"],
   ])("redirects the legacy %s URL", (path, target) => {
@@ -68,6 +73,21 @@ describe("Settings routes", () => {
 
     expect(route?.hidden).toBe(true);
     expect(route && getRedirectTarget(route)).toBe(target);
+  });
+
+  it.each([
+    ["sonarr", "Sonarr"],
+    ["radarr", "Radarr"],
+    ["sportarr", "Sportarr"],
+  ])("renders the %s settings as a library tab", (path, name) => {
+    const library = getSettingsRoutes().find((item) => item.path === "library");
+    const route = (library?.children as CustomRouteObject[] | undefined)?.find(
+      (item) => item.path === path,
+    );
+
+    expect(route?.name).toBe(name);
+    expect(route?.hidden).toBe(true);
+    expect(route && getRedirectTarget(route)).toBeUndefined();
   });
 
   it("redirects integration and grouped settings indexes to their first tabs", () => {
@@ -90,6 +110,7 @@ describe("Settings routes", () => {
   it.each([
     ["sonarr", "/settings/library/sonarr"],
     ["radarr", "/settings/library/radarr"],
+    ["sportarr", "/settings/library/sportarr"],
   ])("redirects the legacy integrations/%s URL", (path, target) => {
     const integrations = getSettingsRoutes().find(
       (item) => item.path === "integrations",

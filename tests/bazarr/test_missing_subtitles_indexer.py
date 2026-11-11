@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Tests for missing subtitles calculation in series and movies indexers.
+Tests for missing subtitles calculation in series, movies and sports indexers.
 
 This module tests the custom alpha2 code resolution fix for languages like
 Spanish (Latino) with custom code "ea" that should map to standard Spanish.
@@ -15,6 +15,7 @@ import app.database as app_database
 from bazarr.languages.custom_lang import LatinAmericanSpanish, CustomLanguage
 from subtitles.indexer import movies as movies_indexer
 from subtitles.indexer import series as series_indexer
+from subtitles.indexer import sports as sports_indexer
 
 
 def test_custom_language_from_value_alpha2():
@@ -145,6 +146,7 @@ def test_ietf_fallback_for_standard_languages():
 INDEXERS = [
     pytest.param(series_indexer, id='series'),
     pytest.param(movies_indexer, id='movies'),
+    pytest.param(sports_indexer, id='sports'),
 ]
 
 ANY_CUTOFF = 65535
@@ -192,27 +194,44 @@ class _FakeDatabase:
         self.missing = ast.literal_eval(missing_subtitles)
 
 
-def _missing(monkeypatch, indexer, profile, subtitles, audio_language='[]', use_embedded_subs=True):
+class _FakeSportsDatabase(_FakeDatabase):
+    """Sports events keep the missing list on the event row, so the indexer writes it with an update statement."""
+
+    def execute(self, statement):
+        if statement.is_select:
+            return SimpleNamespace(all=lambda: [self.row])
+        self.missing = ast.literal_eval(statement.compile().params['missing_subtitles'])
+
+
+def _missing(monkeypatch, indexer, profile, subtitles, audio_language='[]', use_embedded_subs=True,
+             language_equals=()):
     """Run the indexer for one media item and return the sorted missing list it stored."""
     if indexer is series_indexer:
         row = SimpleNamespace(sonarrSeriesId=1, sonarrEpisodeId=1, profileId=1, audio_language=audio_language)
         run = indexer.list_missing_subtitles
+    elif indexer is sports_indexer:
+        row = SimpleNamespace(sportarrLeagueId=1, sportsEventId=1, profileId=1, audio_language=audio_language)
+        run = indexer.list_missing_subtitles_sports
     else:
         row = SimpleNamespace(radarrId=1, profileId=1, audio_language=audio_language)
         run = indexer.list_missing_subtitles_movies
 
-    fake_database = _FakeDatabase(row)
+    if indexer is sports_indexer:
+        fake_database = _FakeSportsDatabase(row)
+        monkeypatch.setattr(indexer, 'get_sports_subtitles', lambda *args, **kwargs: [dict(x) for x in subtitles])
+    else:
+        fake_database = _FakeDatabase(row)
+        monkeypatch.setattr(indexer, 'store_missing_subtitles', fake_database.store_missing_subtitles)
+        monkeypatch.setattr(indexer, 'get_subtitles', lambda *args, **kwargs: [dict(x) for x in subtitles])
     monkeypatch.setattr(app_database, 'update_profile_id_list', lambda: [profile])
     monkeypatch.setattr(indexer, 'database', fake_database)
-    monkeypatch.setattr(indexer, 'store_missing_subtitles', fake_database.store_missing_subtitles)
     monkeypatch.setattr(indexer, 'get_audio_profile_languages',
                         lambda audio: [{'name': 'English', 'code2': 'en', 'code3': 'eng'}]
                         if audio == "['en']"
                         else [{'name': 'Polish', 'code2': 'pl', 'code3': 'pol'}] if audio == "['pl']" else [])
     monkeypatch.setattr(indexer, 'settings',
                         SimpleNamespace(general=SimpleNamespace(use_embedded_subs=use_embedded_subs)))
-    monkeypatch.setattr(indexer, 'get_subtitles', lambda *args, **kwargs: [dict(x) for x in subtitles])
-    monkeypatch.setattr(indexer, 'get_language_equals', lambda: [])
+    monkeypatch.setattr(indexer, 'get_language_equals', lambda: list(language_equals))
     monkeypatch.setattr(indexer, 'event_stream', lambda **kwargs: None)
 
     run()
@@ -397,3 +416,16 @@ def test_embedded_subtitles_without_path_are_ignored_when_embedded_disabled(monk
 
     assert _missing(monkeypatch, indexer, profile, no_path, use_embedded_subs=False) == ['en']
     assert _missing(monkeypatch, indexer, profile, no_path, use_embedded_subs=True) == []
+
+
+# Spanish subtitles count as English through the language equals setting.
+SPANISH_EQUALS_ENGLISH = [(core.Language('spa'), core.Language('eng'))]
+
+
+@pytest.mark.parametrize('indexer', INDEXERS)
+@pytest.mark.parametrize('item_type, expected', [('normal', []), ('non_hi', ['en'])])
+def test_language_equals_with_profile_item_type(monkeypatch, indexer, item_type, expected):
+    profile = _profile([_profile_item(1, item_type)])
+    spanish = [{'path': '/media/es.srt', 'code2': 'es', 'forced': False, 'hi': False}]
+
+    assert _missing(monkeypatch, indexer, profile, spanish, language_equals=SPANISH_EQUALS_ENGLISH) == expected

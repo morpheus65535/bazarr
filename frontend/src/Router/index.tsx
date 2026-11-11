@@ -250,6 +250,12 @@ const useRoutes = (): CustomRouteObject[] => {
                     hidden: true,
                     element: <SettingsRadarrView></SettingsRadarrView>,
                   },
+                  {
+                    path: "sportarr",
+                    name: "Sportarr",
+                    hidden: true,
+                    element: <SettingsSportarrView></SettingsSportarrView>,
+                  },
                 ],
               },
               {
@@ -505,6 +511,13 @@ const useRoutes = (): CustomRouteObject[] => {
                 ),
               },
               {
+                path: "sportarr",
+                hidden: true,
+                element: (
+                  <Navigate to="/settings/library/sportarr" replace></Navigate>
+                ),
+              },
+              {
                 path: "plex",
                 hidden: true,
                 element: (
@@ -629,7 +642,6 @@ const useRoutes = (): CustomRouteObject[] => {
       data?.providers,
       data?.sonarr_signalr,
       data?.radarr_signalr,
-      data?.sportarr_sse,
       data?.announcements,
       data?.status,
       radarr,
