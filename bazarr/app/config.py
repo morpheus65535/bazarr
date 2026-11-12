@@ -416,6 +416,10 @@ validators = [
     Validator('jimaku.enable_archives_download', must_exist=True, default=False, is_type_of=bool),
     Validator('jimaku.enable_ai_subs', must_exist=True, default=False, is_type_of=bool),
 
+    # prijevodionline section
+    Validator('prijevodionline.api_key', must_exist=True, default='', is_type_of=str),
+    Validator('prijevodionline.allow_paid_translations', must_exist=True, default=False, is_type_of=bool),
+
     # titlovi section
     Validator('titlovi.username', must_exist=True, default='', is_type_of=str, cast=str),
     Validator('titlovi.password', must_exist=True, default='', is_type_of=str, cast=str),
@@ -888,6 +892,10 @@ def save_settings(settings_items):
 
         if key == 'settings-subsource-apikey':
             if value != settings.subsource.apikey:
+                reset_providers = True
+
+        if key == 'settings-prijevodionline-api_key':
+            if value != settings.prijevodionline.api_key:
                 reset_providers = True
 
         if reset_providers:
