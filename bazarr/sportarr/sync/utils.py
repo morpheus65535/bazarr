@@ -90,10 +90,23 @@ def get_events_from_sportarr_api(apikey_sportarr, league_id):
             logging.exception(f"Exception raised while getting events from Sportarr API: {e}")
             return
 
-        result = r.json()
-        events += result.get('records', [])
+        try:
+            result = r.json()
+        except ValueError:
+            logging.exception("BAZARR Error trying to get events from Sportarr. Invalid response.")
+            return
+        records = result.get('records', []) if isinstance(result, dict) else None
+        if not isinstance(records, list):
+            logging.debug(f'BAZARR Sportarr events sync returned an invalid payload for league {league_id}.')
+            return
+        events += records
 
-        if page >= result.get('totalPages', 1):
+        total_pages = result.get('totalPages', 1)
+        if type(total_pages) is not int:
+            # A partial walk read as complete would delete the missing events.
+            logging.debug(f'BAZARR Sportarr events sync returned an invalid page count for league {league_id}.')
+            return
+        if page >= total_pages:
             break
         page += 1
 

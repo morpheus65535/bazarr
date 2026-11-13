@@ -17,8 +17,13 @@ def test_event_removal_notifies_the_sports_view(monkeypatch):
     from sportarr.sync import events as sports_events
 
     sent = []
-    event = SimpleNamespace(sportarrEventId=42, partNumber=0, to_dict=lambda: {})
+    event = SimpleNamespace(sportarrEventId=42, partNumber=0, to_dict=lambda: {'id': 5})
     calls = []
+    deleted = []
+
+    def delete_media_and_wanted_search_state(media_type, table, id_column_name, media_ids):
+        deleted.append((media_type, table, id_column_name, media_ids))
+        return media_ids
 
     def execute(statement):
         calls.append(statement)
@@ -29,8 +34,11 @@ def test_event_removal_notifies_the_sports_view(monkeypatch):
     monkeypatch.setattr(sports_events.database, 'execute', execute)
     monkeypatch.setattr(sports_events, 'get_events_from_sportarr_api', lambda **kwargs: [])
     monkeypatch.setattr(sports_events, 'event_stream', lambda **data: sent.append(data))
+    monkeypatch.setattr(sports_events, 'delete_media_and_wanted_search_state', delete_media_and_wanted_search_state)
     monkeypatch.setattr(sports_events.settings.sportarr, 'sync_only_monitored_leagues', False)
 
     sports_events.sync_events(7)
 
+    # The row id keys the shared search state. The view still gets the Sportarr event id.
+    assert deleted == [('sports', sports_events.TableSportsEvents, 'id', [5])]
     assert sent == [{'type': 'sports-event', 'action': 'delete', 'payload': 42}]

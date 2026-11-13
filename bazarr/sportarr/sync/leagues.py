@@ -8,10 +8,11 @@ from datetime import datetime
 
 from app.config import settings
 from sportarr.rootfolder import check_sportarr_rootfolder
-from app.database import TableSportsLeagues, TableLanguagesProfiles, database, insert, update, delete, select
+from app.database import TableSportsLeagues, TableLanguagesProfiles, database, insert, update, select
 from utilities.helper import bool_map
 from app.event_handler import event_stream
 from app.jobs_queue import jobs_queue
+from subtitles.wanted_state import delete_league_and_wanted_search_state
 
 from .events import sync_events
 from .parser import leagueParser
@@ -54,10 +55,13 @@ def update_leagues(job_id=None, wait_for_completion=False):
         logging.exception(f"BAZARR Error trying to get leagues from Sportarr: {e}")
         return
     else:
-        if leagues is None:
+        if not isinstance(leagues, list):
             # The request failed, so nothing can be said about what still exists.
             # Returning here stops a failed call being read as every league
             # having been removed.
+            logging.debug('BAZARR Sportarr leagues sync returned an invalid payload. Skipping sync.')
+            jobs_queue.update_job_name(job_id=job_id, new_job_name="Synced leagues with Sportarr")
+            gc.collect()
             return
 
         # Get current leagues in DB
@@ -67,6 +71,7 @@ def update_leagues(job_id=None, wait_for_completion=False):
                               .all()]
 
         current_leagues_sportarr = []
+        complete_league_list = True
 
         leagues_count = len(leagues)
         skipped_count = 0
@@ -83,7 +88,12 @@ def update_leagues(job_id=None, wait_for_completion=False):
 
         jobs_queue.update_job_progress(job_id=job_id, progress_max=leagues_count)
         for i, league in enumerate(leagues, start=1):
-            jobs_queue.update_job_progress(job_id=job_id, progress_value=i, progress_message=league['name'])
+            if not isinstance(league, dict) or type(league.get('id')) is not int or league['id'] <= 0:
+                complete_league_list = False
+                skipped_count += 1
+                continue
+            jobs_queue.update_job_progress(job_id=job_id, progress_value=i,
+                                           progress_message=league.get('name', 'Unknown'))
 
             # A league with no folder of its own cannot be stored, because the
             # path is what identifies it. Sportarr returns null when the user
@@ -125,7 +135,11 @@ def update_leagues(job_id=None, wait_for_completion=False):
             sync_events(league_id=league['id'])
 
         # Calculate leagues to remove from DB
-        removed_leagues = list(set(current_leagues_db) - set(current_leagues_sportarr))
+        removed_leagues = (
+            list(set(current_leagues_db) - set(current_leagues_sportarr)) if complete_league_list else []
+        )
+        if not complete_league_list:
+            logging.warning('BAZARR Skipping leagues deletion because Sportarr returned unidentified leagues.')
 
         for league in removed_leagues:
             # Remove league from DB
@@ -152,9 +166,7 @@ def update_one_league(league_id, action, league_data=None, tagsDict=None, langua
 
     # Delete league from DB
     if action == 'deleted' and existing_league:
-        database.execute(
-            delete(TableSportsLeagues)
-            .where(TableSportsLeagues.sportarrLeagueId == int(league_id)))
+        delete_league_and_wanted_search_state(league_id)
 
         event_stream(type='sports-league', action='delete', payload=int(league_id))
         return

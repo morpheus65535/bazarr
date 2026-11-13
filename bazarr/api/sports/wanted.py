@@ -5,8 +5,10 @@ import operator
 from flask_restx import Resource, Namespace, reqparse, fields, marshal
 from functools import reduce
 
-from app.database import get_exclusion_clause, TableSportsEvents, TableSportsLeagues, database, select, func
+from app.database import get_exclusion_clause, TableSportsEvents, TableSportsLeagues, TableMissingSubtitles, database, \
+    select, func
 from api.swaggerui import subtitles_language_model
+from subtitles.wanted_state import get_missing_languages_map
 
 from ..utils import authenticate, postprocess
 
@@ -48,8 +50,10 @@ class SportsWanted(Resource):
         args = self.get_request_parser.parse_args()
         eventid = args.get('eventid[]')
 
-        wanted_conditions = [(TableSportsEvents.missing_subtitles.is_not(None)),
-                             (TableSportsEvents.missing_subtitles != '[]')]
+        wanted_conditions = [select(TableMissingSubtitles.id)
+                             .where(TableMissingSubtitles.media_type == 'sports')
+                             .where(TableMissingSubtitles.media_id == TableSportsEvents.id)
+                             .exists()]
         if len(eventid) > 0:
             wanted_conditions.append((TableSportsEvents.id.in_(eventid)))
             start = 0
@@ -64,7 +68,6 @@ class SportsWanted(Resource):
         stmt = select(TableSportsLeagues.title.label('leagueTitle'),
                       TableSportsEvents.title.label('eventTitle'),
                       TableSportsEvents.partName,
-                      TableSportsEvents.missing_subtitles,
                       TableSportsEvents.sportarrLeagueId,
                       TableSportsEvents.id.label('sportsEventId'),
                       TableSportsEvents.sceneName,
@@ -77,17 +80,20 @@ class SportsWanted(Resource):
         if length > 0:
             stmt = stmt.order_by(TableSportsEvents.id.desc()).limit(length).offset(start)
 
+        events = database.execute(stmt).all()
+        missing_languages = get_missing_languages_map('sports', [x.sportsEventId for x in events])
+
         results = [postprocess({
             'leagueTitle': x.leagueTitle,
             'eventTitle': x.eventTitle,
             'partName': x.partName,
-            'missing_subtitles': x.missing_subtitles,
+            'missing_subtitles': missing_languages[x.sportsEventId],
             'sportarrLeagueId': x.sportarrLeagueId,
             'sportsEventId': x.sportsEventId,
             'sceneName': x.sceneName,
             'tags': x.tags,
             'sport': x.sport,
-        }) for x in database.execute(stmt).all()]
+        }) for x in events]
 
         count = database.execute(
             select(func.count())

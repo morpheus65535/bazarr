@@ -1,7 +1,6 @@
 # coding=utf-8
 # fmt: off
 
-import ast
 import logging
 import operator
 import os
@@ -13,13 +12,16 @@ from subtitles.indexer.sports import store_subtitles_sports, list_missing_subtit
 from sportarr.history import history_log_sports
 from app.get_providers import get_providers
 from app.database import (get_exclusion_clause, get_audio_profile_languages, TableSportsLeagues, TableSportsEvents,
-                          database, select, get_sports_subtitles)
-from app.jobs_queue import jobs_queue
+                          TableMissingSubtitles, database, select, get_sports_subtitles)
+from app.jobs_queue import jobs_queue, JobCanceled
 from app.config import settings
 from app.database import get_profile_id
 from app.event_handler import event_stream
 
 from ..download import generate_subtitles
+from ..language_utils import has_unindexed_external_subtitle, resolve_audio_language
+from ..serialization import missing_subtitle_to_language_tuple
+from ..wanted_state import get_missing_languages, get_missing_languages_map, missing_subtitles_need_calculation
 
 
 def _event_label(event):
@@ -33,8 +35,10 @@ def league_download_subtitles(no, job_id=None, job_sub_function=False):
     if not job_sub_function and not job_id:
         jobs_queue.add_job_from_function(f"""Downloading missing subtitles for {database.scalar(
             select(TableSportsLeagues.title).where(TableSportsLeagues.sportarrLeagueId == no))
-            or 'Unknown League'}""", is_progress=True)
+            or 'Unknown League'}""", is_progress=True, is_cancellable=True)
         return
+    else:
+        job = jobs_queue.get_job(job_id=job_id)
 
     league_row = database.execute(
         select(TableSportsLeagues.path,
@@ -42,18 +46,25 @@ def league_download_subtitles(no, job_id=None, job_sub_function=False):
         .where(TableSportsLeagues.sportarrLeagueId == no))\
         .first()
 
+    if not league_row:
+        logging.debug(f"BAZARR no league with that sportarrLeagueId can be found in database: {no}")
+        jobs_queue.update_job_progress(job_id=job_id, progress_message="League not found in database.")
+        return
+
     if league_row and not os.path.exists(path_mappings.path_replace_sports(league_row.path)):
         raise OSError
 
     conditions = [(TableSportsEvents.sportarrLeagueId == no),
-                  (TableSportsEvents.missing_subtitles != '[]')]
+                  select(TableMissingSubtitles.id)
+                  .where(TableMissingSubtitles.media_type == 'sports')
+                  .where(TableMissingSubtitles.media_id == TableSportsEvents.id)
+                  .exists()]
     conditions += get_exclusion_clause('sports')
     events_details = database.execute(
         select(TableSportsEvents.id,
                TableSportsLeagues.title,
                TableSportsEvents.partName,
-               TableSportsEvents.title.label('eventTitle'),
-               TableSportsEvents.missing_subtitles)
+               TableSportsEvents.title.label('eventTitle'))
         .select_from(TableSportsEvents)
         .join(TableSportsLeagues)
         .where(reduce(operator.and_, conditions))) \
@@ -64,16 +75,24 @@ def league_download_subtitles(no, job_id=None, job_sub_function=False):
                       f"ignored because of monitored status, sport or league tags: {no}")
     else:
         count_events_details = len(events_details)
+        missing_languages_by_event = get_missing_languages_map(
+            'sports',
+            [event.id for event in events_details],
+        )
 
         jobs_queue.update_job_progress(job_id=job_id, progress_max=count_events_details)
         for i, event in enumerate(events_details, start=1):
+            if job.cancel_event.is_set():
+                raise JobCanceled
+
             jobs_queue.update_job_progress(job_id=job_id, progress_value=i, progress_message=_event_label(event))
 
             providers_list = get_providers()
             fallback_allowed = settings.general.use_whisper_fallback and settings.general.use_whisper_fallback_series
             if providers_list:
                 sports_event_download_subtitles(no=event.id, job_id=job_id, job_sub_function=True,
-                                                providers_list=providers_list, fallback_allowed=fallback_allowed)
+                                                providers_list=providers_list, fallback_allowed=fallback_allowed,
+                                                missing_languages=missing_languages_by_event[event.id])
             else:
                 jobs_queue.update_job_progress(job_id=job_id, progress_value=count_events_details)
                 logging.info("BAZARR All providers are throttled")
@@ -86,8 +105,9 @@ def league_download_subtitles(no, job_id=None, job_sub_function=False):
     jobs_queue.update_job_name(job_id=job_id, new_job_name=f"Downloaded missing subtitles for {league_row.title}")
 
 
-def sports_event_download_subtitles(no, job_id=None, job_sub_function=False, providers_list=None,
-                                    fallback_allowed=False):
+def sports_event_download_subtitles(no: int | None, job_id: int | None = None, job_sub_function: bool = False,
+                                    providers_list: list[str] | None = None, fallback_allowed: bool = False,
+                                    missing_languages: list[str] | None = None) -> None:
     if not job_sub_function and not job_id:
         jobs_queue.add_job_from_function(f"""Downloading missing subtitles for {database.scalar(
             select(TableSportsEvents.title).where(TableSportsEvents.id == no)) or 'Unknown Event'}""",
@@ -97,7 +117,7 @@ def sports_event_download_subtitles(no, job_id=None, job_sub_function=False, pro
     conditions = [(TableSportsEvents.id == no)]
     conditions += get_exclusion_clause('sports')
     stmt = select(TableSportsEvents.path,
-                  TableSportsEvents.missing_subtitles,
+                  TableSportsEvents.missing_subtitles_calculated,
                   TableSportsEvents.monitored,
                   TableSportsEvents.id,
                   TableSportsEvents.sceneName,
@@ -119,17 +139,27 @@ def sports_event_download_subtitles(no, job_id=None, job_sub_function=False, pro
         jobs_queue.update_job_progress(job_id=job_id, progress_message="Sports event not found in database.")
         return
 
-    previously_indexed_subtitles = get_sports_subtitles(sports_event_id=event.id)
-
-    if not len(previously_indexed_subtitles) or \
-            any([not x['embedded_track_id'] for x in previously_indexed_subtitles if not x['path']]):
+    previously_indexed_subtitles = get_sports_subtitles(sports_event_id=event.id) or []
+    if not previously_indexed_subtitles or has_unindexed_external_subtitle(previously_indexed_subtitles):
         # subtitles indexing for this event might be incomplete, we'll do it again
         store_subtitles_sports(event.id)
+        missing_languages = None
         event = database.execute(stmt).first()
-    elif event.missing_subtitles is None:
+        if not event:
+            logging.debug(f"BAZARR no sports event with that id can be found in database after subtitles "
+                          f"refresh: {no}")
+            jobs_queue.update_job_progress(job_id=job_id, progress_message="Sports event not found in database.")
+            return
+    if missing_subtitles_need_calculation(event.missing_subtitles_calculated):
         # missing subtitles calculation for this event is incomplete, we'll do it again
         list_missing_subtitles_sports(evno=no)
+        missing_languages = None
         event = database.execute(stmt).first()
+        if not event:
+            logging.debug(f"BAZARR no sports event with that id can be found in database after missing-subtitles "
+                          f"refresh: {no}")
+            jobs_queue.update_job_progress(job_id=job_id, progress_message="Sports event not found in database.")
+            return
 
     eventPath = path_mappings.path_replace_sports(event.path)
 
@@ -145,27 +175,24 @@ def sports_event_download_subtitles(no, job_id=None, job_sub_function=False, pro
     downloaded_count = 0
     if providers_list:
         audio_language_list = get_audio_profile_languages(event.audio_language)
-        if len(audio_language_list) > 0:
-            audio_language = audio_language_list[0]['name']
-        else:
-            audio_language = 'None'
+        audio_language = resolve_audio_language(audio_language_list)
 
         languages = []
 
         if not job_sub_function and job_id:
             jobs_queue.update_job_progress(job_id=job_id, progress_max=1, progress_message=_event_label(event))
 
-        for language in ast.literal_eval(event.missing_subtitles):
-            if language is not None:
-                hi_ = "True" if language.endswith(':hi') else "False"
-                forced_ = "True" if language.endswith(':forced') else "False"
-                languages.append((language.split(":")[0], hi_, forced_))
+        if missing_languages is None:
+            missing_languages = get_missing_languages('sports', event.id)
+
+        for language in missing_languages:
+            languages.append(missing_subtitle_to_language_tuple(language))
 
         if languages:
             for result in generate_subtitles(eventPath,
                                              languages,
                                              audio_language,
-                                             str(event.sceneName),
+                                             event.sceneName,
                                              event.title,
                                              'sports',
                                              event.profileId,

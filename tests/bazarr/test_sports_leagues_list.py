@@ -18,7 +18,7 @@ def test_sports_leagues_list_filters_sorts_and_counts(monkeypatch):
     monkeypatch.setitem(sys.modules, 'api.sports', sports_package)
     SportsLeagues = import_module('api.sports.leagues').SportsLeagues
     from app.config import settings
-    from app.database import TableSportsEvents, TableSportsLeagues, database, delete, insert
+    from app.database import TableMissingSubtitles, TableSportsEvents, TableSportsLeagues, database, delete, insert
 
     token = uuid4().hex[:8]
     ids = [int(token, 16) + offset for offset in range(3)]
@@ -38,17 +38,19 @@ def test_sports_leagues_list_filters_sorts_and_counts(monkeypatch):
                 profileId=profile, sport=sport, audio_language=language,
                 tags=str([tag]), created_at_timestamp=datetime(2026, 1, offset + 1)))
 
-        for offset, missing in [(0, "['en']"), (1, '[]'), (2, '[]')]:
+        for offset in range(3):
             database.execute(insert(TableSportsEvents).values(
                 id=ids[0] * 10 + offset, sportarrEventId=ids[0] * 10 + offset,
                 sportarrLeagueId=ids[0], season=2026, episode=offset + 1,
                 title='Event', path=f'/tmp/bazarr-sports-list-{token}-event-{offset}',
-                missing_subtitles=missing))
+                missing_subtitles_calculated=True))
+        database.execute(insert(TableMissingSubtitles).values(
+            media_type='sports', media_id=ids[0] * 10, language='en'))
         database.execute(insert(TableSportsEvents).values(
             id=ids[1] * 10, sportarrEventId=ids[1] * 10,
             sportarrLeagueId=ids[1], season=2026, episode=1,
             title='Event', path=f'/tmp/bazarr-sports-list-{token}-event-b',
-            missing_subtitles='[]'))
+            missing_subtitles_calculated=True))
 
         app = Flask(__name__)
 
@@ -76,6 +78,8 @@ def test_sports_leagues_list_filters_sorts_and_counts(monkeypatch):
         no_profile = fetch({'profileid': 'none', 'missing': 'false'})
         assert [row['sportarrLeagueId'] for row in no_profile['data']] == ids[1:]
     finally:
+        database.execute(delete(TableMissingSubtitles).where(TableMissingSubtitles.media_type == 'sports')
+                         .where(TableMissingSubtitles.media_id == ids[0] * 10))
         database.execute(delete(TableSportsEvents).where(TableSportsEvents.sportarrLeagueId.in_(ids)))
         database.execute(delete(TableSportsLeagues).where(TableSportsLeagues.sportarrLeagueId.in_(ids)))
         database.commit()

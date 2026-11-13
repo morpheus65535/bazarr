@@ -14,6 +14,8 @@ from app.database import (
     TableMissingSubtitles,
     TableMovies,
     TableShows,
+    TableSportsEvents,
+    TableSportsLeagues,
     database,
     delete,
     insert,
@@ -122,6 +124,7 @@ def record_failed_subtitle_attempts_map(media_type, languages_by_media_id, attem
     media_table, media_id_column = {
         'movie': (TableMovies.__table__, 'radarrId'),
         'series': (TableEpisodes.__table__, 'sonarrEpisodeId'),
+        'sports': (TableSportsEvents.__table__, 'id'),
     }[media_type]
     for media_id_chunk in _iter_chunks(list(normalized_languages), WANTED_STATE_ID_QUERY_BATCH_SIZE):
         with _wanted_state_transaction() as connection:
@@ -341,6 +344,24 @@ def delete_series_and_wanted_search_state(series_id):
         # cleanup then includes the state it committed before releasing its lock.
         connection.execute(delete(TableShows).where(TableShows.sonarrSeriesId == series_id))
         delete_wanted_search_state('series', episode_ids, connection=connection)
+
+
+def delete_league_and_wanted_search_state(league_id):
+    """Delete a league and its sports event search state in one writer transaction."""
+    league_id = int(league_id)
+    with _wanted_state_transaction() as connection:
+        # Lock the parent before reading its events, as series deletion does.
+        if connection.execute(
+            select(TableSportsLeagues.sportarrLeagueId)
+            .where(TableSportsLeagues.sportarrLeagueId == league_id).with_for_update()
+        ).first() is None:
+            return
+        event_ids = connection.execute(
+            select(TableSportsEvents.id)
+            .where(TableSportsEvents.sportarrLeagueId == league_id)
+        ).scalars().all()
+        connection.execute(delete(TableSportsLeagues).where(TableSportsLeagues.sportarrLeagueId == league_id))
+        delete_wanted_search_state('sports', event_ids, connection=connection)
 
 
 def get_failed_attempt_pairs(media_type, media_id):

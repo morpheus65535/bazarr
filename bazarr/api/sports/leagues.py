@@ -5,7 +5,8 @@ import operator
 from flask_restx import Resource, Namespace, reqparse, fields, marshal
 from functools import reduce
 
-from app.database import get_exclusion_clause, TableSportsEvents, TableSportsLeagues, database, select, update, func
+from app.database import get_exclusion_clause, TableSportsEvents, TableSportsLeagues, TableMissingSubtitles, database, \
+    select, update, func
 from subtitles.indexer.sports import list_missing_subtitles_sports, sports_scan_subtitles
 from subtitles.mass_download import league_download_subtitles
 from subtitles.wanted import wanted_search_missing_subtitles_sports
@@ -67,17 +68,19 @@ class SportsLeagues(Resource):
         length = args.get('length')
         leagueId = args.get('leagueid[]')
 
+        # Counted per playable file, because a row is one part. An event with
+        # two parts needs subtitles for both.
         file_count = select(TableSportsEvents.sportarrLeagueId,
                             func.count().label('episodeFileCount')) \
             .group_by(TableSportsEvents.sportarrLeagueId).subquery()
 
-        missing_conditions = [TableSportsEvents.missing_subtitles.is_not(None),
-                              TableSportsEvents.missing_subtitles != '[]']
+        missing_conditions = [TableMissingSubtitles.media_type == 'sports']
         missing_conditions += get_exclusion_clause('sports')
         missing_count = select(TableSportsEvents.sportarrLeagueId,
-                               func.count().label('episodeMissingCount')) \
+                               func.count(func.distinct(TableSportsEvents.id)).label('episodeMissingCount')) \
             .select_from(TableSportsEvents) \
             .join(TableSportsLeagues) \
+            .join(TableMissingSubtitles, TableMissingSubtitles.media_id == TableSportsEvents.id) \
             .where(reduce(operator.and_, missing_conditions)) \
             .group_by(TableSportsEvents.sportarrLeagueId).subquery()
 

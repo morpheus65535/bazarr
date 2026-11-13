@@ -1,6 +1,5 @@
 # coding=utf-8
 
-import ast
 import operator
 
 from functools import reduce
@@ -64,18 +63,16 @@ class Badges(Resource):
 
         # Counted per playable file, because a sports row is one part. An event
         # with two parts wants subtitles for both.
-        sports_conditions = [(TableSportsEvents.missing_subtitles.is_not(None)),
-                             (TableSportsEvents.missing_subtitles != '[]')]
+        sports_conditions = [(TableMissingSubtitles.media_type == 'sports'),
+                             (TableMissingSubtitles.media_id == TableSportsEvents.id)]
         sports_conditions += get_exclusion_clause('sports')
-        missing_sports = database.execute(
-            select(TableSportsEvents.missing_subtitles)
+        missing_sports_count = database.execute(
+            select(func.count(TableMissingSubtitles.id))
             .select_from(TableSportsEvents)
             .join(TableSportsLeagues)
+            .join(TableMissingSubtitles, TableMissingSubtitles.media_id == TableSportsEvents.id)
             .where(reduce(operator.and_, sports_conditions))) \
-            .all()
-        missing_sports_count = 0
-        for event in missing_sports:
-            missing_sports_count += len(ast.literal_eval(event.missing_subtitles))
+            .scalar()
 
         throttled_providers = len(get_throttled_providers())
 
