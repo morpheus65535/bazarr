@@ -10,6 +10,7 @@ from subtitles.indexer.sports import list_missing_subtitles_sports, sports_scan_
 from subtitles.mass_download import league_download_subtitles
 from subtitles.wanted import wanted_search_missing_subtitles_sports
 from sportarr.sync.leagues import update_one_league
+from sportarr.sync.events import sync_events
 from app.event_handler import event_stream
 from api.swaggerui import subtitles_language_model
 
@@ -46,6 +47,7 @@ class SportsLeagues(Resource):
         'tags': fields.List(fields.String),
         'audio_language': fields.Nested(get_subtitles_language_model),
         'created_at_timestamp': fields.String(),
+        'alternativeTitles': fields.List(fields.String),
         'episodeFileCount': fields.Integer(),
         'episodeMissingCount': fields.Integer(),
     })
@@ -146,6 +148,7 @@ class SportsLeagues(Resource):
                 'tags': x.tags,
                 'audio_language': x.audio_language,
                 'created_at_timestamp': x.created_at_timestamp,
+                'alternativeTitles': [],
                 'episodeFileCount': x.episodeFileCount,
                 'episodeMissingCount': x.episodeMissingCount,
             }) for x in database.execute(stmt).all()]
@@ -240,6 +243,7 @@ class SportsLeagues(Resource):
             return '', 204
         elif action == "sync":
             update_one_league(leagueid, 'updated')
+            sync_events(league_id=leagueid)
             return '', 204
 
         return 'Unknown action', 400
