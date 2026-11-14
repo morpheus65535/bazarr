@@ -315,6 +315,117 @@ def test_event_sync_keeps_a_part_when_its_file_data_is_incomplete(sports_session
     assert sync == [10]
 
 
+def _add_history(session, row_id, league_id=1):
+    session.execute(db.insert(db.TableHistorySports).values(
+        action=1, description=f'Downloaded for {row_id}', sportsEventId=row_id, sportarrLeagueId=league_id,
+    ))
+
+
+def _event_rows(session):
+    return session.execute(
+        db.select(db.TableSportsEvents.id, db.TableSportsEvents.sportarrEventId, db.TableSportsEvents.partNumber,
+                  db.TableSportsEvents.file_id)
+        .order_by(db.TableSportsEvents.id)
+    ).all()
+
+
+def _row_ids(session, column):
+    return sorted(session.execute(db.select(column)).scalars().all())
+
+
+def _seed_fight_card(session):
+    # Event 11 is a card with two parts, and each part has history.
+    _seed_sync_rows(session)
+    _add_history(session, 2)
+    _add_history(session, 3)
+
+
+def _partly_downloaded_event(parts):
+    # Sportarr reports hasFile false until every monitored part has a file.
+    event = _sportarr_event(11, parts)
+    event['hasFile'] = False
+    return event
+
+
+def test_event_sync_adds_the_present_part_of_a_partly_downloaded_event(sports_session, sync, monkeypatch):
+    _add_league(sports_session)
+    monkeypatch.setattr(sync_events_module, 'get_events_from_sportarr_api',
+                        lambda **kwargs: [_partly_downloaded_event([2])])
+
+    sync_events_module.sync_events(league_id=1)
+
+    assert [(row.sportarrEventId, row.partNumber, row.file_id) for row in _event_rows(sports_session)] == \
+        [(11, 2, 112)]
+
+
+def test_event_sync_keeps_the_other_part_when_one_part_loses_its_file(sports_session, sync, monkeypatch):
+    _seed_fight_card(sports_session)
+    monkeypatch.setattr(sync_events_module, 'get_events_from_sportarr_api',
+                        lambda **kwargs: [_sportarr_event(10, [0]), _partly_downloaded_event([1])])
+
+    sync_events_module.sync_events(league_id=1)
+
+    assert [row.id for row in _event_rows(sports_session)] == [1, 2]
+    assert _row_ids(sports_session, db.TableSportsEventsSubtitles.sportsEventId) == [1, 2]
+    assert _row_ids(sports_session, db.TableHistorySports.sportsEventId) == [2]
+    assert _shared_rows(sports_session, db.TableMissingSubtitles) == [(1, 'en'), (2, 'en')]
+    assert _shared_rows(sports_session, db.TableFailedSubtitleAttempts) == [(1, 'en'), (2, 'en')]
+    assert sync == [11]
+
+
+def test_event_sync_removes_every_part_when_no_file_remains(sports_session, sync, monkeypatch):
+    _seed_fight_card(sports_session)
+    monkeypatch.setattr(sync_events_module, 'get_events_from_sportarr_api',
+                        lambda **kwargs: [_sportarr_event(10, [0]), _partly_downloaded_event([])])
+
+    sync_events_module.sync_events(league_id=1)
+
+    assert [row.id for row in _event_rows(sports_session)] == [1]
+    assert _row_ids(sports_session, db.TableSportsEventsSubtitles.sportsEventId) == [1]
+    assert _row_ids(sports_session, db.TableHistorySports.sportsEventId) == []
+    assert _shared_rows(sports_session, db.TableMissingSubtitles) == [(1, 'en')]
+    assert _shared_rows(sports_session, db.TableFailedSubtitleAttempts) == [(1, 'en')]
+    assert sorted(sync) == [11, 11]
+
+
+@pytest.mark.parametrize('files', [None, 'error'], ids=['no-files', 'text'])
+def test_event_sync_keeps_parts_when_the_file_list_is_invalid(sports_session, sync, monkeypatch, files):
+    _seed_fight_card(sports_session)
+    event = _partly_downloaded_event([1])
+    event['files'] = files
+    monkeypatch.setattr(sync_events_module, 'get_events_from_sportarr_api',
+                        lambda **kwargs: [_sportarr_event(10, [0]), event])
+
+    sync_events_module.sync_events(league_id=1)
+
+    assert [row.id for row in _event_rows(sports_session)] == [1, 2, 3]
+    assert _row_ids(sports_session, db.TableHistorySports.sportsEventId) == [2, 3]
+    assert sync == []
+
+
+def test_event_sync_updates_an_upgraded_part_in_place(sports_session, sync, monkeypatch):
+    _seed_fight_card(sports_session)
+    # Only part 2 differs from Sportarr, so only part 2 is reindexed.
+    for row_id, event_id, file_id in ((1, 10, 100), (2, 11, 111), (3, 11, 112)):
+        sports_session.execute(db.update(db.TableSportsEvents)
+                               .values(file_id=file_id, path=f'/sports/1/{event_id}.mkv')
+                               .where(db.TableSportsEvents.id == row_id))
+    reindexed = []
+    monkeypatch.setattr(sync_events_module, 'store_subtitles_sports', reindexed.append)
+    event = _partly_downloaded_event([1, 2])
+    event['files'][1]['id'] = 999
+    monkeypatch.setattr(sync_events_module, 'get_events_from_sportarr_api',
+                        lambda **kwargs: [_sportarr_event(10, [0]), event])
+
+    sync_events_module.sync_events(league_id=1)
+
+    assert [(row.id, row.partNumber, row.file_id) for row in _event_rows(sports_session)
+            if row.sportarrEventId == 11] == [(2, 1, 111), (3, 2, 999)]
+    assert _row_ids(sports_session, db.TableHistorySports.sportsEventId) == [2, 3]
+    assert reindexed == [3]
+    assert sync == []
+
+
 def test_league_removal_deletes_shared_rows_of_its_events(sports_session, monkeypatch):
     _add_league(sports_session, 1)
     _add_league(sports_session, 2)
