@@ -17,7 +17,7 @@ logger = logging.getLogger()
 
 
 class FileHandlerFormatter(logging.Formatter):
-    """Formatter that masks the tail of any apikey in logs."""
+    """Formatter that masks all but the first characters of any apikey in logs."""
     # Matches `apikey=`, `api_key=` and `apiKey=`, url-encoded or not, and keys
     # containing '-', '_' or '.'. The old pattern required the literal `apikey`
     # and value chars [a-zA-Z0-9], so a provider using `api_key=` — or a key
@@ -40,14 +40,16 @@ class FileHandlerFormatter(logging.Formatter):
         return repr(result)  # or format into one line however you want to
 
     def formatApikey(self, s):
-        # Keep the parameter name and the leading part of the key so a log still
-        # says which key was in play; only the last characters are masked.
+        # Keep the parameter name and, for a key of 16 characters or more, its
+        # first 4 characters so a log still says which key was in play; the rest
+        # is masked.
         def mask(match):
             value = match.group(2)
             if not value:
                 return match.group(0)
             prefix = match.group(0)[:match.start(2) - match.start(0)]
-            return f'{prefix}{value[:-len(self.APIKEY_MASK)]}{self.APIKEY_MASK}'
+            hint = value[:4] if len(value) >= 16 else ''
+            return f'{prefix}{hint}{"x" * max(len(value) - len(hint), len(self.APIKEY_MASK))}'
 
         return re.sub(self.APIKEY_RE, mask, s)
 
