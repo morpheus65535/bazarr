@@ -73,3 +73,24 @@ def test_group_with_all_items_removed_by_audio_options_is_satisfied(monkeypatch,
     profile = _enhanced([_group(4, 'AND', audio_excluded), G1], cutoff)
 
     assert _missing(monkeypatch, indexer, profile, [], audio_language="['en']") == sorted(expected)
+
+
+@pytest.mark.parametrize('indexer', INDEXERS)
+@pytest.mark.parametrize('audio_language, expected', [
+    ("[]", ['fr']),
+    ("['en']", ['en', 'fr']),
+], ids=['no-matching-audio', 'matching-audio'])
+def test_audio_only_cutoff_item_without_matching_audio_does_not_meet_cutoff(monkeypatch, indexer, audio_language,
+                                                                            expected):
+    audio_only_en = dict(_profile_item(1, 'normal', 'en'), audio_only_include='True')
+    profile = _enhanced([_group(1, 'AND', audio_only_en), _group(2, 'AND', _profile_item(2, 'normal', 'fr'))], 1)
+
+    assert _missing(monkeypatch, indexer, profile, [], audio_language=audio_language) == sorted(expected)
+
+
+@pytest.mark.parametrize('indexer', INDEXERS)
+def test_or_group_with_satisfied_item_is_met_even_if_audio_only_item_is_unmatched(monkeypatch, indexer):
+    audio_only_en = dict(_profile_item(1, 'normal', 'en'), audio_only_include='True')
+    profile = _enhanced([_group(1, 'OR', audio_only_en, _profile_item(2, 'normal', 'fr'))], 1)
+
+    assert _missing(monkeypatch, indexer, profile, [FR]) == []
