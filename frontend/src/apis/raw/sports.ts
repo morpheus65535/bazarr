@@ -99,6 +99,30 @@ class SportsApi extends BaseApi {
     return response.data.map(camelCaseKeys);
   }
 
+  async downloadSubtitles(
+    leagueid: number,
+    eventid: number,
+    form: FormType.Subtitle,
+  ) {
+    await this.patch("/subtitles", form, { leagueid, eventid });
+  }
+
+  async uploadSubtitles(
+    leagueid: number,
+    eventid: number,
+    form: FormType.UploadSubtitle,
+  ) {
+    await this.post("/subtitles", form, { leagueid, eventid });
+  }
+
+  async deleteSubtitles(
+    leagueid: number,
+    eventid: number,
+    form: FormType.DeleteSubtitle,
+  ) {
+    await this.delete("/subtitles", form, { leagueid, eventid });
+  }
+
   async blacklist() {
     const response =
       await this.get<DataWrapper<Blacklist.RawSportsEvent[]>>("/blacklist");

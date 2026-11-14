@@ -53,6 +53,7 @@ import SettingsSubtitlesLayout from "@/pages/Settings/Subtitles/Layout";
 import SettingsSubtitlesSearchView from "@/pages/Settings/Subtitles/Search";
 import SettingsUIView from "@/pages/Settings/UI";
 import SportsView from "@/pages/Sports";
+import SportsEventsView from "@/pages/SportsEvents";
 import SystemAnnouncementsView from "@/pages/System/Announcements";
 import SystemBackupsView from "@/pages/System/Backups";
 import SystemLogsView from "@/pages/System/Logs";
@@ -131,6 +132,10 @@ const useRoutes = (): CustomRouteObject[] => {
               {
                 index: true,
                 element: <SportsView></SportsView>,
+              },
+              {
+                path: ":id",
+                element: <SportsEventsView></SportsEventsView>,
               },
             ],
           },
@@ -637,6 +642,7 @@ const useRoutes = (): CustomRouteObject[] => {
       data?.providers,
       data?.sonarr_signalr,
       data?.radarr_signalr,
+      data?.sportarr_sse,
       data?.announcements,
       data?.status,
       radarr,

@@ -124,6 +124,8 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
                            hi=language_hi,
                            srt_lang=downloaded_language_code2,
                            percent_score=percent_score,
+                           sportarr_league_id=sports_metadata.sportarrLeagueId,
+                           sports_event_id=sports_metadata.id,
                            job_id=job_id)
     else:
         movie_metadata = database.execute(

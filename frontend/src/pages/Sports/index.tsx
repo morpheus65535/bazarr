@@ -1,5 +1,6 @@
-import { FunctionComponent, useMemo } from "react";
-import { Container, Group, Progress } from "@mantine/core";
+import { FunctionComponent, useCallback, useMemo } from "react";
+import { Link } from "react-router";
+import { Anchor, Container, Group, Progress } from "@mantine/core";
 import { useDocumentTitle } from "@mantine/hooks";
 import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
 import { faBookmark, faWrench } from "@fortawesome/free-solid-svg-icons";
@@ -14,10 +15,13 @@ import {
 import { useInstanceName } from "@/apis/hooks/site";
 import { Action } from "@/components";
 import LanguageProfileName from "@/components/bazarr/LanguageProfile";
+import { PosterCardSelection } from "@/components/cards";
 import { ItemEditModal } from "@/components/forms/ItemEditForm";
 import { AppColumnDef as ColumnDef } from "@/components/tables/features";
 import { useModals } from "@/modules/modals";
 import ItemView from "@/pages/views/ItemView";
+import { sportsViewModeKey } from "@/utilities/viewMode";
+import SportsLeaguePosterCard from "./PosterCard";
 
 const sportsFilterConfig = {
   sortFields: [
@@ -57,6 +61,15 @@ const SportsView: FunctionComponent = () => {
       {
         header: "Name",
         accessorKey: "title",
+        cell: ({ row: { original } }) => (
+          <Anchor
+            className="table-primary"
+            component={Link}
+            to={`/sports/${original.sportarrLeagueId}`}
+          >
+            {original.title}
+          </Anchor>
+        ),
       },
       {
         // Sport is the closest a league has to a series type.
@@ -154,6 +167,24 @@ const SportsView: FunctionComponent = () => {
     [mutation, modals],
   );
 
+  const renderPoster = useCallback(
+    (item: Item.SportsLeague, selection?: PosterCardSelection) => (
+      <SportsLeaguePosterCard
+        key={item.sportarrLeagueId}
+        item={item}
+        selection={selection}
+        onEdit={() =>
+          modals.openContextModal(
+            ItemEditModal,
+            { mutation, item },
+            { title: item.title },
+          )
+        }
+      ></SportsLeaguePosterCard>
+    ),
+    [modals, mutation],
+  );
+
   useDocumentTitle(`Sports - ${useInstanceName()}`);
 
   return (
@@ -162,6 +193,8 @@ const SportsView: FunctionComponent = () => {
         queryKey={sportsLeaguesPaginationKey}
         queryFn={sportsLeaguesPaginationQuery}
         columns={columns}
+        viewModeKey={sportsViewModeKey}
+        renderPoster={renderPoster}
         filterConfig={sportsFilterConfig}
         useTags={useSportsLeagueTags}
         statePrefix="sports"

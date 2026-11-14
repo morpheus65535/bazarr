@@ -8,6 +8,7 @@ from ffsubsync.ffsubsync import run, make_parser
 from utilities.binaries import get_binary
 from radarr.history import history_log_movie
 from sonarr.history import history_log
+from sportarr.history import history_log_sports
 from subtitles.processing import ProcessSubtitlesResult
 from languages.get_languages import audio_language_from_name, language_from_alpha2
 from utilities.path_mappings import path_mappings
@@ -107,8 +108,8 @@ class SubSyncer:
 
     def sync(self, video_path, srt_path, srt_lang, hi, forced,
              max_offset_seconds, no_fix_framerate, gss, reference=None, sonarr_series_id=None, sonarr_episode_id=None,
-             radarr_id=None, job_id=None, force_sync=False, quality_min_score=None, quality_max_offset_seconds=None,
-             quality_max_framerate_deviation=None):
+             radarr_id=None, sportarr_league_id=None, sports_event_id=None, job_id=None, force_sync=False,
+             quality_min_score=None, quality_max_offset_seconds=None, quality_max_framerate_deviation=None):
         self.reference = video_path
         self.srtin = srt_path
         self.sync_result = None
@@ -235,6 +236,8 @@ class SubSyncer:
 
                     if sonarr_series_id:
                         prr = path_mappings.path_replace_reverse
+                    elif sports_event_id:
+                        prr = path_mappings.path_replace_reverse_sports
                     else:
                         prr = path_mappings.path_replace_reverse_movie
 
@@ -251,6 +254,9 @@ class SubSyncer:
                     if sonarr_episode_id:
                         history_log(action=5, sonarr_series_id=sonarr_series_id, sonarr_episode_id=sonarr_episode_id,
                                     result=result)
+                    elif sports_event_id:
+                        history_log_sports(action=5, sportarr_league_id=sportarr_league_id,
+                                           sports_event_id=sports_event_id, result=result)
                     else:
                         history_log_movie(action=5, radarr_id=radarr_id, result=result)
             else:

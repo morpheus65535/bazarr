@@ -164,6 +164,14 @@ export const useSportsAddBlacklist = () => {
       });
 
       void client.invalidateQueries({
+        queryKey: [
+          QueryKeys.SportsLeagues,
+          QueryKeys.SportsEvents,
+          QueryKeys.History,
+        ],
+      });
+
+      void client.invalidateQueries({
         queryKey: [QueryKeys.SportsLeagues, leagueId],
       });
     },
