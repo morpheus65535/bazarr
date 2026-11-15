@@ -137,7 +137,12 @@ def download_release(url):
         logging.debug(f'BAZARR unable to create update directory {update_dir}')
     else:
         logging.debug(f'BAZARR downloading release from Github: {url}')
-        r = requests.get(url, allow_redirects=True)
+        try:
+            r = requests.get(url, allow_redirects=True, timeout=60)
+            r.raise_for_status()
+        except requests.RequestException:
+            logging.exception(f'BAZARR unable to download new release from {url}')
+            r = None
     if r:
         try:
             with open(os.path.join(update_dir, 'bazarr.zip'), 'wb') as f:
@@ -146,6 +151,16 @@ def download_release(url):
             logging.exception('BAZARR unable to download new release and save it to disk')
         else:
             apply_update()
+
+
+def check_release_archive_paths(names, zip_root_directory, bazarr_dir):
+    """Raise ValueError if any archive entry would be extracted outside of bazarr_dir (zip slip)."""
+    bazarr_dir_norm = os.path.normpath(os.path.abspath(bazarr_dir))
+    for name in names:
+        if name.startswith(zip_root_directory) and name != zip_root_directory:
+            target = os.path.normpath(os.path.join(bazarr_dir_norm, name[len(zip_root_directory):]))
+            if target != bazarr_dir_norm and not target.startswith(bazarr_dir_norm + os.sep):
+                raise ValueError(f'Unsafe path in release archive: {name}')
 
 
 def apply_update():
@@ -163,6 +178,9 @@ def apply_update():
                     zip_root_directory = ''
                     if len({item.split('/')[0] for item in archive.namelist()}) == 1:
                         zip_root_directory = archive.namelist()[0]
+
+                    # Refuse archive entries outside of Bazarr directory before touching anything on disk (zip slip)
+                    check_release_archive_paths(archive.namelist(), zip_root_directory, bazarr_dir)
 
                     if os.path.isdir(build_dir):
                         try:

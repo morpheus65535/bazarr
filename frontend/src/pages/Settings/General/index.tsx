@@ -90,6 +90,16 @@ const SettingsGeneralView: FunctionComponent = () => {
             label="Password"
             settingKey="settings-auth-password"
           ></Password>
+          <Check
+            label="Allow iframe embedding"
+            settingKey="settings-auth-allow_iframe_embedding"
+          ></Check>
+          <Message>
+            Keep the login working when Bazarr is embedded in another site (e.g.
+            Home Assistant, Organizr). Only takes effect over HTTPS. Leave
+            disabled unless needed: it weakens protection against cross-site
+            request forgery.
+          </Message>
         </CollapseBox>
         <Text
           label="API Key"

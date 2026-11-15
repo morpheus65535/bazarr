@@ -7,7 +7,7 @@ from flask_restx import Resource, Namespace, reqparse
 
 from app.config import settings
 from app.form_sessions import start_form_session, end_form_session
-from utilities.helper import check_credentials
+from utilities.helper import check_credentials, get_login_retry_after
 
 api_ns_system_account = Namespace('System Account', description='Login or logout from Bazarr UI')
 
@@ -24,6 +24,7 @@ class SystemAccount(Resource):
     @api_ns_system_account.response(204, 'Success')
     @api_ns_system_account.response(400, 'Unknown action')
     @api_ns_system_account.response(403, 'Authentication failed')
+    @api_ns_system_account.response(429, 'Too many failed login attempts')
     @api_ns_system_account.response(406, 'Browser must be closed to invalidate basic authentication')
     @api_ns_system_account.response(500, 'Unknown authentication type define in config')
     def post(self):
@@ -41,6 +42,10 @@ class SystemAccount(Resource):
                 return '', 204
             else:
                 end_form_session()
+                retry_after = get_login_retry_after(username, request)
+                if retry_after:
+                    return (f'Too many failed login attempts. Try again in {retry_after} seconds.', 429,
+                            {'Retry-After': str(retry_after)})
                 return 'Authentication failed', 403
         elif action == 'logout':
             if settings.auth.type == 'basic':

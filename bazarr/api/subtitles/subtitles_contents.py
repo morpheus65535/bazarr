@@ -77,6 +77,7 @@ class SubtitleNameContents(Resource):
     @authenticate
     @api_ns_subtitle_contents.response(200, 'Success')
     @api_ns_subtitle_contents.response(400, 'Invalid subtitle file encoding')
+    @api_ns_subtitle_contents.response(404, 'Subtitles file is not indexed by Bazarr')
     @api_ns_subtitle_contents.response(401, 'Not Authenticated')
     @api_ns_subtitle_contents.expect(get_request_parser)
     def get(self):

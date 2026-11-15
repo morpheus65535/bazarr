@@ -16,7 +16,7 @@ from languages.get_languages import language_from_alpha2, alpha3_from_alpha2
 from app.database import (get_audio_profile_languages, get_desired_languages, get_subtitles, database, TableEpisodes,
                           TableShows, select)
 from subtitles.pool import get_language_equals
-from utilities.helper import bool_map
+from utilities.helper import bool_map, is_valid_apikey
 from subtitles.serialization import parse_missing_subtitles
 from utilities.path_mappings import path_mappings
 from utilities.text_list import parse_text_list_or_default
@@ -120,15 +120,8 @@ def normalize_flag_token(value):
 def authenticate(actual_method):
     @wraps(actual_method)
     def wrapper(*args, **kwargs):
-        apikey_settings = settings.auth.apikey
-        apikey_get = request.args.get('apikey')
-        apikey_post = request.form.get('apikey')
-        apikey_header = None
-        if 'X-API-KEY' in request.headers:
-            apikey_header = request.headers['X-API-KEY']
-
-        # An unset configured key must never match a request without a key
-        if apikey_settings and apikey_settings in [apikey_get, apikey_post, apikey_header]:
+        if is_valid_apikey(request.args.get('apikey'), request.form.get('apikey'), request.headers.get('X-API-KEY'),
+                           apikey_settings=settings.auth.apikey):
             return actual_method(*args, **kwargs)
 
         return abort(401)

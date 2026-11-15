@@ -1,6 +1,7 @@
 # coding=utf-8
 
 import os
+import re
 import sys
 import logging
 
@@ -114,9 +115,9 @@ class Subtitles(Resource):
     @authenticate
     @api_ns_subtitles.expect(patch_request_parser)
     @api_ns_subtitles.response(204, 'Success')
-    @api_ns_subtitles.response(400, 'Subtitles ID is required for extraction')
+    @api_ns_subtitles.response(400, 'Subtitles ID is required for extraction or unknown media type')
     @api_ns_subtitles.response(401, 'Not Authenticated')
-    @api_ns_subtitles.response(404, 'Episode/movie not found')
+    @api_ns_subtitles.response(404, 'Episode/movie not found or subtitles file not indexed')
     @api_ns_subtitles.response(409, 'Unable to take action on subtitles file. Check logs.')
     @api_ns_subtitles.response(415, 'Image based embedded subtitles cannot be extracted')
     @api_ns_subtitles.response(500, 'Subtitles file not found. Path mapping issue?')
@@ -135,6 +136,9 @@ class Subtitles(Resource):
         hi = True if args.get('hi') == 'True' else False
 
         subtitles_id = args.get('subtitles_id')
+
+        if media_type not in ('episode', 'movie'):
+            return 'Unknown media type', 400
 
         if subtitles_path and not is_indexed_subtitle_path(path_mappings.path_replace_reverse(subtitles_path),
                                                            path_mappings.path_replace_reverse_movie(subtitles_path)):
@@ -177,9 +181,10 @@ class Subtitles(Resource):
             video_path = path_mappings.path_replace_movie(metadata.path)
 
         reference = args.get('reference')
-        # A reference is either an audio track (a:N), the video itself, or a subtitles file that sync reads
-        if action == 'sync' and reference and reference not in empty_values and not reference.startswith('a:') \
-                and reference != video_path and not is_indexed_subtitle_path(
+        # A reference is either the video, one of its audio or embedded subtitles streams (a:N, s:N), or a subtitles
+        # file that sync reads
+        if action == 'sync' and reference not in empty_values and reference != video_path \
+                and not re.fullmatch(r'[as]:\d+', str(reference)) and not is_indexed_subtitle_path(
                     path_mappings.path_replace_reverse(reference), path_mappings.path_replace_reverse_movie(reference)):
             return 'Reference subtitles file is not indexed by Bazarr', 404
 

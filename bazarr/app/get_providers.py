@@ -1,6 +1,7 @@
 # coding=utf-8
 
 import os
+import ast
 import datetime
 import logging
 import subliminal_patch
@@ -580,13 +581,49 @@ def reset_throttled_providers(only_auth_or_conf_error=False):
         logging.info('BAZARR throttled providers have been reset.')
 
 
+def _parse_throttled_providers(content):
+    """Parse throttled_providers.dat content without evaluating code.
+
+    :param content: string representation of the throttled providers dict
+    :returns: the throttled providers dict
+    :raises ValueError: if content contains anything else than literals and datetime.datetime() calls
+    """
+    def convert(node):
+        if isinstance(node, ast.Call):
+            func = node.func
+            if not (isinstance(func, ast.Attribute) and func.attr == 'datetime' and
+                    isinstance(func.value, ast.Name) and func.value.id == 'datetime'):
+                raise ValueError('Unsupported call in throttled providers file')
+            if node.keywords or not all(isinstance(arg, ast.Constant) and type(arg.value) is int
+                                        for arg in node.args):
+                raise ValueError('Unsupported datetime arguments in throttled providers file')
+            return datetime.datetime(*[arg.value for arg in node.args])
+        if isinstance(node, ast.Dict):
+            return {convert(k): convert(v) for k, v in zip(node.keys, node.values)}
+        if isinstance(node, ast.Tuple):
+            return tuple(convert(e) for e in node.elts)
+        if isinstance(node, ast.List):
+            return [convert(e) for e in node.elts]
+        if isinstance(node, ast.Constant) and isinstance(node.value, (str, int, float, bool, type(None))):
+            return node.value
+        raise ValueError('Unsupported content in throttled providers file')
+
+    content = content.strip()
+    if not content:
+        return {}
+    result = convert(ast.parse(content, mode='eval').body)
+    if not isinstance(result, dict):
+        raise ValueError('Throttled providers file must contain a dict')
+    return result
+
+
 def get_throttled_providers():
     providers = {}
     try:
         if os.path.exists(os.path.join(args.config_dir, 'config', 'throttled_providers.dat')):
             with open(os.path.normpath(os.path.join(args.config_dir, 'config', 'throttled_providers.dat')), 'r') as \
                     handle:
-                providers = eval(handle.read())
+                providers = _parse_throttled_providers(handle.read())
     except Exception:
         # set empty content in throttled_providers.dat
         logging.error("Invalid content in throttled_providers.dat. Resetting")

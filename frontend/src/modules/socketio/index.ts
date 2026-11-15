@@ -15,6 +15,7 @@ class SocketIOClient {
   constructor() {
     this.socket = io({
       path: `${Environment.baseUrl}/api/socket.io`,
+      auth: (cb) => cb({ apikey: Environment.apiKey }),
       transports: ["polling", "websocket"],
       upgrade: true,
       rememberUpgrade: true,
