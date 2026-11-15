@@ -608,17 +608,6 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     name: "Subs.sab.bz",
     description: "Bulgarian Subtitles Provider",
   },
-  {
-    key: "subs4free",
-    name: "Subs4Free",
-    description: "Greek Subtitles Provider. Broken, may not work for some.",
-  },
-  {
-    key: "subs4series",
-    name: "Subs4Series",
-    description:
-      "Greek Subtitles Provider.\nRequires Anti-Captcha Provider to solve captchas for each download.",
-  },
   { key: "subscenter", description: "Hebrew Subtitles Provider" },
   {
     key: "subsro",
