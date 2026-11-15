@@ -187,6 +187,7 @@ validators = [
               is_in=[None, 'basic', 'form']),
     Validator('auth.username', must_exist=True, default='', is_type_of=str, cast=str),
     Validator('auth.password', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('auth.allow_iframe_embedding', must_exist=True, default=False, is_type_of=bool),
 
     # cors section
     Validator('cors.enabled', must_exist=True, default=False, is_type_of=bool),
@@ -555,7 +556,47 @@ while failed_validator:
             stop_bazarr(EXIT_VALIDATION_ERROR)
 
 
+# UI password hashing, legacy MD5 hashes are still accepted and upgraded on next successful login
+PASSWORD_HASH_METHOD = 'pbkdf2:sha256:600000'
+_LEGACY_MD5_RE = re.compile(r'^[0-9a-f]{32}$')
+
+
+def hash_password(password):
+    from werkzeug.security import generate_password_hash
+    return generate_password_hash(str(password), method=PASSWORD_HASH_METHOD)
+
+
+def is_legacy_password_hash(stored_hash):
+    return bool(_LEGACY_MD5_RE.match(str(stored_hash or '')))
+
+
+def verify_password(password, stored_hash):
+    """Check a password against a stored werkzeug or legacy MD5 hash."""
+    import hmac
+    stored_hash = str(stored_hash or '')
+    if not stored_hash or password is None:
+        return False
+    try:
+        if is_legacy_password_hash(stored_hash):
+            submitted = hashlib.md5(str(password).encode('utf-8')).hexdigest()
+            return hmac.compare_digest(submitted, stored_hash)
+        from werkzeug.security import check_password_hash
+        return check_password_hash(stored_hash, str(password))
+    except (ValueError, TypeError, UnicodeError):
+        # Malformed stored hash or password that can't be encoded
+        return False
+
+
+# Prevent concurrent writes from corrupting config file
+_write_config_lock = threading.RLock()
+
+
 def write_config():
+    with _write_config_lock:
+        _write_config()
+
+
+def _write_config():
     if settings.as_dict() == Dynaconf(
         settings_file=config_yaml_file,
         core_loaders=['YAML']
@@ -644,6 +685,11 @@ if hasattr(settings.translator, 'gemini_key'):
         settings.translator.gemini_keys = [legacy_key]
     del settings.translator.gemini_key
 
+# Generate a new API key if empty as it would never be accepted
+if not str(settings.auth.apikey or '').strip():
+    settings.auth.apikey = hexlify(os.urandom(16)).decode()
+    logging.warning('BAZARR API key was empty, a new one has been generated.')
+
 # save updated settings to file
 write_config()
 
@@ -685,6 +731,15 @@ def validate_log_regex():
             re.compile(settings.log.exclude_filter)
         except Exception:
             raise ValidationError(f"Exclude filter: invalid regular expression: {settings.log.exclude_filter}")
+
+
+def validate_auth():
+    # Empty username or password would lock everyone out when authentication is enabled
+    if settings.auth.type in ['basic', 'form']:
+        if not str(settings.auth.username or '').strip():
+            raise ValidationError('A username is required when authentication is enabled.')
+        if not str(settings.auth.password or ''):
+            raise ValidationError('A password is required when authentication is enabled.')
 
 
 def save_settings(settings_items):
@@ -766,8 +821,9 @@ def save_settings(settings_items):
             value = None
 
         if key == 'settings-auth-password':
+            # Only hash new passwords, the UI sends back the stored hash when unchanged
             if value != settings.auth.password and value is not None:
-                value = hashlib.md5(f"{value}".encode('utf-8')).hexdigest()
+                value = hash_password(value) if value != '' else ''
 
         if key == 'settings-general-debug':
             configure_debug = True
@@ -945,6 +1001,7 @@ def save_settings(settings_items):
     try:
         settings.validators.validate()
         validate_log_regex()
+        validate_auth()
     except ValidationError:
         settings.reload()
         raise

@@ -120,6 +120,7 @@ declare namespace Settings {
     username?: string;
     password?: string;
     apikey: string;
+    allow_iframe_embedding?: boolean;
   }
 
   interface Subsync {

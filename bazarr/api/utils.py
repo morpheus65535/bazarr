@@ -14,9 +14,9 @@ from subliminal_patch import core
 from app.config import settings, base_url
 from languages.get_languages import language_from_alpha2, alpha3_from_alpha2
 from app.database import (get_audio_profile_languages, get_desired_languages, get_subtitles, database, TableEpisodes,
-                          TableShows, select)
+                          TableShows, TableEpisodesSubtitles, TableMoviesSubtitles, select)
 from subtitles.pool import get_language_equals
-from utilities.helper import bool_map
+from utilities.helper import bool_map, is_valid_apikey
 from utilities.path_mappings import path_mappings
 
 None_Keys = ['null', 'undefined', '', None]
@@ -97,17 +97,39 @@ def apply_sort(stmt, sort_columns, default_column, sort_by, sort_order):
     return stmt.order_by(sort_column.asc() if sort_order == 'asc' else sort_column.desc())
 
 
+def is_known_external_subtitles(path, media_type=None, media_id=None):
+    """Check if a path is an external subtitles file indexed in database.
+
+    :param path: local subtitles path as presented to the UI (path mappings applied)
+    :param media_type: 'episode' or 'movie' to restrict the lookup, or None for both
+    :param media_id: sonarrEpisodeId or radarrId the subtitles must belong to, or None for any
+    :returns: True if the subtitles file is indexed, False otherwise
+    """
+    if not path or not isinstance(path, str):
+        return False
+
+    checks = []
+    if media_type in (None, 'episode', 'series'):
+        query = select(TableEpisodesSubtitles.id).where(
+            TableEpisodesSubtitles.path == path_mappings.path_replace_reverse(path))
+        if media_id is not None:
+            query = query.where(TableEpisodesSubtitles.sonarrEpisodeId == media_id)
+        checks.append(query)
+    if media_type in (None, 'movie'):
+        query = select(TableMoviesSubtitles.id).where(
+            TableMoviesSubtitles.path == path_mappings.path_replace_reverse_movie(path))
+        if media_id is not None:
+            query = query.where(TableMoviesSubtitles.radarrId == media_id)
+        checks.append(query)
+
+    return any(database.execute(query.limit(1)).first() for query in checks)
+
+
 def authenticate(actual_method):
     @wraps(actual_method)
     def wrapper(*args, **kwargs):
-        apikey_settings = settings.auth.apikey
-        apikey_get = request.args.get('apikey')
-        apikey_post = request.form.get('apikey')
-        apikey_header = None
-        if 'X-API-KEY' in request.headers:
-            apikey_header = request.headers['X-API-KEY']
-
-        if apikey_settings in [apikey_get, apikey_post, apikey_header]:
+        if is_valid_apikey(request.args.get('apikey'), request.form.get('apikey'),
+                           request.headers.get('X-API-KEY')):
             return actual_method(*args, **kwargs)
 
         return abort(401)

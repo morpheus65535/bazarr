@@ -1,6 +1,7 @@
 # coding=utf-8
 
 import os
+import re
 import sys
 import logging
 
@@ -23,7 +24,7 @@ from plex.operations import plex_refresh_item
 from jellyfin.operations import jellyfin_refresh_item
 
 
-from ..utils import authenticate
+from ..utils import authenticate, is_known_external_subtitles
 
 api_ns_subtitles = Namespace('Subtitles', description='Apply mods/tools on external subtitles')
 
@@ -113,9 +114,9 @@ class Subtitles(Resource):
     @authenticate
     @api_ns_subtitles.doc(parser=patch_request_parser)
     @api_ns_subtitles.response(204, 'Success')
-    @api_ns_subtitles.response(400, 'Subtitles ID is required for extraction')
+    @api_ns_subtitles.response(400, 'Subtitles ID is required for extraction, invalid sync reference or media type')
     @api_ns_subtitles.response(401, 'Not Authenticated')
-    @api_ns_subtitles.response(404, 'Episode/movie not found')
+    @api_ns_subtitles.response(404, 'Episode/movie or subtitles file not found')
     @api_ns_subtitles.response(409, 'Unable to take action on subtitles file. Check logs.')
     @api_ns_subtitles.response(415, 'Image based embedded subtitles cannot be extracted')
     @api_ns_subtitles.response(500, 'Subtitles file not found. Path mapping issue?')
@@ -134,6 +135,13 @@ class Subtitles(Resource):
         hi = True if args.get('hi') == 'True' else False
 
         subtitles_id = args.get('subtitles_id')
+
+        if media_type not in ('episode', 'movie'):
+            return 'Unknown media type', 400
+
+        # Only act on external subtitles indexed for this episode/movie to prevent access to arbitrary files
+        if subtitles_path and not is_known_external_subtitles(subtitles_path, media_type=media_type, media_id=id):
+            return 'Subtitles file not found', 404
 
         if action not in ('extract', 'translate'):
             if subtitles_path and not os.path.exists(subtitles_path):
@@ -172,6 +180,12 @@ class Subtitles(Resource):
             video_path = path_mappings.path_replace_movie(metadata.path)
 
         if action == 'sync':
+            # Reference must be the video, one of its streams (a:0, s:1) or an indexed subtitles of the same media
+            reference = args.get('reference')
+            if (reference not in empty_values and reference != video_path and
+                    not re.fullmatch(r'[as]:\d+', str(reference)) and
+                    not is_known_external_subtitles(reference, media_type=media_type, media_id=id)):
+                return 'Invalid sync reference', 400
             try:
                 postprocess_callback = lambda: postprocess_subtitles(subtitles_path, media_type, metadata, id)
                 sync_subtitles(video_path=video_path, srt_path=subtitles_path, srt_lang=language, hi=hi, forced=forced,
