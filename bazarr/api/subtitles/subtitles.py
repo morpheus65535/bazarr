@@ -177,8 +177,9 @@ class Subtitles(Resource):
             video_path = path_mappings.path_replace_movie(metadata.path)
 
         reference = args.get('reference')
-        # A reference is either an audio track (a:N), the video itself, or a subtitles file that sync reads
-        if action == 'sync' and reference and reference not in empty_values and not reference.startswith('a:') \
+        # A reference is an audio or subtitles track of the video (a:N, s:N), the video itself, or a subtitles file
+        if action == 'sync' and reference and reference not in empty_values \
+                and not (reference[:2] in ('a:', 's:') and reference[2:].isdigit()) \
                 and reference != video_path and not is_indexed_subtitle_path(
                     path_mappings.path_replace_reverse(reference), path_mappings.path_replace_reverse_movie(reference)):
             return 'Reference subtitles file is not indexed by Bazarr', 404
