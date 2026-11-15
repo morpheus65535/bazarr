@@ -61,9 +61,11 @@ At the request of some users, here is a way to show appreciation for the efforts
 - Addic7ed
 - AnimeKalesi
 - Animetosho (requires AniDb HTTP API client described [here](https://wiki.anidb.net/HTTP_API_Definition))
+- AnimeTosho.net
 - AnimeSub.info
 - Assrt
 - AvistaZ, CinemaZ (Get session cookies using method described [here](https://github.com/morpheus65535/bazarr/pull/2375#issuecomment-2057010996))
+- Bayflix
 - BetaSeries
 - BSplayer
 - Embedded Subtitles
@@ -72,6 +74,7 @@ At the request of some users, here is a way to show appreciation for the efforts
 - GreekSubtitles
 - HDBits.org
 - Hosszupuska
+- Jimaku.cc
 - Karagarga.in
 - Ktuvit (Get `hashed_password` using method described [here](https://github.com/XBMCil/service.subtitles.ktuvit))
 - LegendasDivx
@@ -80,18 +83,16 @@ At the request of some users, here is a way to show appreciation for the efforts
 - Napisy24
 - Nekur
 - OpenSubtitles.com
-- OpenSubtitles.org (VIP users only)
 - Pipocas.tv
 - Prijevodi-Online
 - RegieLive
 - Sous-Titres.eu
+- SubClub.eu
 - SubDL
 - subf2m.co
 - Subs.sab.bz
-- Subs4Free
-- Subs4Series
 - Subsarr (self-hosted, requires [slimcdk/subsarr](https://github.com/slimcdk/subsarr))
-- Subscene
+- Subsource.net
 - Subscenter
 - SubsDump (self-hosted, requires [D3lphi3r/SubsDump](https://github.com/D3lphi3r/SubsDump))
 - SubsRo
@@ -109,8 +110,8 @@ At the request of some users, here is a way to show appreciation for the efforts
 - Titulky.com
 - TsukiHime
 - Turkcealtyazi.org
-- TuSubtitulo
 - TVSubtitles
+- Vladoon Mooo
 - Whisper (requires [ahmetoner/whisper-asr-webservice](https://github.com/ahmetoner/whisper-asr-webservice))
 - Wizdom
 - XSubs
