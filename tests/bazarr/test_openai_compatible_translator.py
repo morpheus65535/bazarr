@@ -390,3 +390,18 @@ def test_rejected_chat_template_kwargs_is_not_resent_for_later_batches(serve_str
     assert service._request_with_retry(['Hello']) == ['Bonjour']
     assert service._request_with_retry(['Hello']) == ['Bonjour']
     assert [('chat_template_kwargs' in payload) for payload in requests_seen] == [True, False, False, False]
+
+
+def test_unescaped_subtitle_line_break_in_response_is_repaired(mocker):
+    """A literal backslash-N subtitle line-break marker (SRT/ASS convention) echoed by
+    the model inside its JSON strings is not a valid JSON escape; it must be repaired
+    instead of rejecting an otherwise correct translation batch."""
+    content = json.dumps([{'id': 1, 'text': 'line one\\Nline two'}]).replace('\\\\N', '\\N')
+    with pytest.raises(json.JSONDecodeError):
+        json.loads(content)
+
+    _settings(mocker)
+    mocker.patch.object(openai_compatible_translator.requests, 'post',
+                        return_value=_response(mocker, content))
+
+    assert _service()._translate_batch(['line one\\Nline two']) == ['line one\\Nline two']
