@@ -94,3 +94,16 @@ def test_or_group_with_satisfied_item_is_met_even_if_audio_only_item_is_unmatche
     profile = _enhanced([_group(1, 'OR', audio_only_en, _profile_item(2, 'normal', 'fr'))], 1)
 
     assert _missing(monkeypatch, indexer, profile, [FR]) == []
+
+
+@pytest.mark.parametrize('indexer', INDEXERS)
+@pytest.mark.parametrize('subtitles, expected', [
+    ([], ['ja']),
+    ([_sub('ja')], []),
+], ids=['japanese-missing', 'japanese-present'])
+def test_audio_excluded_item_does_not_satisfy_or_group(monkeypatch, indexer, subtitles, expected):
+    # English is not required while an English audio track is present, so only Japanese can satisfy the OR group.
+    english_excluded = dict(_profile_item(1, 'normal', 'en'), audio_exclude='True')
+    profile = _enhanced([_group(1, 'OR', english_excluded, _profile_item(2, 'normal', 'ja'))], cutoff=1)
+
+    assert _missing(monkeypatch, indexer, profile, subtitles, audio_language="['en']") == sorted(expected)

@@ -189,18 +189,21 @@ def _item_outcome(item: object, matches_audio: Callable[[dict[str, Any]], bool],
                   actual_subtitles: list[dict[str, str]], expanded_actual_subtitles: list[dict[str, str]],
                   non_hi_languages: set[str]) -> tuple[dict[str, str] | None, bool] | None:
     """
-    Return (entry, satisfied) for one item of an enhanced group, or None when the item is not a language item.
+    Return (entry, satisfied) for one item of an enhanced group, or None when the item takes no part in the group.
 
-    An item dropped by the audio options has no entry. It is satisfied only when audio_exclude removed it because a
-    matching audio track is present. An audio_only_include item with no matching audio track is unsatisfied, so a
-    cutoff group that holds it is not met.
+    An item takes no part when it is not a language item, or when audio_exclude left it out because a matching audio
+    track is present: it is not required, so it neither satisfies nor blocks its group. An audio_only_include item
+    with no matching audio track is unsatisfied and has no entry, so it blocks an AND group and adds nothing to the
+    missing list.
     """
     if not isinstance(item, dict) or not isinstance(item.get('language'), str) or not item['language']:
         return None
 
     desired = get_desired_subtitles([item], matches_audio)
     if not desired:
-        return None, item.get('audio_exclude') == 'True' and bool(matches_audio(item))
+        if item.get('audio_exclude') == 'True' and matches_audio(item):
+            return None
+        return None, False
 
     entry = desired[0]
     satisfied = not _unsatisfied_entries([entry], actual_subtitles, expanded_actual_subtitles, non_hi_languages)
@@ -211,12 +214,12 @@ def calculate_enhanced_missing_subtitles(groups, cutoff, subtitles, matches_audi
     """
     Return the missing subtitles of one media item for an enhanced profile.
 
-    A group is satisfied when all its items are satisfied (AND) or when one of them is (OR). An item removed by
-    audio_exclude because a matching audio track is present is satisfied. An item removed by audio_only_include
-    because no audio track matches is not satisfied, and it adds nothing to the missing list. A satisfied group adds
-    nothing to the missing list, and an unsatisfied group adds its unsatisfied items. The cutoff is a group id: it is
-    met when that group is satisfied. 65535 is met when any group is satisfied, and no cutoff is never met. Once the
-    cutoff is met, nothing is missing.
+    A group is satisfied when all its items are satisfied (AND) or when one of them is (OR). An item left out by
+    audio_exclude because a matching audio track is present takes no part in its group. An item removed by
+    audio_only_include because no audio track matches is not satisfied, and it adds nothing to the missing list. A group
+    with no items taking part is satisfied. A satisfied group adds nothing to the missing list, and an unsatisfied group
+    adds its unsatisfied items. The cutoff is a group id: it is met when that group is satisfied. 65535 is met when any
+    group is satisfied, and no cutoff is never met. Once the cutoff is met, nothing is missing.
     """
     group_items = [item for group in groups for item in (group.get('items') or [])]
     actual_subtitles = get_actual_subtitles(subtitles)
