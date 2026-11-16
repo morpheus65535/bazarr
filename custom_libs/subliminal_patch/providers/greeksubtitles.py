@@ -4,16 +4,18 @@ import io
 import logging
 import os
 import zipfile
+from random import randint
 
 import rarfile
 from subzero.language import Language
 from guessit import guessit
 from requests import Session
 
-from subliminal import __short_version__
 from subliminal.providers import ParserBeautifulSoup, Provider
 from subliminal.subtitle import SUBTITLE_EXTENSIONS, Subtitle, fix_line_ending, guess_matches
 from subliminal.video import Episode, Movie
+
+from .utils import FIRST_THOUSAND_OR_SO_USER_AGENTS as AGENT_LIST
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +65,7 @@ class GreekSubtitlesProvider(Provider):
 
     def initialize(self):
         self.session = Session()
-        self.session.headers['User-Agent'] = 'Subliminal/{}'.format(__short_version__)
+        self.session.headers['User-Agent'] = AGENT_LIST[randint(0, len(AGENT_LIST) - 1)]
 
     def terminate(self):
         self.session.close()
