@@ -253,7 +253,7 @@ class SubSyncer:
                          f"use_original_language={settings.subsync.use_original_language} "
                          f"auto_use_original_language={settings.subsync.auto_use_original_language} "
                          f"force_sync={force_sync}")
-            if reference and isinstance(reference, str) and len(reference) == 3 and reference[:2] in ['a:', 's:']:
+            if reference and isinstance(reference, str) and reference[:2] in ['a:', 's:'] and reference[2:].isdigit():
                 # audio or subtitles track id provided
                 unparsed_args.append('--reference-stream')
                 unparsed_args.append(reference)
