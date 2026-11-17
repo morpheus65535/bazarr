@@ -62,6 +62,14 @@ def test_patch_refuses_unindexed_sync_reference(api_client, api_key, subtitle, i
     episode_lookup.assert_not_called()
 
 
+@pytest.mark.parametrize("reference", ["s:/etc/hosts", r"s:\secret.srt", "a:", "s:x"])
+def test_patch_refuses_reference_that_only_looks_like_a_track(api_client, api_key, subtitle, indexed_subtitles,
+                                                             episode_lookup, reference):
+    indexed_subtitles(str(subtitle))
+
+    assert _sync(api_client, api_key, subtitle, reference=reference).status_code == 404
+
+
 def test_patch_accepts_indexed_subtitles_path(api_client, api_key, subtitle, indexed_subtitles, episode_lookup):
     indexed_subtitles(str(subtitle))
 
@@ -87,7 +95,7 @@ def test_patch_accepts_indexed_path_sent_in_mapped_form(api_client, api_key, sub
     assert response.status_code == 204
 
 
-@pytest.mark.parametrize("reference", ["a:0", "/tv/show/ep.mkv"])
+@pytest.mark.parametrize("reference", ["a:0", "s:1", "s:12", "/tv/show/ep.mkv"])
 def test_patch_accepts_audio_track_and_video_references(api_client, api_key, subtitle, indexed_subtitles,
                                                         episode_lookup, reference):
     indexed_subtitles(str(subtitle))
