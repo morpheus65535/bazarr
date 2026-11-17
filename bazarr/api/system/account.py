@@ -29,11 +29,13 @@ class SystemAccount(Resource):
     def post(self):
         """Login or logout from Bazarr UI when using form login"""
         args = self.post_request_parser.parse_args()
-        if settings.auth.type not in ['form', 'basic']:
+        if settings.auth.type not in ['form', 'basic', 'oidc']:
             return 'Unknown authentication type define in config', 500
 
         action = args.get('action')
         if action == 'login':
+            if settings.auth.type == 'oidc':
+                return 'Use OpenID Connect to sign in', 403
             username = args.get('username')
             password = args.get('password')
             if check_credentials(username, password, request):

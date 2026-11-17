@@ -121,6 +121,11 @@ declare namespace Settings {
     username?: string;
     password?: string;
     apikey: string;
+    oidc_issuer?: string;
+    oidc_client_id?: string;
+    oidc_client_secret_file?: string;
+    oidc_redirect_uri?: string;
+    oidc_allowed_subjects?: string[];
   }
 
   interface Subsync {

@@ -13,6 +13,11 @@ const readEnv = <T>(devValue: T, testValue: T, prodValue: () => T): T => {
 };
 
 export const Environment = {
+  get authType(): string | undefined {
+    return readEnv(import.meta.env.VITE_AUTH_TYPE, undefined, () => {
+      return window.Bazarr.authType;
+    });
+  },
   get apiKey(): string | undefined {
     return readEnv(import.meta.env.VITE_API_KEY, undefined, () => {
       return window.Bazarr.apiKey;
