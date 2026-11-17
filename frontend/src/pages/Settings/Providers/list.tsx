@@ -232,7 +232,7 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
       "Warning for cloud users: this provider needs to read the entire file in order to extract subtitles.",
   },
   {
-    key: "gestdown",
+    key: "subvault",
     name: "Subvault (Addic7ed proxy)",
     description: "Proxy for Addic7ed website. No need for login or cookies.",
   },
