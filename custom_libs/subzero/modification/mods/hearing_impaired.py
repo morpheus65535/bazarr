@@ -98,7 +98,15 @@ class HearingImpaired(SubtitleTextModification):
         # NReProcessor(re.compile(r'(?u)^\s*-\s*'), "", name="HI_starting_dash"),
 
         # all caps at start before new sentence
-        NReProcessor(re.compile(r'(?u)^(?=[A-ZÀ-Ž]{4,})[A-ZÀ-Ž-_\s]+\s([A-ZÀ-Ž][a-zà-ž].+)'), r"\1",
+        # The replacement is a callable rather than a plain r"\1" because the
+        # [a-zà-ž] range (U+00E0-U+017E) also covers the uppercase letters of
+        # Latin Extended-A, such as Ę (U+0118), Ł, Ń, Ś or Ż. An all-caps line
+        # whose second character is one of those therefore looked like
+        # "uppercase followed by lowercase" and was truncated to its last word
+        # ("BUDA - KRÓLESTWO WĘGIER" -> "WĘGIER"). Only strip the prefix when
+        # what would be kept actually contains a lowercase letter.
+        NReProcessor(re.compile(r'(?u)^(?=[A-ZÀ-Ž]{4,})[A-ZÀ-Ž-_\s]+\s([A-ZÀ-Ž][a-zà-ž].+)'),
+                     lambda m: m.group(1) if any(c.islower() for c in m.group(1)) else m.group(0),
                      name="HI_starting_upper_then_sentence", supported=lambda p: not p.mostly_uppercase),
 
         # remove normal and Japanese parentheses only for Japanese subtitles
