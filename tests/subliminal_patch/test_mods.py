@@ -36,12 +36,12 @@ def _remove_hi(content):
 
 
 def test_remove_hi_keeps_all_caps_line_with_latin_extended_uppercase():
-    """An all-caps line must not be truncated to its last word.
+    """An all-caps line must not be truncated to its tail.
 
     [a-zà-ž] spans U+00E0-U+017E, which also holds Latin Extended-A uppercase
-    letters such as Ę (U+0118). With the previous plain r"\\1" replacement the
-    line below matched "uppercase followed by lowercase" and the mod returned
-    only "WĘGIER".
+    letters such as Ę (U+0118). With the previous plain r"\\1" replacement a
+    word whose second letter was one of those counted as the start of a
+    sentence, and the mod returned only what followed the last such word.
     """
     lines = _remove_hi(_srt("BUDA - KRÓLESTWO WĘGIER",
                             "SPRAWOWAŁ WŁADZĘ PRZEZ 68 LAT.",
@@ -53,8 +53,25 @@ def test_remove_hi_keeps_all_caps_line_with_latin_extended_uppercase():
     assert "WĘGIER" not in lines
 
 
+def test_remove_hi_keeps_placard_and_sentence():
+    """The processor still drops an all-caps placard before a normal sentence."""
+    lines = _remove_hi(_srt("WARNING DANGER We must run.",
+                            "SPANISH TITLE Eyebrow text",
+                            "CHAPTER ONE It was raining."))
+
+    assert "We must run." in lines
+    assert "Eyebrow text" in lines
+    assert "It was raining." in lines
+    assert not any("WARNING" in line or "SPANISH" in line or "CHAPTER" in line
+                   for line in lines)
+
+
 def test_remove_hi_still_strips_speaker_prefix():
-    """The processor exists to drop a speaker before the sentence: keep that."""
+    """The mod as a whole strips a speaker prefix, via HI_before_colon_caps.
+
+    HI_starting_upper_then_sentence does not handle this, but the change must
+    not disturb the processor that does.
+    """
     lines = _remove_hi(_srt("JAN: Idziemy", "ANNA: Zaczekaj!"))
 
     assert "Idziemy" in lines
@@ -63,7 +80,7 @@ def test_remove_hi_still_strips_speaker_prefix():
 
 
 def test_remove_hi_still_drops_hearing_impaired_cues():
-    """Bracketed cues remain the processor's main job."""
+    """Bracketed cues remain HI_brackets' job and keep working."""
     lines = _remove_hi(_srt("[śmiech] Nie wierzę"))
 
     assert "Nie wierzę" in lines
