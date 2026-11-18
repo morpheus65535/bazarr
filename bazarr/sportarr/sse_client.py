@@ -157,7 +157,7 @@ class SportarrSSEClient:
 
         if resource == 'league':
             if league_id:
-                update_one_league(league_id, action='deleted' if action == 'removed' else 'updated')
+                update_one_league(league_id, action='deleted' if action == 'removed' else 'updated', is_sse=True)
             return
 
         if resource not in ('event', 'file'):

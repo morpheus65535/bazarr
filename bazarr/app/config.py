@@ -961,6 +961,12 @@ def save_settings(settings_items):
                                                func='list_missing_subtitles_movies',
                                                args=[],
                                                kwargs={})
+        if settings.general.use_sportarr:
+            jobs_queue.feed_jobs_pending_queue(job_name=f'Computing missing sports events subtitles',
+                                               module='subtitles.indexer.sports',
+                                               func='list_missing_subtitles_sports',
+                                               args=[],
+                                               kwargs={})
 
     if undefined_subtitles_track_default_changed:
         if settings.general.use_sonarr:
@@ -979,6 +985,13 @@ def save_settings(settings_items):
                                                kwargs={'use_cache': True},
                                                is_progress=True,
                                                is_cancellable=True)
+        if settings.general.use_sportarr:
+            jobs_queue.feed_jobs_pending_queue(job_name=f'Indexing all existing sports events subtitles',
+                                               module='subtitles.indexer.sports',
+                                               func='sports_full_scan_subtitles',
+                                               args=[],
+                                               kwargs={'use_cache': True},
+                                               is_progress=True)
 
     if audio_tracks_parsing_changed:
         if settings.general.use_sonarr:

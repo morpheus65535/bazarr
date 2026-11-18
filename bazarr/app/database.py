@@ -972,6 +972,7 @@ def fix_code3_languages_in_languages_profiles():
     from languages.get_languages import alpha2_from_alpha3
     from subtitles.indexer.movies import list_missing_subtitles_movies
     from subtitles.indexer.series import list_missing_subtitles
+    from subtitles.indexer.sports import list_missing_subtitles_sports
 
     update_missing_subtitles_required = False
     languages_profiles = database.execute(
@@ -1003,6 +1004,8 @@ def fix_code3_languages_in_languages_profiles():
             list_missing_subtitles()
         if settings.general.use_radarr:
             list_missing_subtitles_movies()
+        if settings.general.use_sportarr:
+            list_missing_subtitles_sports()
 
 
 def is_indexed_subtitle_path(*subtitles_paths) -> bool:

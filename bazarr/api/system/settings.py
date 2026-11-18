@@ -14,6 +14,7 @@ from app.config import settings, save_settings, get_settings
 from app.scheduler import scheduler
 from subtitles.indexer.series import list_missing_subtitles
 from subtitles.indexer.movies import list_missing_subtitles_movies
+from subtitles.indexer.sports import list_missing_subtitles_sports
 
 from ..utils import authenticate
 
@@ -194,6 +195,8 @@ class SystemSettings(Resource):
                 list_missing_subtitles()
             if settings.general.use_radarr:
                 list_missing_subtitles_movies()
+            if settings.general.use_sportarr:
+                list_missing_subtitles_sports()
 
         # Update Notification
         notifications = request.form.getlist('notifications-providers')
