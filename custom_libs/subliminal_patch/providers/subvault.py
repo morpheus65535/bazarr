@@ -20,7 +20,7 @@ _BASE_URL = "https://api.subvault.tv"
 
 
 class SubvaultSubtitle(Subtitle):
-    provider_name = "gestdown"
+    provider_name = "subvault"
     hash_verifiable = False
     hearing_impaired_verifiable = True
 
@@ -92,7 +92,7 @@ def _retry_on_423(method):
 
 
 class SubvaultProvider(Provider):
-    provider_name = "gestdown"
+    provider_name = "subvault"
 
     video_types = (Episode,)
 

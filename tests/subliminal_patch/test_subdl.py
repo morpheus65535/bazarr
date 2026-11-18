@@ -789,3 +789,41 @@ def test_remote_policy_disables_ai_candidates(movies, requests_mock):
 
     with SubdlProvider("fake-key", ai_translate=True) as provider:
         assert provider.list_subtitles(movies["dune"], {Language("fas")}) == []
+
+
+def test_is_forced_marker_in_release_name_only():
+    # Subdl often puts the forced marker only in release_name; the name is a zip.
+    item = {
+        "release_name": "ForAllMankindS04E01-Glasnost(EngForced)",
+        "name": "SUBDL::for-all-mankind-fourth-season-english-3218569.zip",
+        "comment": "",
+        "releases": None,
+    }
+    assert SubdlProvider._is_forced(item) is True
+    assert SubdlProvider._is_hi(item) is False
+
+
+@pytest.mark.parametrize("text", [
+    "ForAllMankindS04E01-Glasnost(EngForced)",
+    "For All Mankind (Eng Forced)",
+    "Show.S01E02.Eng.Forced",
+    "Show.S01E02EngForced",
+    "Show.S01E02SpaForced",
+    "Movie.2020.FRAForced",
+    "Movie.2020.por.forced",
+    "Movie.2020.Forced",
+])
+def test_is_forced_glued_or_separated_iso3_code(text):
+    # Three-letter ISO 639 codes, glued or separated, in front of 'forced'.
+    assert SubdlProvider._FORCED_RE.search(text) is not None
+
+
+@pytest.mark.parametrize("text", [
+    "reinforced",
+    "EnhancedForced",
+    "foreign dialogue",
+    "Dune.2021.1080p.WEBRip.SDH",
+])
+def test_is_forced_negative_text(text):
+    # Words merely ending in 'forced', and non-forced text, are not forced markers.
+    assert SubdlProvider._FORCED_RE.search(text) is None

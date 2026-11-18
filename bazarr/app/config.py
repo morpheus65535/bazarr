@@ -1141,11 +1141,11 @@ def sync_checker(subtitle):
         return False
 
 
-# Plex OAuth Migration Functions
 # Providers renamed upstream, mapping previous key to new key. Enabled providers matching a key are
 # replaced by the value at startup so users keep their selection after a rename.
 RENAMED_PROVIDERS: dict[str, str] = {
     'animetosho_xyz': 'animetosho_net',
+    'gestdown': 'subvault'
 }
 
 
