@@ -32,7 +32,6 @@ Bazarr does not scan your disk to detect series and movies. It only manages the 
 | Resource | Link |
 | --- | --- |
 | Documentation | [Wiki](https://wiki.bazarr.media) |
-| OpenID Connect | [OIDC setup, Pocket ID, and recovery](docs/oidc.md) |
 | Support | [Discord](https://discord.gg/MH2e2eb) |
 | Bug reports | [GitHub Issues](https://github.com/morpheus65535/bazarr/issues) |
 | Feature requests | [Feature Upvote](http://features.bazarr.media) |
