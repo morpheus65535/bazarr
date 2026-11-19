@@ -31,6 +31,10 @@ def sports_session(tmp_path, monkeypatch):
         monkeypatch.setattr(module, 'database', session)
     monkeypatch.setattr(settings_api, 'event_stream', lambda *args, **kwargs: None)
     monkeypatch.setattr(settings_api, 'save_settings', lambda *args, **kwargs: None)
+    # The settings endpoint queues the recalculation as a job that nothing runs in tests. Run it inline for the
+    # one league this fixture creates so the wanted state is written before the assertions.
+    monkeypatch.setattr(settings_api, "list_missing_subtitles_sports",
+                        lambda *args, **kwargs: sports_indexer.list_missing_subtitles_sports(no=1))
     monkeypatch.setattr(sports_indexer, 'event_stream', lambda **kwargs: None)
     monkeypatch.setattr(sports_indexer, 'get_language_equals', lambda: [])
     monkeypatch.setattr(settings_api.settings.general, 'use_sonarr', False)
