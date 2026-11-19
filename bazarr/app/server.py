@@ -12,6 +12,7 @@ from time import sleep
 
 from api import api_bp
 from .ui import ui_bp
+from .oidc import oidc_bp
 from .get_args import args
 from .config import settings, base_url
 from .database import close_database
@@ -20,6 +21,7 @@ from .app import create_app
 app = create_app()
 app.register_blueprint(api_bp, url_prefix=base_url.rstrip('/') + '/api')
 app.register_blueprint(ui_bp, url_prefix=base_url.rstrip('/'))
+app.register_blueprint(oidc_bp, url_prefix=base_url.rstrip('/'))
 
 
 class Server:

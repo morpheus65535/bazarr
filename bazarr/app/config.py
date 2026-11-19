@@ -189,9 +189,14 @@ validators = [
     # auth section
     Validator('auth.apikey', must_exist=True, default=hexlify(os.urandom(16)).decode(), is_type_of=str),
     Validator('auth.type', must_exist=True, default=None, is_type_of=(NoneType, str),
-              is_in=[None, 'basic', 'form']),
+              is_in=[None, 'basic', 'form', 'oidc']),
     Validator('auth.username', must_exist=True, default='', is_type_of=str, cast=str),
     Validator('auth.password', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('auth.oidc_issuer', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('auth.oidc_client_id', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('auth.oidc_client_secret_file', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('auth.oidc_redirect_uri', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('auth.oidc_allowed_subjects', must_exist=True, default=[], is_type_of=list),
 
     # cors section
     Validator('cors.enabled', must_exist=True, default=False, is_type_of=bool),
@@ -600,7 +605,8 @@ base_url = settings.general.base_url.rstrip('/')
 
 ignore_keys = ['flask_secret_key']
 
-array_keys = ['excluded_tags',
+array_keys = ['oidc_allowed_subjects',
+              'excluded_tags',
               'exclude',
               'included_codecs',
               'subzero_mods',
@@ -621,7 +627,8 @@ array_keys = ['excluded_tags',
 
 empty_values = ['', 'None', 'null', 'undefined', None, []]
 
-str_keys = ['chmod', 'log_include_filter', 'log_exclude_filter', 'password', 'f_password', 'hashed_password']
+str_keys = ['chmod', 'log_include_filter', 'log_exclude_filter', 'password', 'f_password', 'hashed_password',
+            'oidc_issuer', 'oidc_client_id', 'oidc_client_secret_file', 'oidc_redirect_uri']
 float_keys = ['quality_min_score', 'quality_max_framerate_deviation']
 
 # Increase Sonarr and Radarr sync interval since we now use SignalR feed to update in real time
@@ -758,7 +765,7 @@ def save_settings(settings_items):
                         pass
 
         # Make sure empty language list are stored correctly
-        if settings_keys[-1] in array_keys and value[0] in empty_values:
+        if settings_keys[-1] in array_keys and (not value or value[0] in empty_values):
             value = []
 
         # Handle path mappings settings since they are array in array
@@ -799,6 +806,8 @@ def save_settings(settings_items):
         elif key == 'settings-auth-type' and value != settings.auth.type:
             revoke_form_sessions = True
         elif key == 'settings-auth-password' and value is not None and value != settings.auth.password:
+            revoke_form_sessions = True
+        elif key.startswith('settings-auth-oidc_') and value != settings.auth.get(settings_keys[-1]):
             revoke_form_sessions = True
 
         if key == 'settings-auth-password':
@@ -989,6 +998,12 @@ def save_settings(settings_items):
     try:
         settings.validators.validate()
         validate_log_regex()
+        if settings.auth.type == 'oidc':
+            from .oidc import validate_oidc_configuration
+            try:
+                validate_oidc_configuration(settings.auth, settings.general.base_url)
+            except ValueError as error:
+                raise ValidationError(str(error)) from error
     except ValidationError:
         settings.reload()
         raise
