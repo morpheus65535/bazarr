@@ -82,11 +82,11 @@ const Layout: FunctionComponent<Props> = (props) => {
             };
           });
 
-          const isAuthenticationChanged = [
-            "settings-auth-type",
-            "settings-auth-username",
-            "settings-auth-password",
-          ].some((key) => Object.hasOwn(submittedSettings, key));
+          const isAuthenticationChanged = Object.keys(submittedSettings).some(
+            (key) =>
+              key.startsWith("settings-auth-") &&
+              key !== "settings-auth-apikey",
+          );
 
           if (isAuthenticationChanged) {
             setIsAuthReloadPending(true);

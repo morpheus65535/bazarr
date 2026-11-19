@@ -84,7 +84,10 @@ const SettingsGeneralView: FunctionComponent = () => {
           placeholder="No Authentication"
           settingKey="settings-auth-type"
         ></Selector>
-        <CollapseBox settingKey="settings-auth-type">
+        <CollapseBox
+          settingKey="settings-auth-type"
+          on={(value) => value === "basic" || value === "form"}
+        >
           <Text label="Username" settingKey="settings-auth-username"></Text>
           <Password
             label="Password"
@@ -99,6 +102,42 @@ const SettingsGeneralView: FunctionComponent = () => {
             Home Assistant, Organizr). Only takes effect over HTTPS. Leave
             disabled unless needed: it weakens protection against cross-site
             request forgery.
+          </Message>
+        </CollapseBox>
+        <CollapseBox
+          settingKey="settings-auth-type"
+          on={(value) => value === "oidc"}
+        >
+          <Text label="Issuer URL" settingKey="settings-auth-oidc_issuer" />
+          <Message>HTTPS issuer URL from your OpenID Connect provider.</Message>
+          <Text label="Client ID" settingKey="settings-auth-oidc_client_id" />
+          <Text
+            label="Redirect URI"
+            settingKey="settings-auth-oidc_redirect_uri"
+          />
+          <Message>
+            Your public HTTPS Bazarr URL followed by /auth/oidc/callback.
+            Include the base URL, if configured, and register this exact URI
+            with your provider. The client must support PKCE with S256.
+          </Message>
+          <Chips
+            label="Allowed subjects"
+            settingKey="settings-auth-oidc_allowed_subjects"
+          />
+          <Message>
+            Required: exact subject (sub) values from your provider. Each
+            allowed account has full administrator access. Usernames and email
+            addresses are not subject identifiers.
+          </Message>
+          <Text
+            label="Client secret file (optional)"
+            settingKey="settings-auth-oidc_client_secret_file"
+          />
+          <Message>
+            Leave blank for a public client. For a confidential client, supply
+            the secret through this file or the BAZARR_OIDC_CLIENT_SECRET
+            environment variable. Local password login is disabled while OIDC is
+            selected. API keys continue to work.
           </Message>
         </CollapseBox>
         <Text

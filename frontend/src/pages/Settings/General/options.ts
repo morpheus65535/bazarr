@@ -9,6 +9,10 @@ export const securityOptions: SelectorOption<string>[] = [
     label: "Form",
     value: "form",
   },
+  {
+    label: "OpenID Connect (OIDC)",
+    value: "oidc",
+  },
 ];
 
 export const proxyOptions: SelectorOption<string>[] = [

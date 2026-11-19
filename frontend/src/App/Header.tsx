@@ -32,7 +32,8 @@ import styleVars from "@/assets/_variables.module.scss";
 
 const AppHeader: FunctionComponent = () => {
   const { data: settings } = useSystemSettings();
-  const hasLogout = settings?.auth.type === "form";
+  const hasLogout =
+    settings?.auth.type === "form" || settings?.auth.type === "oidc";
 
   const { show, showed } = useNavbar();
 

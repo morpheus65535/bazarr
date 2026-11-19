@@ -32,6 +32,7 @@ pycountry==26.2.16
 pyrsistent==0.20.0
 pysubs2<=1.8.1  # newer version requires Python 3.12
 python-engineio==4.14.0
+python-jose==3.5.0
 python-socketio==5.17.0
 pytz==2026.5
 rarfile==4.5
@@ -95,6 +96,11 @@ markupsafe==3.0.4
 pymediainfo==7.0.1
 pyyaml==6.0.3
 trakit==0.4.0
+
+# Required-by: python-jose
+ecdsa==0.19.2
+pyasn1==0.6.5
+rsa==4.9.1
 
 # Required-by: python-socketio
 bidict<0.24.0  # newer version requires Python 3.11

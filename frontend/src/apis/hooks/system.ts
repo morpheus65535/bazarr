@@ -304,7 +304,7 @@ export const useSystem = () => {
 
       const redirectUrl = safeReturnTo
         ? `${Environment.baseUrl}${safeReturnTo}`
-        : Environment.baseUrl;
+        : `${Environment.baseUrl}/`;
 
       window.location.replace(redirectUrl);
     },
