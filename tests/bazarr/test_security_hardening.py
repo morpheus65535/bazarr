@@ -11,23 +11,9 @@ from app.get_providers import _parse_throttled_providers
 from utilities.helper import is_valid_apikey
 
 
-def _import_api_module(monkeypatch, name):
-    """Import a bazarr api submodule without running the api package __init__ files, which import init and set up
-    the whole application."""
+def _import_api_module(name):
+    """Import a bazarr api submodule through the regular packages set up by the conftest bootstrap."""
     import importlib
-    import os
-    import sys
-    import types
-    from app import config
-
-    bazarr_dir = os.path.dirname(os.path.dirname(config.__file__))
-    parts = name.split('.')
-    for depth in range(1, len(parts)):
-        package_name = '.'.join(parts[:depth])
-        if package_name not in sys.modules:
-            package = types.ModuleType(package_name)
-            package.__path__ = [os.path.join(bazarr_dir, *parts[:depth])]
-            monkeypatch.setitem(sys.modules, package_name, package)
     return importlib.import_module(name)
 
 
@@ -175,6 +161,53 @@ def test_concurrent_legacy_upgrade_writes_config_once(ui_credentials):
     assert verify_password('hunter2', settings.auth.password)
 
 
+def test_failed_logins_for_many_usernames_do_not_block_valid_login(ui_credentials):
+    """Failing attempts with distinct usernames never hit the per (client, username) backoff. They must not delay a
+    valid login by queueing it behind their password verifications."""
+    import threading
+    import time
+    from unittest.mock import patch
+    from app import config
+    from app.config import hash_password
+    from utilities import helper
+
+    settings.auth.username = 'admin'
+    settings.auth.password = hash_password('right')
+    helper._get_dummy_password_hash()  # computed lazily, keep it out of the timed section
+    helper._login_failures.clear()
+
+    attackers = 16
+    slow_verify_seconds = 0.5
+    real_verify_password = config.verify_password
+    in_flight = threading.Semaphore(0)
+
+    def verify_password(pw, stored_hash):
+        if pw != 'right':
+            in_flight.release()
+            time.sleep(slow_verify_seconds)  # stand in for a slow hash that doesn't hold the GIL
+        return real_verify_password(pw, stored_hash)
+
+    results = []
+    with patch('app.config.verify_password', verify_password):
+        threads = [threading.Thread(target=lambda i=i: results.append(
+            helper._verify_user_password(f'user{i}', 'wrong', client=f'10.0.0.{i}'))) for i in range(attackers)]
+        try:
+            for thread in threads:
+                thread.start()
+            assert in_flight.acquire(timeout=5)  # failing attempts are verifying, the others are started or queued
+            start = time.monotonic()
+            assert helper._verify_user_password('admin', 'right', client='10.0.1.1')
+            elapsed = time.monotonic() - start
+        finally:
+            for thread in threads:
+                thread.join()
+            helper._login_failures.clear()
+
+    assert results == [False] * attackers
+    # serialized behind the failing attempts this would take at least attackers * slow_verify_seconds (8s)
+    assert elapsed < slow_verify_seconds * 4
+
+
 def test_failed_logins_back_off_per_client_and_username(ui_credentials):
     from app.config import hash_password
     from unittest.mock import patch
@@ -228,7 +261,7 @@ def test_login_backoff_is_capped():
 
 def test_login_api_returns_429_with_retry_after_when_throttled(ui_credentials, monkeypatch):
     from app.config import hash_password
-    SystemAccount = _import_api_module(monkeypatch, 'api.system.account').SystemAccount
+    SystemAccount = _import_api_module('api.system.account').SystemAccount
     from utilities import helper
 
     app = Flask(__name__)
@@ -271,6 +304,24 @@ def test_wrong_username_still_runs_password_hash(ui_credentials):
     with patch('app.config.verify_password', return_value=True) as verify:
         assert not helper._verify_user_password('nobody', 'right')
         verify.assert_called_once()
+
+
+def test_legacy_hash_still_runs_slow_password_hash(ui_credentials):
+    """A legacy MD5 hash verifies instantly, the dummy PBKDF2 hash must run too or the right username answers faster
+    than a wrong one."""
+    import hashlib
+    from unittest.mock import patch
+    from app import config
+    from utilities import helper
+
+    settings.auth.username = 'admin'
+    settings.auth.password = hashlib.md5(b'right').hexdigest()
+    dummy_hash = helper._get_dummy_password_hash()
+    with patch('app.config.verify_password', side_effect=config.verify_password) as verify:
+        assert not helper._verify_user_password('admin', 'wrong')
+        assert not helper._verify_user_password('nobody', 'wrong')
+    # every attempt runs the slow dummy hash once, whether the username exists or not
+    assert [call.args[1] for call in verify.call_args_list].count(dummy_hash) == 2
 
 
 def test_malformed_unicode_never_raises(ui_credentials, apikey):
@@ -434,8 +485,8 @@ def media_db(monkeypatch, apikey):
             radarrId=MOVIE_ID))
     session.commit()
 
-    api_utils = _import_api_module(monkeypatch, 'api.utils')
-    subtitles_api = _import_api_module(monkeypatch, 'api.subtitles.subtitles')
+    api_utils = _import_api_module('api.utils')
+    subtitles_api = _import_api_module('api.subtitles.subtitles')
     for module in (db_module, api_utils, subtitles_api, video_analyzer):
         monkeypatch.setattr(module, 'database', session)
     monkeypatch.setattr(path_mappings, 'path_mapping_series', [['/tv', '/data/tv']])
@@ -458,7 +509,7 @@ def _patch_subtitles(apikey, **params):
 
 @pytest.fixture
 def fake_sync(monkeypatch, media_db):
-    subtitles_api = _import_api_module(monkeypatch, 'api.subtitles.subtitles')
+    subtitles_api = _import_api_module('api.subtitles.subtitles')
 
     calls = []
     monkeypatch.setattr(subtitles_api, 'sync_subtitles', lambda **kwargs: calls.append(kwargs))

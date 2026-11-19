@@ -47,8 +47,8 @@ def is_valid_apikey(*candidates, apikey_settings=None):
 _verified_credentials = {}
 _verified_credentials_lock = threading.Lock()
 
-# Run password verifications and legacy hash upgrades one at a time
-_slow_verify_lock = threading.Lock()
+# Run legacy hash upgrades and verified credentials cache writes one at a time
+_password_update_lock = threading.Lock()
 
 # Failed logins per (client address, username) to slow down brute force attempts. Keying on the username too
 # prevents a client sharing the same address (e.g. behind a reverse proxy) from locking out other usernames.
@@ -156,33 +156,35 @@ def _verify_user_password(user, pw, client=None):
                      f'try again later')
         return False
 
-    with _slow_verify_lock:
-        stored_hash = str(settings.auth.password or '')
-        if not stored_hash:
-            return False
-        # Another thread may have verified or upgraded while waiting for the lock
-        if user_matches and _is_cached_login(user, pw, stored_hash):
-            _record_login_result(failures_key, True)
-            return True
-
-        if user_matches:
-            valid = verify_password(pw, stored_hash)
-        else:
+    # Verify outside of any lock so slow failing attempts don't delay other logins
+    if user_matches:
+        valid = verify_password(pw, stored_hash)
+        if is_legacy_password_hash(stored_hash):
+            # Legacy MD5 check is instant, run the slow hash too so response time doesn't reveal valid usernames
             verify_password(pw, _get_dummy_password_hash())
-            valid = False
+    else:
+        verify_password(pw, _get_dummy_password_hash())
+        valid = False
 
-        if valid and is_legacy_password_hash(stored_hash):
-            # Upgrade legacy MD5 hash now that the password is known
-            stored_hash = hash_password(pw)
-            settings.auth.password = stored_hash
-            try:
-                write_config()
-                logging.info('Upgraded stored UI password hash to a salted PBKDF2 hash.')
-            except Exception:
-                logging.exception('Unable to save upgraded UI password hash.')
+    if valid:
+        with _password_update_lock:
+            current_hash = str(settings.auth.password or '')
+            if current_hash != stored_hash:
+                # Another thread may have upgraded the legacy hash while verifying, any other change is a new password
+                valid = (is_legacy_password_hash(stored_hash) and
+                         _is_cached_login(user, pw, current_hash))
+            elif is_legacy_password_hash(stored_hash):
+                # Upgrade legacy MD5 hash now that the password is known
+                current_hash = hash_password(pw)
+                settings.auth.password = current_hash
+                try:
+                    write_config()
+                    logging.info('Upgraded stored UI password hash to a salted PBKDF2 hash.')
+                except Exception:
+                    logging.exception('Unable to save upgraded UI password hash.')
 
-        if valid:
-            _cache_login(user, pw, stored_hash)
+            if valid:
+                _cache_login(user, pw, current_hash)
 
     _record_login_result(failures_key, valid)
     return valid
