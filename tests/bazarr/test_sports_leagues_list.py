@@ -85,7 +85,7 @@ def test_sports_leagues_list_filters_sorts_and_counts(monkeypatch):
         database.commit()
 
 
-def test_single_league_sync_updates_events(monkeypatch):
+def test_single_league_sync_calls_league_sync_once(monkeypatch):
     api_path = Path(__file__).resolve().parents[2] / 'bazarr' / 'api'
     api_package = ModuleType('api')
     api_package.__path__ = [str(api_path)]
@@ -95,13 +95,16 @@ def test_single_league_sync_updates_events(monkeypatch):
     monkeypatch.setitem(sys.modules, 'api.sports', sports_package)
     module = import_module('api.sports.leagues')
 
+    from sportarr.sync import events as sync_events_module
+
     calls = []
     monkeypatch.setattr(module, 'update_one_league',
                         lambda league_id, action: calls.append(('league', league_id, action)))
-    monkeypatch.setattr(module, 'sync_events',
-                        lambda league_id: calls.append(('events', league_id)))
+    monkeypatch.setattr(sync_events_module, 'get_events_from_sportarr_api',
+                        lambda **kwargs: calls.append(('events', kwargs['league_id'])))
     monkeypatch.setattr(module.SportsLeagues, 'patch_request_parser',
                         SimpleNamespace(parse_args=lambda: {'leagueid': 12, 'action': 'sync'}))
 
     assert module.SportsLeagues.patch.__wrapped__(module.SportsLeagues()) == ('', 204)
-    assert calls == [('league', 12, 'updated'), ('events', 12)]
+    # The league sync also syncs the events, so the route does not call it a second time.
+    assert calls == [('league', 12, 'updated')]

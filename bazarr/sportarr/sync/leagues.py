@@ -128,8 +128,8 @@ def update_leagues(job_id=None, wait_for_completion=False):
             current_leagues_sportarr.append(league['id'])
 
             # Update league in DB
-            update_one_league(league['id'], action='updated', league_data=[league], tagsDict=tagsDict,
-                              language_profiles=language_profiles)
+            update_one_league(league['id'], action='updated', sync_events_after_update=False,
+                              league_data=[league], tagsDict=tagsDict, language_profiles=language_profiles)
 
             # Update events in DB
             sync_events(league_id=league['id'])
@@ -155,7 +155,8 @@ def update_leagues(job_id=None, wait_for_completion=False):
     gc.collect()
 
 
-def update_one_league(league_id, action, league_data=None, tagsDict=None, language_profiles=None):
+def update_one_league(league_id, action, is_sse=False, sync_events_after_update=True, league_data=None,
+                      tagsDict=None, language_profiles=None):
     logging.debug(f'BAZARR syncing this specific league from Sportarr: {league_id}')
 
     # Check if there's a row in database for this league ID
@@ -206,6 +207,10 @@ def update_one_league(league_id, action, league_data=None, tagsDict=None, langua
             for column in existing_league_model.__table__.columns
         }
         if league.items() <= existing_league_values.items():
+            # Sportarr sends event frames for event changes. A league frame
+            # skips the event sync.
+            if sync_events_after_update and not is_sse:
+                sync_events(league_id=int(league_id))
             return
 
         try:
@@ -218,6 +223,8 @@ def update_one_league(league_id, action, league_data=None, tagsDict=None, langua
             logging.error(f"BAZARR cannot update league {league['title']} because of {e}")
             return
 
+        if sync_events_after_update and not is_sse:
+            sync_events(league_id=int(league_id))
         event_stream(type='sports-league', payload=int(league_id))
         logging.debug(f"BAZARR updated this league into the database: {league['path']}")
 
@@ -236,5 +243,9 @@ def update_one_league(league_id, action, league_data=None, tagsDict=None, langua
             logging.error(f"BAZARR cannot insert league {league['title']} because of {e}")
             return
 
+        # Sportarr does not send the events of a league that Bazarr did not
+        # know. Sync them here, or a new league stays empty.
+        if sync_events_after_update and not is_sse:
+            sync_events(league_id=int(league_id))
         event_stream(type='sports-league', action='update', payload=int(league_id))
         logging.debug(f"BAZARR inserted this league into the database: {league['path']}")

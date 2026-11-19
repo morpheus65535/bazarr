@@ -42,3 +42,17 @@ def test_event_removal_notifies_the_sports_view(monkeypatch):
     # The row id keys the shared search state. The view still gets the Sportarr event id.
     assert deleted == [('sports', sports_events.TableSportsEvents, 'id', [5])]
     assert sent == [{'type': 'sports-event', 'action': 'delete', 'payload': 42}]
+
+
+def test_league_frame_syncs_the_league_without_its_events(monkeypatch):
+    from sportarr import sse_client
+
+    calls = []
+    monkeypatch.setattr(sse_client, 'update_one_league',
+                        lambda league_id, action, **kwargs: calls.append(('league', league_id, action, kwargs)))
+    monkeypatch.setattr(sse_client, 'sync_events', lambda league_id: calls.append(('events', league_id)))
+
+    sse_client.SportarrSSEClient().dispatch('{"resourceType": "league", "action": "updated", "leagueId": 3}')
+
+    # Sportarr sends event frames for event changes, so a league frame only syncs the league.
+    assert calls == [('league', 3, 'updated', {'is_sse': True})]

@@ -480,6 +480,111 @@ def test_league_sync_stops_on_an_invalid_top_level_response(sports_session, monk
     assert jobs_queue.names == ['Synced leagues with Sportarr']
 
 
+def _sportarr_league(league_id=1):
+    return {'id': league_id, 'name': f'League {league_id}', 'path': f'/sports/{league_id}', 'monitored': True,
+            'tags': []}
+
+
+@pytest.fixture
+def league_sync(sports_session, sync, monkeypatch):
+    """Store league 1 as Sportarr returns it, with one event whose file Sportarr has since upgraded."""
+    monkeypatch.setattr(sync_leagues_module, 'event_stream', lambda **kwargs: None)
+    monkeypatch.setattr(sync_leagues_module.settings.general, 'league_default_enabled', False)
+    # This seeds the league row only. The events are added by hand below.
+    sync_leagues_module.update_one_league(1, action='updated', sync_events_after_update=False,
+                                          league_data=[_sportarr_league()], tagsDict=[], language_profiles=[])
+    _add_event(sports_session, 1, sportarr_event_id=10)
+    sports_session.execute(db.update(db.TableSportsEvents).values(path='/sports/1/10.mkv'))
+    upgraded = _sportarr_event(10, [0])
+    upgraded['files'][0]['id'] = 999
+    synced = []
+
+    def get_events_from_sportarr_api(**kwargs):
+        synced.append(kwargs['league_id'])
+        return [upgraded]
+
+    monkeypatch.setattr(sync_events_module, 'get_events_from_sportarr_api', get_events_from_sportarr_api)
+    return synced
+
+
+def _file_ids(session):
+    return session.execute(db.select(db.TableSportsEvents.file_id)).scalars().all()
+
+
+def test_unchanged_league_still_syncs_its_events(sports_session, league_sync):
+    sync_leagues_module.update_one_league(1, action='updated', league_data=[_sportarr_league()], tagsDict=[],
+                                          language_profiles=[])
+
+    # The league row stays as it was, so the event sync ran from the unchanged branch.
+    assert sports_session.execute(db.select(db.TableSportsLeagues.updated_at_timestamp)).scalar_one() is None
+    assert league_sync == [1]
+    assert _file_ids(sports_session) == [999]
+
+
+def test_changed_league_syncs_its_events_once(sports_session, league_sync):
+    league = _sportarr_league()
+    league['name'] = 'Renamed'
+
+    sync_leagues_module.update_one_league(1, action='updated', league_data=[league], tagsDict=[],
+                                          language_profiles=[])
+
+    assert sports_session.execute(db.select(db.TableSportsLeagues.title)).scalars().all() == ['Renamed']
+    assert league_sync == [1]
+    assert _file_ids(sports_session) == [999]
+
+
+def test_new_league_syncs_its_events_once(sports_session, league_sync):
+    sync_leagues_module.update_one_league(2, action='updated', league_data=[_sportarr_league(2)], tagsDict=[],
+                                          language_profiles=[])
+
+    assert sports_session.execute(
+        db.select(db.TableSportsLeagues.sportarrLeagueId).order_by(db.TableSportsLeagues.sportarrLeagueId)
+    ).scalars().all() == [1, 2]
+    assert league_sync == [2]
+
+
+def test_league_frame_from_sportarr_leaves_event_sync_to_event_frames(sports_session, league_sync):
+    sync_leagues_module.update_one_league(1, action='updated', is_sse=True, league_data=[_sportarr_league()],
+                                          tagsDict=[], language_profiles=[])
+
+    assert league_sync == []
+
+
+def test_removed_league_does_not_sync_events(sports_session, league_sync):
+    sync_leagues_module.update_one_league(1, action='deleted')
+
+    assert league_sync == []
+    assert sports_session.execute(db.select(db.TableSportsLeagues)).all() == []
+
+
+def _failed_request(**kwargs):
+    raise ConnectionError('Sportarr is down')
+
+
+@pytest.mark.parametrize('get_league', [_failed_request, lambda **kwargs: []], ids=['request-failed', 'empty'])
+def test_failed_league_fetch_does_not_sync_events(sports_session, league_sync, monkeypatch, get_league):
+    monkeypatch.setattr(sync_leagues_module, 'get_leagues_from_sportarr_api', get_league)
+
+    sync_leagues_module.update_one_league(1, action='updated', tagsDict=[], language_profiles=[])
+
+    assert league_sync == []
+    assert _file_ids(sports_session) == [1]
+
+
+def test_full_league_sync_syncs_each_league_once(sports_session, league_sync, monkeypatch):
+    monkeypatch.setattr(sync_leagues_module, 'check_sportarr_rootfolder', lambda: None)
+    monkeypatch.setattr(sync_leagues_module, 'get_tags', lambda: [])
+    monkeypatch.setattr(sync_leagues_module, 'get_language_profiles', lambda: [])
+    monkeypatch.setattr(sync_leagues_module, 'jobs_queue', _FakeJobsQueue())
+    monkeypatch.setattr(sync_leagues_module.settings.sportarr, 'sync_only_monitored_leagues', False)
+    monkeypatch.setattr(sync_leagues_module, 'get_leagues_from_sportarr_api',
+                        lambda **kwargs: [_sportarr_league()])
+
+    sync_leagues_module.update_leagues(job_id=1)
+
+    assert league_sync == [1]
+
+
 @pytest.fixture
 def mass_download(monkeypatch, tmp_path, sports_session):
     from subtitles.mass_download import sports as mass_download_sports
