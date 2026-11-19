@@ -11,7 +11,7 @@ from subliminal_patch.core import save_subtitles
 from subliminal_patch.core_persistent import download_best_subtitles
 
 from app.config import settings, get_array_from
-from app.database import (TableEpisodes, TableMovies, TableMissingSubtitles, database, select, get_profiles_list,
+from app.database import (TableEpisodes, TableMovies, TableSportsEvents, TableMissingSubtitles, database, select, get_profiles_list,
                           get_subtitles)
 from app.jobs_queue import jobs_queue
 from constants import HI_EXCLUDED
@@ -410,6 +410,14 @@ def parse_language_object(language):
         return language
 
 
+def _reverse_path(path, media_type):
+    if media_type == 'series':
+        return path_mappings.path_replace_reverse(path)
+    elif media_type == 'sports':
+        return path_mappings.path_replace_reverse_sports(path)
+    return path_mappings.path_replace_reverse_movie(path)
+
+
 def reload_missing_languages_from_db(path, media_type):
     """Reload the current normalized missing-language rows for a media path."""
     if media_type == 'series':
@@ -418,6 +426,12 @@ def reload_missing_languages_from_db(path, media_type):
             .where(TableEpisodes.path == path_mappings.path_replace_reverse(path)))\
             .first()
         media_id = confirmed_missing_subs.sonarrEpisodeId if confirmed_missing_subs else None
+    elif media_type == 'sports':
+        confirmed_missing_subs = database.execute(
+            select(TableSportsEvents.id)
+            .where(TableSportsEvents.path == path_mappings.path_replace_reverse_sports(path)))\
+            .first()
+        media_id = confirmed_missing_subs.id if confirmed_missing_subs else None
     else:
         confirmed_missing_subs = database.execute(
             select(TableMovies.radarrId)
@@ -426,8 +440,7 @@ def reload_missing_languages_from_db(path, media_type):
         media_id = confirmed_missing_subs.radarrId if confirmed_missing_subs else None
 
     if not confirmed_missing_subs:
-        reversed_path = path_mappings.path_replace_reverse(path) if media_type == 'series' else \
-            path_mappings.path_replace_reverse_movie(path)
+        reversed_path = _reverse_path(path, media_type)
         logging.debug(f"BAZARR no media with this path have been found in database: {reversed_path}")
         return []
 

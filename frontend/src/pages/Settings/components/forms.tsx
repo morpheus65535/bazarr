@@ -158,7 +158,7 @@ export const Slider: FunctionComponent<SliderProps> = (props) => {
 };
 
 type ChipsProp = BaseInput<string[]> &
-  Omit<ChipInputProps, "onChange" | "data"> & {
+  Omit<ChipInputProps, "onChange"> & {
     sanitizeFn?: (values: string[] | null) => string[] | undefined;
   };
 

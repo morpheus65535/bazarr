@@ -5,7 +5,7 @@ import { useSettingValue } from "@/pages/Settings/utilities/hooks";
 import { useResetOnChange } from "@/utilities/resetOnChange";
 
 export const URLTestButton: FunctionComponent<{
-  category: "sonarr" | "radarr";
+  category: "sonarr" | "radarr" | "sportarr";
 }> = ({ category }) => {
   const [title, setTitle] = useState("Test");
   const [color, setVar] = useState("primary");

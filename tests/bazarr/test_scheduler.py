@@ -29,12 +29,13 @@ class _Section(dict):
 @pytest.fixture
 def sched_settings(monkeypatch):
     fake = SimpleNamespace(
-        general=_Section(use_sonarr=True, use_radarr=True, auto_update=False,
+        general=_Section(use_sonarr=True, use_radarr=True, use_sportarr=False, auto_update=False,
                          wanted_search_frequency=6, wanted_search_frequency_movie=6, upgrade_frequency=12),
         sonarr=_Section(series_sync=15, full_update="Manually", full_update_hour=4, full_update_day=6,
                         series_sync_on_live=False, defer_search_signalr=False),
         radarr=_Section(movies_sync=15, full_update="Manually", full_update_hour=4, full_update_day=6,
                         movies_sync_on_live=False, defer_search_signalr=False),
+        sportarr=_Section(leagues_sync=60, full_update="Manually", full_update_hour=4, full_update_day=6),
         backup=_Section(frequency="Manually", hour=3, day=6),
     )
     monkeypatch.setattr(scheduler_module, "settings", fake)

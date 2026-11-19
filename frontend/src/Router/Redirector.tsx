@@ -10,11 +10,17 @@ const Redirector: FunctionComponent = () => {
 
   useEffect(() => {
     if (data) {
-      const { use_sonarr: useSonarr, use_radarr: useRadarr } = data.general;
+      const {
+        use_sonarr: useSonarr,
+        use_radarr: useRadarr,
+        use_sportarr: useSportarr,
+      } = data.general;
       if (useSonarr) {
         navigate("/series");
       } else if (useRadarr) {
         navigate("/movies");
+      } else if (useSportarr) {
+        navigate("/sports");
       } else {
         navigate("/settings/application/general");
       }

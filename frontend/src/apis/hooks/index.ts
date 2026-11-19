@@ -4,6 +4,7 @@ export * from "./languages";
 export * from "./movies";
 export * from "./providers";
 export * from "./series";
+export * from "./sports";
 export * from "./status";
 export * from "./subtitles";
 export * from "./system";

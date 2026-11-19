@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Tests for missing subtitles calculation in series and movies indexers.
+Tests for missing subtitles calculation in series, movies and sports indexers.
 
 This module tests the custom alpha2 code resolution fix for languages like
 Spanish (Latino) with custom code "ea" that should map to standard Spanish.
@@ -15,6 +15,7 @@ import app.database as app_database
 from bazarr.languages.custom_lang import LatinAmericanSpanish, CustomLanguage
 from subtitles.indexer import movies as movies_indexer
 from subtitles.indexer import series as series_indexer
+from subtitles.indexer import sports as sports_indexer
 
 
 def test_custom_language_from_value_alpha2():
@@ -145,6 +146,7 @@ def test_ietf_fallback_for_standard_languages():
 INDEXERS = [
     pytest.param(series_indexer, id='series'),
     pytest.param(movies_indexer, id='movies'),
+    pytest.param(sports_indexer, id='sports'),
 ]
 
 ANY_CUTOFF = 65535
@@ -226,12 +228,17 @@ class _FakeJobsQueue:
         self.names.append((job_id, new_job_name))
 
 
-def _setup(monkeypatch, indexer, profile, subtitles, audio_language='[]', use_embedded_subs=True):
+def _setup(monkeypatch, indexer, profile, subtitles, audio_language='[]', use_embedded_subs=True,
+             language_equals=()):
     """Patch the indexer's dependencies and return the indexer entry point, fake database and fake job queue."""
     if indexer is series_indexer:
         row = SimpleNamespace(sonarrSeriesId=1, sonarrEpisodeId=1, profileId=1, audio_language=audio_language,
                               title='Show', season=1, episode=1, episodeTitle='Pilot')
         run = indexer.list_missing_subtitles
+    elif indexer is sports_indexer:
+        row = SimpleNamespace(sportarrLeagueId=1, title='League', sportsEventId=1, eventTitle='Event',
+                              profileId=1, audio_language=audio_language)
+        run = indexer.list_missing_subtitles_sports
     else:
         row = SimpleNamespace(radarrId=1, profileId=1, audio_language=audio_language, title='Movie')
         run = indexer.list_missing_subtitles_movies
@@ -242,14 +249,15 @@ def _setup(monkeypatch, indexer, profile, subtitles, audio_language='[]', use_em
     monkeypatch.setattr(indexer, 'database', fake_database)
     monkeypatch.setattr(indexer, 'jobs_queue', fake_jobs_queue)
     monkeypatch.setattr(indexer, 'store_missing_subtitles', fake_database.store_missing_subtitles)
+    subtitles_getter = 'get_sports_subtitles' if indexer is sports_indexer else 'get_subtitles'
+    monkeypatch.setattr(indexer, subtitles_getter, lambda *args, **kwargs: [dict(x) for x in subtitles])
     monkeypatch.setattr(indexer, 'get_audio_profile_languages',
                         lambda audio: [{'name': 'English', 'code2': 'en', 'code3': 'eng'}]
                         if audio == "['en']"
                         else [{'name': 'Polish', 'code2': 'pl', 'code3': 'pol'}] if audio == "['pl']" else [])
     monkeypatch.setattr(indexer, 'settings',
                         SimpleNamespace(general=SimpleNamespace(use_embedded_subs=use_embedded_subs)))
-    monkeypatch.setattr(indexer, 'get_subtitles', lambda *args, **kwargs: [dict(x) for x in subtitles])
-    monkeypatch.setattr(indexer, 'get_language_equals', lambda: [])
+    monkeypatch.setattr(indexer, 'get_language_equals', lambda: list(language_equals))
     monkeypatch.setattr(indexer, 'event_stream', lambda **kwargs: None)
     return run, fake_database, fake_jobs_queue
 
@@ -443,7 +451,23 @@ def test_embedded_subtitles_without_path_are_ignored_when_embedded_disabled(monk
 JOB_NAMES = {
     'series': 'Computing missing episodes subtitles',
     'movies': 'Computing missing movies subtitles',
+    'sports': 'Computing missing sports events subtitles',
 }
+
+COMPUTED_NAMES = {
+    'series': 'Computed missing episodes subtitles',
+    'movies': 'Computed missing movies subtitles',
+    'sports': 'Computed missing sports events subtitles',
+}
+
+
+def _indexer_key(indexer) -> str:
+    """Return the JOB_NAMES key for the indexer module under test."""
+    if indexer is series_indexer:
+        return 'series'
+    if indexer is sports_indexer:
+        return 'sports'
+    return 'movies'
 
 
 @pytest.mark.parametrize('indexer', INDEXERS)
@@ -453,8 +477,7 @@ def test_calling_without_arguments_adds_a_progress_job(monkeypatch, indexer):
                                                  ACTUAL['none'])
     run()
 
-    job_name = JOB_NAMES['series'] if indexer is series_indexer else JOB_NAMES['movies']
-    assert fake_jobs_queue.added == [(job_name, True, {})]
+    assert fake_jobs_queue.added == [(JOB_NAMES[_indexer_key(indexer)], True, {})]
     assert fake_database.executed is False
     assert fake_database.missing is None
 
@@ -467,8 +490,7 @@ def test_job_reports_progress_for_each_media_item(monkeypatch, indexer):
 
     assert fake_jobs_queue.progress[0] == (JOB_ID, None, 1, 'Indexing')
     assert fake_jobs_queue.progress[1][:3] == (JOB_ID, 1, None)
-    assert fake_jobs_queue.names == [(JOB_ID, 'Computed missing episodes subtitles' if indexer is series_indexer
-                                      else 'Computed missing movies subtitles')]
+    assert fake_jobs_queue.names == [(JOB_ID, COMPUTED_NAMES[_indexer_key(indexer)])]
 
 
 @pytest.mark.parametrize('indexer', INDEXERS)

@@ -52,11 +52,12 @@ describe("SettingsLibraryView", () => {
     vi.clearAllMocks();
   });
 
-  it("renders both library tab labels", () => {
+  it("renders every library tab label", () => {
     mountAt("/settings/library/sonarr");
 
     expect(screen.getByText("Sonarr")).toBeInTheDocument();
     expect(screen.getByText("Radarr")).toBeInTheDocument();
+    expect(screen.getByText("Sportarr")).toBeInTheDocument();
   });
 
   it("navigates to the clicked tab's nested route", async () => {
@@ -79,6 +80,18 @@ describe("SettingsLibraryView", () => {
       screen.getByRole("tab", { name: "Sonarr, enabled" }),
     ).toBeInTheDocument();
     expect(screen.queryByTestId("tab-status-radarr")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("tab-status-sportarr")).not.toBeInTheDocument();
+  });
+
+  it("shows a status dot on Sportarr when it is enabled", () => {
+    mountAt("/settings/library/sportarr", {
+      general: { use_sportarr: true } as Settings["general"],
+    } as Partial<Settings>);
+
+    expect(
+      screen.getByRole("tab", { name: "Sportarr, enabled" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByTestId("tab-status-sonarr")).not.toBeInTheDocument();
   });
 
   it("renders the tab active state for the current URL", async () => {

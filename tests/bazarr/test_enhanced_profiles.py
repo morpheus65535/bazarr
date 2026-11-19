@@ -1,5 +1,5 @@
 """
-Missing subtitles for enhanced profiles, run through the real series and movies indexers.
+Missing subtitles for enhanced profiles, run through the real series, movies and sports indexers.
 
 Expectations follow the enhanced rules: a group is satisfied by all its items (AND) or any of them (OR), a satisfied
 group adds nothing to the missing list, and the cutoff is a group id (65535 for any group, None for never).
@@ -54,6 +54,8 @@ CASES = [
     pytest.param([_group(2, 'AND', _profile_item(3, 'normal', 'de')), G1], 2, [DE], [], id='and-single-item-cutoff'),
     pytest.param([G2, G1], 1, [EN, FR], [], id='reordered-groups-keep-cutoff-id'),
     pytest.param([G2, G1], 2, [DE], [], id='reordered-groups-or-cutoff'),
+    pytest.param([_group(7, 'OR', _profile_item(9, 'normal', 'en'), _profile_item(10, 'normal', 'es'))], None, [EN],
+                 [], id='or-group-met-by-one-item'),
 ]
 
 

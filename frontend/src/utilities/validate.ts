@@ -5,3 +5,9 @@ export const isEpisode = (v: object): v is Item.Episode =>
 
 export const isSeries = (v: object): v is Item.Series =>
   "episodeFileCount" in v;
+
+export const isSportsEvent = (v: object): v is Item.SportsEvent =>
+  "sportsEventId" in v;
+
+export const isSportsLeague = (v: object): v is Item.SportsLeague =>
+  "sportarrLeagueId" in v;

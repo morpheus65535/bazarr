@@ -5,13 +5,14 @@ import operator
 from functools import reduce
 from flask_restx import Resource, Namespace, fields, marshal
 
-from app.database import get_exclusion_clause, TableEpisodes, TableShows, TableMovies, TableMissingSubtitles, database, \
-    select, func
+from app.database import (get_exclusion_clause, TableEpisodes, TableShows, TableMovies, TableMissingSubtitles,
+                          TableSportsEvents, TableSportsLeagues, database, select, func)
 from app.config import settings
 
 from app.get_args import args
 from app.get_providers import get_throttled_providers
 from app.signalr_client import sonarr_signalr_client, radarr_signalr_client
+from sportarr.sse_client import sportarr_sse_client
 from app.announcements import get_all_announcements
 from utilities.health import get_health_issues
 
@@ -26,10 +27,12 @@ class Badges(Resource):
     get_model = api_ns_badges.model('BadgesGet', {
         'episodes': fields.Integer(),
         'movies': fields.Integer(),
+        'sports': fields.Integer(),
         'providers': fields.Integer(),
         'status': fields.Integer(),
         'sonarr_signalr': fields.String(),
         'radarr_signalr': fields.String(),
+        'sportarr_sse': fields.String(),
         'announcements': fields.Integer(),
     })
 
@@ -59,6 +62,19 @@ class Badges(Resource):
             .where(reduce(operator.and_, movies_conditions))) \
             .scalar()
 
+        # Counted per playable file, because a sports row is one part. An event
+        # with two parts wants subtitles for both.
+        sports_conditions = [(TableMissingSubtitles.media_type == 'sports'),
+                             (TableMissingSubtitles.media_id == TableSportsEvents.id)]
+        sports_conditions += get_exclusion_clause('sports')
+        missing_sports_count = database.execute(
+            select(func.count(TableMissingSubtitles.id))
+            .select_from(TableSportsEvents)
+            .join(TableSportsLeagues)
+            .join(TableMissingSubtitles, TableMissingSubtitles.media_id == TableSportsEvents.id)
+            .where(reduce(operator.and_, sports_conditions))) \
+            .scalar()
+
         throttled_providers = len(get_throttled_providers())
 
         health_issues = len(get_health_issues())
@@ -74,10 +90,12 @@ class Badges(Resource):
         result = {
             "episodes": missing_episodes_count,
             "movies": missing_movies_count,
+            "sports": missing_sports_count,
             "providers": throttled_providers,
             "status": health_issues,
             'sonarr_signalr': sonarr_signalr,
             'radarr_signalr': radarr_signalr,
+            'sportarr_sse': live_str if sportarr_sse_client.connected else "DOWN",
             'announcements': len(get_all_announcements()),
         }
         return marshal(result, self.get_model)
