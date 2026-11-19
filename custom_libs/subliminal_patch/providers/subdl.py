@@ -14,7 +14,7 @@ from requests import Session, Response
 from requests.exceptions import RequestException
 from guessit import guessit
 
-from babelfish import language_converters
+from babelfish import language_converters, LANGUAGE_MATRIX
 from subzero.language import Language
 from subliminal import Episode, Movie
 from subliminal.exceptions import (ConfigurationError, ProviderError, DownloadLimitExceeded, AuthenticationError,
@@ -832,7 +832,19 @@ class SubdlProvider(Provider):
     _NON_HI_RE = re.compile(
         r'(?<![a-z0-9])(non[\s._-]?(hi|sdh)|(hi|sdh)[\s._-]?remove[d]?|remove[d]?[\s._-]?(hi|sdh))(?![a-z0-9])',
         re.IGNORECASE)
-    _FORCED_RE = re.compile(r'(?<![a-z0-9])(forced|foreign[\s._-]?parts?)(?![a-z0-9])', re.IGNORECASE)
+    # ISO 639 three-letter codes (alpha-3 bibliographic, terminological and
+    # alpha-3 forms) so markers glued to a language code, like 'EngForced' or
+    # 'S04E01SpaForced', are recognised. The code must start a token, so
+    # ordinary words ending in 'forced' ('reinforced') still don't match.
+    _ISO3_CODES = '|'.join(sorted(
+        {code for row in LANGUAGE_MATRIX
+         for code in (row.alpha3, row.alpha3b, row.alpha3t) if code},
+        key=len, reverse=True))
+    _FORCED_RE = re.compile(
+        r'(?<![a-z0-9])forced(?![a-z0-9])'
+        r'|(?<![a-z])(?:' + _ISO3_CODES + r')[\s._-]?forced(?![a-z0-9])'
+        r'|(?<![a-z0-9])foreign[\s._-]?parts?(?![a-z0-9])',
+        re.IGNORECASE)
 
     @classmethod
     def _is_hearing_impaired(cls, item):
@@ -877,8 +889,13 @@ class SubdlProvider(Provider):
     def _is_forced(cls, item):
         # Forced markers appear in release names at least as often as in
         # comments, so read both. 'foreign' alone is too loose — it matches
-        # ordinary descriptions — hence 'foreign part(s)'.
-        for text in cls._item_texts(item):
+        # ordinary descriptions — hence 'foreign part(s)'. release_name is
+        # only checked here: HI detection must not read it.
+        texts = cls._item_texts(item)
+        release_name = item.get('release_name')
+        if isinstance(release_name, str):
+            texts.append(release_name)
+        for text in texts:
             if cls._FORCED_RE.search(text):
                 return True
 
