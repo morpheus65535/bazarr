@@ -121,6 +121,7 @@ declare namespace Settings {
     username?: string;
     password?: string;
     apikey: string;
+    allow_iframe_embedding?: boolean;
     oidc_issuer?: string;
     oidc_client_id?: string;
     oidc_client_secret_file?: string;

@@ -1,6 +1,7 @@
 # coding=utf-8
 
-from flask import Flask, redirect, Request
+from flask import Flask, redirect, Request, request, has_request_context
+from flask.sessions import SecureCookieSessionInterface
 
 from flask_compress import Compress
 from flask_cors import CORS
@@ -29,7 +30,7 @@ def create_app():
     app.wsgi_app = ReverseProxied(app.wsgi_app)
 
     app.config["SECRET_KEY"] = settings.general.flask_secret_key
-    app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+    app.session_interface = BazarrSessionInterface()
     app.config['JSONIFY_PRETTYPRINT_REGULAR'] = True
     app.config['JSON_AS_ASCII'] = False
 
@@ -46,6 +47,8 @@ def create_app():
     from engineio.async_drivers import threading  # noqa W0611  # required to prevent an import exception in engineio
     socketio.init_app(app, path=f'{base_url.rstrip("/")}/api/socket.io', cors_allowed_origins='*',
                       async_mode='threading', allow_upgrades=False, transports='polling', engineio_logger=False)
+
+    socketio.on('connect')(socketio_connect)
 
     @app.errorhandler(404)
     def page_not_found(_):
@@ -65,6 +68,28 @@ def create_app():
         database.close()
 
     return app
+
+
+def socketio_connect(auth=None):
+    """Socket.IO connect handler requiring the API key to receive events, like the REST API."""
+    from utilities.helper import is_valid_apikey
+    auth_apikey = auth.get('apikey') if isinstance(auth, dict) else None
+    if not is_valid_apikey(auth_apikey, request.args.get('apikey'), request.headers.get('X-API-KEY')):
+        raise ConnectionRefusedError('unauthorized')
+
+
+class BazarrSessionInterface(SecureCookieSessionInterface):
+    """Session cookie using SameSite=Lax, or SameSite=None; Secure over HTTPS when iframe embedding is allowed."""
+
+    @staticmethod
+    def _embedding_allowed():
+        return bool(settings.auth.allow_iframe_embedding) and has_request_context() and request.is_secure
+
+    def get_cookie_samesite(self, app):
+        return 'None' if self._embedding_allowed() else 'Lax'
+
+    def get_cookie_secure(self, app):
+        return True if self._embedding_allowed() else super().get_cookie_secure(app)
 
 
 class ReverseProxied(object):

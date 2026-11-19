@@ -378,8 +378,8 @@ def subtitles_sync_references(subtitles_path: str, sonarr_episode_id: int | None
                 if subtitles['path'] and subtitles['path'] != subtitles_path:
                     references_dict['external_subtitles_tracks'].append(cast(ExternalSubtitleReference, {
                         'name': os.path.basename(subtitles['path']),
-                        'path': path_mappings.path_replace(subtitles['path']) if sonarr_episode_id else
-                        path_mappings.path_replace_reverse_movie(subtitles['path']),
+                        # get_subtitles() already returns mapped paths, mapping them again would break them
+                        'path': subtitles['path'],
                         'language': subtitles['name'],
                         'forced': subtitles['forced'],
                         'hearing_impaired': subtitles['hi'],

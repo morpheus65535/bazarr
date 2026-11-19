@@ -81,7 +81,7 @@ def catch_all(path):
 
     # PWA Assets are returned from frontend root folder
     if path in pwa_assets or path.startswith('workbox-'):
-        fullpath = os.path.normpath(os.path.join(frontend_build_path, path))
+        fullpath = os.path.realpath(os.path.join(frontend_build_path, path))
         if not Path(fullpath).is_relative_to(os.path.realpath(frontend_build_path)):
             return '', 404
         return send_file(fullpath)
@@ -221,8 +221,11 @@ def movies_images(url):
 @ui_bp.route('/system/backup/download/<path:filename>', methods=['GET'])
 @check_login
 def backup_download(filename):
-    fullpath = os.path.normpath(os.path.join(settings.backup.folder, filename))
-    if not Path(fullpath).is_relative_to(os.path.realpath(settings.backup.folder)):
+    backup_folder = os.path.realpath(settings.backup.folder)
+    # realpath resolves symlinks so a link inside backup folder can't point to files elsewhere
+    fullpath = os.path.realpath(os.path.join(backup_folder, filename))
+    # Only allow files directly inside backup folder to prevent path traversal
+    if os.path.dirname(fullpath) != backup_folder or not os.path.isfile(fullpath):
         return '', 404
     else:
         return send_file(fullpath, max_age=0, as_attachment=True)
