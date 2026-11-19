@@ -90,6 +90,14 @@ class Job:
         """
         return self.job_id == other.job_id
 
+    @property
+    def is_sync(self) -> bool:
+        """
+        Indicates whether this job is a subtitles synchronization job. Those are limited separately by the
+        subsync.concurrent_syncs setting because they are CPU intensive.
+        """
+        return self.func == 'sync_subtitles' and self.module.endswith('subtitles.sync')
+
 
 class JobCanceled(Exception):
     pass
@@ -298,7 +306,7 @@ class JobsQueue:
         :return: Returns True if the job's progress was successfully updated, otherwise False.
         :rtype: bool
         """
-        for job in self.jobs_running_queue:
+        for job in list(self.jobs_running_queue):
             if job.job_id == job_id:
                 payload = self._build_progress_payload(job, progress_value, progress_max, progress_message)
                 event_stream(type='jobs', action='update', payload=payload)
@@ -354,7 +362,7 @@ class JobsQueue:
         :return: Returns True if the job's progress status was successfully updated, otherwise False.
         :rtype: bool
         """
-        for job in self.jobs_running_queue:
+        for job in list(self.jobs_running_queue):
             if job.job_id == job_id:
                 job.is_progress = is_progress
                 event_stream(type='jobs', action='update', payload={"job_id": job.job_id})
@@ -447,6 +455,7 @@ class JobsQueue:
                 else:
                     logging.debug(f"Task {job.job_name} ({job.job_id}) removed from queue")
                     event_stream(type='jobs', action='delete', payload={"job_id": job.job_id})
+                    self._run_callbacks_of_removed_jobs([job])
                     return True
         return False
 
@@ -522,9 +531,44 @@ class JobsQueue:
         """
         if queue_name in ['pending', 'failed', 'canceled', 'completed']:
             logging.debug(f"Emptying jobs queue for {queue_name} jobs")
-            getattr(self, f'jobs_{queue_name}_queue').clear()
+            queue = getattr(self, f'jobs_{queue_name}_queue')
+            with self._queue_lock:
+                removed_jobs = list(queue)
+                queue.clear()
+            if queue_name == 'pending':
+                # other queues hold jobs that already ran, including their callback
+                self._run_callbacks_of_removed_jobs(removed_jobs)
             return True
         return False
+
+    @staticmethod
+    def _run_callbacks_of_removed_jobs(jobs):
+        """
+        Some jobs get a callback that must run once they're done, ex: post-processing and notifications after a
+        subtitles sync. Runs those callbacks for jobs removed from the pending queue before running, so they aren't
+        lost. They run in a separate thread to not block the caller (ex: an API request).
+
+        :param jobs: Jobs removed from the pending queue.
+        :type jobs: list[Job]
+        """
+        callbacks = [(job, job.kwargs['callback']) for job in jobs
+                     if job.kwargs and callable(job.kwargs.get('callback'))]
+        if not callbacks:
+            return
+
+        def run_callbacks():
+            try:
+                for job, callback in callbacks:
+                    logging.debug(f"Running the callback of removed job {job.job_name} ({job.job_id})")
+                    try:
+                        callback()
+                    except Exception:
+                        logging.exception(f"Exception raised while running the callback of removed job "
+                                          f"{job.job_name} ({job.job_id})")
+            finally:
+                database.remove()  # close this thread scoped_session
+
+        Thread(target=run_callbacks, daemon=True).start()
 
     def cancel_running_job(self, job_id: int) -> bool:
         """
@@ -543,11 +587,46 @@ class JobsQueue:
 
         :raises JobCanceled: If the job was canceled by a user
         """
-        for job in self.jobs_running_queue:
+        # Iterate a snapshot: the job runner appends and removes running jobs from other threads, and
+        # iterating the live deque while it changes raises RuntimeError.
+        for job in list(self.jobs_running_queue):
             if job.job_id == job_id:
+                if not job.is_cancellable:
+                    logging.debug(f"Job {job.job_name} ({job.job_id}) does not support cancellation")
+                    return False
                 job.cancel_event.set()
                 logging.debug(f"Cancellation requested for job {job.job_name} ({job.job_id})")
+                return True
         return False
+
+    def is_cancel_requested(self, job_id: int | None) -> bool:
+        """
+        Reports whether a user has requested cancellation of a running job.
+
+        :param job_id: The identifier of the running job, or None when the work is not part of a queued job.
+        :type job_id: int | None
+        :return: True if the job is in the running queue and its cancel event is set, otherwise False.
+        :rtype: bool
+        """
+        if job_id is None:
+            return False
+        job = self.get_job(job_id)
+        return job is not None and job.cancel_event.is_set()
+
+    def raise_if_cancel_requested(self, job_id: int | None) -> None:
+        """
+        Raises JobCanceled when a user has requested cancellation of a running job.
+
+        Long-running work calls this at safe points (between batches or requests) so that a cancelled job
+        stops without writing partial output.
+
+        :param job_id: The identifier of the running job, or None when the work is not part of a queued job.
+        :type job_id: int | None
+        :raises JobCanceled: If cancellation was requested for the job.
+        :rtype: None
+        """
+        if self.is_cancel_requested(job_id):
+            raise JobCanceled()
 
     def get_job(self, job_id: int | None) -> Job | None:
         """
@@ -563,7 +642,8 @@ class JobsQueue:
         :return: The job object if found in the running queue, None otherwise.
         :rtype: Job | None
         """
-        for job in self.jobs_running_queue:
+        # Iterate a snapshot so concurrent appends and removals from the job runner cannot break the lookup.
+        for job in list(self.jobs_running_queue):
             if job.job_id == job_id:
                 return job
         return None
@@ -580,23 +660,41 @@ class JobsQueue:
         """
         while True:
             try:
-                if self.jobs_pending_queue:
-                    with self._queue_lock:
-                        can_run_job = (len(self.jobs_running_queue) < settings.general.concurrent_jobs
-                                       and len(self.jobs_pending_queue) > 0)
-
-                    if can_run_job:
-                        job_thread = Thread(target=self._run_job)
-                        job_thread.daemon = True
-                        job_thread.start()
-                    else:
-                        sleep(0.5)
+                job = self._reserve_next_runnable_job() if self.jobs_pending_queue else None
+                if job:
+                    job_thread = Thread(target=self._run_job, kwargs={'job_instance': job, 'reserved': True})
+                    job_thread.daemon = True
+                    job_thread.start()
                 else:
                     sleep(0.5)
             except (KeyboardInterrupt, SystemExit):
                 break
 
-    def _run_job(self, job_instance=None) -> bool:
+    def _reserve_next_runnable_job(self):
+        """
+        Picks the first pending job allowed to run given the concurrent jobs limit and the concurrent syncs limit,
+        then moves it to the running queue. Doing both under the same lock prevents starting more jobs than allowed.
+
+        :return: The reserved job, or None if no job can be started right now.
+        :rtype: Job | None
+        """
+        with self._queue_lock:
+            if len(self.jobs_running_queue) >= settings.general.concurrent_jobs:
+                return None
+
+            running_syncs = sum(1 for job in list(self.jobs_running_queue) if job.is_sync)
+            can_run_sync = running_syncs < settings.subsync.concurrent_syncs
+
+            for job in self.jobs_pending_queue:
+                if job.is_sync and not can_run_sync:
+                    continue
+                self.jobs_pending_queue.remove(job)
+                job.status = 'running'
+                self.jobs_running_queue.append(job)
+                return job
+            return None
+
+    def _run_job(self, job_instance=None, reserved=False) -> bool:
         """
         Handles the execution of a job from the pending jobs queue or an explicitly provided
         job instance. Manages job state transitions including updating job status, generating
@@ -605,12 +703,16 @@ class JobsQueue:
         :param job_instance: Optional; Specific job instance to execute. If not provided,
             a job will be dequeued from the pending jobs queue.
         :type job_instance: Optional[Job]
+        :param reserved: True if job_instance has already been moved from the pending queue to the running queue.
+        :type reserved: bool
         :return: A boolean indicating the success or failure of the job execution. Returns
             True if the job was successfully completed, otherwise False.
         :rtype: bool
         """
         with self._queue_lock:
-            if job_instance:
+            if job_instance and reserved:
+                job = job_instance
+            elif job_instance:
                 job = job_instance
                 self.jobs_pending_queue.remove(job)
             else:
@@ -626,7 +728,9 @@ class JobsQueue:
             job.last_run_time = datetime.now(timezone.utc).isoformat()
             if 'job_id' not in job.kwargs or not job.kwargs['job_id']:
                 job.kwargs['job_id'] = job.job_id
-            self.jobs_running_queue.append(job)
+            if not reserved:
+                with self._queue_lock:
+                    self.jobs_running_queue.append(job)
 
             # sending event to update the status of progress jobs
             payload = {"job_id": job.job_id, "status": job.status}

@@ -37,6 +37,9 @@ class WebsocketTransport(BaseTransport):
         self.token = None  # auth
         self.state = ConnectionState.disconnected
         self.connection_alive = False
+        self._reconnect_lock = threading.Lock()
+        self._next_reconnect_at = 0
+        self._stopped = False
         self._thread = None
         self._ws = None
         self.verify_ssl = verify_ssl
@@ -52,17 +55,23 @@ class WebsocketTransport(BaseTransport):
     def is_running(self):
         return self.state != ConnectionState.disconnected
 
-    def stop(self):
-        if self.state == ConnectionState.connected:
+    def stop(self, reconnecting=False):
+        if not reconnecting:
+            self._stopped = True
             self.connection_checker.stop()
         if self._ws is not None:
             self._ws.close()
         self.state = ConnectionState.disconnected
         self.handshake_received = False
 
-    def start(self):
+    def start(self, reconnecting=False):
+        if not reconnecting:
+            self._stopped = False
+            self._next_reconnect_at = 0
         if not self.skip_negotiation:
             self.negotiate()
+        if self._stopped:
+            return False
 
         if self.state == ConnectionState.connected:
             self.logger.warning("Already connected unable to start")
@@ -218,27 +227,22 @@ class WebsocketTransport(BaseTransport):
             raise ex
 
     def handle_reconnect(self):
-        if not self.reconnection_handler.reconnecting and self._on_reconnect is not None and \
-                callable(self._on_reconnect):
-            self._on_reconnect()
-        self.reconnection_handler.reconnecting = True
+        # The existing connection checker drives retries. Do not create a new
+        # sleeping worker on every failed ping (including failed retry pings).
+        if not self._reconnect_lock.acquire(blocking=False):
+            return
         try:
-            self.stop()
-            self.start()
-        except Exception as ex:
-            self.logger.error(ex)
-            sleep_time = self.reconnection_handler.next()
-            threading.Thread(
-                target=self.deferred_reconnect,
-                args=(sleep_time,)
-            ).start()
-
-    def deferred_reconnect(self, sleep_time):
-        time.sleep(sleep_time)
-        try:
-            if not self.connection_alive:
-                self.send(PingMessage())
-        except Exception as ex:
-            self.logger.error(ex)
-            self.reconnection_handler.reconnecting = False
-            self.connection_alive = False
+            if self._stopped or time.monotonic() < self._next_reconnect_at:
+                return
+            if not self.reconnection_handler.reconnecting and self._on_reconnect is not None and \
+                    callable(self._on_reconnect):
+                self._on_reconnect()
+            self.reconnection_handler.reconnecting = True
+            try:
+                self.stop(reconnecting=True)
+                self.start(reconnecting=True)
+            except Exception as ex:
+                self.logger.error(ex)
+                self._next_reconnect_at = time.monotonic() + self.reconnection_handler.next()
+        finally:
+            self._reconnect_lock.release()

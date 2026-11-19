@@ -95,7 +95,10 @@ if t.TYPE_CHECKING:
 
 
 class DechunkedInput(io.RawIOBase):
-    """An input stream that handles Transfer-Encoding 'chunked'"""
+    """An input stream that handles ``Transfer-Encoding: chunked``. Only
+    used by the dev server, which must not be used in production. A production
+    WSGI server will have its own robust, secure chunk handler.
+    """
 
     def __init__(self, rfile: t.IO[bytes]) -> None:
         self._rfile = rfile
@@ -107,8 +110,8 @@ class DechunkedInput(io.RawIOBase):
 
     def read_chunk_len(self) -> int:
         try:
-            line = self._rfile.readline().decode("latin1")
-            _len = int(line.strip(), 16)
+            line = self._rfile.readline(100).decode("latin1")
+            _len = int(line.strip(" \t\r\n"), 16)
         except ValueError as e:
             raise OSError("Invalid chunk header") from e
         if _len < 0:
@@ -149,7 +152,7 @@ class DechunkedInput(io.RawIOBase):
             if self._len == 0:
                 # Skip the terminating newline of a chunk that has been fully
                 # consumed. This also applies to the 0-sized final chunk
-                terminator = self._rfile.readline()
+                terminator = self._rfile.readline(2)
                 if terminator not in (b"\n", b"\r\n", b"\r"):
                     raise OSError("Missing chunk terminating newline")
 
@@ -247,7 +250,7 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
         return environ
 
     def run_wsgi(self) -> None:
-        if self.headers.get("Expect", "").lower().strip() == "100-continue":
+        if self.headers.get("Expect", "").lower().strip(" \t") == "100-continue":
             self.wfile.write(b"HTTP/1.1 100 Continue\r\n\r\n")
 
         self.environ = environ = self.make_environ()
@@ -450,17 +453,17 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
         msg = msg.translate(self._control_char_table)
         code = str(code)
 
-        if code[0] == "1":  # 1xx - Informational
+        if code.startswith("1"):  # 1xx - Informational
             msg = _ansi_style(msg, "bold")
         elif code == "200":  # 2xx - Success
             pass
         elif code == "304":  # 304 - Resource Not Modified
             msg = _ansi_style(msg, "cyan")
-        elif code[0] == "3":  # 3xx - Redirection
+        elif code.startswith("3"):  # 3xx - Redirection
             msg = _ansi_style(msg, "green")
         elif code == "404":  # 404 - Resource Not Found
             msg = _ansi_style(msg, "yellow")
-        elif code[0] == "4":  # 4xx - Client Error
+        elif code.startswith("4"):  # 4xx - Client Error
             msg = _ansi_style(msg, "bold", "red")
         else:  # 5xx, or any other response
             msg = _ansi_style(msg, "bold", "magenta")

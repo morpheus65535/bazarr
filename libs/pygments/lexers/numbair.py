@@ -58,6 +58,6 @@ class NumbaIRLexer(RegexLexer):
         ],
 
         'whitespace': [
-            (r'(\n|\s)+', Whitespace),
+            (r'\s+', Whitespace),
         ],
     }

@@ -14,7 +14,8 @@ from chardet._utils import (
     _validate_max_bytes,
 )
 from chardet.enums import EncodingEra, LanguageFilter
-from chardet.equivalences import (
+from chardet.output_names import (
+    NARROWER_DISPLAY_NAMES,
     PREFERRED_SUPERSET,
     apply_compat_names,
     apply_preferred_superset,
@@ -70,9 +71,12 @@ class UniversalDetector:
         :param encoding_era: Restrict candidate encodings to the given era.
         :param max_bytes: Maximum number of bytes to buffer from
             :meth:`feed` calls before stopping accumulation.
-        :param prefer_superset: If ``True``, remap ISO subset encodings to
-            their Windows/CP superset equivalents (e.g., ISO-8859-1 ->
-            Windows-1252).
+        :param prefer_superset: If ``True``, remap subset encodings in the
+            result to their decode-safe Windows/CP superset equivalents
+            (e.g., ISO-8859-1 -> Windows-1252).  If ``False`` (default),
+            skip the renaming --- not a promise of the smallest matching
+            encoding.  The default will change to ``True`` in chardet 8.0.
+            See :func:`chardet.detect` for details.
         :param compat_names: If ``True`` (default), return encoding names
             compatible with chardet 5.x/6.x.  If ``False``, return raw Python
             codec names.
@@ -113,6 +117,7 @@ class UniversalDetector:
             empty_input_encoding, "empty_input_encoding"
         )
         self._buffer = bytearray()
+        self._input_truncated = False
         self._done = False
         self._closed = False
         self._result: DetectionResult | None = None
@@ -132,10 +137,20 @@ class UniversalDetector:
             msg = "feed() called after close() without reset()"
             raise ValueError(msg)
         if self._done:
+            # The buffer already holds max_bytes exactly, which the pipeline
+            # cannot tell apart from an input that was max_bytes long; only
+            # this flag says these bytes were cut off it.
+            if byte_str:
+                self._input_truncated = True
             return
         remaining = self._max_bytes - len(self._buffer)
         if remaining > 0:
             self._buffer.extend(byte_str[:remaining])
+        if len(byte_str) > max(remaining, 0):
+            # Bytes beyond the cap were dropped: the buffer is a truncated
+            # view of the caller's stream, which the pipeline cannot infer
+            # from the buffer length alone (it equals max_bytes exactly).
+            self._input_truncated = True
         if len(self._buffer) >= self._max_bytes:
             self._done = True
 
@@ -145,7 +160,7 @@ class UniversalDetector:
         Runs the full detection pipeline on the buffered data.
 
         :returns: A dictionary with keys ``"encoding"``, ``"confidence"``,
-            and ``"language"``.
+            ``"language"``, and ``"mime_type"``.
         """
         if not self._closed:
             self._closed = True
@@ -154,6 +169,7 @@ class UniversalDetector:
                 data,
                 self._encoding_era,
                 max_bytes=self._max_bytes,
+                input_truncated=self._input_truncated,
                 include_encodings=self._include_encodings,
                 exclude_encodings=self._exclude_encodings,
                 no_match_encoding=self._no_match_encoding,
@@ -166,6 +182,7 @@ class UniversalDetector:
     def reset(self) -> None:
         """Reset the detector to its initial state for reuse."""
         self._buffer = bytearray()
+        self._input_truncated = False
         self._done = False
         self._closed = False
         self._result = None
@@ -180,9 +197,22 @@ class UniversalDetector:
         """The current best detection result."""
         if self._result is not None:
             d = self._result.to_dict()
+            # Copy the buffer only for a transform that reads it: the
+            # superset remap always does, the compat rename only for the
+            # four names whose display codec is narrower than the internal.
+            window = b""
+            if self._prefer_superset or (
+                self._compat_names and d["encoding"] in NARROWER_DISPLAY_NAMES
+            ):
+                window = bytes(self._buffer)
             if self._prefer_superset:
-                apply_preferred_superset(d)
+                apply_preferred_superset(
+                    d,
+                    window,
+                    include_encodings=self._include_encodings,
+                    exclude_encodings=self._exclude_encodings,
+                )
             if self._compat_names:
-                apply_compat_names(d)
+                apply_compat_names(d, window)
             return d
         return _NONE_RESULT.to_dict()

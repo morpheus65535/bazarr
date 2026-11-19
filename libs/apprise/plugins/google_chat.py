@@ -59,6 +59,20 @@ import re
 import requests
 
 from ..common import NotifyFormat, NotifyType
+from ..conversion import (
+    commonmark_emphasis_run,
+    commonmark_escape_link_url,
+    commonmark_find_backtick_run,
+    commonmark_headings_to_bold,
+    commonmark_index_backtick_runs,
+    commonmark_new_scan_budget,
+    commonmark_pick_emphasis_sentinel,
+    commonmark_render_emphasis_markers,
+    commonmark_scan_angle_dest,
+    commonmark_scan_autolink_dest,
+    commonmark_scan_paren_dest,
+)
+from ..exception import AppriseImproperlyConfigured
 from ..locale import gettext_lazy as _
 from ..utils.parse import validate_regex
 from .base import NotifyBase
@@ -161,7 +175,7 @@ class NotifyGoogleChat(NotifyBase):
                 f"({workspace}) was specified."
             )
             self.logger.warning(msg)
-            raise TypeError(msg)
+            raise AppriseImproperlyConfigured(msg)
 
         # Webhook Key (associated with project)
         self.webhook_key = validate_regex(webhook_key)
@@ -171,7 +185,7 @@ class NotifyGoogleChat(NotifyBase):
                 f"({webhook_key}) was specified."
             )
             self.logger.warning(msg)
-            raise TypeError(msg)
+            raise AppriseImproperlyConfigured(msg)
 
         # Webhook Token (associated with project)
         self.webhook_token = validate_regex(webhook_token)
@@ -181,7 +195,7 @@ class NotifyGoogleChat(NotifyBase):
                 f"({webhook_token}) was specified."
             )
             self.logger.warning(msg)
-            raise TypeError(msg)
+            raise AppriseImproperlyConfigured(msg)
 
         if thread_key:
             self.thread_key = validate_regex(thread_key)
@@ -191,24 +205,254 @@ class NotifyGoogleChat(NotifyBase):
                     f"({thread_key}) was specified."
                 )
                 self.logger.warning(msg)
-                raise TypeError(msg)
+                raise AppriseImproperlyConfigured(msg)
         else:
             self.thread_key = None
 
         return
 
-    def send(self, body, title="", notify_type=NotifyType.INFO, **kwargs):
+    def dialect_convert(self, body, body_format=None, *args, **kwargs):
+        """Translate declared CommonMark to Google Chat markup."""
+        if body_format != NotifyFormat.MARKDOWN:
+            return body
+        return self._commonmark_to_google_chat(body)
+
+    # Adapt HTML-derived CommonMark to Google Chat's Markdown subset.
+    # Direct Google Chat Markdown is left unchanged.
+    # Syntax: https://developers.google.com/workspace/chat/format-messages
+
+    @classmethod
+    def _commonmark_to_google_chat(cls, body):
+        """Translate CommonMark to Google Chat formatting.
+
+        CommonMark          Google Chat
+        ------------------  -----------------
+        # heading           *heading* (Chat has no heading syntax)
+        **bold**            *bold*
+        *italic*            _italic_
+        `code`              `code`
+        [label](<url>)      <url|label>
+        &, <, >             HTML entities
+
+        Chat uses HTML-like anchors, so text and code escape ``&``, ``<``,
+        and ``>`` before delivery.
+        """
+        # Google Chat represents headings as bold text.
+        body = commonmark_headings_to_bold(body)
+
+        # Accumulate translated characters one item at a time.
+        out = []
+        # Record ``*`` and ``_`` markup in order, then match it after the scan.
+        delimiters = []
+        # Track possible link-label openings in LIFO order.
+        link_stack = []
+
+        # Initialize the single-pass scanner.
+        i = 0
+        n = len(body)
+
+        # Record backtick positions so matching code spans is quick.
+        backtick_runs = commonmark_index_backtick_runs(body)
+        # Pick a temporary marker that does not occur in the message.
+        sentinel = commonmark_pick_emphasis_sentinel(body)
+        # Bound the total work spent scanning labeled-link destinations.
+        scan_budget = commonmark_new_scan_budget(body)
+
+        while i < n:
+            ch = body[i]
+
+            # Decode CommonMark escapes and protect Chat anchor delimiters.
+            if ch == "\\" and i + 1 < n:
+                nxt = body[i + 1]
+                if nxt == "<":
+                    # "<" starts a Chat anchor; escape it to prevent that.
+                    out.append("&lt;")
+                elif nxt == ">":
+                    # ">" closes a Chat anchor; escape it symmetrically.
+                    out.append("&gt;")
+                elif nxt == "&":
+                    # An escaped ampersand is still escaped for Chat.
+                    out.append("&amp;")
+                elif nxt in ("*", "_", "~", "`"):
+                    # Preserve escapes for Chat formatting characters.
+                    out.append("\\" + nxt)
+                else:
+                    # Other escapes become their literal character.
+                    out.append(nxt)
+                i += 2
+                continue
+
+            # Escape ampersands before Chat interprets them as entities.
+            if ch == "&":
+                out.append("&amp;")
+                i += 1
+                continue
+
+            # Preserve code spans while escaping HTML-sensitive content.
+            if ch == "`":
+                j = i
+                # Measure the run length by counting consecutive backticks.
+                while j < n and body[j] == "`":
+                    j += 1
+                run = j - i
+                # Search the pre-built index for the matching close run.
+                close = commonmark_find_backtick_run(backtick_runs, j, run)
+
+                if close is not None:
+                    # Escape HTML controls inside the matched span.
+                    content = body[j:close]
+                    content = (
+                        content.replace("&", "&amp;")
+                        .replace("<", "&lt;")
+                        .replace(">", "&gt;")
+                    )
+                    # Preserve the original delimiter width (1, 2, or 3+).
+                    delim = body[i:j]
+                    out.append(delim + content + delim)
+                    # Skip past the closing backtick run.
+                    i = close + run
+                    continue
+
+                # Preserve unmatched backticks as literal text.
+                out.append(body[i:j])
+                i = j
+                continue
+
+            # Record a possible CommonMark link-label opening.
+            if ch == "[":
+                link_stack.append(len(out))
+                out.append("[")
+                i += 1
+                continue
+
+            # Convert a complete CommonMark link to ``<url|label>``.
+            if body.startswith("](<", i) and link_stack:
+                # Scan forward with escape awareness for the ">)" terminator.
+                close = commonmark_scan_angle_dest(
+                    body, i, n, budget=scan_budget
+                )
+
+                if close is not None:
+                    # Re-encode characters reserved by Chat anchors.
+                    url = commonmark_escape_link_url(body[i + 3 : close])
+
+                    # Recover the buffered label and replace its opening.
+                    open_index = link_stack.pop()
+                    text = "".join(out[open_index + 1 :])
+                    del out[open_index:]
+                    out.append(f"<{url}|{text}>")
+                    # Skip past the closing ">)" of the destination.
+                    i = close + 2
+                    continue
+
+                # Let the bare-link check handle this failed angle form.
+
+            # Convert bare destinations without scanning their URL as emphasis.
+            if body.startswith("](", i) and link_stack:
+                close = commonmark_scan_paren_dest(
+                    body, i + 1, n, budget=scan_budget
+                )
+
+                if close is not None:
+                    url = commonmark_escape_link_url(body[i + 2 : close])
+                    open_index = link_stack.pop()
+                    text = "".join(out[open_index + 1 :])
+                    del out[open_index:]
+                    out.append(f"<{url}|{text}>")
+                    # Skip past the closing ")".
+                    i = close + 1
+                    continue
+
+                # Same reasoning as the angle-dest case above.
+                link_stack.pop()
+
+            # A "]" that never forms "](" cannot close a link. Retire the
+            # innermost pending "[" so a later, unrelated "](" cannot
+            # incorrectly reuse it as its own opener.
+            if ch == "]" and link_stack and not body.startswith("](", i):
+                link_stack.pop()
+
+            # Convert complete autolinks; other "<" characters remain literal.
+            if ch == "<":
+                close, _ = commonmark_scan_autolink_dest(body, i, n)
+                if close is not None:
+                    url = commonmark_escape_link_url(body[i + 1 : close])
+                    out.append(f"<{url}>")
+                    i = close + 1
+                    continue
+
+            # Map CommonMark emphasis to Chat's ``*``/``_`` syntax.
+            if ch == "*":
+                i = commonmark_emphasis_run(
+                    body, i, n, delimiters, out, sentinel
+                )
+                continue
+
+            # Preserve ordinary characters.
+            out.append(ch)
+            i += 1
+
+        # Replace temporary markers with Chat bold and italic markup.
+        text = commonmark_render_emphasis_markers(
+            "".join(out), delimiters, ("*", "*"), ("_", "_"), sentinel
+        )
+
+        # Google Chat requires four spaces per nested-list level, versus two
+        # in the generated CommonMark, so double leading indentation.
+        # Track fence boundaries so code-block indentation remains unchanged.
+        lines = text.split("\n")
+        result = []
+        # Track the opening fence width; zero means no fence is active.
+        # Shorter backtick runs inside the block remain ordinary content.
+        fence_run = 0
+        for line in lines:
+            # Count leading backticks on the stripped line.
+            stripped_line = line.lstrip(" ")
+            run = len(stripped_line) - len(stripped_line.lstrip("`"))
+
+            # Assume ordinary content until a fence boundary is recognized.
+            is_boundary = False
+            if fence_run == 0:
+                # Outside a fence, three or more backticks open one.
+                if run >= 3:
+                    fence_run = run
+                    is_boundary = True
+            else:
+                # A close needs the opening width or more and no other text.
+                if run >= fence_run and stripped_line[run:].strip() == "":
+                    fence_run = 0
+                    is_boundary = True
+
+            if is_boundary or fence_run != 0:
+                # Fence boundary lines and lines inside a fence are kept as-is.
+                result.append(line)
+            else:
+                # Outside a code block: double leading spaces so CommonMark
+                # 2-space list indentation maps to Chat's 4-space indent.
+                stripped = line.lstrip(" ")
+                spaces = len(line) - len(stripped)
+                result.append("  " * spaces + stripped)
+
+        return "\n".join(result)
+
+    def send(
+        self,
+        body,
+        title="",
+        notify_type=NotifyType.INFO,
+        body_format=None,
+        body_passthrough=None,
+        **kwargs,
+    ):
         """Perform Google Chat Notification."""
+
+        # The framework has already converted and resized the final body.
+        bodies = [body]
 
         # Our headers
         headers = {
             "User-Agent": self.app_id,
             "Content-Type": "application/json; charset=utf-8",
-        }
-
-        payload = {
-            # Our Message
-            "text": body,
         }
 
         # Construct Notify URL
@@ -222,6 +466,11 @@ class NotifyGoogleChat(NotifyBase):
             "key": self.webhook_key,
         }
 
+        thread_update = (
+            {"thread": {"thread_key": self.thread_key}}
+            if self.thread_key
+            else {}
+        )
         if self.thread_key:
             params.update(
                 {
@@ -231,67 +480,81 @@ class NotifyGoogleChat(NotifyBase):
                 }
             )
 
-            payload.update(
-                {
-                    "thread": {
-                        "thread_key": self.thread_key,
-                    }
-                }
-            )
+        # error tracking (used for function return)
+        has_error = False
 
-        self.logger.debug(
-            "Google Chat POST URL:"
-            f" {notify_url} (cert_verify={self.verify_certificate!r})"
-        )
-        self.logger.debug(f"Google Chat Parameters: {params!s}")
-        self.logger.debug(f"Google Chat Payload: {payload!s}")
+        # Send every expanded piece so overflow splitting loses no content.
+        for piece in bodies:
+            # Skip a piece that already accepted this message so
+            # a retry does not deliver it twice.
+            if self.is_delivered(piece):
+                continue
 
-        # Always call throttle before any remote server i/o is made
-        self.throttle()
-        try:
-            r = requests.post(
-                notify_url,
-                params=params,
-                data=dumps(payload),
-                headers=headers,
-                verify=self.verify_certificate,
-                timeout=self.request_timeout,
-                allow_redirects=self.redirects,
+            payload = {
+                # Our Message
+                "text": piece,
+            }
+            payload.update(thread_update)
+
+            self.logger.debug(
+                "Google Chat POST URL:"
+                f" {notify_url} (cert_verify={self.verify_certificate!r})"
             )
-            if r.status_code not in (
-                requests.codes.ok,
-                requests.codes.no_content,
-            ):
-                # We had a problem
-                status_str = NotifyBase.http_response_code_lookup(
-                    r.status_code
+            self.logger.debug(f"Google Chat Parameters: {params!s}")
+            self.logger.debug(f"Google Chat Payload: {payload!s}")
+
+            # Always call throttle before any remote server i/o is made
+            self.throttle()
+            try:
+                r = requests.post(
+                    notify_url,
+                    params=params,
+                    data=dumps(payload),
+                    headers=headers,
+                    verify=self.verify_certificate,
+                    timeout=self.request_timeout,
+                    allow_redirects=self.redirects,
                 )
-
-                self.logger.warning(
-                    "Failed to send Google Chat notification: "
-                    "{}{}error={}.".format(
-                        status_str, ", " if status_str else "", r.status_code
+                if r.status_code not in (
+                    requests.codes.ok,
+                    requests.codes.no_content,
+                ):
+                    # We had a problem
+                    status_str = NotifyBase.http_response_code_lookup(
+                        r.status_code
                     )
-                )
 
-                self.logger.debug(
-                    "Response Details:\r\n%r", (r.content or b"")[:2000]
-                )
+                    self.logger.warning(
+                        "Failed to send Google Chat notification: "
+                        "{}{}error={}.".format(
+                            status_str,
+                            ", " if status_str else "",
+                            r.status_code,
+                        )
+                    )
 
-                # Return; we're done
-                return False
+                    self.logger.debug(
+                        "Response Details:\r\n%r", (r.content or b"")[:2000]
+                    )
 
-            else:
+                    # Flag our error
+                    has_error = True
+                    continue
+
                 self.logger.info("Sent Google Chat notification.")
 
-        except requests.RequestException as e:
-            self.logger.warning(
-                "A Connection error occurred postingto Google Chat."
-            )
-            self.logger.debug(f"Socket Exception: {e!s}")
-            return False
+            except requests.RequestException as e:
+                self.logger.warning(
+                    "A Connection error occurred postingto Google Chat."
+                )
+                self.logger.debug(f"Socket Exception: {e!s}")
+                has_error = True
+                continue
 
-        return True
+            # Delivered; a retry can safely skip this piece.
+            self.mark_delivered(piece)
+
+        return not has_error
 
     @property
     def url_identifier(self):

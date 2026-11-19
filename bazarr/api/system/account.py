@@ -2,10 +2,11 @@
 
 import gc
 
-from flask import session, request
+from flask import request
 from flask_restx import Resource, Namespace, reqparse
 
 from app.config import settings
+from app.form_sessions import start_form_session, end_form_session
 from utilities.helper import check_credentials
 
 api_ns_system_account = Namespace('System Account', description='Login or logout from Bazarr UI')
@@ -28,24 +29,26 @@ class SystemAccount(Resource):
     def post(self):
         """Login or logout from Bazarr UI when using form login"""
         args = self.post_request_parser.parse_args()
-        if settings.auth.type not in ['form', 'basic']:
+        if settings.auth.type not in ['form', 'basic', 'oidc']:
             return 'Unknown authentication type define in config', 500
 
         action = args.get('action')
         if action == 'login':
+            if settings.auth.type == 'oidc':
+                return 'Use OpenID Connect to sign in', 403
             username = args.get('username')
             password = args.get('password')
             if check_credentials(username, password, request):
-                session['logged_in'] = True
+                start_form_session()
                 return '', 204
             else:
-                session.pop('logged_in', None)
+                end_form_session()
                 return 'Authentication failed', 403
         elif action == 'logout':
             if settings.auth.type == 'basic':
                 return 'Browser must be closed to invalidate basic authentication', 406
             else:
-                session.clear()
+                end_form_session()
                 gc.collect()
                 return '', 204
 

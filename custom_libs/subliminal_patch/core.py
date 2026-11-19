@@ -30,7 +30,7 @@ from subliminal.video import VIDEO_EXTENSIONS, Video, Episode, Movie
 from subliminal.core import guessit, ProviderPool, io, is_windows_special_path, \
     ThreadPoolExecutor, check_video
 
-from subzero.language import Language, ENDSWITH_LANGUAGECODE_RE, FULL_LANGUAGE_LIST
+from subzero.language import Language, ENDSWITH_LANGUAGECODE_RE, FULL_LANGUAGE_LIST, m49_basename
 
 logger = logging.getLogger(__name__)
 
@@ -1159,7 +1159,8 @@ def download_best_subtitles(videos, languages, min_score=0, hearing_impaired=Fal
     return downloaded_subtitles
 
 
-def get_subtitle_path(video_path, language=None, extension='.srt', forced_tag=False, hi_tag=False, tags=None):
+def get_subtitle_path(video_path, language=None, extension='.srt', forced_tag=False, hi_tag=False, tags=None,
+                      m49_language_tag=False):
     """Get the subtitle path using the `video_path` and `language`.
 
     :param str video_path: path to the video.
@@ -1169,6 +1170,7 @@ def get_subtitle_path(video_path, language=None, extension='.srt', forced_tag=Fa
     :param bool forced_tag: is the subtitles forced/foreign?
     :param bool hi_tag: is the subtitles hearing-impaired?
     :param list tags: list of custom tags
+    :param bool m49_language_tag: write UN M.49 region tags (e.g. ``es-419``) when one is mapped for the country.
     :return: path of the subtitle.
     :rtype: str
 
@@ -1176,7 +1178,7 @@ def get_subtitle_path(video_path, language=None, extension='.srt', forced_tag=Fa
     subtitle_root = os.path.splitext(video_path)[0]
 
     if language:
-        subtitle_root += '.' + str(language.basename)
+        subtitle_root += '.' + (m49_basename(language) if m49_language_tag else str(language.basename))
 
         tags = tags or []
         hi_extension = os.environ.get("SZ_HI_EXTENSION", "hi")
@@ -1194,7 +1196,7 @@ def get_subtitle_path(video_path, language=None, extension='.srt', forced_tag=Fa
 
 
 def save_subtitles(file_path, subtitles, single=False, directory=None, chmod=None, formats=("srt",),
-                   tags=None, path_decoder=None, debug_mods=False):
+                   tags=None, path_decoder=None, debug_mods=False, m49_language_tag=False):
     """Save subtitles on filesystem.
 
     Subtitles are saved in the order of the list. If a subtitle with a language has already been saved, other subtitles
@@ -1244,7 +1246,8 @@ def save_subtitles(file_path, subtitles, single=False, directory=None, chmod=Non
                 subtitle.language.hi = False
 
         subtitle_path = get_subtitle_path(file_path, None if single else subtitle.language,
-                                          forced_tag=subtitle.language.forced, hi_tag=subtitle.language.hi, tags=tags)
+                                          forced_tag=subtitle.language.forced, hi_tag=subtitle.language.hi, tags=tags,
+                                          m49_language_tag=m49_language_tag)
         if directory is not None:
             subtitle_path = os.path.join(directory, os.path.split(subtitle_path)[1])
 

@@ -33,6 +33,7 @@ import time
 
 from .. import exception
 from ..common import ContentLocation
+from ..exception import AppriseImproperlyConfigured
 from ..locale import gettext_lazy as _
 from ..url import URLBase
 from ..utils.parse import parse_bool
@@ -160,13 +161,13 @@ class AttachBase(URLBase):
             except (TypeError, ValueError):
                 err = f"An invalid cache value ({cache}) was specified."
                 self.logger.warning(err)
-                raise TypeError(err) from None
+                raise AppriseImproperlyConfigured(err) from None
 
             # Some simple error checking
             if self.cache < 0:
                 err = f"A negative cache value ({cache}) was specified."
                 self.logger.warning(err)
-                raise TypeError(err)
+                raise AppriseImproperlyConfigured(err)
 
         else:
             self.cache = None
@@ -185,7 +186,7 @@ class AttachBase(URLBase):
         ):
             err = f"An invalid mime-type ({mimetype}) was specified."
             self.logger.warning(err)
-            raise TypeError(err)
+            raise AppriseImproperlyConfigured(err)
 
         return
 
@@ -342,9 +343,11 @@ class AttachBase(URLBase):
           - detected_mimetype: Should identify mimetype of content
         """
 
-        # Remove all open pointers
+        # Close every tracked pointer without letting cleanup errors escape
+        # from invalidate() or __del__().
         while self.__pointers:
-            self.__pointers.pop().close()
+            with contextlib.suppress(OSError):
+                self.__pointers.pop().close()
 
         self.detected_name = None
         self.download_path = None
@@ -429,7 +432,13 @@ class AttachBase(URLBase):
 
         # Allow overriding the default file name
         if "name" in results["qsd"]:
-            results["name"] = results["qsd"].get("name", "").strip().lower()
+            # Strip any directory components to prevent path traversal
+            # (e.g. ?name=/etc/passwd yields "passwd").  If the result is
+            # empty after stripping, treat it as though ?name= was not
+            # specified so the caller falls through to the next name source.
+            _fname = os.path.basename(results["qsd"].get("name", "")).strip()
+            if _fname:
+                results["name"] = _fname
 
         # Our cache value
         if "cache" in results["qsd"]:

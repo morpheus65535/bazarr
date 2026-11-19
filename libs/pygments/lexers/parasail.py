@@ -10,7 +10,7 @@
 
 import re
 
-from pygments.lexer import RegexLexer, include
+from pygments.lexer import RegexLexer, include, words
 from pygments.token import Text, Comment, Operator, Keyword, Name, String, \
     Number, Punctuation, Literal
 
@@ -40,13 +40,17 @@ class ParaSailLexer(RegexLexer):
              r'(is|not)\s+null)\b',
              Operator.Word),
             # Keywords
-            (r'\b(abs|abstract|all|block|class|concurrent|const|continue|'
-             r'each|end|exit|extends|exports|forward|func|global|implements|'
-             r'import|in|interface|is|lambda|locked|new|not|null|of|op|'
-             r'optional|private|queued|ref|return|reverse|separate|some|'
-             r'type|until|var|with|'
-             # Control flow
-             r'if|then|else|elsif|case|for|while|loop)\b',
+            (words(('abs', 'abstract', 'all', 'block', 'class', 'concurrent',
+                    'const', 'continue', 'each', 'end', 'exit',
+                    'extends', 'exports', 'forward', 'func',
+                    'global', 'implements', 'import', 'in',
+                    'interface', 'is', 'lambda', 'locked',
+                    'new', 'not', 'null', 'of', 'op',
+                    'optional', 'private', 'queued', 'ref',
+                    'return', 'reverse', 'separate', 'some',
+                    'type', 'until', 'var', 'with', 'if',
+                    'then', 'else', 'elsif', 'case', 'for',
+                    'while', 'loop'), prefix=r'\b', suffix=r'\b'),
              Keyword.Reserved),
             (r'(abstract\s+)?(interface|class|op|func|type)',
              Keyword.Declaration),

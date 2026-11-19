@@ -1,38 +1,36 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
-# Copyright 2014 True Blade Systems, Inc.
+# Vendored from toposort 1.4 (https://bitbucket.org/ericvsmith/toposort),
+# Copyright 2014 True Blade Systems, Inc., licensed under the Apache License,
+# Version 2.0 (http://www.apache.org/licenses/LICENSE-2.0).
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Original:
-#   - https://bitbucket.org/ericvsmith/toposort (1.4)
-# Modifications:
-#   - merged Pull request #2 for CyclicDependency error
-#   - import reduce as original name
-#   - support python 2.6 dict comprehension
+# Local changes: CyclicDependency error (upstream pull request #2), Python 3
+# only, fully type-annotated.
 
-# pylint: skip-file
+from __future__ import annotations
+
 from functools import reduce
+from typing import TYPE_CHECKING, Any, TypeVar, cast
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
+
+_T = TypeVar("_T")
 
 
 class CyclicDependency(ValueError):
-    def __init__(self, cyclic):
-        s = 'Cyclic dependencies exist among these items: {0}'.format(', '.join(repr(x) for x in cyclic.items()))
+    def __init__(self, cyclic: dict[_T, set[_T]]) -> None:
+        s = f"Cyclic dependencies exist among these items: {', '.join(repr(x) for x in cyclic.items())}"
         super().__init__(s)
         self.cyclic = cyclic
 
 
-def toposort(data):
+def toposort(data: dict[_T, set[_T]]) -> Iterator[set[_T]]:
     """
     Dependencies are expressed as a dictionary whose keys are items
     and whose values are a set of dependent items. Output is a list of
     sets in topological order. The first set consists of items with no
     dependences, each subsequent set consists of items that depend upon
-    items in the preceeding sets.
+    items in the preceding sets.
     :param data:
     :type data:
     :return:
@@ -52,20 +50,18 @@ def toposort(data):
     # Find all items that don't depend on anything.
     extra_items_in_deps = reduce(set.union, data.values()) - set(data.keys())
     # Add empty dependences where needed.
-    data.update(dict((item, set()) for item in extra_items_in_deps))
+    data.update({item: set() for item in extra_items_in_deps})
     while True:
-        ordered = set(item for item, dep in data.items() if len(dep) == 0)
+        ordered = {item for item, dep in data.items() if len(dep) == 0}
         if not ordered:
             break
         yield ordered
-        data = dict((item, (dep - ordered))
-                for item, dep in data.items()
-                if item not in ordered)
+        data = {item: (dep - ordered) for item, dep in data.items() if item not in ordered}
     if len(data) != 0:
         raise CyclicDependency(data)
 
 
-def toposort_flatten(data, sort=True):
+def toposort_flatten(data: dict[_T, set[_T]], sort: bool = True) -> list[_T]:
     """
     Returns a single list of dependencies. For any set returned by
     toposort(), those items are sorted and appended to the result (just to
@@ -78,7 +74,7 @@ def toposort_flatten(data, sort=True):
     :rtype: list
     """
 
-    result = []
+    result: list[_T] = []
     for d in toposort(data):
-        result.extend((sorted if sort else list)(d))
+        result.extend(cast("list[_T]", sorted(cast("Any", d))) if sort else list(d))
     return result

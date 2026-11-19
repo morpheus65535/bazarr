@@ -55,7 +55,7 @@ class MonokaiStyle(Style):
 
         Name:                      "#f8f8f2", # class: 'n'
         Name.Attribute:            "#a6e22e", # class: 'na' - to be revised
-        Name.Builtin:              "",        # class: 'nb'
+        Name.Builtin:              "#a6e22e", # class: 'nb'
         Name.Builtin.Pseudo:       "",        # class: 'bp'
         Name.Class:                "#a6e22e", # class: 'nc' - to be revised
         Name.Constant:             "#66d9ef", # class: 'no' - to be revised
@@ -100,7 +100,7 @@ class MonokaiStyle(Style):
         Generic:                   "",        # class: 'g'
         Generic.Deleted:           "#ff4689", # class: 'gd',
         Generic.Emph:              "italic",  # class: 'ge'
-        Generic.Error:             "",        # class: 'gr'
+        Generic.Error:             "#ff4689", # class: 'gr'
         Generic.Heading:           "",        # class: 'gh'
         Generic.Inserted:          "#a6e22e", # class: 'gi'
         Generic.Output:            "#66d9ef", # class: 'go'
@@ -108,5 +108,5 @@ class MonokaiStyle(Style):
         Generic.Strong:            "bold",    # class: 'gs'
         Generic.EmphStrong:        "bold italic",  # class: 'ges'
         Generic.Subheading:        "#959077", # class: 'gu'
-        Generic.Traceback:         "",        # class: 'gt'
+        Generic.Traceback:         "#66d9ef", # class: 'gt'
     }

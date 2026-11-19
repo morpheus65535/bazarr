@@ -1,5 +1,6 @@
-
+import contextlib
 import os
+import subprocess
 import typing
 from logging import NullHandler, getLogger
 
@@ -7,6 +8,7 @@ import knowit.config
 from knowit.core import Property, Rule
 from knowit.properties import Quantity
 from knowit.units import units
+from knowit.utils import OS_FAMILY
 
 logger = getLogger(__name__)
 logger.addHandler(NullHandler())
@@ -14,25 +16,25 @@ logger.addHandler(NullHandler())
 
 size_property = Quantity('size', unit=units.byte, description='media size')
 
-PropertyMap = typing.Mapping[str, Property]
+PropertyMap = typing.Mapping[str, Property[typing.Any] | None]
 PropertyConfig = typing.Mapping[str, PropertyMap]
 
-RuleMap = typing.Mapping[str, Rule]
+RuleMap = typing.Mapping[str, Rule[typing.Any]]
 RuleConfig = typing.Mapping[str, RuleMap]
 
 
 class Provider:
     """Base class for all providers."""
 
-    executor: typing.Union["Executor", None]
+    executor: typing.Union['Executor', None]
     min_fps = 10
     max_fps = 200
 
     def __init__(
-            self,
-            config: knowit.config.Config,
-            mapping: PropertyConfig,
-            rules: typing.Optional[RuleConfig] = None,
+        self,
+        config: knowit.config.Config,
+        mapping: PropertyConfig,
+        rules: RuleConfig | None = None,
     ):
         """Init method."""
         self.config = config
@@ -44,15 +46,25 @@ class Provider:
         """Whether or not this provider was loaded."""
         raise NotImplementedError
 
-    def accepts(self, target):
+    def accepts(self, target: str) -> bool:
         """Whether or not the video is supported by this provider."""
         raise NotImplementedError
 
-    def describe(self, target, context):
+    def describe(
+        self, target: str, context: typing.MutableMapping[str, typing.Any]
+    ) -> typing.MutableMapping[str, typing.Any]:
         """Read video metadata information."""
         raise NotImplementedError
 
-    def _describe_tracks(self, video_path, general_track, video_tracks, audio_tracks, subtitle_tracks, context):
+    def _describe_tracks(
+        self,
+        video_path: str,
+        general_track: typing.Mapping[str, typing.Any],
+        video_tracks: typing.Iterable[typing.Mapping[str, typing.Any]] | None,
+        audio_tracks: typing.Iterable[typing.Mapping[str, typing.Any]] | None,
+        subtitle_tracks: typing.Iterable[typing.Mapping[str, typing.Any]] | None,
+        context: typing.MutableMapping[str, typing.Any],
+    ) -> typing.MutableMapping[str, typing.Any]:
         logger.debug('Handling general track')
         props = self._describe_track(general_track, 'general', context)
 
@@ -63,9 +75,10 @@ class Provider:
         if 'size' not in props and os.path.isfile(video_path):
             props['size'] = size_property.handle(os.path.getsize(video_path), context)
 
-        for track_type, tracks, in (('video', video_tracks),
-                                    ('audio', audio_tracks),
-                                    ('subtitle', subtitle_tracks)):
+        for (
+            track_type,
+            tracks,
+        ) in (('video', video_tracks), ('audio', audio_tracks), ('subtitle', subtitle_tracks)):
             results = []
             for track in tracks or []:
                 logger.debug('Handling %s track', track_type)
@@ -79,28 +92,34 @@ class Provider:
         return props
 
     @classmethod
-    def _validate_track(cls, track_type, track):
+    def _validate_track(
+        cls, track_type: str, track: typing.MutableMapping[str, typing.Any]
+    ) -> typing.MutableMapping[str, typing.Any] | None:
         if track_type != 'video' or 'frame_rate' not in track:
             return track
 
         frame_rate = track['frame_rate']
-        try:
+        with contextlib.suppress(AttributeError):
             frame_rate = frame_rate.magnitude
-        except AttributeError:
-            pass
 
         if cls.min_fps < frame_rate < cls.max_fps:
             return track
+        return None
 
-    def _describe_track(self, track, track_type, context):
+    def _describe_track(
+        self,
+        track: typing.Mapping[str, typing.Any],
+        track_type: str,
+        context: typing.MutableMapping[str, typing.Any],
+    ) -> typing.MutableMapping[str, typing.Any]:
         """Describe track to a dict.
 
         :param track:
         :param track_type:
         :rtype: dict
         """
-        props = {}
-        pv_props = {}
+        props: dict[str, typing.Any] = {}
+        pv_props: dict[str, typing.Any] = {}
         for name, prop in self.mapping[track_type].items():
             if not prop:
                 # placeholder to be populated by rules. It keeps the order
@@ -126,16 +145,14 @@ class Provider:
 
         return props
 
-    def match_executor_location(self, suggested_path: typing.Union[str, None]) -> bool:
+    def match_executor_location(self, suggested_path: str | None) -> bool:
         """Compare the suggested path to the path that was suggested when creating the provider."""
         if self.executor is None:
             return True
-        if self.executor.location == suggested_path:
-            return True
-        return False
+        return self.executor.location == suggested_path
 
     @property
-    def version(self):
+    def version(self) -> typing.Mapping[str, typing.Any]:
         """Return provider version information."""
         raise NotImplementedError
 
@@ -143,22 +160,22 @@ class Provider:
 class Executor:
     """Abstraction to a library or executable to be used by a provider."""
 
-    def __init__(self, location, version):
+    def __init__(self, location: str | None, version: typing.Any):
         """Initialize the object."""
         self.location = location
         self.version = version
 
-    def extract_info(self, filename):
+    def extract_info(self, filename: str) -> typing.Mapping[str, typing.Any]:
         """Extract media info."""
         raise NotImplementedError
 
     @classmethod
-    def create(cls, os_family=None, suggested_path=None):
+    def create(cls, os_family: OS_FAMILY | None = None, suggested_path: str | None = None) -> 'Executor | None':
         """Create the executor instance."""
         raise NotImplementedError
 
     @classmethod
-    def get_executor_instance(cls, suggested_path=None) -> "Executor":
+    def get_executor_instance(cls, suggested_path: str | None = None) -> 'Executor':
         """Return executor instance."""
         raise NotImplementedError
 
@@ -166,7 +183,7 @@ class Executor:
 class NotFoundExecutor(Executor):
     """Executor with a library or executable that was not found."""
 
-    def __init__(self, location, version=None) -> None:
+    def __init__(self, location: str | None, version: typing.Any = None) -> None:
         """Initialize the object."""
         self.location = location
         self.warned = False
@@ -175,7 +192,7 @@ class NotFoundExecutor(Executor):
         """Executor not found is always False."""
         return False
 
-    def extract_info(self, filename):
+    def extract_info(self, filename: str) -> typing.Mapping[str, typing.Any]:
         """Extract media info."""
         return {}
 
@@ -196,3 +213,12 @@ class UnsupportedFileFormatError(ProviderError):
     """Unsupported File Format error."""
 
     pass
+
+
+def run_command(args: list[str]) -> str:
+    """Run a backend command and return its output. Keep the backend message when it fails."""
+    process = subprocess.run(args, capture_output=True)
+    if process.returncode:
+        message = (process.stderr or process.stdout).decode(errors='replace').strip()
+        raise ProviderError(f'{os.path.basename(args[0])} failed with exit status {process.returncode}: {message}')
+    return process.stdout.decode()

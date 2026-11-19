@@ -84,6 +84,10 @@ export const onboardingSteps: TourStep[] = [
           Running Bazarr in Docker? Don't use <Code>localhost</Code> to reach
           Sonarr on the same host - use the container name or host IP.
         </Text>
+        <Text size="sm" mt="xs" c="dimmed">
+          The live feed from Sonarr is receive-only; Bazarr never changes your
+          library through it.
+        </Text>
       </>
     ),
   },
@@ -161,6 +165,10 @@ export const onboardingSteps: TourStep[] = [
         <Text size="sm" mt="xs" c="dimmed">
           Sonarr and Radarr are independent - you can set up the other one
           later.
+        </Text>
+        <Text size="sm" mt="xs" c="dimmed">
+          The live feed from Radarr is receive-only; Bazarr never changes your
+          library through it.
         </Text>
       </>
     ),

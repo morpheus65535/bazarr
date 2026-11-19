@@ -2355,3 +2355,44 @@
   title: GTTV
   type: episode
   video_codec: H.264
+
+# --- #814 / #651: a <=3-char service code glued inside a release group is not a service ---
+
+? Show.S01E01.720p.x264-CNHD.mkv
+: title: Show
+  release_group: CNHD
+  -streaming_service: Cartoon Network
+
+# --- community PRs re-implemented: ADN (#764), Channel 5 (#799), Max + NowTV (#748) ---
+
+? Some.Show.S01E01.1080p.ADN.WEB-DL.AAC2.0.H.264-GRP.mkv
+: title: Some Show
+  streaming_service: Anime Digital Network
+
+? Some.Show.S01E01.1080p.MY5.WEB-DL.AAC2.0.H.264-GRP.mkv
+: title: Some Show
+  streaming_service: Channel 5
+
+# "Max" (HBO Max rebrand) is matched only as the uppercase scene tag MAX, so a title
+# like "Mad Max" is unaffected.
+? Some.Show.S01E01.1080p.MAX.WEB-DL.DDP5.1.H.264-GRP.mkv
+: title: Some Show
+  streaming_service: Max
+
+? Mad.Max.Fury.Road.2015.1080p.BluRay.x264-GROUP.mkv
+: title: Mad Max Fury Road
+  -streaming_service: Max
+
+# NowTV matches the uppercase NOW tag only; a Title-case "Now" in a title is not a service.
+? Some.Show.S01E01.1080p.NOW.WEB-DL.DDP5.1.H.264-GRP.mkv
+: title: Some Show
+  streaming_service: NowTV
+
+? Show.About.Now.2020.1080p.BluRay.x264-GRP.mkv
+: title: Show About Now
+  -streaming_service: NowTV
+
+# YouTube Red matches the uppercase RED tag only; "Red" as a title word is not a service.
+? The.Red.Sea.Diving.Resort.2019.1080p.NF.WEBRip.x264-GRP.mkv
+: title: The Red Sea Diving Resort
+  -streaming_service: YouTube Red

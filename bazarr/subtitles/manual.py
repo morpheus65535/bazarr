@@ -222,6 +222,7 @@ def manual_download_subtitle(path, audio_language, hi, forced, subtitle, provide
                 saved_subtitles = save_subtitles(video.original_path, [subtitle],
                                                  single=settings.general.single_language,
                                                  tags=None,  # fixme
+                                                 m49_language_tag=settings.general.use_m49_language_tag,
                                                  directory=get_target_folder(path),
                                                  chmod=chmod,
                                                  formats=(subtitle.format,),

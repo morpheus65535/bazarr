@@ -50,6 +50,11 @@ def fresh_queues(monkeypatch):
 
 
 @pytest.fixture
+def no_signalr(monkeypatch):
+    monkeypatch.setattr(sr.args, "no_signalr", True)
+
+
+@pytest.fixture
 def stream():
     with mock.patch.object(sr, "event_stream") as event_stream:
         yield event_stream
@@ -205,6 +210,43 @@ def test_restart_does_not_start_when_integration_disabled(client_cls, name, job_
     start.assert_not_called()
 
 
+@pytest.mark.parametrize("client_cls, name, job_id, live_flag", CLIENTS)
+def test_start_does_not_connect_when_signalr_disabled(client_cls, name, job_id, live_flag,
+                                                      sr_settings, no_signalr, monkeypatch):
+    client = client_cls()
+    configure = mock.MagicMock()
+    monkeypatch.setattr(client, "configure", configure)
+
+    client.start()
+
+    configure.assert_not_called()
+    assert client.connected is False
+
+
+@pytest.mark.parametrize("client_cls, name, job_id, live_flag", CLIENTS)
+def test_restart_does_not_start_when_signalr_disabled(client_cls, name, job_id, live_flag,
+                                                      sr_settings, no_signalr):
+    client = client_cls()
+    client.connection = _connection(state=4)
+
+    with mock.patch.object(client, "start") as start:
+        client.restart()
+
+    start.assert_not_called()
+    assert client.connected is False
+
+
+@pytest.mark.parametrize("client_cls, name, job_id, live_flag", CLIENTS)
+def test_stop_marks_client_disconnected(client_cls, name, job_id, live_flag, sr_settings):
+    client = client_cls()
+    client.connection = _connection()
+    client.connected = True
+
+    client.stop()
+
+    assert client.connected is False
+
+
 # Legacy Sonarr client (Sonarr v2/v3 with the old SignalR protocol)
 
 @pytest.fixture
@@ -259,6 +301,25 @@ def test_legacy_start_does_not_connect_to_legacy_sonarr(sr_settings, legacy_conn
         client.start()
 
     legacy_connection.start.assert_not_called()
+
+
+def test_legacy_start_does_not_connect_when_signalr_disabled(sr_settings, legacy_connection, no_signalr):
+    client = sr.SonarrSignalrClientLegacy()
+
+    client.start()
+
+    legacy_connection.start.assert_not_called()
+    assert client.connected is False
+
+
+def test_legacy_stop_marks_client_disconnected(sr_settings, legacy_connection):
+    client = sr.SonarrSignalrClientLegacy()
+    client.connection = legacy_connection
+    client.connected = True
+
+    client.stop()
+
+    assert client.connected is False
 
 
 # feed_queue and filter_nested_dict

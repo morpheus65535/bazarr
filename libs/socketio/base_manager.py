@@ -109,9 +109,14 @@ class BaseManager:
             if len(self.pending_disconnect[namespace]) == 0:
                 del self.pending_disconnect[namespace]
 
+    def is_sid_room(self, namespace, room):
+        return room in self.rooms.get(namespace, {}).get(None, {})
+
     def basic_enter_room(self, sid, namespace, room, eio_sid=None):
         if eio_sid is None and namespace not in self.rooms:
             raise ValueError('sid is not connected to requested namespace')
+        if sid != room and self.is_sid_room(namespace, room):
+            raise ValueError('cannot enter a sid room')
         if namespace not in self.rooms:
             self.rooms[namespace] = {}
         if room not in self.rooms[namespace]:
@@ -131,6 +136,8 @@ class BaseManager:
             pass
 
     def basic_close_room(self, room, namespace):
+        if self.is_sid_room(namespace, room):
+            raise ValueError('cannot close a sid room')
         try:
             for sid, _ in self.get_participants(namespace, room):
                 self.basic_leave_room(sid, namespace, room)

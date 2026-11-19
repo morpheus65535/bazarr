@@ -48,7 +48,7 @@ class MesonLexer(RegexLexer):
             (r'\s+', Whitespace),
         ],
         'string': [
-            (r"[']{3}([']{0,2}([^\\']|\\(.|\n)))*[']{3}", String),
+            (r"[']{3}([']{0,2}([^\\']|\\([\s\S])))*[']{3}", String),
             (r"'.*?(?<!\\)(\\\\)*?'", String),
         ],
         'keywords': [

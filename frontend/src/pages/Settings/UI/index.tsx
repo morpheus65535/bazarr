@@ -61,11 +61,12 @@ const SettingsUIView: FunctionComponent = () => {
           defaultValue={"auto"}
         ></Selector>
         <Message>
-          Controls whether the “LIVE” badge appears when SignalR is connected.
-          Turn this off if you prefer a cleaner interface. The “DOWN” badge will
-          always appear when SignalR is disconnected, regardless of this
-          setting. This option affects badge visibility only, not the actual
-          connection status.
+          Controls whether the “LIVE” badge appears while Bazarr is connected to
+          Sonarr or Radarr. Turn this off if you prefer a cleaner interface. The
+          “DOWN” badge (connection lost) and the “OFF” badge (real-time updates
+          disabled) are always shown so the two states stay distinguishable.
+          This option affects badge visibility only, not the actual connection
+          status.
         </Message>
       </Section>
     </Layout>

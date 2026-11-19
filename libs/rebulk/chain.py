@@ -1,15 +1,22 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """
 Chain patterns and handle repetiting capture group
 """
-import itertools
 
-from .builder import Builder
+from __future__ import annotations
+
+import itertools
+from typing import TYPE_CHECKING, Any, Literal, cast, overload
+
 from .loose import call
 from .match import Match, Matches
-from .pattern import Pattern, filter_match_kwargs, BasePattern
+from .pattern import BasePattern, Pattern, filter_match_kwargs
 from .remodule import re
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Iterable, Iterator
+
+    from .builder import ChainBuilder
 
 
 class _InvalidChainException(Exception):
@@ -18,65 +25,59 @@ class _InvalidChainException(Exception):
     """
 
 
-class Chain(Pattern, Builder):
+class Chain(Pattern):
     """
     Definition of a pattern chain to search for.
+
+    A ``Chain`` is a matchable :class:`~rebulk.pattern.Pattern`. It is assembled
+    through a :class:`~rebulk.builder.ChainBuilder` (returned by ``Builder.chain``),
+    which appends :class:`ChainPart` instances to :attr:`parts`.
     """
 
-    def __init__(self, parent, chain_breaker=None, **kwargs):  # pylint: disable=super-init-not-called
-        Builder.__init__(self)
+    def __init__(
+        self,
+        chain_breaker: Callable[[Matches], bool] | None = None,
+        **kwargs: Any,
+    ) -> None:
         call(Pattern.__init__, self, **kwargs)
         self._kwargs = kwargs
         self._match_kwargs = filter_match_kwargs(kwargs)
+        self.chain_breaker: Callable[[Matches], bool] | None
         if callable(chain_breaker):
             self.chain_breaker = chain_breaker
         else:
             self.chain_breaker = None
-        self.parent = parent
-        self.parts = []
+        self.parts: list[ChainPart] = []
 
-    def pattern(self, *pattern):
-        """
-
-        :param pattern:
-        :return:
-        """
-        if not pattern:
-            raise ValueError("One pattern should be given to the chain")
-        if len(pattern) > 1:
-            raise ValueError("Only one pattern can be given to the chain")
-        part = ChainPart(self, pattern[0])
-        self.parts.append(part)
-        return part
-
-    def close(self):
-        """
-        Deeply close the chain
-        :return: Rebulk instance
-        """
-        parent = self.parent
-        while isinstance(parent, Chain):
-            parent = parent.parent
-        return parent
-
-    def _match(self, pattern, input_string, context=None):
-        # pylint: disable=too-many-locals,too-many-nested-blocks
-        chain_matches = []
+    def _match(
+        self,
+        pattern: Any,
+        input_string: str,
+        context: dict[str, Any] | None = None,
+    ) -> Iterator[Match]:
+        chain_matches: list[Match] = []
         chain_input_string = input_string
         offset = 0
         while offset < len(input_string):
             chain_found = False
-            current_chain_matches = []
+            current_chain_matches: list[Match] = []
             valid_chain = True
             for chain_part in self.parts:
                 try:
-                    chain_part_matches, raw_chain_part_matches = chain_part.matches(chain_input_string,
-                                                                                    context,
-                                                                                    with_raw_matches=True)
+                    chain_part_matches, raw_chain_part_matches = chain_part.matches(
+                        chain_input_string, context, with_raw_matches=True
+                    )
 
-                    chain_found, chain_input_string, offset = \
-                        self._to_next_chain_part(chain_part, chain_part_matches, raw_chain_part_matches, chain_found,
-                                                 input_string, chain_input_string, offset, current_chain_matches)
+                    chain_found, chain_input_string, offset = self._to_next_chain_part(
+                        chain_part,
+                        chain_part_matches,
+                        raw_chain_part_matches,
+                        chain_found,
+                        input_string,
+                        chain_input_string,
+                        offset,
+                        current_chain_matches,
+                    )
                 except _InvalidChainException:
                     valid_chain = False
                     if current_chain_matches:
@@ -88,10 +89,19 @@ class Chain(Pattern, Builder):
                 match = self._build_chain_match(current_chain_matches, input_string)
                 chain_matches.append(match)
 
-        return chain_matches
+        return chain_matches  # type: ignore[return-value]
 
-    def _to_next_chain_part(self, chain_part, chain_part_matches, raw_chain_part_matches, chain_found,
-                            input_string, chain_input_string, offset, current_chain_matches):
+    def _to_next_chain_part(
+        self,
+        chain_part: ChainPart,
+        chain_part_matches: list[Match],
+        raw_chain_part_matches: list[Match],
+        chain_found: bool,
+        input_string: str,
+        chain_input_string: str,
+        offset: int,
+        current_chain_matches: list[Match],
+    ) -> tuple[bool, str, int]:
         Chain._fix_matches_offset(chain_part_matches, input_string, offset)
         Chain._fix_matches_offset(raw_chain_part_matches, input_string, offset)
 
@@ -110,7 +120,7 @@ class Chain(Pattern, Builder):
                         current_chain_matches.extend(grouped_matches)
         return chain_found, chain_input_string, offset
 
-    def _process_match(self, match, match_index, child=False):
+    def _process_match(self, match: Match, match_index: int, child: bool = False) -> bool:
         """
         Handle a match
         :param match:
@@ -122,7 +132,6 @@ class Chain(Pattern, Builder):
         :return:
         :rtype:
         """
-        # pylint: disable=too-many-locals
         ret = super()._process_match(match, match_index, child=child)
         if ret:
             return True
@@ -151,15 +160,15 @@ class Chain(Pattern, Builder):
 
         return False
 
-    def _build_chain_match(self, current_chain_matches, input_string):
-        start = None
-        end = None
+    def _build_chain_match(self, current_chain_matches: list[Match], input_string: str) -> Match:
+        start: int | None = None
+        end: int | None = None
         for match in current_chain_matches:
             if start is None or start > match.start:
                 start = match.start
             if end is None or end < match.end:
                 end = match.end
-        match = call(Match, start, end, pattern=self, input_string=input_string, **self._match_kwargs)
+        match = cast("Match", call(Match, start, end, pattern=self, input_string=input_string, **self._match_kwargs))
         for chain_match in current_chain_matches:
             if chain_match.children:
                 for child in chain_match.children:
@@ -169,11 +178,11 @@ class Chain(Pattern, Builder):
                 chain_match.parent = match
         return match
 
-    def _chain_breaker_eval(self, matches):
+    def _chain_breaker_eval(self, matches: list[Match]) -> bool:
         return not self.chain_breaker or not self.chain_breaker(Matches(matches))
 
     @staticmethod
-    def _fix_matches_offset(chain_part_matches, input_string, offset):
+    def _fix_matches_offset(chain_part_matches: Iterable[Match], input_string: str, offset: int) -> None:
         for chain_part_match in chain_part_matches:
             if chain_part_match.input_string != input_string:
                 chain_part_match.input_string = input_string
@@ -183,21 +192,24 @@ class Chain(Pattern, Builder):
                 Chain._fix_matches_offset(chain_part_match.children, input_string, offset)
 
     @staticmethod
-    def _group_by_match_index(matches):
-        grouped_matches_dict = {}
-        for match_index, match in itertools.groupby(matches, lambda m: m.match_index):
+    def _group_by_match_index(matches: Iterable[Match]) -> dict[int, list[Match]]:
+        grouped_matches_dict: dict[int, list[Match]] = {}
+        # groupby only groups consecutive equal keys, so sort by match_index first
+        # to avoid splitting (and overwriting) groups when matches are unordered.
+        sorted_matches = sorted(matches, key=lambda m: m.match_index)
+        for match_index, match in itertools.groupby(sorted_matches, lambda m: m.match_index):
             grouped_matches_dict[match_index] = list(match)
         return grouped_matches_dict
 
     @property
-    def match_options(self):
+    def match_options(self) -> dict[str, Any]:
         return {}
 
     @property
-    def patterns(self):
+    def patterns(self) -> list[Chain]:
         return [self]
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         defined = ""
         if self.defined_at:
             defined = f"@{self.defined_at}"
@@ -209,18 +221,52 @@ class ChainPart(BasePattern):
     Part of a pattern chain.
     """
 
-    def __init__(self, chain, pattern):
-        self._chain = chain
+    def __init__(self, builder: ChainBuilder, pattern: Any) -> None:
+        self._builder = builder
         self.pattern = pattern
-        self.repeater_start = 1
-        self.repeater_end = 1
+        self.repeater_start: int = 1
+        self.repeater_end: int | None = 1
         self._hidden = False
 
     @property
-    def _is_chain_start(self):
+    def _chain(self) -> Chain:
+        return self._builder._chain
+
+    @property
+    def _is_chain_start(self) -> bool:
         return self._chain.parts[0] == self
 
-    def matches(self, input_string, context=None, with_raw_matches=False):
+    @overload
+    def matches(
+        self,
+        input_string: str,
+        context: dict[str, Any] | None,
+        with_raw_matches: Literal[True],
+    ) -> tuple[list[Match], list[Match]]: ...
+
+    @overload
+    def matches(
+        self,
+        input_string: str,
+        context: dict[str, Any] | None = ...,
+        *,
+        with_raw_matches: Literal[True],
+    ) -> tuple[list[Match], list[Match]]: ...
+
+    @overload
+    def matches(
+        self,
+        input_string: str,
+        context: dict[str, Any] | None = ...,
+        with_raw_matches: Literal[False] = ...,
+    ) -> list[Match]: ...
+
+    def matches(
+        self,
+        input_string: str,
+        context: dict[str, Any] | None = None,
+        with_raw_matches: bool = False,
+    ) -> list[Match] | tuple[list[Match], list[Match]]:
         matches, raw_matches = self.pattern.matches(input_string, context=context, with_raw_matches=True)
 
         matches = self._truncate_repeater(matches, input_string)
@@ -233,19 +279,18 @@ class ChainPart(BasePattern):
 
         return matches
 
-    def _truncate_repeater(self, matches, input_string):
+    def _truncate_repeater(self, matches: list[Match], input_string: str) -> list[Match]:
         if not matches:
             return matches
 
         if not self._is_chain_start:
-            separator = input_string[0:matches[0].initiator.raw_start]
+            separator = input_string[0 : matches[0].initiator.raw_start]
             if separator:
                 return []
 
         j = 1
-        for i in range(0, len(matches) - 1):
-            separator = input_string[matches[i].initiator.raw_end:
-                                     matches[i + 1].initiator.raw_start]
+        for i in range(len(matches) - 1):
+            separator = input_string[matches[i].initiator.raw_end : matches[i + 1].initiator.raw_start]
             if separator:
                 break
             j += 1
@@ -254,23 +299,20 @@ class ChainPart(BasePattern):
             truncated = [m for m in truncated if m.match_index < self.repeater_end]
         return truncated
 
-    def _validate_repeater(self, matches):
+    def _validate_repeater(self, matches: list[Match]) -> None:
         max_match_index = -1
         if matches:
             max_match_index = max(m.match_index for m in matches)
         if max_match_index + 1 < self.repeater_start:
             raise _InvalidChainException
 
-    def chain(self):
+    def chain(self) -> ChainBuilder:
         """
-        Add patterns chain, using configuration from this chain
-
-        :return:
-        :rtype:
+        Nest another patterns chain, using configuration from this chain.
         """
-        return self._chain.chain()
+        return self._builder.chain()
 
-    def hidden(self, hidden=True):
+    def hidden(self, hidden: bool = True) -> ChainPart:
         """
         Hide chain part results from global chain result
 
@@ -283,7 +325,7 @@ class ChainPart(BasePattern):
         return self
 
     @property
-    def is_hidden(self):
+    def is_hidden(self) -> bool:
         """
         Check if the chain part is hidden
         :return:
@@ -291,55 +333,34 @@ class ChainPart(BasePattern):
         """
         return self._hidden
 
-    def regex(self, *pattern, **kwargs):
+    def regex(self, *pattern: Any, **kwargs: Any) -> ChainPart:
         """
-        Add re pattern
-
-        :param pattern:
-        :type pattern:
-        :param kwargs:
-        :type kwargs:
-        :return:
-        :rtype:
+        Add re pattern to the chain.
         """
-        return self._chain.regex(*pattern, **kwargs)
+        return self._builder.regex(*pattern, **kwargs)
 
-    def functional(self, *pattern, **kwargs):
+    def functional(self, *pattern: Any, **kwargs: Any) -> ChainPart:
         """
-        Add functional pattern
-
-        :param pattern:
-        :type pattern:
-        :param kwargs:
-        :type kwargs:
-        :return:
-        :rtype:
+        Add functional pattern to the chain.
         """
-        return self._chain.functional(*pattern, **kwargs)
+        return self._builder.functional(*pattern, **kwargs)
 
-    def string(self, *pattern, **kwargs):
+    def string(self, *pattern: Any, **kwargs: Any) -> ChainPart:
         """
-        Add string pattern
-
-        :param pattern:
-        :type pattern:
-        :param kwargs:
-        :type kwargs:
-        :return:
-        :rtype:
+        Add string pattern to the chain.
         """
-        return self._chain.string(*pattern, **kwargs)
+        return self._builder.string(*pattern, **kwargs)
 
-    def close(self):
+    def close(self) -> Any:
         """
         Close the chain builder to continue registering other patterns
 
         :return:
         :rtype:
         """
-        return self._chain.close()
+        return self._builder.close()
 
-    def repeater(self, value):
+    def repeater(self, value: Any) -> ChainPart:
         """
         Define the repeater of the current chain part.
 
@@ -355,17 +376,17 @@ class ChainPart(BasePattern):
             return self
         except ValueError:
             pass
-        if value == '+':
+        if value == "+":
             self.repeater_start = 1
             self.repeater_end = None
-        if value == '*':
+        if value == "*":
             self.repeater_start = 0
             self.repeater_end = None
-        elif value == '?':
+        elif value == "?":
             self.repeater_start = 0
             self.repeater_end = 1
         else:
-            match = re.match(r'\{\s*(\d*)\s*,?\s*(\d*)\s*\}', value)
+            match = re.match(r"\{\s*(\d*)\s*,?\s*(\d*)\s*\}", value)
             if match:
                 start = match.group(1)
                 end = match.group(2)
@@ -374,5 +395,5 @@ class ChainPart(BasePattern):
                     self.repeater_end = int(end) if end else None
         return self
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{self.pattern}({{{self.repeater_start},{self.repeater_end}}})"

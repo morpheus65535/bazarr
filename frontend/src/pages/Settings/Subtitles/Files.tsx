@@ -46,6 +46,15 @@ const SettingsSubtitlesFilesView: FunctionComponent = () => {
           disk (e.g., video.en.sdh.srt).
         </Message>
         <Check
+          label="Save Subtitles With M.49 Region Language Tags"
+          settingKey="settings-general-use_m49_language_tag"
+        ></Check>
+        <Message>
+          Write subtitles with UN M.49 region tags where one is mapped, for
+          example es-419 instead of es-MX for Latin American Spanish. Applies to
+          subtitles saved after this is enabled; existing files are not renamed.
+        </Message>
+        <Check
           label="Encode Subtitles To UTF-8"
           settingKey="settings-general-utf8_encode"
         ></Check>

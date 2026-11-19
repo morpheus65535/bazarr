@@ -16,7 +16,7 @@ from .sgr_state import _SGR_PATTERN
 
 # Text Sizing Protocol (OSC 66), https://sw.kovidgoyal.net/kitty/text-sizing-protocol/
 TEXT_SIZING_PATTERN = re.compile(
-    r'\x1b\]66;([^;\x07\x1b]*);([^\x07\x1b]*)(\x07|\x1b\\)'
+    r'\x1b\]66;([^;\x07\x1b]*)(?:;([^\x07\x1b]*))?(\x07|\x1b\\)'
 )
 
 # Zero-width escape sequences (SGR, OSC, CSI, etc.). This table, like INDETERMINATE_EFFECT_SEQUENCE,
@@ -24,8 +24,8 @@ TEXT_SIZING_PATTERN = re.compile(
 ZERO_WIDTH_PATTERN = re.compile(
     # CSI sequences
     r'\x1b\[[\x30-\x3f]*[\x20-\x2f]*[\x40-\x7e]|'
-    # OSC sequences, note that text sizing protocol (OSC 66) is special case in width() and clip(),
-    # and contrary to the variable name, it is positive width.
+    # OSC sequences; OSC 66 text sizing gets special handling in width() and clip() and has positive
+    # width, despite the ZERO_WIDTH_PATTERN name.
     r'\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)|'
     # APC sequences
     r'\x1b_[^\x1b\x07]*(?:\x07|\x1b\\)|'
@@ -33,8 +33,9 @@ ZERO_WIDTH_PATTERN = re.compile(
     r'\x1bP[^\x1b\x07]*(?:\x07|\x1b\\)|'
     # PM sequences
     r'\x1b\^[^\x1b\x07]*(?:\x07|\x1b\\)|'
-    # Character set designation (subset of nF, handled separately for clarity)
-    r'\x1b[()].|'
+    # Character set designation (subset of nF, handled separately for clarity).
+    # The final byte is (?s:.) so a newline terminates it like any other byte.
+    r'\x1b[()](?s:.)|'
     # nF sequences: ESC + one or more intermediate bytes (0x20-0x2F) + final byte (0x30-0x7E)
     r'\x1b[\x20-\x2f]+[\x30-\x7e]|'
     # Fe sequences (C1 controls)
@@ -44,6 +45,19 @@ ZERO_WIDTH_PATTERN = re.compile(
     # Fs sequences (independent functions)
     r'\x1b[\x60-\x7e]'
 )
+
+# TEXT_SIZING_PATTERN with named groups, shared by the two patterns below.
+_TEXT_SIZING_NAMED = (r'\x1b\]66;(?P<ts_meta>[^;\x07\x1b]*)'
+                      r'(?:;(?P<ts_text>[^\x07\x1b]*))?(?P<ts_term>\x07|\x1b\\)')
+
+# One alternation: a separate OSC 66 pass would splice the text around each removal.
+_STRIP_WITH_TEXT_SIZING = re.compile(_TEXT_SIZING_NAMED + '|' + ZERO_WIDTH_PATTERN.pattern)
+
+
+def _strip_repl(match: "re.Match[str]") -> str:
+    """Keep the inner text of an OSC 66 match, drop every other sequence."""
+    return match.group('ts_text') or ''
+
 
 # Cursor right movement: CSI [n] C, parameter may be parsed by width()
 CURSOR_RIGHT_SEQUENCE = re.compile(r'\x1b\[(\d*)C')
@@ -72,7 +86,7 @@ _SEQUENCE_CLASSIFY = re.compile(
     + '|' + CURSOR_HPA_SEQUENCE.pattern.replace('(', '(?P<hpa_n>', 1)
     + '|' + CURSOR_RIGHT_SEQUENCE.pattern.replace('(', '(?P<cforward_n>', 1)
     + '|' + CURSOR_LEFT_SEQUENCE.pattern.replace('(', '(?P<cbackward_n>', 1)
-    + '|' + r'\x1b\]66;(?P<ts_meta>[^;\x07\x1b]*);(?P<ts_text>[^\x07\x1b]*)(?P<ts_term>\x07|\x1b\\)'
+    + '|' + _TEXT_SIZING_NAMED
     + '|' + r'(?P<other_seq>(?:' + ZERO_WIDTH_PATTERN.pattern + '))'
 )
 
@@ -190,5 +204,5 @@ def strip_sequences(text: str) -> str:
         '[view]'
     """
     if '\x1b]66;' in text:
-        text = TEXT_SIZING_PATTERN.sub(r'\2', text)
+        return _STRIP_WITH_TEXT_SIZING.sub(_strip_repl, text)
     return ZERO_WIDTH_PATTERN.sub('', text)

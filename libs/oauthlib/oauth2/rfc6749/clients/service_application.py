@@ -17,7 +17,7 @@ from .base import Client
 class ServiceApplicationClient(Client):
     """A public client utilizing the JWT bearer grant.
 
-    JWT bearer tokes can be used to request an access token when a client
+    JWT bearer tokens can be used to request an access token when a client
     wishes to utilize an existing trust relationship, expressed through the
     semantics of (and digital signature or keyed message digest calculated
     over) the JWT, without a direct user approval step at the authorization

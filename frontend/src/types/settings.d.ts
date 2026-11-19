@@ -88,6 +88,7 @@ declare namespace Settings {
     use_sonarr: boolean;
     use_sportarr: boolean;
     utf8_encode: boolean;
+    use_m49_language_tag: boolean;
     wanted_search_frequency: number;
     wanted_search_frequency_movie: number;
     use_external_webhook?: boolean;
@@ -125,6 +126,11 @@ declare namespace Settings {
     username?: string;
     password?: string;
     apikey: string;
+    oidc_issuer?: string;
+    oidc_client_id?: string;
+    oidc_client_secret_file?: string;
+    oidc_redirect_uri?: string;
+    oidc_allowed_subjects?: string[];
   }
 
   interface Subsync {
@@ -141,6 +147,7 @@ declare namespace Settings {
     quality_min_score: number;
     quality_max_offset_seconds: number;
     quality_max_framerate_deviation: number;
+    concurrent_syncs: number;
   }
 
   interface Analytic {
@@ -215,6 +222,14 @@ declare namespace Settings {
     gemini_batch_size: number;
     lingarr_url: string;
     lingarr_token: string;
+    lingarr_timeout: number;
+    openai_base_url: string;
+    openai_model: string;
+    openai_api_key: string;
+    openai_batch_size: number;
+    openai_timeout: number;
+    translate_fallback_enabled: boolean;
+    translate_fallback_source_language: string;
     translator_info: boolean;
     translator_type: string;
   }

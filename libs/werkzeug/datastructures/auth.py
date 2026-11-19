@@ -100,11 +100,13 @@ class Authorization:
 
         scheme, _, rest = value.partition(" ")
         scheme = scheme.lower()
-        rest = rest.strip()
+        rest = rest.strip(" \t")
 
         if scheme == "basic":
             try:
-                username, _, password = base64.b64decode(rest).decode().partition(":")
+                username, _, password = (
+                    base64.b64decode(rest, validate=True).decode().partition(":")
+                )
             except (binascii.Error, UnicodeError):
                 return None
 
@@ -281,7 +283,7 @@ class WWWAuthenticate:
 
         scheme, _, rest = value.partition(" ")
         scheme = scheme.lower()
-        rest = rest.strip()
+        rest = rest.strip(" \t")
 
         if "=" in rest.rstrip("="):
             # = that is not trailing, this is parameters.

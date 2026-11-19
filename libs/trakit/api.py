@@ -6,19 +6,22 @@ from trakit.patterns import configure
 
 
 class TrakItApi:
-
-    def __init__(self, config: typing.Optional[typing.Mapping[str, typing.Any]] = None):
+    def __init__(self, config: typing.Mapping[str, typing.Any] | None = None):
         self.rebulk = configure(Config(config))
 
-    def trakit(self, string: str, options: typing.Optional[typing.Mapping[str, typing.Any]] = None):
+    def trakit(
+        self, string: str, options: typing.Mapping[str, typing.Any] | None = None
+    ) -> typing.Mapping[str | None, typing.Any]:
         """Return a mapping of extracted information."""
         matches = self.rebulk.matches(string, Context(options))
-        guess: typing.Mapping[str, typing.Any] = matches.to_dict()
+        guess: typing.Mapping[str | None, typing.Any] = matches.to_dict()
         return guess
 
 
 default_api = TrakItApi()
 
 
-def trakit(string: str, options: typing.Optional[typing.Mapping[str, typing.Any]] = None):
+def trakit(
+    string: str, options: typing.Mapping[str, typing.Any] | None = None
+) -> typing.Mapping[str | None, typing.Any]:
     return default_api.trakit(string, options)

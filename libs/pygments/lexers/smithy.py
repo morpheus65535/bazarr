@@ -31,7 +31,7 @@ class SmithyLexer(RegexLexer):
     simple_shapes = (
         'use', 'byte', 'short', 'integer', 'long', 'float', 'document',
         'double', 'bigInteger', 'bigDecimal', 'boolean', 'blob', 'string',
-        'timestamp',
+        'timestamp', 'enum', 'intEnum',  # enum/intEnum are IDL 2.0 shapes
     )
 
     aggregate_shapes = (
@@ -44,8 +44,9 @@ class SmithyLexer(RegexLexer):
             (r'///.*$', Comment.Multiline),
             (r'//.*$', Comment),
             (r'@[0-9a-zA-Z\.#-]*', Name.Decorator),
+            (r'(:=)', Name.Decorator),  # inline structure / operation shape operator
             (r'(=)', Name.Decorator),
-            (r'^(\$version)(:)(.+)',
+            (r'^(\$[A-Za-z_][A-Za-z0-9_]*)(:)(.+)',
                 bygroups(Keyword.Declaration, Name.Decorator, Name.Class)),
             (r'^(namespace)(\s+' + identifier + r')\b',
                 bygroups(Keyword.Declaration, Name.Class)),
@@ -60,6 +61,9 @@ class SmithyLexer(RegexLexer):
                          Whitespace, Name.Decorator)),
             (r"(true|false|null)", Keyword.Constant),
             (r"(-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?)", Number),
+            (r'\b(with|for)\b', Keyword.Declaration),  # mixin / resource binding keywords
+            # Target elision: the leading "$" marks an elided member, e.g. "$id"
+            (r'(\$)(' + identifier + r')', bygroups(Name.Decorator, Name.Variable.Class)),
             (identifier + ":", Name.Label),
             (identifier, Name.Variable.Class),
             (r'\[', Text, "#push"),
@@ -68,7 +72,9 @@ class SmithyLexer(RegexLexer):
             (r'\)', Text, "#pop"),
             (r'\{', Text, "#push"),
             (r'\}', Text, "#pop"),
-            (r'"{3}(\\\\|\n|\\")*"{3}', String.Doc),
+            # Text block: """...""", spanning escapes, lone 1-2 quotes, and any
+            # other character up to the closing triple quote.
+            (r'"""(?:\\.|"{1,2}(?!")|[^"\\])*"""', String.Doc),
             (r'"(\\\\|\n|\\"|[^"])*"', String.Double),
             (r"'(\\\\|\n|\\'|[^'])*'", String.Single),
             (r'[:,]+', Punctuation),

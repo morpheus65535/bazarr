@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import importlib
 import os
+from collections.abc import Callable
 from contextlib import suppress
-from typing import Callable
 from typing import TYPE_CHECKING
 
 from dynaconf import constants as ct
@@ -14,9 +14,10 @@ from dynaconf.loaders import py_loader
 from dynaconf.loaders import toml_loader
 from dynaconf.loaders import yaml_loader
 from dynaconf.loaders.base import SourceMetadata
+from dynaconf.nodes import DataDict
 from dynaconf.utils import deduplicate
 from dynaconf.utils import ensure_a_list
-from dynaconf.utils.boxing import DynaBox
+from dynaconf.utils import to_dict
 from dynaconf.utils.files import get_local_filename
 from dynaconf.utils.files import glob
 from dynaconf.utils.files import has_magic
@@ -70,7 +71,7 @@ def default_loader(obj, defaults=None):
     )
 
     for key in all_keys:
-        if key not in default_settings_values.keys():
+        if key not in default_settings_values:
             continue
 
         env_value = obj.get_environ(
@@ -100,11 +101,13 @@ def execute_module_hooks(
     hook, obj, env=None, silent=True, key=None, modules=None, files=None
 ):
     """Execute dynaconf_hooks from module or filepath."""
+    config = obj.__core__.config
+
     if hook not in ["post"]:
         raise ValueError(f"hook {hook} not supported yet.")
 
     # try to load hooks using python module __name__
-    modules = modules or obj._loaded_py_modules
+    modules = modules or config.loaded_py_modules
     for loaded_module in modules:
         hook_module_name = ".".join(
             loaded_module.split(".")[:-1] + ["dynaconf_hooks"]
@@ -123,7 +126,7 @@ def execute_module_hooks(
             )
 
     # Try to load from python filename path
-    files = files or obj._loaded_files
+    files = files or config.loaded_files
     for loaded_file in files:
         hook_file = os.path.join(
             os.path.dirname(loaded_file), "dynaconf_hooks.py"
@@ -170,6 +173,7 @@ def _run_hook_module(hook_type, hook_module, obj, key=""):
     Given a @hook_type, a @hook_module and a settings @obj, load the function
     and execute it if found.
     """
+    config = obj.__core__.config
 
     # check errors
     if hook_module and getattr(hook_module, "_error", False):
@@ -181,7 +185,7 @@ def _run_hook_module(hook_type, hook_module, obj, key=""):
     hook_func = getattr(hook_module, hook_type, None)
     if hook_func:
         identifier = _get_unique_hook_id(hook_func, hook_source)
-        if hook_type not in obj._loaded_hooks.get(identifier, {}):
+        if hook_type not in config.loaded_hooks.get(identifier, {}):
             _run_hook_function(obj, hook_type, hook_func, hook_source, key)
 
 
@@ -198,6 +202,7 @@ def _run_hook_function(
     It execute @hook_func, update the results into settings @obj and
     add it to _loaded_hook registry ([@hook_source][@hook_type])
     """
+    config = obj.__core__.config
     # if the function has a _dynaconf_hook_source attribute set
     # hook_source to it
     hook_source = getattr(hook_func, "_dynaconf_hook_source", hook_source)
@@ -239,7 +244,7 @@ def _run_hook_function(
             )
 
     # add to registry
-    obj._loaded_hooks[identifier][hook_type] = hook_dict
+    config.loaded_hooks[identifier][hook_type] = hook_dict
 
 
 def settings_loader(
@@ -260,8 +265,8 @@ def settings_loader(
     :param silent: Boolean to raise loading errors
     :param key: Load a single key if provided
     :param filename: optional filename to override the settings_module
-    :param validate: If True validate the loaded data
-    :param identifier: A string or SourceMetadata to identify the loader
+    :param validate: Validate the loaded data
+    :param identifier: Loader identifier
     """
     if filename is None:
         settings_module = settings_module or obj.settings_module
@@ -366,7 +371,7 @@ def settings_loader(
 def load_from_env_named_file(obj, env, key, validate, identifier, mod_file):
     """Load from env named file e.g: development_settings.py"""
     if mod_file.endswith(".py"):
-        if ".secrets.py" == mod_file:
+        if mod_file == ".secrets.py":
             tmpl = ".{0}_{1}{2}"
             mod_file = "secrets.py"
         else:
@@ -439,7 +444,7 @@ def write(filename, data, env=None, merge=False):
     if not loader:
         raise OSError(f"{loader_name} cannot be found.")
 
-    data = DynaBox(data, box_settings={}).to_dict()
+    data = to_dict(DataDict(data, box_settings={}))
     if loader is not py_loader and env and env not in data:
         data = {env: data}
 

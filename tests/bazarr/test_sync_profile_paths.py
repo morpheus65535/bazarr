@@ -439,7 +439,6 @@ def test_sync_subtitles_handles_malformed_percent_score(monkeypatch):
     monkeypatch.setattr(subtitle_sync.settings.subsync, "use_subsync_movie_threshold", True)
     monkeypatch.setattr(subtitle_sync.settings.subsync, "subsync_movie_threshold", "80")
     monkeypatch.setattr(subtitle_sync, "_create_subsyncer", SubSyncer)
-    monkeypatch.setattr(subtitle_sync.gc, "collect", lambda: None)
     monkeypatch.setattr(
         subtitle_sync.jobs_queue,
         "update_job_name",
@@ -474,7 +473,6 @@ def test_sync_subtitles_falls_back_for_invalid_threshold(monkeypatch):
     monkeypatch.setattr(subtitle_sync.settings.subsync, "use_subsync_movie_threshold", True)
     monkeypatch.setattr(subtitle_sync.settings.subsync, "subsync_movie_threshold", "abc")
     monkeypatch.setattr(subtitle_sync, "_create_subsyncer", SubSyncer)
-    monkeypatch.setattr(subtitle_sync.gc, "collect", lambda: None)
     monkeypatch.setattr(
         subtitle_sync.jobs_queue,
         "update_job_name",
@@ -510,7 +508,6 @@ def test_sync_subtitles_reads_default_sync_options_at_call_time(monkeypatch):
     monkeypatch.setattr(subtitle_sync.settings.subsync, "gss", True)
     monkeypatch.setattr(subtitle_sync.settings.subsync, "no_fix_framerate", True)
     monkeypatch.setattr(subtitle_sync, "_create_subsyncer", SubSyncer)
-    monkeypatch.setattr(subtitle_sync.gc, "collect", lambda: None)
     monkeypatch.setattr(subtitle_sync.jobs_queue, "update_job_name", lambda **kwargs: None)
 
     result = subtitle_sync.sync_subtitles(

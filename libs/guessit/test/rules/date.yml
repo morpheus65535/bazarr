@@ -7,9 +7,14 @@
 
 ? +31.01.15
 ? +31.01.2015
-? +15.01.31
 ? +2015.01.31
 : date: 2015-01-31
+
+# valid_year upper bound widened to 2035 (#646/#815): for this fully ambiguous
+# 2-digit date both 15 and 31 are plausible years, and 2031 is now valid, so
+# dateutil resolves it day-first (15 Jan 2031).
+? +15.01.31
+: date: 2031-01-15
 
 ? +01.02.03
 : date: 2003-02-01

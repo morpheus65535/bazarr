@@ -1,20 +1,18 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
-# pylint: disable=pointless-statement, missing-docstring, invalid-name,len-as-condition
 
 from functools import partial
 
 from rebulk.pattern import StringPattern
 
-from ..validators import chars_before, chars_after, chars_surround, validators
+from ..validators import chars_after, chars_before, chars_surround, validators
 
-chars = ' _.'
+chars = " _."
 left = partial(chars_before, chars)
 right = partial(chars_after, chars)
 surrounding = partial(chars_surround, chars)
 
 
-def test_left_chars():
+def test_left_chars() -> None:
     matches = list(StringPattern("word", validator=left).matches("xxxwordxxx"))
     assert len(matches) == 0
 
@@ -25,7 +23,7 @@ def test_left_chars():
     assert len(matches) == 1
 
 
-def test_right_chars():
+def test_right_chars() -> None:
     matches = list(StringPattern("word", validator=right).matches("xxxwordxxx"))
     assert len(matches) == 0
 
@@ -36,7 +34,7 @@ def test_right_chars():
     assert len(matches) == 1
 
 
-def test_surrounding_chars():
+def test_surrounding_chars() -> None:
     matches = list(StringPattern("word", validator=surrounding).matches("xxxword xxx"))
     assert len(matches) == 0
 
@@ -50,7 +48,7 @@ def test_surrounding_chars():
     assert len(matches) == 1
 
 
-def test_chain():
+def test_chain() -> None:
     matches = list(StringPattern("word", validator=validators(left, right)).matches("xxxword xxx"))
     assert len(matches) == 0
 

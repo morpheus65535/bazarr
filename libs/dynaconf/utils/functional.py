@@ -5,11 +5,17 @@ import operator
 
 
 class Empty:
-    def __str__(self):
+    __slots__ = ()
+
+    def __repr__(self):
         return "EMPTY"
 
 
 empty = Empty()
+
+
+def is_lazy(value):
+    return bool(getattr(value, "_dynaconf_lazy_format", False))
 
 
 def new_method_proxy(func):
@@ -61,7 +67,7 @@ class LazyObject:
             raise TypeError(f"can't delete {name}.")
         if self._wrapped is empty:
             self._setup()
-        delattr(self._wrapped, name)
+        delattr(self._wrapped, name.upper())
 
     def _setup(self):
         """

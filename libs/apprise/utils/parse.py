@@ -43,6 +43,24 @@ VALID_URL_RE = re.compile(
 )
 VALID_QUERY_RE = re.compile(r"^(?P<path>.*[/\\])(?P<query>[^/\\]+)?$")
 
+# RFC 3986 path characters that are safe to leave unencoded when we
+# quote() a URL path. This is the pchar sub-delims set minus comma and
+# semicolon, which Apprise reserves as its own list delimiters. Shared by
+# parse_url() below and by every url() implementation that re-quotes a
+# previously parsed fullpath, so a literal path character (such as the
+# '@' in a jsDelivr version selector) is never re-percent-encoded when a
+# URL is reconstructed.
+URL_PATH_SAFE_CHARS = "/:@!$&'()*+="
+
+# The same characters without the slash, for quoting one path segment.
+# An encoded slash (%2F) inside a segment then stays encoded.
+URL_SEGMENT_SAFE_CHARS = URL_PATH_SAFE_CHARS.replace("/", "")
+
+# The same characters plus '%', for quoting a path that is already
+# percent-encoded (the way parse_url() returns it).  Existing escapes
+# such as %20 or %2F are kept instead of being encoded a second time.
+URL_ENCODED_PATH_SAFE_CHARS = URL_PATH_SAFE_CHARS + "%"
+
 # delimiters used to separate values when content is passed in by string.
 # This is useful when turning a string into a list
 STRING_DELIMITERS = r"[\[\]\;,\s]+"
@@ -79,8 +97,8 @@ URL_DETAILS_RE = re.compile(
 #   - user@example.com
 #   - label+user@example.com
 GET_EMAIL_RE = re.compile(
-    r'(([\s"\']+)?(?P<name>[^:<\'"]+)?[:<\s\'"]+)?'
-    r"(?P<full_email>((?P<label>[^+]+)\+)?"
+    r'(([\s"\']{0,32})?(?P<name>[^:<\'"]{0,128})?[:<\s\'"]{1,32})?'
+    r"(?P<full_email>((?P<label>[^+\s]{1,128})\+)?"
     r"(?P<email>(?P<userid>[a-z0-9_!#$%&*/=?%`{|}~^-]+"
     r"(?:\.[a-z0-9_!#$%&\'*/=?%`{|}~^-]+)"
     r"*)@(?P<domain>("
@@ -95,9 +113,11 @@ GET_EMAIL_RE = re.compile(
 # rougly conforms to a phone number before we parse it further
 IS_PHONE_NO = re.compile(r"^\+?(?P<phone>[0-9\s)(+-]+)\s*$")
 
-# Regular expression used to destinguish between multiple phone numbers
+# Regular expression used to destinguish between multiple phone numbers.
 PHONE_NO_DETECTION_RE = re.compile(
-    r"\s*([+(\s]*[0-9][0-9()\s-]+[0-9])(?=$|[\s,+(]+[0-9])", re.I
+    r"((?:[+(][+(\s]{0,32})?[0-9][0-9()\s-]{1,32}[0-9])"
+    r"(?=$|[\s,+(]+[0-9])",
+    re.I,
 )
 
 IS_DOMAIN_SERVICE_TARGET = re.compile(
@@ -109,14 +129,14 @@ IS_DOMAIN_SERVICE_TARGET = re.compile(
 DOMAIN_SERVICE_TARGET_DETECTION_RE = re.compile(
     r"\s*((?:[a-z0-9_-]+\.)?[a-z0-9_-]+"
     r"(?::(?:[a-z0-9_-]+(?:,+[a-z0-9_-]+)+?))?)"
-    r"(?=$|(?:\s|,+\s|\s,+)+(?:[a-z0-9_-]+\.)?[a-z0-9_-]+)",
+    r"(?=$|[\s,]+(?:[a-z0-9_-]+\.)?[a-z0-9_-]+)",
     re.I,
 )
 
-# Support for prefix: (string followed by colon) infront of phone no
+# Support for prefix: (string followed by colon) infront of phone no.
 PHONE_NO_WPREFIX_DETECTION_RE = re.compile(
-    r"\s*((?:[a-z]+:)?[+(\s]*[0-9][0-9()\s-]+[0-9])"
-    r"(?=$|(?:[a-z]+:)?[\s,+(]+[0-9])",
+    r"((?:[a-z]{1,32}:)?(?:[+(][+(\s]{0,32})?[0-9][0-9()\s-]{1,32}[0-9])"
+    r"(?=$|(?:[a-z]{1,32}:)?[\s,+(]+[0-9])",
     re.I,
 )
 
@@ -135,15 +155,25 @@ CALL_SIGN_DETECTION_RE = re.compile(
     re.I,
 )
 
-# Regular expression used to destinguish between multiple URLs
+# Regular expression used to destinguish between multiple URLs.
 URL_DETECTION_RE = re.compile(
-    r"([a-z0-9]+?:\/\/.*?)(?=$|[\s,]+[a-z0-9]{1,32}?:\/\/)", re.I
+    r"([a-z0-9]+?:\/\/.*?)(?=$|[\s,;]{1,32}[a-z0-9]{1,32}?:\/\/)", re.I
 )
 
+# No leading separator; first-char anchors make separator positions O(1)-fail
+# so findall skips them without any backtracking blowup.
 EMAIL_DETECTION_RE = re.compile(
-    r"[\s,]*([^@]+@.*?)(?=$|[\s,]+"
-    r"(?:[^:<]+?[:<\s]+?)?"
-    r"[^@\s,]+@[^\s,]+)",
+    r"("
+    # Angle-bracketed: bounded display name then <local@domain>
+    r"(?=[^\s,;])"
+    r'(?:"(?:[^"\\]|\\.){0,256}"|[^<>"@,;\r\n]){0,256}?'
+    r"<[^@>\r\n]{1,64}@"
+    r"(?:[a-z0-9][a-z0-9_-]{0,62}\.){1,10}[a-z]{2,63}>"
+    r"|"
+    # Bare email: non-space/non-separator first char, then local@domain
+    r"[^\s@,;\r\n][^@,;\r\n]{0,255}"
+    r"@(?:[a-z0-9][a-z0-9_-]{0,62}\.){1,10}[a-z]{2,63}"
+    r")",
     re.IGNORECASE,
 )
 
@@ -155,6 +185,9 @@ UUID4_RE = re.compile(
 
 # Validate if we're a loadable Python file or not
 VALID_PYTHON_FILE_RE = re.compile(r".+\.py(o|c)?$", re.IGNORECASE)
+
+# Keys created exclusively by full-mode (simple=False) parse_qsd() calls.
+QSD_FULL_MODE_KEYS = ("qsd+", "qsd-", "qsd:")
 
 # validate_regex() utilizes this mapping to track and re-use pre-complied
 # regular expressions
@@ -183,8 +216,28 @@ def is_ipaddr(addr, ipv4=True, ipv6=True):
         # IPV6 URLs should be enclosed in square brackets when placed on a URL
         #   Source: https://tools.ietf.org/html/rfc2732
         #   - For this reason, they are additionally checked for existance
+        #
+        # The brackets are taken off before matching so that the pattern
+        # below can be anchored at both ends. Anchoring matters: without a
+        # closing anchor the pattern is happy to match just the leading
+        # part of an address and hand that shortened value back, so
+        # something like 2001:db8::1 would come back as 2001:db8:: and
+        # point at a completely different machine.
+        ip = addr
+        if ip[:1] == "[":
+            if ip[-1:] != "]":
+                # Brackets have to come in pairs
+                return False
+
+            # Drop the brackets so the address can be matched on its own
+            ip = ip[1:-1]
+
+        elif ip[-1:] == "]":
+            # Brackets have to come in pairs
+            return False
+
         re_ipv6 = re.compile(
-            r"\[?(?P<ip>(([0-9a-f]{1,4}:){7,7}[0-9a-f]{1,4}|([0-9a-f]{1,4}:)"
+            r"^(?P<ip>(([0-9a-f]{1,4}:){7,7}[0-9a-f]{1,4}|([0-9a-f]{1,4}:)"
             r"{1,7}:|([0-9a-f]{1,4}:){1,6}:[0-9a-f]{1,4}|([0-9a-f]{1,4}:){1,5}"
             r"(:[0-9a-f]{1,4}){1,2}|([0-9a-f]{1,4}:){1,4}"
             r"(:[0-9a-f]{1,4}){1,3}|([0-9a-f]{1,4}:){1,3}"
@@ -196,11 +249,11 @@ def is_ipaddr(addr, ipv4=True, ipv6=True):
             r"|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|"
             r"1{0,1}[0-9]){0,1}[0-9])|([0-9a-f]{1,4}:){1,4}:((25[0-5]|"
             r"(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|"
-            r"1{0,1}[0-9]){0,1}[0-9])))\]?",
+            r"1{0,1}[0-9]){0,1}[0-9])))$",
             re.I,
         )
 
-        match = re_ipv6.match(addr)
+        match = re_ipv6.match(ip)
         if match is not None:
             # Return our matched IP between square brackets since that is
             # required for URL formatting as per RFC 2732.
@@ -517,19 +570,10 @@ def parse_qsd(qs, simple=False, plus_to_space=False, sanitize=True):
 
     # Our return result set:
     result = (
-        {
-            # The arguments passed in (the parsed query). This is in a
-            # dictionary of {'key': 'val', etc }.  Keys are all made lowercase
-            # before storing to simplify access to them.
-            "qsd": {},
-            # Detected Entries that start with + or - are additionally stored
-            # in these values (un-touched).  The :,+,- however are stripped
-            # from their name before they are stored here.
-            "qsd+": {},
-            "qsd-": {},
-            "qsd:": {},
-        }
+        # Full mode: create the base qsd dict plus all extended qsd dicts.
+        {"qsd": {}, **{k: {} for k in QSD_FULL_MODE_KEYS}}
         if not simple
+        # Simple mode: only the base qsd dict.
         else {"qsd": {}}
     )
 
@@ -724,11 +768,26 @@ def parse_url(
     # Now do a proper extraction of data; http:// is just substitued in place
     # to allow urlparse() to function as expected, we'll swap this back to the
     # expected schema after.
-    parsed = urlparse(f"http://{host}")
+    try:
+        parsed = urlparse(f"http://{host}")
+
+    except ValueError:
+        # urlparse() raises ValueError on malformed authority content such
+        # as an unmatched '[' from Markdown link syntax ("Invalid IPv6
+        # URL"). Honor the documented contract and treat it as unparseable.
+        return None
 
     # Parse results
     result["host"] = parsed[1].strip()
-    result["fullpath"] = quote(unquote(tidy_path(parsed[2].strip())))
+    # Preserve RFC 3986 path characters used literally by some services.
+    # Keep commas and semicolons encoded because Apprise uses them as
+    # delimiters.  Each segment is decoded and re-encoded on its own so
+    # an encoded slash (%2F) stays part of its segment instead of
+    # becoming a separator.
+    result["fullpath"] = "/".join(
+        quote(unquote(segment), safe=URL_SEGMENT_SAFE_CHARS)
+        for segment in tidy_path(parsed[2].strip()).split("/")
+    )
 
     try:
         # Handle trailing slashes removed by tidy_path
@@ -1013,7 +1072,7 @@ def parse_emails(*args, store_unparseable=True, **kwargs):
     result = []
     for arg in args:
         if isinstance(arg, str) and arg:
-            result_ = EMAIL_DETECTION_RE.findall(arg)
+            result_ = EMAIL_DETECTION_RE.findall(arg) if "@" in arg else []
             if result_:
                 result += result_
 
@@ -1123,13 +1182,15 @@ def urlencode(query, doseq=False, safe="", encoding=None, errors=None):
 
 
 def parse_urls(*args, store_unparseable=True, **kwargs):
-    """Takes a string containing URLs separated by comma's and/or spaces and
-    returns a list."""
+    """Takes a string containing URLs separated by commas, semicolons and/or
+    spaces and returns a list."""
 
     result = []
     for arg in args:
         if isinstance(arg, str) and arg:
-            result_ = URL_DETECTION_RE.findall(arg)
+            result_ = (
+                URL_DETECTION_RE.findall(arg.rstrip()) if "://" in arg else []
+            )
             if result_:
                 result += result_
 

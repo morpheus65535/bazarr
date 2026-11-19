@@ -30,6 +30,7 @@ from shutil import move
 
 from utilities.text_list import parse_text_list_or_default
 
+from .form_sessions import revoke_all_form_sessions
 from .get_args import args
 
 NoneType = type(None)
@@ -141,6 +142,7 @@ validators = [
     Validator('general.use_embedded_subs', must_exist=True, default=True, is_type_of=bool),
     Validator('general.embedded_subs_show_desired', must_exist=True, default=True, is_type_of=bool),
     Validator('general.utf8_encode', must_exist=True, default=True, is_type_of=bool),
+    Validator('general.use_m49_language_tag', must_exist=True, default=False, is_type_of=bool),
     Validator('general.ignore_pgs_subs', must_exist=True, default=False, is_type_of=bool),
     Validator('general.ignore_vobsub_subs', must_exist=True, default=False, is_type_of=bool),
     Validator('general.ignore_ass_subs', must_exist=True, default=False, is_type_of=bool),
@@ -195,9 +197,14 @@ validators = [
     # auth section
     Validator('auth.apikey', must_exist=True, default=hexlify(os.urandom(16)).decode(), is_type_of=str),
     Validator('auth.type', must_exist=True, default=None, is_type_of=(NoneType, str),
-              is_in=[None, 'basic', 'form']),
+              is_in=[None, 'basic', 'form', 'oidc']),
     Validator('auth.username', must_exist=True, default='', is_type_of=str, cast=str),
     Validator('auth.password', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('auth.oidc_issuer', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('auth.oidc_client_id', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('auth.oidc_client_secret_file', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('auth.oidc_redirect_uri', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('auth.oidc_allowed_subjects', must_exist=True, default=[], is_type_of=list),
 
     # cors section
     Validator('cors.enabled', must_exist=True, default=False, is_type_of=bool),
@@ -220,6 +227,14 @@ validators = [
     Validator('translator.translator_type', must_exist=True, default='google_translate', is_type_of=str, cast=str),
     Validator('translator.lingarr_url', must_exist=True, default='http://lingarr:9876', is_type_of=str),
     Validator('translator.lingarr_token', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('translator.lingarr_timeout', must_exist=True, default=1920, is_type_of=int, gte=1),
+    Validator('translator.openai_base_url', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('translator.openai_model', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('translator.openai_api_key', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('translator.openai_batch_size', must_exist=True, default=12, is_type_of=int, gte=1),
+    Validator('translator.openai_timeout', must_exist=True, default=180, is_type_of=int, gte=1),
+    Validator('translator.translate_fallback_enabled', must_exist=True, default=False, is_type_of=bool),
+    Validator('translator.translate_fallback_source_language', must_exist=True, default='en', is_type_of=str, cast=str),
 
     # sonarr section
     Validator('sonarr.ip', must_exist=True, default='127.0.0.1', is_type_of=str),
@@ -439,6 +454,10 @@ validators = [
     Validator('jimaku.enable_archives_download', must_exist=True, default=False, is_type_of=bool),
     Validator('jimaku.enable_ai_subs', must_exist=True, default=False, is_type_of=bool),
 
+    # prijevodionline section
+    Validator('prijevodionline.api_key', must_exist=True, default='', is_type_of=str),
+    Validator('prijevodionline.allow_paid_translations', must_exist=True, default=False, is_type_of=bool),
+
     # titlovi section
     Validator('titlovi.username', must_exist=True, default='', is_type_of=str, cast=str),
     Validator('titlovi.password', must_exist=True, default='', is_type_of=str, cast=str),
@@ -496,6 +515,7 @@ validators = [
               is_in=[5, 10, 15, 20, 30, 45, 60, 120, 300, 600]),
     Validator('subsync.quality_max_framerate_deviation', must_exist=True, default=0.1, is_type_of=(int, float),
               is_in=[0.05, 0.1, 0.15, 0.2, 0.3]),
+    Validator('subsync.concurrent_syncs', must_exist=True, default=1, is_type_of=int, gte=1),
 
     # postgresql section
     Validator('postgresql.enabled', must_exist=True, default=False, is_type_of=bool),
@@ -616,7 +636,8 @@ base_url = settings.general.base_url.rstrip('/')
 
 ignore_keys = ['flask_secret_key']
 
-array_keys = ['excluded_tags',
+array_keys = ['oidc_allowed_subjects',
+              'excluded_tags',
               'exclude',
               'included_codecs',
               'subzero_mods',
@@ -639,7 +660,8 @@ array_keys = ['excluded_tags',
 
 empty_values = ['', 'None', 'null', 'undefined', None, []]
 
-str_keys = ['chmod', 'log_include_filter', 'log_exclude_filter', 'password', 'f_password', 'hashed_password']
+str_keys = ['chmod', 'log_include_filter', 'log_exclude_filter', 'password', 'f_password', 'hashed_password',
+            'oidc_issuer', 'oidc_client_id', 'oidc_client_secret_file', 'oidc_redirect_uri']
 float_keys = ['quality_min_score', 'quality_max_framerate_deviation']
 
 # Increase Sonarr and Radarr sync interval since we now use SignalR feed to update in real time
@@ -746,6 +768,7 @@ def save_settings(settings_items):
     audio_tracks_parsing_changed = False
     reset_providers = False
     language_equals_changed = False
+    revoke_form_sessions = False
 
     # Subzero Mods
     update_subzero = False
@@ -777,7 +800,7 @@ def save_settings(settings_items):
                         pass
 
         # Make sure empty language list are stored correctly
-        if settings_keys[-1] in array_keys and value[0] in empty_values:
+        if settings_keys[-1] in array_keys and (not value or value[0] in empty_values):
             value = []
 
         # Handle path mappings settings since they are array in array
@@ -811,6 +834,17 @@ def save_settings(settings_items):
 
         if key == 'settings-general-instance_name' and value == '':
             value = None
+
+        # Credential or auth type changes invalidate every form login session. The UI only submits
+        # fields the user edited, so a submitted value that differs from the stored one is a real change.
+        if key == 'settings-auth-username' and value != settings.auth.username:
+            revoke_form_sessions = True
+        elif key == 'settings-auth-type' and value != settings.auth.type:
+            revoke_form_sessions = True
+        elif key == 'settings-auth-password' and value is not None and value != settings.auth.password:
+            revoke_form_sessions = True
+        elif key.startswith('settings-auth-oidc_') and value != settings.auth.get(settings_keys[-1]):
+            revoke_form_sessions = True
 
         if key == 'settings-auth-password':
             if value != settings.auth.password and value is not None:
@@ -915,6 +949,10 @@ def save_settings(settings_items):
             if value != settings.subsource.apikey:
                 reset_providers = True
 
+        if key == 'settings-prijevodionline-api_key':
+            if value != settings.prijevodionline.api_key:
+                reset_providers = True
+
         if reset_providers:
             from .get_providers import reset_throttled_providers
             reset_throttled_providers(only_auth_or_conf_error=True)
@@ -1004,11 +1042,20 @@ def save_settings(settings_items):
     try:
         settings.validators.validate()
         validate_log_regex()
+        if settings.auth.type == 'oidc':
+            from .oidc import validate_oidc_configuration
+            try:
+                validate_oidc_configuration(settings.auth, settings.general.base_url)
+            except ValueError as error:
+                raise ValidationError(str(error)) from error
     except ValidationError:
         settings.reload()
         raise
     else:
         write_config()
+
+        if revoke_form_sessions:
+            revoke_all_form_sessions()
 
         # Set the configured state based on config.yaml file existence
         from .database import database, update, System
@@ -1145,7 +1192,54 @@ def sync_checker(subtitle):
         return False
 
 
-# Plex OAuth Migration Functions
+# Providers renamed upstream, mapping previous key to new key. Enabled providers matching a key are
+# replaced by the value at startup so users keep their selection after a rename.
+RENAMED_PROVIDERS: dict[str, str] = {
+    'animetosho_xyz': 'animetosho_net',
+    'gestdown': 'subvault'
+}
+
+
+def rename_enabled_providers(enabled_providers: list[str], renamed_providers: dict[str, str]) -> list[str]:
+    """
+    Return the enabled providers list with renamed provider keys replaced by their new names.
+
+    Order is preserved. If a renamed provider and its new name are both present, the new name is kept once.
+
+    :param enabled_providers: Current list of enabled provider keys.
+    :param renamed_providers: Mapping of previous provider key to new provider key.
+    :return: A new list with renamed keys replaced and duplicates removed.
+    """
+    result: list[str] = []
+    for name in enabled_providers:
+        new_name = renamed_providers.get(name, name)
+        if new_name not in result:
+            result.append(new_name)
+    return result
+
+
+def migrate_renamed_providers() -> None:
+    """
+    Replace renamed providers in ``settings.general.enabled_providers`` using ``RENAMED_PROVIDERS``.
+
+    The configuration is only written when the list actually changes. This must run before the
+    deprecated providers filter at startup, otherwise renamed providers are dropped instead of migrated.
+
+    :return: None
+    """
+    enabled_providers = settings.general.enabled_providers
+    if not isinstance(enabled_providers, list):
+        return
+
+    updated_providers = rename_enabled_providers(enabled_providers, RENAMED_PROVIDERS)
+    if updated_providers == enabled_providers:
+        return
+
+    settings.general.enabled_providers = updated_providers
+    write_config()
+    logging.debug('BAZARR renamed enabled providers: %s -> %s', enabled_providers, updated_providers)
+
+
 def migrate_plex_config():
     # Generate encryption key if not exists or is empty
     existing_key = settings.plex.get('encryption_key')

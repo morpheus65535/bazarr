@@ -106,7 +106,7 @@ class RawTokenFormatter(Formatter):
             for ttype, value in tokensource:
                 line = b"%r\t%r\n" % (ttype, value)
                 if ttype is Token.Error:
-                    write(colorize(self.error_color, line))
+                    write(colorize(self.error_color, line.decode()).encode())
                 else:
                     write(line)
         else:

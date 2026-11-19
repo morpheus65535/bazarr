@@ -14,7 +14,7 @@ from sonarr.history import history_log
 from radarr.history import history_log_movie
 from deep_translator import GoogleTranslator
 from concurrent.futures import ThreadPoolExecutor
-from app.jobs_queue import jobs_queue
+from app.jobs_queue import jobs_queue, JobCanceled
 from deep_translator.exceptions import TooManyRequests, RequestError, TranslationNotFound
 from languages.get_languages import language_from_alpha2, language_from_alpha3
 
@@ -60,6 +60,7 @@ class GoogleTranslatorService:
 
             def translate_line(line_id, subtitle_line):
                 try:
+                    jobs_queue.raise_if_cancel_requested(job_id)
                     translated_text = self._translate_text(subtitle_line, job_id)
                     translated_lines.append({'id': line_id, 'line': translated_text})
                 except TranslationNotFound:
@@ -84,6 +85,8 @@ class GoogleTranslatorService:
             for future in futures:
                 try:
                     future.result()
+                except JobCanceled:
+                    raise
                 except Exception as e:
                     logger.error(f"Error in translation task: {e}")
                     line_errors.append(e)
@@ -135,6 +138,10 @@ class GoogleTranslatorService:
 
             return self.dest_srt_file
 
+        except JobCanceled:
+            logger.info(f'BAZARR canceled Google translation for {self.source_srt_file}')
+            jobs_queue.update_job_progress(job_id=job_id, progress_message='Google translation canceled')
+            raise
         except Exception as e:
             logger.error(f'BAZARR encountered an error during translation: {str(e)}')
             jobs_queue.update_job_progress(job_id=job_id,
@@ -143,6 +150,7 @@ class GoogleTranslatorService:
 
     @retry(exceptions=(TooManyRequests, RequestError), tries=6, delay=1, backoff=2, jitter=(0, 1))
     def _translate_text(self, text, job_id):
+        jobs_queue.raise_if_cancel_requested(job_id)
         try:
             translated_text = GoogleTranslator(
                 source='auto',

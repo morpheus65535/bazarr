@@ -58,6 +58,9 @@ builtins = (
     'f64.convert_i64_s', 'f64.convert_i64_u', 'f64.promote_f32',
     'i32.reinterpret_f32', 'i64.reinterpret_f64', 'f32.reinterpret_i32',
     'f64.reinterpret_i64',
+    # sign-extension operators
+    'i32.extend8_s', 'i32.extend16_s', 'i64.extend8_s', 'i64.extend16_s',
+    'i64.extend32_s',
 )
 
 

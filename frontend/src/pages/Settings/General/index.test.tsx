@@ -192,6 +192,35 @@ describe("SettingsGeneralView", () => {
     ).toBeInTheDocument();
   });
 
+  it("shows the OIDC configuration and hides local login credentials", async () => {
+    renderPage();
+    await userEvent.click(
+      screen.getByRole("combobox", { name: "Authentication" }),
+    );
+    fireEvent.click(
+      screen.getByRole("option", {
+        hidden: true,
+        name: "OpenID Connect (OIDC)",
+      }),
+    );
+
+    expect(
+      screen.getByRole("textbox", { name: "Issuer URL" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("textbox", { name: "Client ID" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("textbox", { name: "Redirect URI" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("textbox", { name: "Client secret file (optional)" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("textbox", { name: "Username" }),
+    ).not.toBeInTheDocument();
+  });
+
   it("should generate a new API key when clicking regenerate", async () => {
     renderPage();
 

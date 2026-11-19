@@ -216,7 +216,8 @@ def test_sports_revision_follows_the_sports_tables(migration_engine: Engine) -> 
         scripts = ScriptDirectory('migrations')
         assert scripts.get_heads() == [current_head(migration_engine)]
         upgrade_path = [step.revision.revision for step in scripts._upgrade_revs('head', '537e9b4d10e3')]
-        sports_path = ['e6cbb0f6f9b1', 'f1d8a9c2b347', '9c2f6a8d4b10', 'a3f2c81b9d47', 'c7d1e5a90b32',
+        sports_path = ['e6cbb0f6f9b1', 'f1d8a9c2b347', '9c2f6a8d4b10', 'a4c7e1f29b03', 'ca7df64674ee',
+                       '3b8e5d1a7f20', 'a3f2c81b9d47', 'c7d1e5a90b32',
                        migration.revision]
         positions = [upgrade_path.index(revision) for revision in sports_path]
         assert positions == sorted(positions)

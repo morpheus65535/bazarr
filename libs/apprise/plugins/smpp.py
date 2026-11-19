@@ -25,7 +25,10 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
+from __future__ import annotations
+
 from itertools import chain
+from typing import Any
 
 try:
     import smpplib
@@ -41,7 +44,9 @@ except ImportError:
 
 
 from ..common import NotifyType
+from ..exception import AppriseImproperlyConfigured
 from ..locale import gettext_lazy as _
+from ..url import PrivacyMode
 from ..utils.parse import is_phone_no, parse_phone_no
 from .base import NotifyBase
 
@@ -142,7 +147,7 @@ class NotifySMPP(NotifyBase):
         if not (self.user and self.password):
             msg = "No SMPP user/pass combination was provided"
             self.logger.warning(msg)
-            raise TypeError(msg)
+            raise AppriseImproperlyConfigured(msg)
 
         result = is_phone_no(source)
         if not result:
@@ -150,7 +155,7 @@ class NotifySMPP(NotifyBase):
                 f"The Account (From) Phone # specified ({source}) is invalid."
             )
             self.logger.warning(msg)
-            raise TypeError(msg)
+            raise AppriseImproperlyConfigured(msg)
 
         # Tidy source
         self.source = result["full"]
@@ -199,8 +204,10 @@ class NotifySMPP(NotifyBase):
             "{schema}://{user}:{password}@{host}/{source}/{targets}/?{params}"
         ).format(
             schema=self.secure_protocol if self.secure else self.protocol,
-            user=self.user,
-            password=self.password,
+            user=NotifySMPP.quote(self.user, safe=""),
+            password=self.pprint(
+                self.password, privacy, mode=PrivacyMode.Secret, safe=""
+            ),
             host=f"{self.host}:{self.port}" if self.port else self.host,
             source=self.source,
             targets="/".join(
@@ -219,7 +226,13 @@ class NotifySMPP(NotifyBase):
         """
         return len(self.targets) if self.targets else 1
 
-    def send(self, body, title="", notify_type=NotifyType.INFO, **kwargs):
+    def send(
+        self,
+        body: str,
+        title: str = "",
+        notify_type: NotifyType = NotifyType.INFO,
+        **kwargs: Any,
+    ) -> bool:
         """Perform SMPP Notification."""
 
         if not self.targets:
@@ -230,8 +243,15 @@ class NotifySMPP(NotifyBase):
         # error tracking (used for function return)
         has_error = False
 
+        # A port in the URL wins; otherwise use the default for our protocol
         port = (
-            self.default_port if not self.secure else self.default_secure_port
+            self.port
+            if self.port
+            else (
+                self.default_port
+                if not self.secure
+                else self.default_secure_port
+            )
         )
 
         client = smpplib.client.Client(
@@ -251,13 +271,31 @@ class NotifySMPP(NotifyBase):
             return False
 
         for target in self.targets:
-            parts, encoding, msg_type = smpplib.gsm.make_parts(body)
+            # Skip a target that already accepted this message so
+            # a retry does not deliver it twice.
+            if self.is_delivered(target):
+                continue
+
+            # Reuse multipart data on retries so every part keeps the same
+            # reference number and can be reassembled by the handset.
+            built = self.recall(("parts", target))
+            if built is None:
+                built = smpplib.gsm.make_parts(body)
+                self.remember(("parts", target), built)
+
+            parts, encoding, msg_type = built
 
             # Always call throttle before any remote server i/o is made
             self.throttle()
 
             try:
-                for payload in parts:
+                for part_no, payload in enumerate(parts):
+                    # Each segment is sent on its own, so a retry only
+                    # repeats the segments that did not make it.
+                    part_key = ("part", target, part_no)
+                    if self.is_delivered(part_key):
+                        continue
+
                     client.send_message(
                         source_addr_ton=smpplib.consts.SMPP_TON_INTL,
                         source_addr=self.source,
@@ -268,6 +306,8 @@ class NotifySMPP(NotifyBase):
                         esm_class=msg_type,
                         registered_delivery=True,
                     )
+
+                    self.mark_delivered(part_key)
             except Exception as e:
                 self.logger.warning(f"Failed to send SMPP notification: {e}")
                 # Mark our failure
@@ -275,6 +315,9 @@ class NotifySMPP(NotifyBase):
                 continue
 
             self.logger.info("Sent SMPP notification to %s", target)
+
+            # Delivered; a retry can safely skip this target.
+            self.mark_delivered(target)
 
         client.unbind()
         client.disconnect()

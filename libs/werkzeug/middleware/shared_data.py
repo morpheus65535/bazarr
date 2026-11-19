@@ -25,6 +25,7 @@ from zlib import adler32
 
 from ..http import http_date
 from ..http import is_resource_modified
+from ..http import quote_etag
 from ..security import safe_join
 from ..utils import get_content_type
 from ..wsgi import get_path_info
@@ -257,9 +258,9 @@ class SharedDataMiddleware:
 
         if self.cache:
             timeout = self.cache_timeout
-            etag = self.generate_etag(mtime, file_size, real_filename)  # type: ignore
+            etag = quote_etag(self.generate_etag(mtime, file_size, real_filename))  # type: ignore
             headers += [
-                ("Etag", f'"{etag}"'),
+                ("Etag", etag),
                 ("Cache-Control", f"max-age={timeout}, public"),
             ]
 

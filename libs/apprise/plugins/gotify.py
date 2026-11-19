@@ -35,8 +35,9 @@ from json import dumps
 import requests
 
 from ..common import NotifyFormat, NotifyType
+from ..exception import AppriseImproperlyConfigured
 from ..locale import gettext_lazy as _
-from ..utils.parse import validate_regex
+from ..utils.parse import URL_PATH_SAFE_CHARS, validate_regex
 from .base import NotifyBase
 
 
@@ -167,7 +168,7 @@ class NotifyGotify(NotifyBase):
         if not self.token:
             msg = f"An invalid Gotify Token ({token}) was specified."
             self.logger.warning(msg)
-            raise TypeError(msg)
+            raise AppriseImproperlyConfigured(msg)
 
         # prepare our fullpath
         self.fullpath = kwargs.get("fullpath", "/")
@@ -316,7 +317,9 @@ class NotifyGotify(NotifyBase):
                 if self.port is None or self.port == default_port
                 else f":{self.port}"
             ),
-            fullpath=NotifyGotify.quote(self.fullpath, safe="/"),
+            fullpath=NotifyGotify.quote(
+                self.fullpath, safe=URL_PATH_SAFE_CHARS
+            ),
             token=self.pprint(self.token, privacy, safe=""),
             params=NotifyGotify.urlencode(params),
         )

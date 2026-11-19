@@ -55,7 +55,7 @@ class PtxLexer(RegexLexer):
 
         ],
         'whitespace': [
-            (r'(\n|\s+)+', Whitespace),
+            (r'\s+', Whitespace),
             (r'//.*?\n', Comment)
         ],
 

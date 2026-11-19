@@ -28,9 +28,9 @@
 46elks SMS Notification Service.
 
 Minimal URL formats (source ends up being target):
-  - 46elks://user:pass@/+15551234567
-  - 46elks://user:pass@/+15551234567/+46701234567
-  - 46elks://user:pass@/+15551234567?from=Acme
+  - 46elks://user:pass@+15551234567
+  - 46elks://user:pass@+15551234567/+46701234567
+  - 46elks://user:pass@+15551234567?from=Acme
 """
 
 from __future__ import annotations
@@ -42,6 +42,7 @@ from typing import Any, Optional
 import requests
 
 from ..common import NotifyType
+from ..exception import AppriseImproperlyConfigured
 from ..locale import gettext_lazy as _
 from ..url import PrivacyMode
 from ..utils.parse import (
@@ -77,8 +78,8 @@ class Notify46Elks(NotifyBase):
 
     # Define object templates
     templates = (
-        "{schema}://{user}:{password}@/{from_phone}",
-        "{schema}://{user}:{password}@/{from_phone}/{targets}",
+        "{schema}://{user}:{password}@{from_phone}",
+        "{schema}://{user}:{password}@{from_phone}/{targets}",
     )
 
     # Define our template tokens
@@ -147,12 +148,12 @@ class Notify46Elks(NotifyBase):
         if not self.password:
             msg = "No 46elks password was specified."
             self.logger.warning(msg)
-            raise TypeError(msg)
+            raise AppriseImproperlyConfigured(msg)
 
         elif not self.user:
             msg = "No 46elks user was specified."
             self.logger.warning(msg)
-            raise TypeError(msg)
+            raise AppriseImproperlyConfigured(msg)
 
         # Parse our targets
         self.targets = []
@@ -201,6 +202,11 @@ class Notify46Elks(NotifyBase):
         targets = list(self.targets)
         while targets:
             target = targets.pop(0)
+
+            # Skip a target that already accepted this message so
+            # a retry does not deliver it twice.
+            if self.is_delivered(target):
+                continue
 
             # Prepare our payload
             payload = {
@@ -264,6 +270,9 @@ class Notify46Elks(NotifyBase):
                 # Mark our failure
                 has_error = True
                 continue
+
+            # Delivered; a retry can safely skip this target.
+            self.mark_delivered(target)
 
         return not has_error
 

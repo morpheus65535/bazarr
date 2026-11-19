@@ -1,5 +1,6 @@
 import { FunctionComponent } from "react";
-import { Code } from "@mantine/core";
+import { Anchor, Code } from "@mantine/core";
+import { SignalRHelpUrl } from "@/constants";
 import {
   Check,
   Chips,
@@ -46,6 +47,14 @@ const SettingsSonarrView: FunctionComponent = () => {
           <Text label="API Key" settingKey="settings-sonarr-apikey"></Text>
           <Check label="SSL" settingKey="settings-sonarr-ssl"></Check>
           <URLTestButton category="sonarr"></URLTestButton>
+          <Message>
+            Bazarr reads from Sonarr through its API and listens to Sonarr's
+            read-only SignalR feed for live updates. It cannot change anything
+            through that feed.{" "}
+            <Anchor href={SignalRHelpUrl} target="_blank" rel="noreferrer">
+              How this connection works
+            </Anchor>
+          </Message>
         </Section>
         <Section header="Options">
           <Check

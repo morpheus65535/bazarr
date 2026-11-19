@@ -28,12 +28,17 @@
 import contextlib
 from itertools import chain
 from json import dumps
-import os
 import time
 
 import requests
 
-from ...common import NotifyImageSize, NotifyType, PersistentStoreMode
+from ...common import (
+    JSON_COMPACT_SEPARATORS,
+    NotifyImageSize,
+    NotifyType,
+    PersistentStoreMode,
+)
+from ...exception import AppriseImproperlyConfigured
 from ...locale import gettext_lazy as _
 from ...utils import pem as _pem
 from ...utils.base64 import base64_urlencode
@@ -55,6 +60,8 @@ class VapidPushMode:
     GENERIC = "generic"
 
 
+# Published push-service URLs retained for compatibility and reference.
+# Delivery always uses the endpoint stored in each subscription.
 VAPID_API_LOOKUP = {
     VapidPushMode.CHROME: "https://fcm.googleapis.com/fcm/send",
     VapidPushMode.FIREFOX: (
@@ -132,8 +139,11 @@ class NotifyVapid(NotifyBase):
     # 43200 = 12 hours
     vapid_jwt_expiration_sec = 43200
 
-    # Subscription file
-    vapid_subscription_file = "subscriptions.json"
+    # Remember expired endpoints when the subscription file cannot be updated.
+    vapid_retired_key = "retired"
+
+    # Expire the retired-endpoint cache after 30 days without updates.
+    vapid_retired_expiry_sec = 60 * 60 * 24 * 30
 
     # Allows the user to specify the NotifyImageSize object
     image_size = NotifyImageSize.XY_72
@@ -237,7 +247,6 @@ class NotifyVapid(NotifyBase):
 
         # default subscriptions
         self.subscriptions = {}
-        self.subscriptions_loaded = False
         self.private_key_loaded = False
 
         # Set our Time to Live Flag
@@ -253,7 +262,7 @@ class NotifyVapid(NotifyBase):
             ):
                 msg = f"The Vapid TTL specified ({self.ttl}) is out of range."
                 self.logger.warning(msg)
-                raise TypeError(msg)
+                raise AppriseImproperlyConfigured(msg)
 
         # Place a thumbnail image inline with the message body
         self.include_image = (
@@ -266,7 +275,7 @@ class NotifyVapid(NotifyBase):
         if not result:
             msg = f"An invalid Vapid Subscriber({subscriber}) was specified."
             self.logger.warning(msg)
-            raise TypeError(msg)
+            raise AppriseImproperlyConfigured(msg)
         self.subscriber = result["full_email"]
 
         # Store our Mode/service
@@ -285,38 +294,35 @@ class NotifyVapid(NotifyBase):
             # Invalid region specified
             msg = f"The Vapid mode specified ({mode}) is invalid."
             self.logger.warning(msg)
-            raise TypeError(msg) from None
+            raise AppriseImproperlyConfigured(msg) from None
 
         # Our Private keyfile
         self.keyfile = keyfile
 
-        # Our Subscription file
-        self.subfile = subfile
+        # Keep explicit paths in generated URLs, but omit internal storage.
+        self.subfile_specified = subfile is not None
 
         # Prepare our PEM Object
         self.pem = _pem.ApprisePEMController(self.store.path, asset=self.asset)
 
-        # Create our subscription object
-        self.subscriptions = subscription.WebPushSubscriptionManager(
-            asset=self.asset
+        # Memory-only setups have no storage directory
+        store_path = (
+            None
+            if self.store.mode == PersistentStoreMode.MEMORY
+            else self.store.path
         )
 
-        if (
-            self.subfile is None
-            and self.store.mode != PersistentStoreMode.MEMORY
-            and self.asset.pem_autogen
-        ):
-            self.subfile = os.path.join(
-                self.store.path, self.vapid_subscription_file
-            )
-            if not os.path.exists(self.subfile) and self.subscriptions.write(
-                self.subfile
-            ):
-                self.logger.info(
-                    "Vapid auto-generated %s/%s",
-                    os.path.basename(self.store.path),
-                    self.vapid_subscription_file,
-                )
+        # Use the storage directory unless the user supplied a file
+        self.subscriptions = subscription.WebPushSubscriptionManager(
+            store_path, subfile=subfile, asset=self.asset
+        )
+
+        if self.asset.pem_autogen:
+            # Leave a starter file behind to fill in
+            self.subscriptions.autogen()
+
+        # Our Subscription file (there may not be one)
+        self.subfile = self.subscriptions.subscription_file
 
         # Acquire our targets for parsing
         self.targets = parse_list(targets)
@@ -328,34 +334,38 @@ class NotifyVapid(NotifyBase):
 
     def send(self, body, title="", notify_type=NotifyType.INFO, **kwargs):
         """Perform Vapid Notification."""
-        if not self.private_key_loaded and (
-            (
-                self.keyfile
-                and not self.pem.private_key(autogen=False, autodetect=False)
-                and not self.pem.load_private_key(self.keyfile)
-            )
-            or (not self.keyfile and not self.pem)
-        ):
-            self.logger.warning(
-                "Provided Vapid/WebPush (PEM) Private Key file could "
-                "not be loaded."
-            )
+        if not self.private_key_loaded:
+            # Load the key only on the first notification
             self.private_key_loaded = True
-            return False
-        else:
-            self.private_key_loaded = True
+
+            loaded = (
+                (
+                    self.pem.private_key(autogen=False, autodetect=False)
+                    or self.pem.load_private_key(self.keyfile)
+                )
+                if self.keyfile
+                else bool(self.pem)
+            )
+
+            if not loaded:
+                self.logger.warning(
+                    "Provided Vapid/WebPush (PEM) Private Key file could "
+                    "not be loaded."
+                )
+                return False
 
         if not self.targets:
             # There is no one to notify; we're done
             self.logger.warning("There are no Vapid targets to notify")
             return False
 
-        if not self.subscriptions_loaded and self.subfile:
-            # Toggle our loaded flag to prevent trying again later
-            self.subscriptions_loaded = True
-            if not self.subscriptions.load(
-                self.subfile, byte_limit=self.max_vapid_subfile_size
-            ):
+        if self.subfile and not self.subscriptions.loaded:
+            # A failed load is not attempted again on the next notification
+            loaded = self.subscriptions.load(
+                byte_limit=self.max_vapid_subfile_size
+            )
+
+            if not loaded:
                 self.logger.warning(
                     "Provided Vapid/WebPush subscriptions file could not be "
                     "loaded."
@@ -372,22 +382,38 @@ class NotifyVapid(NotifyBase):
             )
             return False
 
-        # Prepare our notify URL (based on our mode)
-        notify_url = VAPID_API_LOOKUP[self.mode]
         headers = {
             "User-Agent": self.app_id,
             "TTL": str(self.ttl),
             "Content-Encoding": "aes128gcm",
             "Content-Type": "application/octet-stream",
-            "Authorization": f"vapid t={self.jwt_token}, k={self.public_key}",
         }
 
         has_error = False
+
+        # Collect expired subscriptions for removal after sending.
+        expired = []
+
+        # Skip endpoints retired from a read-only or remote file.
+        retired = self.store.get(self.vapid_retired_key, [])
+
+        # Track skipped targets, attempts, and push-service acceptances.
+        skipped = 0
+        attempted = 0
+        delivered = 0
 
         # Create a copy of the targets list
         targets = list(self.targets)
         while len(targets):
             target = targets.pop(0)
+
+            # An endpoint reached on an earlier attempt is left alone, but
+            # it still counts as delivered so a retry does not report that
+            # nothing was sent.
+            if self.is_delivered(target):
+                delivered += 1
+                continue
+
             if target not in self.subscriptions:
                 self.logger.warning(
                     "Dropped Vapid user "
@@ -399,17 +425,41 @@ class NotifyVapid(NotifyBase):
                 has_error = True
                 continue
 
+            # Reuse the validated subscription details for this target.
+            entry = self.subscriptions[target]
+
+            if entry.endpoint in retired:
+                # The source could not be edited when this endpoint expired.
+                self.logger.debug(
+                    "Skipping retired Vapid subscription: %s", target
+                )
+                skipped += 1
+                continue
+
+            # Deliver to the browser-issued endpoint (RFC 8030).
+            notify_url = entry.endpoint
+
+            # Each endpoint origin needs its own token and headers (RFC 8292).
+            target_headers = {
+                **headers,
+                "Authorization": (
+                    f"vapid t={self._jwt_token(entry.origin)}, "
+                    f"k={self.public_key}"
+                ),
+            }
+
             # Encrypt our payload
             encrypted_payload = self.pem.encrypt_webpush(
                 body,
-                public_key=self.subscriptions[target].public_key,
-                auth_secret=self.subscriptions[target].auth_secret,
+                public_key=entry.public_key,
+                auth_secret=entry.auth_secret,
             )
 
             self.logger.debug(
-                "Vapid %s POST URL: %s (cert_verify=%r)",
+                "Vapid %s POST %s -> %s (cert_verify=%r)",
                 self.mode,
-                notify_url,
+                target,
+                entry.origin,
                 self.verify_certificate,
             )
             self.logger.debug(
@@ -418,18 +468,37 @@ class NotifyVapid(NotifyBase):
 
             # Always call throttle before any remote server i/o is made
             self.throttle()
+            attempted += 1
             try:
                 r = requests.post(
                     notify_url,
                     data=encrypted_payload,
-                    headers=headers,
+                    headers=target_headers,
                     verify=self.verify_certificate,
                     timeout=self.request_timeout,
                     allow_redirects=self.redirects,
                 )
-                if r.status_code not in (
+                if r.status_code in (
+                    requests.codes.not_found,
+                    requests.codes.gone,
+                ):
+                    # RFC 8030 uses 404 for expired subscriptions; services
+                    # may also use 410. Remove either to avoid retrying it.
+                    self.logger.info(
+                        "Removing expired Vapid subscription: %s", target
+                    )
+                    expired.append(target)
+
+                    # The endpoint is gone for good.  It is pruned below,
+                    # so no retry will reach for it again.
+                    has_error = True
+
+                elif r.status_code not in (
                     requests.codes.ok,
                     requests.codes.no_content,
+                    # Services may acknowledge queued messages with 201 or 202.
+                    requests.codes.created,
+                    requests.codes.accepted,
                 ):
                     # We had a problem
                     status_str = NotifyBase.http_response_code_lookup(
@@ -454,6 +523,10 @@ class NotifyVapid(NotifyBase):
 
                 else:
                     self.logger.info("Sent %s Vapid notification.", self.mode)
+                    delivered += 1
+
+                    # Delivered; a retry can safely skip this endpoint.
+                    self.mark_delivered(target)
 
             except requests.RequestException as e:
                 self.logger.warning(
@@ -462,6 +535,44 @@ class NotifyVapid(NotifyBase):
                 self.logger.debug("Socket Exception: %s", e)
 
                 has_error = True
+
+        # Make sure expired subscriptions stay gone.
+        if expired:
+            # Note the endpoints before we drop the entries holding them
+            endpoints = [self.subscriptions[name].endpoint for name in expired]
+
+            for name in expired:
+                self.subscriptions.remove(name)
+
+            # Remove only the expired entries from a writable local file.
+            pruned = (
+                self.subscriptions.prune(expired)
+                if self.subscriptions.writable
+                else False
+            )
+
+            if not pruned:
+                # Remember endpoints that could not be removed from the file.
+                self.logger.info(
+                    "Tracking %d retired Vapid endpoint(s) in persistent "
+                    "storage; the subscription file was not updated",
+                    len(endpoints),
+                )
+                self.store.set(
+                    self.vapid_retired_key,
+                    sorted(set(retired) | set(endpoints)),
+                    expires=self.vapid_retired_expiry_sec,
+                )
+
+        if not delivered:
+            # No push service accepted the message for any target.
+            self.logger.warning(
+                "No Vapid subscriptions could be notified "
+                "(%d skipped, %d attempted)",
+                skipped,
+                attempted,
+            )
+            return False
 
         return not has_error
 
@@ -481,14 +592,15 @@ class NotifyVapid(NotifyBase):
         params = {
             "mode": self.mode,
             "ttl": str(self.ttl),
+            "image": "yes" if self.include_image else "no",
         }
 
         if self.keyfile:
             # Include our keyfile if specified
             params["keyfile"] = self.keyfile
 
-        if self.subfile:
-            # Include our subfile if specified
+        if self.subfile and self.subfile_specified:
+            # Keep an explicit path, but omit machine-specific internal paths.
             params["subfile"] = self.subfile
 
         # Extend our parameters
@@ -585,25 +697,28 @@ class NotifyVapid(NotifyBase):
 
         return results
 
-    @property
-    def jwt_token(self):
-        """Returns our VAPID Token based on class details."""
+    def _jwt_token(self, audience: str) -> str:
+        """Returns a VAPID token for the endpoint origin provided.
+
+        This internal helper requires an audience because each token is valid
+        only for the endpoint origin it names.
+        """
         # JWT header
         header = {"alg": "ES256", "typ": "JWT"}
 
         # JWT payload
         payload = {
-            "aud": VAPID_API_LOOKUP[self.mode],
+            "aud": audience,
             "exp": int(time.time()) + self.vapid_jwt_expiration_sec,
             "sub": f"mailto:{self.subscriber}",
         }
 
         # Base64 URL encode header and payload
         header_b64 = base64_urlencode(
-            dumps(header, separators=(",", ":")).encode("utf-8")
+            dumps(header, separators=JSON_COMPACT_SEPARATORS).encode("utf-8")
         )
         payload_b64 = base64_urlencode(
-            dumps(payload, separators=(",", ":")).encode("utf-8")
+            dumps(payload, separators=JSON_COMPACT_SEPARATORS).encode("utf-8")
         )
         signing_input = f"{header_b64}.{payload_b64}".encode()
         signature_b64 = base64_urlencode(self.pem.sign(signing_input))

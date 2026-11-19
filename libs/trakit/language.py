@@ -2,18 +2,17 @@ import typing
 
 from babelfish import (
     COUNTRIES,
+    LANGUAGE_MATRIX,
+    SCRIPTS,
     Country,
     CountryReverseError,
-    LANGUAGE_MATRIX,
     Language,
     LanguageReverseError,
-    SCRIPTS,
     Script,
     country_converters,
-    language_converters
+    language_converters,
 )
 from babelfish.converters import CaseInsensitiveDict
-
 from rebulk import Rebulk
 from rebulk.match import Match
 
@@ -28,14 +27,13 @@ from trakit.words import (
     to_combinations,
     to_match,
     to_sentence,
-    to_words)
+    to_words,
+)
 
 
-def _convert(value: str, context: Context):
+def _convert(value: str, context: Context) -> Language | None:
     if context.type == 'filename':
-        for conv in (Language.fromietf,
-                     Language.fromalpha3b,
-                     Language.fromalpha2):
+        for conv in (Language.fromietf, Language.fromalpha3b, Language.fromalpha2):
             try:
                 return conv(value)
             except (ValueError, LanguageReverseError):
@@ -48,10 +46,9 @@ def _convert(value: str, context: Context):
 
 
 class LanguageFinder:
-
     def __init__(self, config: Config):
         self.country_max_words = 1
-        for k, v in COUNTRIES.items():
+        for v in COUNTRIES.values():
             self.country_max_words = max(self.country_max_words, v.count(' '))
 
         self.language_max_words = 1
@@ -74,7 +71,7 @@ class LanguageFinder:
         self.common_words = CaseInsensitiveDict(dict.fromkeys(config.ignored, 0))
         self.implicit = CaseInsensitiveDict(config.implicit_languages)
 
-    def _find_country(self, value: str):
+    def _find_country(self, value: str) -> Match | None:
         combinations = to_combinations(to_words(value), self.country_max_words)
         for c in combinations:
             code = to_sentence(c)
@@ -83,7 +80,9 @@ class LanguageFinder:
             except CountryReverseError:
                 continue
 
-    def _find_script(self, value: str):
+        return None
+
+    def _find_script(self, value: str) -> Match | None:
         combinations = to_combinations(to_words(value), self.script_max_words)
         for c in combinations:
             code = to_sentence(c)
@@ -92,7 +91,9 @@ class LanguageFinder:
             except ValueError:
                 continue
 
-    def _find_region(self, value: str):
+        return None
+
+    def _find_region(self, value: str) -> Match | None:
         combinations = to_combinations(to_words(value), self.region_max_words)
         for c in combinations:
             code = to_sentence(c)
@@ -101,7 +102,9 @@ class LanguageFinder:
             except ValueError:
                 continue
 
-    def _find_implicit_language(self, combinations: typing.List[typing.List[Match]]):
+        return None
+
+    def _find_implicit_language(self, combinations: list[list[Match]]) -> Match | None:
         for c in combinations:
             sentence = to_sentence(c)
             if sentence in self.implicit:
@@ -123,17 +126,24 @@ class LanguageFinder:
             except CountryReverseError:
                 pass
 
-    def accept_word(self, string: str):
+        return None
+
+    def accept_word(self, string: str) -> bool:
         return string.lower() not in self.common_words and not string.isnumeric()
 
-    def find_language(self, value: str, context: Context):
+    def find_language(self, value: str, context: Context) -> Match | None:
         value = blank_base_name_and_extension(value) if context.type == 'filename' else blank_release_names(value)
         all_words = to_words(value, predicate=self.accept_word)
         combinations = to_combinations(all_words, self.language_max_words)
         implicit_lang = self._find_implicit_language(combinations)
         implicit_accepted = implicit_lang and context.accept(implicit_lang.value)
 
-        if implicit_accepted and implicit_lang.value.script and implicit_lang.value.script.code.isnumeric():
+        if (
+            implicit_lang is not None
+            and implicit_accepted
+            and implicit_lang.value.script
+            and implicit_lang.value.script.code.isnumeric()
+        ):
             return implicit_lang
         elif implicit_lang and not implicit_accepted:
             value = blank_match(implicit_lang)
@@ -142,7 +152,7 @@ class LanguageFinder:
 
         for c in combinations:
             language_sentence = to_sentence(c)
-            lang: typing.Optional[Language] = _convert(language_sentence, context)
+            lang: Language | None = _convert(language_sentence, context)
             if lang is None:
                 continue
 
@@ -169,7 +179,13 @@ class LanguageFinder:
                     lang = Language(lang.alpha3, country=lang.country, script=script.value)
                     break
 
-            if implicit_accepted and implicit_lang.value.alpha3 == lang.alpha3 and not lang.country and not lang.script:
+            if (
+                implicit_lang is not None
+                and implicit_accepted
+                and implicit_lang.value.alpha3 == lang.alpha3
+                and not lang.country
+                and not lang.script
+            ):
                 return implicit_lang
 
             if context.accept(lang):
@@ -178,13 +194,17 @@ class LanguageFinder:
         if implicit_accepted:
             return implicit_lang
 
-    def find(self, value: str, context: Context):
+        return None
+
+    def find(self, value: str, context: Context) -> tuple[int, int, dict[str, typing.Any]] | None:
         match = self.find_language(value, context)
         if match:
             return match.start, match.end, {'value': match.value}
 
+        return None
 
-def language(config: Config):
+
+def language(config: Config) -> Rebulk:
     rebulk = Rebulk()
     rebulk.functional(LanguageFinder(config).find, name='language')
 

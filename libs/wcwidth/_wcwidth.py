@@ -70,7 +70,11 @@ __lazy_modules__ = [
 ]
 # local
 from .bisearch import bisearch
-from ._constants import _LATEST_VERSION, _AMBIGUOUS_TABLE, _ZERO_WIDTH_TABLE, _WIDE_EASTASIAN_TABLE
+from ._constants import (_LATEST_VERSION,
+                         _AMBIGUOUS_TABLE,
+                         _ZERO_WIDTH_TABLE,
+                         _WIDE_EASTASIAN_TABLE,
+                         _clamp_ambiguous_width)
 
 
 @lru_cache(maxsize=128)
@@ -142,6 +146,8 @@ def wcwidth(wc: str, unicode_version: str = 'auto', ambiguous_width: int = 1) ->
     # less than 1% impact to others.
     if 32 <= ucs < 0x7f:
         return 1
+
+    ambiguous_width = _clamp_ambiguous_width(ambiguous_width)
 
     # C0/C1 control characters are -1 for compatibility with POSIX-like calls
     if ucs and ucs < 32 or 0x07F <= ucs < 0x0A0:

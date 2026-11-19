@@ -33,13 +33,15 @@ class AllLoader(BaseLoader):
                 data[f"{source_file}[{i}]"] = doc
 
     def get_source_data(self, files):
+        config = self.obj.__core__.config
+
         data = {}
         for source_file in files:
             if source_file.endswith(self.extensions):
                 try:
                     with open(source_file, **self.opener_params) as open_file:
                         content = self.file_reader(open_file)
-                        self.obj._loaded_files.append(source_file)
+                        config.loaded_files.append(source_file)
                         self._assign_data(data, source_file, content)
                 except OSError as e:
                     if ".local." not in source_file:

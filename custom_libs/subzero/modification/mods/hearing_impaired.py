@@ -32,8 +32,10 @@ class HearingImpaired(SubtitleTextModification):
     long_description = "Removes tags, text and characters from subtitles that are meant for hearing impaired people"
 
     processors = [
-        # full bracket entry, single or multiline; starting with brackets and ending with brackets
-        FullBracketEntryProcessor(re.compile(r'(?sux)^-?%(t)s[([].+(?=[^)\]]{3,}).+[)\]]%(t)s$' % {"t": TAG}),
+        # full bracket entry, single or multiline; starting with brackets and ending with brackets, with only spaces,
+        # dashes, tags or line breaks between brackets (so that dialogue between two brackets is kept)
+        FullBracketEntryProcessor(re.compile(r'(?sux)^-?%(t)s%(b)s(?:(?:[\s-]|\\N|{\\[iusb][0-1]})*%(b)s)*%(t)s$' %
+                                             {"t": TAG, "b": r'(?:\[[^\[\]]{4,}\]|\([^()]{4,}\))'}),
                                   "", name="HI_brackets_full"),
 
         # uppercase text before colon (at least 3 uppercase chars); at start or after a sentence,
@@ -53,7 +55,7 @@ class HearingImpaired(SubtitleTextModification):
                      name="HI_before_colon_noncaps"),
 
         # brackets (only remove if at least 3 chars in brackets, allow numbers and spaces inside brackets)
-        NReProcessor(re.compile(r'(?sux)-?%(t)s["\']*\[(?=[^\[\]]{3,})[A-Za-zÀ-ž0-9\s\'".:-_&+]+[)\]]["\']*[\s:]*%(t)s' %
+        NReProcessor(re.compile(r'(?sux)-?%(t)s["\']*\[(?=[^\[\]]{3,})[A-Za-zÀ-ž0-9\s\'".:\-_&+]+[)\]]["\']*[\s:]*%(t)s' %
                                 {"t": TAG}), "", name="HI_brackets"),
 
         #NReProcessor(re.compile(r'(?sux)-?%(t)s[([]%(t)s(?=[A-zÀ-ž"\'.]{3,})[^([)\]]+%(t)s$' % {"t": TAG}),

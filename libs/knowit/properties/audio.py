@@ -22,7 +22,7 @@ class AudioChannels(Property[int]):
         'object based',  # Dolby Atmos
     }
 
-    def handle(self, value: typing.Union[int, str], context: typing.MutableMapping) -> typing.Optional[int]:
+    def handle(self, value: int | str, context: typing.MutableMapping[str, typing.Any]) -> int | None:
         """Handle audio channels."""
         if isinstance(value, int):
             return value
@@ -39,7 +39,7 @@ class AudioCodec(Configurable[str]):
     """Audio codec property."""
 
     @classmethod
-    def _extract_key(cls, value) -> str:
+    def _extract_key(cls, value: str) -> str:
         key = str(value).upper()
         if key.startswith('A_'):
             key = key[2:]
@@ -48,7 +48,7 @@ class AudioCodec(Configurable[str]):
         return key.split(' ')[0]
 
     @classmethod
-    def _extract_fallback_key(cls, value, key) -> typing.Optional[str]:
+    def _extract_fallback_key(cls, value: str, key: str) -> str | None:
         if '/' in key:
             return key.split('/')[0]
         else:

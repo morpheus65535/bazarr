@@ -476,7 +476,15 @@ const JobsManager: FunctionComponent<JobsManagerProps> = ({
                                       wrap="nowrap"
                                     >
                                       <Tooltip label={`Job ID: ${job?.job_id}`}>
-                                        <Text fw={500} size="sm">
+                                        <Text
+                                          fw={500}
+                                          size="sm"
+                                          style={{
+                                            flex: 1,
+                                            minWidth: 0,
+                                            overflowWrap: "anywhere",
+                                          }}
+                                        >
                                           {job?.job_name}
                                         </Text>
                                       </Tooltip>

@@ -180,36 +180,74 @@ def _profile(items, cutoff=None):
             'mustContain': [], 'mustNotContain': [], 'originalFormat': False, 'tag': None}
 
 
+JOB_ID = 1
+
+
+class _FakeResult:
+    """Mimics the SQLAlchemy result object returned by database.execute() for the indexer query."""
+
+    def __init__(self, rows):
+        self._rows = rows
+
+    def all(self):
+        return list(self._rows)
+
+
 class _FakeDatabase:
     """Returns the single media row to the indexer and records the missing_subtitles value it writes."""
 
     def __init__(self, row):
         self.row = row
         self.missing = None
+        self.executed = False
 
     def execute(self, statement):
-        return [self.row]
+        self.executed = True
+        return _FakeResult([self.row])
 
     def store_missing_subtitles(self, table, id_column_name, media_type, media_id, missing_subtitles):
         self.missing = ast.literal_eval(missing_subtitles)
 
 
-def _missing(monkeypatch, indexer, profile, subtitles, audio_language='[]', use_embedded_subs=True,
+class _FakeJobsQueue:
+    """Records the job manager calls made by the indexer."""
+
+    def __init__(self):
+        self.added = []
+        self.progress = []
+        self.names = []
+
+    def add_job_from_function(self, job_name, is_progress, **kwargs):
+        self.added.append((job_name, is_progress, kwargs))
+        return JOB_ID
+
+    def update_job_progress(self, job_id, progress_value=None, progress_max=None, progress_message=""):
+        self.progress.append((job_id, progress_value, progress_max, progress_message))
+
+    def update_job_name(self, job_id, new_job_name):
+        self.names.append((job_id, new_job_name))
+
+
+def _setup(monkeypatch, indexer, profile, subtitles, audio_language='[]', use_embedded_subs=True,
              language_equals=()):
-    """Run the indexer for one media item and return the sorted missing list it stored."""
+    """Patch the indexer's dependencies and return the indexer entry point, fake database and fake job queue."""
     if indexer is series_indexer:
-        row = SimpleNamespace(sonarrSeriesId=1, sonarrEpisodeId=1, profileId=1, audio_language=audio_language)
+        row = SimpleNamespace(sonarrSeriesId=1, sonarrEpisodeId=1, profileId=1, audio_language=audio_language,
+                              title='Show', season=1, episode=1, episodeTitle='Pilot')
         run = indexer.list_missing_subtitles
     elif indexer is sports_indexer:
-        row = SimpleNamespace(sportarrLeagueId=1, sportsEventId=1, profileId=1, audio_language=audio_language)
+        row = SimpleNamespace(sportarrLeagueId=1, title='League', sportsEventId=1, eventTitle='Event',
+                              profileId=1, audio_language=audio_language)
         run = indexer.list_missing_subtitles_sports
     else:
-        row = SimpleNamespace(radarrId=1, profileId=1, audio_language=audio_language)
+        row = SimpleNamespace(radarrId=1, profileId=1, audio_language=audio_language, title='Movie')
         run = indexer.list_missing_subtitles_movies
 
     fake_database = _FakeDatabase(row)
+    fake_jobs_queue = _FakeJobsQueue()
     monkeypatch.setattr(app_database, 'update_profile_id_list', lambda: [profile])
     monkeypatch.setattr(indexer, 'database', fake_database)
+    monkeypatch.setattr(indexer, 'jobs_queue', fake_jobs_queue)
     monkeypatch.setattr(indexer, 'store_missing_subtitles', fake_database.store_missing_subtitles)
     subtitles_getter = 'get_sports_subtitles' if indexer is sports_indexer else 'get_subtitles'
     monkeypatch.setattr(indexer, subtitles_getter, lambda *args, **kwargs: [dict(x) for x in subtitles])
@@ -221,9 +259,13 @@ def _missing(monkeypatch, indexer, profile, subtitles, audio_language='[]', use_
                         SimpleNamespace(general=SimpleNamespace(use_embedded_subs=use_embedded_subs)))
     monkeypatch.setattr(indexer, 'get_language_equals', lambda: list(language_equals))
     monkeypatch.setattr(indexer, 'event_stream', lambda **kwargs: None)
+    return run, fake_database, fake_jobs_queue
 
-    run()
 
+def _missing(monkeypatch, indexer, profile, subtitles, audio_language='[]', use_embedded_subs=True):
+    """Run the indexer for one media item as a job and return the sorted missing list it stored."""
+    run, fake_database, _ = _setup(monkeypatch, indexer, profile, subtitles, audio_language, use_embedded_subs)
+    run(job_id=JOB_ID)
     return sorted(fake_database.missing)
 
 
@@ -406,14 +448,62 @@ def test_embedded_subtitles_without_path_are_ignored_when_embedded_disabled(monk
     assert _missing(monkeypatch, indexer, profile, no_path, use_embedded_subs=True) == []
 
 
-# Spanish subtitles count as English through the language equals setting.
-SPANISH_EQUALS_ENGLISH = [(core.Language('spa'), core.Language('eng'))]
+JOB_NAMES = {
+    'series': 'Computing missing episodes subtitles',
+    'movies': 'Computing missing movies subtitles',
+    'sports': 'Computing missing sports events subtitles',
+}
+
+COMPUTED_NAMES = {
+    'series': 'Computed missing episodes subtitles',
+    'movies': 'Computed missing movies subtitles',
+    'sports': 'Computed missing sports events subtitles',
+}
+
+
+def _indexer_key(indexer) -> str:
+    """Return the JOB_NAMES key for the indexer module under test."""
+    if indexer is series_indexer:
+        return 'series'
+    if indexer is sports_indexer:
+        return 'sports'
+    return 'movies'
 
 
 @pytest.mark.parametrize('indexer', INDEXERS)
-@pytest.mark.parametrize('item_type, expected', [('normal', []), ('non_hi', ['en'])])
-def test_language_equals_with_profile_item_type(monkeypatch, indexer, item_type, expected):
-    profile = _profile([_profile_item(1, item_type)])
-    spanish = [{'path': '/media/es.srt', 'code2': 'es', 'forced': False, 'hi': False}]
+def test_calling_without_arguments_adds_a_progress_job(monkeypatch, indexer):
+    """Calling the indexer without a media id or job id must enqueue a progress job and not index inline."""
+    run, fake_database, fake_jobs_queue = _setup(monkeypatch, indexer, _profile([_profile_item(1, 'normal')]),
+                                                 ACTUAL['none'])
+    run()
 
-    assert _missing(monkeypatch, indexer, profile, spanish, language_equals=SPANISH_EQUALS_ENGLISH) == expected
+    assert fake_jobs_queue.added == [(JOB_NAMES[_indexer_key(indexer)], True, {})]
+    assert fake_database.executed is False
+    assert fake_database.missing is None
+
+
+@pytest.mark.parametrize('indexer', INDEXERS)
+def test_job_reports_progress_for_each_media_item(monkeypatch, indexer):
+    """A job run must report the item total and then the processed position with a message."""
+    run, _, fake_jobs_queue = _setup(monkeypatch, indexer, _profile([_profile_item(1, 'normal')]), ACTUAL['none'])
+    run(job_id=JOB_ID)
+
+    assert fake_jobs_queue.progress[0] == (JOB_ID, None, 1, 'Indexing')
+    assert fake_jobs_queue.progress[1][:3] == (JOB_ID, 1, None)
+    assert fake_jobs_queue.names == [(JOB_ID, COMPUTED_NAMES[_indexer_key(indexer)])]
+
+
+@pytest.mark.parametrize('indexer', INDEXERS)
+def test_calling_without_job_id_does_not_touch_the_job_queue(monkeypatch, indexer):
+    """A direct call with a media id runs inline and must not report progress to the job queue."""
+    run, fake_database, fake_jobs_queue = _setup(monkeypatch, indexer, _profile([_profile_item(1, 'normal')]),
+                                                 ACTUAL['none'])
+    if indexer is series_indexer:
+        run(epno=1)
+    else:
+        run(no=1)
+
+    assert fake_database.missing == ['en']
+    assert fake_jobs_queue.added == []
+    assert fake_jobs_queue.progress == []
+    assert fake_jobs_queue.names == []

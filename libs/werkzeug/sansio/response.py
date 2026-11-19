@@ -300,7 +300,7 @@ class Response:
         ct = self.headers.get("content-type")
 
         if ct:
-            return ct.split(";")[0].strip()
+            return ct.partition(";")[0].strip()
         else:
             return None
 

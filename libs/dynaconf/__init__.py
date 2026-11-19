@@ -5,6 +5,7 @@ from dynaconf.constants import DEFAULT_SETTINGS_FILES
 from dynaconf.contrib import DjangoDynaconf
 from dynaconf.contrib import FlaskDynaconf
 from dynaconf.hooking import post_hook
+from dynaconf.nodes import DataDict
 from dynaconf.utils.inspect import get_history
 from dynaconf.utils.inspect import inspect_settings
 from dynaconf.utils.parse_conf import add_converter
@@ -29,6 +30,7 @@ settings = LazySettings(
 Dynaconf = LazySettings  # noqa
 
 __all__ = [
+    "DataDict",
     "Dynaconf",
     "LazySettings",
     "Validator",

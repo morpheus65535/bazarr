@@ -244,24 +244,29 @@ def list_missing_subtitles_movies(
     no: int | None = None,
     job_id: int | None = None,
 ) -> None:
+    if not job_id and no is None:
+        jobs_queue.add_job_from_function("Computing missing movies subtitles", is_progress=True)
+        return
+
     stmt = select(TableMovies.radarrId,
+                  TableMovies.title,
                   TableMovies.profileId,
                   TableMovies.audio_language)
 
     if no:
-        movies_subtitles = database.execute(stmt.where(TableMovies.radarrId == no))
+        movies_subtitles = database.execute(stmt.where(TableMovies.radarrId == no)).all()
     else:
-        movies_subtitles = database.execute(stmt)
+        movies_subtitles = database.execute(stmt).all()
 
     use_embedded_subs = settings.general.use_embedded_subs
 
     # Get language equals configuration
     lang_equals = core._LanguageEquals(get_language_equals())
 
-    matches_audio = lambda language: any(x['code2'] == language['language'] for x in get_audio_profile_languages(
-                                movie_subtitles.audio_language))
+    if job_id is not None:
+        jobs_queue.update_job_progress(job_id=job_id, progress_max=len(movies_subtitles), progress_message='Indexing')
 
-    for movie_subtitles in movies_subtitles:
+    for i, movie_subtitles in enumerate(movies_subtitles, start=1):
         missing_subtitles_text = '[]'
         if movie_subtitles.profileId:
             audio_language_codes = {
@@ -297,6 +302,12 @@ def list_missing_subtitles_movies(
         )
         event_stream(type='movie', payload=movie_subtitles.radarrId)
         event_stream(type='movie-wanted', action='update', payload=movie_subtitles.radarrId)
+        if job_id is not None:
+            jobs_queue.update_job_progress(job_id=job_id, progress_value=i, progress_message=movie_subtitles.title)
+
+    if job_id is not None:
+        jobs_queue.update_job_name(job_id=job_id, new_job_name="Computed missing movies subtitles")
+
     event_stream(type='badges')
 
 

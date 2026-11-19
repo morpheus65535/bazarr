@@ -16,7 +16,7 @@ def test_true_above_error():
 
 
 SECRET = "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6"
-MASKED = "a1b2c3d4e5f6a7b8c9d0e1f2xxxxxxxx"
+MASKED = "a1b2" + "x" * 28
 
 
 def _redact(message):
@@ -51,19 +51,21 @@ def test_masks_query_string_spellings():
     assert out == f"http://radarr/api/v3/movie?{param}{sep}{MASKED}&pageSize=1", param
 
 
-def test_masks_exactly_the_last_eight_characters():
-  # The point of masking rather than removing: enough of the key survives to
-  # tell which one was in play, without publishing the whole thing.
+def test_keeps_only_the_first_four_characters():
+  # Enough of the key survives to tell which one was in play, and no more.
   out = _redact(f"apikey={SECRET}")
-  masked = out.split("=", 1)[1]
-  assert len(masked) == len(SECRET)
-  assert masked.endswith("xxxxxxxx")
-  assert masked[:-8] == SECRET[:-8]
-  assert SECRET[-8:] not in out
+  assert out == f"apikey={SECRET[:4]}{'x' * 28}"
+
+
+def test_masks_key_in_a_logged_traceback():
+  out = _redact(f"Max retries exceeded with url: /api/v3/rootfolder?apikey={SECRET} "
+                "(Caused by NewConnectionError('Failed to establish a new connection'))")
+  assert SECRET[4:8] not in out
+  assert f"rootfolder?apikey={MASKED} (Caused by" in out
 
 
 def test_masks_keys_containing_punctuation():
-  assert _redact("apikey=subdl_Cq7-5IU_x.9") == "apikey=subdl_Cq7xxxxxxxx"
+  assert _redact("apikey=subdl_Cq7-5IU_x.9") == "apikey=subd" + "x" * 13
 
 
 def test_key_no_longer_than_the_mask_is_masked_entirely():
@@ -74,9 +76,12 @@ def test_key_no_longer_than_the_mask_is_masked_entirely():
     assert _redact(f"apikey={key}") == "apikey=xxxxxxxx", key
 
 
-def test_key_one_longer_than_the_mask_keeps_one_character():
-  # The boundary the other way: the first length at which anything survives.
-  assert _redact("apikey=s3cr3tk3y") == "apikey=sxxxxxxxx"
+def test_key_shorter_than_sixteen_characters_keeps_nothing():
+  # Four characters of a short key would be too large a share of it.
+  for length in range(9, 16):
+    key = "s3cr3tk3ys3cr3tk3y"[:length]
+    assert _redact(f"apikey={key}") == "apikey=" + "x" * length, key
+  assert _redact("apikey=s3cr3tk3ys3cr3tk") == "apikey=s3cr" + "x" * 12
 
 
 def test_empty_value_is_left_alone():

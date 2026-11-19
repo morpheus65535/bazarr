@@ -13,6 +13,10 @@ export const translatorOption: SelectorOption<string>[] = [
     label: "Lingarr",
     value: "lingarr",
   },
+  {
+    label: "OpenAI-compatible API",
+    value: "openai_compatible",
+  },
 ];
 
 export const antiCaptchaOption: SelectorOption<string>[] = [

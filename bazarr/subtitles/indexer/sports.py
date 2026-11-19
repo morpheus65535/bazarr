@@ -209,26 +209,35 @@ def list_missing_subtitles_sports(
     evno: int | None = None,
     job_id: int | None = None,
 ) -> None:
+    if not job_id and no is None and evno is None:
+        jobs_queue.add_job_from_function("Computing missing sports events subtitles", is_progress=True)
+        return
+
     stmt = select(TableSportsLeagues.sportarrLeagueId,
+                  TableSportsLeagues.title,
                   TableSportsEvents.id.label("sportsEventId"),
+                  TableSportsEvents.title.label("eventTitle"),
                   TableSportsLeagues.profileId,
                   TableSportsEvents.audio_language) \
         .select_from(TableSportsEvents) \
         .join(TableSportsLeagues)
 
     if evno is not None:
-        events_subtitles = database.execute(stmt.where(TableSportsEvents.id == evno))
+        events_subtitles = database.execute(stmt.where(TableSportsEvents.id == evno)).all()
     elif no is not None:
-        events_subtitles = database.execute(stmt.where(TableSportsEvents.sportarrLeagueId == no))
+        events_subtitles = database.execute(stmt.where(TableSportsEvents.sportarrLeagueId == no)).all()
     else:
-        events_subtitles = database.execute(stmt)
+        events_subtitles = database.execute(stmt).all()
 
     use_embedded_subs = settings.general.use_embedded_subs
 
     # Get language equals configuration
     lang_equals = core._LanguageEquals(get_language_equals())
 
-    for event_subtitles in events_subtitles:
+    if job_id is not None:
+        jobs_queue.update_job_progress(job_id=job_id, progress_max=len(events_subtitles), progress_message='Indexing')
+
+    for i, event_subtitles in enumerate(events_subtitles, start=1):
         missing_subtitles_text = '[]'
         if event_subtitles.profileId:
             audio_language_codes = {
@@ -266,6 +275,14 @@ def list_missing_subtitles_sports(
 
         event_stream(type='sports-event', payload=event_subtitles.sportsEventId)
         event_stream(type='sports-event-wanted', action='update', payload=event_subtitles.sportsEventId)
+        if job_id is not None:
+            jobs_queue.update_job_progress(
+                job_id=job_id, progress_value=i,
+                progress_message=f"{event_subtitles.title} - {event_subtitles.eventTitle}")
+
+    if job_id is not None:
+        jobs_queue.update_job_name(job_id=job_id, new_job_name="Computed missing sports events subtitles")
+
     event_stream(type='badges')
 
 

@@ -72,15 +72,31 @@
 #        - Your bot will join your channel.
 
 import contextlib
+from html import escape
 from json import dumps, loads
 from json.decoder import JSONDecodeError
 import re
 from time import time
+from typing import Any, Optional
 
 import requests
 
 from ..apprise_attachment import AppriseAttachment
 from ..common import NotifyFormat, NotifyImageSize, NotifyType
+from ..conversion import (
+    commonmark_emphasis_run,
+    commonmark_escape_link_url,
+    commonmark_find_backtick_run,
+    commonmark_headings_to_bold,
+    commonmark_index_backtick_runs,
+    commonmark_new_scan_budget,
+    commonmark_pick_emphasis_sentinel,
+    commonmark_render_emphasis_markers,
+    commonmark_scan_angle_dest,
+    commonmark_scan_autolink_dest,
+    commonmark_scan_paren_dest,
+)
+from ..exception import AppriseImproperlyConfigured
 from ..locale import gettext_lazy as _
 from ..utils.parse import is_email, parse_bool, parse_list, validate_regex
 from ..utils.templates import TemplateType, apply_template
@@ -181,8 +197,8 @@ class NotifySlack(NotifyBase):
     # If it is more than this, then it is not accepted
     max_slack_template_size = 35000
 
-    # Default Notification Format
-    notify_format = NotifyFormat.MARKDOWN
+    # Slack supports mrkdwn and plain text. mrkdwn remains the default.
+    notify_format = (NotifyFormat.MARKDOWN, NotifyFormat.TEXT)
 
     # Bot's do not have default channels to notify; so #general
     # becomes the default channel in BOT mode
@@ -254,7 +270,7 @@ class NotifySlack(NotifyBase):
             },
             "target_email": {
                 "name": _("Target Email"),
-                "type": "string",
+                "type": "email",
                 "map_to": "targets",
             },
             "target_user": {
@@ -382,6 +398,215 @@ class NotifySlack(NotifyBase):
         re.IGNORECASE,
     )
 
+    def dialect_convert(
+        self,
+        body: str,
+        body_format: Optional[NotifyFormat] = None,
+        *args: Any,
+        **kwargs: Any,
+    ) -> str:
+        """Adapt a declared body to Slack's own text rules.
+
+        - Markdown becomes Slack ``mrkdwn``.
+        - Plain text escapes ``&``, ``<`` and ``>`` so they stay literal.
+        """
+        if body_format == NotifyFormat.TEXT:
+            # Slack uses these characters for links and mentions. See:
+            # https://docs.slack.dev/messaging/formatting-message-text
+            return escape(body, quote=False)
+
+        if body_format != NotifyFormat.MARKDOWN:
+            # Nothing else needs a Slack specific conversion
+            return body
+
+        return self._commonmark_to_slack(body)
+
+    @classmethod
+    def _commonmark_to_slack(cls, body):
+        """Translate CommonMark to Slack ``mrkdwn``.
+
+        CommonMark          Slack mrkdwn
+        ------------------  -----------------
+        # heading           *heading* (Slack has no heading syntax)
+        **bold**            *bold*
+        *italic*            _italic_
+        `code`              `code`
+        [label](<url>)      <url|label>
+        &, <, >             HTML entities
+
+        Slack retains supported backslash escapes and uses its native anchor
+        syntax for labeled links.
+        """
+        # Slack represents headings as bold text.
+        body = commonmark_headings_to_bold(body)
+
+        # Accumulate translated characters one item at a time.
+        out = []
+        # Record ``*`` and ``_`` markup in order, then match it after the scan.
+        delimiters = []
+        # Each entry is the out-index of the opening "[" for a pending link,
+        # innermost last; used to splice the label text out when we find "]".
+        link_stack = []
+        i = 0
+        n = len(body)
+        # Pre-scan all unescaped backtick run positions indexed by run length
+        # so code-span open/close matching is O(log n) rather than O(n^2).
+        backtick_runs = commonmark_index_backtick_runs(body)
+        # Pick a temporary marker that does not occur in the message.
+        sentinel = commonmark_pick_emphasis_sentinel(body)
+        # Bound the total work spent scanning labeled-link destinations.
+        scan_budget = commonmark_new_scan_budget(body)
+
+        while i < n:
+            ch = body[i]
+
+            # CommonMark uses backslash escapes for literal punctuation.
+            # Translate them into the forms Slack's mrkdwn parser expects.
+            if ch == "\\" and i + 1 < n:
+                nxt = body[i + 1]
+                if nxt == "<":
+                    # "<" must be entity-escaped so Slack does not treat it as
+                    # the start of a <url|label> anchor.
+                    out.append("&lt;")
+                elif nxt == ">":
+                    # Symmetric: ">" closes Slack anchors and must be escaped.
+                    out.append("&gt;")
+                elif nxt in "()[]!#":
+                    # CommonMark escapes these for Markdown disambiguation;
+                    # Slack treats them as plain characters -- emit as-is.
+                    out.append(nxt)
+                else:
+                    # All other escape pairs are valid Slack mrkdwn escapes
+                    # (e.g. \* or \_), so keep the backslash.
+                    out.append(body[i : i + 2])
+                i += 2
+                continue
+
+            # Slack requires literal ampersands to be entity-escaped so they
+            # are not confused with HTML entity sequences in the payload.
+            if ch == "&":
+                out.append("&amp;")
+                i += 1
+                continue
+
+            # Code spans: locate the matching closing run of the same length
+            # and entity-escape HTML controls inside the span content.
+            if ch == "`":
+                j = i
+                # Measure the run length by counting consecutive backticks.
+                while j < n and body[j] == "`":
+                    j += 1
+                run = j - i
+                # Search the pre-built index for the next run of the same
+                # length after the opening run ends.
+                close = commonmark_find_backtick_run(backtick_runs, j, run)
+
+                if close is not None:
+                    # Matched code span: entity-escape its content so Slack
+                    # does not interpret HTML inside monospace runs.
+                    content = body[j:close]
+                    content = (
+                        content.replace("&", "&amp;")
+                        .replace("<", "&lt;")
+                        .replace(">", "&gt;")
+                    )
+                    # Preserve the original delimiter width (1, 2, or 3+).
+                    delim = body[i:j]
+                    out.append(delim + content + delim)
+                    # Advance past the closing run.
+                    i = close + run
+                    continue
+
+                # No matching close -- not a real code span; emit the
+                # backticks as literal text (Slack has no escape for them).
+                out.append(body[i:j])
+                i = j
+                continue
+
+            # CommonMark inline links look like [label](<url>).
+            # Push the current out-index so we can retrieve the label text
+            # once we encounter the matching "](<".
+            if ch == "[":
+                link_stack.append(len(out))
+                out.append("[")
+                i += 1
+                continue
+
+            if body.startswith("](<", i) and link_stack:
+                # We are at the "](<" that closes a pending link label.
+                # Scan forward with escape awareness for the ">)" terminator.
+                close = commonmark_scan_angle_dest(
+                    body, i, n, budget=scan_budget
+                )
+
+                if close is not None:
+                    # Decode CommonMark escapes in the URL and re-encode
+                    # characters that would break the <url|label> syntax.
+                    url = commonmark_escape_link_url(body[i + 3 : close])
+                    # Retrieve the label text that was buffered after "[".
+                    open_index = link_stack.pop()
+                    text = "".join(out[open_index + 1 :])
+                    # Splice out everything from "[" onward and replace with
+                    # the Slack-native anchor format.
+                    del out[open_index:]
+                    out.append(f"<{url}|{text}>")
+                    # Skip past the closing ">)".
+                    i = close + 2
+                    continue
+
+                # Let the bare-link check handle this failed angle form.
+
+            # Convert bare destinations without scanning their URL as emphasis.
+            if body.startswith("](", i) and link_stack:
+                close = commonmark_scan_paren_dest(
+                    body, i + 1, n, budget=scan_budget
+                )
+
+                if close is not None:
+                    url = commonmark_escape_link_url(body[i + 2 : close])
+                    open_index = link_stack.pop()
+                    text = "".join(out[open_index + 1 :])
+                    del out[open_index:]
+                    out.append(f"<{url}|{text}>")
+                    # Skip past the closing ")".
+                    i = close + 1
+                    continue
+
+                # Same reasoning as the angle-dest case above.
+                link_stack.pop()
+
+            # A "]" that never forms "](" cannot close a link. Retire the
+            # innermost pending "[" so a later, unrelated "](" cannot
+            # incorrectly reuse it as its own opener.
+            if ch == "]" and link_stack and not body.startswith("](", i):
+                link_stack.pop()
+
+            # Convert complete autolinks; other "<" characters remain literal.
+            if ch == "<":
+                close, _ = commonmark_scan_autolink_dest(body, i, n)
+                if close is not None:
+                    url = commonmark_escape_link_url(body[i + 1 : close])
+                    out.append(f"<{url}>")
+                    i = close + 1
+                    continue
+
+            # Emphasis: CommonMark uses * for bold (**) and italic (*).
+            # Record this markup now and match it after the full scan.
+            if ch == "*":
+                i = commonmark_emphasis_run(
+                    body, i, n, delimiters, out, sentinel
+                )
+                continue
+
+            # All other characters pass through unchanged.
+            out.append(ch)
+            i += 1
+
+        # Replace temporary markers with Slack bold and italic markup.
+        return commonmark_render_emphasis_markers(
+            "".join(out), delimiters, ("*", "*"), ("_", "_"), sentinel
+        )
+
     def __init__(
         self,
         access_token=None,
@@ -402,10 +627,7 @@ class NotifySlack(NotifyBase):
         """Initialize Slack Object."""
         super().__init__(**kwargs)
 
-        # Store our webhook mode
-        # Track whether the caller supplied an explicit mode so we can
-        # decide later whether to validate exact segment count or
-        # auto-detect the workflow sub-mode from segment count.
+        # Track explicit modes; otherwise workflow segments select the mode.
         _mode_explicit = bool(mode and isinstance(mode, str))
         if _mode_explicit:
             self.mode = next(
@@ -414,7 +636,7 @@ class NotifySlack(NotifyBase):
             if self.mode not in SLACK_MODES:
                 msg = f"The Slack mode specified ({mode}) is invalid."
                 self.logger.warning(msg)
-                raise TypeError(msg)
+                raise AppriseImproperlyConfigured(msg)
 
         elif workflow_path:
             # Mode will be determined by segment count below;
@@ -442,9 +664,7 @@ class NotifySlack(NotifyBase):
             else:
                 self.workflow_path = []
 
-            # Segment counts are fixed by Slack:
-            #   /workflows/ URLs have exactly 4 segments
-            #   /triggers/  URLs have exactly 3 segments
+            # Slack workflows use four segments and triggers use three.
             seg_count = len(self.workflow_path)
             if _mode_explicit:
                 # Validate exact count for the declared mode
@@ -456,7 +676,7 @@ class NotifySlack(NotifyBase):
                         f" ({workflow_path!r} has {seg_count})."
                     )
                     self.logger.warning(msg)
-                    raise TypeError(msg)
+                    raise AppriseImproperlyConfigured(msg)
             else:
                 # Auto-detect sub-mode from segment count
                 if seg_count == 4:
@@ -470,7 +690,7 @@ class NotifySlack(NotifyBase):
                         f" {seg_count})."
                     )
                     self.logger.warning(msg)
-                    raise TypeError(msg)
+                    raise AppriseImproperlyConfigured(msg)
 
         elif self.mode in (SlackMode.WEBHOOK, SlackMode.WEBHOOK_GOV):
             self.workflow_path = []
@@ -484,7 +704,7 @@ class NotifySlack(NotifyBase):
                     f"({token_a}) was specified."
                 )
                 self.logger.warning(msg)
-                raise TypeError(msg)
+                raise AppriseImproperlyConfigured(msg)
 
             self.token_b = validate_regex(
                 token_b, *self.template_tokens["token_b"]["regex"]
@@ -495,7 +715,7 @@ class NotifySlack(NotifyBase):
                     f"({token_b}) was specified."
                 )
                 self.logger.warning(msg)
-                raise TypeError(msg)
+                raise AppriseImproperlyConfigured(msg)
 
             self.token_c = validate_regex(
                 token_c, *self.template_tokens["token_c"]["regex"]
@@ -506,7 +726,7 @@ class NotifySlack(NotifyBase):
                     f"({token_c}) was specified."
                 )
                 self.logger.warning(msg)
-                raise TypeError(msg)
+                raise AppriseImproperlyConfigured(msg)
         else:
             self.workflow_path = []
             self.token_a = None
@@ -521,7 +741,7 @@ class NotifySlack(NotifyBase):
                     f"({access_token}) was specified."
                 )
                 self.logger.warning(msg)
-                raise TypeError(msg)
+                raise AppriseImproperlyConfigured(msg)
 
         # Look the users up by their email address and map them back to their
         # id here for future queries (if needed). This allows people to
@@ -588,7 +808,7 @@ class NotifySlack(NotifyBase):
                 # add() failed (unsupported schema, unparseable URL, etc.)
                 msg = f"The Slack template ({template!r}) could not be loaded."
                 self.logger.warning(msg)
-                raise TypeError(msg)
+                raise AppriseImproperlyConfigured(msg)
             # Enforce maximum file size
             self.template[0].max_file_size = self.max_slack_template_size
 
@@ -603,7 +823,7 @@ class NotifySlack(NotifyBase):
                 f"({tokens}) are not identified as a dictionary."
             )
             self.logger.warning(msg)
-            raise TypeError(msg)
+            raise AppriseImproperlyConfigured(msg)
 
         # A template always implies Block Kit mode; there is no meaningful
         # use for templates outside of blocks mode.
@@ -615,12 +835,7 @@ class NotifySlack(NotifyBase):
     def gen_payload(
         self, body, title="", notify_type=NotifyType.INFO, **kwargs
     ):
-        """Generate our payload from an external Block Kit JSON template.
-
-        Returns the validated attachment content dict (which must contain
-        a non-empty 'blocks' list with typed entries) to be placed into
-        the Slack attachments array.  Returns False on any failure.
-        """
+        """Return a validated Block Kit attachment, or ``False``."""
         # Acquire the first template attachment
         template = self.template[0]
         if not template:
@@ -646,18 +861,16 @@ class NotifySlack(NotifyBase):
         tokens["app_id"] = self.app_id
         tokens["app_desc"] = self.app_desc
         tokens["app_color"] = self.color(notify_type)
+        # app_color_hex is an explicit alias for app_color so templates
+        # can reference the hex variant by a self-documenting name
+        tokens["app_color_hex"] = self.color(notify_type)
         tokens["app_image_url"] = image_url
         tokens["app_url"] = self.app_url
 
         # Templates are always Block Kit JSON; enforce JSON escaping
         tokens["app_mode"] = TemplateType.JSON
 
-        # Coerce all substitution values to str before JSON-escaping.
-        # apply_template's _escape_json() calls json.dumps(v)[1:-1] which
-        # is only correct for strings; None produces "ul" and other non-
-        # string types produce similarly corrupted output.  app_mode is a
-        # TemplateType sentinel passed as a named parameter, not a
-        # substitution value, so it is left as-is.
+        # Stringify substitutions before JSON escaping; preserve app_mode.
         safe_tokens = {
             k: (
                 v
@@ -732,12 +945,16 @@ class NotifySlack(NotifyBase):
         title="",
         notify_type=NotifyType.INFO,
         attach=None,
+        body_format=None,
+        body_passthrough=None,
         **kwargs,
     ):
         """Perform Slack Notification."""
 
         # error tracking (used for function return)
         has_error = False
+
+        # The framework has already converted and resized the final body.
 
         #
         # Workflow Builder mode: fixed endpoint, no channel iteration
@@ -783,7 +1000,6 @@ class NotifySlack(NotifyBase):
 
                 # Wrap the template attachment content in a full payload
                 payload = {
-                    "username": self.user if self.user else self.app_id,
                     "attachments": [template_content],
                 }
 
@@ -791,12 +1007,11 @@ class NotifySlack(NotifyBase):
                 # Our slack format
                 slack_format = (
                     "mrkdwn"
-                    if self.notify_format == NotifyFormat.MARKDOWN
+                    if body_format == NotifyFormat.MARKDOWN
                     else "plain_text"
                 )
 
                 payload = {
-                    "username": self.user if self.user else self.app_id,
                     "attachments": [
                         {
                             "blocks": [
@@ -821,7 +1036,9 @@ class NotifySlack(NotifyBase):
                             "type": "header",
                             "text": {
                                 "type": "plain_text",
-                                "text": title,
+                                # Escape Slack control characters so the
+                                # plain-text title stays literal.
+                                "text": escape(title, quote=False),
                                 "emoji": True,
                             },
                         },
@@ -862,7 +1079,8 @@ class NotifySlack(NotifyBase):
             #
             # Legacy API Formatting
             #
-            if self.notify_format == NotifyFormat.MARKDOWN:
+            # Declared input is already escaped; only escape passthrough text.
+            if body_format == NotifyFormat.MARKDOWN and body_passthrough:
                 body = self._re_formatting_rules.sub(  # pragma: no branch
                     lambda x: self._re_formatting_map[x.group()],
                     body,
@@ -919,9 +1137,8 @@ class NotifySlack(NotifyBase):
 
             # Prepare JSON Object (applicable to both WEBHOOK and BOT mode)
             payload = {
-                "username": self.user if self.user else self.app_id,
                 # Use Markdown language
-                "mrkdwn": self.notify_format == NotifyFormat.MARKDOWN,
+                "mrkdwn": body_format == NotifyFormat.MARKDOWN,
                 "attachments": [
                     {
                         "title": title,
@@ -959,6 +1176,9 @@ class NotifySlack(NotifyBase):
             # attachments if using the Webhook mode
             self.logger.warning("Slack Webhooks do not support attachments.")
 
+        if self.user:
+            payload["username"] = self.user
+
         # Prepare our Slack URL (depends on mode)
         if self.mode is SlackMode.WEBHOOK:
             url = (
@@ -978,9 +1198,27 @@ class NotifySlack(NotifyBase):
         # Create a copy of the channel list
         channels = list(self.channels)
 
+        track_attachments = (
+            attach and self.attachment_support and self.mode is SlackMode.BOT
+        )
         attach_channel_list = []
         while len(channels):
             channel = channels.pop(0)
+            message_key = ("message", channel)
+
+            if self.is_delivered(message_key):
+                # Keep the visible message and retry missing attachments.
+                channel_id = self.recall(message_key)
+                if channel_id:
+                    attach_channel_list.append((message_key, channel_id))
+
+                elif track_attachments:
+                    # The channel was never identified, so attachments
+                    # have nowhere to go.
+                    has_error = True
+
+                continue
+
             if channel is not None:
                 # We'll perform a user lookup if we detect an email
                 email = is_email(channel)
@@ -1043,25 +1281,40 @@ class NotifySlack(NotifyBase):
                 has_error = True
                 continue
 
-            # Store the valid channel or chat ID (for DMs) that will
-            # be accepted by Slack's attachment method later.
-            if response.get("channel"):
-                attach_channel_list.append(response.get("channel"))
-
             self.logger.info(
                 "Sent Slack notification{}.".format(
                     f" to {channel}" if channel is not None else ""
                 )
             )
 
-        if (
-            attach
-            and self.attachment_support
-            and self.mode is SlackMode.BOT
-            and attach_channel_list
-        ):
+            # Keep the channel or DM ID for a later attachment upload
+            channel_id = response.get("channel")
+            if channel_id:
+                attach_channel_list.append((message_key, channel_id))
+
+                # A retry needs this ID to finish a failed attachment
+                self.remember(message_key, channel_id)
+
+            # The message is visible now, even if a later upload fails
+            self.mark_delivered(message_key)
+
+            if track_attachments and not channel_id:
+                self.logger.error(
+                    "Slack did not identify the attachment channel."
+                )
+                has_error = True
+
+        if track_attachments and attach_channel_list:
             # Send our attachments (can only be done in bot mode)
             for no, attachment in enumerate(attach, start=1):
+                pending_channels = [
+                    (message_key, channel_id)
+                    for message_key, channel_id in attach_channel_list
+                    if not self.is_delivered(("attachment", no, message_key))
+                ]
+                if not pending_channels:
+                    continue
+
                 # Perform some simple error checking
                 if not attachment:
                     # We could not access the attachment
@@ -1103,10 +1356,12 @@ class NotifySlack(NotifyBase):
 
                 # Upload file
                 response = self._send(upload_url, {}, attach=attachment)
+                if not response:
+                    return False
 
                 # Send file to channels
                 # https://api.slack.com/methods/files.completeUploadExternal
-                for channel_id in attach_channel_list:
+                for message_key, channel_id in pending_channels:
                     payload_ = {
                         "files": [
                             {
@@ -1133,6 +1388,9 @@ class NotifySlack(NotifyBase):
                         # We failed to send the file to the channel,
                         # take an early exit
                         return False
+
+                    # This attachment is now visible in the channel.
+                    self.mark_delivered(("attachment", no, message_key))
 
         return not has_error
 

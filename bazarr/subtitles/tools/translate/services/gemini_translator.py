@@ -23,7 +23,7 @@ from sonarr.history import history_log
 from radarr.history import history_log_movie
 from utilities.path_mappings import path_mappings
 from subtitles.processing import ProcessSubtitlesResult
-from app.jobs_queue import jobs_queue
+from app.jobs_queue import jobs_queue, JobCanceled
 from languages.get_languages import alpha3_from_alpha2, language_from_alpha2, language_from_alpha3
 from ..core.translator_utils import add_translator_info, get_description, create_process_result
 
@@ -108,6 +108,8 @@ class GeminiTranslatorService:
             try:
                 self._translate_with_gemini()
                 add_translator_info(self.dest_srt_file, f"# Subtitles translated with {settings.translator.gemini_model} # ")
+            except JobCanceled:
+                raise
             except Exception as e:
                 jobs_queue.update_job_progress(job_id=job_id, progress_message=f'Gemini translation error: {str(e)}')
                 raise
@@ -522,6 +524,7 @@ class GeminiTranslatorService:
                                                    progress_message=self.source_srt_file)
 
                     while (i < total or len(batch) > 0) and not self.interrupt_flag:
+                        jobs_queue.raise_if_cancel_requested(self.job_id)
                         if i < total and len(batch) < self.batch_size:
                             batch.append(SubtitleObject(index=str(i), content=original_subtitle[i].content))
                             i += 1
@@ -556,6 +559,13 @@ class GeminiTranslatorService:
                     # Clear progress file on successful completion
                     self._clear_progress()
 
+        except JobCanceled:
+            self._clear_progress()
+            # The output file is only written after the loop, so a cancelled run leaves an empty file behind.
+            if self.output_file and os.path.exists(self.output_file) and os.path.getsize(self.output_file) == 0:
+                os.remove(self.output_file)
+            jobs_queue.update_job_progress(job_id=self.job_id, progress_message='Gemini translation canceled')
+            raise
         except Exception as e:
             logger.error(f'BAZARR encountered an error translating with Gemini: {str(e)}')
             jobs_queue.update_job_progress(job_id=self.job_id, progress_value=total,

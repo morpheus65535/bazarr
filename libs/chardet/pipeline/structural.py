@@ -458,7 +458,7 @@ def compute_structural_score(
     :param ctx: Pipeline context for caching analysis results.
     :returns: A structural fit score between 0.0 and 1.0.
     """
-    if not data or not encoding_info.is_multibyte:
+    if not data or not encoding_info.is_multibyte_cjk:
         return 0.0
 
     result = _get_analysis(data, encoding_info.name, ctx)
@@ -487,7 +487,7 @@ def compute_multibyte_byte_coverage(
         to compute from *data*.
     :returns: A coverage ratio between 0.0 and 1.0.
     """
-    if not data or not encoding_info.is_multibyte:
+    if not data or not encoding_info.is_multibyte_cjk:
         return 0.0
 
     result = _get_analysis(data, encoding_info.name, ctx)
@@ -521,7 +521,7 @@ def compute_lead_byte_diversity(
     :param ctx: Pipeline context for caching analysis results.
     :returns: The number of distinct lead byte values found.
     """
-    if not data or not encoding_info.is_multibyte:
+    if not data or not encoding_info.is_multibyte_cjk:
         return 0
     result = _get_analysis(data, encoding_info.name, ctx)
     if result is None:

@@ -64,7 +64,7 @@
         "DTS-HD": {"regex":  ["DTS-?HD", "DTS(?=-?MA)"], "conflict_solver": "lambda match, other: other if other.name == 'audio_codec' else '__default__'"},
         "DTS:X": {"string": ["DTS:X", "DTS-X", "DTSX"] },
         "Dolby TrueHD": {"regex": ["True-?HD"] },
-        "Opus": "Opus",
+        "Opus": {"string": "Opus", "tags": "title-word"},
         "Vorbis": "Vorbis",
         "PCM": "PCM",
         "LPCM": "LPCM"
@@ -110,7 +110,6 @@
         "_": {
           "regex": ["\\d+-?[kmg]b(ps|its?)", "\\d+\\.\\d+-?[kmg]b(ps|its?)"],
           "conflict_solver": "lambda match, other: match if other.name == 'audio_channels' and 'weak-audio_channels' not in other.tags else other",
-          "formatter": "import:guessit.rules.common.quantity:BitRate.fromstring",
           "tags": ["release-group-prefix"]
         }
       }
@@ -121,7 +120,6 @@
           "regex": "x(\\d+)",
           "private_parent": true,
           "children": true,
-          "formatter": "eval:int",
           "validator": {"__parent__": "import:seps_surround"},
           "validate_all": true,
           "conflict_solver": "lambda match, conflicting: match if conflicting.name in ('video_codec', 'episode') and 'weak-episode' not in conflicting.tags else '__default__'"
@@ -130,12 +128,11 @@
     },
     "cd": {
       "_cd_of_cd_count": {
-        "regex": "cd-?(?P<cd>\\d+)(?:-?of-?(?P<cd_count>\\d+))?",
+        "regex": "(?<!\\d)(?<![^\\W\\d_])cd-?(?P<cd>\\d+)(?:-?of-?(?P<cd_count>\\d+))?",
         "validator": {
           "cd": "lambda match: 0 < match.value < 100",
           "cd_count": "lambda match: 0 < match.value < 100"
         },
-        "formatter": {"cd": "eval:int", "cd_count": "eval:int"},
         "children": true,
         "private_parent": true,
         "properties": {"cd": [null], "cd_count": [null]}
@@ -146,7 +143,6 @@
           "cd": "lambda match: 0 < match.value < 100",
           "cd_count": "lambda match: 0 < match.value < 100"
         },
-        "formatter": {"cd_count": "eval:int"},
         "children": true,
         "private_parent": true,
         "properties": {"cd": [null], "cd_count": [null]}
@@ -202,6 +198,29 @@
       ],
       "nzb": [
         "nzb"
+      ],
+      "archives": [
+        "rar",
+        "zip",
+        "7z",
+        "tar",
+        "gz",
+        "bz2",
+        "tgz",
+        "ace",
+        "arj",
+        "cbr",
+        "cbz",
+        "cb7"
+      ],
+      "images": [
+        "jpg",
+        "jpeg",
+        "png",
+        "gif",
+        "bmp",
+        "tbn",
+        "webp"
       ]
     },
     "country": {
@@ -267,7 +286,8 @@
         "s"
       ],
       "season_ep_markers": [
-        "x"
+        "x",
+        "×"
       ],
       "disc_markers": [
         "d"
@@ -277,7 +297,8 @@
         "ex",
         "ep",
         "e",
-        "x"
+        "x",
+        "×"
       ],
       "range_separators": [
         "-",
@@ -299,23 +320,55 @@
         "saisons",
         "tem",
         "temp",
-        "temporada",
-        "temporadas",
-        "stagione"
+        {"value": "temporada", "numfirst": true},
+        {"value": "temporadas", "numfirst": true},
+        "stagione",
+        {"value": "сезон", "numfirst": true},
+        {"value": "sezon", "numfirst": true},
+        {"value": "staffel", "numfirst": true},
+        "sezonul",
+        "säsong",
+        "sesong",
+        "sæson",
+        {"value": "évad", "numfirst": true}
       ],
       "episode_words": [
         "episode",
         "episodes",
+        "épisode",
+        "épisodes",
         "eps",
         "ep",
         "episodio",
         "episodios",
         "capitulo",
-        "capitulos"
+        "capitulos",
+        {"value": "серия", "numfirst": true},
+        {"value": "серии", "numfirst": true},
+        {"value": "эпизод", "numfirst": true},
+        {"value": "seria", "numfirst": true},
+        {"value": "serii", "numfirst": true},
+        {"value": "serija", "numfirst": true},
+        {"value": "bölüm", "numfirst": true},
+        {"value": "bolum", "numfirst": true},
+        "aflevering",
+        "afl",
+        "folge",
+        "odcinek",
+        "episodul",
+        "avsnitt",
+        {"value": "rész", "numfirst": true}
       ],
+      "ordinal_suffix": "(?:ª|º|°|a|o|-?(?:й|я|е|го|ая|ый|ое))?",
       "of_words": [
         "of",
-        "sur"
+        "sur",
+        "de",
+        "di",
+        "von",
+        "van",
+        "din",
+        "из"
       ],
       "all_words": [
         "All"
@@ -323,7 +376,7 @@
     },
     "film": {
       "film": {
-        "_f": {"regex": "f(\\d{1,2})", "name": "film", "validate_all": true, "validator": {"__parent__": "import:seps_surround"}, "private_parent": true, "children": true, "formatter": "eval:int"}
+        "_f": {"regex": "f(\\d{1,2})", "name": "film", "validate_all": true, "validator": {"__parent__": "import:seps_surround"}, "private_parent": true, "children": true}
       }
     },
     "language": {
@@ -440,6 +493,16 @@
         "true"
       ]
     },
+    "title": {
+      "articles": [
+        "the", "a", "an", "le", "la", "les", "el", "los", "las", "il", "lo", "l"
+      ],
+      "title_stop_words": [
+        "the", "a", "an", "and", "or", "of", "to", "in", "on", "at", "for",
+        "from", "by", "with", "into", "onto", "no", "le", "la", "les", "de",
+        "du", "des", "el"
+      ]
+    },
     "other": {
       "other": {
         "Audio Fixed": {"regex": ["Audio-?Fix", "Audio-?Fixed"]},
@@ -480,11 +543,16 @@
         "XXX": "XXX",
         "2in1": "2in1",
         "3D": {"string": "3D", "tags": "has-neighbor"},
+        "Virtual Reality": {"string": ["VR", "EAC360"], "regex": ["VR180", "VR360", "VR-180", "VR-360"], "tags": "has-neighbor"},
+        "Side By Side": {"string": ["SBS", "LR"], "tags": ["has-neighbor", "stereo-vr-context"]},
+        "Half Side By Side": {"string": ["HSBS"], "regex": ["h-?sbs", "half-?sbs"], "tags": "has-neighbor"},
+        "Over Under": {"string": ["TB", "OU"], "tags": ["has-neighbor", "stereo-vr-context"]},
+        "Half Over Under": {"string": ["HOU"], "regex": ["h-?ou", "half-?ou"], "tags": "has-neighbor"},
         "High Quality": {"string": "HQ", "tags": "uhdbluray-neighbor"},
         "High Resolution": "HR",
         "Line Dubbed": "LD",
         "Mic Dubbed": "MD",
-        "Micro HD": ["mHD", "HDLight"],
+        "Micro HD": {"string": ["mHD", "HDLight"], "regex": ["micro-?hd", "hd-?lite"]},
         "Low Definition": "LDTV",
         "High Frame Rate": "HFR",
         "Variable Frame Rate": "VFR",
@@ -492,7 +560,10 @@
         "Full HD": {"string": ["FHD"],"regex": ["Full-?HD"], "validator": null, "tags": ["streaming_service.prefix", "streaming_service.suffix"]},
         "Ultra HD": {"string": ["UHD"],"regex": ["Ultra-?(?:HD)?"], "validator": null, "tags": ["streaming_service.prefix", "streaming_service.suffix"]},
         "Upscaled": {"regex": "Upscaled?"},
-        "Complete": {"string": ["Complet", "Complete"], "tags": ["has-neighbor", "release-group-prefix"]},
+        "Complete": [
+          {"string": ["Complet", "Complete"], "tags": ["has-neighbor", "release-group-prefix"]},
+          {"regex": ["Int[ée]grale"], "tags": ["has-neighbor", "release-group-prefix"]}
+        ],
         "Classic": {"string": "Classic", "tags": ["has-neighbor", "release-group-prefix"]},
         "Bonus": {"string": "Bonus", "tags": ["has-neighbor", "release-group-prefix"]},
         "Trailer": {"string": "Trailer", "tags": ["has-neighbor", "release-group-prefix"]},
@@ -516,7 +587,7 @@
         "Hardcoded Subtitles": ["HC", "vost"],
         "Standard Dynamic Range": {"string": "SDR", "tags": "uhdbluray-neighbor"},
         "HDR10": {"regex": "HDR(?:10)?", "tags": "uhdbluray-neighbor"},
-        "Dolby Vision": {"regex": "(?:Dolby-?Vision|DV)", "tags": "uhdbluray-neighbor"},
+        "Dolby Vision": {"regex": "(?:Dolby-?Vision|DoVi|DV)", "tags": "uhdbluray-neighbor"},
         "BT.2020": {"regex": "BT-?2020","tags": "uhdbluray-neighbor"},
         "Sample": {"string": "Sample", "tags": ["at-end", "not-a-release-group"]},
         "Extras": [
@@ -526,7 +597,20 @@
         "Proof": {"string": "Proof", "tags": ["at-end", "not-a-release-group"]},
         "Obfuscated": {"string": ["Obfuscated", "Scrambled"], "tags": ["at-end", "not-a-release-group"]},
         "Repost": {"string": ["xpost", "postbot", "asrequested"], "tags": "not-a-release-group"},
-        "_complete_words": {"callable": "import:guessit.rules.properties.other:complete_words", "season_words": ["seasons?", "series?"], "complete_article_words": ["The"]}
+        "_complete_words": {"callable": "import:guessit.rules.properties.other:complete_words", "complete_marker_words": ["Complete", "Int[ée]grale"], "season_words": ["seasons?", "mini-?series?", "series?"], "complete_article_words": ["The"], "complete_prefix_words": ["L['’]?", "Coffret"], "season_number_separators": ["&", "and"]}
+      },
+      "art": {
+        "poster": "Poster",
+        "fanart": "Fanart",
+        "banner": "Banner",
+        "thumb": "Thumbnail",
+        "thumbnail": "Thumbnail",
+        "landscape": "Landscape",
+        "cover": "Cover",
+        "clearart": "Clear Art",
+        "clearlogo": "Clear Logo",
+        "logo": "Logo",
+        "discart": "Disc Art"
       }
     },
     "part": {
@@ -615,6 +699,7 @@
       "ABC Australia": "AUBC",
       "Al Jazeera English": "AJAZ",
       "AMC": "AMC",
+      "Anime Digital Network": "ADN",
       "Amazon Prime": [
         "AMZN",
         "AMZN-CBR",
@@ -658,6 +743,7 @@
         "ALL4",
         "4OD"
       ],
+      "Channel 5": "MY5",
       "CHRGD": "CHGD",
       "Cinemax": "CMAX",
       "Country Music Television": "CMT",
@@ -734,6 +820,7 @@
       "ITV": "ITV",
       "Knowledge Network": "KNOW",
       "Lifetime": "LIFE",
+      "Max": {"pattern": "MAX", "ignore_case": false},
       "Motor Trend OnDemand": "MTOD",
       "MBC": [
         "MBC",
@@ -766,6 +853,7 @@
         "NICKAPP"
       ],
       "Norsk Rikskringkasting": "NRK",
+      "NowTV": {"pattern": "NOW", "ignore_case": false},
       "OnDemandKorea": [
         "ODK",
         "OnDemandKorea"
@@ -845,11 +933,15 @@
       "WWE Network": "WWEN",
       "Xbox Video": "XBOX",
       "Yahoo": "YHOO",
-      "YouTube Red": "RED",
+      "YouTube Red": {"pattern": "RED", "ignore_case": false},
       "ZDF": "ZDF"
     },
     "date": {
-      "week_words": ["week"]
+      "week_words": ["week"],
+      "weekday_words": [
+        "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday",
+        "mon", "tue", "tues", "wed", "weds", "thu", "thur", "thurs", "fri", "sat", "sun"
+      ]
     }
   }
 }

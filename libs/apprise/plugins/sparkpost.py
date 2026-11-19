@@ -62,6 +62,7 @@ import requests
 
 from .. import exception
 from ..common import NotifyFormat, NotifyType
+from ..exception import AppriseImproperlyConfigured
 from ..locale import gettext_lazy as _
 from ..utils.parse import is_email, parse_bool, parse_emails, validate_regex
 from ..utils.sanitize import sanitize_payload
@@ -246,13 +247,13 @@ class NotifySparkPost(NotifyBase):
         if not self.apikey:
             msg = f"An invalid SparkPost API Key ({apikey}) was specified."
             self.logger.warning(msg)
-            raise TypeError(msg)
+            raise AppriseImproperlyConfigured(msg)
 
         # Validate our username
         if not self.user:
             msg = "No SparkPost username was specified."
             self.logger.warning(msg)
-            raise TypeError(msg)
+            raise AppriseImproperlyConfigured(msg)
 
         # Acquire Email 'To'
         self.targets = []
@@ -282,7 +283,7 @@ class NotifySparkPost(NotifyBase):
             # Invalid region specified
             msg = f"The SparkPost region specified ({region_name}) is invalid."
             self.logger.warning(msg)
-            raise TypeError(msg) from None
+            raise AppriseImproperlyConfigured(msg) from None
 
         # Get our From username (if specified)
         self.from_name = from_name
@@ -294,7 +295,7 @@ class NotifySparkPost(NotifyBase):
             # Parse Source domain based on from_addr
             msg = f"Invalid ~From~ email format: {self.from_addr}"
             self.logger.warning(msg)
-            raise TypeError(msg)
+            raise AppriseImproperlyConfigured(msg)
 
         self.headers = {}
         if headers:
@@ -605,6 +606,9 @@ class NotifySparkPost(NotifyBase):
         tokens["app_id"] = self.app_id
         tokens["app_desc"] = self.app_desc
         tokens["app_color"] = self.color(notify_type)
+        # app_color_hex is an explicit alias for app_color so templates
+        # can reference the hex variant by a self-documenting name
+        tokens["app_color_hex"] = self.color(notify_type)
         tokens["app_url"] = self.app_url
 
         # Store our tokens if they're identified
@@ -614,6 +618,11 @@ class NotifySparkPost(NotifyBase):
         emails = list(self.targets)
 
         for index in range(0, len(emails), batch_size):
+            # Skip a batch that already went out so a retry does
+            # not deliver it to those recipients twice.
+            if self.is_delivered(index):
+                continue
+
             # Generate our email listing
             payload["recipients"] = []
 
@@ -690,6 +699,10 @@ class NotifySparkPost(NotifyBase):
             # Failed
             if status_code != requests.codes.ok:
                 has_error = True
+                continue
+
+            # Delivered; a retry can safely skip this batch.
+            self.mark_delivered(index)
 
         return not has_error
 
@@ -729,7 +742,7 @@ class NotifySparkPost(NotifyBase):
             params["cc"] = ",".join(
                 [
                     "{}{}".format(
-                        "" if not e not in self.names else f"{self.names[e]}:",
+                        "" if not self.names.get(e) else f"{self.names[e]}:",
                         e,
                     )
                     for e in self.cc

@@ -20,10 +20,12 @@ def ljust(
     Return text left-justified in a string of given display width.
 
     :param text: String to justify, may contain terminal sequences.
-    :param dest_width: Total display width of result in terminal cells.
+    :param dest_width: Desired displayed width of result in terminal cells, which
+        ``text`` can exceed. Use :func:`wcwidth.clip` to ensure ``text`` does not
+        exceed ``dest_width``.
     :param fillchar: Single character for padding (default space). Must have
-        display width of 1 (not wide, not zero-width, not combining). Unicode
-        characters like ``'·'`` are acceptable. The width is not validated.
+        display width of 1. Unicode characters like ``'·'`` are acceptable.
+        The width is not validated.
     :param control_codes: How to handle control sequences when measuring.
         Passed to :func:`width` for measurement.
     :param ambiguous_width: Width to use for East Asian Ambiguous (A)
@@ -37,16 +39,29 @@ def ljust(
         .. versionadded:: 0.8.0
     :returns: Text padded on the right to reach ``dest_width``.
 
+    Tabs are measured as though ``text`` begins at column 0. It is suggested to first use
+    :func:`str.expandtabs` or :func:`wcwidth.clip` to expand tabs before applying text alignment.
+
+    Text wider than ``dest_width`` is returned unchanged. Clip to ``dest_width`` if needed::
+
+        >>> from wcwidth import clip
+        >>> ljust('abcdefghi', 2)              # wider than dest_width, unchanged
+        'abcdefghi'
+        >>> ljust(clip('abcdefghi', 0, 2), 2)  # clipped to dest_width
+        'ab'
+
     .. versionadded:: 0.3.0
 
     Example::
 
-        >>> wcwidth.ljust('hi', 5)
+        >>> ljust('hi', 5)
         'hi   '
-        >>> wcwidth.ljust('\x1b[31mhi\x1b[0m', 5)
+        >>> ljust('\x1b[31mhi\x1b[0m', 5)
         '\x1b[31mhi\x1b[0m   '
-        >>> wcwidth.ljust('\U0001F468\u200D\U0001F469\u200D\U0001F467', 6)
+        >>> ljust('\U0001F468\u200D\U0001F469\u200D\U0001F467', 6)
         '👨‍👩‍👧    '
+        >>> ljust('\U0001F468\u200D\U0001F469\u200D\U0001F467', 6, term_program='VTE')
+        '👨\u200d👩\u200d👧'
     """
     if text.isascii() and text.isprintable():
         text_width = len(text)
@@ -70,10 +85,11 @@ def rjust(
     Return text right-justified in a string of given display width.
 
     :param text: String to justify, may contain terminal sequences.
-    :param dest_width: Total display width of result in terminal cells.
+    :param dest_width: Desired displayed width of result in terminal cells, which ``text`` can
+        exceed. Use :func:`wcwidth.clip` to ensure ``text`` does not exceed ``dest_width``.
     :param fillchar: Single character for padding (default space). Must have
-        display width of 1 (not wide, not zero-width, not combining). Unicode
-        characters like ``'·'`` are acceptable. The width is not validated.
+        display width of 1. Unicode characters like ``'·'`` are acceptable.
+        The width is not validated.
     :param control_codes: How to handle control sequences when measuring.
         Passed to :func:`width` for measurement.
     :param ambiguous_width: Width to use for East Asian Ambiguous (A)
@@ -87,16 +103,36 @@ def rjust(
         .. versionadded:: 0.8.0
     :returns: Text padded on the left to reach ``dest_width``.
 
+    Tabs are measured as though ``text`` begins at column 0. The ``fillchar`` placed before a tab by
+    right-justified text moves any tabs to a later stop and produces an incorrect alignment result.
+    It is suggested never to align text containing a tab, calling :func:`str.expandtabs` or
+    :func:`wcwidth.clip` (which also expands tabs) if necessary::
+
+        >>> rjust('a\tbc', 12)                # when displayed, becomes width of 10, wrong
+        '  a\tbc'
+        >>> rjust('a\tbc'.expandtabs(), 12)   # properly displayed as width of 12
+        '  a       bc'
+
+    Text wider than ``dest_width`` is returned unchanged. Clip to ``dest_width`` if needed::
+
+        >>> from wcwidth import clip
+        >>> rjust('abcdefghi', 2)              # wider than dest_width, unchanged
+        'abcdefghi'
+        >>> rjust(clip('abcdefghi', 0, 2), 2)  # clipped to dest_width
+        'ab'
+
     .. versionadded:: 0.3.0
 
     Example::
 
-        >>> wcwidth.rjust('hi', 5)
+        >>> rjust('hi', 5)
         '   hi'
-        >>> wcwidth.rjust('\x1b[31mhi\x1b[0m', 5)
+        >>> rjust('\x1b[31mhi\x1b[0m', 5)
         '   \x1b[31mhi\x1b[0m'
-        >>> wcwidth.rjust('\U0001F468\u200D\U0001F469\u200D\U0001F467', 6)
+        >>> rjust('\U0001F468\u200D\U0001F469\u200D\U0001F467', 6)
         '    👨‍👩‍👧'
+        >>> rjust('\U0001F468\u200D\U0001F469\u200D\U0001F467', 6, term_program='VTE')
+        '👨\u200d👩\u200d👧'
     """
     if text.isascii() and text.isprintable():
         text_width = len(text)
@@ -120,10 +156,12 @@ def center(
     Return text centered in a string of given display width.
 
     :param text: String to center, may contain terminal sequences.
-    :param dest_width: Total display width of result in terminal cells.
+    :param dest_width: Desired displayed width of result in terminal cells, which
+        ``text`` can exceed. Use :func:`wcwidth.clip` to ensure ``text`` does not
+        exceed ``dest_width``.
     :param fillchar: Single character for padding (default space). Must have
-        display width of 1 (not wide, not zero-width, not combining). Unicode
-        characters like ``'·'`` are acceptable. The width is not validated.
+        display width of 1. Unicode characters like ``'·'`` are acceptable.
+        The width is not validated.
     :param control_codes: How to handle control sequences when measuring.
         Passed to :func:`width` for measurement.
     :param ambiguous_width: Width to use for East Asian Ambiguous (A)
@@ -142,16 +180,36 @@ def center(
     odd, the right side when ``dest_width`` is even).
     See `the eccentric str.center <https://jazcap53.github.io/pythons-eccentric-strcenter.html>`_.
 
+    Tabs are measured as though ``text`` begins at column 0. The ``fillchar`` placed before a tab by
+    centered text moves any tabs to a later stop and produces an incorrect alignment result. It is
+    suggested never to align text containing a tab, calling :func:`str.expandtabs` or
+    :func:`wcwidth.clip` (which also expands tabs) if necessary::
+
+        >>> center('a\tbc', 12)               # when displayed, becomes width of 11, wrong
+        ' a\tbc '
+        >>> center('a\tbc'.expandtabs(), 12)  # properly displayed as width of 12
+        ' a       bc '
+
+    Text wider than ``dest_width`` is returned unchanged. Clip to ``dest_width`` if needed::
+
+        >>> from wcwidth import clip
+        >>> center('abcdefghi', 2)              # wider than dest_width, unchanged
+        'abcdefghi'
+        >>> center(clip('abcdefghi', 0, 2), 2)  # clipped to dest_width
+        'ab'
+
     .. versionadded:: 0.3.0
 
     Example::
 
-        >>> wcwidth.center('hi', 6)
+        >>> center('hi', 6)
         '  hi  '
-        >>> wcwidth.center('\x1b[31mhi\x1b[0m', 6)
+        >>> center('\x1b[31mhi\x1b[0m', 6)
         '  \x1b[31mhi\x1b[0m  '
-        >>> wcwidth.center('\U0001F468\u200D\U0001F469\u200D\U0001F467', 6)
+        >>> center('\U0001F468\u200D\U0001F469\u200D\U0001F467', 6)
         '  👨‍👩‍👧  '
+        >>> center('\U0001F468\u200D\U0001F469\u200D\U0001F467', 6, term_program='VTE')
+        '👨\u200d👩\u200d👧'
     """
     if text.isascii() and text.isprintable():
         text_width = len(text)

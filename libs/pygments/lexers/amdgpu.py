@@ -45,7 +45,7 @@ class AMDGPULexer(RegexLexer):
                 'lit', 'unorm'), suffix=r'\b'), Name.Attribute),
             (r'(label_[a-z0-9]+)', Keyword),
             (r'(_L[0-9]*)', Name.Variable),
-            (r'(s|v)_[a-z0-9_]+', Keyword),
+            (r'[sv]_[a-z0-9_]+', Keyword),
             (r'(v[0-9.]+|vcc|exec|v)', Name.Variable),
             (r's[0-9.]+|s', Name.Variable),
             (r'[0-9]+\.[^0-9]+', Number.Float),

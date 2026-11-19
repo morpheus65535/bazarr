@@ -543,8 +543,8 @@ class HyLexer(RegexLexer):
             (r'"(\\\\|\\[^\\]|[^"\\])*"', String),
             (r"'" + valid_name, String.Symbol),
             (r"\\(.|[a-z]+)", String.Char),
-            (r'^(\s*)([rRuU]{,2}"""(?:.|\n)*?""")', bygroups(Text, String.Doc)),
-            (r"^(\s*)([rRuU]{,2}'''(?:.|\n)*?''')", bygroups(Text, String.Doc)),
+            (r'^(\s*)([rRuU]{,2}"""[\s\S]*?""")', bygroups(Text, String.Doc)),
+            (r"^(\s*)([rRuU]{,2}'''[\s\S]*?''')", bygroups(Text, String.Doc)),
 
             # keywords
             (r'::?' + valid_name, String.Symbol),
@@ -1627,7 +1627,7 @@ class NewLispLexer(RegexLexer):
             (r'\[text\]*', String, "tagstring"),
 
             # 'special' operators...
-            (r"('|:)", Operator),
+            (r"[':]", Operator),
 
             # highlight the builtins
             (words(builtins, suffix=r'\b'),
@@ -3106,7 +3106,7 @@ class JanetLexer(RegexLexer):
             #
             #   non-empty content enclosed by a pair of n-backticks
             #   with optional leading @
-            (r'@?(`+)(.|\n)+?\1', String),
+            (r'@?(`+)([\s\S])+?\1', String),
 
             # things that hang out on front
             #

@@ -177,6 +177,9 @@ class MathematicaLexer(RegexLexer):
         'root': [
             (r'(?s)\(\*.*?\*\)', Comment),
 
+            # Named character escapes, e.g. \[Nu], \[CapitalAlpha].
+            (r'\\\[[A-Za-z][A-Za-z0-9]*\]', String.Escape),
+
             (r'([a-zA-Z]+[A-Za-z0-9]*`)', Name.Namespace),
             (r'([A-Za-z0-9]*_+[A-Za-z0-9]*)', Name.Variable),
             (r'#\d*', Name.Variable),

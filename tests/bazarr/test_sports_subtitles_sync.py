@@ -15,7 +15,6 @@ def _patch_sync(monkeypatch):
     monkeypatch.setattr(sync_module, "_create_subsyncer", FakeSubSyncer)
     monkeypatch.setattr(sync_module.jobs_queue, "update_job_name", lambda **kwargs: None)
     monkeypatch.setattr(sync_module.jobs_queue, "update_job_progress", lambda **kwargs: None)
-    monkeypatch.setattr(sync_module.gc, "collect", lambda: None)
     monkeypatch.setattr(sync_module.settings.subsync, "use_subsync", True)
     monkeypatch.setattr(sync_module.settings.subsync, "use_subsync_threshold", True)
     monkeypatch.setattr(sync_module.settings.subsync, "subsync_threshold", 90)
@@ -53,17 +52,20 @@ def test_sports_sync_uses_the_series_threshold(monkeypatch):
 
 
 def test_sports_subsyncer_logs_sports_history(monkeypatch, tmp_path):
+    from ffsubsync.ffsubsync import make_parser
     from subtitles.tools import subsyncer as subsyncer_module
 
     captured = {}
 
-    def fake_run(args, progress_handler=None):
+    def fake_run_in_subprocess(self, unparsed_args):
+        # parse the arguments the same way the worker process does
+        args = make_parser().parse_args(args=unparsed_args)
         with open(args.srtout, "w") as f:
             f.write("synced")
         return {"sync_was_successful": True, "offset_seconds": 1.0, "framerate_scale_factor": 1.0}
 
     monkeypatch.setattr(subsyncer_module, "get_binary", lambda name: f"/usr/bin/{name}")
-    monkeypatch.setattr(subsyncer_module, "run", fake_run)
+    monkeypatch.setattr(subsyncer_module.SubSyncer, "_run_in_subprocess", fake_run_in_subprocess)
     monkeypatch.setattr(subsyncer_module, "history_log", lambda **kwargs: captured.setdefault("series", kwargs))
     monkeypatch.setattr(subsyncer_module, "history_log_movie", lambda **kwargs: captured.setdefault("movie", kwargs))
     monkeypatch.setattr(subsyncer_module, "history_log_sports",

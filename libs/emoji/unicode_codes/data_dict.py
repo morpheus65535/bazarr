@@ -22,6 +22,8 @@ See utils/generate_emoji.py
 | Emoji 15.0     | 2022-09-13  | Unicode 15.0     | E15.0             |
 | Emoji 15.1     | 2023-09-12  | Unicode 15.1     | E15.1             |
 | Emoji 16.0     | 2024-09-10  | Unicode 16.0     | E16.0             |
+| Emoji 17.0     | 2025-09-09  | Unicode 17.0     | E17.0             |
+| Emoji 18.0     | 2026-09-15  | Unicode 18.0     | E18.0             |
 
                http://www.unicode.org/reports/tr51/#Versioning
 

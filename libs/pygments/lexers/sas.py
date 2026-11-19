@@ -131,12 +131,12 @@ class SASLexer(RegexLexer):
         'comments': [
             (r'^\s*\*.*?;', Comment),
             (r'/\*.*?\*/', Comment),
-            (r'^\s*\*(.|\n)*?;', Comment.Multiline),
-            (r'/[*](.|\n)*?[*]/', Comment.Multiline),
+            (r'^\s*\*[\s\S]*?;', Comment.Multiline),
+            (r'/[*][\s\S]*?[*]/', Comment.Multiline),
         ],
         # Special highlight for proc, data, quit, run
         'proc-data': [
-            (r'(^|;)\s*(proc \w+|data|run|quit)[\s;]',
+            (r'[^;]\s*(proc \w+|data|run|quit)[\s;]',
              Keyword.Reserved),
         ],
         # Special highlight cards and datalines
@@ -144,16 +144,16 @@ class SASLexer(RegexLexer):
             (r'^\s*(datalines|cards)\s*;\s*$', Keyword, 'data'),
         ],
         'data': [
-            (r'(.|\n)*^\s*;\s*$', Other, '#pop'),
+            (r'([\s\S])*^\s*;\s*$', Other, '#pop'),
         ],
         # Special highlight for put NOTE|ERROR|WARNING (order matters)
         'logs': [
             (r'\n?^\s*%?put ', Keyword, 'log-messages'),
         ],
         'log-messages': [
-            (r'NOTE(:|-).*', Generic, '#pop'),
-            (r'WARNING(:|-).*', Generic.Emph, '#pop'),
-            (r'ERROR(:|-).*', Generic.Error, '#pop'),
+            (r'NOTE[:-].*', Generic, '#pop'),
+            (r'WARNING[:-].*', Generic.Emph, '#pop'),
+            (r'ERROR[:-].*', Generic.Error, '#pop'),
             include('general'),
         ],
         'general': [

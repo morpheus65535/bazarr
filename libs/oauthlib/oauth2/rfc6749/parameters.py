@@ -172,7 +172,7 @@ def prepare_token_request(grant_type, body='', include_client_id=True, code_veri
 
 
 def prepare_token_revocation_request(url, token, token_type_hint="access_token",
-        callback=None, body='', **kwargs):
+        body='', **kwargs):
     """Prepare a token revocation request.
 
     The client constructs the request by including the following parameters
@@ -216,17 +216,16 @@ def prepare_token_revocation_request(url, token, token_type_hint="access_token",
     if token_type_hint:
         params.append(('token_type_hint', token_type_hint))
 
+    if 'callback' in kwargs:
+        raise TypeError("prepare_token_revocation_request() got an unexpected keyword argument 'callback'")
+
     for k in kwargs:
         if kwargs[k]:
             params.append((str(k), kwargs[k]))
 
     headers = {'Content-Type': 'application/x-www-form-urlencoded'}
 
-    if callback:
-        params.append(('callback', callback))
-        return add_params_to_uri(url, params), headers, body
-    else:
-        return url, headers, add_params_to_qs(body, params)
+    return url, headers, add_params_to_qs(body, params)
 
 
 def parse_authorization_code_response(uri, state=None):
@@ -339,7 +338,7 @@ def parse_implicit_response(uri, state=None, scope=None):
     if 'scope' in params:
         params['scope'] = scope_to_list(params['scope'])
 
-    vin, vat, v_at = parse_expires(params)
+    vin, vat, _v_at = parse_expires(params)
     if vin:
         params['expires_in'] = vin
     elif 'expires_in' in params:
@@ -430,7 +429,7 @@ def parse_token_response(body, scope=None):
     if 'scope' in params:
         params['scope'] = scope_to_list(params['scope'])
 
-    vin, vat, v_at = parse_expires(params)
+    vin, vat, _v_at = parse_expires(params)
     if vin:
         params['expires_in'] = vin
     elif 'expires_in' in params:

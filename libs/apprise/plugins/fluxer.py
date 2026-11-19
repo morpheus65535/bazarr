@@ -41,6 +41,20 @@
 #  This plugin will simply work using the url of:
 #     fluxer://WEBHOOK_ID/WEBHOOK_TOKEN
 #
+#  Self-hosted Fluxer uses /api by default:
+#     https://fluxer.example.com/api/webhooks/WEBHOOK_ID/WEBHOOK_TOKEN
+#
+#  Apprise adds /api when no path is given:
+#     fluxers://fluxer.example.com/WEBHOOK_ID/WEBHOOK_TOKEN
+#
+#  Add a custom path before the webhook details when needed:
+#     fluxers://fluxer.example.com/custom/api/WEBHOOK_ID/WEBHOOK_TOKEN
+#
+#  Use path=/ when the API is served from the host root:
+#     fluxers://fluxer.example.com/WEBHOOK_ID/WEBHOOK_TOKEN?path=/
+#
+#  Paths apply only to self-hosted servers and are ignored in cloud mode.
+#
 from __future__ import annotations
 
 import contextlib
@@ -54,8 +68,11 @@ import requests
 
 from ..attachment.base import AttachBase
 from ..common import NotifyFormat, NotifyImageSize, NotifyType
+from ..conversion import commonmark_sections
+from ..exception import AppriseImproperlyConfigured
 from ..locale import gettext_lazy as _
 from ..utils.parse import (
+    URL_PATH_SAFE_CHARS,
     is_hostname,
     is_ipaddr,
     parse_bool,
@@ -133,12 +150,20 @@ class NotifyFluxer(NotifyBase):
     # Fluxer limit for number of embed fields per message
     fluxer_max_fields = 10
 
+    # Fluxer limits the length of each embed field name and value; see
+    # https://docs.fluxer.app/http-api/messages/
+    fluxer_field_name_maxlen = 256
+    fluxer_field_value_maxlen = 1024
+
     # If our hostname matches the following we automatically enforce cloud
     # mode
     __auto_cloud_host = re.compile(r"fluxer\.app", re.IGNORECASE)
 
     # Default upstream/cloud host if none is defined
     cloud_notify_host = "https://api.fluxer.app"
+
+    # Default API path for self-hosted servers; a URL path overrides it.
+    default_private_notify_path = "/api/"
 
     # Webhook URLs used by the Fluxer API.
     notify_url = "{prefix}/webhooks/{webhook_id}/{webhook_token}"
@@ -147,8 +172,11 @@ class NotifyFluxer(NotifyBase):
         "{schema}://{webhook_id}/{webhook_token}",
         "{schema}://{host}/{webhook_id}/{webhook_token}",
         "{schema}://{host}:{port}/{webhook_id}/{webhook_token}",
+        "{schema}://{host}{path}{webhook_id}/{webhook_token}",
+        "{schema}://{host}:{port}{path}{webhook_id}/{webhook_token}",
         "{schema}://{botname}@{webhook_id}/{webhook_token}",
         "{schema}://{botname}@{host}:{port}/{webhook_id}/{webhook_token}",
+        "{schema}://{botname}@{host}:{port}{path}{webhook_id}/{webhook_token}",
     )
 
     # Define our template tokens
@@ -164,6 +192,12 @@ class NotifyFluxer(NotifyBase):
                 "type": "int",
                 "min": 1,
                 "max": 65535,
+            },
+            "path": {
+                "name": _("Path"),
+                "type": "string",
+                "map_to": "fullpath",
+                "default": "/api/",
             },
             "botname": {
                 "name": _("Bot Name"),
@@ -196,6 +230,9 @@ class NotifyFluxer(NotifyBase):
                 "type": "choice:string",
                 "values": FLUXER_MODES,
                 "default": FluxerMode.CLOUD,
+            },
+            "path": {
+                "alias_of": "path",
             },
             "tts": {
                 "name": _("Text To Speech"),
@@ -266,6 +303,7 @@ class NotifyFluxer(NotifyBase):
         self,
         webhook_id: str,
         webhook_token: str,
+        fullpath: str | None = None,
         mode: str | None = None,
         tts: bool = False,
         avatar: bool = True,
@@ -292,7 +330,7 @@ class NotifyFluxer(NotifyBase):
         if not self.webhook_id:
             msg = f"An invalid Fluxer Webhook ID ({webhook_id}) was specified."
             self.logger.warning(msg)
-            raise TypeError(msg)
+            raise AppriseImproperlyConfigured(msg)
 
         # Webhook Token (associated with project)
         self.webhook_token = validate_regex(
@@ -304,7 +342,7 @@ class NotifyFluxer(NotifyBase):
                 f"({webhook_token}) was specified."
             )
             self.logger.warning(msg)
-            raise TypeError(msg)
+            raise AppriseImproperlyConfigured(msg)
 
         # Prepare our mode
         self.mode = (
@@ -316,13 +354,13 @@ class NotifyFluxer(NotifyBase):
         if self.mode not in FLUXER_MODES:
             msg = f"An invalid Fluxer Mode ({mode}) was specified."
             self.logger.warning(msg)
-            raise TypeError(msg)
+            raise AppriseImproperlyConfigured(msg)
 
         if not self.host and self.mode == FluxerMode.PRIVATE:
             # No host provided
             msg = f"An invalid Fluxer Hostname ({self.host}) was provided."
             self.logger.warning(msg)
-            raise TypeError(msg)
+            raise AppriseImproperlyConfigured(msg)
 
         if self.mode == FluxerMode.PRIVATE and self.__auto_cloud_host.search(
             self.host
@@ -335,6 +373,29 @@ class NotifyFluxer(NotifyBase):
                 self.mode,
                 self.host,
             )
+
+        # Self-hosted servers default to /api. Use "/" for the host root.
+        path = fullpath.strip() if isinstance(fullpath, str) else ""
+
+        if self.mode != FluxerMode.PRIVATE:
+            # Cloud mode always uses the fixed Fluxer API address.
+            if path.strip("/"):
+                self.logger.warning(
+                    "Ignoring the Fluxer path (%s) specified; cloud mode "
+                    "always posts to %s",
+                    path,
+                    self.cloud_notify_host,
+                )
+
+            path = "/"
+
+        elif not path:
+            path = self.default_private_notify_path
+
+        # Wrap the path in slashes before joining it to the webhook URL.
+        self.fullpath = "/" + path.strip("/")
+        if not self.fullpath.endswith("/"):
+            self.fullpath += "/"
 
         # Text To Speech
         self.tts = (
@@ -399,7 +460,7 @@ class NotifyFluxer(NotifyBase):
                     f"An invalid Fluxer flags setting ({flags}) was specified."
                 )
                 self.logger.warning(msg)
-                raise TypeError(msg) from None
+                raise AppriseImproperlyConfigured(msg) from None
         else:
             self.flags = None
 
@@ -513,19 +574,31 @@ class NotifyFluxer(NotifyBase):
                     body if not title else f"{title}\r\n{body}"
                 ) + payload.get("content", "")
 
-            if not self._send(payload, params=params):
-                # We failed to post our message
-                return False
+            # Skip the message if an earlier attempt already posted it
+            if not self.is_delivered("message"):
+                if not self._send(payload, params=params):
+                    # We failed to post our message
+                    return False
+
+                # Posted; a retry can safely skip it
+                self.mark_delivered("message")
 
             # Send remaining fields (if any)
             if fields:
                 payload["embeds"][0]["description"] = ""
                 for i in range(0, len(fields), self.fluxer_max_fields):
+                    # Each extra message of fields is tracked on its own
+                    if self.is_delivered(("fields", i)):
+                        continue
+
                     payload["embeds"][0]["fields"] = fields[
                         i : i + self.fluxer_max_fields
                     ]
                     if not self._send(payload, params=params):
                         return False
+
+                    # Posted; a retry can safely skip these fields
+                    self.mark_delivered(("fields", i))
 
         if attach and self.attachment_support:
             # Update our payload; the idea is to preserve it's other detected
@@ -548,7 +621,11 @@ class NotifyFluxer(NotifyBase):
             #
             # Send our attachments
             #
-            for attachment in attach:
+            for index, attachment in enumerate(attach):
+                # Skip an attachment an earlier attempt already posted
+                if self.is_delivered(("attach", index)):
+                    continue
+
                 self.logger.info(
                     f"Posting Fluxer Attachment {attachment.name}"
                 )
@@ -556,6 +633,9 @@ class NotifyFluxer(NotifyBase):
                 if not self._send(payload, params=params, attach=attachment):
                     # We failed to post our message
                     return False
+
+                # Posted; a retry can safely skip this attachment
+                self.mark_delivered(("attach", index))
 
         return True
 
@@ -585,6 +665,9 @@ class NotifyFluxer(NotifyBase):
             prefix = f"{schema}://{self.host}"
             if isinstance(self.port, int):
                 prefix += f":{self.port}"
+
+            # Add the configured API path.
+            prefix += self.fullpath.rstrip("/")
 
         notify_url = self.notify_url.format(
             prefix=prefix,
@@ -813,11 +896,17 @@ class NotifyFluxer(NotifyBase):
         if self.ping:
             params["ping"] = ",".join(self.ping)
 
-        botname = f"{self.user}@" if self.user else ""
+        botname = (
+            f"{NotifyFluxer.quote(self.user, safe='')}@" if self.user else ""
+        )
 
         params.update(self.url_parameters(privacy=privacy, *args, **kwargs))
 
         if self.mode == FluxerMode.PRIVATE:
+            # Preserve the root path; otherwise parsing defaults to /api.
+            if self.fullpath == "/":
+                params["path"] = "/"
+
             default_port = 443 if self.secure else 80
             port = (
                 ""
@@ -827,12 +916,15 @@ class NotifyFluxer(NotifyBase):
 
             schema = self.secure_protocol if self.secure else self.protocol
             return (
-                "{schema}://{bname}{host}{port}/{webhook_id}/{webhook_token}"
-                "/?{params}".format(
+                "{schema}://{bname}{host}{port}{fullpath}{webhook_id}"
+                "/{webhook_token}/?{params}".format(
                     schema=schema,
                     bname=botname,
                     host=self.host,
                     port=port,
+                    fullpath=NotifyFluxer.quote(
+                        self.fullpath, safe=URL_PATH_SAFE_CHARS
+                    ),
                     webhook_id=self.pprint(self.webhook_id, privacy, safe=""),
                     webhook_token=self.pprint(
                         self.webhook_token, privacy, safe=""
@@ -868,6 +960,11 @@ class NotifyFluxer(NotifyBase):
                 ""
                 if self.mode == FluxerMode.CLOUD
                 else (self.port if self.port else (443 if self.secure else 80))
+            ),
+            (
+                ""
+                if self.mode == FluxerMode.CLOUD
+                else self.fullpath.rstrip("/")
             ),
             self.webhook_id,
             self.webhook_token,
@@ -992,6 +1089,16 @@ class NotifyFluxer(NotifyBase):
         results["webhook_token"] = None if not tokens else tokens.pop()
         results["webhook_id"] = None if not tokens else tokens.pop()
 
+        # Remaining segments form the self-hosted API path. An omitted path
+        # stays unset so initialization can apply the /api default.
+        results["fullpath"] = (
+            None if len(tokens) <= 1 else "/{}/".format("/".join(tokens[1:]))
+        )
+
+        # path= overrides URL segments and can explicitly select the host root.
+        if "path" in results["qsd"] and results["qsd"]["path"]:
+            results["fullpath"] = NotifyFluxer.unquote(results["qsd"]["path"])
+
         return results
 
     @staticmethod
@@ -1073,50 +1180,31 @@ class NotifyFluxer(NotifyBase):
 
         return payload
 
-    @staticmethod
+    @classmethod
     def extract_markdown_sections(
+        cls,
         markdown: str,
     ) -> tuple[str, list[dict[str, str]]]:
         """Extract headers and their corresponding sections into embed
         fields."""
 
-        # Search for any header information found without it's own section
-        # identifier
-        match = re.match(
-            r"^\s*(?P<desc>[^\s#]+.*?)(?=\s*$|[\r\n]+\s*#)",
+        # Room left for a section's text once the code block markers
+        # ("```md\n" and "\n```") are wrapped around it
+        description, sections = commonmark_sections(
             markdown,
-            flags=re.S,
+            cls.fluxer_field_name_maxlen,
+            cls.fluxer_field_value_maxlen - 10,
         )
 
-        description = match.group("desc").strip() if match else ""
-        if description:
-            # Strip description from our string since it has been handled
-            # now.
-            markdown = re.sub(re.escape(description), "", markdown, count=1)
-
-        regex = re.compile(
-            r"\s*#[# \t\v]*(?P<name>[^\n]+)(\n|\s*$)"
-            r"\s*((?P<value>[^#].+?)(?=\s*$|[\r\n]+\s*#))?",
-            flags=re.S,
-        )
-
-        common = regex.finditer(markdown)
-        fields: list[dict[str, str]] = []
-        for el in common:
-            d = el.groupdict()
-
-            fields.append(
-                {
-                    "name": d.get("name", "").strip("#`* \r\n\t\v"),
-                    "value": "```{}\n{}```".format(
-                        "md" if d.get("value") else "",
-                        (
-                            d.get("value").strip() + "\n"
-                            if d.get("value")
-                            else ""
-                        ),
-                    ),
-                }
-            )
+        # Show each section as a code block.  An empty one stays empty.
+        fields = [
+            {
+                "name": name,
+                "value": "```md\n{}\n```".format(value.rstrip())
+                if value
+                else "```\n```",
+            }
+            for name, value in sections
+        ]
 
         return description, fields

@@ -2,7 +2,7 @@
 oauthlib.oauth1.rfc5849.errors
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Error used both by OAuth 1 clients and provicers to represent the spec
+Error used both by OAuth 1 clients and providers to represent the spec
 defined error responses for all four core grant types.
 """
 from oauthlib.common import add_params_to_uri, urlencode

@@ -87,6 +87,7 @@ import re
 import requests
 
 from ..common import NotifyFormat, NotifyType
+from ..exception import AppriseImproperlyConfigured
 from ..locale import gettext_lazy as _
 from ..utils.parse import parse_list, validate_regex
 from .base import NotifyBase
@@ -224,7 +225,7 @@ class NotifyWebexTeams(NotifyBase):
             if self.mode not in WEBEX_TEAMS_MODES:
                 msg = f"The Webex Teams mode specified ({mode}) is invalid."
                 self.logger.warning(msg)
-                raise TypeError(msg)
+                raise AppriseImproperlyConfigured(msg)
 
         else:
             # Auto-detect: webhook tokens are 80-160 lowercase alphanumeric
@@ -257,7 +258,7 @@ class NotifyWebexTeams(NotifyBase):
                     f" specified ({_tok}) is invalid."
                 )
                 self.logger.warning(msg)
-                raise TypeError(msg)
+                raise AppriseImproperlyConfigured(msg)
 
         else:  # WebexTeamsMode.BOT
             self.token = None
@@ -267,7 +268,7 @@ class NotifyWebexTeams(NotifyBase):
             if not _at:
                 msg = "A Webex Teams bot access token must be specified."
                 self.logger.warning(msg)
-                raise TypeError(msg)
+                raise AppriseImproperlyConfigured(msg)
 
             self.access_token = _at
 
@@ -373,8 +374,17 @@ class NotifyWebexTeams(NotifyBase):
 
         has_error = False
         for room_id in self.targets:
+            # Skip a target that already accepted this message so
+            # a retry does not deliver it twice.
+            if self.is_delivered(room_id):
+                continue
+
             if not self._post_to_room(body, room_id, attach=attach):
                 has_error = True
+                continue
+
+            # Delivered; a retry can safely skip this target.
+            self.mark_delivered(room_id)
 
         return not has_error
 
@@ -454,6 +464,13 @@ class NotifyWebexTeams(NotifyBase):
 
         # --- Multipart attachment(s) ---
         for no, attachment in enumerate(attach, start=1):
+            # Each attachment is its own post (the first also carries the
+            # message body); track them per room so a retry only re-sends
+            # the ones that failed
+            attach_key = (room_id, no)
+            if self.is_delivered(attach_key):
+                continue
+
             if not attachment:
                 self.logger.error(
                     "Could not access Webex Teams attachment"
@@ -528,6 +545,9 @@ class NotifyWebexTeams(NotifyBase):
                     f" {attachment.name} to room {room_id}."
                 )
 
+                # Delivered; a retry can safely skip this attachment.
+                self.mark_delivered(attach_key)
+
             except requests.RequestException as e:
                 self.logger.warning(
                     "A Connection error occurred posting"
@@ -588,6 +608,11 @@ class NotifyWebexTeams(NotifyBase):
             ),
             params=NotifyWebexTeams.urlencode(params),
         )
+
+    def __len__(self) -> int:
+        """Returns the number of targets associated with this notification."""
+        # Webhook mode (or a bot with no rooms) still counts as one
+        return len(self.targets) if self.targets else 1
 
     @staticmethod
     def parse_url(url):

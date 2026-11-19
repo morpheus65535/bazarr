@@ -166,6 +166,7 @@ def manual_upload_subtitle(path, language, forced, hi, media_type, subtitle, fil
                                          [sub],
                                          single=single,
                                          tags=None,  # fixme
+                                         m49_language_tag=settings.general.use_m49_language_tag,
                                          directory=get_target_folder(path),
                                          chmod=chmod,
                                          formats=sub_format if use_original_format else ("srt",),
@@ -209,12 +210,13 @@ def manual_upload_subtitle(path, language, forced, hi, media_type, subtitle, fil
         set_chmod(subtitles_path=subtitle_path)
 
     if media_type == 'series':
+        # notify Sonarr once the queued sync job is done so it sees the synced file
         sync_subtitles(video_path=path, srt_path=subtitle_path, srt_lang=uploaded_language_code2, percent_score=100,
                        sonarr_series_id=episode_metadata.sonarrSeriesId, forced=forced, hi=hi,
-                       sonarr_episode_id=episode_metadata.sonarrEpisodeId, job_id=job_id)
+                       sonarr_episode_id=episode_metadata.sonarrEpisodeId,
+                       callback=lambda: notify_sonarr(episode_metadata.sonarrSeriesId))
         reversed_path = path_mappings.path_replace_reverse(path)
         reversed_subtitles_path = path_mappings.path_replace_reverse(subtitle_path)
-        notify_sonarr(episode_metadata.sonarrSeriesId)
         event_stream(type='series', action='update', payload=episode_metadata.sonarrSeriesId)
         event_stream(type='episode-wanted', action='delete', payload=episode_metadata.sonarrEpisodeId)
     elif media_type == 'sports':
@@ -229,11 +231,12 @@ def manual_upload_subtitle(path, language, forced, hi, media_type, subtitle, fil
         event_stream(type='sports-league', action='update', payload=sports_metadata.sportarrLeagueId)
         event_stream(type='sports-event-wanted', action='delete', payload=sports_metadata.id)
     else:
+        # notify Radarr once the queued sync job is done so it sees the synced file
         sync_subtitles(video_path=path, srt_path=subtitle_path, srt_lang=uploaded_language_code2, percent_score=100,
-                       radarr_id=movie_metadata.radarrId, forced=forced, hi=hi, job_id=job_id)
+                       radarr_id=movie_metadata.radarrId, forced=forced, hi=hi,
+                       callback=lambda: notify_radarr(movie_metadata.radarrId))
         reversed_path = path_mappings.path_replace_reverse_movie(path)
         reversed_subtitles_path = path_mappings.path_replace_reverse_movie(subtitle_path)
-        notify_radarr(movie_metadata.radarrId)
         event_stream(type='movie', action='update', payload=movie_metadata.radarrId)
         event_stream(type='movie-wanted', action='delete', payload=movie_metadata.radarrId)
 

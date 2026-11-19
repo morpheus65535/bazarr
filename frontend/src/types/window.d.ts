@@ -20,6 +20,7 @@ declare global {
 export interface BazarrServer {
   baseUrl: string;
   apiKey?: string;
+  authType?: string;
   canUpdate: boolean;
   hasUpdate: boolean;
   isConfigured: boolean;

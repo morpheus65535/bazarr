@@ -152,7 +152,12 @@ class NumberConverter(BaseConverter):
     def to_python(self, value: str) -> t.Any:
         if self.fixed_digits and len(value) != self.fixed_digits:
             raise ValidationError()
-        value_num = self.num_convert(value)
+
+        try:
+            value_num = self.num_convert(value)
+        except ValueError as e:
+            raise ValidationError() from e
+
         if (self.min is not None and value_num < self.min) or (
             self.max is not None and value_num > self.max
         ):

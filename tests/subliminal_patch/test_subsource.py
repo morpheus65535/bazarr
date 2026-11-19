@@ -1,11 +1,15 @@
 # coding=utf-8
 import datetime
+import json
+import math
 
 import pytest
 from babelfish import Language
 from requests import Response
+from subzero.language import Language as SubzeroLanguage
 
 from subliminal_patch.converters.subsource import SubsourceConverter
+from subliminal_patch.core import Movie
 from subliminal_patch.exceptions import TooManyRequests
 from subliminal_patch.providers.subsource import MAX_INLINE_WAIT, SubsourceProvider
 
@@ -96,3 +100,102 @@ def test_checked_waits_only_once(_provider):
 
     with pytest.raises(TooManyRequests):
         _provider.checked(fn)
+
+
+def _subsource_item(subtitle_id, language, release, commentary=""):
+    """A subtitle entry as the `subtitles` endpoint returns it."""
+    return {
+        "subtitleId": subtitle_id,
+        "language": language,
+        "releaseInfo": [release],
+        "link": f"/subtitles/{subtitle_id}",
+        "uploaderId": 1,
+        "contributors": [{"id": 1, "displayname": "uploader"}],
+        "commentary": commentary,
+        "foreignParts": False,
+        "hearingImpaired": False,
+    }
+
+
+def _json_response(payload):
+    response = Response()
+    response.status_code = 200
+    response._content = json.dumps(payload).encode()
+    return response
+
+
+def _fake_subtitles_api(monkeypatch, provider, items_by_language):
+    """Answers `subtitles` calls like the API: comma-separated languages, paged by page and limit.
+
+    Returns the list of `(language, page)` pairs requested, in order.
+    """
+    requested = []
+
+    def fake_get(url, params=None, timeout=None):
+        params = dict(params)
+        requested.append((params["language"], params.get("page", 1)))
+        items = [item for name in params["language"].split(",") for item in items_by_language.get(name, [])]
+        size, page = params["limit"], params.get("page", 1)
+        chunk = items[(page - 1) * size:page * size]
+        pages = max(1, math.ceil(len(items) / size))
+        return _json_response({
+            "success": True,
+            "data": chunk,
+            "pagination": {"page": page, "limit": size, "total": len(items), "pages": pages},
+        })
+
+    monkeypatch.setattr(provider.session, "get", fake_get)
+    return requested
+
+
+@pytest.fixture
+def _query_provider(monkeypatch):
+    provider = SubsourceProvider(api_key="key")
+    provider.search_titles = lambda *args, **kwargs: 99
+    data = {
+        "english": [
+            _subsource_item(1, "english", "BluRay"),
+            _subsource_item(2, "english", "WEB", commentary="SDH"),
+        ],
+        "spanish": [_subsource_item(10, "spanish", "BluRay")],
+    }
+    requested = _fake_subtitles_api(monkeypatch, provider, data)
+    return provider, requested
+
+
+def test_query_requests_every_language_in_one_call(_query_provider):
+    # the API takes comma-separated languages, so one call covers the whole set
+    provider, requested = _query_provider
+    video = Movie("Movie.2020.1080p.mkv", "Movie", year=2020, imdb_id="tt1234567")
+    languages = {SubzeroLanguage("eng"), SubzeroLanguage("spa")}
+
+    subtitles = SubsourceProvider.query.original(provider, languages, video)
+
+    assert requested == [("english,spanish", 1)]
+    assert {subtitle.id for subtitle in subtitles} == {1, 2, 10}
+
+
+def test_query_requests_a_language_once_when_its_variants_are_requested(_query_provider):
+    # forced and HI variants share one API language, so the language is requested once and each subtitle is kept once
+    provider, requested = _query_provider
+    video = Movie("Movie.2020.1080p.mkv", "Movie", year=2020, imdb_id="tt1234567")
+    languages = {SubzeroLanguage("eng"), SubzeroLanguage.rebuild(SubzeroLanguage("eng"), hi=True)}
+
+    subtitles = SubsourceProvider.query.original(provider, languages, video)
+
+    assert requested == [("english", 1)]
+    assert sorted(subtitle.id for subtitle in subtitles) == [1, 2]
+
+
+def test_query_follows_pages_until_the_last_one(monkeypatch):
+    # 150 results at 100 per page need a second page, and no page beyond the reported count
+    provider = SubsourceProvider(api_key="key")
+    provider.search_titles = lambda *args, **kwargs: 99
+    items = [_subsource_item(i, "english", "BluRay") for i in range(1, 151)]
+    requested = _fake_subtitles_api(monkeypatch, provider, {"english": items})
+    video = Movie("Movie.2020.1080p.mkv", "Movie", year=2020, imdb_id="tt1234567")
+
+    subtitles = SubsourceProvider.query.original(provider, {SubzeroLanguage("eng")}, video)
+
+    assert requested == [("english", 1), ("english", 2)]
+    assert len(subtitles) == 150

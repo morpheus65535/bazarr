@@ -60,6 +60,11 @@ class RequestValidator:
         class must contain the 'client_id' attribute and the 'client_id' must have
         a value.
 
+        This method MUST NOT be used to authenticate public clients. Public
+        clients do not authenticate through means outside the OAuth 2 spec and
+        are instead validated by :meth:`authenticate_client_id`. If the client
+        is public, this method must return False.
+
         :param request: OAuthlib request.
         :type request: oauthlib.common.Request
         :rtype: True or False
@@ -69,6 +74,7 @@ class RequestValidator:
             - Resource Owner Password Credentials Grant (may be disabled)
             - Client Credentials Grant
             - Refresh Token Grant
+            - Device Code Grant
 
         .. _`HTTP Basic Authentication Scheme`: https://tools.ietf.org/html/rfc1945#section-11.1
         """
@@ -80,9 +86,10 @@ class RequestValidator:
         A non-confidential client is one that is not required to authenticate
         through other means, such as using HTTP Basic.
 
-        Note, while not strictly necessary it can often be very convenient
-        to set request.client to the client object associated with the
-        given client_id.
+        After the client identification succeeds, this method needs to set the
+        client on the request, i.e. request.client = client. A client object's
+        class must contain the 'client_id' attribute and the 'client_id' must have
+        a value.
 
         :param client_id: Unicode client identifier.
         :param request: OAuthlib request.
@@ -91,6 +98,9 @@ class RequestValidator:
 
         Method is used by:
             - Authorization Code Grant
+            - Resource Owner Password Credentials Grant
+            - Refresh Token Grant
+            - Device Code Grant
         """
         raise NotImplementedError('Subclasses must implement this method.')
 
@@ -419,9 +429,10 @@ class RequestValidator:
     def validate_client_id(self, client_id, request, *args, **kwargs):
         """Ensure client_id belong to a valid and active client.
 
-        Note, while not strictly necessary it can often be very convenient
-        to set request.client to the client object associated with the
-        given client_id.
+        After the client identification succeeds, this method needs to set the
+        client on the request, i.e. request.client = client. A client object's
+        class must contain the 'client_id' attribute and the 'client_id' must have
+        a value.
 
         :param client_id: Unicode client identifier.
         :param request: OAuthlib request.

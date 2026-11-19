@@ -186,7 +186,7 @@ class CssLexer(RegexLexer):
         ],
         'basics': [
             (r'\s+', Whitespace),
-            (r'/\*(?:.|\n)*?\*/', Comment),
+            (r'/\*[\s\S]*?\*/', Comment),
             (r'\{', Punctuation, 'content'),
             (r'(\:{1,2})([\w-]+)', bygroups(Punctuation, Name.Decorator)),
             (r'(\.)([\w-]+)', bygroups(Punctuation, Name.Class)),
@@ -220,7 +220,7 @@ class CssLexer(RegexLexer):
             (r'([a-zA-Z_][\w-]*)(\s*)(\:)', bygroups(Name, Whitespace, Punctuation),
              'value-start'),
 
-            (r'/\*(?:.|\n)*?\*/', Comment),
+            (r'/\*[\s\S]*?\*/', Comment),
         ],
         'value-start': [
             (r'\s+', Whitespace),
@@ -236,7 +236,7 @@ class CssLexer(RegexLexer):
             # for transition-property etc.
             (words(_css_properties, suffix=r'\b'), Keyword),
             (r'\!important', Comment.Preproc),
-            (r'/\*(?:.|\n)*?\*/', Comment),
+            (r'/\*[\s\S]*?\*/', Comment),
 
             include('numeric-values'),
 
@@ -263,7 +263,7 @@ class CssLexer(RegexLexer):
             (r'([a-zA-Z_][\w-]+)(\()',
              bygroups(Name.Function, Punctuation), 'function-start'),
 
-            (r'/\*(?:.|\n)*?\*/', Comment),
+            (r'/\*[\s\S]*?\*/', Comment),
             include('numeric-values'),
             (r'[*+/-]', Operator),
             (r',', Punctuation),
@@ -362,6 +362,7 @@ common_sass_tokens = {
         (r'\.', Name.Class, 'class'),
         (r'\#', Name.Namespace, 'id'),
         (r'[\w-]+', Name.Tag),
+        (r'\$[\w-]+', Name.Variable),
         (r'#\{', String.Interpol, 'interpolation'),
         (r'&', Keyword),
         (r'[~^*!&\[\]()<>|+=@:;,./?-]', Operator),
@@ -600,33 +601,33 @@ class LessCssLexer(CssLexer):
         'root': [
             (r'@\w+', Name.Variable),
             (r'//.*\n', Comment.Single),
-            (r'/\*(?:.|\n)*?\*/', Comment.Multiline),
+            (r'/\*[\s\S]*?\*/', Comment.Multiline),
             inherit,
         ],
         'atcontent': [
             (r'//.*\n', Comment.Single),
-            (r'/\*(?:.|\n)*?\*/', Comment.Multiline),
+            (r'/\*[\s\S]*?\*/', Comment.Multiline),
             inherit,
         ],
         'atrule': [
             (r'//.*\n', Comment.Single),
-            (r'/\*(?:.|\n)*?\*/', Comment.Multiline),
+            (r'/\*[\s\S]*?\*/', Comment.Multiline),
             inherit,
         ],
         'content': [
             (r'\{', Punctuation, '#push'),
             (r'//.*\n', Comment.Single),
-            (r'/\*(?:.|\n)*?\*/', Comment.Multiline),
+            (r'/\*[\s\S]*?\*/', Comment.Multiline),
             inherit,
         ],
         'value-start': [
             (r'//.*\n', Comment.Single),
-            (r'/\*(?:.|\n)*?\*/', Comment.Multiline),
+            (r'/\*[\s\S]*?\*/', Comment.Multiline),
             inherit,
         ],
         'function-start': [
             (r'//.*\n', Comment.Single),
-            (r'/\*(?:.|\n)*?\*/', Comment.Multiline),
+            (r'/\*[\s\S]*?\*/', Comment.Multiline),
             inherit,
         ],
     }

@@ -104,7 +104,7 @@ class GroffFormatter(Formatter):
                 newline += (chunk + '\n' + space)
             remainder = length % self.wrap
             if remainder > 0:
-                newline += line[-remainder-1:]
+                newline += line[length-remainder:]
                 self._linelen = remainder
         elif self._linelen + length > self.wrap:
             newline = ('\n' + space) + line

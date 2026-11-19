@@ -1,6 +1,8 @@
 import typing
 from logging import NullHandler, getLogger
 
+from knowit.config import Config
+
 logger = getLogger(__name__)
 logger.addHandler(NullHandler())
 
@@ -17,10 +19,10 @@ class Reportable(typing.Generic[T]):
     """Reportable abstract class."""
 
     def __init__(
-            self,
-            *args: str,
-            description: typing.Optional[str] = None,
-            reportable: bool = True,
+        self,
+        *args: str,
+        description: str | None = None,
+        reportable: bool = True,
     ):
         """Initialize the object."""
         self.names = args
@@ -32,15 +34,18 @@ class Reportable(typing.Generic[T]):
         """Rule description."""
         return self._description or '|'.join(self.names)
 
-    def report(self, value: typing.Union[str, T], context: typing.MutableMapping) -> None:
+    def report(self, value: str | T, context: typing.MutableMapping[str, typing.Any]) -> None:
         """Report unknown value."""
         if not value or not self.reportable:
             return
 
         if 'report' in context:
             report_map = context['report'].setdefault(self.description, {})
-            if value not in report_map:
-                report_map[value] = context['path']
+            # a raw track value is not always hashable: mappings and lists have to be keyed by their
+            # representation instead.
+            key = value if isinstance(value, typing.Hashable) else repr(value)
+            if key not in report_map:
+                report_map[key] = context['path']
         logger.info('Invalid %s: %r', self.description, value)
 
 
@@ -48,13 +53,13 @@ class Property(Reportable[T]):
     """Property class."""
 
     def __init__(
-            self,
-            *args: str,
-            default: typing.Optional[T] = None,
-            private: bool = False,
-            description: typing.Optional[str] = None,
-            delimiter: str = ' / ',
-            **kwargs,
+        self,
+        *args: str,
+        default: T | None = None,
+        private: bool = False,
+        description: str | None = None,
+        delimiter: str = ' / ',
+        **kwargs: typing.Any,
     ):
         """Init method."""
         super().__init__(*args, description=description, **kwargs)
@@ -64,10 +69,7 @@ class Property(Reportable[T]):
         self.delimiter = delimiter
 
     @classmethod
-    def _extract_value(cls,
-                       track: typing.Mapping,
-                       name: str,
-                       names: typing.List[str]):
+    def _extract_value(cls, track: typing.Mapping[str, typing.Any], name: str, names: list[str]) -> typing.Any:
         if len(names) == 2:
             parent_value = track.get(names[0], track.get(names[0].upper(), {}))
             return parent_value.get(names[1], parent_value.get(names[1].upper()))
@@ -75,10 +77,10 @@ class Property(Reportable[T]):
         return track.get(name, track.get(name.upper()))
 
     def extract_value(
-            self,
-            track: typing.Mapping,
-            context: typing.MutableMapping,
-    ) -> typing.Optional[T]:
+        self,
+        track: typing.Mapping[str, typing.Any],
+        context: typing.MutableMapping[str, typing.Any],
+    ) -> T | None:
         """Extract the property value from a given track."""
         for name in self.names:
             names = name.split('.')
@@ -111,68 +113,82 @@ class Property(Reportable[T]):
             return values[0]
         return value
 
-    def handle(self, value: T, context: typing.MutableMapping) -> typing.Optional[T]:
+    def handle(self, value: typing.Any, context: typing.MutableMapping[str, typing.Any]) -> T | None:
         """Return the value without any modification."""
-        return value
+        return typing.cast(T, value)
 
 
 class Configurable(Property[T]):
     """Configurable property where values are in a config mapping."""
 
-    def __init__(self, config: typing.Mapping[str, typing.Mapping], *args: str,
-                 config_key: typing.Optional[str] = None, **kwargs):
+    def __init__(
+        self,
+        config: Config | typing.Mapping[str, typing.Any],
+        *args: str,
+        config_key: str | None = None,
+        **kwargs: typing.Any,
+    ):
         """Init method."""
         super().__init__(*args, **kwargs)
         self.mapping = getattr(config, config_key or self.__class__.__name__) if config else {}
 
     @classmethod
-    def _extract_key(cls, value: str) -> typing.Union[str, bool]:
+    def _extract_key(cls, value: str) -> str | typing.Literal[False]:
         return value.upper()
 
     @classmethod
-    def _extract_fallback_key(cls, value: str, key: str) -> typing.Optional[T]:
+    def _extract_fallback_key(cls, value: str, key: str) -> str | None:
         return None
 
     def _lookup(
-            self,
-            key: str,
-            context: typing.MutableMapping,
-    ) -> typing.Union[T, None, bool]:
+        self,
+        key: str | None,
+        context: typing.MutableMapping[str, typing.Any],
+    ) -> T | None | typing.Literal[False]:
         result = self.mapping.get(key)
         if result is not None:
             result = getattr(result, context.get('profile') or 'default')
             return result if result != '__ignored__' else False
         return None
 
-    def handle(self, value, context):
+    def handle(self, value: T, context: typing.MutableMapping[str, typing.Any]) -> T | None:
         """Return Variable or Constant."""
-        key = self._extract_key(value)
-        if key is False:
+        # Configurable is only ever used with string-keyed lookups: the raw value is always a string
+        # coming from the parsed track data, even though T describes the looked-up result type.
+        str_value = typing.cast(str, value)
+        initial_key = self._extract_key(str_value)
+        if initial_key is False:
             return None
 
+        key: str | None = initial_key
         result = self._lookup(key, context)
         if result is False:
             return None
 
         while not result and key:
-            key = self._extract_fallback_key(value, key)
+            key = self._extract_fallback_key(str_value, key)
             result = self._lookup(key, context)
             if result is False:
                 return None
 
         if not result:
-            self.report(value, context)
+            self.report(str_value, context)
 
         return result
 
 
-class MultiValue(Property):
+class MultiValue(Property[typing.Any]):
     """Property with multiple values."""
 
-    def __init__(self, prop: typing.Optional[Property] = None, delimiter='/', single=False,
-                 handler: typing.Optional[
-                     typing.Callable[[typing.Optional[str], typing.MutableMapping], typing.Optional[str]]] = None,
-                 name=None, **kwargs):
+    def __init__(
+        self,
+        prop: Property[typing.Any] | None = None,
+        delimiter: str = '/',
+        single: bool = False,
+        handler: typing.Callable[[str | None, typing.MutableMapping[str, typing.Any]], str | None] | None = None,
+        name: str | None = None,
+        **kwargs: typing.Any,
+    ):
         """Init method."""
         super().__init__(*(prop.names if prop else (name,)), **kwargs)
         self.prop = prop
@@ -181,10 +197,10 @@ class MultiValue(Property):
         self.handler = handler
 
     def handle(
-            self,
-            value: str,
-            context: typing.MutableMapping,
-    ) -> typing.Optional[typing.Union[str, typing.List[str]]]:
+        self,
+        value: str,
+        context: typing.MutableMapping[str, typing.Any],
+    ) -> str | list[str] | None:
         """Handle properties with multiple values."""
         if self.handler:
             call = self.handler
@@ -201,10 +217,7 @@ class MultiValue(Property):
             return result
 
         if isinstance(value, list):
-            if len(value) == 1:
-                values = self._split(value[0], self.delimiter)
-            else:
-                values = value
+            values = self._split(value[0], self.delimiter) if len(value) == 1 else value
         else:
             values = self._split(value, self.delimiter)
 
@@ -219,10 +232,10 @@ class MultiValue(Property):
 
     @classmethod
     def _split(
-            cls,
-            value: typing.Optional[T],
-            delimiter: str = '/',
-    ) -> typing.Optional[typing.List[str]]:
+        cls,
+        value: T | None,
+        delimiter: str = '/',
+    ) -> list[str] | None:
         if value is None:
             return None
 
@@ -232,12 +245,17 @@ class MultiValue(Property):
 class Rule(Reportable[T]):
     """Rule abstract class."""
 
-    def __init__(self, name: str, private=False, override=False, **kwargs):
+    def __init__(self, name: str, private: bool = False, override: bool = False, **kwargs: typing.Any):
         """Initialize the object."""
         super().__init__(name, **kwargs)
         self.private = private
         self.override = override
 
-    def execute(self, props, pv_props, context: typing.Mapping):
+    def execute(
+        self,
+        props: typing.MutableMapping[str, typing.Any],
+        pv_props: typing.MutableMapping[str, typing.Any],
+        context: typing.MutableMapping[str, typing.Any],
+    ) -> typing.Any:
         """How to execute a rule."""
         raise NotImplementedError

@@ -48,7 +48,7 @@ def host_from_uri(uri):
         'HTTPS': '443',
     }
 
-    sch, netloc, path, par, query, fra = urlparse(uri)
+    sch, netloc, _path, _par, _query, _fra = urlparse(uri)
     if ':' in netloc:
         netloc, port = netloc.split(':', 1)
     else:

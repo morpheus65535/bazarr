@@ -60,7 +60,15 @@ class SaneListExtension(Extension):
     """ Add sane lists to Markdown. """
 
     def extendMarkdown(self, md):
-        """ Override existing Processors. """
+        """ Register the processors.
+
+        | Class Instance                                                            | Registry                                                         | Name   | Priority |
+        | ------------------------------------------------------------------------- | ---------------------------------------------------------------- | ------ | :------: |
+        | [`SaneOListProcessor`][markdown.extensions.sane_lists.SaneOListProcessor] | [`blockprocessors`][markdown.blockprocessors.build_block_parser] | `olist` | `40` |
+        | [`SaneUListProcessor`][markdown.extensions.sane_lists.SaneUListProcessor] | [`blockprocessors`][markdown.blockprocessors.build_block_parser] | `ulist` | `30` |
+
+        """
+        # flake8: noqa: E501 65-68
         md.parser.blockprocessors.register(SaneOListProcessor(md.parser), 'olist', 40)
         md.parser.blockprocessors.register(SaneUListProcessor(md.parser), 'ulist', 30)
 

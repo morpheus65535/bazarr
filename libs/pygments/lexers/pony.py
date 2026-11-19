@@ -34,7 +34,7 @@ class PonyLexer(RegexLexer):
             (r'[^\S\n]+', Text),
             (r'//.*\n', Comment.Single),
             (r'/\*', Comment.Multiline, 'nested_comment'),
-            (r'"""(?:.|\n)*?"""', String.Doc),
+            (r'"""[\s\S]*?"""', String.Doc),
             (r'"', String, 'string'),
             (r'\'.*\'', String.Char),
             (r'=>|[]{}:().~;,|&!^?[]', Punctuation),

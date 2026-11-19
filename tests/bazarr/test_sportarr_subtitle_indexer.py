@@ -56,7 +56,7 @@ def test_sports_missing_subtitles_respects_hi_profile(
             "language": extra_code, "forced": "False", "hi": "False",
             "audio_exclude": "False", "audio_only_include": "False",
         })
-    monkeypatch.setattr(sports.database, "execute", lambda statement: [event])
+    monkeypatch.setattr(sports.database, "execute", lambda statement: SimpleNamespace(all=lambda: [event]))
     monkeypatch.setattr(sports, "store_missing_subtitles", store_missing_subtitles)
     monkeypatch.setattr(sports, "get_profiles_list", lambda **kwargs: profile)
     monkeypatch.setattr(sports, "get_profile_cutoff", lambda **kwargs: profile["items"][:1] if cutoff else [])

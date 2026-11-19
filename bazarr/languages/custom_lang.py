@@ -250,12 +250,13 @@ class LatinAmericanSpanish(CustomLanguage):
     _possible_matches = (
         "es-la", "spa-la", "spl", "mx", "latin", "mexic", "argent", "latam",
     )
-    _extensions = (".es-la", ".spl", ".spa-la", ".ea", ".es-mx", ".lat", ".es.ar")
+    _extensions = (".es-la", ".spl", ".spa-la", ".ea", ".es-mx", ".es-419", ".lat", ".es.ar")
     _extensions_forced = (
-        ".es-la.forced", ".spl.forced", ".spa-la.forced", ".ea.forced", ".es-mx.forced", ".lat.forced", ".es.ar.forced",
+        ".es-la.forced", ".spl.forced", ".spa-la.forced", ".ea.forced", ".es-mx.forced", ".es-419.forced",
+        ".lat.forced", ".es.ar.forced",
     )
     _extensions_hi = (
-        ".es-la.hi", ".spl.hi", ".spa-la.hi", ".ea.hi", ".es-mx.hi", ".lat.hi", ".es.ar.hi",
-        ".es-la.cc", ".spl.cc", ".spa-la.cc", ".ea.cc", ".es-mx.cc", ".lat.cc", ".es.ar.cc",
-        ".es-la.sdh", ".spl.sdh", ".spa-la.sdh", ".ea.sdh", ".es-mx.sdh", ".lat.sdh", ".es.ar.sdh",
+        ".es-la.hi", ".spl.hi", ".spa-la.hi", ".ea.hi", ".es-mx.hi", ".es-419.hi", ".lat.hi", ".es.ar.hi",
+        ".es-la.cc", ".spl.cc", ".spa-la.cc", ".ea.cc", ".es-mx.cc", ".es-419.cc", ".lat.cc", ".es.ar.cc",
+        ".es-la.sdh", ".spl.sdh", ".spa-la.sdh", ".ea.sdh", ".es-mx.sdh", ".es-419.sdh", ".lat.sdh", ".es.ar.sdh",
     )

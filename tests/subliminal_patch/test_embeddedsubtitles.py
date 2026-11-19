@@ -573,3 +573,66 @@ def test_discard_possible_incomplete_subtitles(number_of_frames, expected_len):
     )
     new_list = _discard_possible_incomplete_subtitles([subtitle_1, subtitle_2])
     assert len(new_list) == expected_len
+
+
+@pytest.mark.parametrize(
+    "language_ietf,title",
+    [
+        ("zh-HK", None),
+        ("zh-MO", None),
+        ("yue", None),
+        (None, "Chinese（Hong Kong Sar China）"),
+        (None, "粵語"),
+        (None, "粤语"),
+        (None, "Cantonese"),
+    ],
+)
+def test_rebuild_langs_detects_cantonese_as_distinct_from_chinese(
+    language_ietf, title
+):
+    tags = {"language": "chi"}
+    if language_ietf:
+        tags["language_ietf"] = language_ietf
+    if title:
+        tags["title"] = title
+    stream = FFprobeSubtitleStream(
+        {"index": 1, "codec_name": "subrip", "tags": tags}
+    )
+
+    _rebuild_langs([stream])
+
+    assert stream.language == Language("zho", "HK")
+    assert stream.language != Language("zho")
+    assert stream.language != Language("zho", "TW")
+
+
+def test_rebuild_langs_keeps_mandarin_track_when_cantonese_listed_first():
+    cantonese = FFprobeSubtitleStream(
+        {
+            "index": 33,
+            "codec_name": "subrip",
+            "tags": {
+                "language": "chi",
+                "title": "Chinese（Hong Kong Sar China）",
+            },
+        }
+    )
+    mandarin = FFprobeSubtitleStream(
+        {
+            "index": 34,
+            "codec_name": "subrip",
+            "tags": {"language": "chi", "title": "中文（繁體）"},
+        }
+    )
+
+    _rebuild_langs([cantonese, mandarin])
+
+    assert cantonese.language == Language("zho", "HK")
+    assert cantonese.language != Language("zho")
+    assert mandarin.language == Language("zho", "TW")
+    assert cantonese.language.alpha2 == "zh"
+    assert cantonese.language.country == "HK"
+
+
+def test_cantonese_language_is_offered_by_provider():
+    assert Language("zho", "HK") in EmbeddedSubtitlesProvider.languages

@@ -1,0 +1,148 @@
+# BSD 2-Clause License
+#
+# Apprise - Push Notification Library.
+# Copyright (c) 2026, Chris Caron <lead2gold@gmail.com>
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice,
+#    this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+
+# Convert Apprise's TEXT, HTML, and MARKDOWN formats. Service dialects are
+# handled separately by ``conversion/dialect.py`` and plugin hooks.
+
+from collections.abc import Sequence
+import re
+from string import punctuation
+from typing import Optional
+
+from markdown import Markdown
+
+from ..common import NotifyFormat
+from ..compat.markdown33 import escape_placeholders_as_html
+from ..url import URLBase
+from .html import HTMLConverter, HTMLMarkdownConverter
+
+# CommonMark syntax characters, including backslash itself.
+# Plain text has no escape state, so escape every occurrence.  An "&" is
+# only escaped when it would otherwise read as an entity such as "&amp;".
+_COMMONMARK_ESCAPABLE_RE = re.compile(
+    r"([\\_*\[\]()~`>#+=|{}.!-]|&(?=#?[0-9A-Za-z]{1,32};))"
+)
+
+
+def convert_between(from_format, to_format, content):
+    """Convert content between supported Apprise formats.
+
+    The original content is returned when no converter exists for the pair.
+    """
+
+    # Fetch the converter registered for this format pair.
+    convert = CONVERTERS.get((from_format, to_format))
+
+    # Preserve the original content when no conversion is available
+    return convert(content) if convert else content
+
+
+# Notification-friendly line-break and table extensions.
+_MARKDOWN_EXTENSIONS = (
+    "markdown.extensions.nl2br",
+    "markdown.extensions.tables",
+)
+
+
+def markdown_to_html(
+    content: str, extensions: Optional[Sequence[str]] = None
+) -> str:
+    """Convert Markdown content to HTML.
+
+    ``extensions`` replaces the default Python-Markdown extensions.
+    """
+
+    # Use the notification defaults unless the caller picks its own.
+    md = Markdown(
+        extensions=list(
+            _MARKDOWN_EXTENSIONS if extensions is None else extensions
+        ),
+    )
+
+    # Match CommonMark by allowing all ASCII punctuation to be escaped.
+    md.ESCAPED_CHARS = sorted(set(md.ESCAPED_CHARS) | set(punctuation))
+
+    # Keep escaped characters valid HTML on every Python-Markdown release.
+    escape_placeholders_as_html(md)
+    return md.convert(content)
+
+
+def text_to_html(content):
+    """Convert plain text content to HTML."""
+
+    # First eliminate any carriage returns
+    return URLBase.escape_html(content, convert_new_lines=True)
+
+
+def text_to_markdown(content):
+    """Converts specified content from plain text to CommonMark.
+
+    Escapes CommonMark-significant characters, including backslashes, so
+    plain text renders literally in Markdown destinations.
+    """
+
+    # Prefix each Markdown control character so it stays ordinary text.
+    return _COMMONMARK_ESCAPABLE_RE.sub(r"\\\1", content)
+
+
+def html_to_text(content):
+    """Convert HTML content to plain text."""
+
+    # Initialize the plain-text parser.
+    parser = HTMLConverter()
+
+    # Feed and finalize the HTML document
+    parser.feed(content)
+    parser.close()
+
+    # Return the finalized parser output.
+    return parser.converted
+
+
+def html_to_markdown(content):
+    """Convert HTML content to CommonMark."""
+
+    # Initialize the Markdown parser.
+    parser = HTMLMarkdownConverter()
+
+    # Feed and finalize the HTML document
+    parser.feed(content)
+    parser.close()
+
+    # Return the finalized parser output.
+    return parser.converted
+
+
+# Map each supported format pair to the function that converts it.
+CONVERTERS = {
+    # Each key describes the input format followed by the requested output.
+    (NotifyFormat.MARKDOWN, NotifyFormat.HTML): markdown_to_html,
+    (NotifyFormat.TEXT, NotifyFormat.HTML): text_to_html,
+    (NotifyFormat.HTML, NotifyFormat.TEXT): html_to_text,
+    (NotifyFormat.HTML, NotifyFormat.MARKDOWN): html_to_markdown,
+    (NotifyFormat.TEXT, NotifyFormat.MARKDOWN): text_to_markdown,
+}

@@ -1,0 +1,29 @@
+{
+ "series": {
+  "items": [
+   {
+    "id": 116,
+    "title": "Dexter",
+    "originalTitle": "Dexter",
+    "slug": "dexter",
+    "path": "dexter",
+    "episodesTotal": 120,
+    "episodesTranslated": 120,
+    "episodesReserved": 0,
+    "seasonsCount": 9,
+    "status": "inactive",
+    "published": true,
+    "restricted": false,
+    "tmdbId": 1405,
+    "imdbId": "tt0773262",
+    "premiereDate": "2006-10-01",
+    "finaleDate": "2013-09-22",
+    "updatedAt": "2026-10-15T20:57:58.000Z",
+    "posterUrl": "https://www.prijevodi-online.org/api/v1/series/116/poster?v=309360",
+    "copyrightNoticeAt": null,
+    "copyrightNotice": null
+   }
+  ],
+  "total": 1
+ }
+}

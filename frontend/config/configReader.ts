@@ -45,6 +45,12 @@ export default function overrideEnv(env: Record<string, string>) {
   const reader = new ConfigReader();
   reader.open(configPath);
 
+  if (env["VITE_AUTH_TYPE"] === undefined) {
+    const authType = reader.getValue("auth", "type") ?? "";
+    env["VITE_AUTH_TYPE"] = authType;
+    process.env["VITE_AUTH_TYPE"] = authType;
+  }
+
   if (env["VITE_API_KEY"] === undefined) {
     try {
       const apiKey = reader.getValue("auth", "apikey");

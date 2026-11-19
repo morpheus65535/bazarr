@@ -7,12 +7,10 @@ from knowit import VIDEO_EXTENSIONS
 
 OS_FAMILY = typing.Literal['windows', 'macos', 'unix']
 
-OPTION_MAP = typing.Dict[str, typing.Tuple[str]]
+OPTION_MAP = typing.Mapping[str, tuple[str, ...]]
 
 
-def recurse_paths(
-        paths: typing.Union[str, typing.Iterable[str]]
-) -> typing.List[str]:
+def recurse_paths(paths: str | typing.Iterable[str]) -> list[str]:
     """Return a list of video files."""
     enc_paths = []
 
@@ -23,7 +21,7 @@ def recurse_paths(
         if os.path.isfile(path):
             enc_paths.append(path)
         if os.path.isdir(path):
-            for root, directories, filenames in os.walk(path):
+            for root, _directories, filenames in os.walk(path):
                 for filename in filenames:
                     if os.path.splitext(filename)[1] in VIDEO_EXTENSIONS:
                         full_path = os.path.join(root, filename)
@@ -34,16 +32,13 @@ def recurse_paths(
     return list(unique_paths)
 
 
-def to_dict(
-        obj: typing.Any,
-        classkey: typing.Optional[typing.Type] = None
-) -> typing.Union[str, dict, list]:
+def to_dict(obj: typing.Any, classkey: type | None = None) -> typing.Any:
     """Transform an object to dict."""
     if isinstance(obj, str):
         return obj
     elif isinstance(obj, dict):
         data = {}
-        for (k, v) in obj.items():
+        for k, v in obj.items():
             data[k] = to_dict(v, classkey)
         return data
     elif hasattr(obj, '_ast'):
@@ -51,8 +46,11 @@ def to_dict(
     elif hasattr(obj, '__iter__'):
         return [to_dict(v, classkey) for v in obj]
     elif hasattr(obj, '__dict__'):
-        values = [(key, to_dict(value, classkey))
-                  for key, value in obj.__dict__.items() if not callable(value) and not key.startswith('_')]
+        values = [
+            (key, to_dict(value, classkey))
+            for key, value in obj.__dict__.items()
+            if not callable(value) and not key.startswith('_')
+        ]
         data = {k: v for k, v in values if v is not None}
         if classkey is not None and hasattr(obj, '__class__'):
             data[classkey] = obj.__class__.__name__
@@ -70,21 +68,21 @@ def detect_os() -> OS_FAMILY:
 
 
 def define_candidate(
-        locations: OPTION_MAP,
-        names: OPTION_MAP,
-        os_family: typing.Optional[OS_FAMILY] = None,
-        suggested_path: typing.Optional[str] = None,
+    locations: OPTION_MAP,
+    names: OPTION_MAP,
+    os_family: OS_FAMILY | None = None,
+    suggested_path: str | None = None,
 ) -> typing.Generator[str, None, None]:
     """Select family-specific options and generate possible candidates."""
     os_family = os_family or detect_os()
     family_names = names[os_family]
-    all_locations = (suggested_path, ) + locations[os_family]
+    all_locations = (suggested_path,) + locations[os_family]
     yield from build_candidates(all_locations, family_names)
 
 
 def build_candidates(
-        locations: typing.Iterable[typing.Optional[str]],
-        names: typing.Iterable[str],
+    locations: typing.Iterable[str | None],
+    names: typing.Iterable[str],
 ) -> typing.Generator[str, None, None]:
     """Build candidate names."""
     for location in locations:
@@ -103,7 +101,7 @@ def build_candidates(
 
 def build_path_candidates(
     names: typing.Iterable[str],
-    os_family: typing.Optional[OS_FAMILY] = None,
+    os_family: str | None = None,
 ) -> typing.Generator[str, None, None]:
     """Build candidate names on environment PATH."""
     os_family = os_family or detect_os()
@@ -111,15 +109,11 @@ def build_path_candidates(
         yield from names
     else:
         paths = os.environ['PATH'].split(';')
-        yield from (
-            os.path.join(path, name)
-            for path in paths
-            for name in names
-        )
+        yield from (os.path.join(path, name) for path in paths for name in names)
         yield from names
 
 
-def round_decimal(value: Decimal, min_digits=0, max_digits: typing.Optional[int] = None):
+def round_decimal(value: Decimal, min_digits: int = 0, max_digits: int | None = None) -> Decimal:
     exponent = int(value.normalize().as_tuple().exponent)
     if exponent >= 0:
         return round(value, min_digits)
