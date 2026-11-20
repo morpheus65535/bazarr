@@ -1,7 +1,15 @@
-import React, { FunctionComponent } from "react";
-import { Code, Space, Table, Text as MantineText } from "@mantine/core";
+import React, { FunctionComponent, PropsWithChildren } from "react";
+import {
+  Anchor,
+  Button,
+  Code,
+  Space,
+  Table,
+  Text as MantineText,
+} from "@mantine/core";
+import { notifications } from "@mantine/notifications";
 import { range } from "lodash";
-import { useSystemStatus } from "@/apis/hooks";
+import { useLapseTestMutation, useSystemStatus } from "@/apis/hooks";
 import {
   Check,
   CollapseBox,
@@ -13,6 +21,7 @@ import {
   Slider,
   Text,
 } from "@/pages/Settings/components";
+import { useSettingValue } from "@/pages/Settings/utilities/hooks";
 import {
   SubzeroColorModification,
   SubzeroModification,
@@ -24,6 +33,7 @@ import {
   qualityMaxFramerateDeviationOptions,
   qualityMaxOffsetSecondsOptions,
   qualityMinScoreOptions,
+  syncEngineOptions,
   syncMaxOffsetSecondsOptions,
 } from "./options";
 
@@ -126,6 +136,50 @@ const commandOptionElements: React.JSX.Element[] = commandOptions.map(
     </tr>
   ),
 );
+
+const LapseTestButton: FunctionComponent = () => {
+  const testLapse = useLapseTestMutation();
+  const url = useSettingValue<string>("settings-subsync-lapse_url");
+  const path = useSettingValue<string>("settings-subsync-lapse_path");
+
+  const test = async () => {
+    try {
+      const result = await testLapse.mutateAsync({
+        url: url ?? "",
+        path: path ?? "",
+      });
+      notifications.show({
+        title: result.success ? "Connection successful" : "Connection failed",
+        message: result.message,
+        color: result.success ? "success" : "danger",
+      });
+    } catch {
+      notifications.show({
+        title: "Connection test failed",
+        message: "Could not test LAPSE",
+        color: "danger",
+      });
+    }
+  };
+
+  return (
+    <Button onClick={test} loading={testLapse.isPending}>
+      Test
+    </Button>
+  );
+};
+
+const FFsubsyncSection: FunctionComponent<PropsWithChildren> = ({
+  children,
+}) => {
+  const engine = useSettingValue<string>("settings-subsync-engine");
+
+  return (
+    <Section header="Advanced FFsubsync Options" hidden={engine === "lapse"}>
+      {children}
+    </Section>
+  );
+};
 
 const SettingsSubtitleProcessingView: FunctionComponent = () => {
   const { data: status } = useSystemStatus();
@@ -298,19 +352,62 @@ const SettingsSubtitleProcessingView: FunctionComponent = () => {
         />
         <Message>
           Maximum number of subtitles synchronizations (automatic or manual)
-          running at the same time. Each one runs in its own process and uses
-          one CPU core. Synchronizations also count toward the Concurrent Jobs
-          limit in General settings.
+          running at the same time. Each one runs in its own process, ffsubsync
+          uses one CPU core and LAPSE up to eight. Synchronizations also count
+          toward the Concurrent Jobs limit in General settings.
         </Message>
+        <Selector
+          label="Synchronization Engine"
+          options={syncEngineOptions}
+          settingKey="settings-subsync-engine"
+        ></Selector>
+        <Message>Engine used for automatic and manual synchronization.</Message>
+        <CollapseBox
+          indent
+          settingKey="settings-subsync-engine"
+          on={(v) => v === "lapse"}
+        >
+          <Text
+            label="LAPSE URL"
+            placeholder="http://lapse:8080"
+            settingKey="settings-subsync-lapse_url"
+          ></Text>
+          <Message>
+            URL of the LAPSE container, for Docker. The container needs your
+            media mounted at the same paths as in Bazarr. Used before the
+            executable below.
+          </Message>
+          <Text
+            label="LAPSE Executable Path"
+            placeholder="lapse"
+            settingKey="settings-subsync-lapse_path"
+          ></Text>
+          <Message>
+            Full path to the lapse executable. Leave empty to look for it in
+            PATH. If LAPSE can't be reached, ffsubsync is used instead.
+          </Message>
+          <LapseTestButton />
+          <Message>
+            LAPSE checks every sync itself and only writes the ones it is sure
+            about.{" "}
+            <Anchor
+              href="https://github.com/Schwponaco-org/lapse/blob/main/docs/bazarr.md"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Installing LAPSE for Bazarr
+            </Anchor>
+          </Message>
+        </CollapseBox>
         <CollapseBox settingKey="settings-subsync-use_subsync">
           <Message>
-            This feature uses ffsubsync, which can provide better
-            synchronization results than traditional methods, especially for
-            subtitles that are significantly out of sync. However, it may also
-            increase the time it takes to process subtitles. If you have a lot
-            of subtitles that need synchronization or if you are on a
-            low-powered device, you may want to leave this option disabled and
-            synchronize subtitles manually when needed.
+            This feature uses the synchronization engine selected above, which
+            can provide better synchronization results than traditional methods,
+            especially for subtitles that are significantly out of sync.
+            However, it may also increase the time it takes to process
+            subtitles. If you have a lot of subtitles that need synchronization
+            or if you are on a low-powered device, you may want to leave this
+            option disabled and synchronize subtitles manually when needed.
           </Message>
           <Check
             label="Series Score Threshold For Audio Sync"
@@ -359,7 +456,7 @@ const SettingsSubtitleProcessingView: FunctionComponent = () => {
             Subtitles downloaded from the providers listed above will not be
             automatically synchronized.
           </Message>
-          <Section header="Advanced FFsubsync Options">
+          <Section header="Advanced Options">
             <Selector
               label="Synchronization Reference"
               options={forceAudioOption}
@@ -404,10 +501,12 @@ const SettingsSubtitleProcessingView: FunctionComponent = () => {
                 When enabled, automatic synchronization aligns to the audio
                 track matching the show or movie's original language (from
                 Sonarr/Radarr metadata) instead of using the embedded subtitle
-                as reference. Falls back to ffsubsync's default reference if the
+                as reference. Falls back to the default reference if the
                 original language is not present in the file.
               </Message>
             </CollapseBox>
+          </Section>
+          <FFsubsyncSection>
             <Check
               label="Do Not Fix Framerate Mismatch"
               settingKey="settings-subsync-no_fix_framerate"
@@ -479,7 +578,7 @@ const SettingsSubtitleProcessingView: FunctionComponent = () => {
               file to be able to open an issue for ffsubsync. This file will
               reside alongside the media file.
             </Message>
-          </Section>
+          </FFsubsyncSection>
         </CollapseBox>
       </Section>
 

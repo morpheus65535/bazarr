@@ -164,6 +164,13 @@ class SystemApi extends BaseApi {
     return response.data.data;
   }
 
+  async testLapse(url: string, path: string) {
+    const response = await this.post<
+      DataWrapper<{ success: boolean; message: string }>
+    >("/lapse/test", { url, path });
+    return response.data.data;
+  }
+
   async search(query: string) {
     const response = await this.get<ItemSearchResult[]>("/searches", { query });
     return response;

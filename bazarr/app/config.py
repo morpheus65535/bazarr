@@ -464,6 +464,9 @@ validators = [
 
     # subsync section
     Validator('subsync.use_subsync', must_exist=True, default=False, is_type_of=bool),
+    Validator('subsync.engine', must_exist=True, default='ffsubsync', is_type_of=str, is_in=['ffsubsync', 'lapse']),
+    Validator('subsync.lapse_path', must_exist=True, default='', is_type_of=str),
+    Validator('subsync.lapse_url', must_exist=True, default='', is_type_of=str),
     Validator('subsync.use_subsync_threshold', must_exist=True, default=False, is_type_of=bool),
     Validator('subsync.subsync_threshold', must_exist=True, default=90, is_type_of=int, gte=0, lte=100),
     Validator('subsync.use_subsync_movie_threshold', must_exist=True, default=False, is_type_of=bool),

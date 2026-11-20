@@ -96,6 +96,17 @@ export const syncMaxOffsetSecondsOptions: SelectorOption<number>[] = [
   },
 ];
 
+export const syncEngineOptions: SelectorOption<string>[] = [
+  {
+    label: "ffsubsync",
+    value: "ffsubsync",
+  },
+  {
+    label: "LAPSE",
+    value: "lapse",
+  },
+];
+
 export const forceAudioOption: SelectorOption<string>[] = [
   {
     label: "Use Audio Track as Reference",

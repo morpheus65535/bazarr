@@ -1,6 +1,8 @@
+import { notifications } from "@mantine/notifications";
 import userEvent from "@testing-library/user-event";
 import { Mock, vi, vitest } from "vitest";
 import {
+  useLapseTestMutation,
   useSettingsMutation,
   useSystemSettings,
   useSystemStatus,
@@ -15,12 +17,25 @@ vi.mock("@/apis/hooks", async (importOriginal) => {
     useSystemSettings: vitest.fn(),
     useSettingsMutation: vitest.fn(),
     useSystemStatus: vitest.fn(),
+    useLapseTestMutation: vitest.fn(),
+  };
+});
+
+vi.mock("@mantine/notifications", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("@mantine/notifications")>();
+  return {
+    ...actual,
+    notifications: { ...actual.notifications, show: vitest.fn() },
   };
 });
 
 const mockedUseSystemSettings = useSystemSettings as Mock;
 const mockedUseSettingsMutation = useSettingsMutation as Mock;
 const mockedUseSystemStatus = useSystemStatus as Mock;
+const mockedUseLapseTestMutation = useLapseTestMutation as Mock;
+const mockedNotificationsShow = notifications.show as Mock;
+const mockTestLapse = vitest.fn();
 
 const baseSettings = {
   general: {
@@ -56,6 +71,10 @@ const setupMocks = () => {
     data: { cpu_cores: 4 },
     isLoading: false,
     isRefetching: false,
+  });
+  mockedUseLapseTestMutation.mockReturnValue({
+    mutateAsync: mockTestLapse,
+    isPending: false,
   });
 };
 
@@ -110,5 +129,84 @@ describe("SettingsSubtitleProcessingView", () => {
     );
 
     expect(screen.getByRole("textbox", { name: "Command" })).toBeVisible();
+  });
+
+  describe("with LAPSE as the engine", () => {
+    const renderLapse = async () => {
+      setupMocks();
+      mockedUseSystemSettings.mockReturnValue({
+        data: {
+          ...baseSettings,
+          subsync: {
+            ...baseSettings.subsync,
+            engine: "lapse",
+            lapse_url: "http://lapse:8080",
+            lapse_path: "/usr/bin/lapse",
+          },
+        },
+        isLoading: false,
+        isRefetching: false,
+      });
+      customRender(<SettingsSubtitleProcessingView />);
+
+      await userEvent.click(
+        screen.getByTestId("section-toggle-Audio Synchronization"),
+      );
+    };
+
+    it("hides the ffsubsync options and links the LAPSE docs", async () => {
+      await renderLapse();
+
+      expect(screen.getByText("Synchronization Reference")).toBeVisible();
+      expect(
+        screen.getByText("Do Not Fix Framerate Mismatch"),
+      ).not.toBeVisible();
+      expect(screen.getByText("Max Offset Seconds")).not.toBeVisible();
+      expect(screen.getByText("Quality Max Offset Seconds")).not.toBeVisible();
+      expect(
+        screen.getByRole("link", { name: "Installing LAPSE for Bazarr" }),
+      ).toHaveAttribute(
+        "href",
+        "https://github.com/Schwponaco-org/lapse/blob/main/docs/bazarr.md",
+      );
+    });
+
+    it("tests LAPSE with the current URL and path", async () => {
+      mockTestLapse.mockResolvedValueOnce({
+        success: true,
+        message: "Connected to LAPSE 2.5.1",
+      });
+      await renderLapse();
+
+      expect(screen.getByRole("textbox", { name: "LAPSE URL" })).toHaveValue(
+        "http://lapse:8080",
+      );
+      await userEvent.click(screen.getByRole("button", { name: "Test" }));
+
+      expect(mockTestLapse).toHaveBeenCalledWith({
+        url: "http://lapse:8080",
+        path: "/usr/bin/lapse",
+      });
+      expect(mockedNotificationsShow).toHaveBeenCalledWith(
+        expect.objectContaining({ message: "Connected to LAPSE 2.5.1" }),
+      );
+    });
+
+    it("shows why the test failed", async () => {
+      mockTestLapse.mockResolvedValueOnce({
+        success: false,
+        message: "LAPSE executable not found",
+      });
+      await renderLapse();
+
+      await userEvent.click(screen.getByRole("button", { name: "Test" }));
+
+      expect(mockedNotificationsShow).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: "Connection failed",
+          message: "LAPSE executable not found",
+        }),
+      );
+    });
   });
 });

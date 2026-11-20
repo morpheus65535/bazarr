@@ -355,6 +355,12 @@ export const useSystemWebhookTestMutation = () =>
     mutationFn: () => api.system.testWebhook(),
   });
 
+export const useLapseTestMutation = () =>
+  useMutation({
+    mutationFn: (data: { url: string; path: string }) =>
+      api.system.testLapse(data.url, data.path),
+  });
+
 export const useOpenAICompatibleTranslatorTestMutation = () =>
   useMutation({
     mutationFn: (data: {

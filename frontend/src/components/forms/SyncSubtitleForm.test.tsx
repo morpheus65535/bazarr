@@ -4,6 +4,7 @@ import {
   useRefTracksByEpisodeId,
   useRefTracksByMovieId,
   useSubtitleAction,
+  useSystemSettings,
 } from "@/apis/hooks";
 import { useModals } from "@/modules/modals";
 import { customRender, screen, waitFor } from "@/tests";
@@ -16,6 +17,7 @@ vitest.mock("@/apis/hooks", async (importOriginal) => {
     useSubtitleAction: vitest.fn(),
     useRefTracksByMovieId: vitest.fn(),
     useRefTracksByEpisodeId: vitest.fn(),
+    useSystemSettings: vitest.fn(),
   };
 });
 
@@ -32,6 +34,7 @@ vitest.mock("@/modules/task", async (importOriginal) => {
 const mockUseSubtitleAction = vitest.mocked(useSubtitleAction);
 const mockUseRefTracksByMovieId = vitest.mocked(useRefTracksByMovieId);
 const mockUseRefTracksByEpisodeId = vitest.mocked(useRefTracksByEpisodeId);
+const mockUseSystemSettings = vitest.mocked(useSystemSettings);
 const mockUseModals = vitest.mocked(useModals);
 
 const selection = {
@@ -57,6 +60,9 @@ describe("SyncSubtitleForm", () => {
     mockUseRefTracksByEpisodeId.mockReturnValue({
       data: undefined,
     } as unknown as ReturnType<typeof useRefTracksByEpisodeId>);
+    mockUseSystemSettings.mockReturnValue({
+      data: undefined,
+    } as unknown as ReturnType<typeof useSystemSettings>);
   });
 
   const renderForm = (
@@ -91,5 +97,20 @@ describe("SyncSubtitleForm", () => {
     });
     expect(onSubmit).toHaveBeenCalledTimes(1);
     expect(closeSelf).toHaveBeenCalledTimes(1);
+  });
+
+  it("hides the ffsubsync options when LAPSE is the engine", () => {
+    mockUseSubtitleAction.mockReturnValue({
+      mutateAsync: vitest.fn(),
+      isPending: false,
+    } as unknown as ReturnType<typeof useSubtitleAction>);
+    mockUseSystemSettings.mockReturnValue({
+      data: { general: { theme: "dark" }, subsync: { engine: "lapse" } },
+    } as unknown as ReturnType<typeof useSystemSettings>);
+    renderForm();
+
+    expect(screen.getByText("Reference")).toBeInTheDocument();
+    expect(screen.queryByText("Max Offset Seconds")).not.toBeInTheDocument();
+    expect(screen.queryByText("Quality Checks")).not.toBeInTheDocument();
   });
 });
