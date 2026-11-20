@@ -80,6 +80,7 @@ class GeminiTranslatorService:
         self.progress_file = None
         self.current_progress = 0
         self.job_id = None
+        self._converted_input_file = None
 
     def translate(self, job_id):
         self.job_id = job_id
@@ -94,7 +95,7 @@ class GeminiTranslatorService:
             self.current_api_key = self._select_next_api_key()
             self.gemini_api_key = self.current_api_key
             self.target_language = language_from_alpha3(self.to_lang)
-            self.input_file = self.source_srt_file
+            self.input_file = self._prepare_input_srt(subs)
             self.output_file = self.dest_srt_file
             self.model_name = settings.translator.gemini_model
             self.batch_size = self._get_batch_size()
@@ -113,6 +114,8 @@ class GeminiTranslatorService:
             except Exception as e:
                 jobs_queue.update_job_progress(job_id=job_id, progress_message=f'Gemini translation error: {str(e)}')
                 raise
+            finally:
+                self._remove_converted_input()
 
         except Exception as e:
             logger.error(f'BAZARR encountered an error translating with Gemini: {str(e)}')
@@ -131,6 +134,46 @@ class GeminiTranslatorService:
                 history_log_movie(action=6, radarr_id=self.radarr_id, result=result)
                 
             return self.dest_srt_file
+
+    def _prepare_input_srt(self, subs: pysubs2.SSAFile) -> str:
+        """
+        Return the path of the SRT file that is read by the Gemini translator.
+
+        The translator parses its input with :func:`srt.parse`, so only SRT content can be
+        read. SRT sources are returned unchanged. Any other format (ASS, SSA, VTT) is written
+        with pysubs2 to a sibling ``<name>.gemini-source.srt`` file. The name is deterministic,
+        so the saved progress file still matches the input on resume.
+
+        :param subs: Subtitle document already loaded from the source file, with miscellaneous
+            events removed.
+        :return: Path of the file to read the subtitles from.
+        """
+        source_root, source_ext = os.path.splitext(self.source_srt_file)
+        if source_ext.lower() == '.srt':
+            return self.source_srt_file
+
+        converted_file = f'{source_root}.gemini-source.srt'
+        subs.save(converted_file, encoding='utf-8', format_='srt')
+        self._converted_input_file = converted_file
+        logger.info(f'Converted {source_ext} subtitle to SRT for Gemini translation: {converted_file}')
+        return converted_file
+
+    def _remove_converted_input(self) -> None:
+        """
+        Delete the temporary SRT file created by :meth:`_prepare_input_srt`, if one exists.
+
+        A failed removal is logged and otherwise ignored, so it never masks the translation result.
+
+        :return: None
+        """
+        if self._converted_input_file:
+            try:
+                os.remove(self._converted_input_file)
+            except FileNotFoundError:
+                pass
+            except OSError as e:
+                logger.warning(f'Could not remove temporary Gemini source file {self._converted_input_file}: {e}')
+            self._converted_input_file = None
 
     @staticmethod
     def get_instruction(language: str, description: str) -> str:
@@ -494,6 +537,7 @@ class GeminiTranslatorService:
             jobs_queue.update_job_progress(job_id=self.job_id, progress_message="Please provide a subtitle file.")
             return
 
+        total = 0
         try:
             with open(self.input_file, "r", encoding="utf-8") as original_file:
                 original_text = original_file.read()
