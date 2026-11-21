@@ -175,10 +175,10 @@ def _fallback_search(mocker):
     )
 
 
-def _run_fallback_search(job_id=99):
+def _run_fallback_search(job_id=99, target="fr"):
     return list(generate_subtitles(
         path="/media/Movie.mkv",
-        languages=[("fr", "False", "False")],
+        languages=[(target, "False", "False")],
         audio_language="English",
         sceneName=None,
         title="Movie",
@@ -286,3 +286,30 @@ def test_generate_subtitles_keeps_downloaded_source_when_translation_fails(mocke
     ctx.translate.assert_called_once()
     ctx.process.assert_not_called()
     assert "failed translating fallback subtitle" in caplog.text
+
+
+def test_generate_subtitles_skips_fallback_when_target_is_source_language(mocker):
+    ctx = _fallback_search(mocker)
+    mocker.patch("subtitles.download._get_language_obj", return_value={Language("eng")})
+    ctx.download.side_effect = [{ctx.video: []}]
+
+    _run_fallback_search(target="en")
+
+    assert ctx.download.call_count == 1
+    ctx.find_source.assert_not_called()
+    ctx.extract.assert_not_called()
+    ctx.translate.assert_not_called()
+
+
+def test_generate_subtitles_saves_same_language_provider_subtitle_without_translating(mocker):
+    ctx = _fallback_search(mocker)
+    mocker.patch("subtitles.download._get_language_obj", return_value={Language("eng")})
+    subtitle = SimpleNamespace(language=Language("eng"), storage_path="/media/Movie.en.srt", matches=set())
+    ctx.download.side_effect = [{ctx.video: [SimpleNamespace(format="srt", mods=None)]}]
+    ctx.save.return_value = [subtitle]
+
+    _run_fallback_search(target="en")
+
+    ctx.translate.assert_not_called()
+    ctx.process.assert_called_once()
+    assert ctx.process.call_args.kwargs["subtitle"] is subtitle

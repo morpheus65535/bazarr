@@ -28,6 +28,9 @@ def validate_translation_params(video_path, source_srt_file, from_lang, to_lang)
     if not from_lang or not to_lang:
         raise ValueError("Source and target languages must be specified")
 
+    if from_lang.strip().lower() == to_lang.strip().lower():
+        raise ValueError("Source and target languages must differ")
+
     return True
 
 

@@ -213,7 +213,8 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
                                                                            fallback_allowed=fallback_allowed)
 
                         if (not (downloaded_subtitles and any(downloaded_subtitles.values())) and
-                                settings.translator.translate_fallback_enabled):
+                                settings.translator.translate_fallback_enabled and
+                                lang_alpha2 != settings.translator.translate_fallback_source_language):
                             downloaded_subtitles = download_best_subtitles(
                                 videos={video},
                                 languages={Language(alpha3_from_alpha2(settings.translator.translate_fallback_source_language))},
@@ -307,6 +308,7 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
                             saved_any = True
                             for subtitle in saved_subtitles:
                                 if (settings.translator.translate_fallback_enabled and
+                                        lang_alpha2 != settings.translator.translate_fallback_source_language and
                                         alpha2_from_alpha3(subtitle.language.alpha3) ==
                                         settings.translator.translate_fallback_source_language):
                                     try:
