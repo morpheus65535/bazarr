@@ -24,7 +24,7 @@ def _fake_lapse(tmp_path, returncode=0, result=None, body=""):
         args = sys.argv[1:]
         open({str(tmp_path / 'args.json')!r}, 'w').write(json.dumps(args))
         result = {result!r}
-        if result and result['written']:
+        if result and result['written'] and not result.get('unchanged'):
             open(args[args.index('--output') + 1], 'w').write('synced')
     """) + textwrap.dedent(body) + textwrap.dedent(f"""
         if result:
@@ -69,6 +69,17 @@ def test_solid_result_replaces_subtitles_and_logs_history(tmp_path, monkeypatch,
                                "--no-backup", "--no-sidecar", "--json"]
     assert history[0]["result"].message == ("English subtitles synchronization ended with an offset of -4.2 seconds "
                                             "and a framerate scale factor of 1.00.")
+
+
+def test_old_synced_file_is_not_taken_as_the_result(tmp_path, monkeypatch, subtitle, history):
+    monkeypatch.setattr(lapse_module.settings.subsync, "lapse_path",
+                        _fake_lapse(tmp_path, 0, {**SOLID, "offset_ms": 0, "unchanged": True}))
+    (tmp_path / "movie.en.synced.srt").write_text("old")
+
+    _sync(subtitle)
+
+    assert subtitle.read_text() == "original"
+    assert history == []
 
 
 @pytest.mark.parametrize("reference,force_audio,original_stream,force_sync,expected", [

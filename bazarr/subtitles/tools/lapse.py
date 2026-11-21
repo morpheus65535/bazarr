@@ -36,7 +36,7 @@ def check_lapse(url, path):
             response = requests.get(f'{url.rstrip("/")}/api/version', timeout=10)
             response.raise_for_status()
             return response.json()['version']
-        except (requests.RequestException, ValueError, KeyError) as e:
+        except (requests.RequestException, ValueError, KeyError, TypeError) as e:
             raise RuntimeError(f'Could not get the version from {url}: {e}')
 
     exe = which(path or 'lapse')
@@ -68,7 +68,7 @@ class LapseSyncer(SubSyncer):
 
             # video, or a subtitles file to sync against
             source = video_path
-            stream = reference if reference and reference[:2] in ('a:', 's:') else None
+            stream = reference if reference and reference[:2] in ('a:', 's:') and reference[2:].isdigit() else None
             no_embedded = False
             if reference and not stream and reference != video_path and os.path.isfile(reference):
                 source = reference
@@ -85,6 +85,9 @@ class LapseSyncer(SubSyncer):
                        'audio_track': track if kind == 'a' else None,
                        'sub_track': track if kind == 's' else None}
 
+            # lapse writes nothing when the subtitles are already in sync, don't pick up an old attempt
+            if os.path.isfile(srtout):
+                os.remove(srtout)
             if url:
                 result = self._run_remote(url, source, video_path, srt_path, srtout, options, job_id)
             else:
