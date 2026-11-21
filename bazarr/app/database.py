@@ -14,11 +14,12 @@ from datetime import datetime
 from typing import List
 
 from sqlalchemy import create_engine, inspect, DateTime, Float, ForeignKey, Integer, LargeBinary, Text, text, \
-    BigInteger, Boolean, Index
+    BigInteger, Boolean, Index, case
 # importing here to be indirectly imported in other modules later
 from sqlalchemy import update, delete, select, func, UniqueConstraint  # noqa W0611
 from sqlalchemy.orm import scoped_session, sessionmaker, mapped_column, close_all_sessions, declarative_base, Mapped
 from sqlalchemy.pool import NullPool
+from sqlalchemy.sql.elements import ColumnElement, SQLColumnExpression
 from alembic.migration import MigrationContext
 
 from flask_sqlalchemy import SQLAlchemy
@@ -27,6 +28,11 @@ from .config import settings
 from .get_args import args
 from utilities.text_list import parse_text_list_or_default
 from utilities.path_mappings import path_mappings
+
+
+def text_boolean(column: SQLColumnExpression[str | None]) -> ColumnElement[bool | None]:
+    return case((column.in_(('True', 'true')), True), (column.in_(('False', 'false')), False))
+
 
 logger = logging.getLogger(__name__)
 
@@ -171,7 +177,7 @@ class TableEpisodes(Base):
     audio_language = mapped_column(Text)
     created_at_timestamp = mapped_column(DateTime)
     episode = mapped_column(Integer, nullable=False)
-    episode_file_id = mapped_column(Integer)
+    episode_file_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     ffprobe_cache = mapped_column(LargeBinary)
     file_size = mapped_column(BigInteger)
     format = mapped_column(Text)
@@ -407,7 +413,7 @@ class TableShows(Base):
     poster = mapped_column(Text)
     profileId = mapped_column(Integer, ForeignKey('table_languages_profiles.profileId', ondelete='SET NULL'))
     seriesType = mapped_column(Text)
-    sonarrSeriesId = mapped_column(Integer, primary_key=True)
+    sonarrSeriesId: Mapped[int] = mapped_column(Integer, primary_key=True)
     sortTitle = mapped_column(Text)
     tags = mapped_column(Text)
     title = mapped_column(Text, nullable=False)
