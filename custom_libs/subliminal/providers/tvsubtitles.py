@@ -3,6 +3,7 @@ from __future__ import absolute_import
 import io
 import logging
 import re
+from urllib.parse import urljoin
 from zipfile import ZipFile
 
 from babelfish import Language, language_converters
@@ -86,13 +87,48 @@ class TVsubtitlesProvider(Provider):
 
     def __init__(self):
         self.session = None
+        self.search_page = None
 
     def initialize(self):
         self.session = Session()
         self.session.headers['User-Agent'] = 'Subliminal/%s' % __short_version__
+        self._get_search_page()
 
     def terminate(self):
         self.session.close()
+
+    def _get_search_page(self) -> None:
+        """
+        Retrieve the search page URL from the provider's server.
+
+        Fetches the server's main page, parses the returned HTML and looks for
+        the search form located inside the ``div#search`` element. When the form
+        is found, its ``action`` attribute is resolved against the server URL
+        and stored in ``self.search_page``. If the form has no ``action``
+        attribute, the server URL itself is used, since a form without an action
+        submits to the current document. If no search form is found, a debug
+        message is logged and ``self.search_page`` is left unchanged.
+
+        :raises requests.exceptions.HTTPError: If the server responds with an
+            unsuccessful HTTP status code.
+        :raises requests.exceptions.RequestException: If the request to the
+            server fails, for example due to a timeout or a connection error.
+        :return: None
+        """
+        logger.debug('Getting the search form destination from %s', self.server_url)
+        r = self.session.get(self.server_url, timeout=10)
+        r.raise_for_status()
+
+        soup = ParserBeautifulSoup(r.content, ['lxml', 'html.parser'])
+        form = soup.select_one('div#search form')
+        if form is None:
+            logger.debug('Search form not found on %s', self.server_url)
+            return None
+
+        # a form without an action submits to the current document
+        self.search_page = urljoin(self.server_url, form.get('action', ''))
+        logger.debug('Found search page %s', self.search_page)
+        return None
 
     @region.cache_on_arguments(expiration_time=SHOW_EXPIRATION_TIME)
     def search_show_id(self, series, year=None):
@@ -107,7 +143,7 @@ class TVsubtitlesProvider(Provider):
         """
         # make the search
         logger.info('Searching show id for %r', series)
-        r = self.session.post(self.server_url + 'search.php', data={'q': series}, timeout=10)
+        r = self.session.post(self.search_page, data={'q': series}, timeout=10)
         r.raise_for_status()
 
         # get the series out of the suggestions
