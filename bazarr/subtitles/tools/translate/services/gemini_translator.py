@@ -516,26 +516,16 @@ class GeminiTranslatorService:
 
     def _translate_with_gemini(self):
         if not self.api_keys:
-            jobs_queue.update_job_progress(
-                job_id=self.job_id,
-                progress_message="Please provide at least one valid Gemini API key.",
-            )
-            return
+            raise ValueError("Please provide at least one valid Gemini API key.")
 
         if not self.current_api_key:
-            jobs_queue.update_job_progress(
-                job_id=self.job_id,
-                progress_message="All Gemini API keys are currently rate limited. Please wait before retrying.",
-            )
-            return
+            raise RuntimeError("All Gemini API keys are currently rate limited. Please wait before retrying.")
 
         if not self.target_language:
-            jobs_queue.update_job_progress(job_id=self.job_id, progress_message="Please provide a target language.")
-            return
+            raise ValueError("Please provide a target language.")
 
         if not self.input_file:
-            jobs_queue.update_job_progress(job_id=self.job_id, progress_message="Please provide a subtitle file.")
-            return
+            raise ValueError("Please provide a subtitle file.")
 
         total = 0
         try:

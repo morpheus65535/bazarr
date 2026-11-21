@@ -243,3 +243,47 @@ def test_remove_converted_input_ignores_missing_file(tmp_path):
     service._remove_converted_input()
 
     assert service._converted_input_file is None
+
+
+def test_translate_with_gemini_raises_when_all_keys_rate_limited(mocker):
+    service = _build_service()
+    service.api_keys = ["key-1"]
+    service.current_api_key = None
+    service.target_language = "English"
+    service.input_file = "input.srt"
+    service.job_id = "job-1"
+
+    mocker.patch.object(gemini_translator.jobs_queue, "update_job_progress")
+
+    with pytest.raises(RuntimeError, match="rate limited"):
+        service._translate_with_gemini()
+
+
+def test_translate_does_not_record_success_when_all_keys_rate_limited(tmp_path, mocker):
+    import pysubs2
+
+    service = _build_service()
+    service.source_srt_file = str(tmp_path / "input.srt")
+    service.dest_srt_file = str(tmp_path / "output.srt")
+    (tmp_path / "output.srt").write_text("1\n00:00:00,000 --> 00:00:01,000\nExisting\n", encoding="utf-8")
+
+    mocker.patch.object(gemini_translator.pysubs2, "load", return_value=pysubs2.SSAFile())
+    mocker.patch.object(service, "_get_configured_api_keys", return_value=["key-1"])
+    mocker.patch.object(service, "_select_next_api_key", return_value=None)
+    mocker.patch.object(service, "_prepare_input_srt", return_value=str(tmp_path / "input.srt"))
+    mocker.patch.object(service, "_check_saved_progress")
+    mocker.patch.object(service, "_remove_converted_input")
+    mocker.patch.object(gemini_translator, "get_description", return_value="")
+    progress_mock = mocker.patch.object(gemini_translator.jobs_queue, "update_job_progress")
+    mocker.patch.object(gemini_translator, "language_from_alpha3", return_value="English")
+    add_info_mock = mocker.patch.object(gemini_translator, "add_translator_info")
+    history_mock = mocker.patch.object(gemini_translator, "history_log")
+
+    with pytest.raises(RuntimeError, match="rate limited"):
+        service.translate(job_id="job-1")
+
+    progress_messages = [c.kwargs.get("progress_message") for c in progress_mock.call_args_list]
+    assert any("rate limited" in (m or "") for m in progress_messages)
+    add_info_mock.assert_not_called()
+    history_mock.assert_not_called()
+    assert (tmp_path / "output.srt").read_text(encoding="utf-8").startswith("1\n00:00:00,000")
