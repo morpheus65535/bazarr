@@ -108,6 +108,9 @@ const SettingsGeneralView: FunctionComponent = () => {
           settingKey="settings-auth-type"
           on={(value) => value === "oidc"}
         >
+          <Message>
+            OIDC disables local password login. API keys continue to work.
+          </Message>
           <Text label="Issuer URL" settingKey="settings-auth-oidc_issuer" />
           <Message>HTTPS issuer URL from your OpenID Connect provider.</Message>
           <Text label="Client ID" settingKey="settings-auth-oidc_client_id" />
@@ -136,8 +139,7 @@ const SettingsGeneralView: FunctionComponent = () => {
           <Message>
             Leave blank for a public client. For a confidential client, supply
             the secret through this file or the BAZARR_OIDC_CLIENT_SECRET
-            environment variable. Local password login is disabled while OIDC is
-            selected. API keys continue to work.
+            environment variable.
           </Message>
         </CollapseBox>
         <Text

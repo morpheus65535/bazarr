@@ -1056,9 +1056,12 @@ def save_settings(settings_items):
         validate_log_regex()
         validate_auth()
         if settings.auth.type == 'oidc':
-            from .oidc import validate_oidc_configuration
+            from .oidc import read_oidc_client_secret, validate_oidc_configuration
             try:
                 validate_oidc_configuration(settings.auth, settings.general.base_url)
+                if revoke_form_sessions:
+                    # Check the file before an authentication change can revoke sessions.
+                    read_oidc_client_secret(settings.auth)
             except ValueError as error:
                 raise ValidationError(str(error)) from error
     except ValidationError:
