@@ -1,0 +1,2282 @@
+{
+ "movies|10|de|['en']": [
+  "en",
+  "fr"
+ ],
+ "movies|10|de|['pl']": [
+  "fr"
+ ],
+ "movies|10|de|[]": [
+  "fr"
+ ],
+ "movies|10|ea|['en']": [
+  "en",
+  "fr"
+ ],
+ "movies|10|ea|['pl']": [
+  "fr"
+ ],
+ "movies|10|ea|[]": [
+  "fr"
+ ],
+ "movies|10|en-and-fr|['en']": [],
+ "movies|10|en-and-fr|['pl']": [],
+ "movies|10|en-and-fr|[]": [],
+ "movies|10|en-forced-and-en|['en']": [],
+ "movies|10|en-forced-and-en|['pl']": [
+  "fr"
+ ],
+ "movies|10|en-forced-and-en|[]": [
+  "fr"
+ ],
+ "movies|10|en-forced|['en']": [
+  "en",
+  "fr"
+ ],
+ "movies|10|en-forced|['pl']": [
+  "fr"
+ ],
+ "movies|10|en-forced|[]": [
+  "fr"
+ ],
+ "movies|10|en-hi-and-fr|['en']": [],
+ "movies|10|en-hi-and-fr|['pl']": [],
+ "movies|10|en-hi-and-fr|[]": [],
+ "movies|10|en-hi|['en']": [],
+ "movies|10|en-hi|['pl']": [
+  "fr"
+ ],
+ "movies|10|en-hi|[]": [
+  "fr"
+ ],
+ "movies|10|en|['en']": [],
+ "movies|10|en|['pl']": [
+  "fr"
+ ],
+ "movies|10|en|[]": [
+  "fr"
+ ],
+ "movies|10|fr|['en']": [
+  "en"
+ ],
+ "movies|10|fr|['pl']": [],
+ "movies|10|fr|[]": [],
+ "movies|10|none|['en']": [
+  "en",
+  "fr"
+ ],
+ "movies|10|none|['pl']": [
+  "fr"
+ ],
+ "movies|10|none|[]": [
+  "fr"
+ ],
+ "movies|11|de|['en']": [
+  "en",
+  "fr"
+ ],
+ "movies|11|de|['pl']": [
+  "en",
+  "fr"
+ ],
+ "movies|11|de|[]": [
+  "en",
+  "fr"
+ ],
+ "movies|11|ea|['en']": [
+  "de",
+  "en",
+  "fr"
+ ],
+ "movies|11|ea|['pl']": [
+  "de",
+  "en",
+  "fr"
+ ],
+ "movies|11|ea|[]": [
+  "de",
+  "en",
+  "fr"
+ ],
+ "movies|11|en-and-fr|['en']": [],
+ "movies|11|en-and-fr|['pl']": [],
+ "movies|11|en-and-fr|[]": [],
+ "movies|11|en-forced-and-en|['en']": [],
+ "movies|11|en-forced-and-en|['pl']": [],
+ "movies|11|en-forced-and-en|[]": [],
+ "movies|11|en-forced|['en']": [
+  "de",
+  "en",
+  "fr"
+ ],
+ "movies|11|en-forced|['pl']": [
+  "de",
+  "en",
+  "fr"
+ ],
+ "movies|11|en-forced|[]": [
+  "de",
+  "en",
+  "fr"
+ ],
+ "movies|11|en-hi-and-fr|['en']": [],
+ "movies|11|en-hi-and-fr|['pl']": [],
+ "movies|11|en-hi-and-fr|[]": [],
+ "movies|11|en-hi|['en']": [],
+ "movies|11|en-hi|['pl']": [],
+ "movies|11|en-hi|[]": [],
+ "movies|11|en|['en']": [],
+ "movies|11|en|['pl']": [],
+ "movies|11|en|[]": [],
+ "movies|11|fr|['en']": [
+  "de",
+  "en"
+ ],
+ "movies|11|fr|['pl']": [
+  "de",
+  "en"
+ ],
+ "movies|11|fr|[]": [
+  "de",
+  "en"
+ ],
+ "movies|11|none|['en']": [
+  "de",
+  "en",
+  "fr"
+ ],
+ "movies|11|none|['pl']": [
+  "de",
+  "en",
+  "fr"
+ ],
+ "movies|11|none|[]": [
+  "de",
+  "en",
+  "fr"
+ ],
+ "movies|12|de|['en']": [
+  "en",
+  "en:hi"
+ ],
+ "movies|12|de|['pl']": [
+  "en",
+  "en:hi"
+ ],
+ "movies|12|de|[]": [
+  "en",
+  "en:hi"
+ ],
+ "movies|12|ea|['en']": [
+  "en",
+  "en:hi"
+ ],
+ "movies|12|ea|['pl']": [
+  "en",
+  "en:hi"
+ ],
+ "movies|12|ea|[]": [
+  "en",
+  "en:hi"
+ ],
+ "movies|12|en-and-fr|['en']": [
+  "en:hi"
+ ],
+ "movies|12|en-and-fr|['pl']": [
+  "en:hi"
+ ],
+ "movies|12|en-and-fr|[]": [
+  "en:hi"
+ ],
+ "movies|12|en-forced-and-en|['en']": [
+  "en:hi"
+ ],
+ "movies|12|en-forced-and-en|['pl']": [
+  "en:hi"
+ ],
+ "movies|12|en-forced-and-en|[]": [
+  "en:hi"
+ ],
+ "movies|12|en-forced|['en']": [
+  "en",
+  "en:hi"
+ ],
+ "movies|12|en-forced|['pl']": [
+  "en",
+  "en:hi"
+ ],
+ "movies|12|en-forced|[]": [
+  "en",
+  "en:hi"
+ ],
+ "movies|12|en-hi-and-fr|['en']": [
+  "en"
+ ],
+ "movies|12|en-hi-and-fr|['pl']": [
+  "en"
+ ],
+ "movies|12|en-hi-and-fr|[]": [
+  "en"
+ ],
+ "movies|12|en-hi|['en']": [
+  "en"
+ ],
+ "movies|12|en-hi|['pl']": [
+  "en"
+ ],
+ "movies|12|en-hi|[]": [
+  "en"
+ ],
+ "movies|12|en|['en']": [
+  "en:hi"
+ ],
+ "movies|12|en|['pl']": [
+  "en:hi"
+ ],
+ "movies|12|en|[]": [
+  "en:hi"
+ ],
+ "movies|12|fr|['en']": [
+  "en",
+  "en:hi"
+ ],
+ "movies|12|fr|['pl']": [
+  "en",
+  "en:hi"
+ ],
+ "movies|12|fr|[]": [
+  "en",
+  "en:hi"
+ ],
+ "movies|12|none|['en']": [
+  "en",
+  "en:hi"
+ ],
+ "movies|12|none|['pl']": [
+  "en",
+  "en:hi"
+ ],
+ "movies|12|none|[]": [
+  "en",
+  "en:hi"
+ ],
+ "movies|13|de|['en']": [
+  "ea",
+  "pb"
+ ],
+ "movies|13|de|['pl']": [
+  "ea",
+  "pb"
+ ],
+ "movies|13|de|[]": [
+  "ea",
+  "pb"
+ ],
+ "movies|13|ea|['en']": [
+  "pb"
+ ],
+ "movies|13|ea|['pl']": [
+  "pb"
+ ],
+ "movies|13|ea|[]": [
+  "pb"
+ ],
+ "movies|13|en-and-fr|['en']": [
+  "ea",
+  "pb"
+ ],
+ "movies|13|en-and-fr|['pl']": [
+  "ea",
+  "pb"
+ ],
+ "movies|13|en-and-fr|[]": [
+  "ea",
+  "pb"
+ ],
+ "movies|13|en-forced-and-en|['en']": [
+  "ea",
+  "pb"
+ ],
+ "movies|13|en-forced-and-en|['pl']": [
+  "ea",
+  "pb"
+ ],
+ "movies|13|en-forced-and-en|[]": [
+  "ea",
+  "pb"
+ ],
+ "movies|13|en-forced|['en']": [
+  "ea",
+  "pb"
+ ],
+ "movies|13|en-forced|['pl']": [
+  "ea",
+  "pb"
+ ],
+ "movies|13|en-forced|[]": [
+  "ea",
+  "pb"
+ ],
+ "movies|13|en-hi-and-fr|['en']": [
+  "ea",
+  "pb"
+ ],
+ "movies|13|en-hi-and-fr|['pl']": [
+  "ea",
+  "pb"
+ ],
+ "movies|13|en-hi-and-fr|[]": [
+  "ea",
+  "pb"
+ ],
+ "movies|13|en-hi|['en']": [
+  "ea",
+  "pb"
+ ],
+ "movies|13|en-hi|['pl']": [
+  "ea",
+  "pb"
+ ],
+ "movies|13|en-hi|[]": [
+  "ea",
+  "pb"
+ ],
+ "movies|13|en|['en']": [
+  "ea",
+  "pb"
+ ],
+ "movies|13|en|['pl']": [
+  "ea",
+  "pb"
+ ],
+ "movies|13|en|[]": [
+  "ea",
+  "pb"
+ ],
+ "movies|13|fr|['en']": [
+  "ea",
+  "pb"
+ ],
+ "movies|13|fr|['pl']": [
+  "ea",
+  "pb"
+ ],
+ "movies|13|fr|[]": [
+  "ea",
+  "pb"
+ ],
+ "movies|13|none|['en']": [
+  "ea",
+  "pb"
+ ],
+ "movies|13|none|['pl']": [
+  "ea",
+  "pb"
+ ],
+ "movies|13|none|[]": [
+  "ea",
+  "pb"
+ ],
+ "movies|1|de|['en']": [
+  "en"
+ ],
+ "movies|1|de|['pl']": [
+  "en"
+ ],
+ "movies|1|de|[]": [
+  "en"
+ ],
+ "movies|1|ea|['en']": [
+  "en"
+ ],
+ "movies|1|ea|['pl']": [
+  "en"
+ ],
+ "movies|1|ea|[]": [
+  "en"
+ ],
+ "movies|1|en-and-fr|['en']": [],
+ "movies|1|en-and-fr|['pl']": [],
+ "movies|1|en-and-fr|[]": [],
+ "movies|1|en-forced-and-en|['en']": [],
+ "movies|1|en-forced-and-en|['pl']": [],
+ "movies|1|en-forced-and-en|[]": [],
+ "movies|1|en-forced|['en']": [
+  "en"
+ ],
+ "movies|1|en-forced|['pl']": [
+  "en"
+ ],
+ "movies|1|en-forced|[]": [
+  "en"
+ ],
+ "movies|1|en-hi-and-fr|['en']": [],
+ "movies|1|en-hi-and-fr|['pl']": [],
+ "movies|1|en-hi-and-fr|[]": [],
+ "movies|1|en-hi|['en']": [],
+ "movies|1|en-hi|['pl']": [],
+ "movies|1|en-hi|[]": [],
+ "movies|1|en|['en']": [],
+ "movies|1|en|['pl']": [],
+ "movies|1|en|[]": [],
+ "movies|1|fr|['en']": [
+  "en"
+ ],
+ "movies|1|fr|['pl']": [
+  "en"
+ ],
+ "movies|1|fr|[]": [
+  "en"
+ ],
+ "movies|1|none|['en']": [
+  "en"
+ ],
+ "movies|1|none|['pl']": [
+  "en"
+ ],
+ "movies|1|none|[]": [
+  "en"
+ ],
+ "movies|2|de|['en']": [
+  "fr"
+ ],
+ "movies|2|de|['pl']": [
+  "fr"
+ ],
+ "movies|2|de|[]": [
+  "fr"
+ ],
+ "movies|2|ea|['en']": [
+  "fr"
+ ],
+ "movies|2|ea|['pl']": [
+  "fr"
+ ],
+ "movies|2|ea|[]": [
+  "fr"
+ ],
+ "movies|2|en-and-fr|['en']": [],
+ "movies|2|en-and-fr|['pl']": [],
+ "movies|2|en-and-fr|[]": [],
+ "movies|2|en-forced-and-en|['en']": [
+  "fr"
+ ],
+ "movies|2|en-forced-and-en|['pl']": [
+  "fr"
+ ],
+ "movies|2|en-forced-and-en|[]": [
+  "fr"
+ ],
+ "movies|2|en-forced|['en']": [
+  "fr"
+ ],
+ "movies|2|en-forced|['pl']": [
+  "fr"
+ ],
+ "movies|2|en-forced|[]": [
+  "fr"
+ ],
+ "movies|2|en-hi-and-fr|['en']": [],
+ "movies|2|en-hi-and-fr|['pl']": [],
+ "movies|2|en-hi-and-fr|[]": [],
+ "movies|2|en-hi|['en']": [
+  "fr"
+ ],
+ "movies|2|en-hi|['pl']": [
+  "fr"
+ ],
+ "movies|2|en-hi|[]": [
+  "fr"
+ ],
+ "movies|2|en|['en']": [
+  "fr"
+ ],
+ "movies|2|en|['pl']": [
+  "fr"
+ ],
+ "movies|2|en|[]": [
+  "fr"
+ ],
+ "movies|2|fr|['en']": [],
+ "movies|2|fr|['pl']": [],
+ "movies|2|fr|[]": [],
+ "movies|2|none|['en']": [
+  "fr"
+ ],
+ "movies|2|none|['pl']": [
+  "fr"
+ ],
+ "movies|2|none|[]": [
+  "fr"
+ ],
+ "movies|3|de|['en']": [
+  "en:forced"
+ ],
+ "movies|3|de|['pl']": [
+  "en:forced"
+ ],
+ "movies|3|de|[]": [
+  "en:forced"
+ ],
+ "movies|3|ea|['en']": [
+  "en:forced"
+ ],
+ "movies|3|ea|['pl']": [
+  "en:forced"
+ ],
+ "movies|3|ea|[]": [
+  "en:forced"
+ ],
+ "movies|3|en-and-fr|['en']": [
+  "en:forced"
+ ],
+ "movies|3|en-and-fr|['pl']": [
+  "en:forced"
+ ],
+ "movies|3|en-and-fr|[]": [
+  "en:forced"
+ ],
+ "movies|3|en-forced-and-en|['en']": [],
+ "movies|3|en-forced-and-en|['pl']": [],
+ "movies|3|en-forced-and-en|[]": [],
+ "movies|3|en-forced|['en']": [],
+ "movies|3|en-forced|['pl']": [],
+ "movies|3|en-forced|[]": [],
+ "movies|3|en-hi-and-fr|['en']": [
+  "en:forced"
+ ],
+ "movies|3|en-hi-and-fr|['pl']": [
+  "en:forced"
+ ],
+ "movies|3|en-hi-and-fr|[]": [
+  "en:forced"
+ ],
+ "movies|3|en-hi|['en']": [
+  "en:forced"
+ ],
+ "movies|3|en-hi|['pl']": [
+  "en:forced"
+ ],
+ "movies|3|en-hi|[]": [
+  "en:forced"
+ ],
+ "movies|3|en|['en']": [
+  "en:forced"
+ ],
+ "movies|3|en|['pl']": [
+  "en:forced"
+ ],
+ "movies|3|en|[]": [
+  "en:forced"
+ ],
+ "movies|3|fr|['en']": [
+  "en:forced"
+ ],
+ "movies|3|fr|['pl']": [
+  "en:forced"
+ ],
+ "movies|3|fr|[]": [
+  "en:forced"
+ ],
+ "movies|3|none|['en']": [
+  "en:forced"
+ ],
+ "movies|3|none|['pl']": [
+  "en:forced"
+ ],
+ "movies|3|none|[]": [
+  "en:forced"
+ ],
+ "movies|4|de|['en']": [
+  "en:hi"
+ ],
+ "movies|4|de|['pl']": [
+  "en:hi"
+ ],
+ "movies|4|de|[]": [
+  "en:hi"
+ ],
+ "movies|4|ea|['en']": [
+  "en:hi"
+ ],
+ "movies|4|ea|['pl']": [
+  "en:hi"
+ ],
+ "movies|4|ea|[]": [
+  "en:hi"
+ ],
+ "movies|4|en-and-fr|['en']": [
+  "en:hi"
+ ],
+ "movies|4|en-and-fr|['pl']": [
+  "en:hi"
+ ],
+ "movies|4|en-and-fr|[]": [
+  "en:hi"
+ ],
+ "movies|4|en-forced-and-en|['en']": [
+  "en:hi"
+ ],
+ "movies|4|en-forced-and-en|['pl']": [
+  "en:hi"
+ ],
+ "movies|4|en-forced-and-en|[]": [
+  "en:hi"
+ ],
+ "movies|4|en-forced|['en']": [
+  "en:hi"
+ ],
+ "movies|4|en-forced|['pl']": [
+  "en:hi"
+ ],
+ "movies|4|en-forced|[]": [
+  "en:hi"
+ ],
+ "movies|4|en-hi-and-fr|['en']": [],
+ "movies|4|en-hi-and-fr|['pl']": [],
+ "movies|4|en-hi-and-fr|[]": [],
+ "movies|4|en-hi|['en']": [],
+ "movies|4|en-hi|['pl']": [],
+ "movies|4|en-hi|[]": [],
+ "movies|4|en|['en']": [
+  "en:hi"
+ ],
+ "movies|4|en|['pl']": [
+  "en:hi"
+ ],
+ "movies|4|en|[]": [
+  "en:hi"
+ ],
+ "movies|4|fr|['en']": [
+  "en:hi"
+ ],
+ "movies|4|fr|['pl']": [
+  "en:hi"
+ ],
+ "movies|4|fr|[]": [
+  "en:hi"
+ ],
+ "movies|4|none|['en']": [
+  "en:hi"
+ ],
+ "movies|4|none|['pl']": [
+  "en:hi"
+ ],
+ "movies|4|none|[]": [
+  "en:hi"
+ ],
+ "movies|5|de|['en']": [
+  "en",
+  "en:forced",
+  "en:hi"
+ ],
+ "movies|5|de|['pl']": [
+  "en",
+  "en:forced",
+  "en:hi"
+ ],
+ "movies|5|de|[]": [
+  "en",
+  "en:forced",
+  "en:hi"
+ ],
+ "movies|5|ea|['en']": [
+  "en",
+  "en:forced",
+  "en:hi"
+ ],
+ "movies|5|ea|['pl']": [
+  "en",
+  "en:forced",
+  "en:hi"
+ ],
+ "movies|5|ea|[]": [
+  "en",
+  "en:forced",
+  "en:hi"
+ ],
+ "movies|5|en-and-fr|['en']": [],
+ "movies|5|en-and-fr|['pl']": [],
+ "movies|5|en-and-fr|[]": [],
+ "movies|5|en-forced-and-en|['en']": [],
+ "movies|5|en-forced-and-en|['pl']": [],
+ "movies|5|en-forced-and-en|[]": [],
+ "movies|5|en-forced|['en']": [],
+ "movies|5|en-forced|['pl']": [],
+ "movies|5|en-forced|[]": [],
+ "movies|5|en-hi-and-fr|['en']": [],
+ "movies|5|en-hi-and-fr|['pl']": [],
+ "movies|5|en-hi-and-fr|[]": [],
+ "movies|5|en-hi|['en']": [],
+ "movies|5|en-hi|['pl']": [],
+ "movies|5|en-hi|[]": [],
+ "movies|5|en|['en']": [],
+ "movies|5|en|['pl']": [],
+ "movies|5|en|[]": [],
+ "movies|5|fr|['en']": [
+  "en",
+  "en:forced",
+  "en:hi"
+ ],
+ "movies|5|fr|['pl']": [
+  "en",
+  "en:forced",
+  "en:hi"
+ ],
+ "movies|5|fr|[]": [
+  "en",
+  "en:forced",
+  "en:hi"
+ ],
+ "movies|5|none|['en']": [
+  "en",
+  "en:forced",
+  "en:hi"
+ ],
+ "movies|5|none|['pl']": [
+  "en",
+  "en:forced",
+  "en:hi"
+ ],
+ "movies|5|none|[]": [
+  "en",
+  "en:forced",
+  "en:hi"
+ ],
+ "movies|6|de|['en']": [
+  "en"
+ ],
+ "movies|6|de|['pl']": [
+  "en"
+ ],
+ "movies|6|de|[]": [
+  "en"
+ ],
+ "movies|6|ea|['en']": [
+  "en"
+ ],
+ "movies|6|ea|['pl']": [
+  "en"
+ ],
+ "movies|6|ea|[]": [
+  "en"
+ ],
+ "movies|6|en-and-fr|['en']": [],
+ "movies|6|en-and-fr|['pl']": [],
+ "movies|6|en-and-fr|[]": [],
+ "movies|6|en-forced-and-en|['en']": [],
+ "movies|6|en-forced-and-en|['pl']": [],
+ "movies|6|en-forced-and-en|[]": [],
+ "movies|6|en-forced|['en']": [
+  "en"
+ ],
+ "movies|6|en-forced|['pl']": [
+  "en"
+ ],
+ "movies|6|en-forced|[]": [
+  "en"
+ ],
+ "movies|6|en-hi-and-fr|['en']": [
+  "en"
+ ],
+ "movies|6|en-hi-and-fr|['pl']": [
+  "en"
+ ],
+ "movies|6|en-hi-and-fr|[]": [
+  "en"
+ ],
+ "movies|6|en-hi|['en']": [
+  "en"
+ ],
+ "movies|6|en-hi|['pl']": [
+  "en"
+ ],
+ "movies|6|en-hi|[]": [
+  "en"
+ ],
+ "movies|6|en|['en']": [],
+ "movies|6|en|['pl']": [],
+ "movies|6|en|[]": [],
+ "movies|6|fr|['en']": [
+  "en"
+ ],
+ "movies|6|fr|['pl']": [
+  "en"
+ ],
+ "movies|6|fr|[]": [
+  "en"
+ ],
+ "movies|6|none|['en']": [
+  "en"
+ ],
+ "movies|6|none|['pl']": [
+  "en"
+ ],
+ "movies|6|none|[]": [
+  "en"
+ ],
+ "movies|7|de|['en']": [
+  "en",
+  "fr"
+ ],
+ "movies|7|de|['pl']": [
+  "en",
+  "fr"
+ ],
+ "movies|7|de|[]": [
+  "en",
+  "fr"
+ ],
+ "movies|7|ea|['en']": [
+  "en",
+  "fr"
+ ],
+ "movies|7|ea|['pl']": [
+  "en",
+  "fr"
+ ],
+ "movies|7|ea|[]": [
+  "en",
+  "fr"
+ ],
+ "movies|7|en-and-fr|['en']": [],
+ "movies|7|en-and-fr|['pl']": [],
+ "movies|7|en-and-fr|[]": [],
+ "movies|7|en-forced-and-en|['en']": [
+  "fr"
+ ],
+ "movies|7|en-forced-and-en|['pl']": [
+  "fr"
+ ],
+ "movies|7|en-forced-and-en|[]": [
+  "fr"
+ ],
+ "movies|7|en-forced|['en']": [
+  "en",
+  "fr"
+ ],
+ "movies|7|en-forced|['pl']": [
+  "en",
+  "fr"
+ ],
+ "movies|7|en-forced|[]": [
+  "en",
+  "fr"
+ ],
+ "movies|7|en-hi-and-fr|['en']": [],
+ "movies|7|en-hi-and-fr|['pl']": [],
+ "movies|7|en-hi-and-fr|[]": [],
+ "movies|7|en-hi|['en']": [
+  "fr"
+ ],
+ "movies|7|en-hi|['pl']": [
+  "fr"
+ ],
+ "movies|7|en-hi|[]": [
+  "fr"
+ ],
+ "movies|7|en|['en']": [
+  "fr"
+ ],
+ "movies|7|en|['pl']": [
+  "fr"
+ ],
+ "movies|7|en|[]": [
+  "fr"
+ ],
+ "movies|7|fr|['en']": [],
+ "movies|7|fr|['pl']": [],
+ "movies|7|fr|[]": [],
+ "movies|7|none|['en']": [
+  "en",
+  "fr"
+ ],
+ "movies|7|none|['pl']": [
+  "en",
+  "fr"
+ ],
+ "movies|7|none|[]": [
+  "en",
+  "fr"
+ ],
+ "movies|8|de|['en']": [
+  "el",
+  "en",
+  "fr",
+  "ko"
+ ],
+ "movies|8|de|['pl']": [
+  "el",
+  "en",
+  "fr",
+  "ko"
+ ],
+ "movies|8|de|[]": [
+  "el",
+  "en",
+  "fr",
+  "ko"
+ ],
+ "movies|8|ea|['en']": [
+  "el",
+  "en",
+  "fr",
+  "ko"
+ ],
+ "movies|8|ea|['pl']": [
+  "el",
+  "en",
+  "fr",
+  "ko"
+ ],
+ "movies|8|ea|[]": [
+  "el",
+  "en",
+  "fr",
+  "ko"
+ ],
+ "movies|8|en-and-fr|['en']": [
+  "el",
+  "ko"
+ ],
+ "movies|8|en-and-fr|['pl']": [
+  "el",
+  "ko"
+ ],
+ "movies|8|en-and-fr|[]": [
+  "el",
+  "ko"
+ ],
+ "movies|8|en-forced-and-en|['en']": [
+  "el",
+  "fr",
+  "ko"
+ ],
+ "movies|8|en-forced-and-en|['pl']": [
+  "el",
+  "fr",
+  "ko"
+ ],
+ "movies|8|en-forced-and-en|[]": [
+  "el",
+  "fr",
+  "ko"
+ ],
+ "movies|8|en-forced|['en']": [
+  "el",
+  "en",
+  "fr",
+  "ko"
+ ],
+ "movies|8|en-forced|['pl']": [
+  "el",
+  "en",
+  "fr",
+  "ko"
+ ],
+ "movies|8|en-forced|[]": [
+  "el",
+  "en",
+  "fr",
+  "ko"
+ ],
+ "movies|8|en-hi-and-fr|['en']": [
+  "el",
+  "ko"
+ ],
+ "movies|8|en-hi-and-fr|['pl']": [
+  "el",
+  "ko"
+ ],
+ "movies|8|en-hi-and-fr|[]": [
+  "el",
+  "ko"
+ ],
+ "movies|8|en-hi|['en']": [
+  "el",
+  "fr",
+  "ko"
+ ],
+ "movies|8|en-hi|['pl']": [
+  "el",
+  "fr",
+  "ko"
+ ],
+ "movies|8|en-hi|[]": [
+  "el",
+  "fr",
+  "ko"
+ ],
+ "movies|8|en|['en']": [
+  "el",
+  "fr",
+  "ko"
+ ],
+ "movies|8|en|['pl']": [
+  "el",
+  "fr",
+  "ko"
+ ],
+ "movies|8|en|[]": [
+  "el",
+  "fr",
+  "ko"
+ ],
+ "movies|8|fr|['en']": [
+  "el",
+  "en",
+  "ko"
+ ],
+ "movies|8|fr|['pl']": [
+  "el",
+  "en",
+  "ko"
+ ],
+ "movies|8|fr|[]": [
+  "el",
+  "en",
+  "ko"
+ ],
+ "movies|8|none|['en']": [
+  "el",
+  "en",
+  "fr",
+  "ko"
+ ],
+ "movies|8|none|['pl']": [
+  "el",
+  "en",
+  "fr",
+  "ko"
+ ],
+ "movies|8|none|[]": [
+  "el",
+  "en",
+  "fr",
+  "ko"
+ ],
+ "movies|9|de|['en']": [
+  "fr"
+ ],
+ "movies|9|de|['pl']": [
+  "en",
+  "fr"
+ ],
+ "movies|9|de|[]": [
+  "en",
+  "fr"
+ ],
+ "movies|9|ea|['en']": [
+  "fr"
+ ],
+ "movies|9|ea|['pl']": [
+  "en",
+  "fr"
+ ],
+ "movies|9|ea|[]": [
+  "en",
+  "fr"
+ ],
+ "movies|9|en-and-fr|['en']": [],
+ "movies|9|en-and-fr|['pl']": [],
+ "movies|9|en-and-fr|[]": [],
+ "movies|9|en-forced-and-en|['en']": [
+  "fr"
+ ],
+ "movies|9|en-forced-and-en|['pl']": [
+  "fr"
+ ],
+ "movies|9|en-forced-and-en|[]": [
+  "fr"
+ ],
+ "movies|9|en-forced|['en']": [
+  "fr"
+ ],
+ "movies|9|en-forced|['pl']": [
+  "en",
+  "fr"
+ ],
+ "movies|9|en-forced|[]": [
+  "en",
+  "fr"
+ ],
+ "movies|9|en-hi-and-fr|['en']": [],
+ "movies|9|en-hi-and-fr|['pl']": [],
+ "movies|9|en-hi-and-fr|[]": [],
+ "movies|9|en-hi|['en']": [
+  "fr"
+ ],
+ "movies|9|en-hi|['pl']": [
+  "fr"
+ ],
+ "movies|9|en-hi|[]": [
+  "fr"
+ ],
+ "movies|9|en|['en']": [
+  "fr"
+ ],
+ "movies|9|en|['pl']": [
+  "fr"
+ ],
+ "movies|9|en|[]": [
+  "fr"
+ ],
+ "movies|9|fr|['en']": [],
+ "movies|9|fr|['pl']": [
+  "en"
+ ],
+ "movies|9|fr|[]": [
+  "en"
+ ],
+ "movies|9|none|['en']": [
+  "fr"
+ ],
+ "movies|9|none|['pl']": [
+  "en",
+  "fr"
+ ],
+ "movies|9|none|[]": [
+  "en",
+  "fr"
+ ],
+ "series|10|de|['en']": [
+  "en",
+  "fr"
+ ],
+ "series|10|de|['pl']": [
+  "fr"
+ ],
+ "series|10|de|[]": [
+  "fr"
+ ],
+ "series|10|ea|['en']": [
+  "en",
+  "fr"
+ ],
+ "series|10|ea|['pl']": [
+  "fr"
+ ],
+ "series|10|ea|[]": [
+  "fr"
+ ],
+ "series|10|en-and-fr|['en']": [],
+ "series|10|en-and-fr|['pl']": [],
+ "series|10|en-and-fr|[]": [],
+ "series|10|en-forced-and-en|['en']": [],
+ "series|10|en-forced-and-en|['pl']": [
+  "fr"
+ ],
+ "series|10|en-forced-and-en|[]": [
+  "fr"
+ ],
+ "series|10|en-forced|['en']": [
+  "en",
+  "fr"
+ ],
+ "series|10|en-forced|['pl']": [
+  "fr"
+ ],
+ "series|10|en-forced|[]": [
+  "fr"
+ ],
+ "series|10|en-hi-and-fr|['en']": [],
+ "series|10|en-hi-and-fr|['pl']": [],
+ "series|10|en-hi-and-fr|[]": [],
+ "series|10|en-hi|['en']": [],
+ "series|10|en-hi|['pl']": [
+  "fr"
+ ],
+ "series|10|en-hi|[]": [
+  "fr"
+ ],
+ "series|10|en|['en']": [],
+ "series|10|en|['pl']": [
+  "fr"
+ ],
+ "series|10|en|[]": [
+  "fr"
+ ],
+ "series|10|fr|['en']": [
+  "en"
+ ],
+ "series|10|fr|['pl']": [],
+ "series|10|fr|[]": [],
+ "series|10|none|['en']": [
+  "en",
+  "fr"
+ ],
+ "series|10|none|['pl']": [
+  "fr"
+ ],
+ "series|10|none|[]": [
+  "fr"
+ ],
+ "series|11|de|['en']": [
+  "en",
+  "fr"
+ ],
+ "series|11|de|['pl']": [
+  "en",
+  "fr"
+ ],
+ "series|11|de|[]": [
+  "en",
+  "fr"
+ ],
+ "series|11|ea|['en']": [
+  "de",
+  "en",
+  "fr"
+ ],
+ "series|11|ea|['pl']": [
+  "de",
+  "en",
+  "fr"
+ ],
+ "series|11|ea|[]": [
+  "de",
+  "en",
+  "fr"
+ ],
+ "series|11|en-and-fr|['en']": [],
+ "series|11|en-and-fr|['pl']": [],
+ "series|11|en-and-fr|[]": [],
+ "series|11|en-forced-and-en|['en']": [],
+ "series|11|en-forced-and-en|['pl']": [],
+ "series|11|en-forced-and-en|[]": [],
+ "series|11|en-forced|['en']": [
+  "de",
+  "en",
+  "fr"
+ ],
+ "series|11|en-forced|['pl']": [
+  "de",
+  "en",
+  "fr"
+ ],
+ "series|11|en-forced|[]": [
+  "de",
+  "en",
+  "fr"
+ ],
+ "series|11|en-hi-and-fr|['en']": [],
+ "series|11|en-hi-and-fr|['pl']": [],
+ "series|11|en-hi-and-fr|[]": [],
+ "series|11|en-hi|['en']": [],
+ "series|11|en-hi|['pl']": [],
+ "series|11|en-hi|[]": [],
+ "series|11|en|['en']": [],
+ "series|11|en|['pl']": [],
+ "series|11|en|[]": [],
+ "series|11|fr|['en']": [
+  "de",
+  "en"
+ ],
+ "series|11|fr|['pl']": [
+  "de",
+  "en"
+ ],
+ "series|11|fr|[]": [
+  "de",
+  "en"
+ ],
+ "series|11|none|['en']": [
+  "de",
+  "en",
+  "fr"
+ ],
+ "series|11|none|['pl']": [
+  "de",
+  "en",
+  "fr"
+ ],
+ "series|11|none|[]": [
+  "de",
+  "en",
+  "fr"
+ ],
+ "series|12|de|['en']": [
+  "en",
+  "en:hi"
+ ],
+ "series|12|de|['pl']": [
+  "en",
+  "en:hi"
+ ],
+ "series|12|de|[]": [
+  "en",
+  "en:hi"
+ ],
+ "series|12|ea|['en']": [
+  "en",
+  "en:hi"
+ ],
+ "series|12|ea|['pl']": [
+  "en",
+  "en:hi"
+ ],
+ "series|12|ea|[]": [
+  "en",
+  "en:hi"
+ ],
+ "series|12|en-and-fr|['en']": [
+  "en:hi"
+ ],
+ "series|12|en-and-fr|['pl']": [
+  "en:hi"
+ ],
+ "series|12|en-and-fr|[]": [
+  "en:hi"
+ ],
+ "series|12|en-forced-and-en|['en']": [
+  "en:hi"
+ ],
+ "series|12|en-forced-and-en|['pl']": [
+  "en:hi"
+ ],
+ "series|12|en-forced-and-en|[]": [
+  "en:hi"
+ ],
+ "series|12|en-forced|['en']": [
+  "en",
+  "en:hi"
+ ],
+ "series|12|en-forced|['pl']": [
+  "en",
+  "en:hi"
+ ],
+ "series|12|en-forced|[]": [
+  "en",
+  "en:hi"
+ ],
+ "series|12|en-hi-and-fr|['en']": [
+  "en"
+ ],
+ "series|12|en-hi-and-fr|['pl']": [
+  "en"
+ ],
+ "series|12|en-hi-and-fr|[]": [
+  "en"
+ ],
+ "series|12|en-hi|['en']": [
+  "en"
+ ],
+ "series|12|en-hi|['pl']": [
+  "en"
+ ],
+ "series|12|en-hi|[]": [
+  "en"
+ ],
+ "series|12|en|['en']": [
+  "en:hi"
+ ],
+ "series|12|en|['pl']": [
+  "en:hi"
+ ],
+ "series|12|en|[]": [
+  "en:hi"
+ ],
+ "series|12|fr|['en']": [
+  "en",
+  "en:hi"
+ ],
+ "series|12|fr|['pl']": [
+  "en",
+  "en:hi"
+ ],
+ "series|12|fr|[]": [
+  "en",
+  "en:hi"
+ ],
+ "series|12|none|['en']": [
+  "en",
+  "en:hi"
+ ],
+ "series|12|none|['pl']": [
+  "en",
+  "en:hi"
+ ],
+ "series|12|none|[]": [
+  "en",
+  "en:hi"
+ ],
+ "series|13|de|['en']": [
+  "ea",
+  "pb"
+ ],
+ "series|13|de|['pl']": [
+  "ea",
+  "pb"
+ ],
+ "series|13|de|[]": [
+  "ea",
+  "pb"
+ ],
+ "series|13|ea|['en']": [
+  "pb"
+ ],
+ "series|13|ea|['pl']": [
+  "pb"
+ ],
+ "series|13|ea|[]": [
+  "pb"
+ ],
+ "series|13|en-and-fr|['en']": [
+  "ea",
+  "pb"
+ ],
+ "series|13|en-and-fr|['pl']": [
+  "ea",
+  "pb"
+ ],
+ "series|13|en-and-fr|[]": [
+  "ea",
+  "pb"
+ ],
+ "series|13|en-forced-and-en|['en']": [
+  "ea",
+  "pb"
+ ],
+ "series|13|en-forced-and-en|['pl']": [
+  "ea",
+  "pb"
+ ],
+ "series|13|en-forced-and-en|[]": [
+  "ea",
+  "pb"
+ ],
+ "series|13|en-forced|['en']": [
+  "ea",
+  "pb"
+ ],
+ "series|13|en-forced|['pl']": [
+  "ea",
+  "pb"
+ ],
+ "series|13|en-forced|[]": [
+  "ea",
+  "pb"
+ ],
+ "series|13|en-hi-and-fr|['en']": [
+  "ea",
+  "pb"
+ ],
+ "series|13|en-hi-and-fr|['pl']": [
+  "ea",
+  "pb"
+ ],
+ "series|13|en-hi-and-fr|[]": [
+  "ea",
+  "pb"
+ ],
+ "series|13|en-hi|['en']": [
+  "ea",
+  "pb"
+ ],
+ "series|13|en-hi|['pl']": [
+  "ea",
+  "pb"
+ ],
+ "series|13|en-hi|[]": [
+  "ea",
+  "pb"
+ ],
+ "series|13|en|['en']": [
+  "ea",
+  "pb"
+ ],
+ "series|13|en|['pl']": [
+  "ea",
+  "pb"
+ ],
+ "series|13|en|[]": [
+  "ea",
+  "pb"
+ ],
+ "series|13|fr|['en']": [
+  "ea",
+  "pb"
+ ],
+ "series|13|fr|['pl']": [
+  "ea",
+  "pb"
+ ],
+ "series|13|fr|[]": [
+  "ea",
+  "pb"
+ ],
+ "series|13|none|['en']": [
+  "ea",
+  "pb"
+ ],
+ "series|13|none|['pl']": [
+  "ea",
+  "pb"
+ ],
+ "series|13|none|[]": [
+  "ea",
+  "pb"
+ ],
+ "series|1|de|['en']": [
+  "en"
+ ],
+ "series|1|de|['pl']": [
+  "en"
+ ],
+ "series|1|de|[]": [
+  "en"
+ ],
+ "series|1|ea|['en']": [
+  "en"
+ ],
+ "series|1|ea|['pl']": [
+  "en"
+ ],
+ "series|1|ea|[]": [
+  "en"
+ ],
+ "series|1|en-and-fr|['en']": [],
+ "series|1|en-and-fr|['pl']": [],
+ "series|1|en-and-fr|[]": [],
+ "series|1|en-forced-and-en|['en']": [],
+ "series|1|en-forced-and-en|['pl']": [],
+ "series|1|en-forced-and-en|[]": [],
+ "series|1|en-forced|['en']": [
+  "en"
+ ],
+ "series|1|en-forced|['pl']": [
+  "en"
+ ],
+ "series|1|en-forced|[]": [
+  "en"
+ ],
+ "series|1|en-hi-and-fr|['en']": [],
+ "series|1|en-hi-and-fr|['pl']": [],
+ "series|1|en-hi-and-fr|[]": [],
+ "series|1|en-hi|['en']": [],
+ "series|1|en-hi|['pl']": [],
+ "series|1|en-hi|[]": [],
+ "series|1|en|['en']": [],
+ "series|1|en|['pl']": [],
+ "series|1|en|[]": [],
+ "series|1|fr|['en']": [
+  "en"
+ ],
+ "series|1|fr|['pl']": [
+  "en"
+ ],
+ "series|1|fr|[]": [
+  "en"
+ ],
+ "series|1|none|['en']": [
+  "en"
+ ],
+ "series|1|none|['pl']": [
+  "en"
+ ],
+ "series|1|none|[]": [
+  "en"
+ ],
+ "series|2|de|['en']": [
+  "fr"
+ ],
+ "series|2|de|['pl']": [
+  "fr"
+ ],
+ "series|2|de|[]": [
+  "fr"
+ ],
+ "series|2|ea|['en']": [
+  "fr"
+ ],
+ "series|2|ea|['pl']": [
+  "fr"
+ ],
+ "series|2|ea|[]": [
+  "fr"
+ ],
+ "series|2|en-and-fr|['en']": [],
+ "series|2|en-and-fr|['pl']": [],
+ "series|2|en-and-fr|[]": [],
+ "series|2|en-forced-and-en|['en']": [
+  "fr"
+ ],
+ "series|2|en-forced-and-en|['pl']": [
+  "fr"
+ ],
+ "series|2|en-forced-and-en|[]": [
+  "fr"
+ ],
+ "series|2|en-forced|['en']": [
+  "fr"
+ ],
+ "series|2|en-forced|['pl']": [
+  "fr"
+ ],
+ "series|2|en-forced|[]": [
+  "fr"
+ ],
+ "series|2|en-hi-and-fr|['en']": [],
+ "series|2|en-hi-and-fr|['pl']": [],
+ "series|2|en-hi-and-fr|[]": [],
+ "series|2|en-hi|['en']": [
+  "fr"
+ ],
+ "series|2|en-hi|['pl']": [
+  "fr"
+ ],
+ "series|2|en-hi|[]": [
+  "fr"
+ ],
+ "series|2|en|['en']": [
+  "fr"
+ ],
+ "series|2|en|['pl']": [
+  "fr"
+ ],
+ "series|2|en|[]": [
+  "fr"
+ ],
+ "series|2|fr|['en']": [],
+ "series|2|fr|['pl']": [],
+ "series|2|fr|[]": [],
+ "series|2|none|['en']": [
+  "fr"
+ ],
+ "series|2|none|['pl']": [
+  "fr"
+ ],
+ "series|2|none|[]": [
+  "fr"
+ ],
+ "series|3|de|['en']": [
+  "en:forced"
+ ],
+ "series|3|de|['pl']": [
+  "en:forced"
+ ],
+ "series|3|de|[]": [
+  "en:forced"
+ ],
+ "series|3|ea|['en']": [
+  "en:forced"
+ ],
+ "series|3|ea|['pl']": [
+  "en:forced"
+ ],
+ "series|3|ea|[]": [
+  "en:forced"
+ ],
+ "series|3|en-and-fr|['en']": [
+  "en:forced"
+ ],
+ "series|3|en-and-fr|['pl']": [
+  "en:forced"
+ ],
+ "series|3|en-and-fr|[]": [
+  "en:forced"
+ ],
+ "series|3|en-forced-and-en|['en']": [],
+ "series|3|en-forced-and-en|['pl']": [],
+ "series|3|en-forced-and-en|[]": [],
+ "series|3|en-forced|['en']": [],
+ "series|3|en-forced|['pl']": [],
+ "series|3|en-forced|[]": [],
+ "series|3|en-hi-and-fr|['en']": [
+  "en:forced"
+ ],
+ "series|3|en-hi-and-fr|['pl']": [
+  "en:forced"
+ ],
+ "series|3|en-hi-and-fr|[]": [
+  "en:forced"
+ ],
+ "series|3|en-hi|['en']": [
+  "en:forced"
+ ],
+ "series|3|en-hi|['pl']": [
+  "en:forced"
+ ],
+ "series|3|en-hi|[]": [
+  "en:forced"
+ ],
+ "series|3|en|['en']": [
+  "en:forced"
+ ],
+ "series|3|en|['pl']": [
+  "en:forced"
+ ],
+ "series|3|en|[]": [
+  "en:forced"
+ ],
+ "series|3|fr|['en']": [
+  "en:forced"
+ ],
+ "series|3|fr|['pl']": [
+  "en:forced"
+ ],
+ "series|3|fr|[]": [
+  "en:forced"
+ ],
+ "series|3|none|['en']": [
+  "en:forced"
+ ],
+ "series|3|none|['pl']": [
+  "en:forced"
+ ],
+ "series|3|none|[]": [
+  "en:forced"
+ ],
+ "series|4|de|['en']": [
+  "en:hi"
+ ],
+ "series|4|de|['pl']": [
+  "en:hi"
+ ],
+ "series|4|de|[]": [
+  "en:hi"
+ ],
+ "series|4|ea|['en']": [
+  "en:hi"
+ ],
+ "series|4|ea|['pl']": [
+  "en:hi"
+ ],
+ "series|4|ea|[]": [
+  "en:hi"
+ ],
+ "series|4|en-and-fr|['en']": [
+  "en:hi"
+ ],
+ "series|4|en-and-fr|['pl']": [
+  "en:hi"
+ ],
+ "series|4|en-and-fr|[]": [
+  "en:hi"
+ ],
+ "series|4|en-forced-and-en|['en']": [
+  "en:hi"
+ ],
+ "series|4|en-forced-and-en|['pl']": [
+  "en:hi"
+ ],
+ "series|4|en-forced-and-en|[]": [
+  "en:hi"
+ ],
+ "series|4|en-forced|['en']": [
+  "en:hi"
+ ],
+ "series|4|en-forced|['pl']": [
+  "en:hi"
+ ],
+ "series|4|en-forced|[]": [
+  "en:hi"
+ ],
+ "series|4|en-hi-and-fr|['en']": [],
+ "series|4|en-hi-and-fr|['pl']": [],
+ "series|4|en-hi-and-fr|[]": [],
+ "series|4|en-hi|['en']": [],
+ "series|4|en-hi|['pl']": [],
+ "series|4|en-hi|[]": [],
+ "series|4|en|['en']": [
+  "en:hi"
+ ],
+ "series|4|en|['pl']": [
+  "en:hi"
+ ],
+ "series|4|en|[]": [
+  "en:hi"
+ ],
+ "series|4|fr|['en']": [
+  "en:hi"
+ ],
+ "series|4|fr|['pl']": [
+  "en:hi"
+ ],
+ "series|4|fr|[]": [
+  "en:hi"
+ ],
+ "series|4|none|['en']": [
+  "en:hi"
+ ],
+ "series|4|none|['pl']": [
+  "en:hi"
+ ],
+ "series|4|none|[]": [
+  "en:hi"
+ ],
+ "series|5|de|['en']": [
+  "en",
+  "en:forced",
+  "en:hi"
+ ],
+ "series|5|de|['pl']": [
+  "en",
+  "en:forced",
+  "en:hi"
+ ],
+ "series|5|de|[]": [
+  "en",
+  "en:forced",
+  "en:hi"
+ ],
+ "series|5|ea|['en']": [
+  "en",
+  "en:forced",
+  "en:hi"
+ ],
+ "series|5|ea|['pl']": [
+  "en",
+  "en:forced",
+  "en:hi"
+ ],
+ "series|5|ea|[]": [
+  "en",
+  "en:forced",
+  "en:hi"
+ ],
+ "series|5|en-and-fr|['en']": [],
+ "series|5|en-and-fr|['pl']": [],
+ "series|5|en-and-fr|[]": [],
+ "series|5|en-forced-and-en|['en']": [],
+ "series|5|en-forced-and-en|['pl']": [],
+ "series|5|en-forced-and-en|[]": [],
+ "series|5|en-forced|['en']": [],
+ "series|5|en-forced|['pl']": [],
+ "series|5|en-forced|[]": [],
+ "series|5|en-hi-and-fr|['en']": [],
+ "series|5|en-hi-and-fr|['pl']": [],
+ "series|5|en-hi-and-fr|[]": [],
+ "series|5|en-hi|['en']": [],
+ "series|5|en-hi|['pl']": [],
+ "series|5|en-hi|[]": [],
+ "series|5|en|['en']": [],
+ "series|5|en|['pl']": [],
+ "series|5|en|[]": [],
+ "series|5|fr|['en']": [
+  "en",
+  "en:forced",
+  "en:hi"
+ ],
+ "series|5|fr|['pl']": [
+  "en",
+  "en:forced",
+  "en:hi"
+ ],
+ "series|5|fr|[]": [
+  "en",
+  "en:forced",
+  "en:hi"
+ ],
+ "series|5|none|['en']": [
+  "en",
+  "en:forced",
+  "en:hi"
+ ],
+ "series|5|none|['pl']": [
+  "en",
+  "en:forced",
+  "en:hi"
+ ],
+ "series|5|none|[]": [
+  "en",
+  "en:forced",
+  "en:hi"
+ ],
+ "series|6|de|['en']": [
+  "en"
+ ],
+ "series|6|de|['pl']": [
+  "en"
+ ],
+ "series|6|de|[]": [
+  "en"
+ ],
+ "series|6|ea|['en']": [
+  "en"
+ ],
+ "series|6|ea|['pl']": [
+  "en"
+ ],
+ "series|6|ea|[]": [
+  "en"
+ ],
+ "series|6|en-and-fr|['en']": [],
+ "series|6|en-and-fr|['pl']": [],
+ "series|6|en-and-fr|[]": [],
+ "series|6|en-forced-and-en|['en']": [],
+ "series|6|en-forced-and-en|['pl']": [],
+ "series|6|en-forced-and-en|[]": [],
+ "series|6|en-forced|['en']": [
+  "en"
+ ],
+ "series|6|en-forced|['pl']": [
+  "en"
+ ],
+ "series|6|en-forced|[]": [
+  "en"
+ ],
+ "series|6|en-hi-and-fr|['en']": [
+  "en"
+ ],
+ "series|6|en-hi-and-fr|['pl']": [
+  "en"
+ ],
+ "series|6|en-hi-and-fr|[]": [
+  "en"
+ ],
+ "series|6|en-hi|['en']": [
+  "en"
+ ],
+ "series|6|en-hi|['pl']": [
+  "en"
+ ],
+ "series|6|en-hi|[]": [
+  "en"
+ ],
+ "series|6|en|['en']": [],
+ "series|6|en|['pl']": [],
+ "series|6|en|[]": [],
+ "series|6|fr|['en']": [
+  "en"
+ ],
+ "series|6|fr|['pl']": [
+  "en"
+ ],
+ "series|6|fr|[]": [
+  "en"
+ ],
+ "series|6|none|['en']": [
+  "en"
+ ],
+ "series|6|none|['pl']": [
+  "en"
+ ],
+ "series|6|none|[]": [
+  "en"
+ ],
+ "series|7|de|['en']": [
+  "en",
+  "fr"
+ ],
+ "series|7|de|['pl']": [
+  "en",
+  "fr"
+ ],
+ "series|7|de|[]": [
+  "en",
+  "fr"
+ ],
+ "series|7|ea|['en']": [
+  "en",
+  "fr"
+ ],
+ "series|7|ea|['pl']": [
+  "en",
+  "fr"
+ ],
+ "series|7|ea|[]": [
+  "en",
+  "fr"
+ ],
+ "series|7|en-and-fr|['en']": [],
+ "series|7|en-and-fr|['pl']": [],
+ "series|7|en-and-fr|[]": [],
+ "series|7|en-forced-and-en|['en']": [
+  "fr"
+ ],
+ "series|7|en-forced-and-en|['pl']": [
+  "fr"
+ ],
+ "series|7|en-forced-and-en|[]": [
+  "fr"
+ ],
+ "series|7|en-forced|['en']": [
+  "en",
+  "fr"
+ ],
+ "series|7|en-forced|['pl']": [
+  "en",
+  "fr"
+ ],
+ "series|7|en-forced|[]": [
+  "en",
+  "fr"
+ ],
+ "series|7|en-hi-and-fr|['en']": [],
+ "series|7|en-hi-and-fr|['pl']": [],
+ "series|7|en-hi-and-fr|[]": [],
+ "series|7|en-hi|['en']": [
+  "fr"
+ ],
+ "series|7|en-hi|['pl']": [
+  "fr"
+ ],
+ "series|7|en-hi|[]": [
+  "fr"
+ ],
+ "series|7|en|['en']": [
+  "fr"
+ ],
+ "series|7|en|['pl']": [
+  "fr"
+ ],
+ "series|7|en|[]": [
+  "fr"
+ ],
+ "series|7|fr|['en']": [],
+ "series|7|fr|['pl']": [],
+ "series|7|fr|[]": [],
+ "series|7|none|['en']": [
+  "en",
+  "fr"
+ ],
+ "series|7|none|['pl']": [
+  "en",
+  "fr"
+ ],
+ "series|7|none|[]": [
+  "en",
+  "fr"
+ ],
+ "series|8|de|['en']": [
+  "el",
+  "en",
+  "fr",
+  "ko"
+ ],
+ "series|8|de|['pl']": [
+  "el",
+  "en",
+  "fr",
+  "ko"
+ ],
+ "series|8|de|[]": [
+  "el",
+  "en",
+  "fr",
+  "ko"
+ ],
+ "series|8|ea|['en']": [
+  "el",
+  "en",
+  "fr",
+  "ko"
+ ],
+ "series|8|ea|['pl']": [
+  "el",
+  "en",
+  "fr",
+  "ko"
+ ],
+ "series|8|ea|[]": [
+  "el",
+  "en",
+  "fr",
+  "ko"
+ ],
+ "series|8|en-and-fr|['en']": [
+  "el",
+  "ko"
+ ],
+ "series|8|en-and-fr|['pl']": [
+  "el",
+  "ko"
+ ],
+ "series|8|en-and-fr|[]": [
+  "el",
+  "ko"
+ ],
+ "series|8|en-forced-and-en|['en']": [
+  "el",
+  "fr",
+  "ko"
+ ],
+ "series|8|en-forced-and-en|['pl']": [
+  "el",
+  "fr",
+  "ko"
+ ],
+ "series|8|en-forced-and-en|[]": [
+  "el",
+  "fr",
+  "ko"
+ ],
+ "series|8|en-forced|['en']": [
+  "el",
+  "en",
+  "fr",
+  "ko"
+ ],
+ "series|8|en-forced|['pl']": [
+  "el",
+  "en",
+  "fr",
+  "ko"
+ ],
+ "series|8|en-forced|[]": [
+  "el",
+  "en",
+  "fr",
+  "ko"
+ ],
+ "series|8|en-hi-and-fr|['en']": [
+  "el",
+  "ko"
+ ],
+ "series|8|en-hi-and-fr|['pl']": [
+  "el",
+  "ko"
+ ],
+ "series|8|en-hi-and-fr|[]": [
+  "el",
+  "ko"
+ ],
+ "series|8|en-hi|['en']": [
+  "el",
+  "fr",
+  "ko"
+ ],
+ "series|8|en-hi|['pl']": [
+  "el",
+  "fr",
+  "ko"
+ ],
+ "series|8|en-hi|[]": [
+  "el",
+  "fr",
+  "ko"
+ ],
+ "series|8|en|['en']": [
+  "el",
+  "fr",
+  "ko"
+ ],
+ "series|8|en|['pl']": [
+  "el",
+  "fr",
+  "ko"
+ ],
+ "series|8|en|[]": [
+  "el",
+  "fr",
+  "ko"
+ ],
+ "series|8|fr|['en']": [
+  "el",
+  "en",
+  "ko"
+ ],
+ "series|8|fr|['pl']": [
+  "el",
+  "en",
+  "ko"
+ ],
+ "series|8|fr|[]": [
+  "el",
+  "en",
+  "ko"
+ ],
+ "series|8|none|['en']": [
+  "el",
+  "en",
+  "fr",
+  "ko"
+ ],
+ "series|8|none|['pl']": [
+  "el",
+  "en",
+  "fr",
+  "ko"
+ ],
+ "series|8|none|[]": [
+  "el",
+  "en",
+  "fr",
+  "ko"
+ ],
+ "series|9|de|['en']": [
+  "fr"
+ ],
+ "series|9|de|['pl']": [
+  "en",
+  "fr"
+ ],
+ "series|9|de|[]": [
+  "en",
+  "fr"
+ ],
+ "series|9|ea|['en']": [
+  "fr"
+ ],
+ "series|9|ea|['pl']": [
+  "en",
+  "fr"
+ ],
+ "series|9|ea|[]": [
+  "en",
+  "fr"
+ ],
+ "series|9|en-and-fr|['en']": [],
+ "series|9|en-and-fr|['pl']": [],
+ "series|9|en-and-fr|[]": [],
+ "series|9|en-forced-and-en|['en']": [
+  "fr"
+ ],
+ "series|9|en-forced-and-en|['pl']": [
+  "fr"
+ ],
+ "series|9|en-forced-and-en|[]": [
+  "fr"
+ ],
+ "series|9|en-forced|['en']": [
+  "fr"
+ ],
+ "series|9|en-forced|['pl']": [
+  "en",
+  "fr"
+ ],
+ "series|9|en-forced|[]": [
+  "en",
+  "fr"
+ ],
+ "series|9|en-hi-and-fr|['en']": [],
+ "series|9|en-hi-and-fr|['pl']": [],
+ "series|9|en-hi-and-fr|[]": [],
+ "series|9|en-hi|['en']": [
+  "fr"
+ ],
+ "series|9|en-hi|['pl']": [
+  "fr"
+ ],
+ "series|9|en-hi|[]": [
+  "fr"
+ ],
+ "series|9|en|['en']": [
+  "fr"
+ ],
+ "series|9|en|['pl']": [
+  "fr"
+ ],
+ "series|9|en|[]": [
+  "fr"
+ ],
+ "series|9|fr|['en']": [],
+ "series|9|fr|['pl']": [
+  "en"
+ ],
+ "series|9|fr|[]": [
+  "en"
+ ],
+ "series|9|none|['en']": [
+  "fr"
+ ],
+ "series|9|none|['pl']": [
+  "en",
+  "fr"
+ ],
+ "series|9|none|[]": [
+  "en",
+  "fr"
+ ]
+}

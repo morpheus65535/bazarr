@@ -27,6 +27,7 @@ from .config import settings
 from .get_args import args
 from utilities.text_list import parse_text_list_or_default
 from utilities.path_mappings import path_mappings
+from .profile_migration import convert_basic_profile
 
 logger = logging.getLogger(__name__)
 
@@ -791,6 +792,47 @@ def fix_code3_languages_in_languages_profiles():
             list_missing_subtitles()
         if settings.general.use_radarr:
             list_missing_subtitles_movies()
+
+
+def convert_basic_languages_profiles_to_enhanced() -> None:
+    """
+    Convert every basic languages profile to the enhanced format.
+
+    Each profile is converted with convert_basic_profile(), so the subtitles it asks for stay the same. The profile id,
+    name, tag and matching rules are kept, so Sonarr and Radarr assignments still work. A profile that cannot be
+    converted, such as one without any language, stays basic and a warning is logged. Profiles that are already
+    enhanced are skipped, so running this on every startup does nothing after the first conversion.
+
+    :return: None
+    """
+    profiles = database.execute(
+        select(TableLanguagesProfiles.profileId, TableLanguagesProfiles.name, TableLanguagesProfiles.items,
+               TableLanguagesProfiles.cutoff)
+        .where(TableLanguagesProfiles.profileType == PROFILE_TYPE_BASIC)).all()
+
+    converted = 0
+    for profile in profiles:
+        try:
+            items = json.loads(profile.items)
+            if not isinstance(items, list):
+                raise ValueError('the stored items are not a list')
+            items_object, cutoff = convert_basic_profile(items, profile.cutoff)
+        except (TypeError, ValueError) as error:
+            logger.warning(f"Languages profile {profile.name} could not be converted to an enhanced profile and "
+                           f"stays basic: {error}")
+            continue
+
+        database.execute(
+            update(TableLanguagesProfiles)
+            .values(items=json.dumps(items_object), cutoff=cutoff, profileType=PROFILE_TYPE_ENHANCED)
+            .where(TableLanguagesProfiles.profileId == profile.profileId)
+            .where(TableLanguagesProfiles.profileType == PROFILE_TYPE_BASIC)
+        )
+        converted += 1
+
+    if converted:
+        update_profile_id_list.invalidate()
+        logger.info(f"Converted {converted} languages profile(s) to the enhanced format")
 
 
 def is_indexed_subtitle_path(*subtitles_paths) -> bool:
