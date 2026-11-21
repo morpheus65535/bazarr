@@ -71,19 +71,28 @@ def validate_oidc_configuration(auth, base_url):
         raise ValueError('OIDC requires at least one allowed subject (sub)')
 
 
+def read_oidc_client_secret(auth):
+    if not auth.oidc_client_secret_file:
+        return os.environ.get('BAZARR_OIDC_CLIENT_SECRET', '')
+    try:
+        secret = Path(auth.oidc_client_secret_file).read_text(encoding='utf-8').strip()
+    except (OSError, UnicodeError) as error:
+        raise ValueError('Bazarr must be able to read the OIDC client secret file as UTF-8 text') from error
+    if not secret:
+        raise ValueError('The OIDC client secret file is empty')
+    return secret
+
+
 def _configuration():
     from .config import settings, base_url
 
     if settings.auth.type != 'oidc':
         raise ValueError('OIDC is disabled')
     validate_oidc_configuration(settings.auth, base_url)
-    secret = os.environ.get('BAZARR_OIDC_CLIENT_SECRET', '')
-    if settings.auth.oidc_client_secret_file:
-        secret = Path(settings.auth.oidc_client_secret_file).read_text(encoding='utf-8').strip()
     return {
         'issuer': settings.auth.oidc_issuer,
         'client_id': settings.auth.oidc_client_id,
-        'client_secret': secret,
+        'client_secret': read_oidc_client_secret(settings.auth),
         'redirect_uri': settings.auth.oidc_redirect_uri,
         'subjects': list(settings.auth.oidc_allowed_subjects),
         'base_url': base_url,
@@ -205,7 +214,7 @@ def login():
         config = _configuration()
         metadata, _ = _provider(config['issuer'])
         client = OAuth2Session(config['client_id'], redirect_uri=config['redirect_uri'],
-                               scope=['openid', 'profile', 'email'], pkce='S256')
+                               scope=['openid'], pkce='S256')
         # A redirect from the token endpoint must not forward credentials elsewhere.
         client.max_redirects = 0
         nonce = secrets.token_urlsafe(32)
@@ -259,9 +268,13 @@ def callback():
         elif 'none' not in methods:
             raise ValueError('OIDC provider requires a client secret')
         # Use the configured callback origin, never a Host or forwarded header.
-        token = pending.client.fetch_token(metadata['token_endpoint'],
-                                            authorization_response=config['redirect_uri'] + '?' + request.query_string.decode(),
-                                            timeout=10, **kwargs)
+        authorization_response = config['redirect_uri'] + '?' + request.query_string.decode()
+        try:
+            token = pending.client.fetch_token(metadata['token_endpoint'],
+                                               authorization_response=authorization_response, timeout=10, **kwargs)
+        except Warning as error:
+            # OAuthLib raises Warning when the granted token scope changes.
+            raise ValueError('OIDC provider returned an unexpected token scope') from error
         if not isinstance(token.get('id_token'), str):
             raise ValueError('OIDC provider did not return an ID token')
         try:
