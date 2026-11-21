@@ -42,7 +42,7 @@ def provider(requests_mock, signing_key):
     public_jwk = jwk.construct(public, 'RS256').to_dict()
     public_jwk.update(kid='test-key', use='sig', alg='RS256')
     state = SimpleNamespace(metadata=metadata, jwks={'keys': [public_jwk]}, overrides={},
-                            omit=[], algorithm='RS256', private=private, authorization=None, calls=[])
+                            omit=[], algorithm='RS256', private=private, authorization=None, calls=[], scope=None)
     requests_mock.get(ISSUER + '/.well-known/openid-configuration', json=lambda *_: state.metadata)
     requests_mock.get(ISSUER + '/jwks', json=lambda *_: state.jwks)
 
@@ -61,8 +61,11 @@ def provider(requests_mock, signing_key):
         claims.update(state.overrides)
         for key in state.omit:
             claims.pop(key, None)
-        return {'access_token': 'provider-access-token', 'token_type': 'Bearer',
-                'id_token': jwt.encode(claims, state.private, algorithm=state.algorithm, headers={'kid': 'test-key'})}
+        token = {'access_token': 'provider-access-token', 'token_type': 'Bearer',
+                 'id_token': jwt.encode(claims, state.private, algorithm=state.algorithm, headers={'kid': 'test-key'})}
+        if state.scope is not None:
+            token['scope'] = state.scope
+        return token
 
     requests_mock.post(ISSUER + '/token', json=exchange)
     return state
@@ -140,7 +143,7 @@ def test_login_uses_pkce_nonce_and_secure_cookie(oidc_app, provider):
     assert params['client_id'] == ['bazarr']
     assert params['redirect_uri'] == [CALLBACK]
     assert params['response_type'] == ['code']
-    assert params['scope'] == ['openid profile email']
+    assert params['scope'] == ['openid']
     assert params['code_challenge_method'] == ['S256']
     assert params['nonce'][0]
     cookie = response.headers['Set-Cookie']
@@ -149,6 +152,7 @@ def test_login_uses_pkce_nonce_and_secure_cookie(oidc_app, provider):
 
 
 def test_valid_identity_gets_session_and_return_path(oidc_app, provider):
+    provider.scope = 'openid'
     client = oidc_app.test_client()
     assert 'apiKey' not in injected(client)
     start(client, provider)
@@ -162,6 +166,16 @@ def test_valid_identity_gets_session_and_return_path(oidc_app, provider):
         assert 'oidc_state' not in browser_session
     assert response.headers['Cache-Control'] == 'no-store'
     assert response.headers['Referrer-Policy'] == 'no-referrer'
+
+
+def test_unexpected_granted_scope_returns_login_error(oidc_app, provider, monkeypatch):
+    monkeypatch.delenv('OAUTHLIB_RELAX_TOKEN_SCOPE', raising=False)
+    provider.scope = 'openid profile'
+    client = oidc_app.test_client()
+    start(client, provider)
+
+    assert finish(client, provider).location == '/bazarr/login?oidcError=failed'
+    assert 'apiKey' not in injected(client)
 
 
 @pytest.mark.parametrize('overrides', [
@@ -374,19 +388,46 @@ def test_token_redirect_does_not_forward_credentials(oidc_app, provider, request
     assert not any(call.hostname == 'attacker.example' for call in requests_mock.request_history)
 
 
-def test_secret_file_takes_precedence_and_secret_is_not_in_settings(oidc_app, provider, monkeypatch, tmp_path):
-    from app.config import settings, get_settings
+def test_saved_secret_file_takes_precedence_and_stays_private(oidc_app, provider, monkeypatch, tmp_path,
+                                                              memory_session):
+    from app import config
+    from app import database as db_module
+
+    monkeypatch.setattr(config, 'write_config', lambda: None)
+    monkeypatch.setattr(db_module, 'database', memory_session)
     secret_file = tmp_path / 'client-secret'
     secret_file.write_text('file-test-secret\n')
-    settings.auth.oidc_client_secret_file = str(secret_file)
     monkeypatch.setenv('BAZARR_OIDC_CLIENT_SECRET', 'env-test-secret')
+    config.save_settings([('settings-auth-oidc_client_secret_file', str(secret_file))])
     client = oidc_app.test_client()
     start(client, provider)
     finish(client, provider)
     expected = base64.b64encode(b'bazarr:file-test-secret').decode()
     assert provider.calls[0].headers['Authorization'] == 'Basic ' + expected
-    assert 'file-test-secret' not in json.dumps(get_settings())
-    assert 'env-test-secret' not in json.dumps(get_settings())
+    assert 'file-test-secret' not in json.dumps(config.get_settings())
+    assert 'env-test-secret' not in json.dumps(config.get_settings())
+
+
+@pytest.mark.parametrize('contents, message', [
+    (None, 'must be able to read'),
+    (b' \n', 'file is empty'),
+    (b'\xff', 'must be able to read'),
+])
+def test_invalid_client_secret_file_cannot_be_saved(oidc_app, monkeypatch, tmp_path, contents, message):
+    from app import config
+    from dynaconf.validator import ValidationError
+
+    secret_file = tmp_path / 'client-secret'
+    if contents is not None:
+        secret_file.write_bytes(contents)
+    writes = []
+    monkeypatch.setattr(config, 'write_config', lambda: writes.append(True))
+    monkeypatch.setattr(config.settings, 'reload', lambda: None)
+
+    with pytest.raises(ValidationError, match=message):
+        config.save_settings([('settings-auth-oidc_client_secret_file', str(secret_file))])
+
+    assert not writes
 
 
 def test_confidential_client_can_use_client_secret_post(oidc_app, provider, monkeypatch):
