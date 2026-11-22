@@ -14,6 +14,7 @@ from subliminal_patch.providers.embeddedsubtitles import (
 from subliminal_patch.providers.embeddedsubtitles import _get_extra_release_info
 from subliminal_patch.providers.embeddedsubtitles import _get_pretty_release_name
 from subliminal_patch.providers.embeddedsubtitles import _MemoizedFFprobeVideoContainer
+from subliminal_patch.providers.embeddedsubtitles import _enrich_languages_with_mediainfo
 from subliminal_patch.providers.embeddedsubtitles import _rebuild_langs
 from subliminal_patch.providers.embeddedsubtitles import EmbeddedSubtitle
 from subliminal_patch.providers.embeddedsubtitles import EmbeddedSubtitlesProvider
@@ -636,3 +637,93 @@ def test_rebuild_langs_keeps_mandarin_track_when_cantonese_listed_first():
 
 def test_cantonese_language_is_offered_by_provider():
     assert Language("zho", "HK") in EmbeddedSubtitlesProvider.languages
+
+
+def _chinese_stream(index, **tags):
+    return FFprobeSubtitleStream(
+        {"index": index, "codec_name": "subrip", "tags": {"language": "chi", **tags}}
+    )
+
+
+@pytest.mark.parametrize(
+    "mediainfo_language,expected_language",
+    [
+        ("zh-Hans", Language("zho")),
+        ("zh-Hans-CN", Language("zho")),
+        ("zh-Hant", Language("zho", "TW")),
+        ("zh-Hant-TW", Language("zho", "TW")),
+        ("zh-HK", Language("zho", "HK")),
+    ],
+)
+def test_mediainfo_chinese_script_tags_map_to_bazarr_languages(
+    mocker, mediainfo_language, expected_language
+):
+    # mediainfo reports BCP-47 script subtags that ffprobe drops. Bazarr models
+    # Chinese variants as zho / zho-TW / zho-HK, so the stream must end up on
+    # one of those, not on zho;script=Hans/Hant which no profile can match.
+    stream = _chinese_stream(40)
+    mocker.patch(
+        "subliminal_patch.providers.embeddedsubtitles._mediainfo_languages_by_stream_order",
+        return_value={40: mediainfo_language},
+    )
+
+    _enrich_languages_with_mediainfo([stream], "video.mkv", "mediainfo")
+    _rebuild_langs([stream])
+
+    assert stream.language == expected_language
+    assert stream.language.script is None
+
+
+@pytest.mark.parametrize("mediainfo_language", ["zh", "en"])
+def test_mediainfo_without_chinese_variant_keeps_ffprobe_language(
+    mocker, mediainfo_language
+):
+    stream = _chinese_stream(40)
+    mocker.patch(
+        "subliminal_patch.providers.embeddedsubtitles._mediainfo_languages_by_stream_order",
+        return_value={40: mediainfo_language},
+    )
+
+    _enrich_languages_with_mediainfo([stream], "video.mkv", "mediainfo")
+
+    assert stream.language == Language("zho")
+
+
+def test_mediainfo_still_refines_non_chinese_regions(mocker):
+    stream = FFprobeSubtitleStream(
+        {"index": 33, "codec_name": "subrip", "tags": {"language": "por"}}
+    )
+    mocker.patch(
+        "subliminal_patch.providers.embeddedsubtitles._mediainfo_languages_by_stream_order",
+        return_value={33: "pt-BR"},
+    )
+
+    _enrich_languages_with_mediainfo([stream], "video.mkv", "mediainfo")
+
+    assert stream.language == Language("por", "BR")
+
+
+@pytest.mark.parametrize(
+    "requested,expected_index",
+    [(Language("zho"), 40), (Language("zho", "TW"), 41)],
+)
+def test_query_with_mediainfo_returns_requested_chinese_variant(
+    mocker, requested, expected_index
+):
+    # Real-world layout: two Chinese tracks tagged only "chi" with no title,
+    # telling Simplified and Traditional apart only through LanguageIETF.
+    container = mocker.MagicMock(path="video.mkv")
+    container.get_subtitles.return_value = [_chinese_stream(40), _chinese_stream(41)]
+    mocker.patch(
+        "subliminal_patch.providers.embeddedsubtitles._get_memoized_video_container",
+        return_value=container,
+    )
+    mocker.patch(
+        "subliminal_patch.providers.embeddedsubtitles._mediainfo_languages_by_stream_order",
+        return_value={40: "zh-Hans", 41: "zh-Hant"},
+    )
+
+    with EmbeddedSubtitlesProvider(mediainfo_path="mediainfo") as provider:
+        subtitles = provider.query("video.mkv", {requested}, "series")
+
+    assert [subtitle.stream.index for subtitle in subtitles] == [expected_index]

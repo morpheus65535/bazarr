@@ -413,15 +413,24 @@ def _enrich_languages_with_mediainfo(streams, path, mediainfo_path):
         if not mediainfo_lang:
             continue
 
-        try:
-            refined = Language.fromietf(mediainfo_lang)
-        except Exception:
-            logger.debug("mediainfo language %r not recognized", mediainfo_lang)
-            continue
-
         current = stream.language
-        if refined.alpha3 != current.alpha3:
-            continue
+        if current.alpha3 == "zho":
+            # Bazarr tells Chinese variants apart by country (zho, zho-TW,
+            # zho-HK), never by script. Taken as-is, zh-Hans/zh-Hant would become
+            # zho;script=Hans/Hant, which no Chinese profile asks for, so the
+            # track would be dropped. Map the tag the same way ffprobe tags are.
+            refined = _get_chinese_language_from_ietf(mediainfo_lang)
+            if refined is None:
+                continue
+        else:
+            try:
+                refined = Language.fromietf(mediainfo_lang)
+            except Exception:
+                logger.debug("mediainfo language %r not recognized", mediainfo_lang)
+                continue
+
+            if refined.alpha3 != current.alpha3:
+                continue
         if refined.country == current.country and refined.script == current.script:
             continue
         if current.country is not None and refined.country is None:
@@ -436,29 +445,32 @@ def _enrich_languages_with_mediainfo(streams, path, mediainfo_path):
         stream.language = refined
 
 
+def _get_chinese_language_from_ietf(language_ietf):
+    """Map a Chinese BCP-47 tag to the language Bazarr uses for that variant:
+    zho (Simplified), zho-TW (Traditional) or zho-HK (Cantonese). Returns None
+    when the tag carries no recognised variant marker."""
+    if not language_ietf:
+        return None
+
+    language_ietf = language_ietf.lower().replace("_", "-")
+    if any(marker in language_ietf for marker in _CHINESE_CANTONESE_IETF_MARKERS):
+        return _CHINESE_CANTONESE
+    if any(marker in language_ietf for marker in _CHINESE_TRADITIONAL_IETF_MARKERS):
+        return Language("zho", "TW")
+    if any(marker in language_ietf for marker in _CHINESE_SIMPLIFIED_IETF_MARKERS):
+        return Language("zho")
+
+    return None
+
+
 def _get_chinese_language_from_tags(stream):
     if stream.language.alpha3 != "zho":
         return None
 
     data = getattr(stream.tags, "_data", {}) or {}
-    language_ietf = data.get("language_ietf")
-    if language_ietf:
-        language_ietf = language_ietf.lower().replace("_", "-")
-        if any(
-            marker in language_ietf
-            for marker in _CHINESE_CANTONESE_IETF_MARKERS
-        ):
-            return _CHINESE_CANTONESE
-        if any(
-            marker in language_ietf
-            for marker in _CHINESE_TRADITIONAL_IETF_MARKERS
-        ):
-            return Language("zho", "TW")
-        if any(
-            marker in language_ietf
-            for marker in _CHINESE_SIMPLIFIED_IETF_MARKERS
-        ):
-            return Language("zho")
+    language = _get_chinese_language_from_ietf(data.get("language_ietf"))
+    if language is not None:
+        return language
 
     title = data.get("title", "").lower()
     if any(marker in title for marker in _CHINESE_CANTONESE_TITLE_MARKERS):
