@@ -530,6 +530,42 @@ def test_hi_source_does_not_silence_non_hi_candidate(ai_provider, movies, reques
     assert candidate.hearing_impaired is False
 
 
+def test_english_source_beats_better_matching_other_language(ai_provider, movies, requests_mock):
+    # The Farsi source is the user's exact release, the English one is not.
+    # English still wins: release matching only breaks ties within a language.
+    translation = entitled_translation(
+        missing=["NL"],
+        sources=[
+            {"n_id": "srcEN", "language": "EN", "hi": False, "releases": [OTHER_RELEASE]},
+            {"n_id": "srcFA", "language": "FA", "hi": False, "releases": [MATCHING_RELEASE]},
+        ],
+    )
+    requests_mock.get(SEARCH_URL, json=search_response(translation))
+
+    subtitles = ai_provider.list_subtitles(movies["dune"], {Language("nld")})
+
+    assert len(subtitles) == 1
+    assert subtitles[0].ai_source_n_id == "srcEN"
+    assert subtitles[0].ai_source_language == "EN"
+
+
+def test_non_english_source_used_when_no_english(ai_provider, movies, requests_mock):
+    translation = entitled_translation(
+        missing=["NL"],
+        sources=[
+            {"n_id": "srcAR", "language": "AR", "hi": False, "releases": [OTHER_RELEASE]},
+            {"n_id": "srcFA", "language": "FA", "hi": False, "releases": [MATCHING_RELEASE]},
+        ],
+    )
+    requests_mock.get(SEARCH_URL, json=search_response(translation))
+
+    subtitles = ai_provider.list_subtitles(movies["dune"], {Language("nld")})
+
+    assert len(subtitles) == 1
+    # Among non-English sources, the release match decides.
+    assert subtitles[0].ai_source_n_id == "srcFA"
+
+
 def test_quota_exhausted_pauses_candidates(movies, requests_mock, mocker):
     requests_mock.get(SEARCH_URL, json=search_response(entitled_translation()))
     requests_mock.post(
@@ -753,3 +789,41 @@ def test_remote_policy_disables_ai_candidates(movies, requests_mock):
 
     with SubdlProvider("fake-key", ai_translate=True) as provider:
         assert provider.list_subtitles(movies["dune"], {Language("fas")}) == []
+
+
+def test_is_forced_marker_in_release_name_only():
+    # Subdl often puts the forced marker only in release_name; the name is a zip.
+    item = {
+        "release_name": "ForAllMankindS04E01-Glasnost(EngForced)",
+        "name": "SUBDL::for-all-mankind-fourth-season-english-3218569.zip",
+        "comment": "",
+        "releases": None,
+    }
+    assert SubdlProvider._is_forced(item) is True
+    assert SubdlProvider._is_hi(item) is False
+
+
+@pytest.mark.parametrize("text", [
+    "ForAllMankindS04E01-Glasnost(EngForced)",
+    "For All Mankind (Eng Forced)",
+    "Show.S01E02.Eng.Forced",
+    "Show.S01E02EngForced",
+    "Show.S01E02SpaForced",
+    "Movie.2020.FRAForced",
+    "Movie.2020.por.forced",
+    "Movie.2020.Forced",
+])
+def test_is_forced_glued_or_separated_iso3_code(text):
+    # Three-letter ISO 639 codes, glued or separated, in front of 'forced'.
+    assert SubdlProvider._FORCED_RE.search(text) is not None
+
+
+@pytest.mark.parametrize("text", [
+    "reinforced",
+    "EnhancedForced",
+    "foreign dialogue",
+    "Dune.2021.1080p.WEBRip.SDH",
+])
+def test_is_forced_negative_text(text):
+    # Words merely ending in 'forced', and non-forced text, are not forced markers.
+    assert SubdlProvider._FORCED_RE.search(text) is None

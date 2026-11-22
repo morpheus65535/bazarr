@@ -35,8 +35,8 @@ class ProtoBufLexer(RegexLexer):
         'root': [
             (r'[ \t]+', Whitespace),
             (r'[,;{}\[\]()<>]', Punctuation),
-            (r'/(\\\n)?/(\n|(.|\n)*?[^\\]\n)', Comment.Single),
-            (r'/(\\\n)?\*(.|\n)*?\*(\\\n)?/', Comment.Multiline),
+            (r'/(\\\n)?/(\n|[\s\S]*?[^\\]\n)', Comment.Single),
+            (r'/(\\\n)?\*[\s\S]*?\*(\\\n)?/', Comment.Multiline),
             (words((
                 'import', 'option', 'optional', 'required', 'repeated',
                 'reserved', 'default', 'packed', 'ctype', 'extensions', 'to',
@@ -287,7 +287,7 @@ class ZeekLexer(RegexLexer):
             # operator.
             (r'/(?=.*/)', String.Regex, 'regex'),
 
-            (r'(T|F)\b', Keyword.Constant),
+            (r'[TF]\b', Keyword.Constant),
 
             # Port
             (r'\d{1,5}/(udp|tcp|icmp|unknown)\b', Number),
@@ -372,7 +372,7 @@ class PuppetLexer(RegexLexer):
 
         'comments': [
             (r'(\s*)(#.*)$', bygroups(Whitespace, Comment)),
-            (r'/(\\\n)?[*](.|\n)*?[*](\\\n)?/', Comment.Multiline),
+            (r'/(\\\n)?[*][\s\S]*?[*](\\\n)?/', Comment.Multiline),
         ],
 
         'operators': [
@@ -540,7 +540,7 @@ class MscgenLexer(RegexLexer):
         ],
         'comments': [
             (r'(?://|#).*?\n', Comment.Single),
-            (r'/\*(?:.|\n)*?\*/', Comment.Multiline),
+            (r'/\*[\s\S]*?\*/', Comment.Multiline),
             (r'[ \t\r\n]+', Whitespace)
         ]
     }

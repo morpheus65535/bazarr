@@ -276,65 +276,75 @@ class SubsourceProvider(ProviderRetryMixin, Provider, ProviderSubtitleArchiveMix
             logger.debug('No title id found for this video')
             return []
 
-        # we make sure to get only one language to search for
-        if len(languages):
-            language = list(languages)[0]
-        else:
+        if not languages:
             return []
 
-        language_name = language_converters['subsource'].convert(language.alpha3, language.country, language.script)
+        # group the requested variants (forced, HI) under their base language, the API returns base languages
+        requested = {}
+        for language in languages:
+            requested.setdefault(Language.rebuild(language, hi=False, forced=False), []).append(language)
 
-        logger.debug(f'Searching for this language: {language}')
-
-        parameters = (
-            ('api_key', self.api_key),
-            ('language', language_name.lower()),
-            ('limit', 100),
-            ('movieId', title_id)
-        )
-
-        # query the server
-        if isinstance(self.video, Episode):
-            parameters += (('seasonNumber', self.video.season), ('episodeNumber', self.video.episode))
-            res = self.checked(
-                lambda: self.session.get(self._server_url() + 'subtitles',
-                                         params=parameters,
-                                         timeout=30)
-            )
-        else:
-            res = self.checked(
-                lambda: self.session.get(self._server_url() + 'subtitles',
-                                         params=parameters,
-                                         timeout=30)
-            )
+        # one call for all requested languages, paged at the API maximum of 100 results
+        language_names = sorted({
+            language_converters['subsource'].convert(base.alpha3, base.country, base.script).lower()
+            for base in requested
+        })
+        languages_param = ','.join(language_names)
 
         subtitles = []
+        page = 1
 
-        result = res.json()
+        while True:
+            parameters = (
+                ('api_key', self.api_key),
+                ('language', languages_param),
+                ('limit', 100),
+                ('page', page),
+                ('movieId', title_id)
+            )
 
-        if 'success' in result and not result['success']:
-            return []
+            if isinstance(self.video, Episode):
+                parameters += (('seasonNumber', self.video.season), ('episodeNumber', self.video.episode))
 
-        logger.debug(f"Query returned {len(result['data'])} subtitles")
+            logger.debug(f'Searching for these languages: {languages_param}, page {page}')
 
-        if len(result['data']):
+            # query the server
+            res = self.checked(
+                lambda: self.session.get(self._server_url() + 'subtitles',
+                                         params=parameters,
+                                         timeout=30)
+            )
+            result = res.json()
+
+            if 'success' in result and not result['success']:
+                break
+
+            logger.debug(f"Query returned {len(result['data'])} subtitles on page {page}")
+
             for item in result['data']:
+                # the language of each item comes from the item itself, since a response can mix languages
+                item_language = Language.fromietf(
+                    '-'.join(filter(None, language_converters['subsource'].reverse(
+                        item['language'].capitalize()))))
+                base = Language.rebuild(item_language, hi=False, forced=False)
+
                 page_link = f"https://subsource.net{item['link']}"
                 is_forced = self._is_forced(item)
-                if is_forced and not language.forced:
-                    continue
-
                 is_hi = self._is_hi(item)
-                if not is_hi and language.hi:
+
+                # keep the item if any requested variant of its language accepts it
+                accepted = any(
+                    not (is_forced and not variant.forced) and not (not is_hi and variant.hi)
+                    for variant in requested.get(base, [])
+                )
+                if not accepted:
                     continue
 
                 if isinstance(video, Episode):
                     season, episode = self._get_season_episode_from_release_info(item['releaseInfo'])
                     if season == video.season and (not episode or episode == video.episode):
                         subtitle = SubsourceSubtitle(
-                            language=Language.fromietf(
-                                '-'.join(filter(None, language_converters['subsource'].reverse(
-                                    item['language'].capitalize())))),
+                            language=item_language,
                             forced=is_forced,
                             hearing_impaired=is_hi,
                             page_link=page_link,
@@ -350,9 +360,7 @@ class SubsourceProvider(ProviderRetryMixin, Provider, ProviderSubtitleArchiveMix
                         continue
                 else:
                     subtitle = SubsourceSubtitle(
-                        language=Language.fromietf(
-                            '-'.join(filter(None, language_converters['subsource'].reverse(
-                                item['language'].capitalize())))),
+                        language=item_language,
                         forced=is_forced,
                         hearing_impaired=is_hi,
                         page_link=page_link,
@@ -362,6 +370,12 @@ class SubsourceProvider(ProviderRetryMixin, Provider, ProviderSubtitleArchiveMix
                     )
 
                 subtitles.append(subtitle)
+
+            pagination = result.get('pagination') or {}
+            if not result['data'] or page >= pagination.get('pages', 1):
+                break
+
+            page += 1
 
         return subtitles
 

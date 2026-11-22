@@ -45,7 +45,7 @@ class RellLexer(RegexLexer):
                 'val', 'var', 'when', 'while'), suffix=r'\b'),
              Keyword.Reserved),
             (r'//.*?$', Comment.Single),
-            (r'/\*(.|\n|\r)*?\*/', Comment.Multiline),
+            (r'/\*[\s\S]*?\*/', Comment.Multiline),
             (r'"(\\\\|\\"|[^"])*"', String.Double),
             (r'\'(\\\\|\\\'|[^\\\'])*\'', String.Single),
             (r'-?[0-9]*\.[0-9]+([eE][+-][0-9]+)?', Number.Float),

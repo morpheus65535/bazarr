@@ -4,8 +4,8 @@ import os
 import requests
 import mimetypes
 
-from flask import (request, abort, render_template, Response, session, send_file, stream_with_context, Blueprint,
-                   redirect)
+from pathlib import Path
+from flask import request, abort, render_template, Response, send_file, stream_with_context, Blueprint, redirect, current_app
 from functools import wraps
 from urllib.parse import unquote, urlparse, urljoin
 
@@ -17,7 +17,9 @@ from utilities.helper import check_credentials
 from utilities.central import get_log_file_path
 
 from .config import settings, base_url
-from .database import database, System
+from .database import database, System, select
+from .form_sessions import is_form_session_active
+from .oidc import is_oidc_session_active
 from .get_args import args
 
 frontend_build_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'frontend', 'build')
@@ -61,7 +63,10 @@ def check_login(actual_method):
                     'WWW-Authenticate': 'Basic realm="Login Required"'
                 })
         elif settings.auth.type == 'form':
-            if not session.get('logged_in'):
+            if not is_form_session_active():
+                return abort(401)
+        elif settings.auth.type == 'oidc':
+            if not is_oidc_session_active():
                 return abort(401)
         return actual_method(*args, **kwargs)
     return wrapper
@@ -70,15 +75,14 @@ def check_login(actual_method):
 @ui_bp.route('/', defaults={'path': ''})
 @ui_bp.route('/<path:path>')
 def catch_all(path):
-    if path.startswith('login') and settings.auth.type not in ['basic', 'form']:
+    if path.startswith('login') and settings.auth.type not in ['basic', 'form', 'oidc']:
         # login page has been accessed when no authentication is enabled
         return redirect(base_url or "/", code=302)
 
     # PWA Assets are returned from frontend root folder
     if path in pwa_assets or path.startswith('workbox-'):
-        fullpath = os.path.normpath(os.path.join(frontend_build_path, path))
-        # Use startswith to prevent path traversal
-        if not fullpath.startswith(os.path.realpath(frontend_build_path) + os.sep):
+        fullpath = os.path.realpath(os.path.join(frontend_build_path, path))
+        if not Path(fullpath).is_relative_to(os.path.realpath(frontend_build_path)):
             return '', 404
         return send_file(fullpath)
 
@@ -91,16 +95,18 @@ def catch_all(path):
                 'WWW-Authenticate': 'Basic realm="Login Required"'
             })
     elif settings.auth.type == 'form':
-        if not session.get('logged_in'):
+        if not is_form_session_active():
             auth = False
+    elif settings.auth.type == 'oidc':
+        auth = is_oidc_session_active()
 
     try:
-        updated = database.scalar(System.updated)
+        updated = database.scalar(select(System.updated))
     except Exception:
         updated = '0'
 
     try:
-        configured = database.scalar(System.configured)
+        configured = database.scalar(select(System.configured))
     except Exception:
         configured = '0'
 
@@ -111,6 +117,7 @@ def catch_all(path):
         inject["canUpdate"] = not args.no_update
         inject["hasUpdate"] = updated != '0'
         inject["isConfigured"] = configured != '0'
+        inject["authType"] = settings.auth.type
 
         if auth:
             inject["apiKey"] = settings.auth.apikey
@@ -119,7 +126,10 @@ def catch_all(path):
     if not template_url.endswith("/"):
         template_url += "/"
 
-    return render_template("index.html", BAZARR_SERVER_INJECT=inject, baseUrl=template_url)
+    response = current_app.make_response(render_template("index.html", BAZARR_SERVER_INJECT=inject,
+                                                         baseUrl=template_url))
+    response.headers['Cache-Control'] = 'no-store'
+    return response
 
 
 @ui_bp.route('/' + FILE_LOG)
@@ -211,8 +221,11 @@ def movies_images(url):
 @ui_bp.route('/system/backup/download/<path:filename>', methods=['GET'])
 @check_login
 def backup_download(filename):
-    fullpath = os.path.normpath(os.path.join(settings.backup.folder, filename))
-    if not fullpath.startswith(settings.backup.folder):
+    backup_folder = os.path.realpath(settings.backup.folder)
+    # realpath resolves symlinks so a link inside backup folder can't point to files elsewhere
+    fullpath = os.path.realpath(os.path.join(backup_folder, filename))
+    # Only allow files directly inside backup folder to prevent path traversal
+    if os.path.dirname(fullpath) != backup_folder or not os.path.isfile(fullpath):
         return '', 404
     else:
         return send_file(fullpath, max_age=0, as_attachment=True)
@@ -223,8 +236,7 @@ def swaggerui_static(filename):
     basepath = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'libs', 'flask_restx',
                             'static')
     fullpath = os.path.realpath(os.path.join(basepath, filename))
-    # Use startswith to prevent path traversal
-    if not fullpath.startswith(os.path.realpath(basepath) + os.sep):
+    if not Path(fullpath).is_relative_to(os.path.realpath(basepath)):
         return '', 404
     else:
         return send_file(fullpath)

@@ -40,7 +40,8 @@ def subtitles_apply_mods(language, subtitle_path, mods, video_path):
                 forced_tag=sub.language.forced,
                 hi_tag=False,
                 tags=[],
-                extension=f".{sub.format}"
+                extension=f".{sub.format}",
+                m49_language_tag=settings.general.use_m49_language_tag,
             )
 
             # get the real modded subtitles path taking into account if the user set up Bazarr to store external

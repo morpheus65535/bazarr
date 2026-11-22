@@ -1,7 +1,7 @@
-import { FunctionComponent, ReactNode, useMemo } from "react";
+import { FunctionComponent, ReactNode, useMemo, useState } from "react";
 import { Badge, Container, Group, LoadingOverlay } from "@mantine/core";
 import { useForm } from "@mantine/form";
-import { useDocumentTitle } from "@mantine/hooks";
+import { useDidUpdate, useDocumentTitle } from "@mantine/hooks";
 import { faRotateLeft, faSave } from "@fortawesome/free-solid-svg-icons";
 import { isEqual } from "lodash";
 import { useSettingsMutation, useSystemSettings } from "@/apis/hooks";
@@ -20,13 +20,23 @@ import { usePrompt } from "@/utilities/routers";
 interface Props {
   name: string;
   children: ReactNode;
+  /** True while an in-page editor owns the content (e.g. a profile editor). */
+  isEditorActive?: boolean;
+  /** True when that editor holds changes that have not been applied yet. */
+  isDraftDirty?: boolean;
 }
 
 const Layout: FunctionComponent<Props> = (props) => {
-  const { children, name } = props;
+  const {
+    children,
+    name,
+    isEditorActive = false,
+    isDraftDirty = false,
+  } = props;
 
   const { data: settings, isLoading } = useSystemSettings();
   const { mutate, isPending: isMutating } = useSettingsMutation();
+  const [isAuthReloadPending, setIsAuthReloadPending] = useState(false);
 
   const form = useForm<FormValues>({
     initialValues: {
@@ -36,6 +46,11 @@ const Layout: FunctionComponent<Props> = (props) => {
   });
 
   const submit = (values: FormValues) => {
+    // An in-page editor must be applied or cancelled before settings are saved.
+    if (isEditorActive) {
+      return;
+    }
+
     const { settings, hooks } = values;
 
     if (Object.keys(settings).length > 0) {
@@ -66,6 +81,16 @@ const Layout: FunctionComponent<Props> = (props) => {
               hooks: nextHooks,
             };
           });
+
+          const isAuthenticationChanged = Object.keys(submittedSettings).some(
+            (key) =>
+              key.startsWith("settings-auth-") &&
+              key !== "settings-auth-apikey",
+          );
+
+          if (isAuthenticationChanged) {
+            setIsAuthReloadPending(true);
+          }
         },
       });
     }
@@ -75,10 +100,24 @@ const Layout: FunctionComponent<Props> = (props) => {
     return Object.keys(form.values.settings).length;
   }, [form.values.settings]);
 
+  const isLeaveBlocked =
+    totalStagedCount > 0 || (isEditorActive && isDraftDirty);
+
   usePrompt(
-    totalStagedCount > 0,
-    `You have ${totalStagedCount} unsaved changes, are you sure you want to leave?`,
+    isLeaveBlocked,
+    totalStagedCount > 0
+      ? `You have ${totalStagedCount} unsaved changes, are you sure you want to leave?`
+      : "You have an unsaved profile edit, are you sure you want to leave?",
   );
+
+  // Wait for the unsaved-changes unload listener to be removed before reloading.
+  useDidUpdate(() => {
+    if (!isAuthReloadPending || isLeaveBlocked) {
+      return;
+    }
+
+    window.location.reload();
+  }, [isAuthReloadPending, isLeaveBlocked]);
 
   useDocumentTitle(`${name} - ${useInstanceName()} (Settings)`);
 
@@ -92,8 +131,9 @@ const Layout: FunctionComponent<Props> = (props) => {
               <Toolbox.Button
                 type="submit"
                 icon={faSave}
+                data-onboarding="settings-save"
                 loading={isMutating}
-                disabled={totalStagedCount === 0}
+                disabled={isEditorActive || totalStagedCount === 0}
                 rightSection={
                   <Badge size="xs" radius="sm" hidden={totalStagedCount === 0}>
                     {totalStagedCount}
@@ -105,7 +145,9 @@ const Layout: FunctionComponent<Props> = (props) => {
               <Toolbox.Button
                 type="button"
                 icon={faRotateLeft}
-                disabled={totalStagedCount === 0 || isMutating}
+                disabled={
+                  isEditorActive || totalStagedCount === 0 || isMutating
+                }
                 onClick={() => {
                   form.reset();
                 }}

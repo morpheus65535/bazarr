@@ -17,7 +17,7 @@ class Languages(Resource):
     get_request_parser.add_argument('history', type=str, required=False, help='Language name for history stats')
 
     @authenticate
-    @api_ns_system_languages.doc(parser=get_request_parser)
+    @api_ns_system_languages.expect(get_request_parser)
     @api_ns_system_languages.response(200, 'Success')
     @api_ns_system_languages.response(401, 'Not Authenticated')
     def get(self):

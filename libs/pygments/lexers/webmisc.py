@@ -337,7 +337,7 @@ class XQueryLexer(ExtendedRegexLexer):
             (r'group by', Keyword, 'root'),
             (r'is|mod|order\s+by|stable\s+order\s+by', Keyword, 'root'),
             (r'and|or', Operator.Word, 'root'),
-            (r'(eq|ge|gt|le|lt|ne|idiv|intersect|in)(?=\b)',
+            (r'(eq|ge|gt|le|lt|ne|idiv|intersect|in)\b',
              Operator.Word, 'root'),
             (r'return|satisfies|to|union|where|count|preserve\s+strip',
              Keyword, 'root'),

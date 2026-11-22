@@ -259,7 +259,7 @@ class IDLLexer(RegexLexer):
             (r'\b(mod|lt|le|eq|ne|ge|gt|not|and|or|xor)\b', Operator),
             (r'"[^\"]*"', String.Double),
             (r"'[^\']*'", String.Single),
-            (r'\b[+\-]?([0-9]*\.[0-9]+|[0-9]+\.[0-9]*)(D|E)?([+\-]?[0-9]+)?\b',
+            (r'\b[+\-]?([0-9]*\.[0-9]+|[0-9]+\.[0-9]*)[DE]?([+\-]?[0-9]+)?\b',
              Number.Float),
             (r'\b\'[+\-]?[0-9A-F]+\'X(U?(S?|L{1,2})|B)\b', Number.Hex),
             (r'\b\'[+\-]?[0-7]+\'O(U?(S?|L{1,2})|B)\b', Number.Oct),

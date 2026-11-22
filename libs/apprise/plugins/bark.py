@@ -28,11 +28,22 @@
 #
 # API: https://github.com/Finb/bark-server/blob/master/docs/API_V2.md#python
 #
+import base64
 import json
+import secrets
 
 import requests
 
+try:
+    from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+
+    BARK_AESGCM_SUPPORT = True
+
+except ImportError:
+    BARK_AESGCM_SUPPORT = False
+
 from ..common import NotifyFormat, NotifyImageSize, NotifyType
+from ..exception import AppriseImproperlyConfigured, ApprisePluginException
 from ..locale import gettext_lazy as _
 from ..url import PrivacyMode
 from ..utils.parse import parse_bool, parse_list
@@ -95,12 +106,20 @@ BARK_LEVELS = (
     NotifyBarkLevel.CRITICAL,
 )
 
+BARK_AES_KEY_LENGTHS = frozenset({16, 24, 32})
+BARK_GCM_IV_RANDOM_BYTES = 9
+BARK_GCM_IV_LENGTH = 12
+
 
 class NotifyBark(NotifyBase):
     """A wrapper for Notify Bark Notifications."""
 
     # The default descriptive name associated with the Notification
     service_name = "Bark"
+
+    requirements = {
+        "packages_recommended": "cryptography",
+    }
 
     # The services URL
     service_url = "https://github.com/Finb/Bark"
@@ -154,11 +173,13 @@ class NotifyBark(NotifyBase):
                 "name": _("Target Device"),
                 "type": "string",
                 "map_to": "targets",
+                "private": True,
             },
             "targets": {
                 "name": _("Targets"),
                 "type": "list:string",
                 "required": True,
+                "private": True,
             },
         },
     )
@@ -215,6 +236,12 @@ class NotifyBark(NotifyBase):
                 "type": "bool",
                 "default": False,
             },
+            "key": {
+                "name": _("Encryption Key"),
+                "type": "string",
+                "private": True,
+                "map_to": "encryption_key",
+            },
             "to": {
                 "alias_of": "targets",
             },
@@ -234,6 +261,7 @@ class NotifyBark(NotifyBase):
         volume=None,
         icon=None,
         call=None,
+        encryption_key=None,
         **kwargs,
     ):
         """Initialize Notify Bark Object."""
@@ -281,7 +309,7 @@ class NotifyBark(NotifyBase):
         except ValueError:
             self.badge = None
             self.logger.warning(
-                "The specified Bark badge ({}) is not valid ", badge
+                "The specified Bark badge (%s) is not valid", badge
             )
 
         # Sound (easy-lookup)
@@ -294,7 +322,7 @@ class NotifyBark(NotifyBase):
         )
         if sound and not self.sound:
             self.logger.warning(
-                "The specified Bark sound ({}) was not found ", sound
+                "The specified Bark sound (%s) was not found", sound
             )
 
         # Volume
@@ -307,13 +335,53 @@ class NotifyBark(NotifyBase):
 
             except (TypeError, ValueError):
                 self.logger.warning(
-                    "The specified Bark volume ({}) is not valid. "
+                    "The specified Bark volume (%s) is not valid. "
                     "Must be between 0 and 10",
                     volume,
                 )
 
         # Call
         self.call = parse_bool(call)
+
+        # Encryption is off unless an encryption key was explicitly given
+        self.encryption_key = None
+        self._cipher = None
+        if encryption_key:
+            # The Bark app expects a raw ASCII key, so reject anything
+            # that can't be represented as one up front
+            try:
+                encryption_key_bytes = encryption_key.encode("ascii")
+
+            except (AttributeError, UnicodeEncodeError):
+                msg = (
+                    "The Bark encryption key must contain only ASCII "
+                    "characters."
+                )
+                self.logger.warning(msg)
+                raise AppriseImproperlyConfigured(msg) from None
+
+            # AES-GCM only accepts 128/192/256-bit (16/24/32 byte) keys
+            if len(encryption_key_bytes) not in BARK_AES_KEY_LENGTHS:
+                msg = (
+                    "The Bark encryption key must contain exactly 16, 24, or "
+                    "32 ASCII characters."
+                )
+                self.logger.warning(msg)
+                raise AppriseImproperlyConfigured(msg)
+
+            # Fail closed; never fall back to sending plaintext when the
+            # caller asked for encryption but the library isn't available
+            if not BARK_AESGCM_SUPPORT:
+                msg = (
+                    "Bark encryption requires the 'cryptography' package. "
+                    "Install Apprise with the 'all-plugins' extra."
+                )
+                self.logger.warning(msg)
+                raise AppriseImproperlyConfigured(msg)
+
+            # We're ready to encrypt every outbound payload with this key
+            self.encryption_key = encryption_key
+            self._cipher = AESGCM(encryption_key_bytes)
 
         # Icon URL
         self.icon = icon if isinstance(icon, str) else None
@@ -326,7 +394,7 @@ class NotifyBark(NotifyBase):
         )
         if level and not self.level:
             self.logger.warning(
-                "The specified Bark level ({}) is not valid ", level
+                "The specified Bark level (%s) is not valid", level
             )
 
         return
@@ -419,19 +487,60 @@ class NotifyBark(NotifyBase):
             # Retrieve our device key
             target = targets.pop()
 
-            payload["device_key"] = target
+            # Skip a target that already accepted this message so
+            # a retry does not deliver it twice.
+            if self.is_delivered(target):
+                continue
+
+            private_target = self.pprint(
+                target,
+                privacy=True,
+                mode=PrivacyMode.Secret,
+                safe="",
+            )
+
+            if self._cipher is not None:
+                # Encrypt the payload; on success this replaces the
+                # plaintext fields with a device_key/ciphertext/iv wire
+                # payload for this target
+                try:
+                    ciphertext, iv = self._encrypt_payload(payload)
+                    request_payload = {
+                        "device_key": target,
+                        "ciphertext": ciphertext,
+                        "iv": iv,
+                    }
+
+                except Exception as e:
+                    # Fail closed; never fall back to sending this
+                    # target's notification as plaintext
+                    self.logger.warning("Failed to encrypt Bark notification.")
+                    self.logger.debug(
+                        "Bark encryption failed with %s.", type(e).__name__
+                    )
+                    has_error = True
+                    continue
+
+            else:
+                # Plaintext payload; just tag on this target's device key
+                request_payload = {"device_key": target, **payload}
+
             self.logger.debug(
                 "Bark POST URL:"
-                f" {self.notify_url} (cert_verify={self.verify_certificate!r})"
+                f" {self.notify_url} "
+                f"(cert_verify={self.verify_certificate!r}, "
+                f"encrypted={self._cipher is not None!r})"
             )
-            self.logger.debug(f"Bark Payload: {payload!s}")
+            if self._cipher is None:
+                # Never log ciphertext/iv; there's nothing readable in it
+                self.logger.debug(f"Bark Payload: {request_payload!s}")
 
             # Always call throttle before any remote server i/o is made
             self.throttle()
             try:
                 r = requests.post(
                     self.notify_url,
-                    data=json.dumps(payload),
+                    data=json.dumps(request_payload),
                     headers=headers,
                     auth=auth,
                     verify=self.verify_certificate,
@@ -447,36 +556,78 @@ class NotifyBark(NotifyBase):
                     self.logger.warning(
                         "Failed to send Bark notification to {}: "
                         "{}{}error={}.".format(
-                            target,
+                            private_target,
                             status_str,
                             ", " if status_str else "",
                             r.status_code,
                         )
                     )
 
-                    self.logger.debug(
-                        "Response Details:\r\n%r", (r.content or b"")[:2000]
-                    )
+                    if self._cipher is None:
+                        # The response body is only safe to log when we
+                        # sent a plaintext request in the first place
+                        self.logger.debug(
+                            "Response Details:\r\n%r",
+                            (r.content or b"")[:2000],
+                        )
 
                     # Mark our failure
                     has_error = True
                     continue
 
                 else:
-                    self.logger.info(f"Sent Bark notification to {target}.")
+                    self.logger.info(
+                        f"Sent Bark notification to {private_target}."
+                    )
 
             except requests.RequestException as e:
                 self.logger.warning(
                     "A Connection error occurred sending Bark "
-                    f"notification to {target}."
+                    f"notification to {private_target}."
                 )
-                self.logger.debug(f"Socket Exception: {e!s}")
+                if self._cipher is None:
+                    # Suppress low-level exception text once encryption
+                    # is active; it may echo back request fragments
+                    self.logger.debug(f"Socket Exception: {e!s}")
 
                 # Mark our failure
                 has_error = True
                 continue
 
+            # Delivered; a retry can safely skip this target.
+            self.mark_delivered(target)
+
         return not has_error
+
+    def _encrypt_payload(self, payload):
+        """Encrypt one Bark parameter object with a fresh AES-GCM IV."""
+
+        # Generate a fresh IV for every request; Bark's client rebuilds
+        # this string as raw bytes, so it must land on exactly 12 ASCII
+        # characters (a 96-bit GCM nonce)
+        iv = secrets.token_urlsafe(BARK_GCM_IV_RANDOM_BYTES)
+        if len(iv) != BARK_GCM_IV_LENGTH or not iv.isascii():
+            raise ApprisePluginException(
+                "Bark generated an incompatible AES-GCM IV"
+            )
+
+        # Bark decrypts a compact JSON object back into its parameters
+        plaintext = json.dumps(
+            payload,
+            ensure_ascii=False,
+            separators=(",", ":"),
+        ).encode("utf-8")
+
+        # No additional authenticated data; tag is appended to the
+        # ciphertext automatically (GCM "combined" mode)
+        ciphertext = self._cipher.encrypt(
+            iv.encode("ascii"),
+            plaintext,
+            None,
+        )
+
+        # Bark expects the ciphertext base64-encoded and the IV as-is
+        return base64.b64encode(ciphertext).decode("ascii"), iv
 
     @property
     def url_identifier(self):
@@ -491,6 +642,7 @@ class NotifyBark(NotifyBase):
             self.password,
             self.host,
             self.port,
+            self.encryption_key,
         )
 
     def url(self, privacy=False, *args, **kwargs):
@@ -528,6 +680,14 @@ class NotifyBark(NotifyBase):
         if self.call:
             params["call"] = "yes"
 
+        if self.encryption_key:
+            params["key"] = self.pprint(
+                self.encryption_key,
+                privacy,
+                mode=PrivacyMode.Secret,
+                safe="",
+            )
+
         # Extend our parameters
         params.update(self.url_parameters(privacy=privacy, *args, **kwargs))
 
@@ -556,7 +716,17 @@ class NotifyBark(NotifyBase):
                 if self.port is None or self.port == default_port
                 else f":{self.port}"
             ),
-            targets="/".join([NotifyBark.quote(f"{x}") for x in self.targets]),
+            targets="/".join(
+                [
+                    self.pprint(
+                        f"{x}",
+                        privacy,
+                        mode=PrivacyMode.Secret,
+                        safe="",
+                    )
+                    for x in self.targets
+                ]
+            ),
             params=NotifyBark.urlencode(params),
         )
 
@@ -637,4 +807,15 @@ class NotifyBark(NotifyBase):
         # Call
         results["call"] = parse_bool(results["qsd"].get("call", False))
 
+        # Encryption Key
+        if "key" in results["qsd"] and results["qsd"]["key"]:
+            results["encryption_key"] = NotifyBark.unquote(
+                results["qsd"]["key"]
+            )
+
         return results
+
+    @staticmethod
+    def runtime_deps():
+        """Return optional runtime dependency package names."""
+        return ("cryptography",)

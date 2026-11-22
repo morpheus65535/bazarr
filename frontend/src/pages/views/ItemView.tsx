@@ -108,6 +108,7 @@ interface FilterConfig {
     profile?: boolean;
     audio?: boolean;
     tags?: boolean;
+    ended?: boolean;
   };
 }
 
@@ -358,6 +359,16 @@ const ItemViewFilterControls = ({
         />
       )}
 
+      {filterConfig.filters?.ended && (
+        <TriStateFilter
+          ariaLabel="Series status"
+          trueLabel="Ended"
+          falseLabel="Continuing"
+          value={query.filters?.ended}
+          onChange={(value) => setFilter("ended", value)}
+        />
+      )}
+
       {filterConfig.filters?.missing && (
         <TriStateFilter
           ariaLabel="Missing subtitles"
@@ -557,6 +568,7 @@ const ItemViewToolbox = ({
           disabled={totalCount === 0}
           icon={faSquareCheck}
           style={{ flexShrink: 0 }}
+          data-onboarding="media-select"
           onClick={bulkSelection.toggleActive}
         >
           Select
@@ -698,6 +710,7 @@ const ItemTableView = <T extends Item.Base>({
         const someSelected = selectedCount > 0;
         return (
           <Checkbox
+            data-onboarding="media-checkbox"
             indeterminate={someSelected && !allSelected}
             checked={allSelected}
             onChange={() => bulkSelection.setMany(loadedIds, !allSelected)}
@@ -713,6 +726,7 @@ const ItemTableView = <T extends Item.Base>({
         return (
           <Group gap="xs" wrap="nowrap">
             <Checkbox
+              data-onboarding="media-checkbox"
               checked={bulkSelection.isSelected(id)}
               onChange={() => bulkSelection.toggle(id)}
             ></Checkbox>

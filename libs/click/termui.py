@@ -4,6 +4,7 @@ import collections.abc as cabc
 import inspect
 import io
 import itertools
+import os
 import re
 import sys
 import typing as t
@@ -11,17 +12,17 @@ from contextlib import AbstractContextManager
 from contextlib import redirect_stdout
 from gettext import gettext as _
 
+from . import _compat
 from ._compat import isatty
 from ._compat import strip_ansi
-from ._compat import WIN
 from .exceptions import Abort
 from .exceptions import UsageError
 from .globals import resolve_color_default
 from .types import Choice
 from .types import convert_type
 from .types import ParamType
+from .utils import _LazyFile
 from .utils import echo
-from .utils import LazyFile
 
 if t.TYPE_CHECKING:
     from ._termui_impl import ProgressBar
@@ -82,19 +83,22 @@ def hidden_prompt_func(prompt: str) -> str:
 
 
 def _readline_prompt(func: t.Callable[[str], str], text: str, err: bool) -> str:
-    """Call a prompt function, passing the full prompt on non-Windows so
-    readline can handle line editing and cursor positioning correctly.
+    """Call a prompt function, passing the full prompt so readline can
+    handle line editing and cursor positioning correctly.
 
-    On Windows the prompt is written separately via :func:`echo` for
-    colorama support, with only the last character passed to *func*.
+    The prompt is handed to *func* (such as :func:`input`) rather than
+    written through :func:`echo`, so it has to strip ANSI color and style
+    codes itself when the destination stream does not support them. Without
+    this the prompt would keep codes that :func:`echo` removes from the
+    rest of the output.
     """
-    if WIN:
-        # Write the prompt separately so that we get nice coloring
-        # through colorama on Windows.
-        echo(text[:-1], nl=False, err=err)
-        # Echo the last character to stdout to work around an issue
-        # where readline causes backspace to clear the whole line.
-        return func(text[-1:])
+    stream = sys.stderr if err else sys.stdout
+
+    # Look up ``should_strip_ansi`` on the module so that ``CliRunner``,
+    # which patches it there during test isolation, is honored.
+    if _compat.should_strip_ansi(stream, resolve_color_default()):
+        text = strip_ansi(text)
+
     if err:
         with redirect_stdout(sys.stderr):
             return func(text)
@@ -105,39 +109,74 @@ def _build_prompt(
     text: str,
     suffix: str,
     show_default: bool | str = False,
-    default: t.Any | None = None,
+    default: object | None = None,
     show_choices: bool = True,
-    type: ParamType[t.Any] | None = None,
+    type: object | None = None,
 ) -> str:
     prompt = text
     if type is not None and show_choices and isinstance(type, Choice):
         prompt += f" ({', '.join(map(str, type.choices))})"
-    if isinstance(show_default, str):
-        default = f"({show_default})"
-    if default is not None and show_default:
-        prompt = f"{prompt} [{_format_default(default)}]"
-    return f"{prompt}{suffix}"
+    default_preview = ""
+    if show_default:
+        if isinstance(show_default, str):
+            default_preview = f" [({show_default})]"
+        elif default is not None:
+            default_preview = f" [{_format_default(default)}]"
+    return f"{prompt}{default_preview}{suffix}"
 
 
-def _format_default(default: t.Any) -> t.Any:
-    if isinstance(default, (io.IOBase, LazyFile)) and hasattr(default, "name"):
-        return default.name
+def _format_default(default: V) -> V | str:
+    if isinstance(default, (io.IOBase, _LazyFile)):
+        name = getattr(default, "name", None)
+
+        if name is not None:
+            return str(name)
 
     return default
 
 
+@t.overload
 def prompt(
     text: str,
-    default: t.Any | None = None,
+    default: str | None = None,
     hide_input: bool = False,
     confirmation_prompt: bool | str = False,
-    type: ParamType[t.Any] | t.Any | None = None,
-    value_proc: t.Callable[[str], t.Any] | None = None,
+    type: None = None,
+    value_proc: None = None,
     prompt_suffix: str = ": ",
     show_default: bool | str = True,
     err: bool = False,
     show_choices: bool = True,
-) -> t.Any:
+) -> str: ...
+
+
+@t.overload
+def prompt(
+    text: str,
+    default: V | str | None = None,
+    hide_input: bool = False,
+    confirmation_prompt: bool | str = False,
+    type: ParamType[V, str] | type[V] | None = None,
+    value_proc: t.Callable[[str], V] | None = None,
+    prompt_suffix: str = ": ",
+    show_default: bool | str = True,
+    err: bool = False,
+    show_choices: bool = True,
+) -> V: ...
+
+
+def prompt(
+    text: str,
+    default: V | str | None = None,
+    hide_input: bool = False,
+    confirmation_prompt: bool | str = False,
+    type: ParamType[V, str] | type[V] | None = None,
+    value_proc: t.Callable[[str], V] | None = None,
+    prompt_suffix: str = ": ",
+    show_default: bool | str = True,
+    err: bool = False,
+    show_choices: bool = True,
+) -> V:
     """Prompts a user for input.  This is a convenience function that can
     be used to prompt a user for input later.
 
@@ -166,6 +205,11 @@ def prompt(
                          For example if type is a Choice of either day or week,
                          show_choices is true and text is "Group by" then the
                          prompt will be "Group by (day, week): ".
+
+    .. versionchanged:: 8.5.0
+        Generically typed: the return type is narrowed by ``type``,
+        ``value_proc``, or ``default`` instead of being ``Any``. Runtime
+        behavior is unchanged.
 
     .. versionchanged:: 8.3.3
         ``show_default`` can be a string to show a custom value instead
@@ -219,7 +263,10 @@ def prompt(
             if value:
                 break
             elif default is not None:
-                value = default
+                # Defaults of any type are accepted and round trip through
+                # value_proc like typed input, so the annotation is only
+                # accurate for typed input.
+                value = t.cast("str", default)
                 break
         try:
             result = value_proc(value)
@@ -346,6 +393,10 @@ def echo_via_pager(
     with get_pager_file(color=color) as pager:
         for text in itertools.chain(text_generator, "\n"):
             pager.write(text)
+            # Flush after each write so a slow generator streams to the pager
+            # incrementally rather than staying invisible until the pipe buffer
+            # fills (~8 KB).
+            pager.flush()
 
 
 @t.overload
@@ -563,14 +614,28 @@ def clear() -> None:
 
 
 def _interpret_color(color: int | tuple[int, int, int] | str, offset: int = 0) -> str:
-    if isinstance(color, int):
-        return f"{38 + offset};5;{color:d}"
+    """Interprets a color value and returns the corresponding ANSI code."""
+    if isinstance(color, str) and color in _ansi_colors:
+        return str(_ansi_colors[color] + offset)
 
-    if isinstance(color, (tuple, list)):
+    # bool is an int subclass: without the exclusion, True and False would
+    # silently render as the palette indices 1 and 0.
+    elif isinstance(color, int) and not isinstance(color, bool):
+        if 0 <= color <= 255:
+            return f"{38 + offset};5;{color:d}"
+
+    elif (
+        isinstance(color, (tuple, list))
+        and len(color) == 3
+        and all(
+            isinstance(c, int) and not isinstance(c, bool) and 0 <= c <= 255
+            for c in color
+        )
+    ):
         r, g, b = color
         return f"{38 + offset};2;{r:d};{g:d};{b:d}"
 
-    return str(_ansi_colors[color] + offset)
+    raise ValueError(_("Unknown color {colour!r}").format(colour=color))
 
 
 def style(
@@ -648,6 +713,10 @@ def style(
                   string which means that styles do not carry over.  This
                   can be disabled to compose styles.
 
+    .. versionchanged:: 8.5.0
+        All invalid color values raise :exc:`ValueError`. 256-color index
+        ``0`` is no longer ignored.
+
     .. versionchanged:: 8.0
         A non-string ``message`` is converted to a string.
 
@@ -668,17 +737,11 @@ def style(
 
     bits = []
 
-    if fg:
-        try:
-            bits.append(f"\033[{_interpret_color(fg)}m")
-        except KeyError:
-            raise TypeError(_("Unknown color {colour!r}").format(colour=fg)) from None
+    if fg is not None:
+        bits.append(f"\033[{_interpret_color(fg)}m")
 
-    if bg:
-        try:
-            bits.append(f"\033[{_interpret_color(bg, 10)}m")
-        except KeyError:
-            raise TypeError(_("Unknown color {colour!r}").format(colour=bg)) from None
+    if bg is not None:
+        bits.append(f"\033[{_interpret_color(bg, 10)}m")
 
     if bold is not None:
         bits.append(f"\033[{1 if bold else 22}m")
@@ -775,7 +838,10 @@ def edit(
     env: cabc.Mapping[str, str] | None = None,
     require_save: bool = True,
     extension: str = ".txt",
-    filename: str | cabc.Iterable[str] | None = None,
+    filename: str
+    | os.PathLike[str]
+    | cabc.Iterable[str | os.PathLike[str]]
+    | None = None,
 ) -> None: ...
 
 
@@ -785,7 +851,10 @@ def edit(
     env: cabc.Mapping[str, str] | None = None,
     require_save: bool = True,
     extension: str = ".txt",
-    filename: str | cabc.Iterable[str] | None = None,
+    filename: str
+    | os.PathLike[str]
+    | cabc.Iterable[str | os.PathLike[str]]
+    | None = None,
 ) -> str | bytes | bytearray | None:
     r"""Edits the given text in the defined editor.  If an editor is given
     (should be the full path to the executable but the regular operating
@@ -812,15 +881,19 @@ def edit(
                       highlighting.
     :param filename: if provided it will edit this file instead of the
                      provided text contents.  It will not use a temporary
-                     file as an indirection in that case. If the editor supports
-                     editing multiple files at once, a sequence of files may be
-                     passed as well. Invoke `click.file` once per file instead
-                     if multiple files cannot be managed at once or editing the
-                     files serially is desired.
+                     file as an indirection in that case. It accepts a path
+                     or any iterable of paths. If the editor supports
+                     editing multiple files at once, a sequence of files may
+                     be passed as well. Invoke `click.file` once per file
+                     instead if multiple files cannot be managed at once or
+                     editing the files serially is desired.
 
     .. versionchanged:: 8.2.0
         ``filename`` now accepts any ``Iterable[str]`` in addition to a ``str``
         if the ``editor`` supports editing multiple files at once.
+
+    .. versionchanged:: 8.5.0
+        ``filename`` accepts ``os.PathLike`` values in addition to strings.
 
     """
     from ._termui_impl import Editor
@@ -830,7 +903,7 @@ def edit(
     if filename is None:
         return ed.edit(text)
 
-    if isinstance(filename, str):
+    if isinstance(filename, (str, os.PathLike)):
         filename = (filename,)
 
     ed.edit_files(filenames=filename)

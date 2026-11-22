@@ -69,7 +69,7 @@ class ActionScriptLexer(RegexLexer):
                 'FileReferenceList', 'FocusDirection', 'FocusEvent', 'Font', 'FontStyle', 'FontType',
                 'FrameLabel', 'FullScreenEvent', 'Function', 'GlowFilter', 'GradientBevelFilter',
                 'GradientGlowFilter', 'GradientType', 'Graphics', 'GridFitType', 'HTTPStatusEvent',
-                'IBitmapDrawable', 'ID3Info', 'IDataInput', 'IDataOutput', 'IDynamicPropertyOutput'
+                'IBitmapDrawable', 'ID3Info', 'IDataInput', 'IDataOutput', 'IDynamicPropertyOutput',
                 'IDynamicPropertyWriter', 'IEventDispatcher', 'IExternalizable',
                 'IllegalOperationError', 'IME', 'IMEConversionMode', 'IMEEvent', 'int',
                 'InteractiveObject', 'InterpolationMethod', 'InvalidSWFError', 'InvokeEvent',

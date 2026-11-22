@@ -2,6 +2,9 @@
 
 import logging
 import os
+from typing import Protocol, TypedDict, runtime_checkable
+
+from babelfish import Country, Script
 
 from subzero.language import Language
 
@@ -9,6 +12,26 @@ from app.database import database, insert, update
 from sqlalchemy.exc import IntegrityError
 
 logger = logging.getLogger(__name__)
+
+
+@runtime_checkable
+class Alpha3LanguageInfo(Protocol):
+    @property
+    def alpha3(self) -> str: ...
+
+
+@runtime_checkable
+class LanguageInfo(Alpha3LanguageInfo, Protocol):
+    @property
+    def country(self) -> Country | str | None: ...
+
+    @property
+    def script(self) -> Script | str | None: ...
+
+
+class DetectedLanguage(TypedDict, total=False):
+    language: Alpha3LanguageInfo | str | None
+    name: str
 
 
 class CustomLanguage:
@@ -94,14 +117,14 @@ class CustomLanguage:
 
         return to_return
 
-    def ffprobe_found(self, detected_language: dict) -> bool:
+    def ffprobe_found(self, detected_language: DetectedLanguage) -> bool:
         name = detected_language.get("name", "").lower()
         if not name:
             return False
 
         return any(ext in name for ext in self._possible_matches)
 
-    def language_found(self, language: Language):
+    def language_found(self, language: LanguageInfo):
         if str(language.country) == self.iso:
             return True
 
@@ -135,7 +158,7 @@ class Portuguese(CustomLanguage):
     def subzero_language(self):
         return Language(self.official_alpha3)
 
-    def language_found(self, language: Language):
+    def language_found(self, language: LanguageInfo):
         return str(language.alpha3) == self.alpha3
 
 
@@ -227,12 +250,13 @@ class LatinAmericanSpanish(CustomLanguage):
     _possible_matches = (
         "es-la", "spa-la", "spl", "mx", "latin", "mexic", "argent", "latam",
     )
-    _extensions = (".es-la", ".spl", ".spa-la", ".ea", ".es-mx", ".lat", ".es.ar")
+    _extensions = (".es-la", ".spl", ".spa-la", ".ea", ".es-mx", ".es-419", ".lat", ".es.ar")
     _extensions_forced = (
-        ".es-la.forced", ".spl.forced", ".spa-la.forced", ".ea.forced", ".es-mx.forced", ".lat.forced", ".es.ar.forced",
+        ".es-la.forced", ".spl.forced", ".spa-la.forced", ".ea.forced", ".es-mx.forced", ".es-419.forced",
+        ".lat.forced", ".es.ar.forced",
     )
     _extensions_hi = (
-        ".es-la.hi", ".spl.hi", ".spa-la.hi", ".ea.hi", ".es-mx.hi", ".lat.hi", ".es.ar.hi",
-        ".es-la.cc", ".spl.cc", ".spa-la.cc", ".ea.cc", ".es-mx.cc", ".lat.cc", ".es.ar.cc",
-        ".es-la.sdh", ".spl.sdh", ".spa-la.sdh", ".ea.sdh", ".es-mx.sdh", ".lat.sdh", ".es.ar.sdh",
+        ".es-la.hi", ".spl.hi", ".spa-la.hi", ".ea.hi", ".es-mx.hi", ".es-419.hi", ".lat.hi", ".es.ar.hi",
+        ".es-la.cc", ".spl.cc", ".spa-la.cc", ".ea.cc", ".es-mx.cc", ".es-419.cc", ".lat.cc", ".es.ar.cc",
+        ".es-la.sdh", ".spl.sdh", ".spa-la.sdh", ".ea.sdh", ".es-mx.sdh", ".es-419.sdh", ".lat.sdh", ".es.ar.sdh",
     )

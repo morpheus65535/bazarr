@@ -1,5 +1,5 @@
 // eslint-disable-next-line no-restricted-imports
-import { dependencies } from "../package.json" with { type: "json" };
+import packageJson from "../package.json" with { type: "json" };
 
 const groups: Record<string, string[]> = {
   vendors: ["react", "react-router", "react-dom"],
@@ -38,7 +38,7 @@ function buildLookup(): Record<string, string> {
     }
   }
 
-  for (const key in dependencies) {
+  for (const key in packageJson.dependencies) {
     if (!excludeList.includes(key)) {
       lookup[key] = key;
     }

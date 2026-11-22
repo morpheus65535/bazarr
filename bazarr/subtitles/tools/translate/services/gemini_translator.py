@@ -23,7 +23,7 @@ from sonarr.history import history_log
 from radarr.history import history_log_movie
 from utilities.path_mappings import path_mappings
 from subtitles.processing import ProcessSubtitlesResult
-from app.jobs_queue import jobs_queue
+from app.jobs_queue import jobs_queue, JobCanceled
 from languages.get_languages import alpha3_from_alpha2, language_from_alpha2, language_from_alpha3
 from ..core.translator_utils import add_translator_info, get_description, create_process_result
 
@@ -80,6 +80,7 @@ class GeminiTranslatorService:
         self.progress_file = None
         self.current_progress = 0
         self.job_id = None
+        self._converted_input_file = None
 
     def translate(self, job_id):
         self.job_id = job_id
@@ -94,7 +95,7 @@ class GeminiTranslatorService:
             self.current_api_key = self._select_next_api_key()
             self.gemini_api_key = self.current_api_key
             self.target_language = language_from_alpha3(self.to_lang)
-            self.input_file = self.source_srt_file
+            self.input_file = self._prepare_input_srt(subs)
             self.output_file = self.dest_srt_file
             self.model_name = settings.translator.gemini_model
             self.batch_size = self._get_batch_size()
@@ -108,9 +109,13 @@ class GeminiTranslatorService:
             try:
                 self._translate_with_gemini()
                 add_translator_info(self.dest_srt_file, f"# Subtitles translated with {settings.translator.gemini_model} # ")
+            except JobCanceled:
+                raise
             except Exception as e:
                 jobs_queue.update_job_progress(job_id=job_id, progress_message=f'Gemini translation error: {str(e)}')
                 raise
+            finally:
+                self._remove_converted_input()
 
         except Exception as e:
             logger.error(f'BAZARR encountered an error translating with Gemini: {str(e)}')
@@ -129,6 +134,46 @@ class GeminiTranslatorService:
                 history_log_movie(action=6, radarr_id=self.radarr_id, result=result)
                 
             return self.dest_srt_file
+
+    def _prepare_input_srt(self, subs: pysubs2.SSAFile) -> str:
+        """
+        Return the path of the SRT file that is read by the Gemini translator.
+
+        The translator parses its input with :func:`srt.parse`, so only SRT content can be
+        read. SRT sources are returned unchanged. Any other format (ASS, SSA, VTT) is written
+        with pysubs2 to a sibling ``<name>.gemini-source.srt`` file. The name is deterministic,
+        so the saved progress file still matches the input on resume.
+
+        :param subs: Subtitle document already loaded from the source file, with miscellaneous
+            events removed.
+        :return: Path of the file to read the subtitles from.
+        """
+        source_root, source_ext = os.path.splitext(self.source_srt_file)
+        if source_ext.lower() == '.srt':
+            return self.source_srt_file
+
+        converted_file = f'{source_root}.gemini-source.srt'
+        subs.save(converted_file, encoding='utf-8', format_='srt')
+        self._converted_input_file = converted_file
+        logger.info(f'Converted {source_ext} subtitle to SRT for Gemini translation: {converted_file}')
+        return converted_file
+
+    def _remove_converted_input(self) -> None:
+        """
+        Delete the temporary SRT file created by :meth:`_prepare_input_srt`, if one exists.
+
+        A failed removal is logged and otherwise ignored, so it never masks the translation result.
+
+        :return: None
+        """
+        if self._converted_input_file:
+            try:
+                os.remove(self._converted_input_file)
+            except FileNotFoundError:
+                pass
+            except OSError as e:
+                logger.warning(f'Could not remove temporary Gemini source file {self._converted_input_file}: {e}')
+            self._converted_input_file = None
 
     @staticmethod
     def get_instruction(language: str, description: str) -> str:
@@ -471,27 +516,18 @@ class GeminiTranslatorService:
 
     def _translate_with_gemini(self):
         if not self.api_keys:
-            jobs_queue.update_job_progress(
-                job_id=self.job_id,
-                progress_message="Please provide at least one valid Gemini API key.",
-            )
-            return
+            raise ValueError("Please provide at least one valid Gemini API key.")
 
         if not self.current_api_key:
-            jobs_queue.update_job_progress(
-                job_id=self.job_id,
-                progress_message="All Gemini API keys are currently rate limited. Please wait before retrying.",
-            )
-            return
+            raise RuntimeError("All Gemini API keys are currently rate limited. Please wait before retrying.")
 
         if not self.target_language:
-            jobs_queue.update_job_progress(job_id=self.job_id, progress_message="Please provide a target language.")
-            return
+            raise ValueError("Please provide a target language.")
 
         if not self.input_file:
-            jobs_queue.update_job_progress(job_id=self.job_id, progress_message="Please provide a subtitle file.")
-            return
+            raise ValueError("Please provide a subtitle file.")
 
+        total = 0
         try:
             with open(self.input_file, "r", encoding="utf-8") as original_file:
                 original_text = original_file.read()
@@ -522,6 +558,7 @@ class GeminiTranslatorService:
                                                    progress_message=self.source_srt_file)
 
                     while (i < total or len(batch) > 0) and not self.interrupt_flag:
+                        jobs_queue.raise_if_cancel_requested(self.job_id)
                         if i < total and len(batch) < self.batch_size:
                             batch.append(SubtitleObject(index=str(i), content=original_subtitle[i].content))
                             i += 1
@@ -556,6 +593,13 @@ class GeminiTranslatorService:
                     # Clear progress file on successful completion
                     self._clear_progress()
 
+        except JobCanceled:
+            self._clear_progress()
+            # The output file is only written after the loop, so a cancelled run leaves an empty file behind.
+            if self.output_file and os.path.exists(self.output_file) and os.path.getsize(self.output_file) == 0:
+                os.remove(self.output_file)
+            jobs_queue.update_job_progress(job_id=self.job_id, progress_message='Gemini translation canceled')
+            raise
         except Exception as e:
             logger.error(f'BAZARR encountered an error translating with Gemini: {str(e)}')
             jobs_queue.update_job_progress(job_id=self.job_id, progress_value=total,

@@ -2,7 +2,7 @@
 
 ## Tools required
 
-- Python 3.10.x to 3.13.x (3.13.x is highly recommended). Using any version 3.14 or greater is not allowed as it might break backward compatibility with the libraries we use.
+- Python 3.10.x to 3.14.x (3.13.x is highly recommended). Using any version 3.15 or greater is not allowed as it might break backward compatibility with the libraries we use.
 - Pycharm or Visual Studio Code are recommended IDEs but if you're happy with VIM, enjoy it!
 - Git.
 - UI testing must be done using the latest versions of Chrome and Firefox.

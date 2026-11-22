@@ -35,7 +35,6 @@ class UniconLexer(RegexLexer):
         'root': [
             (r'[^\S\n]+', Text),
             (r'#.*?\n', Comment.Single),
-            (r'[^\S\n]+', Text),
             (r'class|method|procedure', Keyword.Declaration, 'subprogram'),
             (r'(record)(\s+)(\w+)',
              bygroups(Keyword.Declaration, Text, Keyword.Type), 'type_def'),
@@ -180,7 +179,6 @@ class IconLexer(RegexLexer):
         'root': [
             (r'[^\S\n]+', Text),
             (r'#.*?\n', Comment.Single),
-            (r'[^\S\n]+', Text),
             (r'class|method|procedure', Keyword.Declaration, 'subprogram'),
             (r'(record)(\s+)(\w+)',
              bygroups(Keyword.Declaration, Text, Keyword.Type), 'type_def'),

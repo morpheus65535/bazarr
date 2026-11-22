@@ -36,7 +36,7 @@ class CplintLexer(PrologLexer):
                     'finite')), Name.Builtin),
             # annotations of atoms
             (r'([a-z]+)(:)', bygroups(String.Atom, Punctuation)),
-            (r':(-|=)|::?|~=?|=>', Operator),
+            (r':[-=]|::?|~=?|=>', Operator),
             (r'\?', Name.Builtin),
             inherit,
         ],

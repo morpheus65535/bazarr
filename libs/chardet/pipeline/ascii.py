@@ -5,12 +5,15 @@ this module is compiled with mypyc, which does not support PEP 563 string
 annotations.
 """
 
+from chardet._utils import count_deleted
 from chardet.pipeline import ASCII_TEXT_BYTES, DetectionResult
 
 # Maximum fraction of null bytes to still classify data as ASCII.
 # Null-separated CLI output (find -print0, git ls-tree -z) typically has
-# 1-3.5% nulls.  5% covers all realistic cases while staying well below
-# the UTF-16 guard threshold (15%).
+# 1-3.5% nulls.  5% covers all realistic cases.  The UTF-16 stage runs
+# first and its null-separator guard rejects any all-ASCII data with
+# fewer nulls than real UTF-16 carries, so nothing accepted here can
+# have been claimed as UTF-16.
 _MAX_NULL_FRACTION = 0.05
 
 
@@ -26,14 +29,25 @@ def detect_ascii(data: bytes) -> DetectionResult | None:
     """
     if not data:
         return None
-    remainder = data.translate(None, ASCII_TEXT_BYTES)
-    if not remainder:
+    # Non-ASCII data can never pass: the disallowed set includes every high
+    # byte.  ``isascii`` answers that in one allocation-free C scan, so
+    # large non-ASCII inputs skip the counting pass entirely.
+    if not data.isascii():
+        return None
+    # Count rather than materialize the remainder: on a large all-ASCII
+    # window the deletion translate would allocate an input-sized buffer
+    # just to hand back an empty result.
+    # ASCII_TEXT_BYTES is the *allowed* set, so what the deletion leaves is
+    # the disallowed bytes: count them as the complement.
+    disallowed = len(data) - count_deleted(data, ASCII_TEXT_BYTES)
+    if disallowed == 0:
         return DetectionResult(encoding="ascii", confidence=1.0, language=None)
-    # Check if the only non-allowed bytes are null separators
-    if remainder.replace(b"\x00", b""):
-        return None  # Non-null, non-ASCII bytes present
+    null_count = data.count(0)
+    # Any disallowed byte that is not a null disqualifies the data.
+    if disallowed != null_count:
+        return None
     # All non-allowed bytes are nulls — accept if sparse enough
-    null_fraction = len(remainder) / len(data)
+    null_fraction = null_count / len(data)
     if null_fraction <= _MAX_NULL_FRACTION:
         return DetectionResult(encoding="ascii", confidence=0.99, language=None)
     return None

@@ -15,7 +15,7 @@ class System(Resource):
                                      help='Action to perform from ["shutdown", "restart"]')
 
     @authenticate
-    @api_ns_system.doc(parser=post_request_parser)
+    @api_ns_system.expect(post_request_parser)
     @api_ns_system.response(204, 'Success')
     @api_ns_system.response(401, 'Not Authenticated')
     def post(self):

@@ -63,8 +63,14 @@ from typing import Any
 import requests
 
 from ..common import NotifyImageSize, NotifyType, PersistentStoreMode
+from ..exception import AppriseImproperlyConfigured
 from ..locale import gettext_lazy as _
-from ..utils.parse import parse_bool, parse_list, validate_regex
+from ..utils.parse import (
+    URL_PATH_SAFE_CHARS,
+    parse_bool,
+    parse_list,
+    validate_regex,
+)
 from .base import NotifyBase
 
 # Some Reference Locations:
@@ -259,7 +265,7 @@ class NotifyMattermost(NotifyBase):
             if self.mode not in MATTERMOST_MODES:
                 msg = f"The Mattermost mode specified ({mode}) is invalid."
                 self.logger.warning(msg)
-                raise TypeError(msg)
+                raise AppriseImproperlyConfigured(msg)
         else:
             self.mode = self.template_args["mode"]["default"]
 
@@ -271,7 +277,7 @@ class NotifyMattermost(NotifyBase):
         if not self.token:
             msg = f"An invalid Mattermost Token ({token}) was specified."
             self.logger.warning(msg)
-            raise TypeError(msg)
+            raise AppriseImproperlyConfigured(msg)
 
         # Used for URL generation afterwards only
         self._invalid_targets = []
@@ -514,6 +520,15 @@ class NotifyMattermost(NotifyBase):
             targets = [(None, None)]
 
         for kind, value in targets:
+            # A named channel and a channel ID are different targets even
+            # when their text matches, so the kind is part of the key.
+            delivery_key = (kind, value)
+
+            # Skip a target that already accepted this message so
+            # a retry does not deliver it twice.
+            if self.is_delivered(delivery_key):
+                continue
+
             target = value
             if kind == "#" and self.mode == MattermostMode.BOT:
                 target = self._channel_lookup(value)
@@ -698,6 +713,9 @@ class NotifyMattermost(NotifyBase):
                 has_error = True
                 continue
 
+            # Delivered; a retry can safely skip this target.
+            self.mark_delivered(delivery_key)
+
         # Return our overall status
         return not has_error
 
@@ -781,7 +799,9 @@ class NotifyMattermost(NotifyBase):
                     "/"
                     if not self.fullpath
                     else "{}/".format(
-                        NotifyMattermost.quote(self.fullpath, safe="/")
+                        NotifyMattermost.quote(
+                            self.fullpath, safe=URL_PATH_SAFE_CHARS
+                        )
                     )
                 ),
                 token=self.pprint(self.token, privacy, safe=""),

@@ -15,7 +15,7 @@ _list_pos_re=re.compile('\\[(\\d+)\\]')
 DYNABOX_CLASS=_A
 def get_dynabox_class_avoiding_circular_import():
 	global DYNABOX_CLASS
-	if DYNABOX_CLASS is _A:from dynaconf.utils.boxing import DynaBox as A;DYNABOX_CLASS=A
+	if DYNABOX_CLASS is _A:from dynaconf.utils.boxing import _DynaBox as A;DYNABOX_CLASS=A
 	return DYNABOX_CLASS
 class BoxList(list):
 	def __init__(A,iterable=_A,box_class=_A,**C):

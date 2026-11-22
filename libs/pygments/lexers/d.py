@@ -33,7 +33,7 @@ class DLexer(RegexLexer):
             # (r'\\\n', Text), # line continuations
             # Comments
             (r'(//.*?)(\n)', bygroups(Comment.Single, Whitespace)),
-            (r'/(\\\n)?[*](.|\n)*?[*](\\\n)?/', Comment.Multiline),
+            (r'/(\\\n)?[*][\s\S]*?[*](\\\n)?/', Comment.Multiline),
             (r'/\+', Comment.Multiline, 'nested_comment'),
             # Keywords
             (words((
@@ -109,18 +109,18 @@ class DLexer(RegexLexer):
             (r'q"\(', String, 'delimited_parenthesis'),
             (r'q"<', String, 'delimited_angle'),
             (r'q"\{', String, 'delimited_curly'),
-            (r'q"([a-zA-Z_]\w*)\n.*?\n\1"', String),
+            (r'q"([^\W\d]\w*)\n.*?\n\1"', String),
             (r'q"(.).*?\1"', String),
             # -- TokenString
             (r'q\{', String, 'token_string'),
             # Attributes
-            (r'@([a-zA-Z_]\w*)?', Name.Decorator),
+            (r'@([^\W\d]\w*)?', Name.Decorator),
             # Tokens
             (r'(~=|\^=|%=|\*=|==|!>=|!<=|!<>=|!<>|!<|!>|!=|>>>=|>>>|>>=|>>|>='
              r'|<>=|<>|<<=|<<|<=|\+\+|\+=|--|-=|\|\||\|=|&&|&=|\.\.\.|\.\.|/=)'
              r'|[/.&|\-+<>!()\[\]{}?,;:$=*%^~]', Punctuation),
             # Identifier
-            (r'[a-zA-Z_]\w*', Name),
+            (r'[^\W\d]\w*', Name),
             # Line
             (r'(#line)(\s)(.*)(\n)', bygroups(Comment.Special, Whitespace,
                 Comment.Special, Whitespace)),

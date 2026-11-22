@@ -1,5 +1,4 @@
-import { http } from "msw";
-import { HttpResponse } from "msw";
+import { http, HttpResponse } from "msw/http";
 import server from "@/tests/mocks/node";
 import { renderTest, RenderTestCase } from "@/tests/render";
 import SettingsLanguagesGeneralView from "./Languages/General";
@@ -37,7 +36,7 @@ const languagesSetup = () => {
   );
   server.use(
     http.get("/api/system/status", () => {
-      return HttpResponse.json({});
+      return HttpResponse.json({ data: {} });
     }),
   );
 };
@@ -49,7 +48,7 @@ const cases: RenderTestCase[] = [
     setupEach: () => {
       server.use(
         http.get("/api/system/status", () => {
-          return HttpResponse.json({});
+          return HttpResponse.json({ data: {} });
         }),
       );
     },

@@ -635,7 +635,7 @@
   "alias": [":flag_for_French_Polynesia:", ":french_polynesia:"]
 },
 "🇹🇫": {
-  "en": ":French_Southern_Territories:",
+  "en": ":French_Southern_and_Antarctic_Lands:",
   "status": 2,
   "E": 2,
   "alias": [":flag_for_French_Southern_Territories:", ":french_southern_territories:"]
@@ -750,7 +750,7 @@
   "alias": [":flag_for_Haiti:", ":haiti:"]
 },
 "🇭🇲": {
-  "en": ":Heard_&_McDonald_Islands:",
+  "en": ":Heard_Island_&_McDonald_Islands:",
   "status": 2,
   "E": 2,
   "alias": [":flag_for_Heard_&_McDonald_Islands:", ":heard_mcdonald_islands:"]
@@ -1800,7 +1800,7 @@
   "alias": [":flag_for_St._Barthélemy:", ":st_barthelemy:"]
 },
 "🇸🇭": {
-  "en": ":St._Helena:",
+  "en": ":St._Helena_Ascension_&_Tristan_da_Cunha:",
   "status": 2,
   "E": 2,
   "alias": [":flag_for_St._Helena:", ":st_helena:"]
@@ -5220,6 +5220,11 @@
   "status": 2,
   "E": 1
 },
+"🫫": {
+  "en": ":cracking_face:",
+  "status": 2,
+  "E": 18
+},
 "🖍\ufe0f": {
   "en": ":crayon:",
   "status": 2,
@@ -6202,6 +6207,11 @@
   "en": ":envelope_with_arrow:",
   "status": 2,
   "E": 0.6
+},
+"🪌": {
+  "en": ":eraser:",
+  "status": 2,
+  "E": 18
 },
 "💶": {
   "en": ":euro_banknote:",
@@ -10094,6 +10104,36 @@
   "status": 2,
   "E": 15
 },
+"🫹": {
+  "en": ":leftwards_thumb_sign:",
+  "status": 2,
+  "E": 18
+},
+"🫹🏿": {
+  "en": ":leftwards_thumb_sign_dark_skin_tone:",
+  "status": 2,
+  "E": 18
+},
+"🫹🏻": {
+  "en": ":leftwards_thumb_sign_light_skin_tone:",
+  "status": 2,
+  "E": 18
+},
+"🫹🏾": {
+  "en": ":leftwards_thumb_sign_medium-dark_skin_tone:",
+  "status": 2,
+  "E": 18
+},
+"🫹🏼": {
+  "en": ":leftwards_thumb_sign_medium-light_skin_tone:",
+  "status": 2,
+  "E": 18
+},
+"🫹🏽": {
+  "en": ":leftwards_thumb_sign_medium_skin_tone:",
+  "status": 2,
+  "E": 18
+},
 "🦵": {
   "en": ":leg:",
   "status": 2,
@@ -10167,6 +10207,11 @@
   "status": 1,
   "E": 1,
   "alias": [":emoji_modifier_fitzpatrick_type_1_2:"]
+},
+"🛙": {
+  "en": ":lighthouse:",
+  "status": 2,
+  "E": 18
 },
 "🍋\u200d🟩": {
   "en": ":lime:",
@@ -15454,6 +15499,11 @@
   "status": 2,
   "E": 5
 },
+"🪋": {
+  "en": ":meteor:",
+  "status": 2,
+  "E": 18
+},
 "🚇": {
   "en": ":metro:",
   "status": 2,
@@ -15574,6 +15624,11 @@
   "status": 2,
   "E": 0.6,
   "alias": [":calling:"]
+},
+"🫌": {
+  "en": ":monarch_butterfly:",
+  "status": 2,
+  "E": 18
 },
 "🤑": {
   "en": ":money-mouth_face:",
@@ -15860,6 +15915,11 @@
   "en": ":nesting_dolls:",
   "status": 2,
   "E": 13
+},
+"🪍": {
+  "en": ":net_with_handle:",
+  "status": 2,
+  "E": 18
 },
 "😐": {
   "en": ":neutral_face:",
@@ -19065,6 +19125,11 @@
   "E": 0.7,
   "variant": true
 },
+"🫝": {
+  "en": ":pickle:",
+  "status": 2,
+  "E": 18
+},
 "🛻": {
   "en": ":pickup_truck:",
   "status": 2,
@@ -20250,6 +20315,36 @@
   "en": ":rightwards_pushing_hand_medium_skin_tone:",
   "status": 2,
   "E": 15
+},
+"🫺": {
+  "en": ":rightwards_thumb_sign:",
+  "status": 2,
+  "E": 18
+},
+"🫺🏿": {
+  "en": ":rightwards_thumb_sign_dark_skin_tone:",
+  "status": 2,
+  "E": 18
+},
+"🫺🏻": {
+  "en": ":rightwards_thumb_sign_light_skin_tone:",
+  "status": 2,
+  "E": 18
+},
+"🫺🏾": {
+  "en": ":rightwards_thumb_sign_medium-dark_skin_tone:",
+  "status": 2,
+  "E": 18
+},
+"🫺🏼": {
+  "en": ":rightwards_thumb_sign_medium-light_skin_tone:",
+  "status": 2,
+  "E": 18
+},
+"🫺🏽": {
+  "en": ":rightwards_thumb_sign_medium_skin_tone:",
+  "status": 2,
+  "E": 18
 },
 "💍": {
   "en": ":ring:",

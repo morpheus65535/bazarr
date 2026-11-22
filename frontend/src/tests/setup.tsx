@@ -1,5 +1,4 @@
-import { http } from "msw";
-import { HttpResponse } from "msw";
+import { http, HttpResponse } from "msw/http";
 import { vi, vitest } from "vitest";
 import "@testing-library/jest-dom/vitest";
 import queryClient from "@/apis/queries";
@@ -87,7 +86,7 @@ if (typeof window !== "undefined") {
 }
 
 beforeAll(() => {
-  server.listen({ onUnhandledRequest: "error" });
+  server.listen({ onUnhandledFrame: "error" });
 });
 
 beforeEach(() => {
@@ -109,9 +108,14 @@ beforeEach(() => {
   );
 });
 
-afterEach(() => {
+afterEach(async () => {
+  // Let in-flight requests reach MSW's async interception before handlers reset.
+  await new Promise((resolve) => setTimeout(resolve, 0));
   server.resetHandlers();
   queryClient.clear();
 });
 
-afterAll(() => server.close());
+afterAll(async () => {
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  server.close();
+});

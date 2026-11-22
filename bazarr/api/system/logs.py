@@ -38,7 +38,7 @@ class SystemLogs(Resource):
             logs.append(last_log)
 
     @authenticate
-    @api_ns_system_logs.doc(parser=None)
+    @api_ns_system_logs.expect(None)
     @api_ns_system_logs.response(200, 'Success')
     @api_ns_system_logs.response(401, 'Not Authenticated')
     def get(self):
@@ -134,7 +134,7 @@ class SystemLogs(Resource):
         return marshal(logs, self.get_response_model, envelope='data')
 
     @authenticate
-    @api_ns_system_logs.doc(parser=None)
+    @api_ns_system_logs.expect(None)
     @api_ns_system_logs.response(204, 'Success')
     @api_ns_system_logs.response(401, 'Not Authenticated')
     def delete(self):

@@ -26,7 +26,7 @@ class SystemReleases(Resource):
     })
 
     @authenticate
-    @api_ns_system_releases.doc(parser=None)
+    @api_ns_system_releases.expect(None)
     @api_ns_system_releases.response(200, 'Success')
     @api_ns_system_releases.response(401, 'Not Authenticated')
     def get(self):

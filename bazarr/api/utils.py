@@ -3,8 +3,8 @@
 import ast
 
 from functools import wraps
+from typing import TypeAlias
 from flask import request, abort
-from operator import itemgetter
 
 from languages.custom_lang import CustomLanguage
 from sqlalchemy import or_, and_
@@ -16,8 +16,13 @@ from languages.get_languages import language_from_alpha2, alpha3_from_alpha2
 from app.database import (get_audio_profile_languages, get_desired_languages, get_subtitles, database, TableEpisodes,
                           TableShows, select)
 from subtitles.pool import get_language_equals
-from utilities.helper import bool_map
+from utilities.helper import bool_map, is_valid_apikey
+from subtitles.serialization import parse_missing_subtitles
 from utilities.path_mappings import path_mappings
+from utilities.text_list import parse_text_list_or_default
+
+JsonValue: TypeAlias = str | int | float | bool | None | list['JsonValue'] | dict[str, 'JsonValue']
+JsonObject: TypeAlias = dict[str, JsonValue]
 
 None_Keys = ['null', 'undefined', '', None]
 
@@ -43,6 +48,8 @@ def add_list_query_args(parser):
                         help='Filter by languages profile ID or "none"')
     parser.add_argument('missing', type=str, required=False, choices=('true', 'false'),
                         help='Filter by missing subtitles')
+    parser.add_argument('ended', type=str, required=False, choices=('true', 'false'),
+                        help='Filter by series ended status')
     parser.add_argument('audio_language', type=str, required=False,
                         help='Filter by audio language name')
     parser.add_argument('tags[]', type=str, action='append', required=False, default=[],
@@ -57,6 +64,11 @@ def profile_filter_clause(column, value):
 
 def monitored_filter_clause(column, value):
     # monitored is stored as the string 'True'/'False', not a boolean
+    return column == str(bool_map[value])
+
+
+def ended_filter_clause(column, value):
+    # ended is stored as the string 'True'/'False', not a boolean
     return column == str(bool_map[value])
 
 
@@ -95,19 +107,21 @@ def apply_sort(stmt, sort_columns, default_column, sort_by, sort_order):
     # values fall back to the default column.
     sort_column = sort_columns.get(sort_by, default_column)
     return stmt.order_by(sort_column.asc() if sort_order == 'asc' else sort_column.desc())
+def normalize_flag_token(value):
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized == "true":
+            return "True"
+        if normalized == "false":
+            return "False"
+    return "False"
 
 
 def authenticate(actual_method):
     @wraps(actual_method)
     def wrapper(*args, **kwargs):
-        apikey_settings = settings.auth.apikey
-        apikey_get = request.args.get('apikey')
-        apikey_post = request.form.get('apikey')
-        apikey_header = None
-        if 'X-API-KEY' in request.headers:
-            apikey_header = request.headers['X-API-KEY']
-
-        if apikey_settings in [apikey_get, apikey_post, apikey_header]:
+        if is_valid_apikey(request.args.get('apikey'), request.form.get('apikey'), request.headers.get('X-API-KEY'),
+                           apikey_settings=settings.auth.apikey):
             return actual_method(*args, **kwargs)
 
         return abort(401)
@@ -115,7 +129,23 @@ def authenticate(actual_method):
     return wrapper
 
 
-def postprocess(item):
+def get_series_audio_languages(series_ids: list[int]) -> dict[int, list[str | None]]:
+    languages: dict[int, set[str | None]] = {series_id: set() for series_id in series_ids}
+    parsed_values: dict[str | None, list[str | None]] = {}
+    for offset in range(0, len(series_ids), 900):
+        rows = database.execute(
+            select(TableEpisodes.sonarrSeriesId, TableEpisodes.audio_language)
+            .where(TableEpisodes.sonarrSeriesId.in_(series_ids[offset:offset + 900]))
+            .distinct()
+        )
+        for series_id, value in rows:
+            if value not in parsed_values:
+                parsed_values[value] = parse_text_list_or_default(value)
+            languages[series_id].update(parsed_values[value])
+    return {series_id: list(names) for series_id, names in languages.items()}
+
+
+def postprocess(item, subtitles=None):
     # Remove ffprobe_cache
     if item.get('radarrId'):
         path_replace = path_mappings.path_replace_movie
@@ -127,28 +157,8 @@ def postprocess(item):
     # Parse audio language
     if item.get('audio_language'):
         if item.get('sonarrSeriesId') and not item.get('sonarrEpisodeId') and item['audio_language'] == '[]':
-            # if, for a series, audio_language is empty, we need to get the audio_language from the episodes
-            episodes_audio_languages = database.execute(
-                select(TableEpisodes.audio_language)
-                .where(TableEpisodes.sonarrSeriesId == item['sonarrSeriesId'])
-            ).scalars()
-
-            # then parse the audio_languages for all episodes
-            audio_languages_ast_list_of_lists = []
-            for audio_languages in episodes_audio_languages:
-                try:
-                    audio_languages_ast_list_of_lists.append(ast.literal_eval(audio_languages))
-                except ValueError:
-                    continue
-
-            # then flatten the list of lists as a set of unique audio languages
-            audio_languages_flattened_set = set([item for sublist in audio_languages_ast_list_of_lists for item in sublist])
-
-            # then convert the set to a string
-            audio_languages_str = str(list(audio_languages_flattened_set))
-
-            # to pass it to get_audio_profile_languages that will return a list of audio languages dicts
-            item['audio_language'] = get_audio_profile_languages(audio_languages_str)
+            languages = get_series_audio_languages([item['sonarrSeriesId']])
+            item['audio_language'] = get_audio_profile_languages(languages[item['sonarrSeriesId']])
         else:
             # in other cases, we can directly pass the audio_language string to get_audio_profile_languages
             item['audio_language'] = get_audio_profile_languages(item['audio_language'])
@@ -164,8 +174,11 @@ def postprocess(item):
         item['alternativeTitles'] = []
 
     # Add subtitles
-    item['subtitles'] = get_subtitles(sonarr_episode_id=item.get('sonarrEpisodeId'),
-                                      radarr_id=item.get('radarrId'))
+    if subtitles is None:
+        item['subtitles'] = get_subtitles(sonarr_episode_id=item.get('sonarrEpisodeId'),
+                                          radarr_id=item.get('radarrId'))
+    else:
+        item['subtitles'] = subtitles
 
     if settings.general.embedded_subs_show_desired:
         if item.get('profileId'):
@@ -198,15 +211,16 @@ def postprocess(item):
 
             # Filter subtitles: keep if code2 is in expanded desired languages or if it has a path (external)
             item['subtitles'] = [x for x in item['subtitles']
-                                 if x['code2'] in expanded_desired_lang_codes or x['path']]
+                                 if isinstance(x, dict) and
+                                 (x.get('code2') in expanded_desired_lang_codes or x.get('path'))]
         else:
-            item['subtitles'] = [x for x in item['subtitles'] if x['path']]
+            item['subtitles'] = [x for x in item['subtitles'] if isinstance(x, dict) and x.get('path')]
 
-    item['subtitles'] = sorted(item['subtitles'], key=itemgetter('name', 'forced'))
+    item['subtitles'] = sorted(item['subtitles'], key=lambda x: (x.get('name', ''), x.get('forced', False)))
 
     # Parse missing subtitles
     if item.get('missing_subtitles'):
-        item['missing_subtitles'] = ast.literal_eval(item['missing_subtitles'])
+        item['missing_subtitles'] = parse_missing_subtitles(item['missing_subtitles'])
         for i, subs in enumerate(item['missing_subtitles']):
             language = subs.split(':')
             item['missing_subtitles'][i] = {"name": language_from_alpha2(language[0]),

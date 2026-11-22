@@ -52,6 +52,7 @@ def load(
 def load_from_python_object(
     obj, mod, settings_module, key=None, identifier=None, validate=False
 ):
+    config = obj.__core__.config
     file_merge = getattr(mod, "dynaconf_merge", empty)
     if file_merge is empty:
         file_merge = getattr(mod, "DYNACONF_MERGE", empty)
@@ -77,11 +78,10 @@ def load_from_python_object(
         # we use the name instead checking on an attribute to avoid
         # loading a lazy object early in the process
         elif setting.startswith("_dynaconf_hook") and callable(setting_value):
-            if setting_value not in obj._post_hooks:
-                obj._post_hooks.append(setting_value)
-
-    obj._loaded_py_modules.append(mod.__name__)
-    obj._loaded_files.append(mod.__file__)
+            if setting_value not in config.post_hooks:
+                config.post_hooks.append(setting_value)
+    config.loaded_py_modules.append(mod.__name__)
+    config.loaded_files.append(mod.__file__)
 
 
 def try_to_load_from_py_module_name(
@@ -161,7 +161,7 @@ def import_from_filename(obj, filename, silent=False):  # pragma: no cover
             exec(compile(config_file.read(), filename, "exec"), mod.__dict__)
     except OSError as e:
         e.strerror = (
-            f"py_loader: error loading file " f"({e.strerror} {filename})\n"
+            f"py_loader: error loading file ({e.strerror} {filename})\n"
         )
         if silent and e.errno in (errno.ENOENT, errno.EISDIR):
             return

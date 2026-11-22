@@ -61,6 +61,15 @@ describe("SettingsSubtitlesFilesView", () => {
     ).toBeInTheDocument();
   });
 
+  it("should render the M.49 language tag option", () => {
+    renderPage();
+
+    expect(
+      screen.getByText("Save Subtitles With M.49 Region Language Tags"),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/es-419 instead of es-MX/i)).toBeInTheDocument();
+  });
+
   it("should trigger onSaved when changing embedded subtitles parser", async () => {
     renderPage();
 

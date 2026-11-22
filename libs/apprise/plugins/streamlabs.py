@@ -35,9 +35,12 @@
 # API Documentation on Webhooks:
 #    - https://dev.streamlabs.com/
 #
+from typing import Any
+
 import requests
 
 from ..common import NotifyType
+from ..exception import AppriseImproperlyConfigured
 from ..locale import gettext_lazy as _
 from ..utils.parse import validate_regex
 from .base import NotifyBase
@@ -202,7 +205,7 @@ class NotifyStreamlabs(NotifyBase):
         if not self.access_token:
             msg = "An invalid Streamslabs access token was specified."
             self.logger.warning(msg)
-            raise TypeError(msg)
+            raise AppriseImproperlyConfigured(msg)
 
         # Store the call
         try:
@@ -216,7 +219,7 @@ class NotifyStreamlabs(NotifyBase):
             msg = f"The streamlabs call specified ({call}) is invalid."
             self.logger.warning(msg)
             self.logger.debug(f"Socket Exception: {e!s}")
-            raise TypeError(msg) from None
+            raise AppriseImproperlyConfigured(msg) from None
 
         # Store the alert_type
         # only applicable when calling /alerts
@@ -231,7 +234,7 @@ class NotifyStreamlabs(NotifyBase):
             msg = f"The streamlabs alert type specified ({call}) is invalid."
             self.logger.warning(msg)
             self.logger.debug(f"Socket Exception: {e!s}")
-            raise TypeError(msg) from None
+            raise AppriseImproperlyConfigured(msg) from None
 
         # params only applicable when calling /alerts
         self.image_href = image_href
@@ -254,7 +257,7 @@ class NotifyStreamlabs(NotifyBase):
         if not self.currency:
             msg = "An invalid Streamslabs currency was specified."
             self.logger.warning(msg)
-            raise TypeError(msg)
+            raise AppriseImproperlyConfigured(msg)
 
         # only applicable when calling /donations
         # The name of the donor
@@ -262,7 +265,7 @@ class NotifyStreamlabs(NotifyBase):
         if not self.name:
             msg = "An invalid Streamslabs donor was specified."
             self.logger.warning(msg)
-            raise TypeError(msg)
+            raise AppriseImproperlyConfigured(msg)
 
         # An identifier for this donor,
         # which is used to group donations with the same donor.
@@ -271,20 +274,29 @@ class NotifyStreamlabs(NotifyBase):
 
         return
 
-    def send(self, body, title="", notify_type=NotifyType.INFO, **kwargs):
+    def send(
+        self,
+        body: str,
+        title: str = "",
+        notify_type: NotifyType = NotifyType.INFO,
+        **kwargs: Any,
+    ) -> bool:
         """Perform Streamlabs notification call (either donation or alert)"""
 
         headers = {
             "User-Agent": self.app_id,
         }
         if self.call == StrmlabsCall.ALERT:
+            # Alerts require a heading, so use the body when no title exists.
+            # ``user_message`` is the optional second line.
+            # See: https://dev.streamlabs.com/v1.0/reference/alerts
             data = {
                 "access_token": self.access_token,
                 "type": self.alert_type.lower(),
                 "image_href": self.image_href,
                 "sound_href": self.sound_href,
-                "message": title,
-                "user_massage": body,
+                "message": title if title else body,
+                "user_message": body if title else "",
                 "duration": self.duration,
                 "special_text_color": self.special_text_color,
             }
@@ -329,13 +341,19 @@ class NotifyStreamlabs(NotifyBase):
                 return False
 
         if self.call == StrmlabsCall.DONATION:
+            # Donations have no title field, so the title (when given)
+            # is placed on the first line of the message instead
+            message = f"{title}\r\n{body}" if title else body
+
             data = {
                 "name": self.name,
                 "identifier": self.identifier,
                 "amount": self.amount,
                 "currency": self.currency,
                 "access_token": self.access_token,
-                "message": body,
+                # The donation message must be less than 255 characters
+                # See: https://dev.streamlabs.com/v1.0/reference/donations-1
+                "message": message[:254],
             }
 
             try:
@@ -448,12 +466,12 @@ class NotifyStreamlabs(NotifyBase):
         # donation - name
         if "name" in results["qsd"] and results["qsd"]["name"]:
             results["name"] = NotifyStreamlabs.unquote(
-                results["qsd"]["name"].strip().upper()
+                results["qsd"]["name"].strip()
             )
         # donation - identifier
         if "identifier" in results["qsd"] and results["qsd"]["identifier"]:
             results["identifier"] = NotifyStreamlabs.unquote(
-                results["qsd"]["identifier"].strip().upper()
+                results["qsd"]["identifier"].strip()
             )
         # alert - alert_type
         if "alert_type" in results["qsd"] and results["qsd"]["alert_type"]:
@@ -468,7 +486,7 @@ class NotifyStreamlabs(NotifyBase):
         # alert - sound_href
         if "sound_href" in results["qsd"] and results["qsd"]["sound_href"]:
             results["sound_href"] = NotifyStreamlabs.unquote(
-                results["qsd"]["sound_href"].strip().upper()
+                results["qsd"]["sound_href"].strip()
             )
         # alert - duration
         if "duration" in results["qsd"] and results["qsd"]["duration"]:

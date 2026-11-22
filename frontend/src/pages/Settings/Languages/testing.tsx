@@ -45,35 +45,76 @@ export const presetLanguages: Language.Server[] = [
   { code2: "es", code3: "spa", name: "Spanish", enabled: true },
 ];
 
-export const baseProfiles: Language.Profile[] = [
-  {
-    profileId: 1,
-    name: "My Profile",
-    tag: "mytag",
-    items: [
-      {
-        id: 1,
-        language: "en",
-        audioExclude: "False",
-        audioOnlyInclude: "False",
-        hi: "False",
-        forced: "False",
-      },
-      {
-        id: 2,
-        language: "fr",
-        audioExclude: "False",
-        audioOnlyInclude: "False",
-        hi: "True",
-        forced: "False",
-      },
-    ],
-    cutoff: 1,
-    mustContain: [],
-    mustNotContain: [],
-    originalFormat: false,
-  },
-];
+export const profileItem = (
+  id: number,
+  language: string,
+  overrides: Partial<Language.ProfileItem> = {},
+): Language.ProfileItem => ({
+  id,
+  language,
+  audioExclude: "False",
+  audioOnlyInclude: "False",
+  hi: "False",
+  forced: "False",
+  ...overrides,
+});
+
+// A basic profile as stored by older Bazarr versions: flat items and an explicit type.
+export const basicProfile: Language.Profile = {
+  profileId: 1,
+  name: "My Profile",
+  tag: "mytag",
+  profileType: "basic",
+  items: [profileItem(1, "en"), profileItem(2, "fr", { hi: "True" })],
+  cutoff: 1,
+  mustContain: [],
+  mustNotContain: [],
+  originalFormat: false,
+};
+
+// A profile saved before profile types existed: no profileType at all.
+export const legacyProfile: Language.Profile = {
+  profileId: 3,
+  name: "Legacy Profile",
+  tag: undefined,
+  items: [profileItem(1, "en"), profileItem(2, "es")],
+  cutoff: 2,
+  mustContain: ["x265"],
+  mustNotContain: ["cam"],
+  originalFormat: true,
+};
+
+// An enhanced profile with an AND group, an OR group and a group cutoff.
+export const enhancedProfile: Language.Profile = {
+  profileId: 2,
+  name: "Enhanced Profile",
+  tag: undefined,
+  profileType: "enhanced",
+  items: [
+    profileItem(1, "en"),
+    profileItem(2, "fr"),
+    profileItem(3, "de"),
+    profileItem(4, "it"),
+  ],
+  groups: [
+    {
+      id: 1,
+      operator: "AND",
+      items: [profileItem(1, "en"), profileItem(2, "fr")],
+    },
+    {
+      id: 2,
+      operator: "OR",
+      items: [profileItem(3, "de"), profileItem(4, "it")],
+    },
+  ],
+  cutoff: 2,
+  mustContain: [],
+  mustNotContain: [],
+  originalFormat: false,
+};
+
+export const baseProfiles: Language.Profile[] = [basicProfile];
 
 export const setupMocks = (
   overrides?: {

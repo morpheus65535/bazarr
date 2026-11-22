@@ -138,39 +138,42 @@ class LegendasNetProvider(ProviderRetryMixin, Provider):
 
         # query the server
         if isinstance(self.video, Episode):
+            # prefer the series TMDB id, and fall back to the series name when it is unknown
             search_params = {
                 'page': 1,
                 'per_page': 25,
                 'tv_episode': video.episode,
-                'tv_season': video.season,
-                'imdb_id': video.series_imdb_id
+                'tv_season': video.season
             }
-            if not video.series_imdb_id:
+            if video.series_tmdb_id:
+                search_params['tmdb_id'] = video.series_tmdb_id
+            else:
                 search_params['name'] = video.series
 
             res = self.retry(
                 lambda: self.checked(
                     lambda: self.session.get(self.server_url() + 'search/tv',
-                                             json=search_params,
-                                             headers={'Content-Type': 'application/json'},
+                                             params=search_params,
                                              timeout=30)),
                 amount=retry_amount,
                 retry_timeout=retry_timeout
             )
         else:
+            # The imdb_id lookup returns no results on the Legendas.net side, so prefer the TMDB id
+            # that Bazarr stores for the movie and fall back to the title.
             search_params = {
                 'page': 1,
-                'per_page': 25,
-                'imdb_id': video.imdb_id
+                'per_page': 25
             }
-            if not video.imdb_id:
+            if video.tmdb_id:
+                search_params['tmdb_id'] = video.tmdb_id
+            else:
                 search_params['name'] = video.title
 
             res = self.retry(
                 lambda: self.checked(
                     lambda: self.session.get(self.server_url() + 'search/movie',
-                                             json=search_params,
-                                             headers={'Content-Type': 'application/json'},
+                                             params=search_params,
                                              timeout=30)),
                 amount=retry_amount,
                 retry_timeout=retry_timeout
@@ -190,11 +193,11 @@ class LegendasNetProvider(ProviderRetryMixin, Provider):
                     subtitle = LegendasNetSubtitle(
                         language=Language('por', 'BR'),
                         forced=self._is_forced(item),
-                        page_link=f"https://legendas.net/tv_legenda?movie_id={result['tv_shows'][0]['tmdb_id']}&"
+                        page_link=f"https://legendas.net/tv_legenda?movie_id={item['tmdb_id']}&"
                                   f"legenda_id={item['id']}",
                         download_link=item['path'],
                         file_id=item['id'],
-                        release_names=[item.get('release_name', '')],
+                        release_names=[item.get('release_name') or ''],
                         uploader=item['uploader'],
                         season=item.get('season', ''),
                         episode=item.get('episode', '')
@@ -208,11 +211,11 @@ class LegendasNetProvider(ProviderRetryMixin, Provider):
                     subtitle = LegendasNetSubtitle(
                         language=Language('por', 'BR'),
                         forced=self._is_forced(item),
-                        page_link=f"https://legendas.net/legenda?movie_id={result['movies'][0]['tmdb_id']}&"
+                        page_link=f"https://legendas.net/legenda?movie_id={item['tmdb_id']}&"
                                   f"legenda_id={item['id']}",
                         download_link=item['path'],
                         file_id=item['id'],
-                        release_names=[item.get('release_name', '')],
+                        release_names=[item.get('release_name') or ''],
                         uploader=item['uploader'],
                         season=None,
                         episode=None

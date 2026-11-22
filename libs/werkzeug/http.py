@@ -25,7 +25,6 @@ if t.TYPE_CHECKING:
 _token_chars = frozenset(
     "!#$%&'*+-.0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ^_`abcdefghijklmnopqrstuvwxyz|~"
 )
-_etag_re = re.compile(r'([Ww]/)?(?:"(.*?)"|(.*?))(?:\s*,\s*|$)')
 _entity_headers = frozenset(
     [
         "allow",
@@ -187,7 +186,7 @@ def unquote_header_value(value: str) -> str:
     .. versionchanged:: 3.0
         The ``is_filename`` parameter is removed.
     """
-    if len(value) >= 2 and value[0] == value[-1] == '"':
+    if len(value) >= 2 and value.startswith('"') and value.endswith('"'):
         return _unslash_re.sub(r"\g<1>", value[1:-1])
 
     return value
@@ -231,7 +230,7 @@ def dump_options_header(header: str | None, options: t.Mapping[str, t.Any]) -> s
         if value is None:
             continue
 
-        if key[-1] == "*":
+        if key.endswith("*"):
             segments.append(f"{key}={value}")
         else:
             segments.append(f"{key}={quote_header_value(value)}")
@@ -277,7 +276,7 @@ def dump_header(iterable: dict[str, t.Any] | t.Iterable[t.Any]) -> str:
         for key, value in iterable.items():
             if value is None:
                 items.append(key)
-            elif key[-1] == "*":
+            elif key.endswith("*"):
                 items.append(f"{key}={value}")
             else:
                 items.append(f"{key}={quote_header_value(value)}")
@@ -357,7 +356,9 @@ def parse_list_header(value: str) -> list[str]:
 
     items.append(item)
     return [
-        unquote_header_value(item) for item in (item.strip() for item in items) if item
+        unquote_header_value(item)
+        for item in (item.strip(" \t") for item in items)
+        if item
     ]
 
 
@@ -400,7 +401,7 @@ def parse_dict_header(value: str) -> dict[str, str | None]:
 
     for item in parse_list_header(value):
         key, has_value, value = item.partition("=")
-        key = key.strip()
+        key = key.strip(" \t")
 
         if not key:
             # =value is not valid
@@ -410,18 +411,17 @@ def parse_dict_header(value: str) -> dict[str, str | None]:
             result[key] = None
             continue
 
-        value = value.strip()
+        value = value.strip(" \t")
         encoding: str | None = None
 
-        if key[-1] == "*":
+        if key.endswith("*"):
             # key*=charset''value becomes key=value, where value is percent encoded
             # adapted from parse_options_header, without the continuation handling
             key = key[:-1]
-            match = _charset_value_re.match(value)
 
-            if match:
+            if (m_charset := _charset_value_re.match(value)) is not None:
                 # If there is a charset marker in the value, split it off.
-                encoding, value = match.groups()
+                encoding, value = m_charset.groups()
                 encoding = encoding.lower()
 
             # A safe list of encodings. Modern clients should only send ASCII or UTF-8.
@@ -438,18 +438,19 @@ def parse_dict_header(value: str) -> dict[str, str | None]:
 
 # https://httpwg.org/specs/rfc9110.html#parameter
 _parameter_key_re = re.compile(r"([\w!#$%&'*+\-.^`|~]+)=", flags=re.ASCII)
+# https://www.rfc-editor.org/rfc/rfc2231#section-3
+_parameter_mark_re = re.compile(r"(?:\*(\d+))?(\*)?$", flags=re.ASCII)
 _parameter_token_value_re = re.compile(r"[\w!#$%&'*+\-.^`|~]+", flags=re.ASCII)
 # https://www.rfc-editor.org/rfc/rfc2231#section-4
 _charset_value_re = re.compile(
     r"""
     ([\w!#$%&*+\-.^`|~]*)'  # charset part, could be empty
     [\w!#$%&*+\-.^`|~]*'  # don't care about language part, usually empty
-    ([\w!#$%&'*+\-.^`|~]+)  # one or more token chars with percent encoding
+    ([\w!#$%&'*+\-.^`|~]+)$  # one or more token chars with percent encoding
     """,
     re.ASCII | re.VERBOSE,
 )
-# https://www.rfc-editor.org/rfc/rfc2231#section-3
-_continuation_re = re.compile(r"\*(\d+)$", re.ASCII)
+_parameter_delimiter_re = re.compile(r";[ \t]*")
 
 
 def parse_options_header(value: str | None) -> tuple[str, dict[str, str]]:
@@ -513,8 +514,8 @@ def parse_options_header(value: str | None) -> tuple[str, dict[str, str]]:
         return "", {}
 
     value, _, rest = value.partition(";")
-    value = value.strip()
-    rest = rest.strip()
+    value = value.strip(" \t")
+    rest = rest.strip(" \t")
 
     if not value or not rest:
         # empty (invalid) value, or value without options
@@ -522,88 +523,111 @@ def parse_options_header(value: str | None) -> tuple[str, dict[str, str]]:
 
     # Collect all valid key=value parts without processing the value.
     parts: list[tuple[str, str]] = []
+    scan_pos = 0
+    length = len(rest)
 
-    while True:
-        if (m := _parameter_key_re.match(rest)) is not None:
-            pk = m.group(1).lower()
-            rest = rest[m.end() :]
+    while scan_pos < length:
+        if (m_key := _parameter_key_re.match(rest, scan_pos)) is not None:
+            pk = m_key.group(1).lower()
+            scan_pos = m_key.end()
 
             # Value may be a token.
-            if (m := _parameter_token_value_re.match(rest)) is not None:
-                parts.append((pk, m.group()))
+            if (m_value := _parameter_token_value_re.match(rest, scan_pos)) is not None:
+                parts.append((pk, m_value.group()))
 
             # Value may be a quoted string, find the closing quote.
-            elif rest[:1] == '"':
-                pos = 1
-                length = len(rest)
+            elif rest.startswith('"', scan_pos):
+                quote_pos = scan_pos + 1
 
-                while pos < length:
-                    if rest[pos : pos + 2] in {"\\\\", '\\"'}:
+                while quote_pos < length:
+                    if rest.startswith(("\\\\", '\\"'), quote_pos):
                         # Consume escaped slashes and quotes.
-                        pos += 2
-                    elif rest[pos] == '"':
+                        quote_pos += 2
+                    elif rest.startswith('"', quote_pos):
                         # Stop at an unescaped quote.
-                        parts.append((pk, rest[: pos + 1]))
-                        rest = rest[pos + 1 :]
+                        quote_pos += 1
+                        parts.append((pk, rest[scan_pos:quote_pos]))
+                        scan_pos = quote_pos
                         break
                     else:
                         # Consume any other character.
-                        pos += 1
+                        quote_pos += 1
+                else:
+                    # Scanned all without finding closing quote.
+                    break
 
-        # Find the next section delimited by `;`, if any.
-        if (end := rest.find(";")) == -1:
+        # Continue to the next delimited part, skipping spaces.
+        if m_delim := _parameter_delimiter_re.search(rest, scan_pos):
+            scan_pos = m_delim.end()
+        else:
             break
 
-        rest = rest[end + 1 :].lstrip()
-
     options: dict[str, str] = {}
-    encoding: str | None = None
-    continued_encoding: str | None = None
+    continuations: dict[str, list[str]] = {}
+    continuation_encodings: dict[str, str] = {}
 
     # For each collected part, process optional charset and continuation,
     # unquote quoted values.
     for pk, pv in parts:
-        if pk[-1] == "*":
-            # key*=charset''value becomes key=value, where value is percent encoded
-            pk = pk[:-1]
-            match = _charset_value_re.match(pv)
+        encoding: str | None = None
+        has_continuation = has_charset = False
 
-            if match:
+        # Check for and remove markers at end of key.
+        if (
+            m_mark := _parameter_mark_re.search(pk)
+        ) is not None and m_mark.end() - m_mark.start() > 0:
+            has_continuation = m_mark.group(1) is not None
+            has_charset = m_mark.group(2) is not None
+            pk = pk[: m_mark.start()]
+
+        # key*=charset''value becomes key=value, where value is percent encoded
+        if has_charset:
+            if (m_charset := _charset_value_re.match(pv)) is not None:
                 # If there is a valid charset marker in the value, split it off.
-                encoding, pv = match.groups()
+                encoding, pv = m_charset.groups()
                 # This might be the empty string, handled next.
                 encoding = encoding.lower()
 
-            # No charset marker, or marker with empty charset value.
-            if not encoding:
-                encoding = continued_encoding
+            # Use the prior continuation encoding if not set on this part.
+            if not encoding and has_continuation:
+                encoding = continuation_encodings.get(pk)
 
             # A safe list of encodings. Modern clients should only send ASCII or UTF-8.
             # This list will not be extended further. An invalid encoding will leave the
             # value quoted.
             if encoding in {"ascii", "us-ascii", "utf-8", "iso-8859-1"}:
-                # Continuation parts don't require their own charset marker. This is
-                # looser than the RFC, it will persist across different keys and allows
-                # changing the charset during a continuation. But this implementation is
-                # much simpler than tracking the full state.
-                continued_encoding = encoding
                 # invalid bytes are replaced during unquoting
                 pv = unquote(pv, encoding=encoding)
-
-        # Remove quotes. At this point the value cannot be empty or a single quote.
-        if pv[0] == pv[-1] == '"':
-            # HTTP headers use slash, multipart form data uses percent
-            pv = pv[1:-1].replace("\\\\", "\\").replace('\\"', '"').replace("%22", '"')
-
-        match = _continuation_re.search(pk)
-
-        if match:
-            # key*0=a; key*1=b becomes key=ab
-            pk = pk[: match.start()]
-            options[pk] = options.get(pk, "") + pv
         else:
+            # Remove quotes, replace header slash escapes, replace multipart
+            # percent-encoded quotes.
+            pv = unquote_header_value(pv).replace("%22", '"')
+
+        # key*0=a; key*1=b becomes key=ab
+        if has_continuation:
+            # Remove prior normal option.
+            if pk in options:
+                del options[pk]
+
+            # For simplicity, this uses the scan order rather than enforcing
+            # sequential numbering.
+            if pk in continuations:
+                continuations[pk].append(pv)
+            else:
+                continuations[pk] = [pv]
+
+            # Further parts don't require their own charset marker.
+            if encoding:
+                continuation_encodings[pk] = encoding
+        else:
+            # Remove prior continuation option.
+            if pk in continuations:
+                del continuations[pk]
+                continuation_encodings.pop(pk, None)
+
             options[pk] = pv
 
+    options.update({pk: "".join(pv) for pk, pv in continuations.items()})
     return value, options
 
 
@@ -649,7 +673,7 @@ def parse_accept_header(
 
         if "q" in options:
             # pop q, remaining options are reconstructed
-            q_str = options.pop("q").strip()
+            q_str = options.pop("q").strip(" \t")
 
             if _q_value_re.fullmatch(q_str) is None:
                 # ignore an invalid q
@@ -764,12 +788,12 @@ def parse_csp_header(
     items = []
 
     for policy in value.split(";"):
-        policy = policy.strip()
+        policy = policy.strip(" \t")
 
         # Ignore badly formatted policies (no space)
         if " " in policy:
-            directive, value = policy.strip().split(" ", 1)
-            items.append((directive.strip(), value.strip()))
+            directive, _, value = policy.strip(" \t").partition(" ")
+            items.append((directive.strip(" \t"), value.strip(" \t")))
 
     return cls(items, on_update)
 
@@ -840,11 +864,11 @@ def parse_range_header(
 
     ranges = []
     last_end = 0
-    units, rng = value.split("=", 1)
-    units = units.strip().lower()
+    units, _, rng = value.partition("=")
+    units = units.strip(" \t").lower()
 
     for item in rng.split(","):
-        item = item.strip()
+        item = item.strip(" \t")
         if "-" not in item:
             return None
         if item.startswith("-"):
@@ -854,12 +878,17 @@ def parse_range_header(
                 begin = _plain_int(item)
             except ValueError:
                 return None
+
+            # -0 will parse to 0, and is an invalid suffix length.
+            if begin == 0:
+                return None
+
             end = None
             last_end = -1
         elif "-" in item:
-            begin_str, end_str = item.split("-", 1)
-            begin_str = begin_str.strip()
-            end_str = end_str.strip()
+            begin_str, _, end_str = item.partition("-")
+            begin_str = begin_str.strip(" \t")
+            end_str = end_str.strip(" \t")
 
             try:
                 begin = _plain_int(begin_str)
@@ -902,13 +931,13 @@ def parse_content_range_header(
     if value is None:
         return None
     try:
-        units, rangedef = (value or "").strip().split(None, 1)
+        units, _, rangedef = (value or "").strip(" \t").partition(" ")
     except ValueError:
         return None
 
     if "/" not in rangedef:
         return None
-    rng, length_str = rangedef.split("/", 1)
+    rng, _, length_str = rangedef.partition("/")
     if length_str == "*":
         length = None
     else:
@@ -925,7 +954,7 @@ def parse_content_range_header(
     elif "-" not in rng:
         return None
 
-    start_str, stop_str = rng.split("-", 1)
+    start_str, _, stop_str = rng.partition("-")
     try:
         start = _plain_int(start_str)
         stop = _plain_int(stop_str) + 1
@@ -946,10 +975,11 @@ def quote_etag(etag: str, weak: bool = False) -> str:
     """
     if '"' in etag:
         raise ValueError("invalid etag")
-    etag = f'"{etag}"'
+
     if weak:
-        etag = f"W/{etag}"
-    return etag
+        return f'W/"{etag}"'
+
+    return f'"{etag}"'
 
 
 @t.overload
@@ -971,14 +1001,35 @@ def unquote_etag(
     """
     if not etag:
         return None, None
-    etag = etag.strip()
+
     weak = False
+    start = 0
+
     if etag.startswith(("W/", "w/")):
         weak = True
-        etag = etag[2:]
-    if etag[:1] == etag[-1:] == '"':
-        etag = etag[1:-1]
-    return etag, weak
+        start = 2
+
+    if etag.startswith('"', start) and etag.endswith('"', start):
+        return etag[start + 1 : -1], weak
+
+    # invalid unquoted
+    return etag[start:], weak
+
+
+_etag_re = re.compile(
+    r"""
+    [ \t]*  # ignore leading space
+    ([Ww]/)?  # optional weak marker
+    (?:
+        "([^"]*)"  # quoted value
+    |
+        ([^" \t,]+)  # invalid unquoted value, exclude syntax characters
+    )
+    [ \t]*  # ignore trailing space
+    (?:,|\Z)  # only if followed by comma or end
+    """,
+    flags=re.ASCII | re.VERBOSE,
+)
 
 
 def parse_etags(value: str | None) -> ds.ETags:
@@ -989,24 +1040,31 @@ def parse_etags(value: str | None) -> ds.ETags:
     """
     if not value:
         return ds.ETags()
+
+    if value == "*":
+        return ds.ETags(star_tag=True)
+
     strong = []
     weak = []
-    end = len(value)
     pos = 0
-    while pos < end:
-        match = _etag_re.match(value, pos)
-        if match is None:
-            break
-        is_weak, quoted, raw = match.groups()
-        if raw == "*":
-            return ds.ETags(star_tag=True)
-        elif quoted:
-            raw = quoted
+
+    while True:
+        if (m := _etag_re.match(value, pos)) is None:
+            # Skip invalid chars until the next comma.
+            if (pos := value.find(",", pos) + 1) == 0:
+                break
+
+            continue
+
+        is_weak, tag, invalid_unquoted = m.groups()
+        pos = m.end()
+        tag = tag or invalid_unquoted
+
         if is_weak:
-            weak.append(raw)
+            weak.append(tag)
         else:
-            strong.append(raw)
-        pos = match.end()
+            strong.append(tag)
+
     return ds.ETags(strong, weak)
 
 
@@ -1290,6 +1348,11 @@ def dump_cookie(
     happens in the wild.  It's strongly recommended to not use
     non-ASCII values for the keys.
 
+    :param key: The cookie key. This is assumed to be trusted and valid, it
+        must not come from untrusted user input.
+    :param value: The cookie value. It will be quoted if it contains characters
+        not allowed by RFC 6265; ``\123`` octal escapes are used to encode
+        non-ASCII bytes.
     :param max_age: should be a number of seconds, or `None` (default) if
                     the cookie should last only as long as the client's
                     browser session.  Additionally `timedelta` objects

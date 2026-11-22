@@ -64,7 +64,7 @@ class SoongLexer(RegexLexer):
         ],
         'comments': [
             (r'//.*', Comment.Single),
-            (r'/(\\\n)?[*](.|\n)*?[*](\\\n)?/', Comment.Multiline),
+            (r'/(\\\n)?[*][\s\S]*?[*](\\\n)?/', Comment.Multiline),
         ],
         'expr': [
             (r'(true|false)\b', Name.Builtin),

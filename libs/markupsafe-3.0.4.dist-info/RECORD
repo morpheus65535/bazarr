@@ -1,0 +1,13 @@
+markupsafe-3.0.4.dist-info/INSTALLER,sha256=zuuue4knoyJ-UwPPXg8fezS7VCrXJQrAP7zeNuwvFQg,4
+markupsafe-3.0.4.dist-info/METADATA,sha256=ZnZ9djiOzhXUnVDa-2VYke9dhocV5xKOf31zenCzU8Q,2690
+markupsafe-3.0.4.dist-info/RECORD,,
+markupsafe-3.0.4.dist-info/REQUESTED,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
+markupsafe-3.0.4.dist-info/WHEEL,sha256=DkV-ntIm-3VWD87iCIyvXSz28ISStjMGlDRnHg-QlnQ,110
+markupsafe-3.0.4.dist-info/licenses/LICENSE.txt,sha256=SJqOEQhQntmKN7uYPhHg9-HTHwvY-Zp5yESOf_N9B-o,1475
+markupsafe-3.0.4.dist-info/top_level.txt,sha256=qy0Plje5IJuvsCBjejJyhDCjEAdcDLK_2agVcex8Z6U,11
+markupsafe/__init__.py,sha256=H1EnQ7C6bpbB16lFDkJYiemXjrPS0V5y3VfIxH9RhoY,13354
+markupsafe/_native.py,sha256=hSLs8Jmz5aqayuengJJ3kdT5PwNpBWpKrmQSdipndC8,210
+markupsafe/_speedups.c,sha256=t3tC6oVV7-bmKUqvCO5pVSky-G8ACIXpWMaJwkNtJjg,4327
+markupsafe/_speedups.cpython-310-darwin.so,sha256=geY2CO2qKCcP9-6Gk2pCvuNz9Ut2ZBQKm945grVwAFw,50896
+markupsafe/_speedups.pyi,sha256=ENd1bYe7gbBUf2ywyYWOGUpnXOHNJ-cgTNqetlW8h5k,41
+markupsafe/py.typed,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0

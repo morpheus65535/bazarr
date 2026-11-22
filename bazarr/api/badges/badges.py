@@ -1,14 +1,15 @@
 # coding=utf-8
 
 import operator
-import ast
 
 from functools import reduce
 from flask_restx import Resource, Namespace, fields, marshal
 
-from app.database import get_exclusion_clause, TableEpisodes, TableShows, TableMovies, database, select
+from app.database import get_exclusion_clause, TableEpisodes, TableShows, TableMovies, TableMissingSubtitles, database, \
+    select, func
 from app.config import settings
 
+from app.get_args import args
 from app.get_providers import get_throttled_providers
 from app.signalr_client import sonarr_signalr_client, radarr_signalr_client
 from app.announcements import get_all_announcements
@@ -34,33 +35,29 @@ class Badges(Resource):
 
     @authenticate
     @api_ns_badges.response(401, 'Not Authenticated')
-    @api_ns_badges.doc(parser=None)
+    @api_ns_badges.expect(None)
     def get(self):
         """Get badges count to update the UI"""
-        episodes_conditions = [(TableEpisodes.missing_subtitles.is_not(None)),
-                               (TableEpisodes.missing_subtitles != '[]')]
+        episodes_conditions = [(TableMissingSubtitles.media_type == 'series'),
+                               (TableMissingSubtitles.media_id == TableEpisodes.sonarrEpisodeId)]
         episodes_conditions += get_exclusion_clause('series')
-        missing_episodes = database.execute(
-            select(TableEpisodes.missing_subtitles)
+        missing_episodes_count = database.execute(
+            select(func.count(TableMissingSubtitles.id))
             .select_from(TableEpisodes)
             .join(TableShows)
+            .join(TableMissingSubtitles, TableMissingSubtitles.media_id == TableEpisodes.sonarrEpisodeId)
             .where(reduce(operator.and_, episodes_conditions))) \
-            .all()
-        missing_episodes_count = 0
-        for episode in missing_episodes:
-            missing_episodes_count += len(ast.literal_eval(episode.missing_subtitles))
+            .scalar()
 
-        movies_conditions = [(TableMovies.missing_subtitles.is_not(None)),
-                             (TableMovies.missing_subtitles != '[]')]
+        movies_conditions = [(TableMissingSubtitles.media_type == 'movie'),
+                             (TableMissingSubtitles.media_id == TableMovies.radarrId)]
         movies_conditions += get_exclusion_clause('movie')
-        missing_movies = database.execute(
-            select(TableMovies.missing_subtitles)
+        missing_movies_count = database.execute(
+            select(func.count(TableMissingSubtitles.id))
             .select_from(TableMovies)
+            .join(TableMissingSubtitles, TableMissingSubtitles.media_id == TableMovies.radarrId)
             .where(reduce(operator.and_, movies_conditions))) \
-            .all()
-        missing_movies_count = 0
-        for movie in missing_movies:
-            missing_movies_count += len(ast.literal_eval(movie.missing_subtitles))
+            .scalar()
 
         throttled_providers = len(get_throttled_providers())
 
@@ -68,13 +65,19 @@ class Badges(Resource):
 
         live_str = "LIVE" if settings.general.show_live_badge else ""
 
+        if args.no_signalr:
+            sonarr_signalr = radarr_signalr = "OFF"
+        else:
+            sonarr_signalr = live_str if sonarr_signalr_client.connected else "DOWN"
+            radarr_signalr = live_str if radarr_signalr_client.connected else "DOWN"
+
         result = {
             "episodes": missing_episodes_count,
             "movies": missing_movies_count,
             "providers": throttled_providers,
             "status": health_issues,
-            'sonarr_signalr': live_str if sonarr_signalr_client.connected else "DOWN",
-            'radarr_signalr': live_str if radarr_signalr_client.connected else "DOWN",
+            'sonarr_signalr': sonarr_signalr,
+            'radarr_signalr': radarr_signalr,
             'announcements': len(get_all_announcements()),
         }
         return marshal(result, self.get_model)

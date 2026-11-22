@@ -1,20 +1,27 @@
 from __future__ import annotations
 
+import json
 import os
 import warnings
 from collections import defaultdict
+from collections.abc import Iterator
+from collections.abc import Sequence
 from functools import lru_cache
-from json import JSONDecoder
 from pathlib import Path
 from typing import Any
-from typing import Iterator
+from typing import Literal
+from typing import Optional
 from typing import TYPE_CHECKING
+from typing import TypedDict
 from typing import TypeVar
+
+from dynaconf.utils.functional import empty
 
 if TYPE_CHECKING:  # pragma: no cover
     from dynaconf.base import LazySettings
     from dynaconf.base import Settings
-    from dynaconf.utils.boxing import DynaBox
+    from dynaconf.nodes import DataDict
+    from dynaconf.nodes import DataNode
 
 
 BANNER = """
@@ -30,9 +37,15 @@ if os.name == "nt":  # pragma: no cover
     # windows can't handle the above charmap
     BANNER = "DYNACONF"
 
+ListMergeOptions = Literal["merge", "shallow", "deep"]
+
 
 def object_merge(
-    old: Any, new: Any, unique: bool = False, full_path: list[str] = None
+    old: Any,
+    new: Any,
+    unique: bool = False,
+    full_path: Optional[list[str]] = None,
+    list_merge: ListMergeOptions = "merge",
 ) -> Any:
     """
     Recursively merge two data structures, new is mutated in-place.
@@ -41,6 +54,11 @@ def object_merge(
     :param new: The new data to get old values merged in to.
     :param unique: When set to True existing list items are not set.
     :param full_path: Indicates the elements of a tree.
+    :param list_merge: Methods to use to merge lists
+        - merge: default merge behavior, i.e. (unique) concatenation
+        - shallow: replace the top-most level list of the nested structure
+        - deep: iteratively traverse the nested structure and replace
+            the element in the list at the level specified by the full_path
     """
     if full_path is None:
         full_path = []
@@ -54,10 +72,27 @@ def object_merge(
             new.remove("dynaconf_merge_unique")
             unique = True
 
-        for item in old[::-1]:
-            if unique and item in new:
-                continue
-            new.insert(0, item)
+        if list_merge == "merge" or unique:
+            for item in old[::-1]:
+                if unique and item in new:
+                    continue
+                new.insert(0, item)
+        elif list_merge == "deep" and len(full_path) > 0:  # element-wise merge
+            new.extend([[]] * max(len(old) - len(new), 0))
+            for ii, item in enumerate(old):
+                # replace at corresponding positions
+                if list_merge == "shallow":
+                    new[ii] = new[ii] or item
+                else:  # deep replace
+                    if not new[ii]:  # copy over the older values
+                        new[ii] = item
+                    elif item:  # old[ii] is not None
+                        object_merge(
+                            old[ii],
+                            new[ii],
+                            full_path=full_path[1:],
+                            list_merge="deep",
+                        )
 
     if isinstance(old, dict) and isinstance(new, dict):
         existing_value = recursive_get(old, full_path)  # doesn't handle None
@@ -66,24 +101,21 @@ def object_merge(
         # data coming from source, in `new` can be mix case: KEY4|key4|Key4
         # data existing on `old` object has the correct case: key4|KEY4|Key4
         # So we need to ensure that new keys matches the existing keys
-        for new_key in list(new.keys()):
-            all_keys = tuple(old.keys())
-            correct_case_key = find_the_correct_casing(new_key, all_keys)
+        for new_key in tuple(new.keys()):
+            correct_case_key = find_the_correct_casing(
+                new_key, tuple(old.keys())
+            )
             if correct_case_key:
                 new[correct_case_key] = new.pop(new_key)
 
         def safe_items(data):
             """
-            Get items from DynaBox without triggering recursive evaluation
+            Get items from DataDict without triggering recursive evaluation
             """
-            if data.__class__.__name__ == "DynaBox":
+            if data.__class__.__name__ == "DataDict":
                 return data.items(bypass_eval=True)
             else:
                 return data.items()
-
-        # TODO @rochacbruno: Make the above line work with 2 dynaconf_merge
-        # https://github.com/dynaconf/dynaconf/issues/todo
-        # {"a": ["d", "e"], "dynaconf_merge": True},
 
         # local mark may set dynaconf_merge=False
         should_merge = new.pop("dynaconf_merge", True)
@@ -93,6 +125,7 @@ def object_merge(
                 # but the new value on the end of full path is the same
                 if (
                     existing_value is not None
+                    and len(full_path) == 1
                     and old_key.lower() == full_path[-1].lower()
                     and existing_value is value
                 ):
@@ -103,37 +136,75 @@ def object_merge(
                 if old_key not in new:
                     new[old_key] = value
                 else:
-                    object_merge(
+                    new[old_key] = object_merge(
                         value,
                         new[old_key],
                         full_path=full_path[1:] if full_path else None,
+                        list_merge=list_merge,
                     )
 
-        handle_metavalues(old, new)
+            # Restore old key order: keys that exist in old keep old's
+            # relative order; keys that are new-only come last.
+            old_keys = list(safe_items(old))
+            old_key_set = {k for k, _ in old_keys}
+            new_only = [k for k in new if k not in old_key_set]
+            ordered = [k for k, _ in old_keys if k in new] + new_only
+            for k in ordered:
+                new[k] = new.pop(k)
+
+        handle_metavalues(old, new, list_merge=list_merge)
 
     return new
 
 
 def recursive_get(
-    obj: DynaBox | dict[str, int] | dict[str, str | int],
+    obj: DataDict | dict[str, int] | dict[str, str | int],
     names: list[str] | None,
 ) -> Any:
-    """Given a dot accessible object and a list of names `foo.bar.zaz`
-    gets recursively all names one by one obj.foo.bar.zaz.
+    """Given a dot accessible object and a list of names `foo.bar.[1].zaz`
+    gets recursively all names one by one obj.foo.bar.[1].zaz.
     """
-    if not names:
+    if not names or obj is None:
         return
     head, *tail = names
-    result = getattr(obj, head, None)
+    if "[" not in head:
+        result = getattr(obj, head, None)
+    elif (index_string := head[1:-1]).isdigit():  # expect "[123]"
+        index = int(index_string)
+        result = obj[index] if index < len(obj) else []
+    else:
+        result = getattr(obj, head, None)
+
     if not tail:
         return result
+
     return recursive_get(result, tail)
 
 
+def _strip_merge_tokens(data: dict) -> None:
+    """Remove dynaconf_merge tokens from a dict tree without merging."""
+    for key in list(data.keys()):
+        if isinstance(data[key], dict):
+            data[key].pop("dynaconf_merge", None)
+            data[key].pop("dynaconf_merge_unique", None)
+            _strip_merge_tokens(data[key])
+
+
 def handle_metavalues(
-    old: DynaBox | dict[str, int] | dict[str, str | int], new: Any
+    old: DataDict | dict[str, int] | dict[str, str | int],
+    new: Any,
+    list_merge: ListMergeOptions = "merge",
 ) -> None:
-    """Cleanup of MetaValues on new dict"""
+    """
+    Cleanup of MetaValues on new dict
+    :param old: old values
+    :param new: new values
+    :param list_merge: Methods to use to merge lists
+        - merge: default merge behavior, i.e. (unique) concatenation
+        - shallow: replace the top-most level list of the nested structure
+        - deep: iteratively traverse the nested structure and replace
+            the element in the list at the level specified by the full_path
+    """
 
     for key in list(new.keys()):
         # MetaValue instances
@@ -147,7 +218,9 @@ def handle_metavalues(
         elif getattr(new[key], "_dynaconf_merge", False):
             # a Merge on `new` triggers merge with existing data
             new[key] = object_merge(
-                old.get(key), new[key].unwrap(), unique=new[key].unique
+                old.get(key),
+                new[key].unwrap(),
+                unique=new[key].unique,
             )
         elif getattr(new[key], "_dynaconf_insert", False):
             # Insert on `new` triggers insert with existing data
@@ -174,7 +247,7 @@ def handle_metavalues(
                     value.remove("dynaconf_merge_unique")
                     unique = True
 
-                for item in old.get(key)[::-1]:
+                for item in (old.get(key) or [])[::-1]:
                     if unique and item in value:
                         continue
                     value.insert(0, item)
@@ -190,15 +263,53 @@ def handle_metavalues(
                 new[key] = local_merge
 
             if local_merge:
-                new[key] = object_merge(old.get(key), new[key])
+                new[key] = object_merge(
+                    old.get(key), new[key], list_merge=list_merge
+                )
+            elif key not in old:
+                _strip_merge_tokens(new[key])
 
 
+class FakeCore:
+    """
+    Workaround to support DynaconfCore + DynaconfConfig in DynaconfDict.
+
+    When/if re-writing the loaders module we should get rid of this.
+    """
+
+    def __init__(self, dynaconf_dict):  # pragma: no cover
+        self.dynaconf_dict = dynaconf_dict
+
+    def __getattr__(self, name):  # pragma: no cover
+        if name == "config":
+            return self
+        try:
+            return getattr(self.dynaconf_dict, f"_{name}")
+        except AttributeError:
+            return getattr(self.dynaconf_dict, name)
+
+    def __setattr__(self, name, value):  # pragma: no cover
+        underscore_name = f"_{name}"
+        if name == "dynaconf_dict":
+            super().__setattr__(name, value)
+        elif name in self.dynaconf_dict:
+            setattr(self.dynaconf_dict, name, value)
+        elif underscore_name in self.dynaconf_dict:
+            setattr(self.dynaconf_dict, underscore_name, value)
+        else:
+            # Calling this for properly raising
+            setattr(self.dynaconf_dict, name, value)
+
+
+# NOTE: can we get rid of this? (and consequently of FakeCore)
 class DynaconfDict(dict):
     """A dict representing en empty Dynaconf object
     useful to run loaders in to a dict for testing"""
 
     def __init__(self, *args, **kwargs):
-        self._fresh = False
+        self.__core__ = FakeCore(
+            self
+        )  # compat with DynaconfCore + DynaconfConfig
         self._loaded_envs = []
         self._loaded_hooks = defaultdict(dict)
         self._loaded_py_modules = []
@@ -244,9 +355,37 @@ RENAMED_VARS = {
     "GLOBAL_ENV_FOR_DYNACONF": "ENVVAR_PREFIX_FOR_DYNACONF",
 }
 
+MISSPELL_OPTIONS = {
+    "settings_files": "settings_file",
+    "SETTINGS_FILES": "SETTINGS_FILE",
+    "environment": "environments",
+    "ENVIRONMENT": "ENVIRONMENTS",
+}
 
-def compat_kwargs(kwargs: dict[str, Any]) -> None:
-    """To keep backwards compat change the kwargs to new names"""
+
+def normalize_kwargs(kwargs: dict[str, Any]) -> dict[str, Any]:
+    """Resolve names in the user provided keyword arguments."""
+    from dynaconf.base import UPPER_DEFAULT_SETTINGS  # avoid circular import
+
+    for_dynaconf_keys = {
+        key for key in UPPER_DEFAULT_SETTINGS if key.endswith("_FOR_DYNACONF")
+    }
+
+    # Fix config name misspells. E.g:
+    # "settings_files" -> "settings_file"
+    for misspell, correct in MISSPELL_OPTIONS.items():
+        if misspell in kwargs:
+            kwargs[correct] = kwargs.pop(misspell)
+
+    # Replace `_FOR_DYNACONF` aliases. E.g:
+    # "root_PATH" -> "ROOT_PATH_FOR_DYNACONF"
+    for key in tuple(kwargs.keys()):
+        normalized_key = f"{key.upper()}_FOR_DYNACONF"
+        if normalized_key in for_dynaconf_keys:
+            kwargs[normalized_key] = kwargs.pop(key)
+
+    # Keep backwards compatibility with renamed options. E.g:
+    # "DYNACONF_NAMESPACE" -> "ENV_FOR_DYNACONF"
     warn_deprecations(kwargs)
     for old, new in RENAMED_VARS.items():
         if old in kwargs:
@@ -255,6 +394,19 @@ def compat_kwargs(kwargs: dict[str, Any]) -> None:
             for c_old, c_new in RENAMED_VARS.items():
                 if c_new == new:
                     kwargs[c_old] = kwargs[new]
+
+    # A list passed as `env` is the programmatic equivalent of the
+    # comma-separated ENV_FOR_DYNACONF environment variable. Normalize it here
+    # so all loaders can use their existing multi-environment handling. #1278
+    env = kwargs.get("ENV_FOR_DYNACONF")
+    if isinstance(env, list):
+        if not all(isinstance(item, str) for item in env):
+            raise TypeError("'env' must be a string or a list of strings")
+        kwargs["ENV_FOR_DYNACONF"] = ",".join(env)
+    elif env is not None and not isinstance(env, str):
+        raise TypeError("'env' must be a string or a list of strings")
+
+    return kwargs
 
 
 class Missing:
@@ -267,7 +419,7 @@ class Missing:
         """Respond to boolean duck-typing."""
         return False
 
-    def __eq__(self, other: DynaBox | Missing) -> bool:
+    def __eq__(self, other: DataDict | Missing) -> bool:
         """Equality check for a singleton."""
 
         return isinstance(other, self.__class__)
@@ -308,7 +460,7 @@ def warn_deprecations(data: Any) -> None:
 def trimmed_split(
     s: str, seps: str | tuple[str, str] = (";", ",")
 ) -> list[str]:
-    """Given a string s, split is by one of one of the seps."""
+    """Given a string s, split is by one of the seps."""
     for sep in seps:
         if sep not in s:
             continue
@@ -330,6 +482,13 @@ def ensure_a_list(data: T | list[T]) -> list[T]:
         data = trimmed_split(data)  # settings.toml,other.yaml
         return data
     return [data]
+
+
+def ensure_upperfied_list(sequence: Sequence) -> list:
+    """Ensure list of strings contains upperfied items."""
+    return [
+        upperfy(item) if isinstance(item, str) else item for item in sequence
+    ]
 
 
 def build_env_list(obj: Settings | LazySettings, env: str | None) -> list[str]:
@@ -370,6 +529,7 @@ def build_env_list(obj: Settings | LazySettings, env: str | None) -> list[str]:
     return env_list
 
 
+@lru_cache
 def upperfy(key: str) -> str:
     """Receive a string key and returns its upper version.
 
@@ -413,7 +573,7 @@ def multi_replace(text: str, patterns: dict[str, str]) -> str:
 
 
 def extract_json_objects(
-    text: str, decoder: JSONDecoder = JSONDecoder()
+    text: str, decoder=json.JSONDecoder()
 ) -> Iterator[dict[str, int | dict[Any, Any]]]:
     """Find JSON objects in text, and yield the decoded JSON data
 
@@ -434,33 +594,6 @@ def extract_json_objects(
             pos = match + 1
 
 
-def recursively_evaluate_lazy_format(
-    value: Any, settings: Settings | LazySettings
-) -> Any:
-    """Given a value as a data structure, traverse all its members
-    to find Lazy values and evaluate it.
-
-    For example: Evaluate values inside lists and dicts
-    """
-    if getattr(value, "_dynaconf_lazy_format", None):
-        value = value(settings)
-
-    if isinstance(value, list):
-        # This must be the right way of doing it, but breaks validators
-        # To be changed on 4.0.0
-        # for idx, item in enumerate(value):
-        #     value[idx] = _recursively_evaluate_lazy_format(item, settings)
-
-        value = value.__class__(
-            [
-                recursively_evaluate_lazy_format(item, settings)
-                for item in value
-            ]
-        )
-
-    return value
-
-
 def isnamedtupleinstance(value):
     """Check if value is a namedtuple instance
 
@@ -470,7 +603,7 @@ def isnamedtupleinstance(value):
 
     t = type(value)
     b = t.__bases__
-    if len(b) != 1 or b[0] != tuple:
+    if len(b) != 1 or b[0] is not tuple:
         return False
     f = getattr(t, "_fields", None)
     if not isinstance(f, tuple):
@@ -484,11 +617,11 @@ def find_the_correct_casing(
 ) -> str | None:
     """Given a key, find the proper casing in data.
 
-    Return 'None' for non-str key types.
+    Non-str keys in data are skipped.
 
     Arguments:
-        key {str} -- A key to be searched in data_keys
-        data_keys {tuple} -- A tuple with all the dict keys
+        key {str} -- A key to be searched in data
+        data {dict} -- A dict to be searched
 
     Returns:
         str -- The proper casing of the key in data
@@ -497,7 +630,7 @@ def find_the_correct_casing(
         return key
     for k in data_keys:
         if not isinstance(k, str):
-            return None
+            continue
         if k.lower() == key.lower():
             return k
         if k.replace(" ", "_").lower() == key.lower():
@@ -523,3 +656,57 @@ def prepare_json(data: Any) -> Any:
             return_data.append(value)
         return return_data
     return data
+
+
+def to_dict(obj: Any) -> Any:
+    """Recursively convert dict/list subclasses to plain Python types."""
+    if isinstance(obj, dict):
+        return {k: to_dict(obj[k]) for k in obj}
+    elif isinstance(obj, list):
+        return [to_dict(x) for x in obj]
+    return obj
+
+
+def container_items(container: dict | list):
+    if isinstance(container, dict):
+        return container.items()
+    elif isinstance(container, list):
+        return enumerate(container)
+    else:
+        raise TypeError(f"Unsupported container type: {type(container)}")
+
+
+def data_print(data: DataNode, debug=False):
+    """Data print utilities.
+
+    Params:
+        data: The data to be displayed.
+        debug: Whether internal info should be displayed for debugging
+    """
+
+    if not debug:
+        print(json.dumps(data, indent=4))  # noqa
+        return
+
+    class Node(TypedDict):
+        metadata: dict
+        children: list
+
+    def walk(data):
+        children = []
+        for k, v in container_items(data):
+            if isinstance(v, (dict, list)):
+                node = Node(
+                    metadata=v.__meta__.__dict__,
+                    children=walk(v),
+                )
+                children.append({k: node})
+            else:
+                children.append({k: v})
+        return children
+
+    root = Node(
+        metadata=data.__meta__.__dict__,
+        children=walk(data),
+    )
+    print(json.dumps(root, indent=4))  # noqa

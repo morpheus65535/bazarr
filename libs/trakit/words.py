@@ -9,15 +9,17 @@ suppress_chars = frozenset("'")
 release_name_re = re.compile(r'(?P<release>[^\.\s]+(?:\.[^\.\s]+){2,})')
 
 
-def to_words(value: str,
-             separators: typing.FrozenSet[str] = seps,
-             ignore_chars: typing.FrozenSet[str] = suppress_chars,
-             predicate: typing.Callable[[str], bool] = lambda x: True):
+def to_words(
+    value: str,
+    separators: frozenset[str] = seps,
+    ignore_chars: frozenset[str] = suppress_chars,
+    predicate: typing.Callable[[str], bool] = lambda x: True,
+) -> list[Match]:
     input_string = value
     start = 0
     i = 0
     word = ''
-    words: typing.List[Match] = []
+    words: list[Match] = []
     for c in input_string:
         i += 1
         if c in ignore_chars:
@@ -52,8 +54,8 @@ def to_words(value: str,
     return words
 
 
-def to_combinations(words: typing.List[Match], max_items: int):
-    results: typing.List[typing.List[Match]] = []
+def to_combinations(words: list[Match], max_items: int) -> list[list[Match]]:
+    results: list[list[Match]] = []
     n_words = len(words)
     cur_size = min(max_items, n_words)
     start = 0
@@ -70,11 +72,11 @@ def to_combinations(words: typing.List[Match], max_items: int):
     return results
 
 
-def to_sentence(combination: typing.List[Match]):
+def to_sentence(combination: list[Match]) -> str:
     return ' '.join([c.value for c in combination])
 
 
-def to_match(combination: typing.List[Match], value: typing.Any):
+def to_match(combination: list[Match], value: typing.Any) -> Match:
     start = combination[0].start
     end = combination[-1].end
     input_string = combination[0].input_string
@@ -82,15 +84,16 @@ def to_match(combination: typing.List[Match], value: typing.Any):
     return Match(start, end, value=value, input_string=input_string)
 
 
-def blank(string: str, start: int, end: int):
+def blank(string: str, start: int, end: int) -> str:
     return string[:start] + ''.ljust(end - start, ' ') + string[end:]
 
 
-def blank_match(match: Match):
+def blank_match(match: Match) -> str:
+    assert match.input_string is not None
     return blank(match.input_string, match.start, match.end)
 
 
-def blank_release_names(value: str):
+def blank_release_names(value: str) -> str:
     result = value
     match = release_name_re.search(value)
     while match:
@@ -100,7 +103,7 @@ def blank_release_names(value: str):
     return result
 
 
-def blank_base_name_and_extension(value: str):
+def blank_base_name_and_extension(value: str) -> str:
     p = Path(value)
     stems = p.stem.split('.')
 

@@ -141,7 +141,7 @@ class DtdLexer(RegexLexer):
 
         'common': [
             (r'\s+', Text),
-            (r'(%|&)[^;]*;', Name.Entity),
+            (r'[%&][^;]*;', Name.Entity),
             ('<!--', Comment, 'comment'),
             (r'[(|)*,?+]', Operator),
             (r'"[^"]*"', String.Double),
@@ -202,7 +202,7 @@ class XmlLexer(RegexLexer):
     name = 'XML'
     aliases = ['xml']
     filenames = ['*.xml', '*.xsl', '*.rss', '*.xslt', '*.xsd',
-                 '*.wsdl', '*.wsf', '*.xbrl', '*.pom']
+                 '*.wsdl', '*.wsf', '*.xbrl', '*.pom', '*.svg']
     mimetypes = ['text/xml', 'application/xml', 'image/svg+xml',
                  'application/rss+xml', 'application/atom+xml']
     url = 'https://www.w3.org/XML'

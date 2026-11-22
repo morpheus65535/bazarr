@@ -97,6 +97,10 @@ export const useSettingsMutation = (options?: { silent?: boolean }) => {
         queryKey: [QueryKeys.Plex, "libraries"],
       });
 
+      // Lets the onboarding tour advance only after the backend confirms the
+      // save, rather than on the button click.
+      window.dispatchEvent(new Event("bazarr-settings-saved"));
+
       if (!silent) {
         showNotification(
           notification.info("Settings saved", "Your changes have been saved"),
@@ -300,7 +304,7 @@ export const useSystem = () => {
 
       const redirectUrl = safeReturnTo
         ? `${Environment.baseUrl}${safeReturnTo}`
-        : Environment.baseUrl;
+        : `${Environment.baseUrl}/`;
 
       window.location.replace(redirectUrl);
     },
@@ -349,4 +353,14 @@ export const useSystem = () => {
 export const useSystemWebhookTestMutation = () =>
   useMutation({
     mutationFn: () => api.system.testWebhook(),
+  });
+
+export const useOpenAICompatibleTranslatorTestMutation = () =>
+  useMutation({
+    mutationFn: (data: {
+      baseUrl: string;
+      model: string;
+      apiKey: string;
+      timeout: number;
+    }) => api.system.testOpenAICompatibleTranslator(data),
   });

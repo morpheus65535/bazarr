@@ -40,7 +40,7 @@ class EpisodesBlacklist(Resource):
 
     @authenticate
     @api_ns_episodes_blacklist.response(401, 'Not Authenticated')
-    @api_ns_episodes_blacklist.doc(parser=get_request_parser)
+    @api_ns_episodes_blacklist.expect(get_request_parser)
     def get(self):
         """List blacklisted episodes subtitles"""
         args = self.get_request_parser.parse_args()
@@ -83,7 +83,7 @@ class EpisodesBlacklist(Resource):
     post_request_parser.add_argument('subtitles_path', type=str, required=True, help='Subtitles file path')
 
     @authenticate
-    @api_ns_episodes_blacklist.doc(parser=post_request_parser)
+    @api_ns_episodes_blacklist.expect(post_request_parser)
     @api_ns_episodes_blacklist.response(200, 'Success')
     @api_ns_episodes_blacklist.response(401, 'Not Authenticated')
     @api_ns_episodes_blacklist.response(404, 'Episode not found')
@@ -140,7 +140,7 @@ class EpisodesBlacklist(Resource):
     delete_request_parser.add_argument('subs_id', type=str, required=False, help='Subtitles ID')
 
     @authenticate
-    @api_ns_episodes_blacklist.doc(parser=delete_request_parser)
+    @api_ns_episodes_blacklist.expect(delete_request_parser)
     @api_ns_episodes_blacklist.response(204, 'Success')
     @api_ns_episodes_blacklist.response(401, 'Not Authenticated')
     def delete(self):

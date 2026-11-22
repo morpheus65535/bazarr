@@ -142,13 +142,13 @@ def test_check_login_form_auth_success():
     def test_function():
         return "form_authenticated_response"
 
-    # Mock Flask request context with valid session
+    # Mock Flask request context with a live form login session
     app = Flask(__name__)
     app.secret_key = 'test_secret'
 
     with app.test_request_context():
         with patch('bazarr.app.ui.settings') as mock_settings, \
-             patch('bazarr.app.ui.session', {'logged_in': True}):
+             patch('bazarr.app.ui.is_form_session_active', return_value=True):
 
             mock_settings.auth.type = 'form'
 
@@ -168,7 +168,7 @@ def test_check_login_form_auth_failure():
     app = Flask(__name__)
     with app.test_request_context():
         with patch('bazarr.app.ui.settings') as mock_settings, \
-             patch('bazarr.app.ui.session', {}) as mock_session, \
+             patch('bazarr.app.ui.is_form_session_active', return_value=False), \
              patch('bazarr.app.ui.abort') as mock_abort:
 
             mock_settings.auth.type = 'form'

@@ -1,0 +1,320 @@
+{
+ "movieTranslations": {
+  "items": [
+   {
+    "id": 578,
+    "movieId": 324,
+    "movieTitle": "Inception",
+    "movieOriginalTitle": "Inception",
+    "movieSlug": "inception-2010",
+    "movieYear": 2010,
+    "movieGenres": [
+     "Kriminalistički",
+     "Akcija",
+     "Znanstvena fantastika"
+    ],
+    "posterUrl": "https://www.prijevodi-online.org/api/v1/movies/324/poster?v=901",
+    "memberId": 6957,
+    "username": "nebojsa66",
+    "contributors": [
+     {
+      "memberId": 1567,
+      "username": "TBA"
+     }
+    ],
+    "title": "Inception.720p.BluRay.x264CROSSBOW.zip",
+    "slug": "inception-720p-bluray-x264crossbow-zip",
+    "fileId": 902,
+    "fileName": "crossbow.inception.720p.srt.zip",
+    "fileSize": 41241,
+    "downloadCount": 0,
+    "hearingImpaired": false,
+    "copyrightFree": true,
+    "machineTranslated": false,
+    "cdCount": 1,
+    "fps": null,
+    "is3d": false,
+    "versionId": null,
+    "versionTitle": "",
+    "languageId": 1,
+    "languageName": "Hrvatski",
+    "languageCode": "hr",
+    "languageCountryCode": "hr",
+    "releaseFormatName": "BluRay",
+    "createdAt": "2021-10-23T10:03:16.000Z",
+    "updatedAt": "2021-10-23T10:03:16.000Z",
+    "status": "approved",
+    "isPublished": true,
+    "approvedAt": "2021-10-23T10:03:16.000Z",
+    "reviewedBy": null,
+    "reviewerName": null,
+    "reviewStartedAt": null,
+    "rejectionReasons": [],
+    "rejectionReason": null,
+    "note": null,
+    "behindTokens": true,
+    "originalId": null,
+    "originalKind": null,
+    "origin": null,
+    "price": 1,
+    "isPurchased": false,
+    "isRevoked": false
+   },
+   {
+    "id": 579,
+    "movieId": 324,
+    "movieTitle": "Inception",
+    "movieOriginalTitle": "Inception",
+    "movieSlug": "inception-2010",
+    "movieYear": 2010,
+    "movieGenres": [
+     "Kriminalistički",
+     "Akcija",
+     "Znanstvena fantastika"
+    ],
+    "posterUrl": "https://www.prijevodi-online.org/api/v1/movies/324/poster?v=901",
+    "memberId": 19967,
+    "username": "wlaky",
+    "contributors": [],
+    "title": "Inception [2010] 1080p BluRay AAC x264-ETRG.zip",
+    "slug": "inception-2010-1080p-bluray-aac-x264-etrg-zip",
+    "fileId": 903,
+    "fileName": "Inception [2010] 1080p BluRay AAC x264-ETRG.srt.zip",
+    "fileSize": 42376,
+    "downloadCount": 0,
+    "hearingImpaired": false,
+    "copyrightFree": false,
+    "machineTranslated": false,
+    "cdCount": 1,
+    "fps": null,
+    "is3d": false,
+    "versionId": null,
+    "versionTitle": "",
+    "languageId": 2,
+    "languageName": "Srpski",
+    "languageCode": "sr",
+    "languageCountryCode": "rs",
+    "releaseFormatName": "BluRay",
+    "createdAt": "2021-10-23T10:03:16.000Z",
+    "updatedAt": "2021-10-23T10:03:16.000Z",
+    "status": "approved",
+    "isPublished": true,
+    "approvedAt": "2021-10-23T10:03:16.000Z",
+    "reviewedBy": null,
+    "reviewerName": null,
+    "reviewStartedAt": null,
+    "rejectionReasons": [],
+    "rejectionReason": null,
+    "note": null,
+    "behindTokens": true,
+    "originalId": null,
+    "originalKind": null,
+    "origin": null,
+    "price": 1,
+    "isPurchased": false,
+    "isRevoked": false
+   }
+  ],
+  "total": 2
+ },
+ "languages": [
+  {
+   "id": 1,
+   "code": "hr",
+   "name": "Hrvatski",
+   "countryCode": "hr"
+  },
+  {
+   "id": 2,
+   "code": "sr",
+   "name": "Srpski",
+   "countryCode": "rs"
+  },
+  {
+   "id": 3,
+   "code": "bs",
+   "name": "Bosanski",
+   "countryCode": "ba"
+  },
+  {
+   "id": 4,
+   "code": "cnr",
+   "name": "Crnogorski",
+   "countryCode": "me"
+  },
+  {
+   "id": 6,
+   "code": "sr-cyr",
+   "name": "Srpski (ćirilica)",
+   "countryCode": "rs"
+  },
+  {
+   "id": 8,
+   "code": "??",
+   "name": "Nepoznato",
+   "countryCode": null
+  }
+ ],
+ "releaseFormats": [
+  {
+   "id": 12,
+   "name": "1080i"
+  },
+  {
+   "id": 11,
+   "name": "1080p"
+  },
+  {
+   "id": 6,
+   "name": "1080p.BluRay"
+  },
+  {
+   "id": 13,
+   "name": "2160p"
+  },
+  {
+   "id": 7,
+   "name": "2160p.BluRay"
+  },
+  {
+   "id": 9,
+   "name": "480p"
+  },
+  {
+   "id": 10,
+   "name": "720p"
+  },
+  {
+   "id": 5,
+   "name": "720p.BluRay"
+  },
+  {
+   "id": 4,
+   "name": "720p.WEB-DL"
+  },
+  {
+   "id": 18,
+   "name": "BDRip"
+  },
+  {
+   "id": 17,
+   "name": "BluRay"
+  },
+  {
+   "id": 19,
+   "name": "BRRip"
+  },
+  {
+   "id": 28,
+   "name": "CAMRip"
+  },
+  {
+   "id": 24,
+   "name": "DSR"
+  },
+  {
+   "id": 35,
+   "name": "dTV"
+  },
+  {
+   "id": 34,
+   "name": "DVB"
+  },
+  {
+   "id": 39,
+   "name": "DVD"
+  },
+  {
+   "id": 36,
+   "name": "DVD5"
+  },
+  {
+   "id": 37,
+   "name": "DVD9"
+  },
+  {
+   "id": 38,
+   "name": "DVDR"
+  },
+  {
+   "id": 21,
+   "name": "DVDRip"
+  },
+  {
+   "id": 22,
+   "name": "DVDScr"
+  },
+  {
+   "id": 27,
+   "name": "HDCAM"
+  },
+  {
+   "id": 31,
+   "name": "HDRip"
+  },
+  {
+   "id": 29,
+   "name": "HDTV"
+  },
+  {
+   "id": 1,
+   "name": "HDTV x264"
+  },
+  {
+   "id": 2,
+   "name": "HDTV XviD"
+  },
+  {
+   "id": 3,
+   "name": "HDTV-720p"
+  },
+  {
+   "id": 23,
+   "name": "PDTV"
+  },
+  {
+   "id": 20,
+   "name": "REMUX"
+  },
+  {
+   "id": 33,
+   "name": "SATRip"
+  },
+  {
+   "id": 32,
+   "name": "SCR"
+  },
+  {
+   "id": 40,
+   "name": "SD"
+  },
+  {
+   "id": 30,
+   "name": "TELESYNC"
+  },
+  {
+   "id": 25,
+   "name": "TVRip"
+  },
+  {
+   "id": 8,
+   "name": "UHD.BluRay"
+  },
+  {
+   "id": 26,
+   "name": "VHSRip"
+  },
+  {
+   "id": 16,
+   "name": "WEB"
+  },
+  {
+   "id": 14,
+   "name": "WEB-DL"
+  },
+  {
+   "id": 15,
+   "name": "WEBRip"
+  }
+ ]
+}

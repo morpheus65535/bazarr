@@ -46,21 +46,41 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 from itertools import chain
-from json import dumps
+from json import dumps, loads
+from json.decoder import JSONDecodeError
 import re
 from typing import Any
 
 import requests
 
+from ..apprise_attachment import AppriseAttachment
 from ..attachment.base import AttachBase
 from ..common import NotifyFormat, NotifyImageSize, NotifyType
+from ..conversion import commonmark_sections
+from ..exception import AppriseImproperlyConfigured
 from ..locale import gettext_lazy as _
 from ..utils.parse import parse_bool, parse_list, validate_regex
+from ..utils.templates import TemplateType, apply_template
 from .base import NotifyBase
 
 # Used to detect user/role IDs and @here/@everyone tokens.
 USER_ROLE_DETECTION_RE = re.compile(
     r"\s*(?:<?@(?P<role>&?)(?P<id>[0-9]+)>?|@(?P<value>[a-z0-9]+))", re.I
+)
+
+# Discord draws any :name: it recognizes as an emoji, even in the middle
+# of a word, so 2001:db8:100::1 would show an emoji in place of :100:.
+# This finds every colon that opens a :name: so it can be escaped.  These
+# are stepped over and left exactly as they are:
+#  - Characters that are already escaped.
+#  - Code, where Discord never draws emoji.
+#  - Discord tokens such as <:party:123>, <t:1700000000:R> and <@123>.
+#  - Web links, so an address like http://[fe80::1:2]/ keeps working.
+DISCORD_EMOJI_ESCAPE_RE = re.compile(
+    r"(?P<skip>\\.|(?P<tick>`+).+?(?P=tick)|<[^<>\s]*>"
+    r"|(?i:https?)://\S+)"
+    r"|:(?=[a-z0-9_+-]+:)",
+    re.S,
 )
 
 
@@ -81,6 +101,10 @@ class NotifyDiscord(NotifyBase):
 
     # Discord Webhook
     notify_url = "https://discord.com/api/webhooks"
+
+    # Discord supports plain text and Markdown-style embeds. Plain text
+    # remains the default.
+    notify_format = (NotifyFormat.TEXT, NotifyFormat.MARKDOWN)
 
     # Support attachments
     attachment_support = True
@@ -110,6 +134,22 @@ class NotifyDiscord(NotifyBase):
     # embeds message. This value allows the discord message to safely
     # break into multiple messages to handle these cases.
     discord_max_fields = 10
+
+    # Discord limits the length of each embed field name and value; see
+    # https://docs.discord.com/developers/resources/message
+    discord_field_name_maxlen = 256
+    discord_field_value_maxlen = 1024
+
+    # There is no reason we should exceed 35KB when reading in a JSON
+    # file. If it is more than this, then it is not accepted
+    max_discord_template_size = 35000
+
+    # Maximum number of attachments Discord accepts in a single message
+    discord_max_attachments = 10
+
+    # Maximum total attachment bytes per message.
+    # Discord's documented default is 25 MiB for most users.
+    discord_max_attach_bytes = 25 * 1024 * 1024
 
     # Define object templates
     templates = (
@@ -205,8 +245,29 @@ class NotifyDiscord(NotifyBase):
                 "name": _("Ping Users/Roles"),
                 "type": "list:string",
             },
+            "template": {
+                "name": _("Template Path"),
+                "type": "string",
+                "private": True,
+            },
+            # When True (default) multiple attachments are grouped into
+            # batches and sent in a single message where possible.
+            # Set to no/false to revert to one attachment per message.
+            "batch": {
+                "name": _("Batch Attachments"),
+                "type": "bool",
+                "default": True,
+            },
         },
     )
+
+    # Define our token control
+    template_kwargs = {
+        "tokens": {
+            "name": _("Template Tokens"),
+            "prefix": ":",
+        },
+    }
 
     def __init__(
         self,
@@ -223,6 +284,9 @@ class NotifyDiscord(NotifyBase):
         thread: str | None = None,
         flags: int | None = None,
         ping: list[str] | None = None,
+        template: str | None = None,
+        tokens: dict | None = None,
+        batch: bool | None = None,
         **kwargs: Any,
     ) -> None:
         """Initialize Discord Object."""
@@ -235,7 +299,7 @@ class NotifyDiscord(NotifyBase):
                 f"An invalid Discord Webhook ID ({webhook_id}) was specified."
             )
             self.logger.warning(msg)
-            raise TypeError(msg)
+            raise AppriseImproperlyConfigured(msg)
 
         # Webhook Token (associated with project)
         self.webhook_token = validate_regex(webhook_token)
@@ -245,7 +309,7 @@ class NotifyDiscord(NotifyBase):
                 f"({webhook_token}) was specified."
             )
             self.logger.warning(msg)
-            raise TypeError(msg)
+            raise AppriseImproperlyConfigured(msg)
 
         # Text To Speech
         self.tts = tts
@@ -289,19 +353,198 @@ class NotifyDiscord(NotifyBase):
                     "specified."
                 )
                 self.logger.warning(msg)
-                raise TypeError(msg) from None
+                raise AppriseImproperlyConfigured(msg) from None
         else:
             self.flags = None
 
         # Ping targets (tokens from URL, already split by parse_list)
         self.ping: list[str] = parse_list(ping)
 
+        # When True, group multiple attachments into a single message
+        # where count and size limits allow; False reverts to one per
+        # message (old behaviour)
+        self.batch = (
+            self.template_args["batch"]["default"]
+            if batch is None
+            else parse_bool(
+                batch,
+                default=self.template_args["batch"]["default"],
+            )
+        )
+
         self.ratelimit_reset = datetime.now(timezone.utc).replace(tzinfo=None)
 
         # Default to 1.0
         self.ratelimit_remaining = 1.0
 
+        # Our template object is just an AppriseAttachment object
+        self.template = AppriseAttachment(asset=self.asset)
+        if template:
+            # Add our definition to our template
+            self.template.add(template)
+            if not len(self.template):
+                # add() failed (unsupported schema, unparseable URL, etc.)
+                msg = "The Discord template specified could not be loaded."
+                self.logger.warning(msg)
+                raise AppriseImproperlyConfigured(msg)
+
+            # Enforce maximum file size
+            self.template[0].max_file_size = self.max_discord_template_size
+
+        # Template functionality
+        self.tokens: dict = {}
+        if isinstance(tokens, dict):
+            self.tokens.update(tokens)
+
+        elif tokens:
+            msg = (
+                "The specified Discord Template Tokens "
+                f"({tokens}) are not identified as a dictionary."
+            )
+            self.logger.warning(msg)
+            raise AppriseImproperlyConfigured(msg)
+
+        # else: NoneType - this is okay
+
         return
+
+    def gen_payload(
+        self, body, title="", notify_type=NotifyType.INFO, **kwargs
+    ):
+        """Return a validated Discord webhook payload from template,
+        or False on failure."""
+
+        # Acquire the first template attachment
+        template = self.template[0]
+        if not template:
+            # We could not access the attachment
+            self.logger.error(
+                "Could not access Discord template"
+                f" {template.url(privacy=True)}."
+            )
+            return False
+
+        # Acquire our image URL for potential token substitution
+        image_url = self.image_url(notify_type)
+
+        # Take a copy of our token dictionary
+        tokens = self.tokens.copy()
+
+        # Apply our standard template variable defaults
+        tokens["app_body"] = body
+        tokens["app_title"] = title
+        tokens["app_type"] = notify_type.value
+        tokens["app_id"] = self.app_id
+        tokens["app_desc"] = self.app_desc
+        tokens["app_color"] = self.color(notify_type)
+        # app_color_hex is an explicit alias for app_color, provided so
+        # templates can name the hex variant unambiguously alongside
+        # app_color_int
+        tokens["app_color_hex"] = self.color(notify_type)
+        # Discord embed payloads require color as a decimal integer;
+        # app_color_int provides that while app_color stays hex for
+        # consistency with all other template-capable plugins
+        tokens["app_color_int"] = self.color(notify_type, int)
+        tokens["app_image_url"] = image_url
+        tokens["app_url"] = self.app_url
+
+        # Templates are always JSON; enforce JSON escaping
+        tokens["app_mode"] = TemplateType.JSON
+
+        # Stringify substitutions before JSON escaping; preserve app_mode
+        safe_tokens = {
+            k: (
+                v
+                if k == "app_mode" or isinstance(v, str)
+                else ("" if v is None else str(v))
+            )
+            for k, v in tokens.items()
+        }
+
+        try:
+            with open(template.path) as fp:
+                content = apply_template(fp.read(), **safe_tokens)
+
+        except OSError:
+            self.logger.error(
+                "Discord template"
+                f" {template.url(privacy=True)} could not be read."
+            )
+            return False
+
+        # Parse and validate as JSON
+        try:
+            content = loads(content)
+
+        except (JSONDecodeError, ValueError) as e:
+            self.logger.error(
+                "Discord template"
+                f" {template.url(privacy=True)} contains invalid JSON."
+            )
+            self.logger.debug(f"JSONDecodeError: {e}")
+            return False
+
+        # Template must parse to a JSON object, not an array or scalar
+        if not isinstance(content, dict):
+            self.logger.error(
+                "Discord template"
+                f" {template.url(privacy=True)} must be a JSON object"
+                " (got {}).".format(type(content).__name__)
+            )
+            return False
+
+        # A Discord webhook payload must have a non-empty 'content' string
+        # or a non-empty 'embeds' list containing embed dicts
+        has_content = (
+            isinstance(content.get("content"), str) and content["content"]
+        )
+        has_embeds = (
+            isinstance(content.get("embeds"), list) and content["embeds"]
+        )
+        if not (has_content or has_embeds):
+            self.logger.error(
+                "Discord template"
+                f" {template.url(privacy=True)} must contain"
+                " a non-empty 'content' string or a non-empty 'embeds'"
+                " list."
+            )
+            return False
+
+        # If embeds is present, each entry must be a JSON object (dict)
+        if has_embeds and not all(
+            isinstance(e, dict) for e in content["embeds"]
+        ):
+            self.logger.error(
+                "Discord template"
+                f" {template.url(privacy=True)} contains"
+                " an embed entry that is not a JSON object."
+            )
+            return False
+
+        # Return the validated payload content dict
+        return content
+
+    def dialect_convert(
+        self,
+        body: str,
+        body_format: NotifyFormat | None = None,
+        *args: Any,
+        **kwargs: Any,
+    ) -> str:
+        """Escape each ``:name:`` so Discord shows it as text.
+
+        This only happens when emoji support is turned off.
+        """
+        if self.interpret_emojis is not False:
+            # Left unset, Discord draws emoji as it always has.  Turned on,
+            # Apprise already converted the names it knows and Discord is
+            # free to draw the rest.
+            return body
+
+        # Discord shows \: as a plain colon, in text and markdown alike.
+        return DISCORD_EMOJI_ESCAPE_RE.sub(
+            lambda m: m.group("skip") or "\\:", body
+        )
 
     def send(
         self,
@@ -309,9 +552,20 @@ class NotifyDiscord(NotifyBase):
         title: str = "",
         notify_type: NotifyType = NotifyType.INFO,
         attach: list[AttachBase] | None = None,
+        body_format: NotifyFormat | None = None,
         **kwargs: Any,
     ) -> bool:
         """Perform Discord Notification."""
+
+        # body_format arrives as the resolved render target.
+
+        if title and not kwargs.get("body_passthrough"):
+            # The title skips dialect_convert(), so protect it here too.
+            title = self.dialect_convert(title)
+
+        # Use embeds only when the URL explicitly selects Markdown. Discord
+        # already renders Markdown sent as regular content.
+        use_embeds = self._format_override == NotifyFormat.MARKDOWN
 
         payload: dict[str, Any] = {
             "tts": self.tts,
@@ -339,25 +593,52 @@ class NotifyDiscord(NotifyBase):
         # Associate our thread_id with our message
         params = {"thread_id": self.thread_id} if self.thread_id else None
 
-        # Ping handling rules:
-        # - If ping= is set, it is an additive if in MARKDOWN mode otherwise
-        #   it is explicit for TEXT/HTML formats.
-        # - Otherwise, ping detection only happens in MARKDOWN mode
-        if self.notify_format == NotifyFormat.MARKDOWN:
-            if self.ping:
-                payload.update(self.ping_payload(body, " ".join(self.ping)))
-            else:
-                payload.update(self.ping_payload(body))
+        # Template mode bypasses ping detection and embed construction;
+        # the template defines the complete payload content.
+        if not self.template:
+            # Embed mode can detect pings; ping= is additive there and
+            # explicit for regular content.
+            if use_embeds:
+                if self.ping:
+                    payload.update(
+                        self.ping_payload(body, " ".join(self.ping))
+                    )
+                else:
+                    payload.update(self.ping_payload(body))
 
-        # TEXT/HTML: no body parsing, ping= is exclusive
-        elif self.ping:
-            payload.update(self.ping_payload(" ".join(self.ping)))
+            # Regular content: no body parsing, ping= is exclusive.
+            elif self.ping:
+                payload.update(self.ping_payload(" ".join(self.ping)))
 
-        if body:
+        if self.template:
+            # Generate our payload from the user-supplied template file
+            template_payload = self.gen_payload(
+                body=body,
+                title=title,
+                notify_type=notify_type,
+                **kwargs,
+            )
+            if template_payload is False:
+                # gen_payload() already logged the error; bail early
+                return False
+
+            # Merge template content over our base payload
+            payload.update(template_payload)
+
+            # Skip the message if an earlier attempt already posted it
+            if not self.is_delivered("message"):
+                if not self._send(payload, params=params):
+                    # We failed to post our message
+                    return False
+
+                # Posted; a retry can safely skip it
+                self.mark_delivered("message")
+
+        elif body:
             # Track extra embed fields (if used)
             fields: list[dict[str, str]] = []
 
-            if self.notify_format == NotifyFormat.MARKDOWN:
+            if use_embeds:
                 # Use embeds for payload
                 payload["embeds"] = [
                     {
@@ -407,30 +688,43 @@ class NotifyDiscord(NotifyBase):
                             : self.discord_max_fields
                         ]
                         fields = fields[self.discord_max_fields :]
+
             else:
-                # TEXT or HTML:
+                # TEXT, HTML, or markdown without an explicit request:
                 # - No ping detection unless ping= was provided.
                 # - If ping= was provided, ping_payload() already generated
-                #   payload["content"] starting with "👉 ...", and we append
-                #   it.
+                #   payload["content"] starting with "👉 ...", and we
+                #   append it.
                 payload["content"] = (
                     body if not title else f"{title}\r\n{body}"
                 ) + payload.get("content", "")
 
-            if not self._send(payload, params=params):
-                # We failed to post our message
-                return False
+            # Skip the message if an earlier attempt already posted it
+            if not self.is_delivered("message"):
+                if not self._send(payload, params=params):
+                    # We failed to post our message
+                    return False
+
+                # Posted; a retry can safely skip it
+                self.mark_delivered("message")
 
             # Send remaining fields (if any)
             if fields:
                 payload["embeds"][0]["description"] = ""
                 for i in range(0, len(fields), self.discord_max_fields):
+                    # Each extra message of fields is tracked on its own
+                    if self.is_delivered(("fields", i)):
+                        continue
+
                     payload["embeds"][0]["fields"] = fields[
                         i : i + self.discord_max_fields
                     ]
-                    if not self._send(payload):
+                    if not self._send(payload, params=params):
                         # We failed to post our message
                         return False
+
+                    # Posted; a retry can safely skip these fields
+                    self.mark_delivered(("fields", i))
 
         if attach and self.attachment_support:
             # Update our payload; the idea is to preserve it's other detected
@@ -452,15 +746,56 @@ class NotifyDiscord(NotifyBase):
             payload.pop("allow_mentions", None)
 
             #
-            # Send our attachments
+            # Build attachment batches in strict serial order.
+            # Each batch respects the per-message attachment count and
+            # total byte limits.  When batch=False every attachment is
+            # its own message (legacy one-per-message behaviour).
             #
+            max_per = self.discord_max_attachments if self.batch else 1
+
+            batches: list[list[AttachBase]] = []
+            current: list[AttachBase] = []
+            current_size = 0
+
             for attachment in attach:
-                self.logger.info(
-                    f"Posting Discord Attachment {attachment.name}"
+                # Size is only needed for byte-limit batching; skip the
+                # stat()/download() it triggers when batching is off
+                size = (
+                    (len(attachment) if attachment else 0) if self.batch else 0
                 )
-                if not self._send(payload, params=params, attach=attachment):
-                    # We failed to post our message
+
+                if current and (
+                    len(current) >= max_per
+                    or (
+                        self.batch
+                        and current_size + size > self.discord_max_attach_bytes
+                    )
+                ):
+                    # Current batch is full; flush and start a new one
+                    batches.append(current)
+                    current = []
+                    current_size = 0
+
+                current.append(attachment)
+                current_size += size
+
+            # current always holds at least the last attachment here
+            batches.append(current)
+
+            #
+            # Send each attachment batch
+            #
+            for index, batch in enumerate(batches):
+                # Skip a batch an earlier attempt already posted
+                if self.is_delivered(("attach", index)):
+                    continue
+
+                if not self._send(payload, params=params, attach=batch):
+                    # We failed to post our attachment batch
                     return False
+
+                # Posted; a retry can safely skip this batch
+                self.mark_delivered(("attach", index))
 
         # Otherwise return
         return True
@@ -468,7 +803,7 @@ class NotifyDiscord(NotifyBase):
     def _send(
         self,
         payload: dict[str, Any],
-        attach: AttachBase | None = None,
+        attach: list[AttachBase] | None = None,
         params: dict[str, str] | None = None,
         rate_limit: int = 1,
         **kwargs: Any,
@@ -512,40 +847,70 @@ class NotifyDiscord(NotifyBase):
         # Always call throttle before any remote server i/o is made;
         self.throttle(wait=wait)
 
-        # Perform some simple error checking
-        if isinstance(attach, AttachBase):
-            if not attach:
-                # We could not access the attachment
-                self.logger.error(
-                    f"Could not access attachment {attach.url(privacy=True)}."
-                )
-                return False
+        # File handles opened for this call; all closed in `finally`
+        handles: list[Any] = []
+        # Multipart file list built from the attach batch
+        files: list[Any] | None = None
+        attach_ok = True
 
-            self.logger.debug(
-                f"Posting Discord attachment {attach.url(privacy=True)}"
-            )
-
-        # Our attachment path (if specified)
-        files = None
         try:
-            # Open our attachment path if required:
+            # Open our attachment path(s) if required:
             if attach:
-                files = {
-                    "file": (
-                        attach.name,
-                        # file handle is safely closed in `finally`; inline
-                        # open is intentional; attach.open() dispatches to
-                        # BytesIO for memory attachments
-                        attach.open(),
+                files = []
+                for idx, attachment in enumerate(attach):
+                    # Verify accessibility before opening
+                    if not attachment:
+                        self.logger.warning(
+                            "Could not access Discord attachment %s.",
+                            attachment.url(privacy=True),
+                        )
+                        attach_ok = False
+                        break
+
+                    self.logger.debug(
+                        "Posting Discord attachment %s",
+                        attachment.url(privacy=True),
                     )
-                }
+
+                    # Catch OSError per attachment open
+                    try:
+                        handle = attachment.open()
+                    except OSError as e:
+                        self.logger.warning(
+                            "An I/O error occurred while reading %s.",
+                            attachment.name or "attachment",
+                        )
+                        self.logger.debug("I/O Exception: %s", str(e))
+                        attach_ok = False
+                        break
+
+                    # Register handle before appending to files
+                    handles.append(handle)
+                    files.append(
+                        (
+                            f"files[{idx}]",
+                            (
+                                attachment.name,
+                                handle,
+                                attachment.mimetype,
+                            ),
+                        )
+                    )
+
+                if not attach_ok:
+                    return False
+
             else:
                 headers["Content-Type"] = "application/json; charset=utf-8"
 
             r = requests.post(
                 notify_url,
                 params=params,
-                data=payload if files else dumps(payload),
+                data=(
+                    {"payload_json": dumps(payload)}
+                    if files
+                    else dumps(payload)
+                ),
                 headers=headers,
                 files=files,
                 verify=self.verify_certificate,
@@ -598,13 +963,15 @@ class NotifyDiscord(NotifyBase):
                     )
 
                 self.logger.warning(
-                    "Failed to send {}to Discord notification: "
-                    "{}{}error={}.".format(
-                        attach.name if attach else "",
-                        status_str,
-                        ", " if status_str else "",
-                        r.status_code,
-                    )
+                    "Failed to send Discord %s: %s%serror=%s.",
+                    (
+                        "{} attachment(s)".format(len(attach))
+                        if attach
+                        else "notification"
+                    ),
+                    status_str,
+                    ", " if status_str else "",
+                    r.status_code,
                 )
 
                 self.logger.debug(
@@ -615,35 +982,31 @@ class NotifyDiscord(NotifyBase):
                 return False
 
             else:
-                self.logger.info(
-                    "Sent Discord {}.".format(
-                        "attachment" if attach else "notification"
+                if attach:
+                    self.logger.info(
+                        "Sent Discord %d attachment(s).", len(attach)
                     )
-                )
+                else:
+                    self.logger.info("Sent Discord notification.")
 
         except requests.RequestException as e:
             self.logger.warning(
-                "A Connection error occurred posting {}to Discord.".format(
-                    attach.name if attach else ""
-                )
+                "A Connection error occurred posting to Discord."
             )
             self.logger.debug(f"Socket Exception: {e!s}")
             return False
 
         except OSError as e:
-            self.logger.warning(
-                "An I/O error occurred while reading {}.".format(
-                    attach.name if attach else "attachment"
-                )
-            )
+            # Catches I/O errors from requests.post() and any unexpected
+            # file-system errors not caught by the per-attachment check above
+            self.logger.warning("An I/O error occurred posting to Discord.")
             self.logger.debug(f"I/O Exception: {e!s}")
             return False
 
         finally:
-            # Close our file (if it's open) stored in the second element
-            # of our files tuple (index 1)
-            if files:
-                files["file"][1].close()
+            # Close all handles regardless of success or failure
+            for handle in handles:
+                handle.close()
 
         return True
 
@@ -657,6 +1020,7 @@ class NotifyDiscord(NotifyBase):
             "footer_logo": "yes" if self.footer_logo else "no",
             "image": "yes" if self.include_image else "no",
             "fields": "yes" if self.fields else "no",
+            "batch": "yes" if self.batch else "no",
         }
 
         if self.avatar_url:
@@ -675,8 +1039,19 @@ class NotifyDiscord(NotifyBase):
             # Let Apprise urlencode handle list formatting
             params["ping"] = ",".join(self.ping)
 
+        if self.template:
+            # Include our template reference
+            params["template"] = NotifyDiscord.quote(
+                self.template[0].url(), safe=""
+            )
+
+        # Store any template token entries if specified
+        params.update({f":{k}": v for k, v in self.tokens.items()})
+
         # Ensure our botname is set
-        botname = f"{self.user}@" if self.user else ""
+        botname = (
+            f"{NotifyDiscord.quote(self.user, safe='')}@" if self.user else ""
+        )
 
         # Extend our parameters
         params.update(self.url_parameters(privacy=privacy, *args, **kwargs))
@@ -784,6 +1159,23 @@ class NotifyDiscord(NotifyBase):
         if "ping" in results["qsd"]:
             results["ping"] = NotifyDiscord.unquote(results["qsd"]["ping"])
 
+        # Template Handling
+        if "template" in results["qsd"] and results["qsd"]["template"]:
+            results["template"] = NotifyDiscord.unquote(
+                results["qsd"]["template"]
+            )
+
+        # Store our template tokens
+        results["tokens"] = results["qsd:"]
+
+        # Batch attachments flag
+        results["batch"] = parse_bool(
+            results["qsd"].get(
+                "batch",
+                NotifyDiscord.template_args["batch"]["default"],
+            )
+        )
+
         return results
 
     @staticmethod
@@ -871,50 +1263,31 @@ class NotifyDiscord(NotifyBase):
 
         return payload
 
-    @staticmethod
+    @classmethod
     def extract_markdown_sections(
+        cls,
         markdown: str,
     ) -> tuple[str, list[dict[str, str]]]:
         """Extract headers and their corresponding sections into embed
         fields."""
 
-        # Search for any header information found without it's own section
-        # identifier
-        match = re.match(
-            r"^\s*(?P<desc>[^\s#]+.*?)(?=\s*$|[\r\n]+\s*#)",
+        # Room left for a section's text once the code block markers
+        # ("```md\n" and "\n```") are wrapped around it
+        description, sections = commonmark_sections(
             markdown,
-            flags=re.S,
+            cls.discord_field_name_maxlen,
+            cls.discord_field_value_maxlen - 10,
         )
 
-        description = match.group("desc").strip() if match else ""
-        if description:
-            # Strip description from our string since it has been handled
-            # now.
-            markdown = re.sub(re.escape(description), "", markdown, count=1)
-
-        regex = re.compile(
-            r"\s*#[# \t\v]*(?P<name>[^\n]+)(\n|\s*$)"
-            r"\s*((?P<value>[^#].+?)(?=\s*$|[\r\n]+\s*#))?",
-            flags=re.S,
-        )
-
-        common = regex.finditer(markdown)
-        fields: list[dict[str, str]] = []
-        for el in common:
-            d = el.groupdict()
-
-            fields.append(
-                {
-                    "name": d.get("name", "").strip("#`* \r\n\t\v"),
-                    "value": "```{}\n{}```".format(
-                        "md" if d.get("value") else "",
-                        (
-                            d.get("value").strip() + "\n"
-                            if d.get("value")
-                            else ""
-                        ),
-                    ),
-                }
-            )
+        # Show each section as a code block.  An empty one stays empty.
+        fields = [
+            {
+                "name": name,
+                "value": "```md\n{}\n```".format(value.rstrip())
+                if value
+                else "```\n```",
+            }
+            for name, value in sections
+        ]
 
         return description, fields

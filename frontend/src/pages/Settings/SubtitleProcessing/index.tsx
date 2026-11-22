@@ -1,5 +1,7 @@
 import React, { FunctionComponent } from "react";
 import { Code, Space, Table, Text as MantineText } from "@mantine/core";
+import { range } from "lodash";
+import { useSystemStatus } from "@/apis/hooks";
 import {
   Check,
   CollapseBox,
@@ -126,6 +128,8 @@ const commandOptionElements: React.JSX.Element[] = commandOptions.map(
 );
 
 const SettingsSubtitleProcessingView: FunctionComponent = () => {
+  const { data: status } = useSystemStatus();
+
   return (
     <Layout name="Subtitle Processing">
       <Section
@@ -162,6 +166,24 @@ const SettingsSubtitleProcessingView: FunctionComponent = () => {
               When enabled, Bazarr will also use Whisper fallback for single
               series subtitle searches. All of the warnings about overloading
               Whisper from the previous setting also apply to this one.
+            </Message>
+          </CollapseBox>
+          <Check
+            label="Use Whisper as Fallback for Searches Triggered by Imports"
+            settingKey="settings-general-use_whisper_fallback_on_import"
+          ></Check>
+          <CollapseBox
+            settingKey={"settings-general-use_whisper_fallback_on_import"}
+          >
+            <Message>
+              When enabled, Bazarr will also use Whisper fallback for the
+              subtitle search triggered by the Sonarr or Radarr webhook when a
+              file is imported. Searches queued by the SignalR sync are not
+              affected. Other providers often have nothing yet right after a
+              release, so Whisper may be used where waiting a few hours would
+              have found a human-made subtitle. All of the warnings about
+              overloading Whisper from the previous settings also apply to this
+              one.
             </Message>
           </CollapseBox>
         </CollapseBox>
@@ -265,6 +287,20 @@ const SettingsSubtitleProcessingView: FunctionComponent = () => {
         <Message>
           Enable automatic audio synchronization after downloading subtitles for
           series and movies based on selections below.
+        </Message>
+        <Selector
+          label="Concurrent Syncs"
+          options={range(1, (status?.cpu_cores ?? 3) + 1).map((opt) => ({
+            label: `${opt.toString()} ${opt === 1 ? "sync" : "syncs"}`,
+            value: opt,
+          }))}
+          settingKey="settings-subsync-concurrent_syncs"
+        />
+        <Message>
+          Maximum number of subtitles synchronizations (automatic or manual)
+          running at the same time. Each one runs in its own process and uses
+          one CPU core. Synchronizations also count toward the Concurrent Jobs
+          limit in General settings.
         </Message>
         <CollapseBox settingKey="settings-subsync-use_subsync">
           <Message>
@@ -385,45 +421,46 @@ const SettingsSubtitleProcessingView: FunctionComponent = () => {
               settingKey="settings-subsync-no_fix_framerate"
               on={(v) => v === false || v === "false"}
             >
-              <Section header="Quality Checks (Framerate-Fix Mode)">
-                <Selector
-                  label="Minimum Quality Score"
-                  options={qualityMinScoreOptions}
-                  settingKey="settings-subsync-quality_min_score"
-                ></Selector>
-                <Message>
-                  Minimum alignment confidence score required to accept a
-                  synchronization result. Lower values are more permissive.
-                </Message>
-                <Selector
-                  label="Quality Max Offset Seconds"
-                  options={qualityMaxOffsetSecondsOptions}
-                  settingKey="settings-subsync-quality_max_offset_seconds"
-                ></Selector>
-                <Message>
-                  Maximum offset in seconds to allow when quality checks are
-                  enabled. Alignments suggesting larger offsets will be
-                  rejected.
-                </Message>
-                <Selector
-                  label="Max Framerate Deviation"
-                  options={qualityMaxFramerateDeviationOptions}
-                  settingKey="settings-subsync-quality_max_framerate_deviation"
-                ></Selector>
-                <Message>
-                  Maximum framerate deviation allowed. Prevents extreme stretch
-                  factors that indicate failed synchronization.
-                </Message>
-              </Section>
+              <Check
+                label="Golden-Section Search"
+                settingKey="settings-subsync-gss"
+              ></Check>
+              <Message>
+                If specified, use golden-section search to try to find the
+                optimal framerate ratio between video and subtitles.
+              </Message>
+              <Selector
+                label="Max Framerate Deviation"
+                options={qualityMaxFramerateDeviationOptions}
+                settingKey="settings-subsync-quality_max_framerate_deviation"
+              ></Selector>
+              <Message>
+                Maximum framerate deviation allowed. Prevents extreme stretch
+                factors that indicate failed synchronization.
+              </Message>
             </CollapseBox>
-            <Check
-              label="Golden-Section Search"
-              settingKey="settings-subsync-gss"
-            ></Check>
-            <Message>
-              If specified, use golden-section search to try to find the optimal
-              framerate ratio between video and subtitles.
-            </Message>
+            <Section header="Quality Checks">
+              <Selector
+                label="Minimum Quality Score"
+                options={qualityMinScoreOptions}
+                settingKey="settings-subsync-quality_min_score"
+              ></Selector>
+              <Message>
+                Minimum alignment score required to accept a synchronization
+                result. The score is not normalized, so only its sign is
+                meaningful: the default of 0 rejects anti-correlated (clearly
+                wrong) alignments.
+              </Message>
+              <Selector
+                label="Quality Max Offset Seconds"
+                options={qualityMaxOffsetSecondsOptions}
+                settingKey="settings-subsync-quality_max_offset_seconds"
+              ></Selector>
+              <Message>
+                Alignments suggesting a larger offset than this are rejected and
+                the original subtitles are left untouched.
+              </Message>
+            </Section>
             <Selector
               label="Max Offset Seconds"
               options={syncMaxOffsetSecondsOptions}

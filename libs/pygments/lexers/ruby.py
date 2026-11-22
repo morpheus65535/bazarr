@@ -84,6 +84,10 @@ class RubyLexer(ExtendedRegexLexer):
                     # end of heredoc not found -- error!
                     for amatch in lines:
                         yield amatch.start(), Error, amatch.group()
+                    # advance past the consumed lines so they are not
+                    # re-lexed (and thus duplicated) once ctx.end is reset
+                    if lines:
+                        ctx.pos = lines[-1].end()
             ctx.end = len(ctx.text)
             del heredocstack[:]
 
@@ -249,7 +253,7 @@ class RubyLexer(ExtendedRegexLexer):
              Name.Builtin),
             (r'__(FILE|LINE)__\b', Name.Builtin.Pseudo),
             # normal heredocs
-            (r'(?<!\w)(<<[-~]?)(["`\']?)([a-zA-Z_]\w*)(\2)(.*?\n)',
+            (r'(?<![\w)\]}])(<<[-~]?)(["`\']?)([a-zA-Z_]\w*)(\2)(.*?\n)',
              heredoc_callback),
             # empty string heredocs
             (r'(<<[-~]?)("|\')()(\2)(.*?\n)', heredoc_callback),

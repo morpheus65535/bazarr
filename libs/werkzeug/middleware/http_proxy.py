@@ -137,7 +137,7 @@ class ProxyMiddleware:
             chunked = False
 
             if content_length not in ("", None):
-                headers.append(("Content-Length", content_length))  # type: ignore
+                headers.append(("Content-Length", content_length))
             elif content_length is not None:
                 headers.append(("Transfer-Encoding", "chunked"))
                 chunked = True

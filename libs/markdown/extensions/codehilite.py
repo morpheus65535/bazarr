@@ -335,7 +335,15 @@ class CodeHiliteExtension(Extension):
                 self.config[key] = [value, '']
 
     def extendMarkdown(self, md):
-        """ Add `HilitePostprocessor` to Markdown instance. """
+        """
+        Register the processor.
+
+        | Class Instance                                                              | Registry                                                         | Name   | Priority |
+        | --------------------------------------------------------------------------- | ---------------------------------------------------------------- | ------ | :------: |
+        | [`HiliteTreeprocessor`][markdown.extensions.codehilite.HiliteTreeprocessor] | [`treeprocessors`][markdown.treeprocessors.build_treeprocessors] | `hilite` | `30` |
+
+        """
+        # flake8: noqa: E501 341-343
         hiliter = HiliteTreeprocessor(md)
         hiliter.config = self.getConfigs()
         md.treeprocessors.register(hiliter, 'hilite', 30)

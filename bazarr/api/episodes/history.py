@@ -55,7 +55,7 @@ class EpisodesHistory(Resource):
 
     @authenticate
     @api_ns_episodes_history.response(401, 'Not Authenticated')
-    @api_ns_episodes_history.doc(parser=get_request_parser)
+    @api_ns_episodes_history.expect(get_request_parser)
     def get(self):
         """List episodes history events"""
         args = self.get_request_parser.parse_args()

@@ -4,12 +4,13 @@ import logging
 import os
 import pysubs2
 import requests
+from concurrent.futures import Future, ThreadPoolExecutor, TimeoutError as FutureTimeoutError
 
 from retry.api import retry
 from deep_translator.exceptions import TooManyRequests, RequestError
 
 from app.config import settings
-from app.jobs_queue import jobs_queue
+from app.jobs_queue import jobs_queue, JobCanceled
 from languages.get_languages import language_from_alpha2, language_from_alpha3
 from radarr.history import history_log_movie
 from sonarr.history import history_log
@@ -102,12 +103,74 @@ class LingarrTranslatorService:
 
             return self.dest_srt_file
 
+        except JobCanceled:
+            jobs_queue.update_job_progress(job_id=job_id, progress_message='Lingarr translation canceled')
+            raise
         except Exception as e:
             logger.error(f'BAZARR encountered an error during Lingarr translation for {self.source_srt_file}: {str(e)}')
             jobs_queue.update_job_progress(job_id=job_id, progress_message=f'Lingarr translation failed: {str(e)}')
             raise
 
-    @retry(exceptions=(TooManyRequests, RequestError, requests.exceptions.RequestException), tries=3, delay=1,
+    def _wait_for_response(self, future: Future, job_id: int | None, title: str,
+                           headers: dict[str, str]) -> requests.Response:
+        """Wait for the Lingarr content response, cancelling the remote request if the job is cancelled.
+
+        :param future: Future holding the in-flight POST to the Lingarr content endpoint.
+        :param job_id: Identifier of the running Bazarr job, or None when not run from the job queue.
+        :param title: Title Lingarr stored for the request, used to find it for cancellation.
+        :param headers: Request headers, including the API key when one is configured.
+        :return: The response returned by Lingarr.
+        :raises JobCanceled: If the user cancelled the job while Lingarr was still translating.
+        """
+        while True:
+            try:
+                return future.result(timeout=1)
+            except FutureTimeoutError:
+                if jobs_queue.is_cancel_requested(job_id):
+                    self._cancel_remote_request(title, headers)
+                    raise JobCanceled()
+
+    def _cancel_remote_request(self, title: str, headers: dict[str, str]) -> None:
+        """Ask Lingarr to cancel the active translation request created for this subtitle file.
+
+        Lingarr does not return the request id from the content endpoint, so the request is looked up by
+        title. The newest request with that title and no completion time is cancelled. Failures are logged
+        and do not stop the Bazarr job from being cancelled.
+
+        :param title: Title Lingarr stored for the request.
+        :param headers: Request headers, including the API key when one is configured.
+        :return: None
+        """
+        base_url = settings.translator.lingarr_url
+        try:
+            listing = requests.get(
+                f"{base_url}/api/TranslationRequest/requests",
+                params={"searchQuery": title, "orderBy": "CreatedAt", "ascending": "true", "pageNumber": 1},
+                headers=headers,
+                timeout=30,
+            )
+            listing.raise_for_status()
+            items = listing.json().get("items", [])
+            match = next(
+                (item for item in items
+                 if (item.get("title") or "").strip() == title.strip() and item.get("completedAt") is None),
+                None,
+            )
+            if match is None:
+                logger.warning(f'No active Lingarr translation request found to cancel for {self.source_srt_file}')
+                return
+
+            cancel_response = requests.post(f"{base_url}/api/TranslationRequest/cancel", json=match,
+                                            headers=headers, timeout=30)
+            cancel_response.raise_for_status()
+            logger.info(f'Cancelled Lingarr translation request {match.get("id")} for {self.source_srt_file}')
+        except (requests.exceptions.RequestException, ValueError) as e:
+            logger.error(f'Unable to cancel Lingarr translation request for {self.source_srt_file}: {str(e)}')
+
+    # Only retry failures where Lingarr did not accept the request: rate limiting (429) and connection
+    # errors. A 5xx or a timeout can happen after Lingarr has already spent a long time translating the
+    # file, so re-sending the whole payload would duplicate that work and leave orphaned jobs on Lingarr.
+    @retry(exceptions=(TooManyRequests, requests.exceptions.ConnectionError), tries=3, delay=1,
            backoff=2, jitter=(0, 1))
     def _translate_content(self, lines_list, job_id):
         try:
@@ -136,7 +199,7 @@ class LingarrTranslatorService:
 
             if self.media_type == 'episode':
                 api_media_type = "Episode"
-                arr_media_id = self.sonarr_series_id or 0
+                arr_media_id = self.sonarr_episode_id or 0
             else:
                 api_media_type = "Movie"
                 arr_media_id = self.radarr_id or 0
@@ -160,13 +223,18 @@ class LingarrTranslatorService:
             if settings.translator.lingarr_token:
                 headers["X-Api-Key"] = settings.translator.lingarr_token
 
-            response = requests.post(
+            # The POST runs in a worker thread so this job can notice a user cancellation while Lingarr is busy.
+            executor = ThreadPoolExecutor(max_workers=1)
+            future = executor.submit(
+                requests.post,
                 f"{settings.translator.lingarr_url}/api/translate/content",
                 json=payload,
                 headers=headers,
-                timeout=1920  # increase timeout to 32 minutes to give time to Lingarr timeout (30 minutes) to occur
-                # and get reported to Bazarr instead of silently failing.
+                timeout=settings.translator.lingarr_timeout  # default 1920 (32 minutes) leaves time for the Lingarr
+                # timeout (30 minutes) to occur and get reported to Bazarr instead of silently failing.
             )
+            executor.shutdown(wait=False)
+            response = self._wait_for_response(future, job_id, display_title, headers)
 
             if response.status_code == 200:
                 translated_batch = response.json()
@@ -190,17 +258,20 @@ class LingarrTranslatorService:
                 logger.debug(f'Lingarr API error for {self.source_srt_file}: {response.status_code} - {response.text}')
                 return None
 
+        except JobCanceled:
+            logger.info(f'BAZARR canceled Lingarr translation for {self.source_srt_file}')
+            raise
         except requests.exceptions.Timeout:
             logger.error(f'Lingarr API request timed out for {self.source_srt_file}')
             raise RequestError("Request timed out")
         except requests.exceptions.ConnectionError:
             logger.error(f'Lingarr API connection error for {self.source_srt_file}')
-            raise RequestError("Connection error")
+            raise
         except requests.exceptions.RequestException as e:
             logger.error(f'Lingarr API request failed for {self.source_srt_file}: {str(e)}')
             raise
         except (TooManyRequests, RequestError) as e:
-            logger.error(f'Lingarr API error after retries for {self.source_srt_file}: {str(e)}')
+            logger.error(f'Lingarr API error for {self.source_srt_file}: {str(e)}')
             jobs_queue.update_job_progress(job_id=job_id, progress_message=f'Lingarr API error: {str(e)}')
             raise
         except Exception as e:

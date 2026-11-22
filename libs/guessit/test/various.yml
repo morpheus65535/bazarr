@@ -689,7 +689,9 @@
   audio_codec: DTS-HD
   audio_profile: Master Audio
   source: Blu-ray
-  other: 3D
+  other:
+  - 3D
+  - Half Side By Side
   release_group: ABC
   screen_size: 1080p
   title: TEST
@@ -702,7 +704,9 @@
   audio_codec: DTS-HD
   audio_profile: Master Audio
   source: Blu-ray
-  other: 3D
+  other:
+  - 3D
+  - Half Over Under
   release_group: ABC
   screen_size: 1080p
   title: TEST
@@ -718,7 +722,9 @@
   - Dolby Atmos
   audio_profile: Master Audio
   source: Blu-ray
-  other: 3D
+  other:
+  - 3D
+  - Half Over Under
   release_group: ABC
   screen_size: 1080p
   title: TEST
@@ -734,7 +740,9 @@
   - Dolby Atmos
   audio_profile: Master Audio
   source: Blu-ray
-  other: 3D
+  other:
+  - 3D
+  - Half Side By Side
   release_group: ABC
   screen_size: 1080p
   title: TEST
@@ -945,6 +953,13 @@
   frame_rate: 24fps
   source: Blu-ray
   audio_codec: DTS-HD
+  type: movie
+
+# #693: a decimal frame rate with an FPS suffix must be read as frame_rate, not split into
+# season/episode numbers ("23.976" -> S9 E[23,76]).
+? Gladiator 23.976 FPS
+: title: Gladiator
+  frame_rate: 23.976fps
   type: movie
 
 ? Mr Robot - S03E01 - eps3 0 power-saver-mode h (1080p AMZN WEB-DL x265 HEVC 10bit EAC3 6.0 RCVR).mkv
@@ -1197,3 +1212,685 @@
   release_group: YTS.LT
   container: mp4
   type: movie
+
+# new property / value extraction (#818)
+
+? Show.Name.vol127.1080p.x264-GRP.mkv
+: title: Show Name
+  volume: 127
+  screen_size: 1080p
+  video_codec: H.264
+  release_group: GRP
+  container: mkv
+  type: movie
+
+? Manga.Title.vol.3.720p.x264-GRP.mkv
+: title: Manga Title
+  volume: 3
+  screen_size: 720p
+  video_codec: H.264
+  release_group: GRP
+  container: mkv
+  type: movie
+
+? Movie.Name.2020.tt1234567.1080p.BluRay.x264-GRP.mkv
+: title: Movie Name
+  year: 2020
+  imdb_id: tt1234567
+  screen_size: 1080p
+  source: Blu-ray
+  video_codec: H.264
+  release_group: GRP
+  container: mkv
+  type: movie
+
+? Movie.Name.2020.{tmdb-12345}.1080p.x264-GRP.mkv
+: title: Movie Name
+  year: 2020
+  tmdb_id: 12345
+  screen_size: 1080p
+  video_codec: H.264
+  release_group: GRP
+  container: mkv
+  type: movie
+
+? Show.Name.S01E02.[tvdbid-67890].720p.HDTV.x264-GRP.mkv
+: title: Show Name
+  season: 1
+  episode: 2
+  tvdb_id: 67890
+  screen_size: 720p
+  source: HDTV
+  video_codec: H.264
+  release_group: GRP
+  container: mkv
+  type: episode
+
+? Movie.Name.VR180.2020.1080p.x264-GRP.mkv
+: title: Movie Name
+  other: Virtual Reality
+  year: 2020
+  screen_size: 1080p
+  video_codec: H.264
+  release_group: GRP
+  container: mkv
+  type: movie
+
+# VR with a separated angle: the 180/360 must be absorbed by Virtual Reality,
+# not split into season/episode (#618).
+? Movie.Name.2020.VR.180.1080p.x264-GRP.mkv
+: title: Movie Name
+  other: Virtual Reality
+  year: 2020
+  screen_size: 1080p
+  -season: 1
+  -episode: 80
+  type: movie
+
+? Movie.Name.2020.VR.360.1080p.mkv
+: title: Movie Name
+  other: Virtual Reality
+  year: 2020
+  -season: 3
+  -episode: 60
+  type: movie
+
+? Movie.Name.2020.EAC360.1080p.mkv
+: title: Movie Name
+  other: Virtual Reality
+  type: movie
+
+# Stereoscopic layout, VR context resolves the ambiguous abbreviations.
+? Movie.Name.VR.180.SBS.1080p.mkv
+: title: Movie Name
+  other:
+  - Virtual Reality
+  - Side By Side
+  -streaming_service: SBS
+  type: movie
+
+? Movie.Name.VR.180.LR.1080p.mkv
+: title: Movie Name
+  other:
+  - Virtual Reality
+  - Side By Side
+  type: movie
+
+? Movie.Name.VR.180.OU.1080p.mkv
+: title: Movie Name
+  other:
+  - Virtual Reality
+  - Over Under
+  -episode_title: OU
+  type: movie
+
+? Movie.Name.2015.3D.SBS.1080p.BluRay.x264-GRP.mkv
+: title: Movie Name
+  other:
+  - 3D
+  - Side By Side
+  type: movie
+
+# The compact `H*`/`Half-*` forms are unambiguous and need no VR/3D neighbor.
+? Movie.Name.2015.1080p.HSBS.x264-GRP.mkv
+: title: Movie Name
+  other: Half Side By Side
+  type: movie
+
+? Movie.Name.2015.1080p.Half-OU.x264-GRP.mkv
+: title: Movie Name
+  other: Half Over Under
+  type: movie
+
+# In a VR/3D context the ambiguous abbreviation wins its span over the SBS
+# broadcaster (the same token must not be reported as two properties).
+? Movie.Name.VR.180.SBS.HDTV.x264-GRP.mkv
+: title: Movie Name
+  other:
+  - Virtual Reality
+  - Side By Side
+  source: HDTV
+  -streaming_service: SBS
+  type: movie
+
+# Negative guards: outside a VR/3D context, the ambiguous abbreviations and the
+# real-word phrases keep their usual meaning and never become a stereoscopic `other`.
+? Over.Under.2021.1080p.WEB.h264-GRP.mkv
+: title: Over Under
+  -other: Over Under
+  type: movie
+
+# Spelled-out word pairs are never a stereoscopic `other`, even with a 3D neighbor,
+# so a real title is preserved.
+? Top.Bottom.2019.3D.1080p.BluRay.x264-GRP.mkv
+: title: Top Bottom
+  other: 3D
+  -other: Over Under
+  type: movie
+
+? Show.Name.SBS.HDTV.x264-GRP.mkv
+: title: Show Name
+  streaming_service: SBS
+  source: HDTV
+  video_codec: H.264
+  release_group: GRP
+  container: mkv
+  -other: Side By Side
+  type: movie
+
+? Show.Name.S04E10.OU.1080p.x264-GRP.mkv
+: title: Show Name
+  season: 4
+  episode: 10
+  -other: Over Under
+  type: episode
+
+? Show.Name.S01E01.NCOP.1080p.x264-GRP.mkv
+: title: Show Name
+  season: 1
+  episode: 1
+  other:
+  - Opening Credits
+  - Creditless
+  screen_size: 1080p
+  video_codec: H.264
+  release_group: GRP
+  container: mkv
+  type: episode
+
+? Show.Name.S01E01.NCED.1080p.x264-GRP.mkv
+: title: Show Name
+  season: 1
+  episode: 1
+  other:
+  - Ending Credits
+  - Creditless
+  screen_size: 1080p
+  video_codec: H.264
+  release_group: GRP
+  container: mkv
+  type: episode
+
+? Show.Name.S01E01.NC-ED.1080p.x264-GRP.mkv
+: title: Show Name
+  season: 1
+  episode: 1
+  other:
+  - Ending Credits
+  - Creditless
+  screen_size: 1080p
+  video_codec: H.264
+  release_group: GRP
+  container: mkv
+  type: episode
+
+# OPED is the combined opening+ending sequence (both credits), not creditless.
+? Show.Name.S01E01.OPED.1080p.x264-GRP.mkv
+: title: Show Name
+  season: 1
+  episode: 1
+  other:
+  - Opening Credits
+  - Ending Credits
+  -other: Creditless
+  screen_size: 1080p
+  video_codec: H.264
+  release_group: GRP
+  container: mkv
+  type: episode
+
+# Opening/ending sequence ordinal (credits_number) and version.
+? '[FFF] Shingeki no Kyojin - OP02 [BD][1080p-FLAC][40D46701].mkv'
+: title: Shingeki no Kyojin
+  other: Opening Credits
+  credits_number: '2'
+  source: Blu-ray
+  screen_size: 1080p
+  release_group: FFF
+
+? '[Coalgirls]_Bakemonogatari_OP4a_(1920x1080_Blu-ray_FLAC)_[AF4FF3CC].mkv'
+: title: Bakemonogatari
+  other: Opening Credits
+  credits_number: 4a
+  source: Blu-ray
+  release_group: Coalgirls
+
+? Fullmetal_Alchemist_Brotherhood_ED2v2_Clean_[BD_1080p][AtsA][0F81F8F7].mkv
+: title: Fullmetal Alchemist Brotherhood
+  other: Ending Credits
+  credits_number: '2'
+  version: 2
+  source: Blu-ray
+  screen_size: 1080p
+
+# Bare uppercase OP token (anime opening, no ordinal).
+? '[GHOST] Saga of Tanya the Evil - OP [BDRip 1920x1080 x264][FB85D2DA].mkv'
+: title: Saga of Tanya the Evil
+  other:
+  - Opening Credits
+  - Rip
+  release_group: GHOST
+
+# Creditless opening with ordinal, plus the Creditless attribute.
+? Code_Geass_Creditless_OP5_[720p,BluRay,x264]_-_gg-THORA.mkv
+: title: Code Geass
+  other:
+  - Opening Credits
+  - Creditless
+  credits_number: '5'
+  screen_size: 720p
+
+# Creditless ending alongside a real episode number.
+? 'NC/[VCB-Studio] Ishuzoku Reviewers [NCED_EP12][Ma10p_1080p][x265_flac].mkv'
+: title: Ishuzoku Reviewers
+  other:
+  - Ending Credits
+  - Creditless
+  episode: 12
+  release_group: VCB-Studio
+
+# The name "Ed" must not be captured as an Ending Credits token (case-sensitive).
+? Ed.S01E01.1080p.WEB-DL-GRP.mkv
+: title: Ed
+  season: 1
+  episode: 1
+  -other: Ending Credits
+
+? Show.Name.July.30.2021.1080p.WEB-DL.x264-GRP.mkv
+: title: Show Name
+  date: 2021-07-30
+  screen_size: 1080p
+  source: Web
+  video_codec: H.264
+  release_group: GRP
+  container: mkv
+  type: episode
+
+# archive / image containers + artwork (#817)
+
+? Show.Name.S01E01.720p.HDTV.x264-GRP.rar
+: title: Show Name
+  season: 1
+  episode: 1
+  screen_size: 720p
+  source: HDTV
+  video_codec: H.264
+  release_group: GRP
+  container: rar
+  type: episode
+
+? Movie.Name.2020.1080p.x264.r00
+: title: Movie Name
+  year: 2020
+  screen_size: 1080p
+  video_codec: H.264
+  container: r00
+  type: movie
+
+? Movie.Name.2020.1080p-GRP.zip
+: title: Movie Name
+  year: 2020
+  screen_size: 1080p
+  release_group: GRP
+  container: zip
+  type: movie
+
+? Show.Name.S01E01.720p-GRP.jpg
+: title: Show Name
+  season: 1
+  episode: 1
+  screen_size: 720p
+  release_group: GRP
+  container: jpg
+  type: episode
+
+? poster.jpg
+: other: Poster
+  container: jpg
+  type: movie
+
+? Movie.Name.2020-fanart.jpg
+: title: Movie Name
+  year: 2020
+  other: Fanart
+  container: jpg
+  type: movie
+
+? The.Poster.2020.1080p.BluRay.x264-GRP.mkv
+: title: The Poster
+  year: 2020
+  screen_size: 1080p
+  source: Blu-ray
+  video_codec: H.264
+  release_group: GRP
+  container: mkv
+  type: movie
+
+# every archive/image extension is a container (#817)
+# (keeps the container enum code-complete; the extension must not leak)
+
+? Some.Release.2020.1080p.x264-GRP.7z
+: container: 7z
+  release_group: GRP
+
+? Some.Release.2020.1080p.x264-GRP.tar
+: container: tar
+  release_group: GRP
+
+? Some.Release.2020.1080p.x264-GRP.gz
+: container: gz
+  release_group: GRP
+
+? Some.Release.2020.1080p.x264-GRP.bz2
+: container: bz2
+  release_group: GRP
+
+? Some.Release.2020.1080p.x264-GRP.tgz
+: container: tgz
+  release_group: GRP
+
+? Some.Release.2020.1080p.x264-GRP.ace
+: container: ace
+  release_group: GRP
+
+? Some.Release.2020.1080p.x264-GRP.arj
+: container: arj
+  release_group: GRP
+
+? Some.Release.2020.1080p.x264-GRP.cbr
+: container: cbr
+  release_group: GRP
+
+? Some.Release.2020.1080p.x264-GRP.cbz
+: container: cbz
+  release_group: GRP
+
+? Some.Release.2020.1080p.x264-GRP.cb7
+: container: cb7
+  release_group: GRP
+
+? Some.Release.2020.1080p.x264-GRP.jpeg
+: container: jpeg
+  release_group: GRP
+
+? Some.Release.2020.1080p.x264-GRP.png
+: container: png
+  release_group: GRP
+
+? Some.Release.2020.1080p.x264-GRP.gif
+: container: gif
+  release_group: GRP
+
+? Some.Release.2020.1080p.x264-GRP.bmp
+: container: bmp
+  release_group: GRP
+
+? Some.Release.2020.1080p.x264-GRP.tbn
+: container: tbn
+  release_group: GRP
+
+? Some.Release.2020.1080p.x264-GRP.webp
+: container: webp
+  release_group: GRP
+# --- #814: short "cd" token must not match glued inside a larger word/hash ---
+
+? My File 238ddcd5aff.mkv
+: title: My File 238ddcd5aff
+  -cd: 5
+
+# standalone CD tokens still match
+? Movie CD1.avi
+: title: Movie
+  cd: 1
+
+? Movie cd1of2.avi
+: title: Movie
+  cd: 1
+  cd_count: 2
+
+? (CD3) Movie.avi
+: title: Movie
+  cd: 3
+
+# a bracket whose content is a recognized "other" tag stays "other" (must not become
+# an anime release_group) — only a leading subtitle-format bracket like [SSA] does
+? Show.2020.[Remux].1080p.mkv
+: title: Show
+  year: 2020
+  other: Remux
+  screen_size: 1080p
+  -release_group: Remux
+
+# --- #816: Unicode × must be read as a resolution separator, not a season/episode ---
+? Movie.1920×1080.BluRay.mkv
+: title: Movie
+  screen_size: 1080p
+  -season: 1920
+
+# === regression anchors for historically-fixed 'Invalid Guess Result' issues ===
+# These bugs were reported and fixed in earlier releases but lacked a corpus fixture.
+# Added while sweeping closed issues; each anchors the now-correct parse for its ticket.
+
+# #659: leading www. website, title after it
+? "www.4MovieRulz.be - Ginny Weds Sunny (2020) 1080p Hindi Proper HDRip x264 DD5.1 - 2.4GB ESub.mkv"
+: title: Ginny Weds Sunny
+  year: 2020
+  website: www.4MovieRulz.be
+  language: hi
+  audio_codec: Dolby Digital
+  audio_channels: "5.1"
+  video_codec: H.264
+  screen_size: 1080p
+  other: [Proper, HD, Rip]
+  proper_count: 1
+  type: movie
+
+# #620: one-word title Us kept (not country)
+? "Us.2019.2160p.BluRay.REMUX.HEVC.DTS-HD.MA.TrueHD.7.1.Atmos-FGT.mkv"
+: title: Us
+  year: 2019
+  release_group: FGT
+  source: Ultra HD Blu-ray
+  audio_codec: [DTS-HD, Dolby TrueHD, Dolby Atmos]
+  audio_channels: "7.1"
+  video_codec: H.265
+  video_profile: High Efficiency Video Coding
+  screen_size: 2160p
+  other: Remux
+  type: movie
+
+# #523: title with year and SxxExx
+? "Next.Of.Kin.2018.S01E04.HDTV.x264-ORGANiC[eztv].mkv"
+: title: Next Of Kin
+  season: 1
+  episode: 4
+  year: 2018
+  release_group: ORGANiC[eztv]
+  source: HDTV
+  video_codec: H.264
+  type: episode
+
+# #505: multi-language list, NTb release group
+? "Test (2013) [WEBDL-1080p] [x264 AC3] [ENG+RU+PT] [NTb].mkv"
+: title: Test
+  year: 2013
+  release_group: NTb
+  language: [en, ru, pt]
+  source: Web
+  audio_codec: Dolby Digital
+  video_codec: H.264
+  screen_size: 1080p
+  type: movie
+
+# #458: CZ language, SDTV group
+? "Goof.Troop.1x24.Waste.Makes.Haste.720p.HDTV.x264.CZ-SDTV"
+: title: Goof Troop
+  season: 1
+  episode: 24
+  episode_title: Waste Makes Haste
+  release_group: SDTV
+  language: cs
+  source: HDTV
+  video_codec: H.264
+  screen_size: 720p
+  type: episode
+
+# #440: episode title with Part 1
+? "Adventure.Time.S08E16.Elements.Part.1.Skyhooks.720p.WEB-DL.AAC2.0.H.264-RTN.mkv"
+: title: Adventure Time
+  season: 8
+  episode: 16
+  episode_title: Elements Part 1 Skyhooks
+  release_group: RTN
+  source: Web
+  audio_codec: AAC
+  audio_channels: "2.0"
+  video_codec: H.264
+  screen_size: 720p
+  type: episode
+
+# #417: READ.NFO + NTSC others
+? "The.Hobbit.The.Battle.Of.The.Five.Armies.2014.READ.NFO.NTSC.DVDR-KART3LDVD"
+: title: The Hobbit The Battle Of The Five Armies
+  year: 2014
+  release_group: KART3LDVD
+  source: DVD
+  other: [Read NFO, NTSC]
+  type: movie
+
+# #413: season-only S01, iP streaming
+? "Special.Forces.Ultimate.Hell.Week.S01.720p.iP.WEBRip.AAC2.0.H.264-BTN"
+: title: Special Forces Ultimate Hell Week
+  season: 1
+  release_group: BTN
+  source: Web
+  audio_codec: AAC
+  audio_channels: "2.0"
+  video_codec: H.264
+  screen_size: 720p
+  other: Rip
+  type: episode
+
+# #303: BS666 group not audio
+? "Banshee.S04E03.1080i.HDTV.DD5.1.H.264-BS666"
+: title: Banshee
+  season: 4
+  episode: 3
+  release_group: BS666
+  source: HDTV
+  audio_codec: Dolby Digital
+  audio_channels: "5.1"
+  video_codec: H.264
+  screen_size: 1080i
+  type: episode
+
+# #298: BATV group
+? "Dark.Net.S01E06.720p.HDTV.x264-BATV"
+: title: Dark Net
+  season: 1
+  episode: 6
+  release_group: BATV
+  source: HDTV
+  video_codec: H.264
+  screen_size: 720p
+  type: episode
+
+# #286: single-letter episode title X
+? "Black.Sails.S02E02.X.1080p.WEB-DL.DD5.1.H.264-BS.mkv"
+: title: Black Sails
+  season: 2
+  episode: 2
+  episode_title: X
+  release_group: BS
+  source: Web
+  audio_codec: Dolby Digital
+  audio_channels: "5.1"
+  video_codec: H.264
+  screen_size: 1080p
+  type: episode
+
+# #269: AC3D audio, DL dual-language
+? "Das.Appartement.GERMAN.AC3D.DL.720p.BluRay.x264-TVP"
+: title: Das Appartement
+  release_group: TVP
+  language: [de, mul]
+  source: Blu-ray
+  audio_codec: Dolby Digital
+  video_codec: H.264
+  screen_size: 720p
+  type: movie
+
+# #234: dashed layout episode title
+? "Californication - S05E09 - At the Movies [HDTV-720p].mkv"
+: title: Californication
+  season: 5
+  episode: 9
+  episode_title: At the Movies
+  source: HDTV
+  screen_size: 720p
+  type: episode
+
+# #220: LD line-dubbed
+? "Doctor.Who.2005.S04E06.FRENCH.LD.DVDRip.XviD-TRACKS.avi"
+: title: Doctor Who
+  season: 4
+  episode: 6
+  year: 2005
+  release_group: TRACKS
+  language: fr
+  source: DVD
+  video_codec: Xvid
+  other: [Line Dubbed, Rip]
+  type: episode
+
+# #245: anime - 01 -> episode
+? "[PuyaSubs!] Digimon Adventure tri - 01 [720p][F9967949].mkv"
+: title: Digimon Adventure tri
+  episode: 1
+  release_group: PuyaSubs!
+  screen_size: 720p
+  type: episode
+
+# #151: h265 prefix not in title
+? "h265 Volte Face 1080p DTS"
+: title: Volte Face
+  audio_codec: DTS
+  video_codec: H.265
+  screen_size: 1080p
+  type: movie
+
+# #328: 5.1Ch audio channels
+? "Show.Name.S02E02.Episode.Title.1080p.WEB-DL.x264.5.1Ch.-.Group"
+: title: Show Name
+  season: 2
+  episode: 2
+  episode_title: Episode Title
+  release_group: Group
+  source: Web
+  audio_channels: "5.1"
+  video_codec: H.264
+  screen_size: 1080p
+  type: episode
+
+# #311: episode range 21.22, VOSTFR
+? "Show.Name.S03E21.22.FASTSUB.VOSTFR.HDTV.XviD.GROUP"
+: title: Show Name
+  season: 3
+  episode: [21, 22]
+  release_group: GROUP
+  source: HDTV
+  video_codec: Xvid
+  other: Fast Subtitled
+  type: episode
+
+# --- #776: a release group casing must follow the actual match (the scene tag at the end of the
+# filename), not a parent folder with a different casing ---
+? /mnt/user/noxxus/Hellboy.2019.1080p.BluRay.x265-NOXXUS.mkv
+: title: Hellboy
+  year: 2019
+  release_group: NOXXUS
+
+? /mnt/user/noXxus/Hellboy.2019.1080p.BluRay.x265-NOXXUS.mkv
+: title: Hellboy
+  year: 2019
+  release_group: NOXXUS

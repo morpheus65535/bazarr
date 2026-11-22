@@ -3,6 +3,8 @@
 import requests
 import logging
 
+from urllib.parse import urlencode
+
 from app.config import settings
 from radarr.info import url_api_radarr
 from constants import HEADERS
@@ -12,8 +14,13 @@ def browse_radarr_filesystem(path='#'):
     if path == '#':
         path = ''
 
-    url_radarr_api_filesystem = (f"{url_api_radarr()}filesystem?path={path}&allowFoldersWithoutTrailingSlashes=true&"
-                                 f"includeFiles=false&apikey={settings.radarr.apikey}")
+    query = urlencode({
+        'path': path,
+        'allowFoldersWithoutTrailingSlashes': 'true',
+        'includeFiles': 'false',
+        'apikey': settings.radarr.apikey,
+    })
+    url_radarr_api_filesystem = f"{url_api_radarr()}filesystem?{query}"
     try:
         r = requests.get(url_radarr_api_filesystem, timeout=int(settings.radarr.http_timeout), verify=False,
                          headers=HEADERS)

@@ -530,7 +530,8 @@ class tqdm(Comparable):
         """
 
         # sanity check: total
-        if total and n >= (total + 0.5):  # allow float imprecision (#849)
+        if total and (n >= (total + 0.5) or total == float("inf")):
+            # allow float imprecision (#849) or inf (#651)
             total = None
 
         # apply custom scale if necessary
@@ -627,9 +628,9 @@ class tqdm(Comparable):
                 bar_format = "{l_bar}{bar}{r_bar}"
 
             full_bar = FormatReplace()
-            nobar = bar_format.format(bar=full_bar, **format_dict)
+            nobar = bar_format.format(bar=full_bar, **format_dict)  # no `{bar}`
             if not full_bar.format_called:
-                return nobar  # no `{bar}`; nothing else to do
+                return disp_trim(nobar, ncols) if ncols else nobar
 
             # Formatting progress bar space available for bar's display
             full_bar = Bar(frac,
@@ -648,7 +649,7 @@ class tqdm(Comparable):
             full_bar = FormatReplace()
             nobar = bar_format.format(bar=full_bar, **format_dict)
             if not full_bar.format_called:
-                return nobar
+                return disp_trim(nobar, ncols) if ncols else nobar
             full_bar = Bar(0,
                            max(1, ncols - disp_len(nobar)) if ncols else 10,
                            charset=Bar.BLANK, colour=colour)
@@ -656,8 +657,9 @@ class tqdm(Comparable):
             return disp_trim(res, ncols) if ncols else res
         else:
             # no total: no bar & ETA, just progress stats
-            return (f'{(prefix + ": ") if prefix else ""}'
-                    f'{n_fmt}{unit} [{elapsed_str}, {rate_fmt}{postfix}]')
+            res = (f'{(prefix + ": ") if prefix else ""}'
+                   f'{n_fmt}{unit} [{elapsed_str}, {rate_fmt}{postfix}]')
+            return disp_trim(res, ncols) if ncols else res
 
     def __new__(cls, *_, **__):
         instance = object.__new__(cls)
@@ -716,6 +718,8 @@ class tqdm(Comparable):
     def write(cls, s, file=None, end="\n", nolock=False):
         """Print a message via tqdm (without overlap with bars)."""
         fp = file if file is not None else sys.stdout
+        if fp is None:
+            return
         with cls.external_write_mode(file=file, nolock=nolock):
             # Write the message
             fp.write(s)
@@ -729,6 +733,9 @@ class tqdm(Comparable):
         Useful when writing to standard output stream
         """
         fp = file if file is not None else sys.stdout
+        if fp is None:
+            yield
+            return
 
         try:
             if not nolock:
@@ -978,8 +985,7 @@ class tqdm(Comparable):
             except (TypeError, AttributeError):
                 total = None
         if total == float("inf"):
-            # Infinite iterations, behave same as unknown
-            total = None
+            total = None  # same as unknown
 
         if disable:
             self.iterable = iterable
@@ -1166,8 +1172,7 @@ class tqdm(Comparable):
         # If the bar is disabled, then just walk the iterable
         # (note: keep this check outside the loop for performance)
         if self.disable:
-            for obj in iterable:
-                yield obj
+            yield from iterable
             return
 
         mininterval = self.mininterval
@@ -1264,7 +1269,7 @@ class tqdm(Comparable):
 
     def close(self):
         """Cleanup and (if leave=False) close the progress bar."""
-        if self.disable:
+        if getattr(self, 'disable', True):
             return
 
         # Prevent multiple closures
@@ -1274,6 +1279,8 @@ class tqdm(Comparable):
         pos = abs(self.pos)
         self._decr_instances(self)
 
+        if not hasattr(self, 'last_print_t'):
+            return
         if self.last_print_t < self.start_t + self.delay:
             # haven't ever displayed; nothing to clear
             return
@@ -1369,7 +1376,7 @@ class tqdm(Comparable):
         """
         self.n = 0
         if total is not None:
-            self.total = total
+            self.total = None if total == float("inf") else total
         if self.disable:
             return
         self.last_print_n = 0

@@ -21,11 +21,13 @@ declare namespace System {
     job_name: string;
     status: string;
     last_run_time: string;
+    is_cancellable: boolean;
     is_progress: boolean;
     is_signalr: boolean;
     progress_value: number;
     progress_max: number;
     progress_message: string;
+    duration: number;
   }
 
   interface Status {

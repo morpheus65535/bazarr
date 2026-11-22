@@ -2,31 +2,41 @@ import typing
 from decimal import Decimal, InvalidOperation
 from logging import NullHandler, getLogger
 
+from knowit.config import Config
 from knowit.core import Rule
 
 logger = getLogger(__name__)
 logger.addHandler(NullHandler())
 
 
-class AtmosRule(Rule):
-    """Atmos rule."""
+class AtmosRule(Rule[typing.Any]):
+    """Add the object audio codec (Dolby Atmos or DTS:X) that the commercial format names."""
 
-    def __init__(self, config: typing.Mapping[str, typing.Mapping], name: str,
-                 **kwargs):
+    #: Text in the commercial format, and the code of the object audio codec. IMAX Enhanced audio is DTS:X.
+    markers = (('atmos', 'ATMOS'), ('dts:x', 'DTS:X'), ('imax enhanced', 'DTS:X'))
+
+    def __init__(self, config: Config, name: str, **kwargs: typing.Any):
         """Initialize an Atmos rule."""
         super().__init__(name, **kwargs)
-        self.audio_codecs = getattr(config, 'AudioCodec')
+        self.audio_codecs = config.AudioCodec
 
-    def execute(self, props, pv_props, context):
+    def execute(
+        self,
+        props: typing.MutableMapping[str, typing.Any],
+        pv_props: typing.MutableMapping[str, typing.Any],
+        context: typing.MutableMapping[str, typing.Any],
+    ) -> typing.Any:
         """Execute the rule against properties."""
         profile = context.get('profile') or 'default'
-        format_commercial = pv_props.get('format_commercial')
-        if 'codec' in props and format_commercial and 'atmos' in format_commercial.lower():
-            props['codec'] = [props['codec'],
-                              getattr(self.audio_codecs['ATMOS'], profile)]
+        format_commercial = str(pv_props.get('format_commercial') or '').lower()
+        for marker, code in self.markers:
+            if 'codec' in props and marker in format_commercial:
+                props['codec'] = [props['codec'], getattr(self.audio_codecs[code], profile)]
+                break
+        return None
 
 
-class AudioChannelsRule(Rule):
+class AudioChannelsRule(Rule[typing.Any]):
     """Audio Channel rule."""
 
     mapping = {
@@ -36,7 +46,12 @@ class AudioChannelsRule(Rule):
         8: '7.1',
     }
 
-    def execute(self, props, pv_props, context):
+    def execute(
+        self,
+        props: typing.MutableMapping[str, typing.Any],
+        pv_props: typing.MutableMapping[str, typing.Any],
+        context: typing.MutableMapping[str, typing.Any],
+    ) -> typing.Any:
         """Execute the rule against properties."""
         count = props.get('channels_count')
         if count is None:
@@ -45,7 +60,7 @@ class AudioChannelsRule(Rule):
         channels = self.mapping.get(count) if isinstance(count, int) else None
         positions = pv_props.get('channel_positions') or []
         positions = positions if isinstance(positions, list) else [positions]
-        candidate = 0
+        candidate: int | Decimal = 0
         for position in positions:
             if not position:
                 continue
@@ -73,18 +88,17 @@ class AudioChannelsRule(Rule):
         self.report(positions, context)
 
 
-class DtsHdRule(Rule):
+class DtsHdRule(Rule[typing.Any]):
     """DTS-HD rule."""
 
-    def __init__(self, config: typing.Mapping[str, typing.Mapping], name: str,
-                 **kwargs):
+    def __init__(self, config: Config, name: str, **kwargs: typing.Any):
         """Initialize a DTS-HD Rule."""
         super().__init__(name, **kwargs)
-        self.audio_codecs = getattr(config, 'AudioCodec')
-        self.audio_profiles = getattr(config, 'AudioProfile')
+        self.audio_codecs = config.AudioCodec
+        self.audio_profiles = config.AudioProfile
 
     @classmethod
-    def _redefine(cls, props, name, index):
+    def _redefine(cls, props: typing.MutableMapping[str, typing.Any], name: str, index: int) -> None:
         actual = props.get(name)
         if isinstance(actual, list):
             value = actual[index]
@@ -93,12 +107,17 @@ class DtsHdRule(Rule):
             else:
                 props[name] = value
 
-    def execute(self, props, pv_props, context):
+    def execute(
+        self,
+        props: typing.MutableMapping[str, typing.Any],
+        pv_props: typing.MutableMapping[str, typing.Any],
+        context: typing.MutableMapping[str, typing.Any],
+    ) -> typing.Any:
         """Execute the rule against properties."""
         profile = context.get('profile') or 'default'
 
-        if props.get('codec') == getattr(self.audio_codecs['DTS'],
-                                         profile) and props.get('profile') in (
-                getattr(self.audio_profiles['MA'], profile),
-                getattr(self.audio_profiles['HRA'], profile)):
+        if props.get('codec') == getattr(self.audio_codecs['DTS'], profile) and props.get('profile') in (
+            getattr(self.audio_profiles['MA'], profile),
+            getattr(self.audio_profiles['HRA'], profile),
+        ):
             props['codec'] = getattr(self.audio_codecs['DTS-HD'], profile)

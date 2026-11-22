@@ -6,6 +6,7 @@ interface ListQueryKeys {
   sortOrder: string;
   monitored: string;
   missing: string;
+  ended: string;
   profileId: string;
   audioLanguage: string;
   tags: string;
@@ -20,6 +21,7 @@ const keysFor = (prefix?: string): ListQueryKeys => {
     sortOrder: `${p}sort_order`,
     monitored: `${p}monitored`,
     missing: `${p}missing`,
+    ended: `${p}ended`,
     profileId: `${p}profileid`,
     audioLanguage: `${p}audio_language`,
     tags: `${p}tags`,
@@ -43,6 +45,7 @@ export const parseListQuery = (
   const filters: Parameter.ListFilters = {};
   const monitored = searchParams.get(keys.monitored);
   const missing = searchParams.get(keys.missing);
+  const ended = searchParams.get(keys.ended);
   const profileId = searchParams.get(keys.profileId);
   const tags = searchParams.getAll(keys.tags);
 
@@ -51,6 +54,9 @@ export const parseListQuery = (
   }
   if (missing !== null) {
     filters.missing = missing === "true";
+  }
+  if (ended !== null) {
+    filters.ended = ended === "true";
   }
   if (profileId !== null) {
     filters.profileId = profileId === NO_PROFILE ? 0 : Number(profileId);
@@ -97,6 +103,7 @@ export const buildListSearchParams = (
   setParam(next, keys.sortOrder, query.sortOrder);
   setParam(next, keys.monitored, boolParam(query.filters?.monitored));
   setParam(next, keys.missing, boolParam(query.filters?.missing));
+  setParam(next, keys.ended, boolParam(query.filters?.ended));
   setParam(
     next,
     keys.profileId,

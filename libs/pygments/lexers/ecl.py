@@ -39,7 +39,7 @@ class ECLLexer(RegexLexer):
         'whitespace': [
             (r'\s+', Whitespace),
             (r'\/\/.*', Comment.Single),
-            (r'/(\\\n)?\*(.|\n)*?\*(\\\n)?/', Comment.Multiline),
+            (r'/(\\\n)?\*[\s\S]*?\*(\\\n)?/', Comment.Multiline),
         ],
         'statements': [
             include('types'),

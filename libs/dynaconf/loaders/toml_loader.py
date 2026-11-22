@@ -31,6 +31,7 @@ def load(
     :param filename: Optional custom filename to load
     :return: None
     """
+
     # when load_file function is called directly it comes with module and line number
     if isinstance(identifier, SourceMetadata) and identifier.loader.startswith(
         "load_file"

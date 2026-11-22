@@ -2,6 +2,7 @@
 import io
 import logging
 import os
+from random import randint
 import zipfile
 
 from subzero.language import Language
@@ -11,10 +12,9 @@ from requests import Session
 from subliminal_patch.providers import Provider
 from subliminal_patch.subtitle import Subtitle
 from subliminal.subtitle import fix_line_ending
-from subliminal import __short_version__
 from subliminal.cache import SHOW_EXPIRATION_TIME, region
-from subliminal_patch.exceptions import ProviderError
 from subliminal_patch.subtitle import guess_matches
+from .utils import FIRST_THOUSAND_OR_SO_USER_AGENTS as AGENT_LIST
 from subliminal_patch.utils import sanitize
 from subliminal.video import Episode, Movie
 
@@ -86,7 +86,7 @@ class WizdomProvider(Provider):
 
     def initialize(self):
         self.session = Session()
-        self.session.headers['User-Agent'] = 'Subliminal/{}'.format(__short_version__)
+        self.session.headers['User-Agent'] = AGENT_LIST[randint(0, len(AGENT_LIST) - 1)]
 
     def terminate(self):
         self.session.close()

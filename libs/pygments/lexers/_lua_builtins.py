@@ -181,7 +181,7 @@ if __name__ == '__main__':  # pragma: no cover
 
     # you can't generally find out what module a function belongs to if you
     # have only its name. Because of this, here are some callback functions
-    # that recognize if a gioven function belongs to a specific module
+    # that recognize if a given function belongs to a specific module
     def module_callbacks():
         def is_in_coroutine_module(name):
             return name.startswith('coroutine.')

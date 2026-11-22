@@ -96,10 +96,10 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     requiredIntegration: "anidb",
   },
   {
-    key: "animetosho_xyz",
-    name: "AnimeTosho.xyz",
+    key: "animetosho_net",
+    name: "AnimeTosho.net",
     description:
-      "AnimeTosho.xyz is a free, completely automated service which mirrors most torrents posted on TokyoTosho's anime category, Nyaa.si's English translated anime category and AniDex's anime category.",
+      "AnimeTosho.net is a free, completely automated service which mirrors most torrents posted on TokyoTosho's anime category, Nyaa.si's English translated anime category and AniDex's anime category.",
     requiredIntegration: "anidb",
   },
   {
@@ -232,8 +232,8 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
       "Warning for cloud users: this provider needs to read the entire file in order to extract subtitles.",
   },
   {
-    key: "gestdown",
-    name: "Gestdown (Addic7ed proxy)",
+    key: "subvault",
+    name: "Subvault (Addic7ed proxy)",
     description: "Proxy for Addic7ed website. No need for login or cookies.",
   },
   {
@@ -463,7 +463,20 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
   {
     key: "prijevodionline",
     name: "Prijevodi Online",
-    description: "Prijevodi Online website. No need for login or cookies.",
+    message:
+      "API key required, in the form po_... Paid translations spend tokens from your account when downloaded.",
+    inputs: [
+      {
+        type: "password",
+        key: "api_key",
+        name: "API key",
+      },
+      {
+        type: "switch",
+        key: "allow_paid_translations",
+        name: "Allow paid translations (downloading one spends tokens from your account)",
+      },
+    ],
   },
   {
     key: "regielive",
@@ -607,17 +620,6 @@ export const ProviderList: Readonly<ProviderInfo[]> = [
     key: "subssabbz",
     name: "Subs.sab.bz",
     description: "Bulgarian Subtitles Provider",
-  },
-  {
-    key: "subs4free",
-    name: "Subs4Free",
-    description: "Greek Subtitles Provider. Broken, may not work for some.",
-  },
-  {
-    key: "subs4series",
-    name: "Subs4Series",
-    description:
-      "Greek Subtitles Provider.\nRequires Anti-Captcha Provider to solve captchas for each download.",
   },
   { key: "subscenter", description: "Hebrew Subtitles Provider" },
   {

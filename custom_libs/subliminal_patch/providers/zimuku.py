@@ -24,7 +24,7 @@ from six import text_type
 from random import randint, randrange
 
 from subliminal.providers import ParserBeautifulSoup
-from subliminal_patch.pitcher import pitchers
+from subliminal_patch.pitcher import get_solve_cooldown, pitchers
 from subliminal_patch.providers import Provider
 from subliminal.subtitle import (
     SUBTITLE_EXTENSIONS,
@@ -246,6 +246,51 @@ def solve_bmp_captcha(bmp_bytes):
         return None
 
 
+def _external_pitcher_name() -> str | None:
+    """Return the name of the paid pitcher configured for image captchas.
+
+    :return: The pitcher name, or None if no external service is configured.
+    """
+    anticaptcha_class = os.environ.get("ANTICAPTCHA_CLASS")
+    if not anticaptcha_class:
+        return None
+
+    pitcher_names = {
+        "AntiCaptchaProxyLess": "AntiCaptchaImageToText",
+        "CaptchaAIProxyLess": "CaptchaAIImageToText",
+    }
+    return pitcher_names.get(anticaptcha_class, "DeathByCaptchaImageToText")
+
+
+def _solve_with_external_pitcher(image_bytes: bytes) -> str | None:
+    """Solve a verification image with the configured paid anti-captcha service.
+
+    Each call makes at most one paid attempt (a single decode, no internal
+    retries). The pitcher's cooldown after a failure is applied in
+    ``Pitcher.throw``.
+
+    :param image_bytes: Raw BMP image bytes of the verification challenge.
+    :return: The solved text, or None if no paid attempt was made or it failed.
+    """
+    image_pitcher = _external_pitcher_name()
+    if not image_pitcher:
+        return None
+
+    solved = None
+    try:
+        img_fp = io.BytesIO()
+        Image.open(io.BytesIO(image_bytes)).convert("RGB").save(img_fp, "PNG")
+        img_fp.seek(0)
+        pitcher = pitchers.get_pitcher(image_pitcher)("Zimuku", img_fp, tries=1)
+        solved = pitcher.throw()
+    except Exception as e:
+        logger.warning("External anti-captcha pitcher failed: %s", e)
+
+    if solved:
+        logger.info("Zimuku captcha solved by external service (%s)", image_pitcher)
+    return solved
+
+
 class ZimukuProvider(Provider):
     """Zimuku Provider."""
 
@@ -268,7 +313,27 @@ class ZimukuProvider(Provider):
     verification_image_re = re.compile(r'<img.*?src="data:image/bmp;base64,(.*?)".*?>')
 
     def yunsuo_bypass(self, url, *args, **kwargs):
-        def parse_verification_image(image_content: str):
+        """Fetch a URL, solving the Yunsuo WAF challenge when one is served.
+
+        At most one paid external solve is made per call, regardless of how
+        many challenge pages are served. Other challenge attempts use the
+        local solver or a random guess. If a paid answer is submitted and the
+        server still serves a challenge, the paid pitcher is put into cooldown.
+
+        :param url: URL to fetch.
+        :return: The final response object.
+        """
+        external_attempted = False
+        pending_paid_pitcher: str | None = None
+
+        def parse_verification_image(image_content: str) -> str:
+            """Return the challenge answer for a base64 BMP verification image.
+
+            :param image_content: Base64 encoded BMP image from the challenge page.
+            :return: The answer to submit, as a string.
+            """
+            nonlocal external_attempted, pending_paid_pitcher
+            raw_bytes = None
             try:
                 raw_bytes = base64.b64decode(image_content)
                 solved = solve_bmp_captcha(raw_bytes)
@@ -278,27 +343,24 @@ class ZimukuProvider(Provider):
             except Exception as e:
                 logger.debug("Local captcha solver error: %s", e)
 
-            anticaptcha_class = os.environ.get("ANTICAPTCHA_CLASS")
-            if anticaptcha_class:
-                pitcher_names = {
-                    "AntiCaptchaProxyLess": "AntiCaptchaImageToText",
-                    "CaptchaAIProxyLess": "CaptchaAIImageToText",
-                }
-                image_pitcher = pitcher_names.get(anticaptcha_class, "DeathByCaptchaImageToText")
-                try:
-                    img_fp = io.BytesIO()
-                    Image.open(io.BytesIO(raw_bytes)).convert("RGB").save(img_fp, "PNG")
-                    img_fp.seek(0)
-                    pitcher = pitchers.get_pitcher(image_pitcher)("Zimuku", img_fp)
-                    return pitcher.throw()
-                except Exception as e:
-                    logger.warning("External anti-captcha pitcher failed: %s", e)
+            if raw_bytes is not None and not external_attempted:
+                external_attempted = True
+                image_pitcher = _external_pitcher_name()
+                solved = _solve_with_external_pitcher(raw_bytes)
+                if solved:
+                    pending_paid_pitcher = image_pitcher
+                    return solved
 
             return f"{randrange(800, 1920)},{randrange(600, 1080)}"
 
         for _ in range(_MAX_YUNSUO_RETRIES):
             r = self.session.get(url, *args, **kwargs)
             if r.status_code == 404:
+                if pending_paid_pitcher is not None:
+                    logger.warning("Zimuku paid captcha answer was rejected, pausing %s solving",
+                                   pending_paid_pitcher)
+                    get_solve_cooldown(pending_paid_pitcher).report_failure()
+                    pending_paid_pitcher = None
                 # mock js script logic
                 tr = self.location_re.findall(r.text)
                 verification_image = self.verification_image_re.findall(r.text)
@@ -310,7 +372,7 @@ class ZimukuProvider(Provider):
                 if tr:
                     verify_url = urljoin(self.server_url, tr[0] + string_to_hex(self.code))
                     self.session.get(verify_url, allow_redirects=False, headers={"Referer": r.url})
-                    continue
+                continue
             if not self.location_re.findall(r.text):
                 self.verify_token = string_to_hex(self.code)
                 return r

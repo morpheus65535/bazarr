@@ -28,6 +28,7 @@ const filterConfig = {
     missing: true,
     profile: true,
     tags: true,
+    ended: true,
   },
 };
 

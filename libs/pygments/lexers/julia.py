@@ -140,13 +140,13 @@ class JuliaLexer(RegexLexer):
             (allowed_variable, Name),
 
             # numbers
-            (r'(\d+((_\d+)+)?\.(?!\.)(\d+((_\d+)+)?)?|\.\d+((_\d+)+)?)([eEf][+-]?[0-9]+)?', Number.Float),
-            (r'\d+((_\d+)+)?[eEf][+-]?[0-9]+', Number.Float),
-            (r'0x[a-fA-F0-9]+((_[a-fA-F0-9]+)+)?(\.([a-fA-F0-9]+((_[a-fA-F0-9]+)+)?)?)?p[+-]?\d+', Number.Float),
-            (r'0b[01]+((_[01]+)+)?', Number.Bin),
-            (r'0o[0-7]+((_[0-7]+)+)?', Number.Oct),
-            (r'0x[a-fA-F0-9]+((_[a-fA-F0-9]+)+)?', Number.Hex),
-            (r'\d+((_\d+)+)?', Number.Integer),
+            (r'(\d+(_\d+)*\.(?!\.)(\d+(_\d+)*)?|\.\d+(_\d+)*)([eEf][+-]?[0-9]+)?', Number.Float),
+            (r'\d+(_\d+)*[eEf][+-]?[0-9]+', Number.Float),
+            (r'0x[a-fA-F0-9]+(_[a-fA-F0-9]+)*(\.([a-fA-F0-9]+(_[a-fA-F0-9]+)*)?)?p[+-]?\d+', Number.Float),
+            (r'0b[01]+(_[01]+)*', Number.Bin),
+            (r'0o[0-7]+(_[0-7]+)*', Number.Oct),
+            (r'0x[a-fA-F0-9]+(_[a-fA-F0-9]+)*', Number.Hex),
+            (r'\d+(_\d+)*', Number.Integer),
 
             # single dot operator matched last to permit e.g. ".1" as a float
             (words(['.']), Operator),
@@ -212,8 +212,7 @@ class JuliaLexer(RegexLexer):
 
         'regex': [
             (r'(")([imsxa]*)?', bygroups(String.Regex, String.Affix), '#pop'),
-            (r'\\"', String.Regex),
-            (r'[^\\"]+', String.Regex),
+            (r'(\\[BbDdEgNQSsUuWw\\.*+?^$|()[\]{}\" ]|[^\\\"])+', String.Regex),
         ],
 
         'tqregex': [

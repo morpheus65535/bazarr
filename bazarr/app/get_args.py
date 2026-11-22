@@ -22,6 +22,7 @@ def strtobool(val):
 
 no_update = os.environ.get("NO_UPDATE", "false").strip() == "true"
 no_cli = os.environ.get("NO_CLI", "false").strip() == "true"
+no_signalr = os.environ.get("NO_SIGNALR", "false").strip() == "true"
 
 parser = argparse.ArgumentParser()
 
@@ -43,8 +44,9 @@ parser.add_argument('--dev', default=False, type=bool, const=True, metavar="BOOL
                     help="Enable developer mode (default: False)")
 parser.add_argument('--no-tasks', default=False, type=bool, const=True, metavar="BOOL", nargs="?",
                     help="Disable all tasks (default: False)")
-parser.add_argument('--no-signalr', default=False, type=bool, const=True, metavar="BOOL", nargs="?",
-                    help="Disable SignalR connections to Sonarr and/or Radarr (default: False)")
+parser.add_argument('--no-signalr', default=no_signalr, type=bool, const=True, metavar="BOOL", nargs="?",
+                    help="Disable SignalR connections to Sonarr and Radarr (default: False). "
+                         "Can also be set with the NO_SIGNALR=true environment variable.")
 parser.add_argument('--create-db-revision', default=False, type=bool, const=True, metavar="BOOL", nargs="?",
                     help="Create a new database revision that will be used to migrate database")
 

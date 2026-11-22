@@ -68,6 +68,9 @@ export const buildListParams = (
     if (filters.missing !== undefined) {
       result.missing = filters.missing ? "true" : "false";
     }
+    if (filters.ended !== undefined) {
+      result.ended = filters.ended ? "true" : "false";
+    }
     if (filters.profileId !== undefined) {
       // 0 means "items without a languages profile"
       result.profileid = filters.profileId === 0 ? "none" : filters.profileId;

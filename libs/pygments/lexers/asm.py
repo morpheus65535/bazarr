@@ -258,7 +258,7 @@ class HsailLexer(RegexLexer):
     # Numeric Constant
     float = r'((\d+\.)|(\d*\.\d+))[eE][+-]?\d+'
     hexfloat = r'0[xX](([0-9a-fA-F]+\.[0-9a-fA-F]*)|([0-9a-fA-F]*\.[0-9a-fA-F]+))[pP][+-]?\d+'
-    ieeefloat = r'0((h|H)[0-9a-fA-F]{4}|(f|F)[0-9a-fA-F]{8}|(d|D)[0-9a-fA-F]{16})'
+    ieeefloat = r'0(?:[hH][0-9a-fA-F]{4}|[fF][0-9a-fA-F]{8}|[dD][0-9a-fA-F]{16})'
 
     tokens = {
         'root': [
@@ -285,7 +285,7 @@ class HsailLexer(RegexLexer):
             (r'[=<>{}\[\]()*.,:;!]|x\b', Punctuation)
         ],
         'whitespace': [
-            (r'(\n|\s)+', Whitespace),
+            (r'\s+', Whitespace),
         ],
         'comments': [
             (r'/\*.*?\*/', Comment.Multiline),
@@ -396,7 +396,7 @@ class LlvmLexer(RegexLexer):
             (r'[=<>{}\[\]()*.,!]|x\b', Punctuation)
         ],
         'whitespace': [
-            (r'(\n|\s+)+', Whitespace),
+            (r'\s+', Whitespace),
             (r';.*?\n', Comment),
             (r'/\*', Comment, 'c-comment'),
         ],
@@ -676,7 +676,7 @@ class LlvmMirLexer(RegexLexer):
             # Documents end with '...' or '---'
             (r'(\.\.\.|(?=---))', Keyword, '#pop'),
             # Delegate to the LlvmLexer
-            (r'((?:.|\n)+?)(?=(\.\.\.|---))', bygroups(using(LlvmLexer))),
+            (r'([\s\S]+?)(?=(\.\.\.|---))', bygroups(using(LlvmLexer))),
         ],
         'llvm_mir': [
             # Comments are hashes at the YAML level
@@ -717,10 +717,10 @@ class LlvmMirLexer(RegexLexer):
             # We have to pop llvm_mir_body and llvm_mir
             (r'(\.\.\.|(?=---))', Keyword, '#pop:2'),
             # Delegate the body block to the LlvmMirBodyLexer
-            (r'((?:.|\n)+?)(?=\.\.\.|---)', bygroups(using(LlvmMirBodyLexer))),
+            (r'([\s\S]+?)(?=\.\.\.|---)', bygroups(using(LlvmMirBodyLexer))),
             # The '...' is optional. If we didn't already find it then it isn't
             # there. There might be a '---' instead though.
-            (r'(?!\.\.\.|---)((?:.|\n)+)', bygroups(using(LlvmMirBodyLexer))),
+            (r'(?!\.\.\.|---)([\s\S]+)', bygroups(using(LlvmMirBodyLexer))),
         ],
     }
 

@@ -2,11 +2,13 @@
 
 from __future__ import absolute_import
 import os
+import threading
 import time
 import logging
 import json
 import base64
 import requests
+from collections.abc import Callable
 from subliminal.cache import region
 from dogpile.cache.api import NO_VALUE
 from python_anticaptcha import AnticaptchaClient, NoCaptchaTaskProxylessTask, NoCaptchaTask, ImageToTextTask, \
@@ -50,6 +52,69 @@ class PitcherRegistry(object):
 registry = pitchers = PitcherRegistry()
 
 
+# Seconds to stop solving with a pitcher after one of its solve attempts fails
+PITCHER_COOLDOWN_SECONDS = 15 * 60
+
+
+class SolveCooldown(object):
+    """Cooldown gate for the solve attempts of one pitcher.
+
+    After a failed solve, no further solves are attempted with that pitcher
+    until the cooldown expires. Shared by every instance of the same pitcher.
+    """
+
+    def __init__(self, cooldown_seconds: float, clock: Callable[[], float] = time.time) -> None:
+        """Create a cooldown.
+
+        :param cooldown_seconds: Seconds to block solves after a failure.
+        :param clock: Callable returning the current time in seconds.
+        """
+        self._cooldown_seconds = cooldown_seconds
+        self._clock = clock
+        self._cooldown_until = 0.0
+        self._lock = threading.Lock()
+
+    def is_available(self) -> bool:
+        """Check whether a solve may be attempted now.
+
+        :return: True if no cooldown is active, False otherwise.
+        """
+        with self._lock:
+            return self._clock() >= self._cooldown_until
+
+    def report_failure(self) -> None:
+        """Start the cooldown after a failed solve.
+
+        :return: None
+        """
+        with self._lock:
+            self._cooldown_until = self._clock() + self._cooldown_seconds
+
+    def report_success(self) -> None:
+        """Clear any active cooldown after a successful solve.
+
+        :return: None
+        """
+        with self._lock:
+            self._cooldown_until = 0.0
+
+
+_solve_cooldowns: dict[str, SolveCooldown] = {}
+_solve_cooldowns_lock = threading.Lock()
+
+
+def get_solve_cooldown(name: str) -> SolveCooldown:
+    """Return the shared solve cooldown for a pitcher name, creating it if needed.
+
+    :param name: The pitcher's ``name`` attribute.
+    :return: The cooldown shared by all instances of that pitcher.
+    """
+    with _solve_cooldowns_lock:
+        if name not in _solve_cooldowns:
+            _solve_cooldowns[name] = SolveCooldown(PITCHER_COOLDOWN_SECONDS)
+        return _solve_cooldowns[name]
+
+
 class Pitcher(object):
     name = None
     source = None
@@ -87,11 +152,30 @@ class Pitcher(object):
         self.job = self.get_job()
 
     def throw(self):
+        """Attempt a solve, gated by the cooldown shared by this pitcher's instances.
+
+        :return: The solver result, or None if the solve failed or is in cooldown.
+        """
+        cooldown = get_solve_cooldown(self.name)
+        if not cooldown.is_available():
+            logger.debug("%s: %s solving is in cooldown, skipping", self.website_name, self.name)
+            return None
+
         t = time.time()
-        data = self._throw()
-        if self.success:
+        try:
+            data = self._throw()
+        except Exception:
+            cooldown.report_failure()
+            raise
+
+        if data:
+            cooldown.report_success()
             self.solve_time = time.time() - t
             logger.info("%s: Solving took %ss", self.website_name, int(self.solve_time))
+        else:
+            cooldown.report_failure()
+            logger.warning("%s: %s solve failed, pausing it for %ss",
+                           self.website_name, self.name, PITCHER_COOLDOWN_SECONDS)
         return data
 
 

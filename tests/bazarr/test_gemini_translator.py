@@ -160,3 +160,130 @@ def test_translate_with_gemini_does_not_leave_output_file_on_failure(tmp_path, m
         service._translate_with_gemini()
 
     assert not output_file.exists()
+
+
+def _write_ass_file(path):
+    import pysubs2
+
+    subs = pysubs2.SSAFile()
+    subs.events.append(pysubs2.SSAEvent(start=0, end=2000, text="Hello {\\i1}there{\\i0}"))
+    subs.events.append(pysubs2.SSAEvent(start=3000, end=5000, text="Second\\Nline"))
+    subs.save(str(path), encoding="utf-8")
+
+
+def test_prepare_input_srt_converts_ass_source_to_parseable_srt(tmp_path, mocker):
+    import pysubs2
+    import srt
+
+    ass_file = tmp_path / "episode.ass"
+    _write_ass_file(ass_file)
+
+    service = _build_service()
+    service.source_srt_file = str(ass_file)
+    subs = pysubs2.load(str(ass_file), encoding="utf-8")
+    subs.remove_miscellaneous_events()
+
+    converted = service._prepare_input_srt(subs)
+
+    assert converted == str(tmp_path / "episode.gemini-source.srt")
+    parsed = list(srt.parse(open(converted, encoding="utf-8").read()))
+    assert [sub.index for sub in parsed] == [1, 2]
+    assert "Hello" in parsed[0].content
+    assert "Second" in parsed[1].content
+
+    service._remove_converted_input()
+    assert not (tmp_path / "episode.gemini-source.srt").exists()
+
+
+def test_prepare_input_srt_returns_srt_source_unchanged(tmp_path):
+    import pysubs2
+
+    srt_file = tmp_path / "episode.srt"
+    srt_file.write_text("1\n00:00:00,000 --> 00:00:02,000\nHello\n\n", encoding="utf-8")
+
+    service = _build_service()
+    service.source_srt_file = str(srt_file)
+    subs = pysubs2.load(str(srt_file), encoding="utf-8")
+
+    assert service._prepare_input_srt(subs) == str(srt_file)
+    assert service._converted_input_file is None
+    assert not (tmp_path / "episode.gemini-source.srt").exists()
+
+
+def test_translate_with_gemini_raises_parse_error_not_unbound_local(tmp_path, mocker):
+    import srt
+
+    input_file = tmp_path / "input.srt"
+    output_file = tmp_path / "output.srt"
+    input_file.write_text("[Script Info]\nTitle: not srt\n\nDialogue: 0,0:00:00.00,0:00:01.00,Default,,0,0,0,,Hi\n",
+                          encoding="utf-8")
+
+    service = _build_service()
+    service.input_file = str(input_file)
+    service.output_file = str(output_file)
+    service.api_keys = ["key-1"]
+    service.current_api_key = "key-1"
+    service.target_language = "English"
+    service.job_id = "job-1"
+
+    progress_mock = mocker.patch.object(gemini_translator.jobs_queue, "update_job_progress")
+
+    with pytest.raises(srt.SRTParseError):
+        service._translate_with_gemini()
+
+    progress_values = [call.kwargs.get("progress_value") for call in progress_mock.call_args_list]
+    assert 0 in progress_values
+    assert not output_file.exists()
+
+
+def test_remove_converted_input_ignores_missing_file(tmp_path):
+    service = _build_service()
+    service._converted_input_file = str(tmp_path / "missing.gemini-source.srt")
+
+    service._remove_converted_input()
+
+    assert service._converted_input_file is None
+
+
+def test_translate_with_gemini_raises_when_all_keys_rate_limited(mocker):
+    service = _build_service()
+    service.api_keys = ["key-1"]
+    service.current_api_key = None
+    service.target_language = "English"
+    service.input_file = "input.srt"
+    service.job_id = "job-1"
+
+    mocker.patch.object(gemini_translator.jobs_queue, "update_job_progress")
+
+    with pytest.raises(RuntimeError, match="rate limited"):
+        service._translate_with_gemini()
+
+
+def test_translate_does_not_record_success_when_all_keys_rate_limited(tmp_path, mocker):
+    import pysubs2
+
+    service = _build_service()
+    service.source_srt_file = str(tmp_path / "input.srt")
+    service.dest_srt_file = str(tmp_path / "output.srt")
+    (tmp_path / "output.srt").write_text("1\n00:00:00,000 --> 00:00:01,000\nExisting\n", encoding="utf-8")
+
+    mocker.patch.object(gemini_translator.pysubs2, "load", return_value=pysubs2.SSAFile())
+    mocker.patch.object(service, "_get_configured_api_keys", return_value=["key-1"])
+    mocker.patch.object(service, "_select_next_api_key", return_value=None)
+    mocker.patch.object(service, "_prepare_input_srt", return_value=str(tmp_path / "input.srt"))
+    mocker.patch.object(service, "_check_saved_progress")
+    mocker.patch.object(service, "_remove_converted_input")
+    mocker.patch.object(gemini_translator, "get_description", return_value="")
+    progress_mock = mocker.patch.object(gemini_translator.jobs_queue, "update_job_progress")
+    mocker.patch.object(gemini_translator, "language_from_alpha3", return_value="English")
+    add_info_mock = mocker.patch.object(gemini_translator, "add_translator_info")
+    history_mock = mocker.patch.object(gemini_translator, "history_log")
+
+    with pytest.raises(RuntimeError, match="rate limited"):
+        service.translate(job_id="job-1")
+
+    progress_messages = [c.kwargs.get("progress_message") for c in progress_mock.call_args_list]
+    assert any("rate limited" in (m or "") for m in progress_messages)
+    add_info_mock.assert_not_called()
+    history_mock.assert_not_called()
+    assert (tmp_path / "output.srt").read_text(encoding="utf-8").startswith("1\n00:00:00,000")

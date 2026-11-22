@@ -2,6 +2,7 @@
 
 from __future__ import absolute_import
 import logging
+import re
 
 from random import randint
 from requests import Session
@@ -9,8 +10,9 @@ from requests import Session
 from subzero.language import Language
 from subliminal.providers import ParserBeautifulSoup
 from subliminal.cache import SHOW_EXPIRATION_TIME, region, EPISODE_EXPIRATION_TIME
+from subliminal.exceptions import ProviderError
 from subliminal.providers.tvsubtitles import TVsubtitlesProvider as _TVsubtitlesProvider, \
-    TVsubtitlesSubtitle as _TVsubtitlesSubtitle, link_re, episode_id_re
+    TVsubtitlesSubtitle as _TVsubtitlesSubtitle, episode_id_re
 from subliminal.utils import sanitize
 from subliminal.video import Episode
 
@@ -40,40 +42,89 @@ class TVsubtitlesProvider(_TVsubtitlesProvider):
         self.session.headers['User-Agent'] = AGENT_LIST[randint(0, len(AGENT_LIST) - 1)]
 
     @region.cache_on_arguments(expiration_time=SHOW_EXPIRATION_TIME)
-    def search_show_id(self, series, year=None):
-        """Search the show id from the `series` and `year`.
-        :param string series: series of the episode.
-        :param year: year of the series, if any.
-        :type year: int or None
-        :return: the show id, if any.
-        :rtype: int or None
+    def _show_list(self):
         """
-        # make the search
-        logger.info('Searching show id for %r', series)
-        r = self.session.post(self.server_url + 'search1.php', data={'qs': series}, timeout=10)
+        Retrieve the complete list of TV shows available on the provider server.
+
+        The method requests the ``tvshows.html`` page from the server, parses
+        the HTML content and extracts every link pointing to a show page. For
+        each matching link, the show title, its numeric identifier (taken from
+        the link target) and the year of first airing (taken from the last cell
+        of the same table row, when present) are collected. The result is
+        cached on the method arguments for the duration defined by the show
+        expiration time, so repeated calls within that period do not trigger
+        new HTTP requests.
+
+        :raises ProviderError: If the page contains no shows. Raising keeps the
+            empty result out of the cache.
+        :raises requests.exceptions.HTTPError: If the server responds with an
+            unsuccessful HTTP status code.
+        :raises requests.exceptions.Timeout: If the request does not complete
+            within the configured timeout.
+        :raises requests.exceptions.RequestException: If any other network
+            related error occurs while fetching the page.
+        :return: A list of tuples, each containing the show title as a string,
+            the show identifier as an integer and the year of first airing as an
+            integer or ``None`` when the year could not be determined.
+        :rtype: list[tuple[str, int, int | None]]
+        """
+        r = self.session.get(self.server_url + 'tvshows.html', timeout=20)
         r.raise_for_status()
-
-        # get the series out of the suggestions
         soup = ParserBeautifulSoup(r.content, ['lxml', 'html.parser'])
-        show_id = None
-        for suggestion in soup.select('div.left li div a[href^="/tvshow-"]'):
-            match = link_re.match(suggestion.text)
-            if not match:
-                logger.error('Failed to match %s', suggestion.text)
+        shows = []
+        for a in soup.select('a[href^="tvshow-"]'):
+            m = re.match(r'tvshow-(\d+)-\d+\.html$', a.get('href', ''))
+            td = a.find_parent('td')
+            if not m or td is None:
                 continue
-
-            if sanitize(match.group('series')).lower() == series.lower():
-                if year is not None and int(match.group('first_year')) != year:
-                    logger.debug('Year does not match')
-                    continue
-                show_id = int(suggestion['href'][8:-5])
-                logger.debug('Found show id %d', show_id)
-                break
-
+            cells = td.find_next_siblings('td')
+            ym = re.match(r'\s*(\d{4})', cells[-1].text) if cells else None
+            shows.append((a.text.strip(), int(m.group(1)), int(ym.group(1)) if ym else None))
         soup.decompose()
-        soup = None
+        if not shows:
+            raise ProviderError('No shows found in tvshows.html')
+        return shows
 
-        return show_id
+    def search_show_id(self, series, year=None):
+        """
+        Search the show list for the identifier of a series matching the given
+        name and, optionally, the given year.
+
+        The series name is sanitized and lower-cased before comparison. Each
+        entry of the show list is parsed to separate the base series name from
+        an optional trailing year or country suffix (such as "(US)" or "(UK)").
+        An entry is considered a candidate when either its base name or its
+        full name matches the wanted series name. When a year is provided, an
+        exact match on the year is preferred; if no exact match exists, the
+        first candidate whose year differs by at most one year is returned as a
+        fallback. When no year is provided, the first candidate found is
+        returned.
+
+        :param series: Name of the series to search for.
+        :type series: str
+        :param year: Year of the series used to disambiguate between shows
+            sharing the same name. If omitted, the first matching show is
+            returned.
+        :type year: int or None
+        :return: The identifier of the matching show, or ``None`` if no show
+            matches the given series name and year.
+        :rtype: int or str or None
+        """
+        logger.info('Searching show id for %r', series)
+        wanted = sanitize(series).lower()
+        exact, close = None, None
+        for name, show_id, first_year in self._show_list():
+            m = re.match(r'^(?P<series>.+?)(?: \(?(?P<year>\d{4})\)?| \((?:US|UK)\))?$', name)
+            base = sanitize(m.group('series')).lower() if m else sanitize(name).lower()
+            if base != wanted and sanitize(name).lower() != wanted:
+                continue
+            show_year = int(m.group('year')) if m and m.group('year') else first_year
+            if year is None or show_year == year:
+                exact = show_id
+                break
+            if close is None and show_year is not None and abs(show_year - year) <= 1:
+                close = show_id
+        return exact or close
 
     @region.cache_on_arguments(expiration_time=EPISODE_EXPIRATION_TIME)
     def get_episode_ids(self, show_id, season):

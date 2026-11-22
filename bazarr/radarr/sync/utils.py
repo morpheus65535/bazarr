@@ -28,12 +28,20 @@ def get_profile_list():
         # Parsing data returned from radarr
         if get_radarr_info.is_legacy():
             for profile in profiles_json.json():
-                if 'language' in profile:
-                    profiles_list.append([profile['id'], profile['language'].capitalize()])
+                if not isinstance(profile, dict):
+                    continue
+                profile_id = profile.get('id')
+                language = profile.get('language')
+                if profile_id is not None and isinstance(language, str):
+                    profiles_list.append([profile_id, language.capitalize()])
         else:
             for profile in profiles_json.json():
-                if 'language' in profile and 'name' in profile['language']:
-                    profiles_list.append([profile['id'], profile['language']['name'].capitalize()])
+                if not isinstance(profile, dict):
+                    continue
+                profile_id = profile.get('id')
+                language = profile.get('language')
+                if profile_id is not None and isinstance(language, dict) and isinstance(language.get('name'), str):
+                    profiles_list.append([profile_id, language['name'].capitalize()])
 
     return profiles_list
 
@@ -100,7 +108,7 @@ def get_history_from_radarr_api(apikey_radarr, movie_id):
     url_radarr_api_history = f"{url_api_radarr()}history?eventType=1&movieIds={movie_id}&apikey={apikey_radarr}"
 
     try:
-        r = requests.get(url_radarr_api_history, timeout=int(settings.sonarr.http_timeout), verify=False,
+        r = requests.get(url_radarr_api_history, timeout=int(settings.radarr.http_timeout), verify=False,
                          headers=HEADERS)
         r.raise_for_status()
     except requests.exceptions.HTTPError:

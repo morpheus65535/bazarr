@@ -198,7 +198,7 @@ class Accept(ImmutableList[tuple[str, float]]):
         return None
 
 
-_mime_split_re = re.compile(r"/|(?:\s*;\s*)")
+_mime_split_re = re.compile(r"/|(?:[ \t]*;[ \t]*)")
 
 
 def _normalize_mime(value: str) -> list[str]:

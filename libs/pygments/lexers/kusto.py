@@ -36,7 +36,7 @@ KUSTO_KEYWORDS = [
 # https://github.com/microsoft/Kusto-Query-Language/blob/master/src/Kusto.Language/Syntax/SyntaxFacts.cs
 KUSTO_PUNCTUATION = [
     "(", ")", "[", "]", "{", "}", "|", "<|", "+", "-", "*", "/",
-    "%", ".." "!", "<", "<=", ">", ">=", "=", "==", "!=", "<>",
+    "%", ".", "..", "!", "<", "<=", ">", ">=", "=", "==", "!=", "<>",
     ":", ";", ",", "=~", "!~", "?", "=>",
 ]
 
@@ -56,10 +56,10 @@ class KustoLexer(RegexLexer):
             (r"\s+", Whitespace),
             (words(KUSTO_KEYWORDS, suffix=r"\b"), Keyword),
             (r"//.*", Comment),
-            (words(KUSTO_PUNCTUATION), Punctuation),
-            (r"[^\W\d]\w*", Name),
             # Numbers can take the form 1, .1, 1., 1.1, 1.1111, etc.
             (r"\d+[.]\d*|[.]\d+", Number.Float),
+            (words(KUSTO_PUNCTUATION), Punctuation),
+            (r"[^\W\d]\w*", Name),
             (r"\d+", Number.Integer),
             (r"'", String, "single_string"),
             (r'"', String, "double_string"),

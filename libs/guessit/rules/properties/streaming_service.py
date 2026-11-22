@@ -1,20 +1,26 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """
 streaming_service property
 """
-from rebulk.remodule import re
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
 
 from rebulk import Rebulk
-from rebulk.rules import Rule, RemoveMatch
+from rebulk.remodule import re
+from rebulk.rules import RemoveMatch, Rule
 
-from ..common.pattern import is_disabled
 from ...config import load_config_patterns
-from ...rules.common import seps, dash
-from ...rules.common.validators import seps_before, seps_after
+from ...rules.common import dash, seps
+from ...rules.common.validators import seps_after, seps_before
+from ..common.pattern import is_disabled
+
+if TYPE_CHECKING:
+    from rebulk.match import Match, Matches
 
 
-def streaming_service(config):  # pylint: disable=too-many-statements,unused-argument
+def streaming_service(config: dict[str, Any]) -> Rebulk:
     """Streaming service property.
 
     :param config: rule configuration
@@ -22,9 +28,9 @@ def streaming_service(config):  # pylint: disable=too-many-statements,unused-arg
     :return:
     :rtype: Rebulk
     """
-    rebulk = Rebulk(disabled=lambda context: is_disabled(context, 'streaming_service'))
+    rebulk = Rebulk(disabled=lambda context: is_disabled(context, "streaming_service"))
     rebulk = rebulk.string_defaults(ignore_case=True).regex_defaults(flags=re.IGNORECASE, abbreviations=[dash])
-    rebulk.defaults(name='streaming_service', tags=['source-prefix'])
+    rebulk.defaults(name="streaming_service", tags=["source-prefix"])
 
     load_config_patterns(rebulk, config)
 
@@ -39,7 +45,7 @@ class ValidateStreamingService(Rule):
     priority = 128
     consequence = RemoveMatch
 
-    def when(self, matches, context):
+    def when(self, matches: Matches, context: dict[str, Any] | None) -> Any:
         """Streaming service is always before source.
 
         :param matches:
@@ -48,26 +54,43 @@ class ValidateStreamingService(Rule):
         :type context: dict
         :return:
         """
-        to_remove = []
-        for service in matches.named('streaming_service'):
-            next_match = matches.next(service, lambda match: 'streaming_service.suffix' in match.tags, 0)
-            previous_match = matches.previous(service, lambda match: 'streaming_service.prefix' in match.tags, 0)
-            has_other = service.initiator and service.initiator.children.named('other')
+        to_remove: list[Match] = []
+        input_string = matches.input_string or ""
+        for service in matches.named("streaming_service"):
+            # A short service code (e.g. CN) glued inside a larger token (CNHD) is a
+            # substring of that token, not a real streaming service (upstream #651).
+            raw = service.raw or ""
+            if len(raw) <= 3:
+                char_after = input_string[service.end : service.end + 1]
+                char_before = input_string[service.start - 1 : service.start] if service.start > 0 else ""
+                if (char_after and re.match(r"[a-z0-9]", char_after, re.IGNORECASE)) or (
+                    char_before and re.match(r"[a-z0-9]", char_before, re.IGNORECASE)
+                ):
+                    to_remove.append(service)
+                    continue
 
-            if not has_other:
-                if (not next_match or
-                        matches.holes(service.end, next_match.start,
-                                      predicate=lambda match: match.value.strip(seps)) or
-                        not seps_before(service)):
-                    if (not previous_match or
-                            matches.holes(previous_match.end, service.start,
-                                          predicate=lambda match: match.value.strip(seps)) or
-                            not seps_after(service)):
-                        to_remove.append(service)
-                        continue
+            next_match = matches.next(service, lambda match: "streaming_service.suffix" in match.tags, 0)
+            previous_match = matches.previous(service, lambda match: "streaming_service.prefix" in match.tags, 0)
+            has_other = service.initiator and service.initiator.children.named("other")
 
-            if service.value == 'Comedy Central':
+            if (
+                not has_other
+                and (
+                    not next_match
+                    or matches.holes(service.end, next_match.start, predicate=lambda match: match.value.strip(seps))
+                    or not seps_before(service)
+                )
+                and (
+                    not previous_match
+                    or matches.holes(previous_match.end, service.start, predicate=lambda match: match.value.strip(seps))
+                    or not seps_after(service)
+                )
+            ):
+                to_remove.append(service)
+                continue
+
+            if service.value == "Comedy Central":
                 # Current match is a valid streaming service, removing invalid Criterion Collection (CC) matches
-                to_remove.extend(matches.named('edition', predicate=lambda match: match.value == 'Criterion'))
+                to_remove.extend(matches.named("edition", predicate=lambda match: match.value == "Criterion"))
 
         return to_remove

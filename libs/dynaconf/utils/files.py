@@ -137,10 +137,11 @@ def glob(
 ):
     """Redefined std glob assuming some defaults.
     and fallback for diffente python versions."""
-    glob_args = {"recursive": recursive}
-    if sys.version_info >= (3, 10):
-        glob_args["root_dir"] = root_dir
-        glob_args["dir_fd"] = dir_fd
+    glob_args = {
+        "recursive": recursive,
+        "root_dir": root_dir,
+        "dir_fd": dir_fd,
+    }
     if sys.version_info >= (3, 11):
         glob_args["include_hidden"] = include_hidden
     return python_glob(pathname, **glob_args)

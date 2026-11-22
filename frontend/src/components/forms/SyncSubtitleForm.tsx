@@ -222,28 +222,10 @@ const SyncSubtitleForm: FunctionComponent<Props> = ({
         ></Checkbox>
         {!form.values.noFixFramerate && (
           <>
-            <Divider></Divider>
-            <Text size="sm" fw={500}>
-              Quality Checks (Framerate-Fix Mode)
-            </Text>
-            <Text size="xs" c="dimmed">
-              These parameters override the settings when framerate-fixing is
-              enabled. Leave empty to use defaults from settings.
-            </Text>
-            <Selector
-              clearable
-              label="Minimum Quality Score"
-              options={qualityMinScoreOptions}
-              placeholder="Use default from settings"
-              {...form.getInputProps("qualityMinScore")}
-            ></Selector>
-            <Selector
-              clearable
-              label="Quality Max Offset Seconds"
-              options={qualityMaxOffsetSecondsOptions}
-              placeholder="Use default from settings"
-              {...form.getInputProps("qualityMaxOffsetSeconds")}
-            ></Selector>
+            <Checkbox
+              label="Golden-Section Search"
+              {...form.getInputProps("gss")}
+            ></Checkbox>
             <Selector
               clearable
               label="Max Framerate Deviation"
@@ -253,10 +235,29 @@ const SyncSubtitleForm: FunctionComponent<Props> = ({
             ></Selector>
           </>
         )}
-        <Checkbox
-          label="Golden-Section Search"
-          {...form.getInputProps("gss")}
-        ></Checkbox>
+        <Divider></Divider>
+        <Text size="sm" fw={500}>
+          Quality Checks
+        </Text>
+        <Text size="xs" c="dimmed">
+          Alignments failing these checks are rejected and the original
+          subtitles are left untouched. Leave empty to use defaults from
+          settings.
+        </Text>
+        <Selector
+          clearable
+          label="Minimum Quality Score"
+          options={qualityMinScoreOptions}
+          placeholder="Use default from settings"
+          {...form.getInputProps("qualityMinScore")}
+        ></Selector>
+        <Selector
+          clearable
+          label="Quality Max Offset Seconds"
+          options={qualityMaxOffsetSecondsOptions}
+          placeholder="Use default from settings"
+          {...form.getInputProps("qualityMaxOffsetSeconds")}
+        ></Selector>
         <Divider></Divider>
         <Button type="submit" loading={isPending}>
           Sync

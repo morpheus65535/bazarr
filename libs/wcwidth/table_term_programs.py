@@ -10,6 +10,7 @@ reliable indicators of actual width.
 # pylint: skip-file
 
 KNOWN_TERMINALS = frozenset({
+    'absolutetelnet/ssh',
     'alacritty',
     'apple_terminal',
     'bobcat',

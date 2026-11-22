@@ -136,7 +136,7 @@ class Episode(Video):
     def __init__(self, name, series, season, episode, title=None, year=None, original_series=True, tvdb_id=None,
                  series_tvdb_id=None, series_imdb_id=None, alternative_series=None, series_anidb_id=None,
                  series_anidb_episode_id=None, series_anidb_season_episode_offset=None,
-                 anilist_id=None, **kwargs):
+                 anilist_id=None, series_tmdb_id=None, **kwargs):
         super(Episode, self).__init__(name, **kwargs)
 
         #: Series of the episode
@@ -165,6 +165,9 @@ class Episode(Video):
 
         #: IMDb id of the series
         self.series_imdb_id = series_imdb_id
+
+        #: TMDB id of the series
+        self.series_tmdb_id = series_tmdb_id
 
         #: Alternative names of the series
         self.alternative_series = alternative_series or []

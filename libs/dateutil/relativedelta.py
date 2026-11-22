@@ -564,9 +564,6 @@ class relativedelta(object):
             self.microsecond,
         ))
 
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
     def __div__(self, other):
         try:
             reciprocal = 1 / float(other)

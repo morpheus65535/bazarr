@@ -64,8 +64,16 @@ class EmbeddedSubtitle(Subtitle):
 
 
 _ALLOWED_CODECS = ("ass", "subrip", "webvtt", "mov_text")
-_CHINESE_TRADITIONAL_IETF_MARKERS = ("zh-hant", "zh-tw", "zh-hk", "zh-mo", "hant")
+_CHINESE_CANTONESE = Language("zho", "HK")
+_CHINESE_CANTONESE_IETF_MARKERS = ("zh-hk", "zh-mo", "yue")
+_CHINESE_TRADITIONAL_IETF_MARKERS = ("zh-hant", "zh-tw", "hant")
 _CHINESE_SIMPLIFIED_IETF_MARKERS = ("zh-hans", "zh-cn", "zh-sg", "hans")
+_CHINESE_CANTONESE_TITLE_MARKERS = (
+    "hong kong",
+    "cantonese",
+    "粵",
+    "粤",
+)
 _CHINESE_TRADITIONAL_TITLE_MARKERS = (
     "zh-tw",
     "zht",
@@ -92,7 +100,12 @@ _CHINESE_SIMPLIFIED_TITLE_MARKERS = (
 class EmbeddedSubtitlesProvider(Provider):
     provider_name = "embeddedsubtitles"
 
-    languages = {Language("por", "BR"), Language("spa", "MX"), Language("zho", "TW")} | {
+    languages = {
+        Language("por", "BR"),
+        Language("spa", "MX"),
+        Language("zho", "TW"),
+        _CHINESE_CANTONESE,
+    } | {
         Language.fromalpha2(l) for l in language_converters["alpha2"].codes
     }
     languages.update(set(Language.rebuild(lang, hi=True) for lang in languages))
@@ -433,6 +446,11 @@ def _get_chinese_language_from_tags(stream):
         language_ietf = language_ietf.lower().replace("_", "-")
         if any(
             marker in language_ietf
+            for marker in _CHINESE_CANTONESE_IETF_MARKERS
+        ):
+            return _CHINESE_CANTONESE
+        if any(
+            marker in language_ietf
             for marker in _CHINESE_TRADITIONAL_IETF_MARKERS
         ):
             return Language("zho", "TW")
@@ -443,6 +461,8 @@ def _get_chinese_language_from_tags(stream):
             return Language("zho")
 
     title = data.get("title", "").lower()
+    if any(marker in title for marker in _CHINESE_CANTONESE_TITLE_MARKERS):
+        return _CHINESE_CANTONESE
     if any(marker in title for marker in _CHINESE_TRADITIONAL_TITLE_MARKERS):
         return Language("zho", "TW")
     if any(marker in title for marker in _CHINESE_SIMPLIFIED_TITLE_MARKERS):

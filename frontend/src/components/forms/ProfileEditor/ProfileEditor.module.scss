@@ -1,0 +1,221 @@
+.editor {
+  padding-bottom: var(--mantine-spacing-xl);
+}
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  padding: var(--mantine-spacing-sm) 0;
+  border-bottom: 1px solid var(--mantine-color-default-border);
+
+  // Match the page canvas so the pinned header reads as part of the page.
+  @include mantine.light {
+    background: var(--mantine-color-gray-0);
+  }
+
+  @include mantine.dark {
+    background: var(--mantine-color-dark-8);
+  }
+}
+
+.dashedButton {
+  border-style: dashed;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mantine-spacing-sm);
+}
+
+.requirements {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mantine-spacing-sm);
+}
+
+.requirementItem {
+  &[data-entering="true"] {
+    animation: requirement-enter 200ms ease;
+  }
+
+  &[data-exiting="true"] {
+    pointer-events: none;
+    animation: requirement-exit 150ms ease forwards;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+  }
+}
+
+@keyframes requirement-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes requirement-exit {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+
+  to {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+.requirement {
+  position: relative;
+  border-left-width: 4px;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+
+  &[data-operator="AND"] {
+    border-left-color: var(--mantine-color-brand-6);
+  }
+
+  &[data-operator="OR"] {
+    border-left-color: var(--mantine-color-info-6);
+  }
+
+  &[data-cutoff="true"] {
+    box-shadow: 0 0 0 1px var(--mantine-color-brand-4);
+  }
+
+  @include mantine.dark {
+    &[data-operator="AND"] {
+      border-left-color: var(--mantine-color-brand-4);
+    }
+
+    &[data-operator="OR"] {
+      border-left-color: var(--mantine-color-info-4);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}
+
+.requirementHeader {
+  padding: var(--mantine-spacing-xs) var(--mantine-spacing-sm);
+  border-radius: var(--mantine-radius-sm);
+
+  @include mantine.light {
+    background: var(--mantine-color-gray-0);
+  }
+
+  @include mantine.dark {
+    background: var(--mantine-color-dark-6);
+  }
+}
+
+.numberBadge {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: var(--mantine-radius-xl);
+  font-size: var(--mantine-font-size-xs);
+  font-weight: 600;
+  color: var(--mantine-color-white);
+  background: var(--mantine-color-brand-6);
+}
+
+.relationship {
+  @include mantine.smaller-than(mantine.$mantine-breakpoint-md) {
+    width: 100%;
+  }
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mantine-spacing-xs);
+}
+
+.row {
+  display: grid;
+  grid-template-columns:
+    minmax(9rem, 2fr) minmax(8rem, 1.5fr) minmax(9rem, 1.6fr)
+    auto;
+  gap: var(--mantine-spacing-sm);
+  align-items: start;
+
+  @include mantine.smaller-than(mantine.$mantine-breakpoint-md) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.rowActions {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.cutoffHint {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  color: var(--mantine-color-brand-6);
+
+  @include mantine.dark {
+    color: var(--mantine-color-brand-3);
+  }
+}
+
+.addLanguage {
+  align-self: flex-start;
+}
+
+.touchAction {
+  @media (pointer: coarse) {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+.summaryPanel {
+  // Clear the pinned editor header so the panel never tucks under it.
+  position: sticky;
+  top: 4.5rem;
+
+  @include mantine.smaller-than(mantine.$mantine-breakpoint-md) {
+    position: static;
+  }
+}
+
+.summaryRequirement {
+  padding: var(--mantine-spacing-xs);
+  border-radius: var(--mantine-radius-sm);
+
+  &[data-cutoff="true"] {
+    @include mantine.light {
+      background: var(--mantine-color-brand-0);
+    }
+
+    @include mantine.dark {
+      background: var(--mantine-color-dark-5);
+    }
+  }
+}
+
+.summaryHeading {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}

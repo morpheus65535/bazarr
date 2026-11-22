@@ -1,13 +1,9 @@
 import os
 import typing
+from importlib.resources import files
 from logging import NullHandler, getLogger
 
 import yaml
-
-try:
-    from importlib.resources import files
-except ImportError:
-    from importlib_resources import files  # type: ignore[assignment,no-redef,import-not-found]
 
 from knowit.serializer import get_yaml_loader
 
@@ -26,10 +22,18 @@ _valid_aliases = _Value._fields
 
 
 class Config:
-    """Application config class."""
+    """Application config class.
+
+    Instances expose config sections (e.g. AudioCodec, VideoCodec, general) as dynamic
+    attributes, populated in `build()` by replacing `__dict__` directly.
+    """
+
+    def __getattr__(self, item: str) -> typing.Any:
+        """Raise for any config section not populated by `build()`."""
+        raise AttributeError(item)
 
     @classmethod
-    def build(cls, path: typing.Optional[typing.Union[str, os.PathLike]] = None) -> 'Config':
+    def build(cls, path: str | os.PathLike[str] | None = None) -> 'Config':
         """Build config instance."""
         loader = get_yaml_loader()
         config_file = files(__package__).joinpath('defaults.yml')
@@ -50,7 +54,7 @@ class Config:
             if 'knowledge' in cfg:
                 knowledge_data.update(cfg['knowledge'])
 
-        data: typing.Dict[str, typing.MutableMapping] = {'general': {}}
+        data: dict[str, typing.MutableMapping[str, typing.Any]] = {'general': {}}
         for class_name, data_map in knowledge_data.items():
             data.setdefault(class_name, {})
             for code, detection_values in data_map.items():

@@ -16,6 +16,7 @@ import {
   MantineColorScheme,
   Stack,
   Text,
+  Tooltip,
   useMantineColorScheme,
 } from "@mantine/core";
 import {
@@ -363,7 +364,36 @@ const NavbarItem: FunctionComponent<NavbarItemProps> = ({
       };
     }
 
+    if (badge === "OFF") {
+      return {
+        // Neutral styling: real-time updates are intentionally disabled.
+        backgroundColor:
+          "light-dark(var(--mantine-color-gray-2), var(--mantine-color-dark-7))",
+        color:
+          "light-dark(var(--mantine-color-gray-7), var(--mantine-color-gray-5))",
+        border: "none",
+      };
+    }
+
     return {};
+  }, [badge, isSignalRBadge]);
+
+  const badgeTitle = useMemo(() => {
+    if (!isSignalRBadge) return undefined;
+
+    if (badge === "LIVE") {
+      return "Live connection established";
+    }
+
+    if (badge === "DOWN") {
+      return "Live connection lost; updates will use the scheduled sync";
+    }
+
+    if (badge === "OFF") {
+      return "Real-time updates are disabled; updates will use the scheduled sync";
+    }
+
+    return undefined;
   }, [badge, isSignalRBadge]);
 
   return (
@@ -397,14 +427,21 @@ const NavbarItem: FunctionComponent<NavbarItemProps> = ({
         )}
         {name}
         {!shouldHideBadge && (
-          <Badge
-            className={styles.badge}
-            radius="xs"
-            // We apply the explicit styling overrides here
-            style={badgeStyle}
+          <Tooltip
+            label={badgeTitle}
+            disabled={!badgeTitle}
+            position="right"
+            withArrow
           >
-            {badge}
-          </Badge>
+            <Badge
+              className={styles.badge}
+              radius="xs"
+              // We apply the explicit styling overrides here
+              style={badgeStyle}
+            >
+              {badge}
+            </Badge>
+          </Tooltip>
         )}
       </Text>
     </NavLink>

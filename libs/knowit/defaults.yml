@@ -205,6 +205,10 @@ knowledge:
       - DOLBY VISION
     HDR10:
       - SMPTE ST 2086
+    HDR10PLUS:
+      - SMPTE ST 2094 APP 4
+    HDRVIVID:
+      - HDR VIVID
 
   ScanType:
     PROGRESSIVE:
@@ -239,6 +243,11 @@ knowledge:
       - MA
       - DTS-HD MA
       - XLL
+      - XLL X
+      - XLL X IMAX
+      # ffmpeg profiles
+      - DTS-HD MA + DTS:X
+      - DTS-HD MA + DTS:X IMAX
     MAIN:
       - MAIN
     LC:
@@ -266,22 +275,31 @@ knowledge:
     __ignored__:
       - DOLBY DIGITAL
       - DTS
+      # ffmpeg profiles. AtmosRule gives the Atmos codec.
+      - DOLBY DIGITAL PLUS + DOLBY ATMOS
+      - DOLBY TRUEHD + DOLBY ATMOS
 
   # References:
   #  - https://ffmpeg.org/general.html#Audio-Codecs
   AudioCodec:
     AC3:
       - AC3
+      - AC-3
       - BSID9
       - BSID10
       - 2000
     EAC3:
       - EAC3
+      - E-AC-3
       - AC3+
     TRUEHD:
       - TRUEHD
+      # mediainfo format of TrueHD: 'MLP FBA'
+      - MLP
     ATMOS:
       - ATMOS
+    DTSX:
+      - DTS:X
     DTS:
       - DTS
     # DTS-HD used for DTS-HD High Resolution Audio and DTS-HD Master Audio
@@ -295,6 +313,9 @@ knowledge:
     PCM:
       - PCM
       - PCM_S16LE
+    # ffmpeg Atmos profiles: 'Dolby TrueHD + Dolby Atmos'. The codec comes from codec_name.
+    __ignored__:
+      - DOLBY
     # https://en.wikipedia.org/wiki/MPEG-1_Audio_Layer_II
     MP2:
       - MP2
@@ -517,6 +538,11 @@ profiles:
     HDR10:
       default: HDR10
       technical: HDR10 - SMPTE ST 2086
+    HDR10PLUS:
+      default: HDR10+
+      technical: HDR10+ - SMPTE ST 2094-40
+    HDRVIVID:
+      default: HDR Vivid
 
   ScanType:
     PROGRESSIVE:
@@ -589,6 +615,8 @@ profiles:
     ATMOS:
       default: Atmos
       human: Dolby Atmos
+    DTSX:
+      default: DTS:X
     DTS:
     DTSHD:
       default: DTS-HD

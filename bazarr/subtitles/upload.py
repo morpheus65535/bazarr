@@ -37,6 +37,29 @@ from plex.operations import plex_set_movie_added_date_now, plex_set_episode_adde
 from jellyfin.operations import jellyfin_refresh_item
 
 
+def _get_profile_original_format(profile_id):
+    profile = get_profiles_list(profile_id)
+    if not isinstance(profile, dict):
+        return False
+
+    return bool(profile.get("originalFormat", 0))
+
+
+def _get_audio_language_payload(audio_languages):
+    empty_audio_language = {'name': '', 'code2': '', 'code3': ''}
+    if not isinstance(audio_languages, list) or not audio_languages:
+        return empty_audio_language
+
+    first_audio_language = audio_languages[0]
+    if not isinstance(first_audio_language, dict):
+        return empty_audio_language
+
+    return {
+        key: value if isinstance(value := first_audio_language.get(key), str) else ''
+        for key in empty_audio_language
+    }
+
+
 def manual_upload_subtitle(path, language, forced, hi, media_type, subtitle, filename, audio_language, job_id=None,
                            sonarrSeriesId=None, sonarrEpisodeId=None, radarrId=None):
     if not job_id:
@@ -81,7 +104,7 @@ def manual_upload_subtitle(path, language, forced, hi, media_type, subtitle, fil
             .first()
 
         if episode_metadata:
-            use_original_format = bool(get_profiles_list(episode_metadata.profileId)["originalFormat"])
+            use_original_format = _get_profile_original_format(episode_metadata.profileId)
         else:
             return
     else:
@@ -92,15 +115,11 @@ def manual_upload_subtitle(path, language, forced, hi, media_type, subtitle, fil
             .first()
 
         if movie_metadata:
-            use_original_format = bool(get_profiles_list(movie_metadata.profileId)["originalFormat"])
+            use_original_format = _get_profile_original_format(movie_metadata.profileId)
         else:
             return
 
-    audio_language = get_audio_profile_languages(audio_language)
-    if len(audio_language) and isinstance(audio_language[0], dict):
-        audio_language = audio_language[0]
-    else:
-        audio_language = {'name': '', 'code2': '', 'code3': ''}
+    audio_language = _get_audio_language_payload(get_audio_profile_languages(audio_language))
 
     sub = Subtitle(
         lang_obj,
@@ -129,6 +148,7 @@ def manual_upload_subtitle(path, language, forced, hi, media_type, subtitle, fil
                                          [sub],
                                          single=single,
                                          tags=None,  # fixme
+                                         m49_language_tag=settings.general.use_m49_language_tag,
                                          directory=get_target_folder(path),
                                          chmod=chmod,
                                          formats=sub_format if use_original_format else ("srt",),
@@ -169,20 +189,22 @@ def manual_upload_subtitle(path, language, forced, hi, media_type, subtitle, fil
         set_chmod(subtitles_path=subtitle_path)
 
     if media_type == 'series':
+        # notify Sonarr once the queued sync job is done so it sees the synced file
         sync_subtitles(video_path=path, srt_path=subtitle_path, srt_lang=uploaded_language_code2, percent_score=100,
                        sonarr_series_id=episode_metadata.sonarrSeriesId, forced=forced, hi=hi,
-                       sonarr_episode_id=episode_metadata.sonarrEpisodeId, job_id=job_id)
+                       sonarr_episode_id=episode_metadata.sonarrEpisodeId,
+                       callback=lambda: notify_sonarr(episode_metadata.sonarrSeriesId))
         reversed_path = path_mappings.path_replace_reverse(path)
         reversed_subtitles_path = path_mappings.path_replace_reverse(subtitle_path)
-        notify_sonarr(episode_metadata.sonarrSeriesId)
         event_stream(type='series', action='update', payload=episode_metadata.sonarrSeriesId)
         event_stream(type='episode-wanted', action='delete', payload=episode_metadata.sonarrEpisodeId)
     else:
+        # notify Radarr once the queued sync job is done so it sees the synced file
         sync_subtitles(video_path=path, srt_path=subtitle_path, srt_lang=uploaded_language_code2, percent_score=100,
-                       radarr_id=movie_metadata.radarrId, forced=forced, hi=hi, job_id=job_id)
+                       radarr_id=movie_metadata.radarrId, forced=forced, hi=hi,
+                       callback=lambda: notify_radarr(movie_metadata.radarrId))
         reversed_path = path_mappings.path_replace_reverse_movie(path)
         reversed_subtitles_path = path_mappings.path_replace_reverse_movie(subtitle_path)
-        notify_radarr(movie_metadata.radarrId)
         event_stream(type='movie', action='update', payload=movie_metadata.radarrId)
         event_stream(type='movie-wanted', action='delete', payload=movie_metadata.radarrId)
 

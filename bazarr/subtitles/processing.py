@@ -57,9 +57,11 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
     audio_language_code3 = alpha3_from_language(audio_language)
     downloaded_path = subtitle.storage_path
     subtitle_id = subtitle.id
-    if subtitle.language.hi:
+    language_forced = subtitle.language.forced if subtitle.language else False
+    language_hi = subtitle.language.hi if subtitle.language else False
+    if language_hi:
         modifier_string = " HI"
-    elif subtitle.language.forced:
+    elif language_forced:
         modifier_string = " forced"
     else:
         modifier_string = ""
@@ -71,7 +73,10 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
     else:
         action = "downloaded"
 
-    percent_score = round(subtitle.score * 100 / max_score, 2)
+    if max_score and max_score > 0:
+        percent_score = round(subtitle.score * 100 / max_score, 2)
+    else:
+        percent_score = 0
     message = (f"{downloaded_language}{modifier_string} subtitles {action} from {downloaded_provider} with a score of "
                f"{percent_score}%.")
 
@@ -89,17 +94,8 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
             return
         series_id = episode_metadata.sonarrSeriesId
         episode_id = episode_metadata.sonarrEpisodeId
-
-        if sync_checker(subtitle) is True:
-            from .sync import sync_subtitles
-            sync_subtitles(video_path=path, srt_path=downloaded_path,
-                           forced=subtitle.language.forced,
-                           hi=subtitle.language.hi,
-                           srt_lang=downloaded_language_code2,
-                           percent_score=percent_score,
-                           sonarr_series_id=episode_metadata.sonarrSeriesId,
-                           sonarr_episode_id=episode_metadata.sonarrEpisodeId,
-                           job_id=job_id)
+        sync_ids = {'sonarr_series_id': episode_metadata.sonarrSeriesId,
+                    'sonarr_episode_id': episode_metadata.sonarrEpisodeId}
     else:
         movie_metadata = database.execute(
             select(TableMovies.radarrId, TableMovies.imdbId, TableMovies.tmdbId)
@@ -109,18 +105,12 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
             return
         series_id = ""
         episode_id = movie_metadata.radarrId
+        sync_ids = {'radarr_id': movie_metadata.radarrId}
 
-        if sync_checker(subtitle) is True:
-            from .sync import sync_subtitles
-            sync_subtitles(video_path=path, srt_path=downloaded_path,
-                           forced=subtitle.language.forced,
-                           hi=subtitle.language.hi,
-                           srt_lang=downloaded_language_code2,
-                           percent_score=percent_score,
-                           radarr_id=movie_metadata.radarrId,
-                           job_id=job_id)
+    def _postprocess():
+        if use_postprocessing is not True:
+            return
 
-    if use_postprocessing is True:
         args = pp_replace(postprocessing_cmd, path, downloaded_path, downloaded_language, downloaded_language_code2,
                              downloaded_language_code3, audio_language, audio_language_code2, audio_language_code3,
                              percent_score, subtitle_id, downloaded_provider, uploader, release_info, series_id,
@@ -141,52 +131,76 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
             logging.debug(f"BAZARR post-processing skipped because subtitles score isn't below this "
                           f"threshold value: {pp_threshold}%")
 
+    def _notify():
+        if media_type == 'series':
+            notify_sonarr(episode_metadata.sonarrSeriesId)
+            if settings.general.use_plex is True:
+                if settings.plex.update_series_library is True:
+                    # Use specific item refresh instead of full library scan
+                    plex_refresh_item(episode_metadata.imdbId, is_movie=False,
+                                    season=episode_metadata.season, episode=episode_metadata.episode)
+                if settings.plex.set_episode_added is True:
+                    plex_set_episode_added_date_now(episode_metadata)
+            if settings.general.use_jellyfin is True:
+                if settings.jellyfin.update_series_library is True:
+                    jellyfin_refresh_item(episode_metadata.imdbId, is_movie=False,
+                                          season=episode_metadata.season, episode=episode_metadata.episode,
+                                          tvdb_id=episode_metadata.tvdbId)
+        else:
+            notify_radarr(movie_metadata.radarrId)
+            if settings.general.use_plex is True:
+                if settings.plex.set_movie_added is True:
+                    plex_set_movie_added_date_now(movie_metadata)
+                if settings.plex.update_movie_library is True:
+                    # Use specific item refresh instead of full library scan
+                    plex_refresh_item(movie_metadata.imdbId, is_movie=True)
+            if settings.general.use_jellyfin is True:
+                if settings.jellyfin.update_movie_library is True:
+                    jellyfin_refresh_item(movie_metadata.imdbId, is_movie=True,
+                                          tmdb_id=movie_metadata.tmdbId)
+
+        # Call external webhook after all processing is complete if enabled
+        call_external_webhook(
+            subtitle_path=downloaded_path,
+            media_path=path,
+            language=downloaded_language,
+            media_type=media_type,
+            action_type='add'
+        )
+
+    def _after_sync():
+        try:
+            _postprocess()
+        finally:
+            _notify()
+
+    if settings.subsync.use_subsync and sync_checker(subtitle) is True:
+        # Sync runs in its own job so this one isn't blocked and many syncs can run in parallel (up to
+        # subsync.concurrent_syncs). Post-processing and notifications (Sonarr/Radarr, Plex, Jellyfin, webhook) must
+        # see the synced file, so they run at the end of the sync job.
+        from .sync import sync_subtitles
+        sync_subtitles(video_path=path, srt_path=downloaded_path,
+                       forced=language_forced,
+                       hi=language_hi,
+                       srt_lang=downloaded_language_code2,
+                       percent_score=percent_score,
+                       callback=_after_sync,
+                       **sync_ids)
+    else:
+        _after_sync()
+
     if media_type == 'series':
         reversed_path = path_mappings.path_replace_reverse(path)
         reversed_subtitles_path = path_mappings.path_replace_reverse(downloaded_path)
-        notify_sonarr(episode_metadata.sonarrSeriesId)
         event_stream(type='series', action='update', payload=episode_metadata.sonarrSeriesId)
         event_stream(type="episode-history")
         event_stream(type='episode-wanted', action='delete',
                      payload=episode_metadata.sonarrEpisodeId)
-        if settings.general.use_plex is True:
-            if settings.plex.update_series_library is True:
-                # Use specific item refresh instead of full library scan
-                plex_refresh_item(episode_metadata.imdbId, is_movie=False, 
-                                season=episode_metadata.season, episode=episode_metadata.episode)
-            if settings.plex.set_episode_added is True:
-                plex_set_episode_added_date_now(episode_metadata)
-        if settings.general.use_jellyfin is True:
-            if settings.jellyfin.update_series_library is True:
-                jellyfin_refresh_item(episode_metadata.imdbId, is_movie=False,
-                                      season=episode_metadata.season, episode=episode_metadata.episode,
-                                      tvdb_id=episode_metadata.tvdbId)
-
     else:
         reversed_path = path_mappings.path_replace_reverse_movie(path)
         reversed_subtitles_path = path_mappings.path_replace_reverse_movie(downloaded_path)
-        notify_radarr(movie_metadata.radarrId)
         event_stream(type="movie-history")
         event_stream(type='movie-wanted', action='delete', payload=movie_metadata.radarrId)
-        if settings.general.use_plex is True:
-            if settings.plex.set_movie_added is True:
-                plex_set_movie_added_date_now(movie_metadata)
-            if settings.plex.update_movie_library is True:
-                # Use specific item refresh instead of full library scan
-                plex_refresh_item(movie_metadata.imdbId, is_movie=True)
-        if settings.general.use_jellyfin is True:
-            if settings.jellyfin.update_movie_library is True:
-                jellyfin_refresh_item(movie_metadata.imdbId, is_movie=True,
-                                      tmdb_id=movie_metadata.tmdbId)
-
-    # Call external webhook after all processing is complete if enabled
-    call_external_webhook(
-        subtitle_path=downloaded_path,
-        media_path=path,
-        language=downloaded_language,
-        media_type=media_type,
-        action_type='add'
-    )
 
     event_tracker.track_subtitles(provider=downloaded_provider, action=action, language=downloaded_language)
 
@@ -195,10 +209,10 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
                                   downloaded_language_code2=downloaded_language_code2,
                                   downloaded_provider=downloaded_provider,
                                   score=subtitle.score,
-                                  forced=subtitle.language.forced,
+                                  forced=language_forced,
                                   subtitle_id=subtitle.id,
                                   reversed_subtitles_path=reversed_subtitles_path,
-                                  hearing_impaired=subtitle.language.hi,
+                                  hearing_impaired=language_hi,
                                   matched=list(subtitle.matches or []),
                                   not_matched=_get_not_matched(subtitle, media_type))
 

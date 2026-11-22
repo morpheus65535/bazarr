@@ -16,6 +16,12 @@ _TITLE_RE = re.compile(r'\s(\(\d{4}\))')
 
 
 def refine_from_db(path, video):
+    """Refine a guessed video with the series or movie metadata stored in the database.
+
+    :param str path: path of the video file as known to Bazarr.
+    :param video: video to refine, either an ``Episode`` or a ``Movie``.
+    :return: the refined video.
+    """
     if isinstance(video, Episode):
         data = database.execute(
             select(TableShows.title.label('seriesTitle'),
@@ -31,6 +37,7 @@ def refine_from_db(path, video):
                    TableEpisodes.audio_codec,
                    TableEpisodes.path,
                    TableShows.imdbId,
+                   TableShows.tmdbId,
                    TableEpisodes.sonarrSeriesId,
                    TableEpisodes.sonarrEpisodeId,
                    TableEpisodes.absoluteEpisode)
@@ -51,10 +58,16 @@ def refine_from_db(path, video):
                 if int(data.year) > 0:
                     video.year = int(data.year)
 
-            video.series_tvdb_id = int(data.tvdbId)
+            # A library entry can legitimately have no TVDB mapping.  Keep
+            # the guessed/refined value in that case instead of aborting all
+            # video metadata processing for the file.
+            if data.tvdbId:
+                video.series_tvdb_id = int(data.tvdbId)
             video.alternative_series = ast.literal_eval(data.alternativeTitles)
             if data.imdbId and not video.series_imdb_id:
                 video.series_imdb_id = data.imdbId
+            if data.tmdbId and not video.series_tmdb_id:
+                video.series_tmdb_id = data.tmdbId
             if not video.source:
                 video.source = convert_to_guessit('source', str(data.format))
             if not video.resolution:

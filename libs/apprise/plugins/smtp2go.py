@@ -52,6 +52,7 @@ import requests
 
 from .. import exception
 from ..common import NotifyFormat, NotifyType
+from ..exception import AppriseImproperlyConfigured
 from ..locale import gettext_lazy as _
 from ..utils.parse import is_email, parse_bool, parse_emails, validate_regex
 from ..utils.sanitize import sanitize_payload
@@ -182,13 +183,13 @@ class NotifySMTP2Go(NotifyBase):
         if not self.apikey:
             msg = f"An invalid SMTP2Go API Key ({apikey}) was specified."
             self.logger.warning(msg)
-            raise TypeError(msg)
+            raise AppriseImproperlyConfigured(msg)
 
         # Validate our username
         if not self.user:
             msg = "No SMTP2Go username was specified."
             self.logger.warning(msg)
-            raise TypeError(msg)
+            raise AppriseImproperlyConfigured(msg)
 
         # Acquire Email 'To'
         self.targets = []
@@ -220,7 +221,7 @@ class NotifySMTP2Go(NotifyBase):
             # Parse Source domain based on from_addr
             msg = f"Invalid ~From~ email format: {self.from_addr}"
             self.logger.warning(msg)
-            raise TypeError(msg)
+            raise AppriseImproperlyConfigured(msg)
 
         if targets:
             # Validate recipients (to:) and drop bad ones:
@@ -376,6 +377,11 @@ class NotifySMTP2Go(NotifyBase):
         emails = list(self.targets)
 
         for index in range(0, len(emails), batch_size):
+            # Skip a batch that already went out so a retry does
+            # not deliver it to those recipients twice.
+            if self.is_delivered(index):
+                continue
+
             # Initialize our cc list
             cc = self.cc - self.bcc
 
@@ -506,6 +512,9 @@ class NotifySMTP2Go(NotifyBase):
                 has_error = True
                 continue
 
+            # Delivered; a retry can safely skip this batch.
+            self.mark_delivered(index)
+
         return not has_error
 
     @property
@@ -540,7 +549,7 @@ class NotifySMTP2Go(NotifyBase):
             params["cc"] = ",".join(
                 [
                     "{}{}".format(
-                        "" if not e not in self.names else f"{self.names[e]}:",
+                        "" if not self.names.get(e) else f"{self.names[e]}:",
                         e,
                     )
                     for e in self.cc

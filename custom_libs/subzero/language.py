@@ -82,6 +82,55 @@ def wrap_forced(f):
     return inner
 
 
+# UN M.49 numeric region codes (e.g. "419" for Latin America in "es-419") are valid BCP-47 subtags,
+# but babelfish reads a 3-digit subtag as a script and rejects it. Codes listed here are rewritten to the
+# ISO 3166-1 alpha-2 country Bazarr uses for that region. Codes not listed fall back to the base language.
+M49_REGION_TO_COUNTRY = {
+    "419": "MX",  # Latin America -> Spanish (Latino), which Bazarr maps to Mexico
+}
+
+M49_REGION_FOR_COUNTRY = {country: region for region, country in M49_REGION_TO_COUNTRY.items()}
+
+_M49_TAG_RE = re.compile(r"^([a-z]{2,3})-(\d{3})$")
+
+
+def _normalize_m49_region(ietf: str) -> str:
+    """Rewrite a BCP-47 tag that carries a UN M.49 numeric region into a form babelfish can parse.
+
+    :param str ietf: BCP-47 language tag, e.g. ``es-419`` or ``en-001``.
+    :return: the tag with a mapped ISO alpha-2 region, or the base language when the region is unmapped.
+    :rtype: str
+    """
+    match = _M49_TAG_RE.match(ietf.lower())
+    if match is None:
+        return ietf
+
+    language, region = match.groups()
+    country = M49_REGION_TO_COUNTRY.get(region)
+    return f"{language}-{country}" if country else language
+
+
+def m49_basename(language: "Language") -> str:
+    """Return the language tag for a filename, using a UN M.49 region when one is mapped for the country.
+
+    :param language: language whose tag is written to a subtitle filename.
+    :type language: :class:`Language`
+    :return: ``basename`` with the country replaced by its M.49 region (e.g. ``es-419`` for Spanish, Mexico),
+        or the unchanged ``basename`` when the country has no mapped region.
+    :rtype: str
+    """
+    basename = str(language.basename)
+    country = language.country
+    if country is None:
+        return basename
+
+    region = M49_REGION_FOR_COUNTRY.get(str(country))
+    if region is None:
+        return basename
+
+    return f"{basename.split('-')[0]}-{region}"
+
+
 class Language(Language_):
     forced = False
     hi = False
@@ -150,6 +199,8 @@ class Language(Language_):
         if ietf_lower in repl_map:
             ietf = repl_map[ietf_lower]
 
+        ietf = _normalize_m49_region(ietf)
+
         return Language(*Language_.fromietf(ietf).__getstate__())
 
     @classmethod
@@ -162,4 +213,4 @@ class Language(Language_):
         return Language(*Language_.fromalpha3b(s).__getstate__())
 
 
-ENDSWITH_LANGUAGECODE_RE = re.compile(r"\.([^-.]{2,3})(?:-[A-Za-z]{2,})?$")
+ENDSWITH_LANGUAGECODE_RE = re.compile(r"\.([^-.]{2,3})(?:-[A-Za-z0-9]{2,})?$")

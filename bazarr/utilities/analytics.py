@@ -13,18 +13,39 @@ from sonarr.info import get_sonarr_info
 
 
 class EventTracker:
-    def __init__(self):
+    tracker: GtagMP
+
+    def __init__(self) -> None:
         self.bazarr_version = os.environ["BAZARR_VERSION"].lstrip('v')
         self.os_version = platform.python_version()
         self.sonarr_version = get_sonarr_info.version()
         self.radarr_version = get_radarr_info.version()
         self.python_version = platform.platform()
 
-        self.tracker = None
-
         self.start_tracker()
 
-    def start_tracker(self):
+    def start_tracker(self) -> None:
+        """
+        Initialize and configure the Google Analytics (GA4) tracker for this
+        instance.
+
+        Creates a ``GtagMP`` tracker with the predefined API secret and
+        measurement ID, then resolves a persistent visitor identifier. The
+        identifier is read from the ``analytics_visitor_id.txt`` file located
+        in the ``config`` sub-directory of the configured directory. If that
+        file does not exist, a new random client identifier is generated and
+        written to it so that subsequent runs reuse the same visitor identity.
+
+        Once the client identifier is assigned to the tracker, several user
+        properties describing the running environment (Bazarr, Python, Sonarr,
+        Radarr and operating system versions) are registered on the tracker
+        store and the store is persisted to disk.
+
+        :raises OSError: If the visitor identifier file cannot be created,
+            read or written.
+
+        :return: None
+        """
         self.tracker = GtagMP(api_secret="qHRaseheRsic6-h2I_rIAA", measurement_id="G-3820T18GE3", client_id="temp")
 
         if not os.path.isfile(os.path.normpath(os.path.join(args.config_dir, 'config', 'analytics_visitor_id.txt'))):
@@ -47,7 +68,24 @@ class EventTracker:
 
         self.tracker.store.save()
 
-    def track_subtitles(self, provider, action, language):
+    def track_subtitles(self, provider: str, action: str, language: str) -> None:
+        """
+        Track a subtitles-related analytics event.
+
+        Builds a new "subtitles" event on the configured tracker, attaches the
+        provider, action and language as event parameters and sends it to the
+        analytics backend. If analytics are disabled in the application
+        settings, the method returns immediately without doing anything. When
+        the event is sent successfully, the tracker store is persisted; if
+        sending fails, the failure is logged at debug level and silently
+        ignored.
+
+        :param provider: Name of the subtitles provider involved in the event.
+        :param action: Action performed on the subtitles (for example download,
+            upgrade or manual search).
+        :param language: Language of the subtitles concerned by the action.
+        :return: None
+        """
         if not settings.analytics.enabled:
             return
 
@@ -64,7 +102,26 @@ class EventTracker:
         else:
             self.tracker.store.save()
 
-    def track_throttling(self, provider, exception_name, exception_info):
+    def track_throttling(self, provider: str, exception_name: str, exception_info: str) -> None:
+        """
+        Record a throttling event for a subtitle provider in the analytics tracker.
+
+        If analytics are disabled in the application settings, the method returns
+        immediately without recording anything. Otherwise, a new ``throttling``
+        event is created and populated with the provider name, the exception name
+        and the exception details, after which it is sent through the tracker.
+        Any failure during sending is caught and logged at debug level; on
+        successful delivery the tracker store is persisted.
+
+        :param provider: Name of the subtitle provider that triggered the
+            throttling.
+        :param exception_name: Name of the exception class responsible for the
+            throttling.
+        :param exception_info: Additional textual information describing the
+            exception that caused the throttling.
+        :return: None
+
+        """
         if not settings.analytics.enabled:
             return
 

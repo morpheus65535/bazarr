@@ -142,9 +142,7 @@ export default defineConfig(({ mode, command }) => {
       environment: "happy-dom",
       setupFiles: "./src/tests/setup.tsx",
       pool: "threads",
-      experimental: {
-        fsModuleCache: true,
-      },
+      fsModuleCache: false,
     },
     server: {
       proxy: {

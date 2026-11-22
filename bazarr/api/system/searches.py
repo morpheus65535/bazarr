@@ -19,7 +19,7 @@ class Searches(Resource):
     get_request_parser.add_argument('query', type=str, required=True, help='Series or movie name to search for')
 
     @authenticate
-    @api_ns_system_searches.doc(parser=get_request_parser)
+    @api_ns_system_searches.expect(get_request_parser)
     @api_ns_system_searches.response(200, 'Success')
     @api_ns_system_searches.response(401, 'Not Authenticated')
     def get(self):

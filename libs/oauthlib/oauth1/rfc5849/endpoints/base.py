@@ -73,7 +73,7 @@ class BaseEndpoint:
             request = Request(uri, http_method, body, headers)
         else:
             request = Request(uri, http_method, '', headers)
-        signature_type, params, oauth_params = (
+        _signature_type, params, oauth_params = (
             self._get_signature_type_and_params(request))
 
         # The server SHOULD return a 400 (Bad Request) status code when

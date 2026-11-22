@@ -28,6 +28,9 @@ from binascii import hexlify
 from types import MappingProxyType
 from shutil import move
 
+from utilities.text_list import parse_text_list_or_default
+
+from .form_sessions import revoke_all_form_sessions
 from .get_args import args
 
 NoneType = type(None)
@@ -131,6 +134,7 @@ validators = [
     Validator('general.use_embedded_subs', must_exist=True, default=True, is_type_of=bool),
     Validator('general.embedded_subs_show_desired', must_exist=True, default=True, is_type_of=bool),
     Validator('general.utf8_encode', must_exist=True, default=True, is_type_of=bool),
+    Validator('general.use_m49_language_tag', must_exist=True, default=False, is_type_of=bool),
     Validator('general.ignore_pgs_subs', must_exist=True, default=False, is_type_of=bool),
     Validator('general.ignore_vobsub_subs', must_exist=True, default=False, is_type_of=bool),
     Validator('general.ignore_ass_subs', must_exist=True, default=False, is_type_of=bool),
@@ -149,6 +153,7 @@ validators = [
     Validator('general.subfolder_custom', must_exist=True, default='', is_type_of=str),
     Validator('general.use_whisper_fallback', must_exist=True, default=False, is_type_of=bool),
     Validator('general.use_whisper_fallback_series', must_exist=True, default=False, is_type_of=bool),
+    Validator('general.use_whisper_fallback_on_import', must_exist=True, default=False, is_type_of=bool),
     Validator('general.upgrade_subs', must_exist=True, default=True, is_type_of=bool),
     Validator('general.upgrade_frequency', must_exist=True, default=12, is_type_of=int,
               is_in=[6, 12, 24, 168, ONE_HUNDRED_YEARS_IN_HOURS]),
@@ -184,9 +189,15 @@ validators = [
     # auth section
     Validator('auth.apikey', must_exist=True, default=hexlify(os.urandom(16)).decode(), is_type_of=str),
     Validator('auth.type', must_exist=True, default=None, is_type_of=(NoneType, str),
-              is_in=[None, 'basic', 'form']),
+              is_in=[None, 'basic', 'form', 'oidc']),
     Validator('auth.username', must_exist=True, default='', is_type_of=str, cast=str),
     Validator('auth.password', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('auth.allow_iframe_embedding', must_exist=True, default=False, is_type_of=bool),
+    Validator('auth.oidc_issuer', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('auth.oidc_client_id', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('auth.oidc_client_secret_file', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('auth.oidc_redirect_uri', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('auth.oidc_allowed_subjects', must_exist=True, default=[], is_type_of=list),
 
     # cors section
     Validator('cors.enabled', must_exist=True, default=False, is_type_of=bool),
@@ -209,6 +220,14 @@ validators = [
     Validator('translator.translator_type', must_exist=True, default='google_translate', is_type_of=str, cast=str),
     Validator('translator.lingarr_url', must_exist=True, default='http://lingarr:9876', is_type_of=str),
     Validator('translator.lingarr_token', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('translator.lingarr_timeout', must_exist=True, default=1920, is_type_of=int, gte=1),
+    Validator('translator.openai_base_url', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('translator.openai_model', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('translator.openai_api_key', must_exist=True, default='', is_type_of=str, cast=str),
+    Validator('translator.openai_batch_size', must_exist=True, default=12, is_type_of=int, gte=1),
+    Validator('translator.openai_timeout', must_exist=True, default=180, is_type_of=int, gte=1),
+    Validator('translator.translate_fallback_enabled', must_exist=True, default=False, is_type_of=bool),
+    Validator('translator.translate_fallback_source_language', must_exist=True, default='en', is_type_of=str, cast=str),
 
     # sonarr section
     Validator('sonarr.ip', must_exist=True, default='127.0.0.1', is_type_of=str),
@@ -405,6 +424,10 @@ validators = [
     Validator('jimaku.enable_archives_download', must_exist=True, default=False, is_type_of=bool),
     Validator('jimaku.enable_ai_subs', must_exist=True, default=False, is_type_of=bool),
 
+    # prijevodionline section
+    Validator('prijevodionline.api_key', must_exist=True, default='', is_type_of=str),
+    Validator('prijevodionline.allow_paid_translations', must_exist=True, default=False, is_type_of=bool),
+
     # titlovi section
     Validator('titlovi.username', must_exist=True, default='', is_type_of=str, cast=str),
     Validator('titlovi.password', must_exist=True, default='', is_type_of=str, cast=str),
@@ -459,9 +482,10 @@ validators = [
     Validator('subsync.quality_min_score', must_exist=True, default=0.0, is_type_of=(int, float),
               is_in=[0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]),
     Validator('subsync.quality_max_offset_seconds', must_exist=True, default=30, is_type_of=int,
-              is_in=[5, 10, 15, 20, 30, 45, 60]),
+              is_in=[5, 10, 15, 20, 30, 45, 60, 120, 300, 600]),
     Validator('subsync.quality_max_framerate_deviation', must_exist=True, default=0.1, is_type_of=(int, float),
               is_in=[0.05, 0.1, 0.15, 0.2, 0.3]),
+    Validator('subsync.concurrent_syncs', must_exist=True, default=1, is_type_of=int, gte=1),
 
     # postgresql section
     Validator('postgresql.enabled', must_exist=True, default=False, is_type_of=bool),
@@ -530,7 +554,7 @@ elif not os.path.exists(config_yaml_file):
         os.makedirs(os.path.dirname(config_yaml_file))
     open(config_yaml_file, mode='w').close()
 
-if os.path.exists(config_yaml_file):
+if os.path.exists(config_yaml_file) and os.path.getsize(config_yaml_file) > 0:
     os.environ['BAZARR_CONFIGURED'] = '1'
 
 settings = Dynaconf(
@@ -560,7 +584,47 @@ while failed_validator:
             stop_bazarr(EXIT_VALIDATION_ERROR)
 
 
+# UI password hashing, legacy MD5 hashes are still accepted and upgraded on next successful login
+PASSWORD_HASH_METHOD = 'pbkdf2:sha256:600000'
+_LEGACY_MD5_RE = re.compile(r'^[0-9a-f]{32}$')
+
+
+def hash_password(password):
+    from werkzeug.security import generate_password_hash
+    return generate_password_hash(str(password), method=PASSWORD_HASH_METHOD)
+
+
+def is_legacy_password_hash(stored_hash):
+    return bool(_LEGACY_MD5_RE.match(str(stored_hash or '')))
+
+
+def verify_password(password, stored_hash):
+    """Check a password against a stored werkzeug or legacy MD5 hash."""
+    import hmac
+    stored_hash = str(stored_hash or '')
+    if not stored_hash or password is None:
+        return False
+    try:
+        if is_legacy_password_hash(stored_hash):
+            submitted = hashlib.md5(str(password).encode('utf-8')).hexdigest()
+            return hmac.compare_digest(submitted, stored_hash)
+        from werkzeug.security import check_password_hash
+        return check_password_hash(stored_hash, str(password))
+    except (ValueError, TypeError, UnicodeError):
+        # Malformed stored hash or password that can't be encoded
+        return False
+
+
+# Prevent concurrent writes from corrupting config file
+_write_config_lock = threading.RLock()
+
+
 def write_config():
+    with _write_config_lock:
+        _write_config()
+
+
+def _write_config():
     if settings.as_dict() == Dynaconf(
         settings_file=config_yaml_file,
         core_loaders=['YAML']
@@ -585,7 +649,8 @@ base_url = settings.general.base_url.rstrip('/')
 
 ignore_keys = ['flask_secret_key']
 
-array_keys = ['excluded_tags',
+array_keys = ['oidc_allowed_subjects',
+              'excluded_tags',
               'exclude',
               'included_codecs',
               'subzero_mods',
@@ -606,7 +671,9 @@ array_keys = ['excluded_tags',
 
 empty_values = ['', 'None', 'null', 'undefined', None, []]
 
-str_keys = ['chmod', 'log_include_filter', 'log_exclude_filter', 'password', 'f_password', 'hashed_password']
+str_keys = ['chmod', 'log_include_filter', 'log_exclude_filter', 'password', 'f_password', 'hashed_password',
+            'oidc_issuer', 'oidc_client_id', 'oidc_client_secret_file', 'oidc_redirect_uri']
+float_keys = ['quality_min_score', 'quality_max_framerate_deviation']
 
 # Increase Sonarr and Radarr sync interval since we now use SignalR feed to update in real time
 if settings.sonarr.series_sync < 15:
@@ -648,6 +715,11 @@ if hasattr(settings.translator, 'gemini_key'):
     if legacy_key and not settings.translator.gemini_keys:
         settings.translator.gemini_keys = [legacy_key]
     del settings.translator.gemini_key
+
+# Generate a new API key if empty as it would never be accepted
+if not str(settings.auth.apikey or '').strip():
+    settings.auth.apikey = hexlify(os.urandom(16)).decode()
+    logging.warning('BAZARR API key was empty, a new one has been generated.')
 
 # save updated settings to file
 write_config()
@@ -692,6 +764,15 @@ def validate_log_regex():
             raise ValidationError(f"Exclude filter: invalid regular expression: {settings.log.exclude_filter}")
 
 
+def validate_auth():
+    # Empty username or password would lock everyone out when authentication is enabled
+    if settings.auth.type in ['basic', 'form']:
+        if not str(settings.auth.username or '').strip():
+            raise ValidationError('A username is required when authentication is enabled.')
+        if not str(settings.auth.password or ''):
+            raise ValidationError('A password is required when authentication is enabled.')
+
+
 def save_settings(settings_items):
     configure_debug = False
     configure_captcha = False
@@ -710,6 +791,7 @@ def save_settings(settings_items):
     audio_tracks_parsing_changed = False
     reset_providers = False
     language_equals_changed = False
+    revoke_form_sessions = False
 
     # Subzero Mods
     update_subzero = False
@@ -728,15 +810,20 @@ def save_settings(settings_items):
             if value in empty_values and value != '':
                 value = None
 
-        # try to cast string as integer
+        # Try to cast numeric form values. Browser form submissions are strings,
+        # including decimal values such as Subsync's quality score.
         if isinstance(value, str) and settings_keys[-1] not in str_keys:
             try:
                 value = int(value)
             except ValueError:
-                pass
+                if settings_keys[-1] in float_keys:
+                    try:
+                        value = float(value)
+                    except ValueError:
+                        pass
 
         # Make sure empty language list are stored correctly
-        if settings_keys[-1] in array_keys and value[0] in empty_values:
+        if settings_keys[-1] in array_keys and (not value or value[0] in empty_values):
             value = []
 
         # Handle path mappings settings since they are array in array
@@ -770,9 +857,21 @@ def save_settings(settings_items):
         if key == 'settings-general-instance_name' and value == '':
             value = None
 
+        # Credential or auth type changes invalidate every form login session. The UI only submits
+        # fields the user edited, so a submitted value that differs from the stored one is a real change.
+        if key == 'settings-auth-username' and value != settings.auth.username:
+            revoke_form_sessions = True
+        elif key == 'settings-auth-type' and value != settings.auth.type:
+            revoke_form_sessions = True
+        elif key == 'settings-auth-password' and value is not None and value != settings.auth.password:
+            revoke_form_sessions = True
+        elif key.startswith('settings-auth-oidc_') and value != settings.auth.get(settings_keys[-1]):
+            revoke_form_sessions = True
+
         if key == 'settings-auth-password':
+            # Only hash new passwords, the UI sends back the stored hash when unchanged
             if value != settings.auth.password and value is not None:
-                value = hashlib.md5(f"{value}".encode('utf-8')).hexdigest()
+                value = hash_password(value) if value != '' else ''
 
         if key == 'settings-general-debug':
             configure_debug = True
@@ -865,6 +964,10 @@ def save_settings(settings_items):
             if value != settings.subsource.apikey:
                 reset_providers = True
 
+        if key == 'settings-prijevodionline-api_key':
+            if value != settings.prijevodionline.api_key:
+                reset_providers = True
+
         if reset_providers:
             from .get_providers import reset_throttled_providers
             reset_throttled_providers(only_auth_or_conf_error=True)
@@ -919,14 +1022,16 @@ def save_settings(settings_items):
                                                func='series_full_scan_subtitles',
                                                args=[],
                                                kwargs={'use_cache': True},
-                                               is_progress=True)
+                                               is_progress=True,
+                                               is_cancellable=True)
         if settings.general.use_radarr:
             jobs_queue.feed_jobs_pending_queue(job_name=f'Indexing all existing movies subtitles',
                                                module='subtitles.indexer.movies',
                                                func='movies_full_scan_subtitles',
                                                args=[],
                                                kwargs={'use_cache': True},
-                                               is_progress=True)
+                                               is_progress=True,
+                                               is_cancellable=True)
 
     if audio_tracks_parsing_changed:
         if settings.general.use_sonarr:
@@ -935,14 +1040,16 @@ def save_settings(settings_items):
                                                func='update_series',
                                                args=[],
                                                kwargs={},
-                                               is_progress=True)
+                                               is_progress=True,
+                                               is_cancellable=True)
         if settings.general.use_radarr:
             jobs_queue.feed_jobs_pending_queue(job_name=f'Syncing movies with Radarr',
                                                module='radarr.sync.movies',
                                                func='update_movies',
                                                args=[],
                                                kwargs={},
-                                               is_progress=True)
+                                               is_progress=True,
+                                               is_cancellable=True)
 
     if update_subzero:
         settings.general.subzero_mods = ','.join(subzero_mods)
@@ -950,11 +1057,24 @@ def save_settings(settings_items):
     try:
         settings.validators.validate()
         validate_log_regex()
+        validate_auth()
+        if settings.auth.type == 'oidc':
+            from .oidc import read_oidc_client_secret, validate_oidc_configuration
+            try:
+                validate_oidc_configuration(settings.auth, settings.general.base_url)
+                if revoke_form_sessions:
+                    # Check the file before an authentication change can revoke sessions.
+                    read_oidc_client_secret(settings.auth)
+            except ValueError as error:
+                raise ValidationError(str(error)) from error
     except ValidationError:
         settings.reload()
         raise
     else:
         write_config()
+
+        if revoke_form_sessions:
+            revoke_all_form_sessions()
 
         # Set the configured state based on config.yaml file existence
         from .database import database, update, System
@@ -1007,12 +1127,10 @@ def save_settings(settings_items):
                 event_stream(type='reset-episode-wanted')
             if radarr_exclusion_updated:
                 event_stream(type='reset-movie-wanted')
-
-
 def get_array_from(property):
     if property:
         if '[' in property:
-            return ast.literal_eval(property)
+            return parse_text_list_or_default(property)
         elif ',' in property:
             return property.split(',')
         else:
@@ -1086,7 +1204,54 @@ def sync_checker(subtitle):
         return False
 
 
-# Plex OAuth Migration Functions
+# Providers renamed upstream, mapping previous key to new key. Enabled providers matching a key are
+# replaced by the value at startup so users keep their selection after a rename.
+RENAMED_PROVIDERS: dict[str, str] = {
+    'animetosho_xyz': 'animetosho_net',
+    'gestdown': 'subvault'
+}
+
+
+def rename_enabled_providers(enabled_providers: list[str], renamed_providers: dict[str, str]) -> list[str]:
+    """
+    Return the enabled providers list with renamed provider keys replaced by their new names.
+
+    Order is preserved. If a renamed provider and its new name are both present, the new name is kept once.
+
+    :param enabled_providers: Current list of enabled provider keys.
+    :param renamed_providers: Mapping of previous provider key to new provider key.
+    :return: A new list with renamed keys replaced and duplicates removed.
+    """
+    result: list[str] = []
+    for name in enabled_providers:
+        new_name = renamed_providers.get(name, name)
+        if new_name not in result:
+            result.append(new_name)
+    return result
+
+
+def migrate_renamed_providers() -> None:
+    """
+    Replace renamed providers in ``settings.general.enabled_providers`` using ``RENAMED_PROVIDERS``.
+
+    The configuration is only written when the list actually changes. This must run before the
+    deprecated providers filter at startup, otherwise renamed providers are dropped instead of migrated.
+
+    :return: None
+    """
+    enabled_providers = settings.general.enabled_providers
+    if not isinstance(enabled_providers, list):
+        return
+
+    updated_providers = rename_enabled_providers(enabled_providers, RENAMED_PROVIDERS)
+    if updated_providers == enabled_providers:
+        return
+
+    settings.general.enabled_providers = updated_providers
+    write_config()
+    logging.debug('BAZARR renamed enabled providers: %s -> %s', enabled_providers, updated_providers)
+
+
 def migrate_plex_config():
     # Generate encryption key if not exists or is empty
     existing_key = settings.plex.get('encryption_key')

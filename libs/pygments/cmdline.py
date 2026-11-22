@@ -206,14 +206,14 @@ def main_inner(parser, argns):
             parser.print_help(sys.stderr)
             return 2
 
-        # print version
-        if not argns.json:
-            main(['', '-V'])
         allowed_types = {'lexer', 'formatter', 'filter', 'style'}
         largs = [arg.rstrip('s') for arg in argns.L]
         if any(arg not in allowed_types for arg in largs):
             parser.print_help(sys.stderr)
-            return 0
+            return 2
+        # print version
+        if not argns.json:
+            main(['', '-V'])
         if not largs:
             largs = allowed_types
         if not argns.json:

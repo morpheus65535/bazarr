@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 class NullRegistry:
     """A NullRegistry that masquerades as a pint.UnitRegistry."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize a null registry."""
 
     def __getattr__(self, item: typing.Any) -> int:
@@ -25,15 +25,15 @@ class NullRegistry:
                 pass
         return 1
 
-    def __bool__(self):
+    def __bool__(self) -> bool:
         """Return False since a NullRegistry is not a pint.UnitRegistry."""
         return False
 
-    def define(self, *args, **kwargs):
+    def define(self, *args: typing.Any, **kwargs: typing.Any) -> None:
         """Pretend to add unit to the registry."""
 
 
-def _build_unit_registry():
+def _build_unit_registry() -> typing.Any:
     try:
         import pint
 
@@ -45,7 +45,7 @@ def _build_unit_registry():
     except ModuleNotFoundError:
         pass
     except Exception:
-        logger.exception("Cannot import the pint package")
+        logger.exception('Cannot import the pint package')
 
     return NullRegistry()
 

@@ -1,0 +1,62 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 140;
+  background: transparent;
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 141;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+}
+
+.anchor {
+  position: fixed;
+  pointer-events: none;
+}
+
+.centeredWrapper {
+  position: fixed;
+  inset: 0;
+  z-index: 140;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--mantine-spacing-md);
+  background: rgb(0 0 0 / 62%);
+  overflow-y: auto;
+}
+
+.centeredCard {
+  width: min(440px, calc(100vw - 32px));
+  margin: auto;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-height: 60vh;
+  outline: none;
+}
+
+.cardBody {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.cardFooter {
+  flex: 0 0 auto;
+  padding-top: var(--mantine-spacing-xs);
+}
+
+.action {
+  border-top: 1px solid
+    light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+  padding-top: var(--mantine-spacing-sm);
+}

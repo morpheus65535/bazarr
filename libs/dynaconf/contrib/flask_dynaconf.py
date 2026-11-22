@@ -111,6 +111,9 @@ class FlaskDynaconf:
 
     def init_app(self, app, **kwargs):
         """kwargs holds initial dynaconf configuration"""
+        if kwargs.pop("compatibility_mode", None) is True:
+            kwargs["DYNABOXIFY"] = False
+
         self.kwargs.update(kwargs)
         self.settings = self.dynaconf_instance or dynaconf.LazySettings(
             **self.kwargs

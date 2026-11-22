@@ -16,7 +16,7 @@ class Notifications(Resource):
     patch_request_parser.add_argument('url', type=str, required=True, help='Notifications provider URL')
 
     @authenticate
-    @api_ns_system_notifications.doc(parser=patch_request_parser)
+    @api_ns_system_notifications.expect(patch_request_parser)
     @api_ns_system_notifications.response(204, 'Success')
     @api_ns_system_notifications.response(401, 'Not Authenticated')
     def patch(self):

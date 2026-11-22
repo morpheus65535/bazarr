@@ -31,10 +31,12 @@ import hmac
 from json import dumps
 import re
 import time
+from typing import Any, Optional
 
 import requests
 
 from ..common import NotifyFormat, NotifyType
+from ..exception import AppriseImproperlyConfigured
 from ..locale import gettext_lazy as _
 from ..url import PrivacyMode
 from ..utils.parse import parse_list, validate_regex
@@ -72,10 +74,12 @@ class NotifyDingTalk(NotifyBase):
     # DingTalk API
     notify_url = "https://oapi.dingtalk.com/robot/send?access_token={token}"
 
-    # Do not set title_maxlen as it is set in a property value below
-    # since the length varies depending if we are doing a markdown
-    # based message or a text based one.
-    # title_maxlen = see below @propery defined
+    # Keep the title separate so send() can place it consistently in both
+    # text and Markdown messages.
+
+    # DingTalk renders both plain text and markdown natively. Text is
+    # listed first, making it the default when nothing else applies.
+    notify_format = (NotifyFormat.TEXT, NotifyFormat.MARKDOWN)
 
     # Define object templates
     templates = (
@@ -141,7 +145,7 @@ class NotifyDingTalk(NotifyBase):
         if not self.token:
             msg = f"An invalid DingTalk API Token ({token}) was specified."
             self.logger.warning(msg)
-            raise TypeError(msg)
+            raise AppriseImproperlyConfigured(msg)
 
         self.secret = None
         if secret:
@@ -151,7 +155,7 @@ class NotifyDingTalk(NotifyBase):
             if not self.secret:
                 msg = f"An invalid DingTalk Secret ({token}) was specified."
                 self.logger.warning(msg)
-                raise TypeError(msg)
+                raise AppriseImproperlyConfigured(msg)
 
         # Parse our targets
         self.targets = []
@@ -190,7 +194,14 @@ class NotifyDingTalk(NotifyBase):
         signature = NotifyDingTalk.quote(base64.b64encode(hmac_code), safe="")
         return timestamp, signature
 
-    def send(self, body, title="", notify_type=NotifyType.INFO, **kwargs):
+    def send(
+        self,
+        body: str,
+        title: str = "",
+        notify_type: NotifyType = NotifyType.INFO,
+        body_format: Optional[NotifyFormat] = None,
+        **kwargs: Any,
+    ) -> bool:
         """Perform DingTalk Notification."""
 
         payload = {
@@ -201,15 +212,27 @@ class NotifyDingTalk(NotifyBase):
             },
         }
 
-        if self.notify_format == NotifyFormat.MARKDOWN:
+        if body_format == NotifyFormat.MARKDOWN:
+            # Keep the title on one line and drop any leading heading or
+            # list markers so it reads cleanly as a heading
+            title = " ".join(title.split()).lstrip("#- ")
+
+            # ``markdown.title`` is only a preview, so repeat the title as
+            # a heading in ``markdown.text``.
+            # See: https://open.dingtalk.com/document/app/
+            #      custom-robot-access
             payload["markdown"] = {
-                "title": title,
-                "text": body,
+                # A title is mandatory for markdown messages
+                "title": title if title else self.app_desc,
+                "text": f"# {title}\n{body}" if title else body,
             }
+            payload["msgtype"] = "markdown"
 
         else:
+            # Plain text has no title field, so the title goes on the
+            # first line
             payload["text"] = {
-                "content": body,
+                "content": f"{title}\r\n{body}" if title else body,
             }
 
         # Our Notification URL
@@ -281,24 +304,13 @@ class NotifyDingTalk(NotifyBase):
 
         return True
 
-    @property
-    def title_maxlen(self):
-        """The title isn't used when not in markdown mode."""
-        return (
-            NotifyBase.title_maxlen
-            if self.notify_format == NotifyFormat.MARKDOWN
-            else 0
-        )
-
     def url(self, privacy=False, *args, **kwargs):
         """Returns the URL built dynamically based on specified arguments."""
 
-        # Define any arguments set
-        args = {
-            "format": self.notify_format,
-            "overflow": self.overflow_mode,
-            "verify": "yes" if self.verify_certificate else "no",
-        }
+        # Define any arguments set. url_parameters() knows how to
+        # serialize format= for a multi-format plugin; it is only
+        # emitted when the user asked for an explicit override.
+        args = self.url_parameters(privacy=privacy, *args, **kwargs)
 
         return "{schema}://{secret}{token}/{targets}/?{args}".format(
             schema=self.secure_protocol,

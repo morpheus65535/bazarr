@@ -1,10 +1,10 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
 from functools import wraps
 from typing import Any
-from typing import Callable
 
 from dynaconf.base import Settings
 from dynaconf.loaders.base import SourceMetadata
@@ -117,7 +117,7 @@ def hookable(function=None, name=None):
                 identifier=f"{function_name}_hook_({hook_names})",
                 merged=True,
             )
-            history = self._loaded_by_loaders.setdefault(metadata, {})
+            history = self.loaded_by_loaders.setdefault(metadata, {})
             key = args[0] if args else kwargs.get("key")
             history[key] = value.value
 
@@ -157,8 +157,8 @@ def get_hooks(obj):
             return getattr(obj, key)
         elif isinstance(obj, dict) and key in obj:
             return obj[key]
-        elif hasattr(obj, "_store") and key in obj._store:
-            return obj._store[key]
+        elif hasattr(obj, "store") and key in obj.store:
+            return obj.store[key]
     return {}
 
 
@@ -303,44 +303,40 @@ class TempSettingsHolder:
     To save runtime resources initialize a copy of it only if accessed.
     """
 
-    _settings = None
+    _temp_settings = None
 
     def __init__(self, settings):
         self._original_settings = settings
 
-    def _initialize(self):
-        if self._settings is None:
-            self._settings = Settings(
+    @property
+    def _settings(self):
+        if self._temp_settings is None:
+            self._temp_settings = Settings(
                 dynaconf_skip_loaders=True,
                 dynaconf_skip_validators=True,
-                _store=self._original_settings._store.copy(bypass_eval=True),
+                _store=self._original_settings.store.copy(bypass_eval=True),
             )
+        return self._temp_settings
 
     def __getattr__(self, attr):
-        self._initialize()
         return getattr(self._settings, attr)
 
     def __getitem__(self, item):
-        self._initialize()
         return self._settings[item]
 
     def __setitem__(self, item, value):
-        self._initialize()
         self._settings[item] = value
 
     def __iter__(self):
-        self._initialize()
         return iter(self._settings)
 
     def __contains__(self, item):
-        self._initialize()
         return item in self._settings
 
     def __setattr__(self, attr, value):
-        if attr in ["_original_settings", "_settings"]:
+        if attr in ["_original_settings", "_temp_settings"]:
             super().__setattr__(attr, value)
         else:
-            self._initialize()
             setattr(self._settings, attr, value)
 
 

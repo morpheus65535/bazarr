@@ -74,7 +74,7 @@ def get_machine_id() -> str | bytes | None:
         # relatively stable across boots.
         try:
             with open("/proc/self/cgroup", "rb") as f:
-                linux += f.readline().strip().rpartition(b"/")[2]
+                linux += f.readline().strip()
         except OSError:
             pass
 
@@ -450,7 +450,7 @@ class DebuggedApplication:
         val = parse_cookie(environ).get(self.pin_cookie_name)
         if not val or "|" not in val:
             return False
-        ts_str, pin_hash = val.split("|", 1)
+        ts_str, _, pin_hash = val.partition("|")
 
         try:
             ts = int(ts_str)

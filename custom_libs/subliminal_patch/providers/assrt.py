@@ -48,6 +48,45 @@ def search_language_in_list(lang, langlist):
     return None
 
 
+def get_search_language_keys(sub):
+    """Return Assrt language identifiers from legacy and current result shapes."""
+    keys = []
+
+    legacy_languages = sub.get('lang')
+    if isinstance(legacy_languages, dict):
+        langlist = legacy_languages.get('langlist')
+        if isinstance(langlist, dict):
+            keys.extend(key for key, present in langlist.items() if present)
+
+    current_languages = sub.get('m_langn')
+    if isinstance(current_languages, str):
+        keys.append(current_languages)
+    elif isinstance(current_languages, (list, tuple, set)):
+        keys.extend(current_languages)
+
+    return list(dict.fromkeys(key for key in keys if isinstance(key, str)))
+
+
+def get_search_video_name(sub):
+    """Select the best available title field from an Assrt search result."""
+    video_name = sub.get('videoname')
+    if isinstance(video_name, str) and video_name and video_name not in meaningless_videoname:
+        return video_name
+
+    native_name = sub.get('native_name')
+    if isinstance(native_name, str) and native_name:
+        return native_name
+    if isinstance(native_name, list):
+        for name in native_name:
+            if isinstance(name, str) and name:
+                return name
+
+    sub_name = sub.get('sub_name')
+    if isinstance(sub_name, str) and sub_name:
+        return sub_name
+    return None
+
+
 def check_status_code(resp):
     try:
         response = resp.json()
@@ -242,31 +281,30 @@ class AssrtProvider(Provider):
         pattern = re.compile(r'lang(?P<code>\w+)')
         subtitles = []
         for sub in result['sub']['subs']:
-            if 'lang' not in sub:
+            subtitle_id = sub.get('id')
+            if subtitle_id is None or subtitle_id == '':
+                subtitle_id = sub.get('fileid')
+            if subtitle_id is None or subtitle_id == '':
                 continue
-            for key in sub['lang']['langlist'].keys():
-                match = pattern.match(key)
+
+            video_name = get_search_video_name(sub)
+            for key in get_search_language_keys(sub):
+                match = pattern.fullmatch(key)
+                if not match:
+                    continue
                 try:
                     language = Language.fromassrt(match.group('code'))
-                    output_language = search_language_in_list(language, languages)
-                    if output_language:
-                        if sub['videoname'] not in meaningless_videoname:
-                            video_name = sub['videoname']
-                        elif 'native_name' in sub and isinstance(sub['native_name'], str):
-                            video_name = sub['native_name']
-                        elif ('native_name' in sub and isinstance(sub['native_name'], list) and
-                              len(sub['native_name']) > 0):
-                            video_name = sub['native_name'][0]
-                        else:
-                            video_name = None
-                        subtitles.append(AssrtSubtitle(language=output_language,
-                                                       subtitle_id=sub['id'],
-                                                       video_name=video_name,
-                                                       session=self.session,
-                                                       token=self.token,
-                                                       max_request_per_minute=self.max_request_per_minute))
-                except:
-                    pass
+                except ConfigurationError:
+                    continue
+
+                output_language = search_language_in_list(language, languages)
+                if output_language:
+                    subtitles.append(AssrtSubtitle(language=output_language,
+                                                   subtitle_id=subtitle_id,
+                                                   video_name=video_name,
+                                                   session=self.session,
+                                                   token=self.token,
+                                                   max_request_per_minute=self.max_request_per_minute))
 
         return subtitles
 

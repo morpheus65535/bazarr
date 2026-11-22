@@ -15,6 +15,8 @@ class SimpleWebSocketWSGI:  # pragma: no cover
         ret = self.app(self)
         if self.ws.mode == 'gunicorn':
             raise StopIteration()
+        elif self.ws.mode == 'werkzeug':
+            raise ConnectionError()
         return ret
 
     def close(self):

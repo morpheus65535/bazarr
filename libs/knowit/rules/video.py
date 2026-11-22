@@ -1,9 +1,10 @@
+import typing
 from decimal import Decimal
 
 from knowit.core import Rule
 
 
-class ResolutionRule(Rule):
+class ResolutionRule(Rule[typing.Any]):
     """Resolution rule."""
 
     standard_resolutions = (
@@ -19,11 +20,16 @@ class ResolutionRule(Rule):
         360,
         576,
     )
-    resolutions = list(sorted(standard_resolutions + uncommon_resolutions))
-    square = 4. / 3
-    wide = 16. / 9
+    resolutions = sorted(standard_resolutions + uncommon_resolutions)
+    square = 4.0 / 3
+    wide = 16.0 / 9
 
-    def execute(self, props, pv_props, context):
+    def execute(
+        self,
+        props: typing.MutableMapping[str, typing.Any],
+        pv_props: typing.MutableMapping[str, typing.Any],
+        context: typing.MutableMapping[str, typing.Any],
+    ) -> typing.Any:
         """Return the resolution for the video.
 
         The resolution is based on a widescreen TV (16:9)
