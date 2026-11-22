@@ -15,7 +15,9 @@ from subzero.language import Language
 
 from subliminal.providers import ParserBeautifulSoup
 from subliminal.subtitle import SUBTITLE_EXTENSIONS, fix_line_ending
+from subliminal.exceptions import DownloadLimitExceeded, ProviderError
 from subliminal.video import Episode, Movie
+from subliminal_patch.exceptions import TooManyRequests
 from subliminal_patch.providers import Provider
 from subliminal_patch.subtitle import Subtitle, guess_matches
 from .utils import FIRST_THOUSAND_OR_SO_USER_AGENTS as AGENT_LIST, get_archive_from_bytes
@@ -66,6 +68,41 @@ class SubhdSubtitle(Subtitle):
         return self.matches
 
 
+def _has_keyword(name: str, keywords: list[str]) -> bool:
+    """Return True if any keyword occurs in a file name.
+
+    Purely alphanumeric ASCII keywords must not be adjacent to another ASCII letter or digit, so
+    ``sc`` matches ``show.sc.srt`` but not ``scrubs``. Keywords with punctuation or non-ASCII
+    characters are matched as plain substrings.
+
+    :param str name: Lower-cased file name to search.
+    :param list[str] keywords: Keywords to look for.
+    :return: True if at least one keyword matches.
+    :rtype: bool
+    """
+    for kw in keywords:
+        if kw.isascii() and kw.isalnum():
+            if re.search(r'(?<![a-z0-9])%s(?![a-z0-9])' % re.escape(kw), name):
+                return True
+        elif kw in name:
+            return True
+    return False
+
+
+def _raise_if_rate_limited(response, exc_cls: type[ProviderError], message: str) -> None:
+    """Raise ``exc_cls`` if the HTTP response is a 429 Too Many Requests.
+
+    :param response: HTTP response object exposing ``status_code``.
+    :param type[ProviderError] exc_cls: Exception class to raise on a rate-limited response.
+    :param str message: Message attached to the raised exception.
+    :raises ProviderError: ``exc_cls`` when the status code is 429.
+    :return: None
+    :rtype: None
+    """
+    if response.status_code == 429:
+        raise exc_cls(message)
+
+
 def _extract_subtitle_from_archive(archive, language, video=None):
     """Extract best matching subtitle file from zip/rar archive according to language and episode."""
     extract_subname = None
@@ -107,23 +144,23 @@ def _extract_subtitle_from_archive(archive, language, video=None):
         lang_country = getattr(language, 'country', None)
 
         if lang_alpha3 == 'zho' and (lang_country == 'CN' or not lang_country):
-            if any(k in lower_name for k in ['简', 'chs', 'gb', 'sc', 'zh-cn', 'zh-hans']):
+            if _has_keyword(lower_name, ['简', 'chs', 'gb', 'gbk', 'gb2312', 'sc', 'zh-cn', 'zh-hans']):
                 score += 15
-            if any(k in lower_name for k in ['中英', '简英', '双语']):
+            if _has_keyword(lower_name, ['中英', '简英', '双语']):
                 score += 10
-            if any(k in lower_name for k in ['繁体', 'cht', 'big5', 'tc', 'zh-tw', 'zh-hant']) and not any(k in lower_name for k in ['简', 'chs']):
+            if _has_keyword(lower_name, ['繁体', 'cht', 'big5', 'tc', 'zh-tw', 'zh-hant']) and not _has_keyword(lower_name, ['简', 'chs']):
                 score -= 10
         elif lang_alpha3 == 'zho' and lang_country in ('TW', 'HK'):
-            if any(k in lower_name for k in ['繁', 'cht', 'big5', 'tc', 'zh-tw', 'zh-hant']):
+            if _has_keyword(lower_name, ['繁', 'cht', 'big5', 'tc', 'zh-tw', 'zh-hant']):
                 score += 15
-            if any(k in lower_name for k in ['繁英', '双语']):
+            if _has_keyword(lower_name, ['繁英', '双语']):
                 score += 10
-            if any(k in lower_name for k in ['简体', 'chs', 'gb', 'sc', 'zh-cn', 'zh-hans']) and not any(k in lower_name for k in ['繁', 'cht']):
+            if _has_keyword(lower_name, ['简体', 'chs', 'gb', 'gbk', 'gb2312', 'sc', 'zh-cn', 'zh-hans']) and not _has_keyword(lower_name, ['繁', 'cht']):
                 score -= 10
         elif lang_alpha3 == 'eng':
-            if any(k in lower_name for k in ['eng', 'en.', '.en', 'english']):
+            if _has_keyword(lower_name, ['eng', 'en.', '.en', 'english']):
                 score += 15
-            if any(k in lower_name for k in ['双语', '中英', '简英', '繁英']):
+            if _has_keyword(lower_name, ['双语', '中英', '简英', '繁英']):
                 score += 10
 
         # Format scoring
@@ -175,6 +212,8 @@ class SubhdProvider(Provider):
 
         # Search result cards
         cards = soup.find_all('div', class_=re.compile(r'\bshadow-sm\b.*\brounded-3\b'))
+        if not cards:
+            logger.debug('SubHD search page contained no result cards; no results or markup changed')
         for card in cards:
             # Find subtitle title & link
             view_text = card.find('div', class_='view-text')
@@ -274,7 +313,10 @@ class SubhdProvider(Provider):
         logger.debug('SubHD searching URL: %s', search_link)
         try:
             r = self.session.get(search_link, timeout=15)
+            _raise_if_rate_limited(r, TooManyRequests, 'SubHD search rate limited (HTTP 429)')
             r.raise_for_status()
+        except TooManyRequests:
+            raise
         except Exception as err:
             logger.warning('SubHD search request failed for %r: %s', search_term, err)
             return []
@@ -306,21 +348,22 @@ class SubhdProvider(Provider):
                         titles.append(alt)
 
         for title in titles:
+            # Each entry is (query term, episode_specific)
             search_queries = []
             if isinstance(video, Episode):
                 if video.season is not None and video.episode is not None:
-                    search_queries.append(f"{title} S{video.season:02d}E{video.episode:02d}")
-                    search_queries.append(f"{title} S{video.season:02d}")
+                    search_queries.append((f"{title} S{video.season:02d}E{video.episode:02d}", True))
+                    search_queries.append((f"{title} S{video.season:02d}", False))
                 elif video.season is not None:
-                    search_queries.append(f"{title} S{video.season:02d}")
+                    search_queries.append((f"{title} S{video.season:02d}", False))
                 else:
-                    search_queries.append(title)
+                    search_queries.append((title, False))
             elif isinstance(video, Movie):
                 if video.year:
-                    search_queries.append(f"{title} {video.year}")
-                search_queries.append(title)
+                    search_queries.append((f"{title} {video.year}", False))
+                search_queries.append((title, False))
 
-            for query_term in search_queries:
+            for query_term, episode_specific in search_queries:
                 subs = self.query(query_term, languages, year=video.year)
                 for sub in subs:
                     key = (sub.sid, sub.language.alpha3, sub.language.country)
@@ -330,7 +373,7 @@ class SubhdProvider(Provider):
                         candidates.append(sub)
 
                 # If specific episode query returned results, no need to fallback to broader season search
-                if isinstance(video, Episode) and 'E' in query_term and subs:
+                if episode_specific and subs:
                     break
 
         return candidates
@@ -350,7 +393,8 @@ class SubhdProvider(Provider):
         try:
             # Step 1: visit detail page to initialize session / referer
             logger.debug("SubHD step 1: fetching detail page %s", detail_url)
-            self.session.get(detail_url, headers={'Referer': self.server_url}, timeout=15)
+            detail_res = self.session.get(detail_url, headers={'Referer': self.server_url}, timeout=15)
+            _raise_if_rate_limited(detail_res, DownloadLimitExceeded, 'SubHD rate limited (detail page)')
 
             # Step 2: request prepare-download
             prep_url = urljoin(self.server_url, "/api/sub/prepare-download")
@@ -367,6 +411,7 @@ class SubhdProvider(Provider):
                 },
                 timeout=15,
             )
+            _raise_if_rate_limited(prep_res, DownloadLimitExceeded, 'SubHD rate limited (prepare-download)')
             prep_res.raise_for_status()
             prep_data = prep_res.json()
             if not prep_data.get('success') or not prep_data.get('url'):
@@ -378,7 +423,8 @@ class SubhdProvider(Provider):
             # Step 3: GET the down page to acquire the down authorization cookie
             down_page_url = urljoin(self.server_url, down_path)
             logger.debug("SubHD step 3: fetching down page %s", down_page_url)
-            self.session.get(down_page_url, headers={'Referer': detail_url}, timeout=15)
+            down_page_res = self.session.get(down_page_url, headers={'Referer': detail_url}, timeout=15)
+            _raise_if_rate_limited(down_page_res, DownloadLimitExceeded, 'SubHD rate limited (down page)')
 
             # Step 4: POST /api/sub/down to acquire direct download URL
             api_down_url = urljoin(self.server_url, "/api/sub/down")
@@ -395,6 +441,7 @@ class SubhdProvider(Provider):
                 },
                 timeout=15,
             )
+            _raise_if_rate_limited(down_api_res, DownloadLimitExceeded, 'SubHD rate limited (/api/sub/down)')
             down_api_res.raise_for_status()
             down_data = down_api_res.json()
             if not down_data.get('success') or not down_data.get('url'):
@@ -413,6 +460,7 @@ class SubhdProvider(Provider):
                 },
                 timeout=30,
             )
+            _raise_if_rate_limited(file_res, DownloadLimitExceeded, 'SubHD rate limited (file download)')
             file_res.raise_for_status()
             raw_content = file_res.content
 
@@ -430,5 +478,7 @@ class SubhdProvider(Provider):
                     return
                 subtitle.content = fix_line_ending(raw_content)
 
+        except ProviderError:
+            raise
         except Exception as e:
             logger.exception("Failed to download subtitle from SubHD for sid %s: %s", sid, e)

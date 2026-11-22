@@ -2,15 +2,19 @@
 import io
 import zipfile
 
+import pytest
 from babelfish import language_converters
 from subzero.language import Language
+from subliminal.exceptions import DownloadLimitExceeded, ProviderError
 from subliminal.video import Episode, Movie
+from subliminal_patch.exceptions import TooManyRequests
 
 from subliminal_patch.converters.subhd import SubhdConverter
 from subliminal_patch.providers.subhd import (
     SubhdProvider,
     SubhdSubtitle,
     _extract_subtitle_from_archive,
+    _has_keyword,
 )
 
 
@@ -251,3 +255,111 @@ def test_subhd_download_subtitle_zip_archive_selection():
     assert sub_cht.content is not None
     assert b"Title: Traditional E07" in sub_cht.content
 
+
+
+class FailingSession(MockSession):
+    """Session whose GET requests to downloaded file hosts fail with a network error."""
+
+    def get(self, url, **kwargs):
+        if 'dlus.subhd.me' in url:
+            raise ConnectionError('simulated network failure')
+        return super().get(url, **kwargs)
+
+
+def test_subhd_query_rate_limited_raises_too_many_requests():
+    provider = SubhdProvider()
+    provider.session = MockSession()
+    provider.session.get_responses['/search/'] = MockResponse(b'', status_code=429)
+
+    with pytest.raises(TooManyRequests):
+        provider.query('Lioness', {Language('zho', 'CN')})
+
+
+def test_subhd_query_connection_error_returns_empty():
+    provider = SubhdProvider()
+    provider.session = MockSession()
+
+    def failing_get(url, **kwargs):
+        raise ConnectionError('simulated network failure')
+
+    provider.session.get = failing_get
+    assert provider.query('Lioness', {Language('zho', 'CN')}) == []
+
+
+def test_subhd_download_rate_limited_raises_download_limit():
+    provider = SubhdProvider()
+    provider.session = MockSession()
+    sid = 'limitsub'
+    provider.session.post_responses['/api/sub/prepare-download'] = MockResponse(b'', status_code=429)
+
+    sub = SubhdSubtitle(
+        language=Language('zho', 'CN'),
+        page_link=f'https://subhd.tv/a/{sid}',
+        sid=sid,
+        version='Lioness.S03E07',
+    )
+
+    with pytest.raises(DownloadLimitExceeded):
+        provider.download_subtitle(sub)
+    assert sub.content is None
+
+
+def test_subhd_download_network_error_is_swallowed():
+    provider = SubhdProvider()
+    provider.session = FailingSession()
+    sid = 'netfail'
+    provider.session.post_responses['/api/sub/prepare-download'] = MockResponse(
+        json_data={'success': True, 'url': f'/down/{sid}'}
+    )
+    provider.session.post_responses['/api/sub/down'] = MockResponse(
+        json_data={'success': True, 'pass': True, 'url': 'https://dlus.subhd.me/sub.srt'}
+    )
+
+    sub = SubhdSubtitle(
+        language=Language('zho', 'CN'),
+        page_link=f'https://subhd.tv/a/{sid}',
+        sid=sid,
+        version='Lioness.S03E07',
+    )
+
+    provider.download_subtitle(sub)
+    assert sub.content is None
+
+
+def test_has_keyword_uses_token_boundaries():
+    assert not _has_keyword('show.s03e07.escape.srt', ['sc'])
+    assert not _has_keyword('scrubs.s01e01.srt', ['sc'])
+    assert _has_keyword('show.s03e07.sc.srt', ['sc'])
+    assert _has_keyword('show.s03e07.gbk.srt', ['gb', 'gbk'])
+    assert _has_keyword('show.s03e07.zh-cn.srt', ['zh-cn'])
+    assert _has_keyword('show.s03e07.简英.ass', ['简英'])
+
+
+def test_subhd_episode_hit_skips_season_query():
+    provider = SubhdProvider()
+    provider.session = MockSession()
+    provider.session.get_responses['/search/'] = MockResponse(MOCK_SEARCH_HTML)
+
+    episode = Episode(name='Lioness.S03E07.mkv', series='Lioness', season=3, episode=7)
+    provider.list_subtitles(episode, {Language('zho', 'CN')})
+
+    search_urls = [url for method, url, _ in provider.session.history if method == 'GET' and '/search/' in url]
+    assert len(search_urls) == 1
+    assert 'S03E07' in search_urls[0]
+
+
+def test_subhd_season_query_runs_when_episode_query_empty():
+    provider = SubhdProvider()
+    provider.session = MockSession()
+    # Insertion order matters: the episode-specific key must be checked before the generic one.
+    provider.session.get_responses['S03E07'] = MockResponse(b'<html></html>')
+    provider.session.get_responses['/search/'] = MockResponse(MOCK_SEARCH_HTML)
+
+    episode = Episode(name='Lioness.S03E07.mkv', series='Lioness', season=3, episode=7)
+    subs = provider.list_subtitles(episode, {Language('zho', 'CN')})
+
+    search_urls = [url for method, url, _ in provider.session.history if method == 'GET' and '/search/' in url]
+    assert len(search_urls) == 2
+    assert 'S03E07' in search_urls[0]
+    assert 'S03E07' not in search_urls[1]
+    assert len(subs) >= 1
