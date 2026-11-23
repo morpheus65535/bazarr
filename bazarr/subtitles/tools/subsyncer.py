@@ -314,8 +314,12 @@ class SubSyncer:
                 # ffsubsync rejected the alignment (low quality or anti-correlated score): keep the original subtitles
                 if os.path.isfile(self.srtout):
                     os.remove(self.srtout)
+                message = (f'{language_from_alpha2(srt_lang)} subtitles synchronization was rejected, '
+                           f'original subtitles left untouched.')
                 logging.warning(f'BAZARR subtitles synchronization was rejected, original subtitles left untouched: '
                                 f'{self.srtin}')
+                if self.job_id:
+                    jobs_queue.update_job_progress(job_id=self.job_id, progress_message=message)
             elif os.path.isfile(self.srtout):
                 if not settings.subsync.debug:
                     os.remove(self.srtin)

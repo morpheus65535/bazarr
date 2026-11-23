@@ -432,6 +432,8 @@ def test_sync_subtitles_handles_malformed_percent_score(monkeypatch):
     job_names = []
 
     class SubSyncer:
+        sync_result = {"sync_was_successful": True}
+
         def sync(self, **kwargs):
             sync_calls.append(kwargs)
 
@@ -466,6 +468,8 @@ def test_sync_subtitles_falls_back_for_invalid_threshold(monkeypatch):
     job_names = []
 
     class SubSyncer:
+        sync_result = {"sync_was_successful": True}
+
         def sync(self, **kwargs):
             sync_calls.append(kwargs)
 
@@ -499,6 +503,8 @@ def test_sync_subtitles_reads_default_sync_options_at_call_time(monkeypatch):
     sync_calls = []
 
     class SubSyncer:
+        sync_result = {"sync_was_successful": True}
+
         def sync(self, **kwargs):
             sync_calls.append(kwargs)
 

@@ -5,6 +5,7 @@ from subtitles import sync as sync_module
 
 class FakeSubSyncer:
     calls = []
+    sync_result = {"sync_was_successful": True}
 
     def sync(self, **kwargs):
         self.calls.append(kwargs)

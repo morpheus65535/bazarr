@@ -132,10 +132,12 @@ def _sync_subtitles(video_path, srt_path, srt_lang, forced, hi, percent_score, s
                                   f'subtitle file: {srt_path}')
                 success = False
             else:
-                success = True
+                # sync() swallows its own errors and leaves sync_result unset; only an accepted alignment is a success
+                success = bool(subsync.sync_result and subsync.sync_result.get('sync_was_successful'))
             if job_id:
                 jobs_queue.update_job_progress(job_id=job_id, progress_value="max")
-                jobs_queue.update_job_name(job_id=job_id, new_job_name=f"Synced {srt_path}")
+                jobs_queue.update_job_name(job_id=job_id,
+                                           new_job_name=f"{'Synced' if success else 'Sync failed'} {srt_path}")
             return success
         else:
             logging.debug(f"BAZARR subsync skipped because subtitles score isn't below this "
