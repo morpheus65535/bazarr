@@ -95,31 +95,4 @@ describe("ItemOverview", () => {
     expect(screen.getByText("Any of")).toBeInTheDocument();
     expect(screen.getByText("de")).toBeInTheDocument();
   });
-
-  it("should show a basic profile's languages and highlight its cutoff", async () => {
-    server.use(
-      http.get("/api/system/languages/profiles", () => {
-        return HttpResponse.json([
-          {
-            profileId: 3,
-            name: "Basic Rule",
-            tag: null,
-            cutoff: 2,
-            profileType: "basic",
-            items: [rawItem(1, "en"), rawItem(2, "fr", { hi: "True" })],
-            mustContain: [],
-            mustNotContain: [],
-            originalFormat: false,
-          },
-        ]);
-      }),
-    );
-
-    customRender(<ItemOverview item={createMinimalItem({ profileId: 3 })} />);
-
-    expect(await screen.findByText("Basic Rule")).toBeInTheDocument();
-    expect(screen.getByText("fr:HI")).toBeInTheDocument();
-    const cutoffBadge = screen.getByTitle("Stops searching once this is found");
-    expect(cutoffBadge).toHaveTextContent("fr:HI");
-  });
 });

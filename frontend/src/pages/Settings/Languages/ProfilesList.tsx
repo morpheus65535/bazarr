@@ -119,11 +119,6 @@ const ProfilesList: FunctionComponent<ProfilesListProps> = ({
                 >
                   <Group gap="xs" align="center" wrap="wrap">
                     <Text fw={600}>{profile.name || "Untitled profile"}</Text>
-                    {profile.profileType === "enhanced" && (
-                      <Badge size="xs" variant="light" color="brand">
-                        Enhanced
-                      </Badge>
-                    )}
                     {profile.tag && (
                       <Badge size="xs" variant="light" color="secondary">
                         {profile.tag}

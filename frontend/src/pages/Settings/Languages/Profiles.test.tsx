@@ -7,9 +7,7 @@ import {
   baseLanguages,
   baseProfiles,
   baseSettings,
-  basicProfile,
   enhancedProfile,
-  legacyProfile,
   setupMocks,
 } from "./testing";
 
@@ -166,7 +164,7 @@ describe("SettingsLanguageProfilesView", () => {
     expect(screen.getByText("My Profile")).toBeInTheDocument();
     expect(screen.getByText(/subtitles are required/i)).toBeInTheDocument();
     expect(
-      screen.getByText(/Stop searching once English subtitles are found/i),
+      screen.getByText(/Stop searching once English and French is satisfied/i),
     ).toBeInTheDocument();
   });
 
@@ -410,7 +408,10 @@ describe("SettingsLanguageProfilesView", () => {
     renderPage(
       {
         languages: baseLanguages,
-        profiles: [basicProfile, enhancedProfile],
+        profiles: [
+          { ...enhancedProfile, profileId: 1, name: "Other Profile" },
+          enhancedProfile,
+        ],
       },
       mutate,
     );
@@ -482,42 +483,6 @@ describe("SettingsLanguageProfilesView", () => {
         },
       ],
     });
-  });
-
-  it("should keep a legacy profile flat and untyped after an edit", async () => {
-    const mutate = vitest.fn();
-
-    renderPage(
-      {
-        languages: baseLanguages,
-        profiles: [legacyProfile],
-      },
-      mutate,
-    );
-
-    await userEvent.click(screen.getByRole("button", { name: "Edit" }));
-
-    fireEvent.change(nameInput(), { target: { value: "Legacy Renamed" } });
-
-    await userEvent.click(
-      screen.getByRole("button", { name: "Apply changes" }),
-    );
-
-    await userEvent.click(saveButton());
-
-    const saved = submittedProfiles(mutate);
-
-    expect(saved).toHaveLength(1);
-    expect(saved[0]).not.toHaveProperty("profileType");
-    expect(saved[0]).toMatchObject({
-      profileId: 3,
-      name: "Legacy Renamed",
-      cutoff: 2,
-      mustContain: ["x265"],
-      mustNotContain: ["cam"],
-      originalFormat: true,
-    });
-    expect(Array.isArray(saved[0].items)).toBe(true);
   });
 
   it("should fall back to API profiles for the default profile selector", async () => {

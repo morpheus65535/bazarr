@@ -8,7 +8,7 @@ from dynaconf.validator import ValidationError
 
 from api.utils import None_Keys
 from app.database import TableLanguagesProfiles, TableSettingsLanguages, TableSettingsNotifier, \
-    update_profile_id_list, database, insert, update, delete, select, PROFILE_TYPE_BASIC, PROFILE_TYPE_ENHANCED
+    update_profile_id_list, database, insert, update, delete, select, PROFILE_TYPE_ENHANCED
 from app.event_handler import event_stream
 from app.config import settings, save_settings, get_settings
 from app.scheduler import scheduler
@@ -84,17 +84,16 @@ def validate_languages_profiles(profiles):
     """
     Return an error message for the first invalid profile, or None if all are valid.
 
-    Only enhanced profiles are checked here. Basic profiles keep their existing handling.
+    Every profile must be an enhanced profile.
     """
     for profile in profiles:
         name = profile.get('name')
-        profile_type = profile.get('profileType', PROFILE_TYPE_BASIC)
-        if profile_type not in (PROFILE_TYPE_BASIC, PROFILE_TYPE_ENHANCED):
-            return f'Languages profile {name!r} has an unknown profile type {profile_type!r}'
-        if profile_type == PROFILE_TYPE_ENHANCED:
-            error = _enhanced_profile_error(profile)
-            if error:
-                return f'Languages profile {name!r} is invalid: {error}'
+        profile_type = profile.get('profileType', PROFILE_TYPE_ENHANCED)
+        if profile_type != PROFILE_TYPE_ENHANCED:
+            return f'Languages profile {name!r} has an unsupported profile type {profile_type!r}'
+        error = _enhanced_profile_error(profile)
+        if error:
+            return f'Languages profile {name!r} is invalid: {error}'
     return None
 
 
@@ -159,7 +158,7 @@ class SystemSettings(Resource):
                             originalFormat=int(item['originalFormat']) if item['originalFormat'] not in None_Keys else
                             None,
                             tag=item['tag'] if 'tag' in item else None,
-                            profileType=item.get('profileType', PROFILE_TYPE_BASIC),
+                            profileType=item.get('profileType', PROFILE_TYPE_ENHANCED),
                         )
                         .where(TableLanguagesProfiles.profileId == item['profileId']))
                     existing.remove(item['profileId'])
@@ -177,7 +176,7 @@ class SystemSettings(Resource):
                             originalFormat=int(item['originalFormat']) if item['originalFormat'] not in None_Keys else
                             None,
                             tag=item['tag'] if 'tag' in item else None,
-                            profileType=item.get('profileType', PROFILE_TYPE_BASIC),
+                            profileType=item.get('profileType', PROFILE_TYPE_ENHANCED),
                         ))
             for profileId in existing:
                 # Remove deleted profiles

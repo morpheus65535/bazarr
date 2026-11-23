@@ -9,16 +9,18 @@ from sqlalchemy import select
 
 
 def _profile_with_english():
+    item = {
+        "id": 1,
+        "language": "en",
+        "forced": False,
+        "hi": False,
+        "audio_exclude": "False",
+        "audio_only_include": "False",
+    }
     return {
-        "items": [
-            {
-                "language": "en",
-                "forced": False,
-                "hi": False,
-                "audio_exclude": "False",
-                "audio_only_include": "False",
-            }
-        ]
+        "items": [item],
+        "groups": [{"id": 1, "operator": "AND", "items": [item]}],
+        "cutoff": None,
     }
 
 
@@ -27,7 +29,6 @@ def _bind_indexer_module(bind_wanted_database, module_name, kind, monkeypatch):
     bind_wanted_database(module, kind)
     monkeypatch.setattr(module, "event_stream", lambda *args, **kwargs: None)
     monkeypatch.setattr(module, "get_profiles_list", lambda *args, **kwargs: _profile_with_english())
-    monkeypatch.setattr(module, "get_profile_cutoff", lambda *args, **kwargs: None)
     monkeypatch.setattr(module.settings.general, "use_embedded_subs", False)
     return module
 
@@ -104,7 +105,6 @@ def test_missing_profile_flags_default_when_recalculating_wanted_rows(
     module_name = "subtitles.indexer.movies" if kind == "movies" else "subtitles.indexer.series"
     module = _bind_indexer_module(bind_wanted_database, module_name, kind, monkeypatch)
     monkeypatch.setattr(module, "get_profiles_list", lambda **kwargs: {"items": [{"language": "en"}]})
-    monkeypatch.setattr(module, "get_profile_cutoff", lambda **kwargs: [{"language": "en"}])
     monkeypatch.setattr(
         module,
         "get_subtitles",

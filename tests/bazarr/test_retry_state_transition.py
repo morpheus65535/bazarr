@@ -111,10 +111,11 @@ def test_indexer_updates_normalized_missing_languages_before_sync_checks(
     ])
     indexer = importlib.import_module('subtitles.indexer.movies' if kind == 'movies' else 'subtitles.indexer.series')
     bind_wanted_database(indexer, kind)
-    monkeypatch.setattr(indexer, 'get_profiles_list', lambda **kwargs: {'items': [{
-        'language': 'en', 'hi': 'False', 'forced': 'False', 'audio_exclude': 'False', 'audio_only_include': 'False',
-    }]})
-    monkeypatch.setattr(indexer, 'get_profile_cutoff', lambda **kwargs: None)
+    item = {'id': 1, 'language': 'en', 'hi': 'False', 'forced': 'False', 'audio_exclude': 'False',
+            'audio_only_include': 'False'}
+    monkeypatch.setattr(indexer, 'get_profiles_list', lambda **kwargs: {
+        'items': [item], 'groups': [{'id': 1, 'operator': 'AND', 'items': [item]}], 'cutoff': None,
+    })
     monkeypatch.setattr(indexer, 'event_stream', lambda **kwargs: None)
     if kind == 'movies':
         indexer.list_missing_subtitles_movies(no=row.radarrId)

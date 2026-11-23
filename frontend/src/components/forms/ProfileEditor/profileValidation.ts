@@ -63,44 +63,22 @@ export const validateProfileDraft = (
     });
   }
 
-  if (draft.profileType === "enhanced") {
-    if (draft.groups.length === 0) {
-      issues.push({
-        field: "requirements",
-        message: "Add at least one requirement.",
-      });
-    }
-
-    for (const group of draft.groups) {
-      issues.push(
-        ...validateItems(
-          group.items,
-          "A language cannot repeat with the same subtitle type in one requirement.",
-          group.id,
-        ),
-      );
-    }
-
-    return issues;
-  }
-
-  const basicGroup = draft.groups[0];
-
-  if (basicGroup === undefined) {
+  if (draft.groups.length === 0) {
     issues.push({
       field: "requirements",
-      message: "Add at least one language.",
+      message: "Add at least one requirement.",
     });
-    return issues;
   }
 
-  issues.push(
-    ...validateItems(
-      basicGroup.items,
-      "A language cannot repeat with the same subtitle type.",
-      basicGroup.id,
-    ),
-  );
+  for (const group of draft.groups) {
+    issues.push(
+      ...validateItems(
+        group.items,
+        "A language cannot repeat with the same subtitle type in one requirement.",
+        group.id,
+      ),
+    );
+  }
 
   return issues;
 };

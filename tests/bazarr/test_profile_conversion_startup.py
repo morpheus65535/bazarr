@@ -92,22 +92,22 @@ def test_enhanced_profiles_are_left_untouched(profiles_db):
     pytest.param('{"groups": []}', id='not-a-list'),
     pytest.param('not json', id='invalid-json'),
 ], )
-def test_profile_that_cannot_be_converted_stays_basic(profiles_db, items):
+def test_profile_without_usable_items_becomes_empty_enhanced_profile(profiles_db, items):
     _insert(profiles_db, 3, 'Broken', items, cutoff=1)
 
     convert_basic_languages_profiles_to_enhanced()
 
     row = _row(profiles_db, 3)
-    assert (row.profileType, row.items, row.cutoff) == ('basic', items, 1)
+    assert (row.profileType, json.loads(row.items), row.cutoff) == ('enhanced', {'groups': []}, None)
 
 
-def test_unconvertible_profile_does_not_block_other_profiles(profiles_db):
+def test_unusable_profile_does_not_block_other_profiles(profiles_db):
     _insert(profiles_db, 3, 'Broken', '[]')
     _insert(profiles_db, 4, 'Good', json.dumps([_item(1, 'en')]))
 
     convert_basic_languages_profiles_to_enhanced()
 
-    assert _row(profiles_db, 3).profileType == 'basic'
+    assert _row(profiles_db, 3).profileType == 'enhanced'
     assert _row(profiles_db, 4).profileType == 'enhanced'
 
 

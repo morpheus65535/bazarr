@@ -91,43 +91,6 @@ def get_non_hi_languages(profile_items):
             and str(item.get('forced', False)) == 'False' and item.get('hi') == HI_EXCLUDED}
 
 
-def is_cutoff_met(cutoff_items, matches_audio, actual_subtitles, expanded_actual_subtitles, non_hi_languages):
-    """Return True when any cutoff item is satisfied by the existing subtitles."""
-    for cutoff_temp in cutoff_items or []:
-        if not isinstance(cutoff_temp, dict):
-            continue
-        cutoff_code = cutoff_temp.get('language')
-        if not isinstance(cutoff_code, str) or not cutoff_code:
-            continue
-        cutoff_language = {'language': cutoff_code,
-                           'forced': cutoff_temp.get('forced', 'False'),
-                           'hi': cutoff_temp.get('hi', 'False')}
-        if cutoff_temp.get('audio_only_include') == 'True' and not matches_audio(cutoff_temp):
-            # We don't want subs in this language unless it matches
-            # the audio. Don't use it to meet the cutoff.
-            continue
-        elif cutoff_temp.get('audio_exclude') == 'True' and matches_audio(cutoff_temp):
-            # The cutoff is met through one of the audio tracks.
-            return True
-        elif cutoff_language in actual_subtitles:
-            return True
-        elif cutoff_language in expanded_actual_subtitles:
-            # Check against expanded actual subtitles (includes language equals)
-            return True
-        elif (cutoff_language['hi'] == 'False' and cutoff_language['forced'] == 'False' and
-              cutoff_language['language'] not in non_hi_languages and
-              {'language': cutoff_language['language'], 'forced': 'False', 'hi': 'True'} in actual_subtitles):
-            # HI is considered as good as normal only if the language isn't set to exclude HI
-            return True
-        elif (cutoff_language['hi'] == HI_EXCLUDED and
-              {'language': cutoff_language['language'],
-               'forced': cutoff_language['forced'],
-               'hi': 'False'} in actual_subtitles):
-            # Cutoff is met by non-HI subtitles when HI subtitles are excluded in languages profile
-            return True
-    return False
-
-
 def _unsatisfied_entries(desired_subtitles, actual_subtitles, expanded_actual_subtitles, non_hi_languages):
     """Return the desired entries the existing subtitles do not satisfy. The cutoff is not considered here."""
     missing_subtitles_list = []
@@ -164,25 +127,6 @@ def _format_missing(missing_subtitles_list):
             lang += ':hi'
         missing_subtitles_output_list.append(lang)
     return missing_subtitles_output_list
-
-
-def calculate_missing_subtitles(profile_items, cutoff_items, subtitles, matches_audio, lang_equals):
-    """
-    Return the missing subtitles of one media item for a basic profile.
-
-    profile_items is the profile's raw item list, cutoff_items the items returned by get_profile_cutoff(),
-    and subtitles the stored subtitles of the media item. Nothing is missing once the cutoff is met.
-    """
-    desired_subtitles = get_desired_subtitles(profile_items, matches_audio)
-    actual_subtitles = get_actual_subtitles(subtitles)
-    expanded_actual_subtitles = expand_actual_subtitles(actual_subtitles, lang_equals)
-    non_hi_languages = get_non_hi_languages(profile_items)
-
-    if is_cutoff_met(cutoff_items, matches_audio, actual_subtitles, expanded_actual_subtitles, non_hi_languages):
-        return []
-
-    return _format_missing(
-        _unsatisfied_entries(desired_subtitles, actual_subtitles, expanded_actual_subtitles, non_hi_languages))
 
 
 def _item_outcome(item: object, matches_audio: Callable[[dict[str, Any]], bool],

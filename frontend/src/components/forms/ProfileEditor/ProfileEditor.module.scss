@@ -167,17 +167,6 @@
   justify-content: flex-end;
 }
 
-.cutoffHint {
-  display: inline-flex;
-  gap: 4px;
-  align-items: center;
-  color: var(--mantine-color-brand-6);
-
-  @include mantine.dark {
-    color: var(--mantine-color-brand-3);
-  }
-}
-
 .addLanguage {
   align-self: flex-start;
 }

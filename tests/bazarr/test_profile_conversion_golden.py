@@ -8,8 +8,8 @@ item. Each (indexer, profile, subtitle set, audio state) combination is run thro
 loop, with the profile read back from the database rows. The missing lists produced before the conversion are stored in
 tests/bazarr/golden/profile_conversion_missing.json. After the conversion the same combinations must reproduce them.
 
-To regenerate the golden file after an intentional change to the basic evaluator, run the snapshot test with
-UPDATE_PROFILE_GOLDEN=1 and review the diff.
+The golden file was produced by the basic evaluator before that evaluator was removed, so it can no longer be
+regenerated. It is the fixed reference the converted profiles must keep matching.
 """
 import copy
 import json
@@ -72,7 +72,7 @@ AUDIO_STATES = ['[]', "['en']", "['pl']"]
 
 
 def insert_library(session):
-    """Store the library profiles as basic rows, the way the settings endpoint did before the conversion."""
+    """Store the library profiles as basic rows, the way the settings endpoint stored them before the conversion."""
     for profile_id, (name, cutoff, items) in LIBRARY_PROFILES.items():
         session.execute(insert(TableLanguagesProfiles).values(
             profileId=profile_id, name=name, cutoff=cutoff, items=json.dumps(items), mustContain='[]',
@@ -103,19 +103,6 @@ def library_db(memory_session, monkeypatch):
     monkeypatch.setattr(app_database, 'database', memory_session)
     insert_library(memory_session)
     return memory_session
-
-
-def test_library_matches_golden_before_conversion(library_db, monkeypatch):
-    results = snapshot(monkeypatch)
-
-    if os.environ.get('UPDATE_PROFILE_GOLDEN'):
-        GOLDEN_FILE.parent.mkdir(parents=True, exist_ok=True)
-        GOLDEN_FILE.write_text(json.dumps(results, indent=1, sort_keys=True) + '\n')
-        pytest.skip('golden file regenerated')
-
-    assert GOLDEN_FILE.exists(), 'run with UPDATE_PROFILE_GOLDEN=1 to create the golden file'
-    golden = json.loads(GOLDEN_FILE.read_text())
-    assert results == golden
 
 
 def test_library_after_conversion_reproduces_golden(library_db, monkeypatch):

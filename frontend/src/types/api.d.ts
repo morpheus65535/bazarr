@@ -35,7 +35,7 @@ declare namespace Language {
 
   type ProfileItem = CamelCaseKeys<RawProfileItem>;
 
-  type ProfileType = "basic" | "enhanced";
+  type ProfileType = "enhanced";
 
   // Enhanced profiles: groups in priority order. The cutoff is a group id, 65535 (any group) or null.
   interface RawEnhancedGroup {
@@ -53,14 +53,13 @@ declare namespace Language {
     mustNotContain: string[];
     originalFormat: boolean | null;
     tag: string | undefined;
-    // Absent on profiles saved before profile types existed, which are basic.
-    profileType?: ProfileType;
-    // Only on enhanced profiles. For those, items is the flat list of every group's items.
-    groups?: RawEnhancedGroup[];
+    profileType: ProfileType;
+    // Requirement groups. items is the flat list of every group's items.
+    groups: RawEnhancedGroup[];
   }
 
   // What the settings endpoint receives. Enhanced profiles send their groups instead of a flat item list.
-  interface RawProfileSubmission extends Omit<RawProfile, "items"> {
+  interface RawProfileSubmission extends Omit<RawProfile, "items" | "groups"> {
     items: RawProfileItem[] | { groups: RawEnhancedGroup[] };
   }
 

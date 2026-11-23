@@ -12,7 +12,6 @@ import pytest
 
 import api.system.settings as settings_api
 import app.database as app_database
-import utilities.health as health
 from app.database import TableLanguagesProfiles, convert_basic_languages_profiles_to_enhanced, select
 from tests.bazarr.test_profile_conversion_golden import LIBRARY_PROFILES, insert_library
 
@@ -35,11 +34,30 @@ def _view(profile_id):
     }
 
 
+def _expected_before(profile_id):
+    """The view a basic profile gave before the conversion, computed from the stored items of the library."""
+    name, cutoff, items = LIBRARY_PROFILES[profile_id]
+    if cutoff == 65535:
+        cutoff_items = items
+    elif cutoff:
+        first_match = next((item for item in items if item['id'] == cutoff), None)
+        cutoff_items = [first_match] if first_match else None
+    else:
+        cutoff_items = None
+    return {
+        'desired': [item['language'] for item in items],
+        'items': [_essence(item) for item in items],
+        'meta': {'name': name, 'tag': f'tag-{profile_id}' if profile_id == 2 else None, 'originalFormat': None,
+                 'mustContain': [], 'mustNotContain': []},
+        'cutoff_items': [_essence(item) for item in cutoff_items or []],
+    }
+
+
 @pytest.fixture
 def views_before_and_after(memory_session, monkeypatch):
     monkeypatch.setattr(app_database, 'database', memory_session)
     insert_library(memory_session)
-    before = {profile_id: _view(profile_id) for profile_id in LIBRARY_PROFILES}
+    before = {profile_id: _expected_before(profile_id) for profile_id in LIBRARY_PROFILES}
 
     convert_basic_languages_profiles_to_enhanced()
     app_database.update_profile_id_list.invalidate()
@@ -67,28 +85,6 @@ def test_cutoff_items_are_unchanged(views_before_and_after, profile_id):
     before, after = views_before_and_after
 
     assert after[profile_id]['cutoff_items'] == before[profile_id]['cutoff_items']
-
-
-def test_health_flags_legacy_duplicate_ids_before_and_not_after(memory_session, monkeypatch):
-    monkeypatch.setattr(health, 'database', memory_session)
-    monkeypatch.setattr(app_database, 'database', memory_session)
-    monkeypatch.setattr(health, 'settings', SimpleNamespace(general=SimpleNamespace(
-        use_sonarr=False, use_radarr=False, serie_default_enabled=False, movie_default_enabled=False,
-        serie_default_profile='', movie_default_profile='')))
-    insert_library(memory_session)
-
-    def duplicate_issues():
-        return [issue['object'] for issue in health.get_health_issues()
-                if 'duplicate IDs' in issue['issue']]
-
-    before = duplicate_issues()
-    convert_basic_languages_profiles_to_enhanced()
-    after = duplicate_issues()
-
-    # Profile 11 has a cutoff and duplicate item ids. The conversion renumbers its items, so the warning goes away.
-    # This is an intended change: the warning asked the user to fix the profile, which the conversion now does.
-    assert before == ['Legacy duplicate ids with cutoff']
-    assert after == []
 
 
 def test_api_lists_converted_profiles_as_enhanced(memory_session, monkeypatch, api_client, api_key):

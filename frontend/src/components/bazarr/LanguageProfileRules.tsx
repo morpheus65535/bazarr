@@ -66,33 +66,17 @@ const GroupsExpression: FunctionComponent<GroupsProps> = ({
 
 export type LanguageProfileRulesProfile = Pick<
   Language.Profile,
-  "cutoff" | "items" | "profileType" | "groups"
+  "cutoff" | "groups"
 >;
 
-// Shows a languages profile's rules: the groups for enhanced profiles, and one
-// badge per language for basic ones. The item that meets the cutoff is highlighted.
+// Shows a languages profile's requirement groups. The group that meets the cutoff is highlighted.
 const LanguageProfileRules: FunctionComponent<{
   profile: LanguageProfileRulesProfile;
-}> = ({ profile }) => {
-  const { cutoff, groups, items, profileType } = profile;
-
-  if (profileType === "enhanced" && groups) {
-    return (
-      <GroupsExpression groups={groups} cutoff={cutoff}></GroupsExpression>
-    );
-  }
-
-  return (
-    <Group gap="xs" wrap="wrap">
-      {items.map((item) => (
-        <ItemBadge
-          key={item.id}
-          isCutoff={item.id === cutoff || cutoff === anyCutoff}
-          item={item}
-        ></ItemBadge>
-      ))}
-    </Group>
-  );
-};
+}> = ({ profile }) => (
+  <GroupsExpression
+    groups={profile.groups}
+    cutoff={profile.cutoff}
+  ></GroupsExpression>
+);
 
 export default LanguageProfileRules;

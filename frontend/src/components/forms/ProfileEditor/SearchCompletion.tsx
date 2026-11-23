@@ -1,17 +1,12 @@
 import { FunctionComponent, useMemo } from "react";
 import { Alert, Select, Stack, Text } from "@mantine/core";
 import { anyCutoff } from "@/components/forms/profileOptions";
-import {
-  describeGroupLanguages,
-  describeLanguage,
-} from "@/utilities/languageProfileSummary";
+import { describeGroupLanguages } from "@/utilities/languageProfileSummary";
 import { LanguageNameResolver } from "@/utilities/languages";
 
 export interface SearchCompletionProps {
-  isEnhanced: boolean;
   cutoff: number | null;
   groups: readonly Language.EnhancedGroup[];
-  items: readonly Language.ProfileItem[];
   resolveLanguageName: LanguageNameResolver;
   onChange: (cutoff: number | null) => void;
   notice: string | null;
@@ -23,8 +18,6 @@ const noCutoffValue = "none";
 const SearchCompletion: FunctionComponent<SearchCompletionProps> = ({
   cutoff,
   groups,
-  isEnhanced,
-  items,
   notice,
   onChange,
   onDismissNotice,
@@ -36,38 +29,21 @@ const SearchCompletion: FunctionComponent<SearchCompletionProps> = ({
         value: noCutoffValue,
         label: "Keep searching for all unmet requirements",
       },
-    ];
-
-    if (isEnhanced) {
-      result.push({
+      {
         value: String(anyCutoff),
         label: "When any requirement is satisfied",
-      });
+      },
+    ];
 
-      for (const group of groups) {
-        result.push({
-          value: String(group.id),
-          label: `When ${describeGroupLanguages(group, resolveLanguageName)} is satisfied`,
-        });
-      }
-
-      return result;
-    }
-
-    result.push({
-      value: String(anyCutoff),
-      label: "When any of these languages is found",
-    });
-
-    for (const item of items) {
+    for (const group of groups) {
       result.push({
-        value: String(item.id),
-        label: `When ${describeLanguage(item, resolveLanguageName)} is found`,
+        value: String(group.id),
+        label: `When ${describeGroupLanguages(group, resolveLanguageName)} is satisfied`,
       });
     }
 
     return result;
-  }, [groups, isEnhanced, items, resolveLanguageName]);
+  }, [groups, resolveLanguageName]);
 
   return (
     <Stack gap="xs">

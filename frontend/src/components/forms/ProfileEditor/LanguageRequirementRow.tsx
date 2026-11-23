@@ -1,7 +1,6 @@
 import { FunctionComponent } from "react";
 import { Select, Stack, Text } from "@mantine/core";
-import { faBullseye, faTrash } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faTrash } from "@fortawesome/free-solid-svg-icons";
 import { Action } from "@/components";
 import {
   inclusionOptions,
@@ -22,12 +21,10 @@ export interface LanguageRequirementRowProps {
   item: Language.ProfileItem;
   languageData: readonly LanguageOption[];
   languageName: string;
-  isCutoff: boolean;
   error?: string;
   condition?: string;
   onChange: (patch: Partial<Language.ProfileItem>) => void;
   onRemove: () => void;
-  onToggleCutoff?: () => void;
 }
 
 const LanguageRequirementRow: FunctionComponent<
@@ -35,13 +32,11 @@ const LanguageRequirementRow: FunctionComponent<
 > = ({
   condition,
   error,
-  isCutoff,
   item,
   languageData,
   languageName,
   onChange,
   onRemove,
-  onToggleCutoff,
 }) => {
   return (
     <Stack gap={4}>
@@ -79,20 +74,6 @@ const LanguageRequirementRow: FunctionComponent<
           }}
         ></Select>
         <div className={styles.rowActions}>
-          {onToggleCutoff && (
-            <Action
-              label={
-                isCutoff
-                  ? `Stop searching after ${languageName}`
-                  : `Stop searching when ${languageName} is found`
-              }
-              icon={faBullseye}
-              className={styles.touchAction}
-              variant={isCutoff ? "filled" : "subtle"}
-              color={isCutoff ? "brand" : "secondary"}
-              onClick={onToggleCutoff}
-            ></Action>
-          )}
           <Action
             label={`Remove ${languageName}`}
             icon={faTrash}
@@ -105,12 +86,6 @@ const LanguageRequirementRow: FunctionComponent<
       {condition && (
         <Text size="xs" c="dimmed">
           {condition}
-        </Text>
-      )}
-      {isCutoff && (
-        <Text size="xs" className={styles.cutoffHint}>
-          <FontAwesomeIcon icon={faBullseye} />
-          Stops searching once this language is found.
         </Text>
       )}
     </Stack>

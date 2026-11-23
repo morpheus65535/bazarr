@@ -127,17 +127,15 @@ const ProfileEditor: FunctionComponent<ProfileEditorProps> = ({
     [draft, resolveLanguageName],
   );
 
-  const isEnhanced = draft.profileType === "enhanced";
-
   const highlightedRequirementIndex = useMemo(() => {
-    if (!isEnhanced || draft.cutoff === null || draft.cutoff === anyCutoff) {
+    if (draft.cutoff === null || draft.cutoff === anyCutoff) {
       return null;
     }
 
     const index = draft.groups.findIndex((group) => group.id === draft.cutoff);
 
     return index === -1 ? null : index;
-  }, [draft.cutoff, draft.groups, isEnhanced]);
+  }, [draft.cutoff, draft.groups]);
 
   const orderKey = useMemo(
     () => draft.groups.map((group) => group.id).join(","),
@@ -302,12 +300,6 @@ const ProfileEditor: FunctionComponent<ProfileEditorProps> = ({
     [controller, draft.cutoff],
   );
 
-  const toggleItemCutoff = useCallback(
-    (itemId: number) =>
-      controller.setCutoff(draft.cutoff === itemId ? null : itemId),
-    [controller, draft.cutoff],
-  );
-
   return (
     <Stack gap="lg" className={styles.editor}>
       <Group
@@ -383,9 +375,7 @@ const ProfileEditor: FunctionComponent<ProfileEditorProps> = ({
                       group={group}
                       index={index}
                       count={draft.groups.length}
-                      isBasic={!isEnhanced}
-                      isCutoffGroup={isEnhanced && draft.cutoff === group.id}
-                      cutoffItemId={isEnhanced ? null : draft.cutoff}
+                      isCutoffGroup={draft.cutoff === group.id}
                       languageData={languageData}
                       resolveLanguageName={resolveLanguageName}
                       issues={issuesForGroup(group.id)}
@@ -400,7 +390,6 @@ const ProfileEditor: FunctionComponent<ProfileEditorProps> = ({
                         controller.updateItem(group.id, itemId, patch)
                       }
                       onRemoveItem={(itemId) => handleRemoveItem(group, itemId)}
-                      onToggleItemCutoff={toggleItemCutoff}
                     ></RequirementCard>
                   </div>
                 ))}
@@ -410,25 +399,21 @@ const ProfileEditor: FunctionComponent<ProfileEditorProps> = ({
                   {requirementError}
                 </Text>
               )}
-              {isEnhanced && (
-                <Button
-                  id="profile-requirements"
-                  variant="default"
-                  fullWidth
-                  className={styles.dashedButton}
-                  leftSection={<FontAwesomeIcon icon={faPlus} />}
-                  onClick={controller.addGroup}
-                >
-                  Add another requirement
-                </Button>
-              )}
+              <Button
+                id="profile-requirements"
+                variant="default"
+                fullWidth
+                className={styles.dashedButton}
+                leftSection={<FontAwesomeIcon icon={faPlus} />}
+                onClick={controller.addGroup}
+              >
+                Add another requirement
+              </Button>
             </section>
 
             <SearchCompletion
-              isEnhanced={isEnhanced}
               cutoff={draft.cutoff}
               groups={draft.groups}
-              items={isEnhanced ? [] : (draft.groups[0]?.items ?? [])}
               resolveLanguageName={resolveLanguageName}
               onChange={controller.setCutoff}
               notice={controller.cutoffResetNotice}

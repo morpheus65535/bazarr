@@ -12,6 +12,7 @@ import pytest
 from subliminal_patch import core
 
 import app.database as app_database
+from app.profile_migration import convert_basic_profile
 from bazarr.languages.custom_lang import LatinAmericanSpanish, CustomLanguage
 from subtitles.indexer import movies as movies_indexer
 from subtitles.indexer import series as series_indexer
@@ -173,8 +174,11 @@ def _profile_item(item_id, subtitle_type, language='en'):
 
 
 def _profile(items, cutoff=None):
-    # Same key order as update_profile_id_list() because get_profile_cutoff() unpacks profile.values()
-    return {'profileId': 1, 'name': 'test', 'cutoff': cutoff, 'items': items,
+    # Build the profile the way the startup conversion stores it, so the indexers see enhanced groups.
+    groups_object, new_cutoff = convert_basic_profile(items, cutoff)
+    groups = groups_object['groups']
+    return {'profileId': 1, 'name': 'test', 'cutoff': new_cutoff, 'profileType': 'enhanced',
+            'items': [item for group in groups for item in group['items']], 'groups': groups,
             'mustContain': [], 'mustNotContain': [], 'originalFormat': False, 'tag': None}
 
 

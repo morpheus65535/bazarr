@@ -101,12 +101,9 @@ def test_items_without_language_are_dropped():
     assert _group_languages(result) == [(1, 'AND', ['fr'])]
 
 
-def test_profile_without_any_language_cannot_be_converted():
-    with pytest.raises(ValueError):
-        convert_basic_profile([{'id': 1, 'forced': 'False'}], None)
-
-    with pytest.raises(ValueError):
-        convert_basic_profile([], None)
+def test_profile_without_any_language_becomes_a_profile_without_groups():
+    assert convert_basic_profile([{'id': 1, 'forced': 'False'}], 1) == ({'groups': []}, None)
+    assert convert_basic_profile([], None) == ({'groups': []}, None)
 
 
 def test_missing_audio_flags_are_filled_with_false():

@@ -6,9 +6,7 @@ import {
   nextGroupId,
   nextItemId,
   nextProfileId,
-  prepareProfileForEditing,
   removeProfileAt,
-  repairDuplicateItemIds,
   upsertProfile,
 } from "./profileModel";
 
@@ -25,7 +23,9 @@ const profile = (profileId: number): Language.Profile => ({
   profileId,
   name: `Profile ${profileId}`,
   tag: undefined,
+  profileType: "enhanced",
   items: [item(1, "en")],
+  groups: [{ id: 1, operator: "AND", items: [item(1, "en")] }],
   cutoff: null,
   mustContain: [],
   mustNotContain: [],
@@ -76,38 +76,6 @@ describe("createEnhancedProfile", () => {
       { id: 1, operator: "AND", items: [item(1, "en")] },
     ]);
     expect(created.items).toEqual([item(1, "en")]);
-  });
-});
-
-describe("repairDuplicateItemIds", () => {
-  it("gives every duplicated item id a new unique value", () => {
-    const repaired = repairDuplicateItemIds({
-      ...profile(1),
-      items: [item(1, "en"), item(1, "fr"), item(2, "de")],
-    });
-
-    expect(repaired.items.map((value) => value.id)).toEqual([1, 3, 2]);
-  });
-});
-
-describe("prepareProfileForEditing", () => {
-  it("keeps enhanced groups untouched", () => {
-    const enhanced = createEnhancedProfile(2, "en");
-    const prepared = prepareProfileForEditing(enhanced);
-
-    expect(prepared.groups).toEqual(enhanced.groups);
-    expect(prepared.profileType).toBe("enhanced");
-  });
-
-  it("repairs duplicated ids and clears an empty tag on basic profiles", () => {
-    const prepared = prepareProfileForEditing({
-      ...profile(3),
-      tag: "",
-      items: [item(1, "en"), item(1, "fr")],
-    });
-
-    expect(prepared.tag).toBeUndefined();
-    expect(prepared.items.map((value) => value.id)).toEqual([1, 2]);
   });
 });
 

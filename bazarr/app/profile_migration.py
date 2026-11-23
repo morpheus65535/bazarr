@@ -3,8 +3,8 @@
 Conversion of basic languages profile items into enhanced profile groups.
 
 Every basic item becomes its own AND group, so the enhanced evaluator decides whether an item is satisfied the same way
-the basic evaluator does. Item and group ids are renumbered from 1 in list order. The cutoff is remapped to the group
-that holds the first item with the basic cutoff id, which is the item get_profile_cutoff() returns.
+the basic evaluator did. Item and group ids are renumbered from 1 in list order. The cutoff is remapped to the group
+that holds the first item with the basic cutoff id, which is the item the basic evaluator used as its cutoff.
 
 This module only depends on the standard library, so it can be imported from an Alembic revision and from tests.
 """
@@ -22,7 +22,7 @@ def _boolean_flag(value: object) -> str:
 def _hi_flag(value: object) -> str:
     """Return 'True', 'False' or 'Excluded' for a stored hearing-impaired value."""
     text = str(value).lower()
-    if text == 'true':
+    if text in ('true', 'only'):
         return 'True'
     if text == HI_EXCLUDED.lower():
         return HI_EXCLUDED
@@ -54,21 +54,21 @@ def convert_basic_profile(items: list[Any], cutoff: int | None) -> tuple[dict[st
     Items that are not objects with a language code are dropped, as the basic evaluator already ignores them. The
     cutoff becomes the id of the group that holds the first item with the basic cutoff id. A cutoff of 65535 is kept.
     A missing cutoff, or one that matches no usable item, becomes None, which keeps the basic "never met" behavior.
+    A profile with no item that has a language code becomes an enhanced profile with no groups and no cutoff.
 
     :param items: The raw item list stored for the basic profile.
     :param cutoff: The basic profile cutoff, an item id, 65535 or None.
     :return: The enhanced items object, {"groups": [...]}, and the enhanced cutoff.
-    :raises ValueError: When the profile has no item with a language code, because an enhanced profile needs a group.
     """
     usable_items = [item for item in items if _is_language_item(item)]
     if not usable_items:
-        raise ValueError('a basic profile needs at least one language to be converted')
+        return {'groups': []}, None
 
     new_cutoff: int | None = None
     if cutoff == ANY_CUTOFF:
         new_cutoff = ANY_CUTOFF
     elif cutoff:
-        # Same lookup as get_profile_cutoff(): the first dict with the id, even if it has no language code.
+        # The basic evaluator used the first dict with the id as the cutoff, even if it has no language code.
         first_match = next((item for item in items if isinstance(item, dict) and item.get('id') == cutoff), None)
         for index, item in enumerate(usable_items, start=1):
             if item is first_match:

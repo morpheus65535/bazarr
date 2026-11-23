@@ -93,25 +93,6 @@ def test_missing_languages_profile_is_reported(db, health_settings):
     assert [issue["object"] for issue in issues] == ["Missing languages profile"]
 
 
-def test_duplicate_profile_ids_with_cutoff_are_reported(db, health_settings):
-    health_settings.general["use_sonarr"] = False
-    health_settings.general["use_radarr"] = False
-    items = [{"id": 1, "language": "en"}, {"id": 1, "language": "fr"}]
-    _profile(db, 1, "Broken", items, cutoff=1)
-
-    assert ("Broken", "This languages profile has duplicate IDs. You need to edit this profile and make sure "
-                       "to select the proper cutoff if required.") in _issues(health.get_health_issues())
-
-
-def test_duplicate_profile_ids_without_cutoff_are_ignored(db, health_settings):
-    health_settings.general["use_sonarr"] = False
-    health_settings.general["use_radarr"] = False
-    items = [{"id": 1, "language": "en"}, {"id": 1, "language": "fr"}]
-    _profile(db, 1, "Tolerated", items, cutoff=None)
-
-    assert health.get_health_issues() == []
-
-
 def test_unassigned_profile_is_reported_when_no_default_exists(db, health_settings):
     health_settings.general["use_radarr"] = False
     health_settings.general["serie_default_enabled"] = True
