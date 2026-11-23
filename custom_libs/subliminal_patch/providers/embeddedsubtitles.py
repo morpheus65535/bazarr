@@ -397,10 +397,40 @@ def _mediainfo_languages_by_stream_order(path, mediainfo_path):
     return languages
 
 
-def _enrich_languages_with_mediainfo(streams, path, mediainfo_path):
-    """Refine each stream language with mediainfo, only when it adds
-    region/script detail to the same base language ffprobe already found, so a
-    mismatch never downgrades or replaces the ffprobe-detected language."""
+def _is_offered_region_or_script(language: Language) -> bool:
+    """Return whether the provider offers ``language`` as a distinct entry.
+
+    Only the base language, country and script are compared; the hi and forced
+    flags are ignored. A region or script that Bazarr does not model (for
+    example ``en-US``) returns False, so a refinement to it would produce a
+    language no profile can request.
+
+    :param language: The language to check, typically a mediainfo refinement.
+    :return: True if the provider's ``languages`` contains a matching entry.
+    """
+    return any(
+        offered.alpha3 == language.alpha3
+        and offered.country == language.country
+        and offered.script == language.script
+        for offered in EmbeddedSubtitlesProvider.languages
+    )
+
+
+def _enrich_languages_with_mediainfo(
+    streams: list[FFprobeSubtitleStream], path: str, mediainfo_path: str
+) -> None:
+    """Refine each stream language with mediainfo.
+
+    A refinement is applied only when it adds region/script detail to the same
+    base language ffprobe already found, and only when the provider offers the
+    refined language as a distinct entry. Otherwise the ffprobe language is
+    kept, so a mismatch never downgrades, replaces, or hides the track.
+
+    :param streams: Subtitle streams whose ``language`` may be updated in place.
+    :param path: Path of the media file to analyze with mediainfo.
+    :param mediainfo_path: Path to the mediainfo binary.
+    :return: None.
+    """
     if not streams:
         return
 
@@ -421,6 +451,13 @@ def _enrich_languages_with_mediainfo(streams, path, mediainfo_path):
 
         current = stream.language
         if refined.alpha3 != current.alpha3:
+            continue
+        if not _is_offered_region_or_script(refined):
+            logger.debug(
+                "mediainfo language %r is not offered by the provider, keeping %r",
+                mediainfo_lang,
+                current,
+            )
             continue
         if refined.country == current.country and refined.script == current.script:
             continue

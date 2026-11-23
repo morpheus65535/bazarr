@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import json
 import os
 
 from fese import FFprobeSubtitleStream
@@ -11,6 +12,7 @@ from subliminal_patch.core import Movie
 from subliminal_patch.providers.embeddedsubtitles import (
     _discard_possible_incomplete_subtitles,
 )
+from subliminal_patch.providers.embeddedsubtitles import _enrich_languages_with_mediainfo
 from subliminal_patch.providers.embeddedsubtitles import _get_extra_release_info
 from subliminal_patch.providers.embeddedsubtitles import _get_pretty_release_name
 from subliminal_patch.providers.embeddedsubtitles import _MemoizedFFprobeVideoContainer
@@ -636,3 +638,84 @@ def test_rebuild_langs_keeps_mandarin_track_when_cantonese_listed_first():
 
 def test_cantonese_language_is_offered_by_provider():
     assert Language("zho", "HK") in EmbeddedSubtitlesProvider.languages
+
+
+def _mediainfo_result(mocker, languages_by_order):
+    tracks = [{"@type": "General"}] + [
+        {"@type": "Text", "StreamOrder": str(order), "Language": language}
+        for order, language in languages_by_order.items()
+    ]
+    return mocker.patch(
+        "subliminal_patch.providers.embeddedsubtitles.subprocess.run",
+        return_value=mocker.Mock(stdout=json.dumps({"media": {"track": tracks}}).encode()),
+    )
+
+
+def _eng_us_streams():
+    return [
+        FFprobeSubtitleStream(
+            {
+                "index": 5,
+                "codec_name": "subrip",
+                "disposition": {"forced": 1},
+                "tags": {"language": "eng", "title": "English (United States) [Forced]"},
+            }
+        ),
+        FFprobeSubtitleStream(
+            {
+                "index": 6,
+                "codec_name": "subrip",
+                "disposition": {"hearing_impaired": 1},
+                "tags": {"language": "eng", "title": "English (United States) [SDH]"},
+            }
+        ),
+    ]
+
+
+def test_enrich_keeps_ffprobe_language_for_region_not_offered(mocker):
+    streams = _eng_us_streams()
+    _mediainfo_result(mocker, {5: "en-US", 6: "en-US"})
+
+    _enrich_languages_with_mediainfo(streams, "/fake.mkv", "/usr/bin/mediainfo")
+    _rebuild_langs(streams)
+
+    for stream in streams:
+        assert stream.language.alpha3 == "eng"
+        assert stream.language.country is None
+
+
+def test_enrich_refines_region_offered_by_provider(mocker):
+    stream = FFprobeSubtitleStream(
+        {
+            "index": 3,
+            "codec_name": "subrip",
+            "tags": {"language": "por", "title": "Portuguese"},
+        }
+    )
+    _mediainfo_result(mocker, {3: "pt-BR"})
+
+    _enrich_languages_with_mediainfo([stream], "/fake.mkv", "/usr/bin/mediainfo")
+
+    assert stream.language == Language("por", "BR")
+
+
+def test_query_returns_en_us_track_when_mediainfo_enabled(mocker):
+    mocker.patch(
+        "subliminal_patch.providers.embeddedsubtitles.EmbeddedSubtitlesProvider.initialize"
+    )
+    provider = EmbeddedSubtitlesProvider(
+        ffprobe_path="/usr/bin/ffprobe",
+        mediainfo_path="/usr/bin/mediainfo",
+        hi_fallback=True,
+    )
+    container = mocker.Mock(path="/fake/episode.mkv", info=None)
+    container.get_subtitles.return_value = _eng_us_streams()
+    mocker.patch(
+        "subliminal_patch.providers.embeddedsubtitles._get_memoized_video_container",
+        return_value=container,
+    )
+    _mediainfo_result(mocker, {5: "en-US", 6: "en-US"})
+
+    subtitles = provider.query("/fake/episode.mkv", {Language("eng")}, "series")
+
+    assert [subtitle.stream.index for subtitle in subtitles] == [6]
