@@ -405,3 +405,21 @@ def test_unescaped_subtitle_line_break_in_response_is_repaired(mocker):
                         return_value=_response(mocker, content))
 
     assert _service()._translate_batch(['line one\\Nline two']) == ['line one\\Nline two']
+
+
+@pytest.mark.parametrize('content, expected', [
+    # Valid JSON escapes must survive untouched, including an escaped backslash before N.
+    ('[{"id":1,"text":"a\\\\Nb"}]', 'a\\Nb'),
+    ('[{"id":1,"text":"a\\nb"}]', 'a\nb'),
+    ('[{"id":1,"text":"say \\"hi\\""}]', 'say "hi"'),
+    ('[{"id":1,"text":"\\u00e9"}]', 'é'),
+    # A lone backslash-N (invalid JSON escape) is repaired to a literal backslash-N.
+    ('[{"id":1,"text":"a\\Nb"}]', 'a\\Nb'),
+])
+def test_json_escape_repair_keeps_valid_escapes(mocker, content, expected):
+    """Valid JSON escapes are decoded as before; only lone backslashes are repaired."""
+    _settings(mocker)
+    mocker.patch.object(openai_compatible_translator.requests, 'post',
+                        return_value=_response(mocker, content))
+
+    assert _service()._translate_batch(['source']) == [expected]

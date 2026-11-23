@@ -27,6 +27,20 @@ _BLOCKED_NETWORKS = tuple(ip_network(network) for network in (
     '0.0.0.0/8', '169.254.0.0/16', 'fe80::/10', 'fd00:ec2::/32'))
 
 
+# Matches either a complete valid JSON escape (consumed as a unit so that `\\N` is read as an escaped
+# backslash followed by N) or a lone backslash, which is the only thing that needs repairing.
+_JSON_ESCAPE_OR_LONE_BACKSLASH = re.compile(r'\\(["\\/bfnrt]|u[0-9a-fA-F]{4})|\\')
+
+
+def _repair_json_escapes(text: str) -> str:
+    """Double every backslash that does not start a valid JSON escape sequence.
+
+    :param text: Raw JSON text returned by the translator model.
+    :return: The text with each invalid escape turned into an escaped backslash, leaving valid escapes intact.
+    """
+    return _JSON_ESCAPE_OR_LONE_BACKSLASH.sub(lambda m: m.group(0) if m.group(1) else '\\\\', text)
+
+
 class InvalidTranslationResponseError(RuntimeError):
     pass
 
@@ -184,7 +198,7 @@ def _request_translation(cues, base_url, model, api_key, timeout, from_lang, to_
     # Models routinely echo subtitle line-break markers (`\N` in SRT/ASS cues) back inside
     # their JSON strings, but `\N` is not a valid JSON escape, which would reject an otherwise
     # correct translation. Escape any backslash that does not start a valid JSON escape sequence.
-    repaired = re.sub(r'\\(?!"\\/bfnrtu])', r'\\\\', match.group())
+    repaired = _repair_json_escapes(match.group())
     try:
         translated = json.loads(repaired)
     except json.JSONDecodeError as error:
