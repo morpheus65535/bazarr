@@ -164,7 +164,7 @@ const LapseTestButton: FunctionComponent = () => {
 
   return (
     <Button onClick={test} loading={testLapse.isPending}>
-      Test
+      Test Connection
     </Button>
   );
 };
@@ -374,8 +374,8 @@ const SettingsSubtitleProcessingView: FunctionComponent = () => {
           ></Text>
           <Message>
             URL of the LAPSE container, for Docker. The container needs your
-            media mounted at the same paths as in Bazarr. Used before the
-            executable below.
+            media mounted at the same paths as in Bazarr. When set, the
+            executable below isn't used.
           </Message>
           <Text
             label="LAPSE Executable Path"

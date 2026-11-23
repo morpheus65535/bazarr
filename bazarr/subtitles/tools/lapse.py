@@ -85,7 +85,7 @@ class LapseSyncer(SubSyncer):
                        'audio_track': track if kind == 'a' else None,
                        'sub_track': track if kind == 's' else None}
 
-            # lapse writes nothing when the subtitles are already in sync, don't pick up an old attempt
+            # lapse only writes a file when it is sure, don't pick up an old attempt
             if os.path.isfile(srtout):
                 os.remove(srtout)
             if url:
@@ -94,10 +94,13 @@ class LapseSyncer(SubSyncer):
                 result = self._run_local(exe, source, srt_path, srtout, options, job_id)
 
             if result['verdict'] != 'solid' or not os.path.isfile(srtout):
-                logging.warning(f'BAZARR LAPSE left these subtitles untouched ({result["verdict"]}: '
-                                f'{result.get("why") or "nothing to change"}): {srt_path}')
+                why = f'{result["verdict"]}: {result.get("why") or "nothing to change"}'
+                logging.warning(f'BAZARR LAPSE left these subtitles untouched ({why}): {srt_path}')
+                jobs_queue.update_job_progress(job_id=job_id, progress_message=f'Subtitles left untouched ({why})')
                 return
             os.replace(srtout, srt_path)
+            # sync_subtitles() checks this
+            self.sync_result = {'sync_was_successful': True}
             self._log_history(result, video_path, srt_path, srt_lang, hi, forced, sonarr_series_id,
                               sonarr_episode_id, radarr_id)
         except LapseUnavailable as e:

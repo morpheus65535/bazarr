@@ -50,8 +50,10 @@ def history(monkeypatch):
 
 
 def _sync(subtitle, **kwargs):
-    LapseSyncer().sync(video_path="/movies/movie.mkv", srt_path=str(subtitle), srt_lang="en", hi=False,
-                       forced=False, radarr_id=1, **kwargs)
+    syncer = LapseSyncer()
+    syncer.sync(video_path="/movies/movie.mkv", srt_path=str(subtitle), srt_lang="en", hi=False, forced=False,
+                radarr_id=1, **kwargs)
+    return syncer
 
 
 def _args(tmp_path):
@@ -61,8 +63,9 @@ def _args(tmp_path):
 def test_solid_result_replaces_subtitles_and_logs_history(tmp_path, monkeypatch, subtitle, history):
     monkeypatch.setattr(lapse_module.settings.subsync, "lapse_path", _fake_lapse(tmp_path, 0, SOLID))
 
-    _sync(subtitle)
+    syncer = _sync(subtitle)
 
+    assert syncer.sync_result == {"sync_was_successful": True}
     assert subtitle.read_text() == "synced"
     assert not (tmp_path / "movie.en.synced.srt").exists()
     assert _args(tmp_path) == ["/movies/movie.mkv", str(subtitle), "--output", str(tmp_path / "movie.en.synced.srt"),
@@ -126,8 +129,9 @@ def test_unsuccessful_run_leaves_subtitles_untouched(tmp_path, monkeypatch, subt
     monkeypatch.setattr(lapse_module.settings.subsync, "lapse_path",
                         _fake_lapse(tmp_path, returncode, result, "print('boom', file=sys.stderr)"))
 
-    _sync(subtitle)
+    syncer = _sync(subtitle)
 
+    assert not (syncer.sync_result or {}).get("sync_was_successful")
     assert logged in caplog.text
     assert subtitle.read_text() == "original"
     assert not (tmp_path / "movie.en.synced.srt").exists()
@@ -286,8 +290,9 @@ def test_remote_solid_result_replaces_subtitles(tmp_path, monkeypatch, subtitle,
     updates = []
     monkeypatch.setattr(lapse_module.jobs_queue, "update_job_progress", lambda **kwargs: updates.append(kwargs))
 
-    _sync(subtitle, job_id=7)
+    syncer = _sync(subtitle, job_id=7)
 
+    assert syncer.sync_result == {"sync_was_successful": True}
     assert subtitle.read_text() == "synced"
     assert not (tmp_path / "args.json").exists()
     assert server.posted == [{"video": "/movies/movie.mkv", "subtitle": base64.b64encode(b"original").decode(),
@@ -312,11 +317,14 @@ def test_remote_gets_tracks_and_reference_subtitles(tmp_path, subtitle, history,
     assert server.posted[1]["reference_filename"] == "movie.da.srt"
 
 
-def test_remote_unsure_verdict_is_never_written(subtitle, history, server, caplog):
+def test_remote_unsure_verdict_is_never_written(monkeypatch, subtitle, history, server, caplog):
     server.lines = [_done({**SOLID, "verdict": "unsure", "why": "not sure"}, "synced")]
+    updates = []
+    monkeypatch.setattr(lapse_module.jobs_queue, "update_job_progress", lambda **kwargs: updates.append(kwargs))
 
-    _sync(subtitle)
+    _sync(subtitle, job_id=7)
 
+    assert updates == [{"job_id": 7, "progress_message": "Subtitles left untouched (unsure: not sure)"}]
     assert "unsure: not sure" in caplog.text
     assert subtitle.read_text() == "original"
     assert history == []
@@ -331,8 +339,9 @@ def test_remote_unsure_verdict_is_never_written(subtitle, history, server, caplo
 def test_remote_errors_are_logged(subtitle, history, server, caplog, status, lines, logged):
     server.status, server.lines = status, lines
 
-    _sync(subtitle)
+    syncer = _sync(subtitle)
 
+    assert not (syncer.sync_result or {}).get("sync_was_successful")
     assert logged in caplog.text
     assert subtitle.read_text() == "original"
 

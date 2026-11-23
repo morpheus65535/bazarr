@@ -181,7 +181,9 @@ describe("SettingsSubtitleProcessingView", () => {
       expect(screen.getByRole("textbox", { name: "LAPSE URL" })).toHaveValue(
         "http://lapse:8080",
       );
-      await userEvent.click(screen.getByRole("button", { name: "Test" }));
+      await userEvent.click(
+        screen.getByRole("button", { name: "Test Connection" }),
+      );
 
       expect(mockTestLapse).toHaveBeenCalledWith({
         url: "http://lapse:8080",
@@ -199,7 +201,9 @@ describe("SettingsSubtitleProcessingView", () => {
       });
       await renderLapse();
 
-      await userEvent.click(screen.getByRole("button", { name: "Test" }));
+      await userEvent.click(
+        screen.getByRole("button", { name: "Test Connection" }),
+      );
 
       expect(mockedNotificationsShow).toHaveBeenCalledWith(
         expect.objectContaining({
