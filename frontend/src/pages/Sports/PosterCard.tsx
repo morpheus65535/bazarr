@@ -45,10 +45,11 @@ const SportsLeaguePosterCard: FunctionComponent<Props> = ({
       to={`/sports/${sportarrLeagueId}`}
       header={
         <Group gap="xs" wrap="nowrap">
-          <FontAwesomeIcon
-            title={monitored ? "monitored" : "unmonitored"}
-            icon={monitored ? faBookmark : farBookmark}
-          ></FontAwesomeIcon>
+          <Tooltip label={monitored ? "Monitored" : "Unmonitored"}>
+            <FontAwesomeIcon
+              icon={monitored ? faBookmark : farBookmark}
+            ></FontAwesomeIcon>
+          </Tooltip>
         </Group>
       }
       actions={
@@ -64,7 +65,7 @@ const SportsLeaguePosterCard: FunctionComponent<Props> = ({
       }
       selection={selection}
     >
-      <Tooltip label={`Events with subtitles: ${label}`}>
+      <Tooltip label={`Files with subtitles: ${label}`}>
         <Progress.Root size="sm" mt={4}>
           <Progress.Section
             value={value}

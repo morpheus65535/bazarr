@@ -17,6 +17,7 @@ import { Lazy } from "@/components/async";
 import Authentication from "@/pages/Authentication";
 import BlacklistMoviesView from "@/pages/Blacklist/Movies";
 import BlacklistSeriesView from "@/pages/Blacklist/Series";
+import BlacklistSportsView from "@/pages/Blacklist/Sports";
 import Episodes from "@/pages/Episodes";
 import NotFound from "@/pages/errors/NotFound";
 import MoviesHistoryView from "@/pages/History/Movies";
@@ -208,7 +209,7 @@ const useRoutes = (): CustomRouteObject[] => {
             icon: faFileExcel,
             name: "Blacklist",
             path: "blacklist",
-            hidden: !sonarr && !radarr,
+            hidden: !sonarr && !radarr && !sportarr,
             children: [
               {
                 path: "series",
@@ -221,6 +222,12 @@ const useRoutes = (): CustomRouteObject[] => {
                 name: "Movies",
                 hidden: !radarr,
                 element: <BlacklistMoviesView></BlacklistMoviesView>,
+              },
+              {
+                path: "sports",
+                name: "Sports",
+                hidden: !sportarr,
+                element: <BlacklistSportsView></BlacklistSportsView>,
               },
             ],
           },

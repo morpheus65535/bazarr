@@ -42,6 +42,16 @@ export const SportsSubtitle: FunctionComponent<Props> = ({
   const showSearch = missing;
   const showDelete = !missing && !isEmbedded;
 
+  const badge = (
+    <Badge variant={variant}>
+      <Language.Text value={subtitle} long={false}></Language.Text>
+    </Badge>
+  );
+
+  if (!showSearch && !showDelete) {
+    return badge;
+  }
+
   return (
     <Menu
       withArrow
@@ -51,13 +61,9 @@ export const SportsSubtitle: FunctionComponent<Props> = ({
       onOpen={() => setOpen(true)}
       onClose={() => setOpen(false)}
     >
-      <Menu.Target>
-        <Badge variant={variant}>
-          <Language.Text value={subtitle} long={false}></Language.Text>
-        </Badge>
-      </Menu.Target>
+      <Menu.Target>{badge}</Menu.Target>
       <Menu.Dropdown>
-        {(showSearch || showDelete) && <Menu.Label>Actions</Menu.Label>}
+        <Menu.Label>Actions</Menu.Label>
         {showSearch && (
           <Menu.Item
             leftSection={<FontAwesomeIcon icon={faSearch}></FontAwesomeIcon>}

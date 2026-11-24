@@ -11,10 +11,10 @@ from subliminal_patch.score import MAX_SCORES
 
 from app.config import settings
 from app.database import (TableShows, TableEpisodes, TableEpisodesSubtitles, TableMovies, TableMoviesSubtitles,
-                          database, select)
+                          TableSportsEvents, TableSportsEventsSubtitles, TableSportsLeagues, database, select)
 from app.event_handler import event_stream
 from app.jobs_queue import jobs_queue
-from app.notifier import send_notifications, send_notifications_movie
+from app.notifier import send_notifications, send_notifications_movie, send_notifications_sports
 from jellyfin.operations import jellyfin_refresh_item
 from languages.custom_lang import CustomLanguage
 from languages.get_languages import alpha3_from_alpha2, language_from_alpha2
@@ -23,8 +23,11 @@ from radarr.history import history_log_movie
 from radarr.notify import notify_radarr
 from sonarr.history import history_log
 from sonarr.notify import notify_sonarr
+from sportarr.history import history_log_sports
+from sportarr.media_refresh import refresh_sports_media_servers
 from subtitles.indexer.movies import store_subtitles_movie
 from subtitles.indexer.series import store_subtitles
+from subtitles.indexer.sports import store_subtitles_sports
 from subtitles.processing import ProcessSubtitlesResult
 from utilities.autopulse_webhook import call_external_webhook
 from utilities.binaries import get_binary
@@ -76,7 +79,7 @@ def extract_embedded_subtitle(subtitles_id, media_type, job_id=None, filename_su
     user's subtitles location settings, then reindex it.
 
     :param subtitles_id: primary key of the subtitles record to extract
-    :param media_type: "episode" or "movie"
+    :param media_type: "episode", "movie" or "sports"
     :param job_id: the job id of the job that is extracting the subtitles
     :param filename_suffix: optional suffix to add before the extracted file extension
     :returns: the path of the extracted subtitles file
@@ -112,6 +115,23 @@ def extract_embedded_subtitle(subtitles_id, media_type, job_id=None, filename_su
             .join(TableShows, TableShows.sonarrSeriesId == TableEpisodes.sonarrSeriesId)
             .where(TableEpisodesSubtitles.id == subtitles_id)) \
             .first()
+    elif media_type == 'sports':
+        data = database.execute(
+            select(TableSportsEventsSubtitles.embedded_track_id,
+                   TableSportsEventsSubtitles.language,
+                   TableSportsEventsSubtitles.forced,
+                   TableSportsEventsSubtitles.hi,
+                   TableSportsEventsSubtitles.sportsEventId,
+                   TableSportsEventsSubtitles.sportarrLeagueId,
+                   TableSportsEvents.path,
+                   TableSportsLeagues.title.label('leagueTitle'),
+                   TableSportsEvents.title,
+                   TableSportsEvents.partName,
+                   TableSportsEvents.audio_language,)
+            .join(TableSportsEvents, TableSportsEvents.id == TableSportsEventsSubtitles.sportsEventId)
+            .join(TableSportsLeagues, TableSportsLeagues.sportarrLeagueId == TableSportsEvents.sportarrLeagueId)
+            .where(TableSportsEventsSubtitles.id == subtitles_id)) \
+            .first()
     else:
         data = database.execute(
             select(TableMoviesSubtitles.embedded_track_id,
@@ -136,6 +156,9 @@ def extract_embedded_subtitle(subtitles_id, media_type, job_id=None, filename_su
     else:
         if media_type == 'episode':
             media_title = f'{data.seriesTitle} - S{data.season:02d}E{data.episode:02d} - {data.title}'
+        elif media_type == 'sports':
+            part = f' - {data.partName}' if data.partName else ''
+            media_title = f'{data.leagueTitle} - {data.title}{part}'
         else:
             media_title = f'{data.title} ({data.year})'
 
@@ -150,6 +173,9 @@ def extract_embedded_subtitle(subtitles_id, media_type, job_id=None, filename_su
     if media_type == 'episode':
         video_path = path_mappings.path_replace(data.path)
         media_id = data.sonarrEpisodeId
+    elif media_type == 'sports':
+        video_path = path_mappings.path_replace_sports(data.path)
+        media_id = data.sportsEventId
     else:
         video_path = path_mappings.path_replace_movie(data.path)
         media_id = data.radarrId
@@ -222,15 +248,22 @@ def extract_embedded_subtitle(subtitles_id, media_type, job_id=None, filename_su
 
     if media_type == 'episode':
         store_subtitles(media_id)
+        event_stream(type=media_type, payload=media_id)
+    elif media_type == 'sports':
+        store_subtitles_sports(media_id)
+        event_stream(type='sports-event', payload=media_id)
     else:
         store_subtitles_movie(media_id)
-    event_stream(type=media_type, payload=media_id)
+        event_stream(type=media_type, payload=media_id)
 
     # Log the extraction to the history database (action 7 == extracted)
     modifier = " HI" if data.hi else " forced" if data.forced else ""
     if media_type == 'episode':
         reversed_video_path = path_mappings.path_replace_reverse(video_path)
         reversed_subtitles_path = path_mappings.path_replace_reverse(subtitles_path)
+    elif media_type == 'sports':
+        reversed_video_path = path_mappings.path_replace_reverse_sports(video_path)
+        reversed_subtitles_path = path_mappings.path_replace_reverse_sports(subtitles_path)
     else:
         reversed_video_path = path_mappings.path_replace_reverse_movie(video_path)
         reversed_subtitles_path = path_mappings.path_replace_reverse_movie(subtitles_path)
@@ -250,6 +283,10 @@ def extract_embedded_subtitle(subtitles_id, media_type, job_id=None, filename_su
     if media_type == 'episode':
         history_log(7, data.sonarrSeriesId, media_id, result, fake_score=MAX_SCORES['episode'])
         event_stream(type="episode-history")
+    elif media_type == 'sports':
+        # A sports event is scored as an episode.
+        history_log_sports(7, data.sportarrLeagueId, media_id, result, fake_score=MAX_SCORES['episode'])
+        event_stream(type="sports-event-history")
     else:
         history_log_movie(7, media_id, result, fake_score=MAX_SCORES['movie'])
         event_stream(type="movie-history")
@@ -257,13 +294,16 @@ def extract_embedded_subtitle(subtitles_id, media_type, job_id=None, filename_su
     # Notify apprise
     if media_type == 'episode':
         send_notifications(data.sonarrSeriesId, media_id, result.message)
+    elif media_type == 'sports':
+        send_notifications_sports(data.sportarrLeagueId, media_id, result.message)
     else:
         send_notifications_movie(media_id, result.message)
 
-    # Notify media downloader so they update their library so the newly extracted subtitles are picked up
+    # Notify media downloader so they update their library so the newly extracted subtitles are picked up.
+    # Sportarr does not index subtitles, so it is not notified.
     if media_type == 'episode':
         notify_sonarr(data.sonarrSeriesId)
-    else:
+    elif media_type != 'sports':
         notify_radarr(media_id)
 
     # Refresh the media servers so the newly extracted subtitles are picked up
@@ -273,6 +313,8 @@ def extract_embedded_subtitle(subtitles_id, media_type, job_id=None, filename_su
         if settings.general.use_jellyfin and settings.jellyfin.update_series_library:
             jellyfin_refresh_item(data.imdbId, is_movie=False, season=data.season, episode=data.episode,
                                   tvdb_id=data.tvdbId)
+    elif media_type == 'sports':
+        refresh_sports_media_servers(video_path)
     else:
         if settings.general.use_plex and settings.plex.update_movie_library:
             plex_refresh_item(data.imdbId, is_movie=True)

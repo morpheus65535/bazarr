@@ -114,12 +114,6 @@ export const useSportsEventsByLeagueId = (leagueId?: number) =>
     },
   });
 
-export const useSportsEventsById = (eventIds: number[]) =>
-  useQuery({
-    queryKey: [QueryKeys.SportsEvents, ...eventIds],
-    queryFn: () => api.sports.byEventId(eventIds),
-  });
-
 export const useSportsWantedPagination = () =>
   usePaginationQuery(
     [QueryKeys.SportsLeagues, QueryKeys.SportsEvents, QueryKeys.Wanted],

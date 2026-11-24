@@ -139,6 +139,7 @@ validators = [
               is_in=['auto', 'light', 'dark']),
     Validator('general.show_live_badge', must_exist=True, default=True, is_type_of=bool),
     Validator('general.minimum_score_movie', must_exist=True, default=70, is_type_of=int, gte=0, lte=100),
+    Validator('general.minimum_score_sports', must_exist=True, default=90, is_type_of=int, gte=0, lte=100),
     Validator('general.use_embedded_subs', must_exist=True, default=True, is_type_of=bool),
     Validator('general.embedded_subs_show_desired', must_exist=True, default=True, is_type_of=bool),
     Validator('general.utf8_encode', must_exist=True, default=True, is_type_of=bool),
@@ -1029,7 +1030,8 @@ def save_settings(settings_items):
                                                func='sports_full_scan_subtitles',
                                                args=[],
                                                kwargs={'use_cache': True},
-                                               is_progress=True)
+                                               is_progress=True,
+                                               is_cancellable=True)
 
     if audio_tracks_parsing_changed:
         if settings.general.use_sonarr:

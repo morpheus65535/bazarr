@@ -15,7 +15,8 @@ from languages.get_languages import alpha3_from_alpha2, language_from_alpha2, la
 from subtitles.processing import ProcessSubtitlesResult
 from utilities.path_mappings import path_mappings
 
-from app.database import TableShows, TableEpisodes, TableMovies, database, select
+from app.database import TableShows, TableEpisodes, TableMovies, TableSportsEvents, TableSportsLeagues, database, \
+    select
 
 logger = logging.getLogger(__name__)
 
@@ -124,6 +125,10 @@ def create_process_result(message, video_path, orig_to_lang, forced, hi, dest_sr
     if media_type == 'episode':
         prr = path_mappings.path_replace_reverse
         score = int((settings.translator.default_score / 100) * MAX_SCORES['episode'])
+    elif media_type == 'sports':
+        # A sports event is scored as an episode.
+        prr = path_mappings.path_replace_reverse_sports
+        score = int((settings.translator.default_score / 100) * MAX_SCORES['episode'])
     else:
         prr = path_mappings.path_replace_reverse_movie
         score = int((settings.translator.default_score / 100) * MAX_SCORES['movie'])
@@ -187,9 +192,22 @@ def add_translator_info(dest_srt_file, info):
             f.write(srt.compose(subtitles))
 
 
-def get_description(media_type, radarr_id, sonarr_series_id):
+def get_description(media_type, radarr_id, sonarr_series_id, sportarr_league_id=None):
     try:
-        if media_type in ('movies', 'movie'):
+        if media_type == 'sports':
+            league = database.execute(
+                select(TableSportsLeagues.title, TableSportsLeagues.sport, TableSportsLeagues.overview)
+                .where(TableSportsLeagues.sportarrLeagueId == sportarr_league_id)
+            ).first()
+
+            if league:
+                return (f"You will translate a {league.sport or 'sports'} broadcast from {league.title}. "
+                        f"Its overview: {league.overview}")
+            else:
+                logger.info(f"No league found for this sportarr_league_id: {sportarr_league_id}")
+                return ""
+
+        elif media_type in ('movies', 'movie'):
             movie = database.execute(
                 select(TableMovies.title, TableMovies.imdbId, TableMovies.year, TableMovies.overview)
                 .where(TableMovies.radarrId == radarr_id)
@@ -223,9 +241,28 @@ def get_title(
         media_type: str,
         radarr_id: Union[int, None] = None,
         sonarr_series_id: Union[int, None] = None,
-        sonarr_episode_id: Union[int, None] = None
+        sonarr_episode_id: Union[int, None] = None,
+        sports_event_id: Union[int, None] = None
 ) -> str:
     try:
+        if media_type == "sports":
+            if sports_event_id is None:
+                return ""
+
+            event_row = database.execute(
+                select(TableSportsLeagues.title.label("leagueTitle"), TableSportsEvents.title,
+                       TableSportsEvents.partName)
+                .select_from(TableSportsEvents)
+                .join(TableSportsLeagues)
+                .where(TableSportsEvents.id == sports_event_id)
+            ).first()
+
+            if event_row is None:
+                return ""
+
+            part = f" - {event_row.partName}" if event_row.partName else ""
+            return f"{event_row.leagueTitle} - {event_row.title}{part}"
+
         if media_type in ("movies", "movie"):
             if radarr_id is None:
                 return ""

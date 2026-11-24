@@ -14,6 +14,7 @@ from app.jobs_queue import jobs_queue, JobCanceled
 from languages.get_languages import language_from_alpha2, language_from_alpha3
 from radarr.history import history_log_movie
 from sonarr.history import history_log
+from sportarr.history import history_log_sports
 
 from ..core.translator_utils import add_translator_info, create_process_result, get_title
 
@@ -23,7 +24,7 @@ logger = logging.getLogger(__name__)
 class LingarrTranslatorService:
     def __init__(self, source_srt_file, dest_srt_file, lang_obj, to_lang, from_lang, media_type,
                  video_path, orig_to_lang, forced, hi, sonarr_series_id, sonarr_episode_id,
-                 radarr_id):
+                 radarr_id, sportarr_league_id=None, sports_event_id=None):
         self.source_srt_file = source_srt_file
         self.dest_srt_file = dest_srt_file
         self.lang_obj = lang_obj
@@ -37,6 +38,8 @@ class LingarrTranslatorService:
         self.sonarr_series_id = sonarr_series_id
         self.sonarr_episode_id = sonarr_episode_id
         self.radarr_id = radarr_id
+        self.sportarr_league_id = sportarr_league_id
+        self.sports_event_id = sports_event_id
         self.language_code_convert_dict = {
             'zh': 'zh-CN',
             'zt': 'zh-TW',
@@ -94,6 +97,9 @@ class LingarrTranslatorService:
                             sonarr_series_id=self.sonarr_series_id,
                             sonarr_episode_id=self.sonarr_episode_id,
                             result=result)
+            elif self.media_type == 'sports':
+                history_log_sports(action=6, sportarr_league_id=self.sportarr_league_id,
+                                   sports_event_id=self.sports_event_id, result=result)
             else:
                 history_log_movie(action=6,
                                   radarr_id=self.radarr_id,
@@ -190,7 +196,8 @@ class LingarrTranslatorService:
                 media_type=self.media_type,
                 radarr_id=self.radarr_id,
                 sonarr_series_id=self.sonarr_series_id,
-                sonarr_episode_id=self.sonarr_episode_id
+                sonarr_episode_id=self.sonarr_episode_id,
+                sports_event_id=self.sports_event_id
             )
             # Lingarr content API has no subtitle path field; put basename in title
             # so the Translations UI is not blank when title lookup fails or is empty.

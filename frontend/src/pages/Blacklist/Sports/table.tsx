@@ -1,5 +1,6 @@
 import { FunctionComponent, useMemo } from "react";
-import { Text } from "@mantine/core";
+import { Link } from "react-router";
+import { Anchor, Text } from "@mantine/core";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
 import { useSportsDeleteBlacklist } from "@/apis/hooks";
 import MutateAction from "@/components/async/MutateAction";
@@ -20,6 +21,18 @@ const Table: FunctionComponent<Props> = ({ blacklist }) => {
       {
         header: "League",
         accessorKey: "leagueTitle",
+        cell: ({
+          row: {
+            original: { sportarrLeagueId, leagueTitle },
+          },
+        }) => {
+          const target = `/sports/${sportarrLeagueId}`;
+          return (
+            <Anchor className="table-primary" component={Link} to={target}>
+              {leagueTitle}
+            </Anchor>
+          );
+        },
       },
       {
         header: "Event",

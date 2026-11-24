@@ -44,6 +44,7 @@ describe("SettingsSportarrView", () => {
           instance_name: "Bazarr",
           use_sportarr: true,
           minimum_score: 90,
+          minimum_score_sports: 40,
           path_mappings_sports: [],
           league_default_enabled: true,
           league_default_profile: 7,
@@ -104,5 +105,27 @@ describe("SettingsSportarrView", () => {
     );
 
     expect(screen.getByText("No Subs")).toBeInTheDocument();
+  });
+
+  it("binds the sports minimum score to its own setting", () => {
+    mockedLeagueMutation.mockReturnValue({
+      mutate: vitest.fn(),
+      isPending: false,
+    });
+    customRender(<SettingsSportarrView />);
+
+    expect(screen.getByRole("slider")).toHaveAttribute("aria-valuenow", "40");
+  });
+
+  it("explains that each league needs its own folder", () => {
+    mockedLeagueMutation.mockReturnValue({
+      mutate: vitest.fn(),
+      isPending: false,
+    });
+    customRender(<SettingsSportarrView />);
+
+    expect(
+      screen.getByText(/Turn on Create League Folders in Sportarr/),
+    ).toBeInTheDocument();
   });
 });

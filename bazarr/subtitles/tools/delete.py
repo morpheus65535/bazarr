@@ -18,9 +18,9 @@ from subtitles.processing import ProcessSubtitlesResult
 from sonarr.history import history_log
 from radarr.history import history_log_movie
 from sportarr.history import history_log_sports
+from sportarr.media_refresh import refresh_sports_media_servers
 from sonarr.notify import notify_sonarr
 from radarr.notify import notify_radarr
-from sportarr.notify import notify_sportarr
 from plex.operations import plex_refresh_item
 from jellyfin.operations import jellyfin_refresh_item
 
@@ -58,8 +58,8 @@ def delete_subtitles(media_type, language, forced, hi, media_path, subtitles_pat
         pr = path_mappings.path_replace_sports
         prr = path_mappings.path_replace_reverse_sports
 
-        # Sports events carry no media server ids, so there is nothing to
-        # refresh an item with. The rescan below covers Sportarr.
+        # Sports events carry no media server ids. The media servers are
+        # refreshed by path below.
         metadata = None
     else:
         pr = path_mappings.path_replace_movie
@@ -89,7 +89,7 @@ def delete_subtitles(media_type, language, forced, hi, media_path, subtitles_pat
         else:
             store_subtitles_sports(sports_event_id)
             history_log_sports(0, sportarr_league_id, sports_event_id, result)
-            notify_sportarr(sportarr_league_id)
+            refresh_sports_media_servers(media_path)
             event_stream(type='sports-league', action='update', payload=sportarr_league_id)
             event_stream(type='sports-event-wanted', action='update', payload=sports_event_id)
 

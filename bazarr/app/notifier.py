@@ -5,7 +5,8 @@ import logging
 import re
 from urllib.parse import quote
 
-from .database import TableSettingsNotifier, TableEpisodes, TableShows, TableMovies, database, insert, delete, select
+from .database import TableSettingsNotifier, TableEpisodes, TableShows, TableMovies, TableSportsEvents, \
+    TableSportsLeagues, database, insert, delete, select
 
 
 def update_notifier():
@@ -131,6 +132,47 @@ def send_notifications_movie(radarr_id, message):
     apobj.notify(
         title='Bazarr notification',
         body=f"{movie_title}{movie_year} : {message}",
+    )
+
+
+def send_notifications_sports(sportarr_league_id, sports_event_id, message):
+    providers = get_notifier_providers()
+    if not len(providers):
+        return
+    league = database.execute(
+        select(TableSportsLeagues)
+        .where(TableSportsLeagues.sportarrLeagueId == sportarr_league_id))\
+        .scalars()\
+        .first()
+    if not league:
+        return
+    event = database.execute(
+        select(TableSportsEvents)
+        .where(TableSportsEvents.id == sports_event_id))\
+        .scalars()\
+        .first()
+    if not event:
+        return
+
+    media_variables = {}
+    media_variables.update(_build_media_variables(league, 'league'))
+    media_variables.update(_build_media_variables(event, 'event'))
+
+    asset = AppriseAsset(async_mode=False)
+
+    apobj = Apprise(asset=asset)
+
+    for provider in providers:
+        if provider.name in {"Form", "XML", "JSON"}:
+            apobj.add(_expand_notifier_url(provider.url, media_variables))
+        else:
+            apobj.add(provider.url)
+
+    # One event can have several files. The part name tells them apart.
+    part = f" - {event.partName}" if event.partName else ""
+    apobj.notify(
+        title='Bazarr notification',
+        body=f"{league.title} - {event.title}{part} : {message}",
     )
 
 
