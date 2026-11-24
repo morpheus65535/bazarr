@@ -199,3 +199,87 @@ def test_query_follows_pages_until_the_last_one(monkeypatch):
 
     assert requested == [("english", 1), ("english", 2)]
     assert len(subtitles) == 150
+
+
+def _archive_response(payload: bytes) -> Response:
+    response = Response()
+    response.status_code = 200
+    response._content = payload
+    return response
+
+
+def test_download_subtitle_extracts_zip_archive(_provider, monkeypatch):
+    import io
+    import types
+    import zipfile
+
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, 'w') as archive:
+        archive.writestr('movie.srt', b'1\n00:00:01,000 --> 00:00:02,000\nhi\n')
+    seen = []
+    monkeypatch.setattr(_provider, '_get_subtitles_archive', lambda link: _archive_response(buffer.getvalue()))
+    monkeypatch.setattr(_provider, 'get_subtitle_from_archive', lambda subtitle, archive: seen.append(type(archive)) or b'ok')
+
+    subtitle = types.SimpleNamespace(id=1, content=None)
+    _provider.download_subtitle(subtitle)
+
+    assert seen == [zipfile.ZipFile]
+    assert subtitle.content == b'ok'
+
+
+def test_download_subtitle_extracts_rar_archive(_provider, monkeypatch):
+    import types
+    import subliminal_patch.providers.subsource as subsource
+
+    opened = []
+
+    class FakeRarFile:
+        def __init__(self, stream):
+            opened.append(stream)
+
+    monkeypatch.setattr(subsource, 'is_rarfile', lambda stream: True)
+    monkeypatch.setattr(subsource, 'RarFile', FakeRarFile)
+    monkeypatch.setattr(_provider, '_get_subtitles_archive', lambda link: _archive_response(b'Rar!\x1a\x07\x01\x00'))
+    monkeypatch.setattr(_provider, 'get_subtitle_from_archive', lambda subtitle, archive: b'from-rar' if isinstance(archive, FakeRarFile) else None)
+
+    subtitle = types.SimpleNamespace(id=2, content=None)
+    _provider.download_subtitle(subtitle)
+
+    assert len(opened) == 1
+    assert subtitle.content == b'from-rar'
+
+
+def test_download_subtitle_rar_error_fails_only_that_subtitle(_provider, monkeypatch):
+    import types
+    import rarfile
+    import subliminal_patch.providers.subsource as subsource
+
+    class FakeRarFile:
+        def __init__(self, stream):
+            pass
+
+    def broken(subtitle, archive):
+        raise rarfile.BadRarFile('corrupt')
+
+    monkeypatch.setattr(subsource, 'is_rarfile', lambda stream: True)
+    monkeypatch.setattr(subsource, 'RarFile', FakeRarFile)
+    monkeypatch.setattr(_provider, '_get_subtitles_archive', lambda link: _archive_response(b'Rar!\x1a\x07\x01\x00'))
+    monkeypatch.setattr(_provider, 'get_subtitle_from_archive', broken)
+
+    subtitle = types.SimpleNamespace(id=3, content=b'stale')
+    _provider.download_subtitle(subtitle)
+
+    assert subtitle.content is None
+
+
+def test_download_subtitle_rejects_unknown_payload(_provider, monkeypatch):
+    import types
+    import subliminal_patch.providers.subsource as subsource
+
+    monkeypatch.setattr(subsource, 'is_rarfile', lambda stream: False)
+    monkeypatch.setattr(_provider, '_get_subtitles_archive', lambda link: _archive_response(b'<html>nope</html>'))
+
+    subtitle = types.SimpleNamespace(id=4, content=b'stale')
+    _provider.download_subtitle(subtitle)
+
+    assert subtitle.content is None

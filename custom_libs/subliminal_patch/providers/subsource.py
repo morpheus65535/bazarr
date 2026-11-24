@@ -12,6 +12,7 @@ from typing import Callable, Optional, TYPE_CHECKING
 
 from babelfish import language_converters
 from zipfile import ZipFile, is_zipfile
+from rarfile import RarFile, is_rarfile, Error as RarError
 from requests import Session, Response
 from guessit import guessit
 
@@ -616,8 +617,8 @@ class SubsourceProvider(ProviderRetryMixin, Provider, ProviderSubtitleArchiveMix
         """
         Downloads a subtitle file from the provider's API server. This function
         constructs a download URL for the given subtitle, retrieves the
-        archive content, and extracts the subtitle data if it is a valid zip
-        file.
+        archive content, and extracts the subtitle data if it is a valid ZIP
+        or RAR archive.
 
         If the subtitle cannot be downloaded or extracted, the content of the
         subtitle will be set to None.
@@ -636,15 +637,47 @@ class SubsourceProvider(ProviderRetryMixin, Provider, ProviderSubtitleArchiveMix
             logger.error(f'Could not download subtitle from {download_link}')
             subtitle.content = None
         else:
-            archive_stream = io.BytesIO(r.content)
-            if is_zipfile(archive_stream):
-                archive = ZipFile(archive_stream)
-                subtitle.content = self.get_subtitle_from_archive(subtitle, archive)
-            else:
+            archive = self._open_archive(io.BytesIO(r.content))
+            if archive is None:
                 logger.error(f'Could not unzip subtitle from {download_link}')
                 subtitle.content = None
+            else:
+                # A corrupt RAR, or one bazarr cannot extract because no unrar/unar
+                # binary is available, raises a rarfile error. Absorb it here so it
+                # is treated as a per-subtitle failure and not as a provider throttle.
+                try:
+                    subtitle.content = self.get_subtitle_from_archive(subtitle, archive)
+                except RarError as error:
+                    logger.error(f'Could not read RAR subtitle from {download_link}: {error!r}')
+                    subtitle.content = None
 
         return subtitle
+
+    @staticmethod
+    def _open_archive(stream: io.BytesIO) -> ZipFile | RarFile | None:
+        """
+        Open a subtitle archive, sniffing the payload instead of trusting its headers.
+
+        SubSource serves some subtitles as RAR archives, so both ZIP and RAR
+        payloads are accepted.
+
+        :param stream: In-memory archive payload.
+        :type stream: io.BytesIO
+        :return: An open ZipFile or RarFile, or None if the payload is neither.
+        :rtype: ZipFile | RarFile | None
+        """
+        stream.seek(0)
+        if is_zipfile(stream):
+            stream.seek(0)
+            return ZipFile(stream)
+        stream.seek(0)
+        try:
+            if is_rarfile(stream):
+                stream.seek(0)
+                return RarFile(stream)
+        except RarError:
+            logger.debug('subsource: payload looked like RAR but could not be opened', exc_info=True)
+        return None
 
     @region.cache_on_arguments(expiration_time=ARCHIVES_EXPIRATION_TIME)
     def _get_subtitles_archive(self, download_link: str) -> Response:
