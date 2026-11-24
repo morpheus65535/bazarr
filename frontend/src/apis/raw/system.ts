@@ -64,6 +64,10 @@ class SystemApi extends BaseApi {
     await this.post("/backups");
   }
 
+  async uploadBackups(file: File) {
+    await this.post("/backups/upload", { file });
+  }
+
   async restoreBackups(filename: string) {
     await this.patch("/backups", { filename });
   }

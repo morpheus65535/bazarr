@@ -5,6 +5,7 @@ import {
   useDeleteBackups,
   useRestoreBackups,
   useSystemBackups,
+  useUploadBackups,
 } from "@/apis/hooks";
 import { useInstanceName } from "@/apis/hooks/site";
 import { customRender, screen, within } from "@/tests";
@@ -18,6 +19,7 @@ vi.mock("@/apis/hooks", async (importOriginal) => {
     useCreateBackups: vitest.fn(),
     useDeleteBackups: vitest.fn(),
     useRestoreBackups: vitest.fn(),
+    useUploadBackups: vitest.fn(),
   };
 });
 
@@ -33,6 +35,7 @@ const mockedUseSystemBackups = useSystemBackups as Mock;
 const mockedUseCreateBackups = useCreateBackups as Mock;
 const mockedUseDeleteBackups = useDeleteBackups as Mock;
 const mockedUseRestoreBackups = useRestoreBackups as Mock;
+const mockedUseUploadBackups = useUploadBackups as Mock;
 const mockedUseInstanceName = useInstanceName as Mock;
 
 const baseBackup: System.Backups = {
@@ -66,6 +69,10 @@ const setupMocks = (
   });
   mockedUseDeleteBackups.mockReturnValue({
     mutate: deleteMutate ?? vitest.fn(),
+    isPending: false,
+  });
+  mockedUseUploadBackups.mockReturnValue({
+    mutate: vitest.fn(),
     isPending: false,
   });
   mockedUseInstanceName.mockReturnValue("Bazarr");
@@ -102,6 +109,15 @@ describe("SystemBackupsView", () => {
     await userEvent.click(screen.getByRole("button", { name: "Backup Now" }));
 
     expect(createMutate).toHaveBeenCalled();
+  });
+
+  it("should render an Upload button next to Backup Now", async () => {
+    renderPage([]);
+
+    expect(
+      screen.getByRole("button", { name: "Backup Now" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Upload" })).toBeInTheDocument();
   });
 
   it("should restore a backup after confirming", async () => {

@@ -227,6 +227,26 @@ export const useCreateBackups = () => {
   });
 };
 
+export const useUploadBackups = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationKey: [QueryKeys.System, QueryKeys.Backups],
+    mutationFn: (file: File) => api.system.uploadBackups(file),
+
+    onSuccess: () => {
+      void client.invalidateQueries({
+        queryKey: [QueryKeys.System, QueryKeys.Backups],
+      });
+      showNotification(
+        notification.success(
+          "Backup uploaded",
+          "The backup can now be restored from the backups list",
+        ),
+      );
+    },
+  });
+};
+
 export const useRestoreBackups = () => {
   const client = useQueryClient();
   return useMutation({

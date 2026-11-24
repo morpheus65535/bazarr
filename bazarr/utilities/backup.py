@@ -1,6 +1,7 @@
 # coding=utf-8
 
 import os
+import secrets
 import sqlite3
 import shutil
 import logging
@@ -10,7 +11,12 @@ import tempfile
 from datetime import datetime, timedelta, timezone
 from zipfile import ZipFile, BadZipFile, ZIP_DEFLATED
 from glob import glob
-from typing import Literal, overload
+from pathlib import PurePosixPath
+from typing import BinaryIO, Literal, overload
+
+import yaml
+
+from dynaconf.utils.parse_conf import converters as _DYNACONF_CONVERTERS
 
 from app.get_args import args
 from app.config import settings
@@ -195,6 +201,10 @@ def backup_to_zip(job_id: int | None = None, wait_for_completion: bool = False) 
     :return: None
     :raises OSError: If the zip archive cannot be created or the
         configuration file cannot be read from the configuration directory.
+
+    The archive is created with owner-only permissions (``0600``) on POSIX
+    systems. On Windows the owner-only mode is not enforced, so the archive
+    inherits the access control list of the backup directory.
     """
     if not job_id:
         jobs_queue.add_job_from_function("Backing up Database and Configuration File", is_progress=False,
@@ -239,8 +249,10 @@ def backup_to_zip(job_id: int | None = None, wait_for_completion: bool = False) 
     logging.debug(f'Config file path to backup is: {config_file}')
 
     try:
-        with ZipFile(os.path.join(_get_backup_path(), backup_filename), 'w', compression=ZIP_DEFLATED,
-                     compresslevel=9) as backupZip:
+        backup_file_path = os.path.join(_get_backup_path(), backup_filename)
+        backup_fd = os.open(backup_file_path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        with os.fdopen(backup_fd, 'wb') as backup_file, ZipFile(backup_file, 'w', compression=ZIP_DEFLATED,
+                                                                compresslevel=9) as backupZip:
             if database_backup_file:
                 backupZip.write(database_backup_file, 'bazarr.db')
             else:
@@ -257,45 +269,153 @@ def backup_to_zip(job_id: int | None = None, wait_for_completion: bool = False) 
     event_stream(type='backup')
 
 
+def _is_template_value(value: object) -> bool:
+    """
+    Check whether a single parsed value is a Dynaconf template value.
+
+    Dynaconf only evaluates a string when its first space-delimited word is
+    exactly one of its converter names, such as ``@get``, ``@read_file`` or
+    ``@format``. Other strings that start with ``@``, for example a password
+    like ``@hunter2``, are loaded literally and are not templates.
+
+    :param value: Parsed YAML scalar.
+    :return: ``True`` if Dynaconf would evaluate the string, ``False`` otherwise.
+    """
+    return isinstance(value, str) and value.partition(' ')[0] in _DYNACONF_CONVERTERS
+
+
+def _has_template_values(node: object) -> bool:
+    """
+    Check whether a parsed configuration contains Dynaconf template values.
+
+    :param node: Parsed YAML value, possibly a nested mapping or list.
+    :return: ``True`` if any string in the structure is a Dynaconf template
+        value, ``False`` otherwise.
+    """
+    if isinstance(node, dict):
+        return any(_has_template_values(value) for value in node.values())
+    if isinstance(node, list):
+        return any(_has_template_values(value) for value in node)
+    return _is_template_value(node)
+
+
+def _load_config_yaml(content: bytes) -> dict[str, object] | None:
+    """
+    Parse the content of a Bazarr YAML configuration file.
+
+    :param content: Raw bytes of the ``config.yaml`` file.
+    :return: The parsed mapping, or ``None`` if the content is not valid YAML,
+        does not describe a mapping, or contains Dynaconf template values.
+    """
+    try:
+        config = yaml.safe_load(content)
+    except yaml.YAMLError:
+        return None
+    if not isinstance(config, dict) or _has_template_values(config):
+        return None
+    return config
+
+
+def _uses_postgresql(config: dict[str, object]) -> bool:
+    """
+    Tell whether a parsed configuration enables the PostgreSQL backend.
+
+    :param config: Parsed configuration mapping.
+    :return: ``True`` only if ``postgresql.enabled`` is the boolean ``True``.
+    """
+    section = config.get('postgresql')
+    return isinstance(section, dict) and section.get('enabled') is True
+
+
+def _read_restore_config(config_path: str) -> dict[str, object] | None:
+    """
+    Read and validate a configuration file located in the restore directory.
+
+    :param config_path: Path to the ``config.yaml`` file to read.
+    :return: The parsed configuration, or ``None`` if the file cannot be read,
+        is invalid, or contains Dynaconf template values.
+    """
+    try:
+        with open(config_path, 'rb') as config_file:
+            return _load_config_yaml(config_file.read())
+    except OSError:
+        return None
+
+
+def _restore_config_uses_postgresql(config_path: str) -> bool:
+    """
+    Check whether a configuration file in the restore directory enables PostgreSQL.
+
+    Unreadable or invalid files are treated as not using PostgreSQL, so that a
+    SQLite database is required before anything is restored.
+
+    :param config_path: Path to the ``config.yaml`` file to inspect.
+    :return: ``True`` if the file parses and enables PostgreSQL, ``False``
+        otherwise.
+    """
+    config = _read_restore_config(config_path)
+    return config is not None and _uses_postgresql(config)
+
+
 def restore_from_backup() -> None:
     """
     Restore Bazarr configuration and database files from a previously
     extracted backup located in the restore directory.
 
-    The function first determines which configuration format is present in
-    the restore directory, preferring the YAML configuration file over the
-    legacy INI file. A restore is only performed when both the configuration
-    file and the SQLite database file are found in the restore directory.
-    When both are present, the configuration file is copied to the
-    configuration directory and any leftover configuration file of the other
-    format is removed from the restore directory. If PostgreSQL is not
-    enabled, the database file is copied to the database directory and any
-    stale SQLite shared-memory and write-ahead log files are removed. After
-    a successful restore, all running web server connections are closed and
-    Bazarr is restarted.
+    The configuration file is required and must be valid YAML without Dynaconf
+    template values; otherwise the backup is refused and its files are removed
+    from the restore directory. The YAML configuration file is preferred over
+    the legacy INI file. The SQLite database file is required
+    unless the restored configuration enables PostgreSQL, because backups taken
+    on a PostgreSQL instance contain only the configuration file. When the
+    database is required and missing, the partial backup is ignored and a debug
+    message is logged.
 
-    If only one of the two required files is present, the partial backup is
-    ignored and a debug message is logged. If neither file is present, the
-    function returns without further action. All file system errors
-    encountered during copy or removal operations are logged rather than
-    propagated.
+    When the restore proceeds, the configuration file is copied to the
+    configuration directory and any leftover configuration file of the other
+    format is removed from the restore directory. The SQLite database file is
+    copied to the database directory only if the restored configuration does
+    not use PostgreSQL, and any stale SQLite shared-memory and write-ahead log
+    files are removed. After a successful restore, all running web server
+    connections are closed and Bazarr is restarted.
+
+    If neither a configuration file nor a database file is present, the function
+    returns without further action. All file system errors encountered during
+    copy or removal operations are logged rather than propagated.
 
     :return: None.
     :rtype: None
     """
-    if os.path.isfile(os.path.join(_get_restore_path(), 'config.yaml')):
-        restore_config_path = os.path.join(_get_restore_path(), 'config.yaml')
+    restore_dir = _get_restore_path()
+    if os.path.isfile(os.path.join(restore_dir, 'config.yaml')):
+        restore_config_path = os.path.join(restore_dir, 'config.yaml')
         dest_config_path = os.path.join(args.config_dir, 'config', 'config.yaml')
         new_config = True
     else:
-        restore_config_path = os.path.join(_get_restore_path(), 'config.ini')
+        restore_config_path = os.path.join(restore_dir, 'config.ini')
         dest_config_path = os.path.join(args.config_dir, 'config', 'config.ini')
         new_config = False
 
-    restore_database_path = os.path.join(_get_restore_path(), 'bazarr.db')
+    restore_database_path = os.path.join(restore_dir, 'bazarr.db')
     dest_database_path = os.path.join(args.config_dir, 'db', 'bazarr.db')
 
-    if os.path.isfile(restore_config_path) and os.path.isfile(restore_database_path):
+    has_config = os.path.isfile(restore_config_path)
+    has_database = os.path.isfile(restore_database_path)
+
+    if new_config and has_config and _read_restore_config(restore_config_path) is None:
+        logging.error('Refusing to restore backup: config.yaml is invalid or contains template values.')
+        for leftover in (restore_config_path, restore_database_path):
+            try:
+                os.remove(leftover)
+            except FileNotFoundError:
+                pass
+            except OSError:
+                logging.exception(f'Unable to delete {leftover}')
+        return
+
+    uses_postgresql = new_config and has_config and _restore_config_uses_postgresql(restore_config_path)
+
+    if has_config and (has_database or uses_postgresql):
         try:
             shutil.copy(restore_config_path, dest_config_path)
             os.remove(restore_config_path)
@@ -303,12 +423,12 @@ def restore_from_backup() -> None:
             logging.exception(f'Unable to restore or delete config file to {dest_config_path}')
         else:
             if new_config:
-                if os.path.isfile(os.path.join(_get_restore_path(), 'config.ini')):
-                    os.remove(os.path.join(_get_restore_path(), 'config.ini'))
+                if os.path.isfile(os.path.join(restore_dir, 'config.ini')):
+                    os.remove(os.path.join(restore_dir, 'config.ini'))
             else:
-                if os.path.isfile(os.path.join(_get_restore_path(), 'config.yaml')):
-                    os.remove(os.path.join(_get_restore_path(), 'config.yaml'))
-        if not settings.postgresql.enabled:
+                if os.path.isfile(os.path.join(restore_dir, 'config.yaml')):
+                    os.remove(os.path.join(restore_dir, 'config.yaml'))
+        if has_database and not uses_postgresql:
             try:
                 shutil.copy(restore_database_path, dest_database_path)
             except (OSError, FileNotFoundError):
@@ -321,19 +441,20 @@ def restore_from_backup() -> None:
                         os.remove(f'{dest_database_path}-wal')
                 except (OSError, FileNotFoundError):
                     logging.exception('Unable to delete SHM and WAL file.')
-
+        if has_database:
             try:
                 os.remove(restore_database_path)
             except (OSError, FileNotFoundError):
-                logging.exception(f'Unable to delete {dest_database_path}')
+                logging.exception(f'Unable to delete {restore_database_path}')
 
         logging.info('Backup restored successfully. Bazarr will restart.')
         from app.server import webserver
         if webserver is not None:
             webserver.close_all()
         restart_bazarr()
-    elif os.path.isfile(restore_config_path) or os.path.isfile(restore_database_path):
-        logging.debug('Cannot restore a partial backup. You must have both config and database.')
+    elif has_config or has_database:
+        logging.debug('Cannot restore a partial backup. You must have a config file, and a database unless the '
+                      'configuration uses PostgreSQL.')
     else:
         logging.debug('No backup to restore.')
         return
@@ -466,6 +587,147 @@ def delete_backup_file(filename: str) -> bool:
     except (OSError, FileNotFoundError):
         logging.debug(f'Unable to delete backup file {backup_file_path}')
     return False
+
+
+BACKUP_UPLOAD_MAX_BYTES = 1024 ** 3
+_BACKUP_UPLOAD_MAX_UNCOMPRESSED_BYTES = 4 * 1024 ** 3
+_BACKUP_UPLOAD_MAX_CONFIG_BYTES = 1024 * 1024
+_BACKUP_UPLOAD_CHUNK_SIZE = 1024 * 1024
+_SQLITE_MAGIC = b'SQLite format 3\x00'
+
+
+class BackupUploadError(Exception):
+    """
+    Error raised when an uploaded backup archive is refused.
+
+    The message is safe to return to the client. The status code is the HTTP
+    status the API layer should answer with.
+    """
+
+    def __init__(self, message: str, status_code: int) -> None:
+        """
+        Create the upload error.
+
+        :param message: Human-readable reason the upload was refused.
+        :param status_code: HTTP status code to answer with.
+        """
+        super().__init__(message)
+        self.status_code = status_code
+
+
+def _is_safe_member_name(name: str) -> bool:
+    """
+    Check that a ZIP member name is a plain relative path without traversal.
+
+    :param name: Member name as stored in the archive.
+    :return: ``True`` if the name is relative, uses forward slashes only and
+        contains no ``..`` component, ``False`` otherwise.
+    """
+    if '\\' in name or ':' in name.split('/')[0]:
+        return False
+    path = PurePosixPath(name)
+    return not path.is_absolute() and '..' not in path.parts
+
+
+def _validate_backup_archive(archive_path: str) -> None:
+    """
+    Verify that a file is a complete Bazarr backup archive.
+
+    The archive must be a readable ZIP whose CRCs check out and must not
+    contain unsafe member names or expand beyond the uncompressed size limit.
+    It must contain a ``config.yaml`` that parses to a mapping. A SQLite
+    database file is required unless the configuration enables PostgreSQL,
+    because backups taken on a PostgreSQL instance have no database file. When
+    a database file is present it must start with the SQLite header.
+
+    :param archive_path: Path to the archive file to inspect.
+    :raises BackupUploadError: If the file is not a valid backup archive.
+    :return: None
+    """
+    invalid = BackupUploadError('The uploaded file is not a valid Bazarr backup archive.', 400)
+    try:
+        with ZipFile(archive_path, 'r') as archive:
+            if archive.testzip() is not None:
+                raise invalid
+            members = archive.infolist()
+            if sum(member.file_size for member in members) > _BACKUP_UPLOAD_MAX_UNCOMPRESSED_BYTES:
+                raise BackupUploadError('The uploaded backup archive expands to too much data.', 413)
+            names = {member.filename for member in members}
+            if not all(_is_safe_member_name(member.filename) for member in members):
+                raise invalid
+            if 'config.yaml' not in names:
+                raise invalid
+            config_member = archive.getinfo('config.yaml')
+            if config_member.file_size > _BACKUP_UPLOAD_MAX_CONFIG_BYTES:
+                raise invalid
+            config = _load_config_yaml(archive.read(config_member))
+            if config is None:
+                raise invalid
+            if 'bazarr.db' in names:
+                with archive.open('bazarr.db') as database_member:
+                    if database_member.read(len(_SQLITE_MAGIC)) != _SQLITE_MAGIC:
+                        raise invalid
+            elif not _uses_postgresql(config):
+                raise BackupUploadError('The backup has no database file and does not use PostgreSQL, so it '
+                                        'cannot be restored.', 400)
+    except BadZipFile:
+        raise invalid
+
+
+def save_uploaded_backup(stream: BinaryIO, filename: str | None) -> str:
+    """
+    Store an uploaded backup archive in the configured backup directory.
+
+    The uploaded filename must match the same pattern used for backups that
+    Bazarr creates itself, otherwise the archive would not be listed or
+    restorable. The data is streamed into a hidden temporary file in the
+    backup directory, never under a name the backup list reads, and is capped
+    at ``BACKUP_UPLOAD_MAX_BYTES``. Only after the archive passes validation
+    is it moved to its final name. Existing backups are never overwritten. The
+    temporary file is removed on every failure path. The file is created with
+    owner-only permissions (``0600``) on POSIX systems.
+    On Windows the owner-only mode is not enforced, so the file inherits the access
+    control list of the backup directory.
+
+    :param stream: Binary stream carrying the uploaded archive.
+    :param filename: Filename supplied by the client.
+    :raises BackupUploadError: If the filename is invalid (400), a backup with
+        the same name already exists (409), the upload exceeds the size limit
+        (413) or the file is not a valid backup archive (400).
+    :return: The validated filename under which the backup was stored.
+    """
+    safe_filename = _validate_backup_filename(filename)
+    if safe_filename is None:
+        raise BackupUploadError('Invalid filename. Expected a Bazarr backup archive name.', 400)
+
+    backup_dir = _get_backup_path()
+    final_path = os.path.join(backup_dir, safe_filename)
+    if os.path.exists(final_path):
+        raise BackupUploadError('A backup with this name already exists.', 409)
+
+    temp_path = os.path.join(backup_dir, f'.upload_{secrets.token_hex(16)}.tmp')
+    fd = os.open(temp_path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    try:
+        written = 0
+        with os.fdopen(fd, 'wb') as temp_file:
+            while chunk := stream.read(_BACKUP_UPLOAD_CHUNK_SIZE):
+                written += len(chunk)
+                if written > BACKUP_UPLOAD_MAX_BYTES:
+                    raise BackupUploadError('The uploaded backup archive is too large.', 413)
+                temp_file.write(chunk)
+        _validate_backup_archive(temp_path)
+        if os.path.exists(final_path):
+            raise BackupUploadError('A backup with this name already exists.', 409)
+        os.replace(temp_path, final_path)
+    finally:
+        if os.path.exists(temp_path):
+            try:
+                os.remove(temp_path)
+            except OSError:
+                logging.exception(f'Unable to delete temporary upload file {temp_path}')
+
+    logging.info(f'Backup archive uploaded: {safe_filename}')
+    return safe_filename
 
 
 def _sizeof_fmt(num: float, suffix: str = "B") -> str:

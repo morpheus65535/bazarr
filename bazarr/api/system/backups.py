@@ -1,8 +1,13 @@
 # coding=utf-8
 
-from flask_restx import Resource, Namespace, reqparse, fields, marshal
+from typing import Any
 
-from utilities.backup import get_backup_files, prepare_restore, delete_backup_file, backup_to_zip
+from flask import request
+from flask_restx import Resource, Namespace, reqparse, fields, marshal
+from werkzeug.datastructures import FileStorage
+
+from utilities.backup import (get_backup_files, prepare_restore, delete_backup_file, backup_to_zip,
+                              save_uploaded_backup, BackupUploadError, BACKUP_UPLOAD_MAX_BYTES)
 
 from ..utils import authenticate
 
@@ -75,3 +80,41 @@ class SystemBackups(Resource):
             if deleted:
                 return '', 204
         return 'Filename not provided', 400
+
+
+_MULTIPART_OVERHEAD_BYTES = 1024 * 1024
+
+
+@api_ns_system_backups.route('system/backups/upload')
+class SystemBackupsUpload(Resource):
+    upload_request_parser = reqparse.RequestParser()
+    upload_request_parser.add_argument('file', type=FileStorage, location='files', required=True,
+                                       help='Backup archive to upload')
+
+    def dispatch_request(self, *args: object, **kwargs: object) -> Any:
+        """
+        Apply the upload size limit before any part of the request body is read.
+
+        ``@authenticate`` reads ``request.form``, which parses the multipart
+        body, so the limit has to be in place before the decorated method runs.
+        Werkzeug enforces it while reading and answers 413 when it is exceeded.
+        """
+        request.max_content_length = BACKUP_UPLOAD_MAX_BYTES + _MULTIPART_OVERHEAD_BYTES
+        return super().dispatch_request(*args, **kwargs)
+
+    @authenticate
+    @api_ns_system_backups.expect(upload_request_parser)
+    @api_ns_system_backups.response(204, 'Success')
+    @api_ns_system_backups.response(400, 'Invalid filename or not a valid backup archive')
+    @api_ns_system_backups.response(401, 'Not Authenticated')
+    @api_ns_system_backups.response(409, 'A backup with this name already exists')
+    @api_ns_system_backups.response(413, 'Backup archive is too large')
+    def post(self) -> tuple[str, int]:
+        """Upload a backup archive into the backup directory"""
+        args = self.upload_request_parser.parse_args()
+        uploaded_file = args.get('file')
+        try:
+            save_uploaded_backup(uploaded_file.stream, uploaded_file.filename)
+        except BackupUploadError as error:
+            return str(error), error.status_code
+        return '', 204
