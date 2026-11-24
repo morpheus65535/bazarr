@@ -74,6 +74,18 @@ def test_solid_result_replaces_subtitles_and_logs_history(tmp_path, monkeypatch,
                                             "and a framerate scale factor of 1.00.")
 
 
+def test_unreadable_solid_result_leaves_subtitles_untouched(tmp_path, monkeypatch, subtitle, history):
+    result = {key: value for key, value in SOLID.items() if key != "ratio"}
+    monkeypatch.setattr(lapse_module.settings.subsync, "lapse_path", _fake_lapse(tmp_path, 0, result))
+
+    with pytest.raises(KeyError):
+        _sync(subtitle)
+
+    assert subtitle.read_text() == "original"
+    assert not (tmp_path / "movie.en.synced.srt").exists()
+    assert history == []
+
+
 def test_old_synced_file_is_not_taken_as_the_result(tmp_path, monkeypatch, subtitle, history):
     monkeypatch.setattr(lapse_module.settings.subsync, "lapse_path",
                         _fake_lapse(tmp_path, 0, {**SOLID, "offset_ms": 0, "unchanged": True}))

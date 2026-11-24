@@ -98,10 +98,15 @@ class LapseSyncer(SubSyncer):
                 logging.warning(f'BAZARR LAPSE left these subtitles untouched ({why}): {srt_path}')
                 jobs_queue.update_job_progress(job_id=job_id, progress_message=f'Subtitles left untouched ({why})')
                 return
+            # before the replace, so a result we can't read fails with the subtitles untouched
+            message = (f"{language_from_alpha2(srt_lang)} subtitles synchronization ended with an offset of "
+                       f"{result['offset_ms'] / 1000} seconds and a framerate scale factor of {result['ratio']:.2f}.")
+            if result['parts'] > 1:
+                message += f" The subtitles were split in {result['parts']} parts."
             os.replace(srtout, srt_path)
             # sync_subtitles() checks this
             self.sync_result = {'sync_was_successful': True}
-            self._log_history(result, video_path, srt_path, srt_lang, hi, forced, sonarr_series_id,
+            self._log_history(message, video_path, srt_path, srt_lang, hi, forced, sonarr_series_id,
                               sonarr_episode_id, radarr_id)
         except LapseUnavailable as e:
             logging.warning(f'BAZARR LAPSE is not available ({e}), using ffsubsync instead')
@@ -227,13 +232,8 @@ class LapseSyncer(SubSyncer):
                 errors.append(line)
 
     @staticmethod
-    def _log_history(result, video_path, srt_path, srt_lang, hi, forced, sonarr_series_id, sonarr_episode_id,
+    def _log_history(message, video_path, srt_path, srt_lang, hi, forced, sonarr_series_id, sonarr_episode_id,
                      radarr_id):
-        message = (f"{language_from_alpha2(srt_lang)} subtitles synchronization ended with an offset of "
-                   f"{result['offset_ms'] / 1000} seconds and a framerate scale factor of {result['ratio']:.2f}.")
-        if result['parts'] > 1:
-            message += f" The subtitles were split in {result['parts']} parts."
-
         if sonarr_series_id:
             prr = path_mappings.path_replace_reverse
         else:
