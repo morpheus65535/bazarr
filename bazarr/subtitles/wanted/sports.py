@@ -21,6 +21,7 @@ from app.database import (
     TableSportsEventsSubtitles, database, select, get_sports_subtitles,
 )
 from app.event_handler import event_stream
+from app.notifier import send_notifications_sports
 from app.jobs_queue import jobs_queue, JobCanceled
 from app.config import settings
 
@@ -46,6 +47,7 @@ _WANTED_SPORTS_EVENT_DETAILS_SELECT = select(TableSportsEvents.path,
                                              TableSportsEvents.audio_language,
                                              TableSportsEvents.sceneName,
                                              TableSportsEvents.title,
+                                             TableSportsLeagues.title.label('leagueTitle'),
                                              TableSportsLeagues.profileId,
                                              select(TableSportsEventsSubtitles.id)
                                              .where(TableSportsEventsSubtitles.sportsEventId == TableSportsEvents.id)
@@ -123,7 +125,7 @@ def _wanted_event(event, providers_list, due_languages=None, job_id=None, adapti
                                      languages,
                                      audio_language,
                                      event.sceneName or None,
-                                     event.title,
+                                     event.leagueTitle,
                                      'sports',
                                      event.profileId,
                                      check_if_still_required=True,
@@ -134,6 +136,8 @@ def _wanted_event(event, providers_list, due_languages=None, job_id=None, adapti
             found_any = True
             store_subtitles_sports(event.id)
             history_log_sports(1, event.sportarrLeagueId, event.id, result)
+            if hasattr(result, 'message'):
+                send_notifications_sports(event.sportarrLeagueId, event.id, result.message)
             event_stream(type='sports-league', action='update', payload=event.sportarrLeagueId)
             event_stream(type='sports-event-wanted', action='delete', payload=event.id)
 

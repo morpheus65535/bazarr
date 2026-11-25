@@ -21,7 +21,7 @@ from subtitles.pool import get_language_equals
 from subtitles.indexer.profile_requirements import calculate_missing_subtitles, \
     calculate_enhanced_missing_subtitles
 from subtitles.wanted_state import store_missing_subtitles
-from app.jobs_queue import jobs_queue
+from app.jobs_queue import jobs_queue, JobCanceled
 
 gc.enable()
 
@@ -150,6 +150,19 @@ def store_subtitles_sports(sports_event_id, use_cache=True):
             logging.exception(f"BAZARR unable to index external subtitles for this file {mapped_path}: {repr(e)}")
         else:
             for subtitle, language in subtitles.items():
+                valid_language = False
+                if language:
+                    if hasattr(language, 'alpha3'):
+                        valid_language = alpha2_from_alpha3(language.alpha3)
+                else:
+                    logging.debug(f"Skipping subtitles because we are unable to define language: {subtitle}")
+                    continue
+
+                if not valid_language:
+                    if hasattr(language, 'alpha3'):
+                        logging.debug(f'{language.alpha3} is an unsupported language code.')
+                    continue
+
                 subtitle_path = get_external_subtitles_path(mapped_path, subtitle)
 
                 try:
@@ -165,7 +178,7 @@ def store_subtitles_sports(sports_event_id, use_cache=True):
                                                'sportsEventId': sports_event_id,
                                                'language': custom.split(':')[0],
                                                'forced': custom.endswith(':forced'),
-                                               'hi': custom.endswith(':hi'),
+                                               'hi': custom.endswith((':hi', ':HI')),
                                                'path': path_mappings.path_replace_reverse_sports(subtitle_path),
                                                'size': subtitle_size})
 
@@ -289,8 +302,10 @@ def list_missing_subtitles_sports(
 def sports_full_scan_subtitles(job_id=None, use_cache=None, wait_for_completion=False):
     if not job_id:
         jobs_queue.add_job_from_function("Indexing all existing sports events subtitles", is_progress=True,
-                                         wait_for_completion=wait_for_completion)
+                                         wait_for_completion=wait_for_completion, is_cancellable=True)
         return
+    else:
+        job = jobs_queue.get_job(job_id=job_id)
 
     if use_cache is None:
         use_cache = settings.sportarr.use_ffprobe_cache
@@ -306,6 +321,9 @@ def sports_full_scan_subtitles(job_id=None, use_cache=None, wait_for_completion=
 
     jobs_queue.update_job_progress(job_id=job_id, progress_max=len(events), progress_message='Indexing')
     for i, event in enumerate(events, start=1):
+        if job.cancel_event.is_set():
+            raise JobCanceled
+
         jobs_queue.update_job_progress(job_id=job_id, progress_value=i,
                                        progress_message=f"{event.title} - {event.eventTitle}")
         store_subtitles_sports(event.id, use_cache=use_cache)

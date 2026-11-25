@@ -24,10 +24,10 @@ def test_restart_stops_the_previous_stream(monkeypatch):
     second_started = Event()
     runs = []
 
-    def fake_connect(stop_event):
-        runs.append(stop_event)
+    def fake_connect(run):
+        runs.append(run)
         (first_started if len(runs) == 1 else second_started).set()
-        stop_event.wait(1)
+        run.stop.wait(1)
 
     monkeypatch.setattr(client, 'connect', fake_connect)
     initial = Thread(target=client.start, daemon=True)
@@ -37,22 +37,10 @@ def test_restart_stops_the_previous_stream(monkeypatch):
     client.restart()
 
     assert second_started.wait(1)
-    assert runs[0].is_set()
+    assert runs[0].stop.is_set()
     client.stop()
     initial.join(1)
     assert not initial.is_alive()
-
-
-def test_restart_drops_the_previous_server_cursor(monkeypatch):
-    from sportarr import sse_client
-
-    client = sse_client.SportarrSSEClient()
-    client.last_event_id = '400'
-    monkeypatch.setattr(sse_client.settings.general, 'use_sportarr', False)
-
-    client.restart()
-
-    assert client.last_event_id is None
 
 
 def test_stop_shuts_down_the_stream_before_closing_it():

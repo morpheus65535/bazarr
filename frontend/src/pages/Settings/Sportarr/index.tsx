@@ -66,11 +66,11 @@ const SettingsSportarrView: FunctionComponent = () => {
         <Section header="Options">
           <Slider
             label="Minimum Score For Sports Events"
-            settingKey="settings-general-minimum_score"
+            settingKey="settings-general-minimum_score_sports"
           ></Slider>
           <Message>
-            A sports event carries a season and an episode number from Sportarr
-            and is scored the same way an episode is, so it shares this setting.
+            Subtitles with a score below the minimum will not be downloaded
+            automatically for sports events.
           </Message>
           <Chips
             label="Excluded Tags"
@@ -120,6 +120,11 @@ const SettingsSportarrView: FunctionComponent = () => {
           <Message>
             Both are needed to skip unmonitored events during a sync. Skipped
             events stay in the database rather than being removed from it.
+          </Message>
+          <Message>
+            Bazarr needs each league in its own folder. Turn on Create League
+            Folders in Sportarr, under Settings, Media Management. Leagues
+            without their own folder are skipped during a sync.
           </Message>
           <Check
             label="Use ffprobe Cache"

@@ -86,7 +86,7 @@ def test_sports_upload_works_without_a_league_profile(monkeypatch):
     monkeypatch.setattr(upload, 'save_subtitles', lambda *args, **kwargs: [
         SimpleNamespace(storage_path='/subs/event.en.srt')])
     monkeypatch.setattr(upload, 'sync_subtitles', lambda *args, **kwargs: None)
-    monkeypatch.setattr(upload, 'notify_sportarr', lambda *args, **kwargs: None)
+    monkeypatch.setattr(upload, 'send_notifications_sports', lambda *args, **kwargs: None)
     monkeypatch.setattr(upload, 'event_stream', lambda **kwargs: None)
     monkeypatch.setattr(upload, 'store_subtitles_sports', lambda *args, **kwargs: None)
     monkeypatch.setattr(upload, 'history_log_sports', lambda *args, **kwargs: None)

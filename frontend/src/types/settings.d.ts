@@ -52,6 +52,7 @@ declare namespace Settings {
     multithreading: boolean;
     minimum_score: number;
     minimum_score_movie: number;
+    minimum_score_sports: number;
     movie_default_enabled: boolean;
     movie_default_profile?: number;
     league_default_enabled: boolean;

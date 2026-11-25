@@ -8,7 +8,7 @@ from subliminal import Movie
 from guessit.jsonutils import GuessitEncoder
 
 from utilities.path_mappings import path_mappings
-from app.database import TableEpisodes, TableMovies, database, select
+from app.database import TableEpisodes, TableMovies, TableSportsEvents, database, select
 from utilities.video_analyzer import parse_video_metadata
 from languages.get_languages import language_from_alpha3
 
@@ -24,6 +24,12 @@ def refine_from_ffprobe(path, video):
             select(TableEpisodes.episode_file_id, TableEpisodes.file_size)
             .where(TableEpisodes.path == path_mappings.path_replace_reverse(path)))\
             .first()
+        if not file_id:
+            # A sports event is searched as an episode, but its row is in its own table.
+            file_id = database.execute(
+                select(TableSportsEvents.id.label('sports_event_id'), TableSportsEvents.file_size)
+                .where(TableSportsEvents.path == path_mappings.path_replace_reverse_sports(path))) \
+                .first()
 
     if not file_id:
         return video
@@ -31,6 +37,9 @@ def refine_from_ffprobe(path, video):
     if isinstance(video, Movie):
         data = parse_video_metadata(file=path, file_size=file_id.file_size,
                                     movie_file_id=file_id.movie_file_id)
+    elif hasattr(file_id, 'sports_event_id'):
+        data = parse_video_metadata(file=path, file_size=file_id.file_size,
+                                    sports_event_id=file_id.sports_event_id)
     else:
         data = parse_video_metadata(file=path, file_size=file_id.file_size,
                                     episode_file_id=file_id.episode_file_id)

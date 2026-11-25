@@ -32,25 +32,36 @@ def get_tags():
 
 
 def get_event_from_sportarr_api(apikey_sportarr, event_id):
-    """Read a single event, mainly to learn which league it belongs to.
+    """Read a single event.
 
-    Some stream frames name only the event, so the league has to be looked up
-    before anything can be synced.
+    Returns None when Sportarr says the event does not exist. Raises
+    requests.RequestException when Sportarr cannot answer, so the caller can
+    retry the change later instead of losing it.
     """
     url_sportarr_api_event = f"{url_api_sportarr()}events/{event_id}?apikey={apikey_sportarr}"
 
-    try:
-        r = requests.get(url_sportarr_api_event, timeout=int(settings.sportarr.http_timeout), verify=False,
-                         headers=HEADERS)
-        r.raise_for_status()
-    except requests.exceptions.RequestException:
-        logging.exception(f"BAZARR Error trying to get event {event_id} from Sportarr.")
-        return
-    except Exception as e:
-        logging.exception(f"Exception raised while getting event from Sportarr API: {e}")
-        return
-    else:
-        return r.json()
+    r = requests.get(url_sportarr_api_event, timeout=int(settings.sportarr.http_timeout), verify=False,
+                     headers=HEADERS)
+    if r.status_code == 404:
+        return None
+    r.raise_for_status()
+    return r.json()
+
+
+def get_league_from_sportarr_api(apikey_sportarr, league_id):
+    """Read a single league.
+
+    Returns None when Sportarr says the league does not exist. Raises
+    requests.RequestException when Sportarr cannot answer.
+    """
+    url_sportarr_api_league = f"{url_api_sportarr()}leagues/{league_id}?apikey={apikey_sportarr}"
+
+    r = requests.get(url_sportarr_api_league, timeout=int(settings.sportarr.http_timeout), verify=False,
+                     headers=HEADERS)
+    if r.status_code == 404:
+        return None
+    r.raise_for_status()
+    return r.json()
 
 
 def get_events_from_sportarr_api(apikey_sportarr, league_id):
@@ -63,10 +74,13 @@ def get_events_from_sportarr_api(apikey_sportarr, league_id):
     """
     events = []
     page = 1
+    total_records = None
 
     while True:
+        # showAll bypasses the league monitoring filters. Without it, an event
+        # that a filter hides is missing from the list and looks removed.
         url_sportarr_api_events = (f"{url_api_sportarr()}leagues/{league_id}/events?"
-                                   f"page={page}&pageSize=1000&apikey={apikey_sportarr}")
+                                   f"page={page}&pageSize=1000&showAll=true&apikey={apikey_sportarr}")
 
         try:
             r = requests.get(url_sportarr_api_events, timeout=int(settings.sportarr.http_timeout), verify=False,
@@ -95,20 +109,25 @@ def get_events_from_sportarr_api(apikey_sportarr, league_id):
         except ValueError:
             logging.exception("BAZARR Error trying to get events from Sportarr. Invalid response.")
             return
-        records = result.get('records', []) if isinstance(result, dict) else None
-        if not isinstance(records, list):
+        # A page without its records or its page count cannot prove the walk
+        # is complete, so it counts as a failed read.
+        records = result.get('records') if isinstance(result, dict) else None
+        total_pages = result.get('totalPages') if isinstance(result, dict) else None
+        if not isinstance(records, list) or type(total_pages) is not int:
             logging.debug(f'BAZARR Sportarr events sync returned an invalid payload for league {league_id}.')
             return
         events += records
+        if type(result.get('totalRecords')) is int:
+            total_records = result['totalRecords']
 
-        total_pages = result.get('totalPages', 1)
-        if type(total_pages) is not int:
-            # A partial walk read as complete would delete the missing events.
-            logging.debug(f'BAZARR Sportarr events sync returned an invalid page count for league {league_id}.')
-            return
         if page >= total_pages:
             break
         page += 1
+
+    if total_records is not None and len(events) != total_records:
+        # The list changed during the walk, so it may be missing events.
+        logging.debug(f'BAZARR Sportarr returned {len(events)} of {total_records} events for league {league_id}.')
+        return
 
     return events
 

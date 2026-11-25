@@ -27,11 +27,12 @@ from app.jobs_queue import jobs_queue
 from app.event_handler import event_stream
 from app.notifier import send_notifications
 from app.notifier import send_notifications_movie
+from app.notifier import send_notifications_sports
 from subtitles.indexer.series import store_subtitles
 from subtitles.indexer.movies import store_subtitles_movie
 from subtitles.indexer.sports import store_subtitles_sports
 from sportarr.history import history_log_sports
-from sportarr.notify import notify_sportarr
+from sportarr.media_refresh import refresh_sports_media_servers
 from subtitles.processing import ProcessSubtitlesResult
 
 from .sync import sync_subtitles
@@ -220,14 +221,14 @@ def manual_upload_subtitle(path, language, forced, hi, media_type, subtitle, fil
         event_stream(type='series', action='update', payload=episode_metadata.sonarrSeriesId)
         event_stream(type='episode-wanted', action='delete', payload=episode_metadata.sonarrEpisodeId)
     elif media_type == 'sports':
+        # Sportarr does not index subtitles. Refresh the media servers once the
+        # queued sync job is done so they see the synced file.
         sync_subtitles(video_path=path, srt_path=subtitle_path, srt_lang=uploaded_language_code2, percent_score=100,
                        sportarr_league_id=sports_metadata.sportarrLeagueId, forced=forced, hi=hi,
-                       sports_event_id=sports_metadata.id, job_id=job_id)
+                       sports_event_id=sports_metadata.id,
+                       callback=lambda: refresh_sports_media_servers(path))
         reversed_path = path_mappings.path_replace_reverse_sports(path)
         reversed_subtitles_path = path_mappings.path_replace_reverse_sports(subtitle_path)
-        # Sportarr rescans the league folder, which is how it learns the file is
-        # there. It has no per-event notify endpoint.
-        notify_sportarr(sports_metadata.sportarrLeagueId)
         event_stream(type='sports-league', action='update', payload=sports_metadata.sportarrLeagueId)
         event_stream(type='sports-event-wanted', action='delete', payload=sports_metadata.id)
     else:
@@ -278,6 +279,8 @@ def manual_upload_subtitle(path, language, forced, hi, media_type, subtitle, fil
             # maximum score.
             history_log_sports(4, sports_metadata.sportarrLeagueId, sportsEventId, result, fake_provider=provider,
                                fake_score=MAX_SCORES['episode'])
+            if not settings.general.dont_notify_manual_actions:
+                send_notifications_sports(sports_metadata.sportarrLeagueId, sportsEventId, result.message)
         else:
             store_subtitles_movie(radarrId)
             history_log_movie(4, radarrId, result, fake_provider=provider, fake_score=MAX_SCORES['movie'])

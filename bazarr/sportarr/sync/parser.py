@@ -1,7 +1,45 @@
 # coding=utf-8
 
+import re
+
 from app.config import settings
 from utilities.path_mappings import path_mappings
+
+# A quality name, for example WEBDL-1080p or Bluray-1080p Remux.
+QUALITY_NAME = re.compile(r'^([A-Za-z]+)-(\d{3,4})p\b', re.IGNORECASE)
+QUALITY_RESOLUTION = re.compile(r'^(\d{3,4})p$', re.IGNORECASE)
+# Sportarr writes 2160p as 4K or UHD when the file name does.
+RESOLUTION_ALIASES = {'4K': '2160p', 'UHD': '2160p'}
+# The source tokens Sportarr writes into a quality built from a file name.
+QUALITY_SOURCES = {'BLURAY', 'BD', 'BDREMUX', 'WEBDL', 'WEBRIP', 'WEB', 'HDTV', 'PDTV', 'SDTV', 'DVDRIP', 'DVD',
+                   'TELECINE', 'HDCAM', 'CAM', 'TELESYNC', 'TS', 'RAWHD'}
+
+
+def parse_quality(quality):
+    """Split a Sportarr quality string into the source and the resolution.
+
+    Sportarr sends two shapes. A grab keeps the quality name of the release,
+    for example WEBDL-1080p. An import parsed from a file name joins tokens
+    with spaces, for example 1080P WEBDL x264 AAC.
+    """
+    if not isinstance(quality, str) or not quality.strip():
+        return None, None
+
+    match = QUALITY_NAME.match(quality.strip())
+    if match:
+        return match.group(1), f'{match.group(2)}p'
+
+    video_format = None
+    video_resolution = None
+    for token in quality.split():
+        resolution = QUALITY_RESOLUTION.match(token)
+        if resolution and not video_resolution:
+            video_resolution = f'{resolution.group(1)}p'
+        elif token.upper() in RESOLUTION_ALIASES and not video_resolution:
+            video_resolution = RESOLUTION_ALIASES[token.upper()]
+        elif token.upper() in QUALITY_SOURCES and not video_format:
+            video_format = token
+    return video_format, video_resolution
 
 
 def eventParser(event, file):
@@ -11,15 +49,7 @@ def eventParser(event, file):
     event, and each needs its own subtitles, so the file is the unit here and
     the event is what groups them.
     """
-    video_format = None
-    video_resolution = None
-    if file.get('quality'):
-        # Sportarr reports quality as source and resolution joined, for
-        # example WEBDL-1080p, which is the shape Sonarr uses too.
-        parts = file['quality'].split('-')
-        video_format = parts[0]
-        if len(parts) > 1:
-            video_resolution = parts[1]
+    video_format, video_resolution = parse_quality(file.get('quality'))
 
     season = event.get('seasonNumber')
     if season is None:

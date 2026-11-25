@@ -7,7 +7,8 @@ import re
 from subliminal import Episode, Movie
 
 from utilities.path_mappings import path_mappings
-from app.database import TableShows, TableEpisodes, TableMovies, database, select
+from app.database import TableShows, TableEpisodes, TableMovies, TableSportsEvents, TableSportsLeagues, database, \
+    select
 
 from .utils import convert_to_guessit
 
@@ -81,6 +82,8 @@ def refine_from_db(path, video):
 
             video.sonarrSeriesId = data.sonarrSeriesId
             video.sonarrEpisodeId = data.sonarrEpisodeId
+        else:
+            _refine_from_sports_event(path, video)
     elif isinstance(video, Movie):
         data = database.execute(
             select(TableMovies.title,
@@ -126,3 +129,50 @@ def refine_from_db(path, video):
             video.radarrId = data.radarrId
 
     return video
+
+
+def _refine_from_sports_event(path, video):
+    """Refine an episode with the sports event stored for this path, if there is one.
+
+    A sports file is searched as an episode. Without this, the series, season and episode come from guessit, which
+    reads them from the folder names and gets them wrong.
+
+    :param str path: path of the video file as known to Bazarr.
+    :param video: the ``Episode`` to refine in place.
+    """
+    data = database.execute(
+        select(TableSportsLeagues.title.label('leagueTitle'),
+               TableSportsEvents.title.label('eventTitle'),
+               TableSportsEvents.season,
+               TableSportsEvents.episode,
+               TableSportsEvents.format,
+               TableSportsEvents.resolution,
+               TableSportsEvents.video_codec,
+               TableSportsEvents.audio_codec,
+               TableSportsEvents.sportarrLeagueId,
+               TableSportsEvents.id)
+        .select_from(TableSportsEvents)
+        .join(TableSportsLeagues)
+        .where(TableSportsEvents.path == path_mappings.path_replace_reverse_sports(path))) \
+        .first()
+
+    if not data:
+        return
+
+    video.series = data.leagueTitle
+    video.season = int(data.season)
+    video.episode = int(data.episode)
+    video.title = data.eventTitle
+    # A league has no alternative titles and no tvdb, imdb or tmdb id.
+    video.alternative_series = []
+    if not video.source and data.format:
+        video.source = convert_to_guessit('source', str(data.format))
+    if not video.resolution and data.resolution:
+        video.resolution = str(data.resolution)
+    if not video.video_codec and data.video_codec:
+        video.video_codec = convert_to_guessit('video_codec', data.video_codec)
+    if not video.audio_codec and data.audio_codec:
+        video.audio_codec = convert_to_guessit('audio_codec', data.audio_codec)
+
+    video.sportarrLeagueId = data.sportarrLeagueId
+    video.sportsEventId = data.id

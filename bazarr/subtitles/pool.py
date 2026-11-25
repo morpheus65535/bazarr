@@ -71,7 +71,7 @@ def _get_embedded_pool(media_type, profile_id=None):
         pool.update(
             [_EMBEDDED_PROVIDER],
             get_providers_auth(),
-            get_blacklist() if media_type == "series" else get_blacklist_movie(),
+            _blacklist_for(media_type),
             get_ban_list(profile_id),
             get_language_equals(),
         )

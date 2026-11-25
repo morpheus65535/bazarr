@@ -1,6 +1,6 @@
 import { FunctionComponent, useCallback, useMemo } from "react";
 import { Link } from "react-router";
-import { Anchor, Container, Group, Progress } from "@mantine/core";
+import { Anchor, Container, Group, Progress, Tooltip } from "@mantine/core";
 import { useDocumentTitle } from "@mantine/hooks";
 import { faBookmark as farBookmark } from "@fortawesome/free-regular-svg-icons";
 import { faBookmark, faWrench } from "@fortawesome/free-solid-svg-icons";
@@ -51,10 +51,11 @@ const SportsView: FunctionComponent = () => {
         id: "status",
         cell: ({ row: { original } }) => (
           <Group gap="xs" wrap="nowrap">
-            <FontAwesomeIcon
-              title={original.monitored ? "monitored" : "unmonitored"}
-              icon={original.monitored ? faBookmark : farBookmark}
-            ></FontAwesomeIcon>
+            <Tooltip label={original.monitored ? "Monitored" : "Unmonitored"}>
+              <FontAwesomeIcon
+                icon={original.monitored ? faBookmark : farBookmark}
+              ></FontAwesomeIcon>
+            </Tooltip>
           </Group>
         ),
       },

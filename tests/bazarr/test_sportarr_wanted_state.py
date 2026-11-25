@@ -107,7 +107,7 @@ def search(monkeypatch):
     def generate_subtitles(path, languages, audio_language, scene_name, title, media_type, profile_id,
                            attempted_languages=None, **kwargs):
         calls.append({'path': path, 'languages': list(languages), 'scene_name': scene_name,
-                      'media_type': media_type})
+                      'title': title, 'media_type': media_type})
         if attempted_languages is not None:
             attempted_languages.update(languages)
         yield from results.get(path, [])
@@ -122,11 +122,27 @@ def search(monkeypatch):
     ])
     monkeypatch.setattr(wanted_sports, 'history_log_sports', lambda *args, **kwargs: None)
     monkeypatch.setattr(wanted_sports, 'event_stream', lambda **kwargs: None)
+    notifications = []
+    monkeypatch.setattr(wanted_sports, 'send_notifications_sports',
+                        lambda *args: notifications.append(args))
     monkeypatch.setattr(wanted_sports.path_mappings, 'path_replace_sports', lambda path: path)
     monkeypatch.setattr(wanted_sports.settings.sportarr, 'excluded_tags', [])
     monkeypatch.setattr(wanted_sports.settings.sportarr, 'excluded_sports', [])
     monkeypatch.setattr(wanted_sports.settings.sportarr, 'only_monitored', False)
-    return SimpleNamespace(calls=calls, results=results)
+    return SimpleNamespace(calls=calls, results=results, notifications=notifications)
+
+
+def test_wanted_search_uses_the_league_title_and_notifies(sports_session, search):
+    # The league download and the manual search pass the league title too.
+    # Release names start with the league, not with the event.
+    _add_league(sports_session)
+    _add_event(sports_session, 1, missing=['en'])
+    search.results['/sports/1/1.mkv'] = [SimpleNamespace(message='found')]
+
+    wanted_sports.wanted_download_subtitles_sports(1)
+
+    assert search.calls[0]['title'] == 'League 1'
+    assert search.notifications == [(1, 1, 'found')]
 
 
 def test_failed_search_records_every_searched_language(sports_session, search):

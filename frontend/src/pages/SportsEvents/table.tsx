@@ -161,13 +161,15 @@ const Table = forwardRef<TableInstance<Item.SportsEvent> | null, Props>(
                   label="History"
                   disabled={disabled}
                   onClick={() => {
+                    const { title, partName } = row.original;
+                    const label = partName ? `${title} - ${partName}` : title;
                     modals.openContextModal(
                       SportsEventHistoryModal,
                       {
                         event: row.original,
                       },
                       {
-                        title: `History - ${row.original.title}`,
+                        title: `History - ${label}`,
                       },
                     );
                   }}

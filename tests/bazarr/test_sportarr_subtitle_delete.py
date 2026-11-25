@@ -13,7 +13,7 @@ def test_sports_delete_sends_delete_action_to_external_webhook(monkeypatch, tmp_
     monkeypatch.setattr(delete.path_mappings, "path_replace_reverse_sports", lambda path: path)
     monkeypatch.setattr(delete, "store_subtitles_sports", lambda event_id: None)
     monkeypatch.setattr(delete, "history_log_sports", lambda *args, **kwargs: None)
-    monkeypatch.setattr(delete, "notify_sportarr", lambda league_id: None)
+    monkeypatch.setattr(delete, "refresh_sports_media_servers", lambda path: None)
     monkeypatch.setattr(delete, "event_stream", lambda **kwargs: None)
     monkeypatch.setattr(delete, "call_external_webhook", webhook)
 

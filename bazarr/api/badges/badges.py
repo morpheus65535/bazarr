@@ -82,10 +82,11 @@ class Badges(Resource):
         live_str = "LIVE" if settings.general.show_live_badge else ""
 
         if args.no_signalr:
-            sonarr_signalr = radarr_signalr = "OFF"
+            sonarr_signalr = radarr_signalr = sportarr_sse = "OFF"
         else:
             sonarr_signalr = live_str if sonarr_signalr_client.connected else "DOWN"
             radarr_signalr = live_str if radarr_signalr_client.connected else "DOWN"
+            sportarr_sse = live_str if sportarr_sse_client.connected else "DOWN"
 
         result = {
             "episodes": missing_episodes_count,
@@ -95,7 +96,7 @@ class Badges(Resource):
             "status": health_issues,
             'sonarr_signalr': sonarr_signalr,
             'radarr_signalr': radarr_signalr,
-            'sportarr_sse': live_str if sportarr_sse_client.connected else "DOWN",
+            'sportarr_sse': sportarr_sse,
             'announcements': len(get_all_announcements()),
         }
         return marshal(result, self.get_model)

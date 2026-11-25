@@ -13,7 +13,7 @@ from flask import Flask
 from datetime import datetime
 from typing import List
 
-from sqlalchemy import create_engine, inspect, DateTime, Float, ForeignKey, Index, Integer, LargeBinary, Text, text, \
+from sqlalchemy import create_engine, inspect, DateTime, Float, ForeignKey, Integer, LargeBinary, Text, text, \
     BigInteger, Boolean, Index
 # importing here to be indirectly imported in other modules later
 from sqlalchemy import update, delete, select, func, UniqueConstraint  # noqa W0611

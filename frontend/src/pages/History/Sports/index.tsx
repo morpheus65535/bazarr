@@ -1,5 +1,6 @@
 import { FunctionComponent, useMemo } from "react";
-import { Badge, Text } from "@mantine/core";
+import { Link } from "react-router";
+import { Anchor, Badge, Text } from "@mantine/core";
 import { faFileExcel, faInfoCircle } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -28,6 +29,18 @@ const SportsHistoryView: FunctionComponent = () => {
       {
         header: "League",
         accessorKey: "leagueTitle",
+        cell: ({
+          row: {
+            original: { sportarrLeagueId, leagueTitle },
+          },
+        }) => {
+          const target = `/sports/${sportarrLeagueId}`;
+          return (
+            <Anchor className="table-primary" component={Link} to={target}>
+              {leagueTitle}
+            </Anchor>
+          );
+        },
       },
       {
         header: "Event",

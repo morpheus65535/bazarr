@@ -17,6 +17,7 @@ from app.jobs_queue import jobs_queue, JobCanceled
 from app.config import settings
 from app.database import get_profile_id
 from app.event_handler import event_stream
+from app.notifier import send_notifications_sports
 
 from ..download import generate_subtitles
 from ..language_utils import has_unindexed_external_subtitle, resolve_audio_language
@@ -202,6 +203,8 @@ def sports_event_download_subtitles(no: int | None, job_id: int | None = None, j
                 if result:
                     store_subtitles_sports(event.id)
                     history_log_sports(1, event.sportarrLeagueId, event.id, result)
+                    if hasattr(result, 'message'):
+                        send_notifications_sports(event.sportarrLeagueId, event.id, result.message)
                     downloaded_count += 1
         outcome_msg = (f"{downloaded_count} subtitle(s) downloaded"
                        if downloaded_count else "No subtitles found")
@@ -270,6 +273,8 @@ def sports_event_download_specific_subtitles(sportarr_league_id, sports_event_id
             result = result[0]
             store_subtitles_sports(sports_event_id)
             history_log_sports(1, sportarr_league_id, sports_event_id, result)
+            if hasattr(result, 'message'):
+                send_notifications_sports(sportarr_league_id, sports_event_id, result.message)
         else:
             event_stream(type='sports-event', payload=sports_event_id)
             return '', 204

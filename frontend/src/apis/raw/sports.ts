@@ -57,28 +57,10 @@ class SportsApi extends BaseApi {
     return response.data.map(camelCaseKeys);
   }
 
-  async byEventId(eventid: number[]) {
-    const response = await this.get<DataWrapper<Item.RawSportsEvent[]>>(
-      "/events",
-      { eventid },
-    );
-    return response.data.map(camelCaseKeys);
-  }
-
   async wanted(params: Parameter.Range) {
     const response = await this.get<
       DataWrapperWithTotal<Wanted.RawSportsEvent>
     >("/wanted", params);
-    return {
-      ...response,
-      data: response.data.map(camelCaseKeys),
-    };
-  }
-
-  async wantedBy(eventid: number[]) {
-    const response = await this.get<
-      DataWrapperWithTotal<Wanted.RawSportsEvent>
-    >("/wanted", { eventid });
     return {
       ...response,
       data: response.data.map(camelCaseKeys),

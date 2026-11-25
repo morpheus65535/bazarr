@@ -27,6 +27,7 @@ from app.event_handler import event_stream
 from utilities.binaries import get_binary
 from radarr.blacklist import blacklist_log_movie
 from sonarr.blacklist import blacklist_log
+from sportarr.blacklist import blacklist_log_sports
 from utilities.analytics import event_tracker
 
 _TRACEBACK_RE = re.compile(r'File "(.*?providers[\\/].*?)", line (\d+)')
@@ -412,7 +413,14 @@ def blacklist_subtitle(name, subs_id, media_type, ids, language):
         language_str = language.basename
 
     if ids:
-        if media_type == "series":
+        # A provider reports a sports subtitle as an episode, so the sports ids decide.
+        if media_type == "sports" or ids.get('sportsEventId'):
+            if ids.get('sportarrLeagueId') and ids.get('sportsEventId'):
+                blacklist_log_sports(ids['sportarrLeagueId'], ids['sportsEventId'], name, subs_id, language_str)
+            else:
+                logging.debug(f'BAZARR cannot blacklist subtitle {subs_id} from {name}: unknown league or '
+                              f'event id')
+        elif media_type == "series":
             if ids.get('sonarrSeriesId') and ids.get('sonarrEpisodeId'):
                 blacklist_log(ids['sonarrSeriesId'], ids['sonarrEpisodeId'], name, subs_id, language_str)
             else:

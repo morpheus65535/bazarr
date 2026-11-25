@@ -12,7 +12,6 @@ from app.database import TableShows, TableEpisodes, TableMovies, TableSportsEven
 from utilities.analytics import event_tracker
 from radarr.notify import notify_radarr
 from sonarr.notify import notify_sonarr
-from sportarr.notify import notify_sportarr
 from plex.operations import plex_set_movie_added_date_now, plex_set_episode_added_date_now, plex_refresh_item
 from jellyfin.operations import jellyfin_refresh_item
 from app.event_handler import event_stream
@@ -163,7 +162,7 @@ def process_subtitle(subtitle, media_type, audio_language, path, max_score, is_u
                                           season=episode_metadata.season, episode=episode_metadata.episode,
                                           tvdb_id=episode_metadata.tvdbId)
         elif media_type == 'sports':
-            notify_sportarr(sports_metadata.sportarrLeagueId)
+            # Sportarr does not index subtitles, so only the media servers need to know.
             from sportarr.media_refresh import refresh_sports_media_servers
             refresh_sports_media_servers(path)
         else:

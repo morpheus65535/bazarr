@@ -32,6 +32,7 @@ class WantedEpisode(WantedMedia, Protocol):
 class WantedSportsEvent(WantedMedia, Protocol):
     id: int
     sportarrLeagueId: int
+    leagueTitle: str | None
 
 
 def get_due_missing_languages(missing_subtitles, failed_attempts, adaptive_search_policy=None):

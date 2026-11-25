@@ -28,6 +28,9 @@ def test_event_removal_notifies_the_sports_view(monkeypatch):
     def execute(statement):
         calls.append(statement)
         if len(calls) == 1:
+            # The league row exists.
+            return SimpleNamespace(first=lambda: (7,))
+        if len(calls) == 2:
             return SimpleNamespace(all=lambda: [(event,)])
         return SimpleNamespace(first=lambda: None)
 
@@ -44,15 +47,15 @@ def test_event_removal_notifies_the_sports_view(monkeypatch):
     assert sent == [{'type': 'sports-event', 'action': 'delete', 'payload': 42}]
 
 
-def test_league_frame_syncs_the_league_without_its_events(monkeypatch):
+def test_frame_for_an_unknown_resource_syncs_nothing(monkeypatch):
     from sportarr import sse_client
 
     calls = []
-    monkeypatch.setattr(sse_client, 'update_one_league',
-                        lambda league_id, action, **kwargs: calls.append(('league', league_id, action, kwargs)))
-    monkeypatch.setattr(sse_client, 'sync_events', lambda league_id: calls.append(('events', league_id)))
+    monkeypatch.setattr(sse_client, 'update_one_league', lambda *args, **kwargs: calls.append('league'))
+    monkeypatch.setattr(sse_client, 'sync_events', lambda league_id: calls.append('events'))
+    monkeypatch.setattr(sse_client, 'get_event_from_sportarr_api', lambda **kwargs: calls.append('event'))
 
+    # Sportarr sends event and file frames only. Each names its event.
     sse_client.SportarrSSEClient().dispatch('{"resourceType": "league", "action": "updated", "leagueId": 3}')
 
-    # Sportarr sends event frames for event changes, so a league frame only syncs the league.
-    assert calls == [('league', 3, 'updated', {'is_sse': True})]
+    assert calls == []

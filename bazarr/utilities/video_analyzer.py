@@ -414,24 +414,6 @@ def parse_video_metadata(file: str, file_size: int, episode_file_id: int | None 
     and written back to the database as the new cache value for the
     corresponding episode or movie file.
 
-    @type file: string
-    @param file: Properly mapped path of a video file
-    @type file_size: int
-    @param file_size: File size in bytes of the video file
-    @type episode_file_id: int or None
-    @param episode_file_id: episode ID of the video file from Sonarr (or None if it's a movie)
-    @type movie_file_id: int or None
-    @param movie_file_id: movie ID of the video file from Radarr (or None if it's an episode)
-    @type sports_event_id: int or None
-    @param sports_event_id: row ID of the sports event part from Sportarr (or None if it's not a sports event)
-    @type use_cache: bool
-    @param use_cache:
-
-    The analysis is delegated to the ``knowit`` library with the
-    appropriate provider. On success, the resulting metadata is pickled
-    and written back to the database as the new cache value for the
-    corresponding episode or movie file.
-
     :param file: Path to the video file (or ``.strm`` file) to analyze.
     :param file_size: Size of the video file in bytes, used to validate
         the cache.
@@ -439,6 +421,8 @@ def parse_video_metadata(file: str, file_size: int, episode_file_id: int | None 
         database, if the video belongs to an episode.
     :param movie_file_id: Identifier of the movie file in the database,
         if the video belongs to a movie.
+    :param sports_event_id: Row id of the sports event part in the
+        database, if the video belongs to a sports event.
     :param use_cache: Whether to try to reuse the cached metadata stored
         in the database before analyzing the file.
     :return: The parsed video metadata, or ``None`` if the file cannot be

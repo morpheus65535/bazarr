@@ -396,6 +396,8 @@ class SZProviderPool(ProviderPool):
                 s.radarrId = video.radarrId if hasattr(video, 'radarrId') else None
                 s.sonarrSeriesId = video.sonarrSeriesId if hasattr(video, 'sonarrSeriesId') else None
                 s.sonarrEpisodeId = video.sonarrEpisodeId if hasattr(video, 'sonarrEpisodeId') else None
+                s.sportarrLeagueId = video.sportarrLeagueId if hasattr(video, 'sportarrLeagueId') else None
+                s.sportsEventId = video.sportsEventId if hasattr(video, 'sportsEventId') else None
 
                 s.plex_media_fps = float(video.fps) if video.fps else None
                 out.append(s)
@@ -408,6 +410,8 @@ class SZProviderPool(ProviderPool):
                 'radarrId': video.radarrId if hasattr(video, 'radarrId') else None,
                 'sonarrSeriesId': video.sonarrSeriesId if hasattr(video, 'sonarrSeriesId') else None,
                 'sonarrEpisodeId': video.sonarrEpisodeId if hasattr(video, 'sonarrEpisodeId') else None,
+                'sportarrLeagueId': video.sportarrLeagueId if hasattr(video, 'sportarrLeagueId') else None,
+                'sportsEventId': video.sportsEventId if hasattr(video, 'sportsEventId') else None,
             }
             logger.exception('Unexpected error in provider %r: %s', provider, traceback.format_exc())
             self.throttle_callback(provider, e, ids=ids, language=list(languages)[0] if len(languages) else None)
@@ -473,6 +477,8 @@ class SZProviderPool(ProviderPool):
             'radarrId': subtitle.radarrId if hasattr(subtitle, 'radarrId') else None,
             'sonarrSeriesId': subtitle.sonarrSeriesId if hasattr(subtitle, 'sonarrSeriesId') else None,
             'sonarrEpisodeId': subtitle.sonarrEpisodeId if hasattr(subtitle, 'sonarrEpisodeId') else None,
+            'sportarrLeagueId': subtitle.sportarrLeagueId if hasattr(subtitle, 'sportarrLeagueId') else None,
+            'sportsEventId': subtitle.sportsEventId if hasattr(subtitle, 'sportsEventId') else None,
         }
 
         # retry downloading on failure until settings' download retry limit hit

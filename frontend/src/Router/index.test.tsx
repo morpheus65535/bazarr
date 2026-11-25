@@ -3,6 +3,7 @@ import { createBrowserRouter } from "react-router";
 import { vi } from "vitest";
 import { useBadges } from "@/apis/hooks";
 import { useEnabledStatus } from "@/apis/hooks/site";
+import BlacklistSportsView from "@/pages/Blacklist/Sports";
 import { rawRender } from "@/tests";
 import { Router } from "./index";
 import { CustomRouteObject } from "./type";
@@ -138,5 +139,71 @@ describe("Settings routes", () => {
     expect(route?.hidden).toBe(true);
     expect(route?.name).toBeUndefined();
     expect(route && getRedirectTarget(route)).toBe(target);
+  });
+});
+
+describe("Blacklist routes", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  const getBlacklistRoute = (status: {
+    sonarr: boolean;
+    radarr: boolean;
+    sportarr: boolean;
+  }): CustomRouteObject | undefined => {
+    mockedUseBadges.mockReturnValue({ data: undefined } as ReturnType<
+      typeof useBadges
+    >);
+    mockedUseEnabledStatus.mockReturnValue(status);
+
+    rawRender(<Router />);
+
+    const routes = mockedCreateBrowserRouter.mock.calls.at(-1)?.[0] as
+      CustomRouteObject[] | undefined;
+    const root = routes?.find((route) => route.path === "/");
+    return root?.children?.find((route) => route.path === "blacklist");
+  };
+
+  it("shows the sports blacklist when only Sportarr is enabled", () => {
+    const blacklist = getBlacklistRoute({
+      sonarr: false,
+      radarr: false,
+      sportarr: true,
+    });
+    const sports = (
+      blacklist?.children as CustomRouteObject[] | undefined
+    )?.find((route) => route.path === "sports");
+
+    expect(blacklist?.hidden).toBe(false);
+    expect(sports?.name).toBe("Sports");
+    expect(sports?.hidden).toBe(false);
+    expect((sports?.element as ReactElement | undefined)?.type).toBe(
+      BlacklistSportsView,
+    );
+  });
+
+  it("hides the sports blacklist when Sportarr is disabled", () => {
+    const blacklist = getBlacklistRoute({
+      sonarr: true,
+      radarr: false,
+      sportarr: false,
+    });
+    const sports = (
+      blacklist?.children as CustomRouteObject[] | undefined
+    )?.find((route) => route.path === "sports");
+
+    expect(blacklist?.hidden).toBe(false);
+    expect(sports?.hidden).toBe(true);
+  });
+
+  it("hides the blacklist menu when no library is enabled", () => {
+    const blacklist = getBlacklistRoute({
+      sonarr: false,
+      radarr: false,
+      sportarr: false,
+    });
+
+    expect(blacklist?.hidden).toBe(true);
   });
 });
