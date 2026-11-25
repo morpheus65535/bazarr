@@ -155,6 +155,11 @@ def _float_or_default(value, default, warning_label):
 
 
 def _create_subsyncer():
+    if settings.subsync.engine == 'lapse':
+        from subtitles.tools.lapse import LapseSyncer
+
+        return LapseSyncer()
+
     from subtitles.tools.subsyncer import SubSyncer
 
     return SubSyncer()

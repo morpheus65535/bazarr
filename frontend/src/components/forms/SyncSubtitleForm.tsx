@@ -16,6 +16,7 @@ import {
   useRefTracksByEpisodeId,
   useRefTracksByMovieId,
   useSubtitleAction,
+  useSystemSettings,
 } from "@/apis/hooks";
 import {
   GroupedSelector,
@@ -137,6 +138,8 @@ const SyncSubtitleForm: FunctionComponent<Props> = ({
 
   const { mutateAsync, isPending } = useSubtitleAction();
   const modals = useModals();
+  const settings = useSystemSettings();
+  const isLapse = settings.data?.subsync.engine === "lapse";
 
   const subtitle = selections[0];
 
@@ -209,55 +212,59 @@ const SyncSubtitleForm: FunctionComponent<Props> = ({
           options={subtitles}
           {...form.getInputProps("reference")}
         ></GroupedSelector>
-        <Selector
-          clearable
-          label="Max Offset Seconds"
-          options={syncMaxOffsetSecondsOptions}
-          placeholder="Use default from settings"
-          {...form.getInputProps("maxOffsetSeconds")}
-        ></Selector>
-        <Checkbox
-          label="No Fix Framerate"
-          {...form.getInputProps("noFixFramerate")}
-        ></Checkbox>
-        {!form.values.noFixFramerate && (
+        {!isLapse && (
           <>
-            <Checkbox
-              label="Golden-Section Search"
-              {...form.getInputProps("gss")}
-            ></Checkbox>
             <Selector
               clearable
-              label="Max Framerate Deviation"
-              options={qualityMaxFramerateDeviationOptions}
+              label="Max Offset Seconds"
+              options={syncMaxOffsetSecondsOptions}
               placeholder="Use default from settings"
-              {...form.getInputProps("qualityMaxFramerateDev")}
+              {...form.getInputProps("maxOffsetSeconds")}
+            ></Selector>
+            <Checkbox
+              label="No Fix Framerate"
+              {...form.getInputProps("noFixFramerate")}
+            ></Checkbox>
+            {!form.values.noFixFramerate && (
+              <>
+                <Checkbox
+                  label="Golden-Section Search"
+                  {...form.getInputProps("gss")}
+                ></Checkbox>
+                <Selector
+                  clearable
+                  label="Max Framerate Deviation"
+                  options={qualityMaxFramerateDeviationOptions}
+                  placeholder="Use default from settings"
+                  {...form.getInputProps("qualityMaxFramerateDev")}
+                ></Selector>
+              </>
+            )}
+            <Divider></Divider>
+            <Text size="sm" fw={500}>
+              Quality Checks
+            </Text>
+            <Text size="xs" c="dimmed">
+              Alignments failing these checks are rejected and the original
+              subtitles are left untouched. Leave empty to use defaults from
+              settings.
+            </Text>
+            <Selector
+              clearable
+              label="Minimum Quality Score"
+              options={qualityMinScoreOptions}
+              placeholder="Use default from settings"
+              {...form.getInputProps("qualityMinScore")}
+            ></Selector>
+            <Selector
+              clearable
+              label="Quality Max Offset Seconds"
+              options={qualityMaxOffsetSecondsOptions}
+              placeholder="Use default from settings"
+              {...form.getInputProps("qualityMaxOffsetSeconds")}
             ></Selector>
           </>
         )}
-        <Divider></Divider>
-        <Text size="sm" fw={500}>
-          Quality Checks
-        </Text>
-        <Text size="xs" c="dimmed">
-          Alignments failing these checks are rejected and the original
-          subtitles are left untouched. Leave empty to use defaults from
-          settings.
-        </Text>
-        <Selector
-          clearable
-          label="Minimum Quality Score"
-          options={qualityMinScoreOptions}
-          placeholder="Use default from settings"
-          {...form.getInputProps("qualityMinScore")}
-        ></Selector>
-        <Selector
-          clearable
-          label="Quality Max Offset Seconds"
-          options={qualityMaxOffsetSecondsOptions}
-          placeholder="Use default from settings"
-          {...form.getInputProps("qualityMaxOffsetSeconds")}
-        ></Selector>
         <Divider></Divider>
         <Button type="submit" loading={isPending}>
           Sync

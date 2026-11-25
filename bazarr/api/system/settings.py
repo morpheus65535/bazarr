@@ -279,3 +279,19 @@ class SystemTranslatorTest(Resource):
                 'message': f'Connection successful. Test translation: {translation}',
             }
         }
+
+
+@api_ns_system_settings.route('system/lapse/test')
+class SystemLapseTest(Resource):
+    @authenticate
+    def post(self):
+        """Test LAPSE using the submitted, unsaved URL or executable path."""
+        from subtitles.tools.lapse import check_lapse
+
+        try:
+            version = check_lapse(url=(request.form.get('url') or '').strip(),
+                                  path=(request.form.get('path') or '').strip())
+        except RuntimeError as error:
+            return {'data': {'success': False, 'message': str(error)}}
+
+        return {'data': {'success': True, 'message': f'Connected to LAPSE {version}'}}

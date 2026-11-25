@@ -131,6 +131,9 @@ declare namespace Settings {
 
   interface Subsync {
     use_subsync: boolean;
+    engine: string;
+    lapse_path: string;
+    lapse_url: string;
     use_subsync_threshold: boolean;
     subsync_threshold: number;
     use_subsync_movie_threshold: boolean;
