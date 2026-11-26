@@ -1,7 +1,11 @@
 import { FunctionComponent, useMemo } from "react";
 import { Link } from "react-router";
 import { Anchor, Badge, Text } from "@mantine/core";
-import { faFileExcel, faInfoCircle } from "@fortawesome/free-solid-svg-icons";
+import {
+  faFileExcel,
+  faInfoCircle,
+  faRecycle,
+} from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   useSportsAddBlacklist,
@@ -132,6 +136,25 @@ const SportsHistoryView: FunctionComponent = () => {
               <FontAwesomeIcon size="sm" icon={faInfoCircle}></FontAwesomeIcon>
             </TextPopover>
           );
+        },
+      },
+      {
+        header: "Upgradable",
+        accessorKey: "upgradable",
+        cell: ({
+          row: {
+            original: { upgradable },
+          },
+        }) => {
+          if (upgradable) {
+            return (
+              <TextPopover text="This Subtitle File Is Eligible For An Upgrade.">
+                <FontAwesomeIcon size="sm" icon={faRecycle}></FontAwesomeIcon>
+              </TextPopover>
+            );
+          } else {
+            return null;
+          }
         },
       },
       {

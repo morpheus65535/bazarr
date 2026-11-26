@@ -821,3 +821,107 @@ def test_stream_league_sync_stores_the_monitored_flag_from_sportarr(sports_db, s
     # The row follows Sportarr, so later frames are not handed to a league sync again.
     assert sports_db.execute(db.select(db.TableSportsLeagues.monitored)).scalar_one() == 'True'
     assert ('league sync', 1) in calls
+
+
+@pytest.mark.parametrize('change', ['stop', 'sportarr off'])
+def test_stop_while_start_reads_the_cursor_keeps_the_client_stopped(stream, monkeypatch, change):
+    client, calls, _ = stream
+    read_cursor = client.load_cursor
+
+    def load_cursor_then_change(run):
+        read_cursor(run)
+        if change == 'stop':
+            client.stop()
+        else:
+            monkeypatch.setattr(sse_client.settings.general, 'use_sportarr', False)
+
+    monkeypatch.setattr(client, 'load_cursor', load_cursor_then_change)
+
+    # A start that ran anyway would connect, and this script would end it.
+    run_cycles(client, monkeypatch, [[]])
+
+    assert FakeSession.urls == []
+    assert client._run is None
+
+
+@pytest.mark.parametrize('data', [
+    pytest.param('not json', id='invalid JSON'),
+    pytest.param('[17]', id='not an object'),
+    pytest.param(json.dumps({'resourceType': 'file', 'action': 'imported', 'eventId': '17'}), id='no event id'),
+])
+def test_unreadable_frame_is_owed_to_a_full_sync(stream, data, caplog):
+    client, calls, cursor_file = stream
+    run = begin(client, cursor=40)
+    FakeSession.scripts = [['id: 41', 'event: file.imported', f'data: {data}', '']]
+
+    client.connect(run)
+
+    # The stream cannot send the change again, so the cursor moves on and the debt covers it.
+    assert run.last_event_id == 41
+    assert calls_of(calls, 'read event', 'event sync') == []
+    assert ('full sync',) in calls
+    assert saved(cursor_file)['fullSyncOwed'] is True
+    assert 'could not read Sportarr stream frame 41' in caplog.text
+
+
+def test_frame_of_another_resource_moves_the_cursor_without_a_debt(stream):
+    client, calls, cursor_file = stream
+    run = begin(client, cursor=40)
+    FakeSession.scripts = [frame(41, {'resourceType': 'league', 'action': 'updated', 'leagueId': 3})]
+
+    client.connect(run)
+
+    assert run.last_event_id == 41
+    assert ('full sync',) not in calls
+    assert saved(cursor_file)['fullSyncOwed'] is False
+
+
+@pytest.mark.parametrize('reason', ['cursor ahead', 'cursor ahead of server'])
+def test_resync_moves_a_cursor_that_is_past_the_server_back(stream, caplog, reason):
+    client, calls, cursor_file = stream
+    run = begin(client, cursor=500)
+    FakeSession.scripts = [frame(None, {'reason': reason, 'lastId': 12}, name='stream.resync'), []]
+
+    with caplog.at_level(logging.INFO):
+        client.connect(run)
+
+    # Sportarr's ids went back, so a higher cursor would never hear a live change.
+    assert (saved(cursor_file)['lastEventId'], saved(cursor_file)['fullSyncOwed']) == (12, True)
+    assert 'past the newest Sportarr change' in caplog.text
+    client.connect(run)
+    assert FakeSession.urls[-1].endswith('&since=12')
+
+
+def test_resync_to_zero_reconnects_without_a_cursor(stream):
+    client, calls, cursor_file = stream
+    run = begin(client, cursor=500)
+    FakeSession.scripts = [frame(None, {'reason': 'cursor ahead', 'lastId': 0}, name='stream.resync'), []]
+
+    client.connect(run)
+    client.connect(run)
+
+    assert run.last_event_id is None
+    assert '&since=' not in FakeSession.urls[-1]
+
+
+def test_failed_cursor_save_warns_once_and_keeps_trying(stream, monkeypatch, tmp_path, caplog):
+    client, calls, cursor_file = stream
+    run = begin(client, cursor=41)
+    monkeypatch.setattr(sse_client, 'cursor_file_path', lambda: str(tmp_path / 'missing' / 'sportarr_stream.json'))
+
+    with caplog.at_level(logging.DEBUG):
+        client.save_cursor(run)
+        client.save_cursor(run)
+
+    assert [record.levelno for record in caplog.records if 'could not save' in record.getMessage()] == [
+        logging.WARNING, logging.DEBUG]
+    # The next keepalive writes it again.
+    assert run.dirty is True
+
+    caplog.clear()
+    monkeypatch.setattr(sse_client, 'cursor_file_path', lambda: str(cursor_file))
+    with caplog.at_level(logging.INFO):
+        client.save_cursor(run)
+
+    assert saved(cursor_file)['lastEventId'] == 41
+    assert 'saved the Sportarr event stream cursor again' in caplog.text

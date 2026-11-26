@@ -36,6 +36,8 @@ def test_event_removal_notifies_the_sports_view(monkeypatch):
 
     monkeypatch.setattr(sports_events.database, 'execute', execute)
     monkeypatch.setattr(sports_events, 'get_events_from_sportarr_api', lambda **kwargs: [])
+    # The row has no subtitles or history, so the sync asks Sportarr nothing more.
+    monkeypatch.setattr(sports_events, '_row_ids_with_kept_data', lambda row_ids: set())
     monkeypatch.setattr(sports_events, 'event_stream', lambda **data: sent.append(data))
     monkeypatch.setattr(sports_events, 'delete_media_and_wanted_search_state', delete_media_and_wanted_search_state)
     monkeypatch.setattr(sports_events.settings.sportarr, 'sync_only_monitored_leagues', False)

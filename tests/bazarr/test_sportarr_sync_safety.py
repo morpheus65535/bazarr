@@ -9,6 +9,7 @@ from types import SimpleNamespace
 from urllib.parse import parse_qs, urlparse
 
 import pytest
+from requests.exceptions import ConnectionError as RequestsConnectionError
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import Session
 
@@ -36,7 +37,11 @@ def sports_db(tmp_path, monkeypatch):
     for module in (wanted_state, sync_events_module, sync_leagues_module):
         monkeypatch.setattr(module, 'database', session)
     monkeypatch.setattr(sync_events_module, 'store_subtitles_sports', lambda row_id: None)
+    monkeypatch.setattr(sync_events_module, 'list_missing_subtitles_sports', lambda evno: None)
     monkeypatch.setattr(sync_events_module, 'event_stream', lambda **kwargs: None)
+    # An event that a league read leaves out is gone from Sportarr, unless a test moves it.
+    monkeypatch.setattr(sync_events_module, 'get_event_from_sportarr_api', lambda **kwargs: None)
+    monkeypatch.setattr(sync_events_module, 'get_league_from_sportarr_api', lambda **kwargs: None)
     monkeypatch.setattr(sync_leagues_module, 'event_stream', lambda **kwargs: None)
     monkeypatch.setattr(sync_leagues_module, 'check_sportarr_rootfolder', lambda: None)
     monkeypatch.setattr(sync_leagues_module, 'get_tags', lambda: [])
@@ -685,3 +690,296 @@ def test_renumber_waits_while_an_incomplete_read_keeps_the_row_at_its_new_number
 
     assert 'cannot change the part numbers' not in caplog.text
     assert row_parts(sports_db) == [(1, 1, 111), (2, 2, 112)]
+
+
+def league_ids_of_children(session):
+    return {
+        'subtitles': set(session.execute(db.select(db.TableSportsEventsSubtitles.sportarrLeagueId)).scalars()),
+        'history': set(session.execute(db.select(db.TableHistorySports.sportarrLeagueId)).scalars()),
+        'blacklist': set(session.execute(db.select(db.TableBlacklistSports.sportarr_league_id)).scalars()),
+    }
+
+
+def moved_event_setup(session, monkeypatch):
+    """Event 10 sits in league 1 in Bazarr. Sportarr moved it to league 2, and its file stayed where it was."""
+    add_league(session, 1)
+    add_league(session, 2)
+    add_event(session, 1, 1, 10)
+    moved = sportarr_event(10, 2)
+    moved['files'][0]['filePath'] = '/sports/1/10-0.mkv'
+    monkeypatch.setattr(sync_events_module, 'get_events_from_sportarr_api',
+                        lambda **kwargs: {1: [], 2: [moved]}[kwargs['league_id']])
+    monkeypatch.setattr(sync_events_module, 'get_event_from_sportarr_api',
+                        lambda **kwargs: moved if kwargs['event_id'] == 10 else None)
+    return moved
+
+
+@pytest.mark.parametrize('league_order', [(1, 2), (2, 1)], ids=['old league first', 'new league first'])
+def test_full_sync_keeps_the_history_of_an_event_that_moved_league(sports_db, monkeypatch, league_order):
+    moved_event_setup(sports_db, monkeypatch)
+    before = counts(sports_db)
+    monkeypatch.setattr(sync_leagues_module, 'get_leagues_from_sportarr_api',
+                        lambda **kwargs: [sportarr_league(league_id) for league_id in league_order])
+
+    sync_leagues_module.update_leagues(job_id=1)
+
+    assert counts(sports_db) == before
+    assert sports_db.execute(
+        db.select(db.TableSportsEvents.id, db.TableSportsEvents.sportarrLeagueId)).all() == [(1, 2)]
+    assert league_ids_of_children(sports_db) == {'subtitles': {2}, 'history': {2}, 'blacklist': {2}}
+
+
+def test_sync_of_the_old_league_alone_keeps_an_event_that_moved(sports_db, monkeypatch):
+    moved_event_setup(sports_db, monkeypatch)
+    before = counts(sports_db)
+
+    sync_events_module.sync_events(league_id=1)
+
+    # The sync of league 2 takes the rows over later.
+    assert counts(sports_db) == before
+
+
+@pytest.mark.parametrize('sportarr_league', [None, {'id': 3, 'path': None}],
+                         ids=['league gone from Sportarr', 'league without a folder'])
+def test_event_that_moved_to_a_league_bazarr_cannot_hold_is_deleted(sports_db, monkeypatch, sportarr_league):
+    moved = moved_event_setup(sports_db, monkeypatch)
+    moved['leagueId'] = 3
+    monkeypatch.setattr(sync_events_module, 'get_league_from_sportarr_api', lambda **kwargs: sportarr_league)
+
+    sync_events_module.sync_events(league_id=1)
+
+    assert counts(sports_db)['events'] == []
+
+
+def test_full_sync_keeps_the_history_of_an_event_that_moved_to_a_new_league(sports_db, monkeypatch):
+    # League 2 is new in Sportarr, and the full sync reads league 1 before it adds league 2.
+    add_league(sports_db, 1)
+    add_event(sports_db, 1, 1, 10)
+    before = counts(sports_db)
+    moved = sportarr_event(10, 2)
+    moved['files'][0]['filePath'] = '/sports/1/10-0.mkv'
+    monkeypatch.setattr(sync_leagues_module, 'get_leagues_from_sportarr_api',
+                        lambda **kwargs: [sportarr_league(1), sportarr_league(2)])
+    monkeypatch.setattr(sync_events_module, 'get_events_from_sportarr_api',
+                        lambda **kwargs: {1: [], 2: [moved]}[kwargs['league_id']])
+    monkeypatch.setattr(sync_events_module, 'get_event_from_sportarr_api', lambda **kwargs: moved)
+    monkeypatch.setattr(sync_events_module, 'get_league_from_sportarr_api', lambda **kwargs: sportarr_league(2))
+
+    sync_leagues_module.update_leagues(job_id=1)
+
+    after = counts(sports_db)
+    assert after['leagues'] == [1, 2]
+    assert (after['events'], after['subtitles'], after['history'], after['blacklist']) == \
+        (before['events'], before['subtitles'], before['history'], before['blacklist'])
+    assert league_ids_of_children(sports_db) == {'subtitles': {2}, 'history': {2}, 'blacklist': {2}}
+
+
+def subtitle_rows(session):
+    return sorted(session.execute(
+        db.select(db.TableSportsEventsSubtitles.sportarrLeagueId, db.TableSportsEventsSubtitles.language,
+                  db.TableSportsEventsSubtitles.path)).all())
+
+
+def test_move_drops_an_index_row_that_the_new_league_already_holds(sports_db, monkeypatch):
+    moved = moved_event_setup(sports_db, monkeypatch)
+    # The indexer already stored the same file under league 2. The French file is not a copy, so it moves.
+    sports_db.execute(db.insert(db.TableSportsEventsSubtitles), [
+        {'sportsEventId': 1, 'sportarrLeagueId': 2, 'language': 'en', 'forced': False, 'hi': False,
+         'path': '/sports/1/10-0.en.srt'},
+        {'sportsEventId': 1, 'sportarrLeagueId': 1, 'language': 'fr', 'forced': False, 'hi': False,
+         'path': '/sports/1/10-0.fr.srt'},
+    ])
+    history = counts(sports_db)['history']
+
+    sync_events_module.sync_one_event(moved)
+
+    assert sports_db.execute(db.select(db.TableSportsEvents.sportarrLeagueId)).scalar_one() == 2
+    assert subtitle_rows(sports_db) == [(2, 'en', '/sports/1/10-0.en.srt'), (2, 'fr', '/sports/1/10-0.fr.srt')]
+    assert counts(sports_db)['history'] == history
+
+
+def test_move_keeps_one_copy_when_two_old_leagues_hold_the_file(sports_db, monkeypatch):
+    moved = moved_event_setup(sports_db, monkeypatch)
+    add_league(sports_db, 3)
+    # An earlier build moved the event row to league 2 alone, and the indexer then stored the file again there.
+    sports_db.execute(db.update(db.TableSportsEvents).values(sportarrLeagueId=2))
+    sports_db.execute(db.insert(db.TableSportsEventsSubtitles).values(
+        sportsEventId=1, sportarrLeagueId=2, language='en', forced=False, hi=False, path='/sports/1/10-0.en.srt'))
+    moved['leagueId'] = 3
+
+    sync_events_module.sync_one_event(moved)
+
+    assert sports_db.execute(db.select(db.TableSportsEvents.sportarrLeagueId)).scalar_one() == 3
+    assert subtitle_rows(sports_db) == [(3, 'en', '/sports/1/10-0.en.srt')]
+
+
+def test_failed_move_leaves_the_event_and_its_rows_in_the_old_league(sports_db, monkeypatch, caplog):
+    from sqlalchemy.exc import IntegrityError
+
+    moved = moved_event_setup(sports_db, monkeypatch)
+
+    def fail(connection, row_id, league_id):
+        raise IntegrityError('UPDATE table_sports_events_subtitles', {}, Exception('unique'))
+
+    monkeypatch.setattr(sync_events_module, '_move_child_rows', fail)
+
+    sync_events_module.sync_one_event(moved)
+
+    assert 'cannot update events' in caplog.text
+    assert sports_db.execute(db.select(db.TableSportsEvents.sportarrLeagueId)).scalar_one() == 1
+    assert league_ids_of_children(sports_db) == {'subtitles': {1}, 'history': {1}, 'blacklist': {1}}
+
+
+def test_rows_stay_when_sportarr_cannot_say_whether_the_new_league_has_a_folder(sports_db, monkeypatch):
+    moved = moved_event_setup(sports_db, monkeypatch)
+    moved['leagueId'] = 3
+    before = counts(sports_db)
+
+    def unreachable(**kwargs):
+        raise RequestsConnectionError('Sportarr is down')
+
+    monkeypatch.setattr(sync_events_module, 'get_league_from_sportarr_api', unreachable)
+
+    sync_events_module.sync_events(league_id=1)
+
+    assert counts(sports_db) == before
+
+
+def test_full_sync_moves_child_rows_left_in_the_old_league_before_it_deletes_that_league(sports_db, monkeypatch):
+    moved_event_setup(sports_db, monkeypatch)
+    # An earlier build moved the event row to league 2 and left its child rows in league 1.
+    sports_db.execute(db.update(db.TableSportsEvents).values(sportarrLeagueId=2))
+    # The indexer then stored the English file again under league 2.
+    sports_db.execute(db.insert(db.TableSportsEventsSubtitles).values(
+        sportsEventId=1, sportarrLeagueId=2, language='en', forced=False, hi=False, path='/sports/1/10-0.en.srt'))
+    recalculated = []
+    monkeypatch.setattr(sync_events_module, 'list_missing_subtitles_sports', lambda evno: recalculated.append(evno))
+    before = counts(sports_db)
+    # League 1 left Sportarr, and the read of league 2 fails.
+    monkeypatch.setattr(sync_leagues_module, 'get_leagues_from_sportarr_api', lambda **kwargs: [sportarr_league(2)])
+    monkeypatch.setattr(sync_events_module, 'get_events_from_sportarr_api', lambda **kwargs: None)
+
+    sync_leagues_module.update_leagues(job_id=1)
+
+    after = counts(sports_db)
+    assert after['leagues'] == [2]
+    assert (after['history'], after['blacklist']) == (before['history'], before['blacklist'])
+    assert subtitle_rows(sports_db) == [(2, 'en', '/sports/1/10-0.en.srt')]
+    assert league_ids_of_children(sports_db) == {'subtitles': {2}, 'history': {2}, 'blacklist': {2}}
+    assert recalculated == [1]
+
+
+def test_lost_part_of_an_event_still_listed_is_deleted_without_asking_sportarr(sports_db, monkeypatch):
+    add_league(sports_db, 1)
+    add_event(sports_db, 1, 1, 10, part_number=1)
+    add_event(sports_db, 2, 1, 10, part_number=2)
+    reads = []
+    monkeypatch.setattr(sync_events_module, 'get_events_from_sportarr_api',
+                        lambda **kwargs: [sportarr_event(10, 1, parts=(2,))])
+    monkeypatch.setattr(sync_events_module, 'get_event_from_sportarr_api',
+                        lambda **kwargs: reads.append(kwargs['event_id']))
+
+    sync_events_module.sync_events(league_id=1)
+
+    assert counts(sports_db)['events'] == [2]
+    assert reads == []
+
+
+def test_league_move_works_out_the_missing_subtitles_again(sports_db, monkeypatch):
+    moved = moved_event_setup(sports_db, monkeypatch)
+    indexed = []
+    monkeypatch.setattr(sync_events_module, 'store_subtitles_sports', lambda row_id: indexed.append(row_id))
+
+    sync_events_module.sync_one_event(moved)
+
+    # The new league can have another profile, and the file did not change.
+    assert indexed == [1]
+
+
+def test_event_stays_when_sportarr_cannot_say_where_it_went(sports_db, monkeypatch):
+    moved_event_setup(sports_db, monkeypatch)
+    before = counts(sports_db)
+
+    def unreachable(**kwargs):
+        raise RequestsConnectionError('Sportarr is down')
+
+    monkeypatch.setattr(sync_events_module, 'get_event_from_sportarr_api', unreachable)
+
+    sync_events_module.sync_events(league_id=1)
+
+    assert counts(sports_db) == before
+
+
+def test_stream_move_takes_the_subtitles_and_history_to_the_new_league(sports_db, monkeypatch):
+    moved = moved_event_setup(sports_db, monkeypatch)
+    before = counts(sports_db)
+
+    sync_events_module.sync_one_event(moved)
+
+    assert counts(sports_db) == before
+    assert league_ids_of_children(sports_db) == {'subtitles': {2}, 'history': {2}, 'blacklist': {2}}
+    # The old league can now leave Bazarr without taking the event's history with it.
+    sports_db.execute(db.delete(db.TableSportsLeagues).where(db.TableSportsLeagues.sportarrLeagueId == 1))
+    assert counts(sports_db)['history'] == before['history']
+
+
+def test_first_failed_sportarr_read_keeps_every_remaining_event_without_more_reads(sports_db, monkeypatch):
+    add_league(sports_db, 1)
+    add_event(sports_db, 1, 1, 10)
+    add_event(sports_db, 2, 1, 11)
+    before = counts(sports_db)
+    reads = []
+
+    def unreachable(**kwargs):
+        reads.append(kwargs['event_id'])
+        raise RequestsConnectionError('Sportarr is down')
+
+    monkeypatch.setattr(sync_events_module, 'get_events_from_sportarr_api', lambda **kwargs: [])
+    monkeypatch.setattr(sync_events_module, 'get_event_from_sportarr_api', unreachable)
+
+    sync_events_module.sync_events(league_id=1)
+
+    # Each read could wait the whole timeout, so the sync stops asking after one failure.
+    assert reads == [10]
+    assert counts(sports_db) == before
+
+
+def test_rows_stay_when_sportarr_does_not_say_which_league_the_event_is_in(sports_db, monkeypatch):
+    moved = moved_event_setup(sports_db, monkeypatch)
+    del moved['leagueId']
+    before = counts(sports_db)
+
+    sync_events_module.sync_events(league_id=1)
+
+    assert counts(sports_db) == before
+
+
+def test_full_sync_on_a_clean_database_works_out_nothing_again(sports_db, monkeypatch):
+    moved_event_setup(sports_db, monkeypatch)
+    recalculated = []
+    monkeypatch.setattr(sync_events_module, 'list_missing_subtitles_sports', lambda evno: recalculated.append(evno))
+    monkeypatch.setattr(sync_leagues_module, 'get_leagues_from_sportarr_api',
+                        lambda **kwargs: [sportarr_league(1), sportarr_league(2)])
+
+    sync_leagues_module.update_leagues(job_id=1)
+
+    assert recalculated == []
+
+
+def test_repair_moves_child_rows_to_the_league_the_event_is_in_when_it_runs(sports_db, monkeypatch):
+    moved_event_setup(sports_db, monkeypatch)
+    add_league(sports_db, 3)
+    sports_db.execute(db.update(db.TableSportsEvents).values(sportarrLeagueId=2))
+    read_stranded = sync_events_module._stranded_child_rows
+
+    def stranded_then_moved():
+        rows = read_stranded()
+        # The stream moves the event to league 3 after the repair read where it was.
+        sports_db.execute(db.update(db.TableSportsEvents).values(sportarrLeagueId=3))
+        return rows
+
+    monkeypatch.setattr(sync_events_module, '_stranded_child_rows', stranded_then_moved)
+
+    sync_events_module.repair_stranded_child_rows()
+
+    assert league_ids_of_children(sports_db) == {'subtitles': {3}, 'history': {3}, 'blacklist': {3}}

@@ -20,7 +20,7 @@ from subtitles.wanted_state import delete_league_and_wanted_search_state, _wante
 # The jobs queue runs this module under a second name, so the state the
 # event stream reads lives in a module that is imported by one name only.
 from sportarr.sync import state as sync_state
-from .events import league_in_bazarr, sync_events
+from .events import league_in_bazarr, repair_stranded_child_rows, sync_events
 from .parser import leagueParser
 from .utils import get_tags, get_leagues_from_sportarr_api
 
@@ -65,6 +65,7 @@ def update_leagues(job_id=None, wait_for_completion=False):
     started_at = sync_state.last_sync_started_at = time.monotonic()
     unread_leagues = []
     sync_state.last_incomplete_sync_reason = 'Sportarr did not return the league list.'
+    repair_stranded_child_rows()
 
     # Update root folders and update their health status
     check_sportarr_rootfolder()
@@ -175,6 +176,10 @@ def update_leagues(job_id=None, wait_for_completion=False):
         if not complete_league_list:
             logging.warning('BAZARR Skipping leagues deletion because Sportarr returned unidentified leagues.')
 
+        if removed_leagues:
+            # A job can write history under a league that this sync moved an
+            # event away from. The repair runs again so the delete cannot take it.
+            repair_stranded_child_rows()
         for league in removed_leagues:
             # Remove league from DB
             update_one_league(league, action='deleted')

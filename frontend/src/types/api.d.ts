@@ -352,7 +352,6 @@ declare namespace History {
       dont_matches: string[];
     };
 
-  // Sports history has no upgrade marker.
   type RawUpgradableBase = RawBase & {
     upgradable: boolean;
   };
@@ -365,7 +364,9 @@ declare namespace History {
       episode_number: string;
     };
 
-  type RawSportsEvent = RawBase & SportsEventIdType & SportsEventTitleType;
+  type RawSportsEvent = RawUpgradableBase &
+    SportsEventIdType &
+    SportsEventTitleType;
 
   type Base = CamelCaseKeys<RawBase>;
   type Movie = CamelCaseKeys<RawMovie>;

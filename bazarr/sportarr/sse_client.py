@@ -9,7 +9,7 @@ import tempfile
 import time
 from threading import Event, RLock, Thread
 
-from requests import Session
+from requests import Response, Session
 from requests.exceptions import RequestException
 
 from app.config import settings
@@ -43,21 +43,29 @@ LEAGUE_GONE_TTL = 60
 RECONNECT_DELAYS = (5, 10, 20, 40, 80, 160, 300)
 
 
-def cursor_file_path():
+class UnreadableFrame(ValueError):
+    """A stream frame that does not say what changed."""
+
+
+def cursor_file_path() -> str:
+    """The file that holds the saved cursor and debt."""
     return os.path.join(args.config_dir, 'config', 'sportarr_stream.json')
 
 
-def reconnect_delay(failures):
+def reconnect_delay(failures: int) -> int:
+    """Seconds to wait before the next connection, longer after each failure."""
     return RECONNECT_DELAYS[min(max(failures, 1), len(RECONNECT_DELAYS)) - 1]
 
 
-def connection_fingerprint():
-    # A cursor belongs to one Sportarr instance. The key is hashed, so the
-    # file never holds it in clear text.
+def connection_fingerprint() -> str:
+    """Identify the Sportarr address and API key that a saved cursor belongs to."""
+    # The file does not hold the key in clear text. The hash has no salt, so
+    # anyone who reads the file can test a guessed key against it. That is
+    # safe for a random key, which Sportarr makes unless the user sets one.
     return hashlib.sha256(f'{url_sportarr()}|{settings.sportarr.apikey}'.encode('utf-8')).hexdigest()
 
 
-def frame_time(raw):
+def frame_time(raw: str) -> int | None:
     """The time of a frame, in seconds, or None. Sportarr writes UTC, for example 2026-08-10T23:30:45Z."""
     try:
         stamp = json.loads(raw).get('timestamp')
@@ -69,7 +77,7 @@ def frame_time(raw):
 class _Run:
     """The state of one run of the client. A restart builds a new one, so an old reader cannot change it."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.stop = Event()
         self.fingerprint = None
         self.last_event_id = None
@@ -80,15 +88,17 @@ class _Run:
         # When Bazarr last skipped a change that only a full sync covers, on the monotonic clock.
         self.owed_at = None
         self.incomplete_logged = False
-        self.pending = {}
+        self.pending: dict[int, dict[str, float]] = {}
         self.pending_cursor = None
         self.flush_due_at = 0
         self.failing_frame = (None, 0)
-        self.gone_leagues = {}
+        self.gone_leagues: dict[int, float] = {}
         self.failures = 0
         self.failure_logged = False
         # True after a frame failed to apply, until a frame applies again.
         self.apply_failing = False
+        # True after a cursor save failed, until a save works again.
+        self.save_failing = False
 
 
 class SportarrSSEClient:
@@ -104,14 +114,18 @@ class SportarrSSEClient:
     after it reads every league.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._lock = RLock()
         self._run = None
         self._response = None
+        # stop() counts up, so a start() that began before a stop() can tell.
+        self._generation = 0
         self.connected = False
-        self.stopped = False
 
-    def start(self):
+    def start(self) -> None:
+        """Read the stream until stop() runs, and reconnect after each drop."""
+        with self._lock:
+            generation = self._generation
         if args.no_signalr or not settings.general.use_sportarr:
             self.connected = False
             return
@@ -119,12 +133,14 @@ class SportarrSSEClient:
         run = _Run()
         self.load_cursor(run)
         with self._lock:
+            if self._generation != generation or not settings.general.use_sportarr:
+                # stop() ran while the cursor was read. That stop applies to this start too.
+                return
             previous, previous_response = self._run, self._response
             if previous:
                 previous.stop.set()
             self._run = run
             self._response = None
-            self.stopped = False
             self.connected = False
         if previous_response:
             self._close_response(previous_response)
@@ -153,7 +169,8 @@ class SportarrSSEClient:
             run.stop.wait(reconnect_delay(run.failures))
 
     @staticmethod
-    def _stream_works(run):
+    def _stream_works(run: _Run) -> None:
+        """Reset the reconnect backoff, because the stream delivered."""
         # The stream counts as working only once it delivers, not when it
         # answers. A frame that fails on every connection keeps the backoff.
         if run.failure_logged:
@@ -161,19 +178,21 @@ class SportarrSSEClient:
         run.failures = 0
         run.failure_logged = False
 
-    def _set_connected(self, run, connected):
+    def _set_connected(self, run: _Run, connected: bool) -> None:
+        """Set the connected state of the current run, and refresh the badge when it changes."""
         with self._lock:
             if self._run is not run or self.connected == connected:
                 return
             self.connected = connected
         event_stream(type='badges')
 
-    def stop(self):
+    def stop(self) -> None:
+        """End the current run, and any start() that has not made its run yet."""
         with self._lock:
             run, response, was_connected = self._run, self._response, self.connected
             self._run = None
             self._response = None
-            self.stopped = True
+            self._generation += 1
             self.connected = False
             if run:
                 run.stop.set()
@@ -184,7 +203,8 @@ class SportarrSSEClient:
             event_stream(type='badges')
         logging.info('BAZARR SSE client for Sportarr is now disconnected.')
 
-    def restart(self):
+    def restart(self) -> None:
+        """Stop the client, then start it again in a new thread when Sportarr is enabled."""
         self.stop()
         # The saved cursor stays. start() drops it when the Sportarr address
         # or the API key changed.
@@ -192,7 +212,8 @@ class SportarrSSEClient:
             Thread(target=self.start, daemon=True).start()
 
     @staticmethod
-    def _close_response(response):
+    def _close_response(response: Response) -> None:
+        """Close a stream response, and wake a reader that waits on it."""
         # Shutdown wakes a reader blocked while waiting for the next frame.
         try:
             response.raw.shutdown()
@@ -201,7 +222,7 @@ class SportarrSSEClient:
         response.close()
 
     @staticmethod
-    def load_cursor(run):
+    def load_cursor(run: _Run) -> bool:
         """Read the saved cursor and debt into run. Returns False when there is no cursor."""
         run.fingerprint = connection_fingerprint()
         try:
@@ -225,7 +246,7 @@ class SportarrSSEClient:
         run.current_at = saved['savedAt']
         return True
 
-    def save_cursor(self, run, final=False):
+    def save_cursor(self, run: _Run, final: bool = False) -> None:
         """Write the cursor of run, while run is the current one, or as stop() ends it."""
         with self._lock:
             if self._run is not run and not final:
@@ -250,12 +271,24 @@ class SportarrSSEClient:
                     json.dump(saved, temp_file)
                 # A crash during the write leaves the previous file whole.
                 os.replace(temp_path, path)
-            except OSError:
-                logging.debug('BAZARR could not save the Sportarr event stream cursor.')
+            except OSError as e:
+                # The next keepalive tries again.
+                run.dirty = True
+                if not run.save_failing:
+                    run.save_failing = True
+                    logging.warning(f'BAZARR could not save the Sportarr event stream cursor: {e}. It keeps '
+                                    f'trying. Until a save works, a restart replays changes and can lose a '
+                                    f'full league sync that is owed.')
+                else:
+                    logging.debug(f'BAZARR could not save the Sportarr event stream cursor: {e}')
                 if temp_path and os.path.exists(temp_path):
                     os.remove(temp_path)
+            else:
+                if run.save_failing:
+                    run.save_failing = False
+                    logging.info('BAZARR saved the Sportarr event stream cursor again.')
 
-    def owe_full_sync(self, run, reason=None):
+    def owe_full_sync(self, run: _Run, reason: str | None = None) -> None:
         """Record that only a full league sync covers a change, and queue one."""
         owed_before = run.owed_at is not None
         # The newest need counts, so a sync that read the league list before it does not cover it.
@@ -272,7 +305,7 @@ class SportarrSSEClient:
             self.save_cursor(run)
         self.settle_full_sync(run)
 
-    def settle_full_sync(self, run):
+    def settle_full_sync(self, run: _Run) -> None:
         """Clear the debt when a full sync covered it, or queue one when none ran since the debt."""
         if run.owed_at is None:
             return
@@ -293,7 +326,8 @@ class SportarrSSEClient:
             return
         queue_full_sync()
 
-    def connect(self, run):
+    def connect(self, run: _Run) -> None:
+        """Open one stream connection and read it until it ends."""
         if run.last_event_id and time.time() - run.current_at > CURSOR_MAX_AGE:
             # Sportarr may have pruned changes after the cursor.
             run.last_event_id = None
@@ -333,7 +367,8 @@ class SportarrSSEClient:
                     self._set_connected(run, False)
                     self.save_cursor(run)
 
-    def read_frames(self, response, run):
+    def read_frames(self, response: Response, run: _Run) -> None:
+        """Parse the stream lines into frames and keepalives, and handle each one."""
         frame_id = None
         frame_name = None
         data = []
@@ -368,22 +403,33 @@ class SportarrSSEClient:
             frame_name = None
             data = []
 
-    def handle_resync(self, run, raw):
-        # Sportarr replayed as much as it will and goes live after lastId.
-        # That id is the cursor now, so a reconnect does not replay the same
-        # pages again, and a full sync covers what Sportarr did not replay.
+    def handle_resync(self, run: _Run, raw: str) -> None:
+        """Take the cursor that Sportarr gives, and owe a full sync for what it could not replay."""
+        # Sportarr goes live after lastId, so that id is the cursor now. It is
+        # lower than the cursor when Sportarr's ids went back, for example
+        # after a restore from backup. Sportarr says 0 when it holds no events.
         try:
-            last_id = json.loads(raw).get('lastId')
-        except (ValueError, AttributeError):
-            last_id = None
-        if type(last_id) is int and last_id > 0 and (run.last_event_id is None or last_id > run.last_event_id):
-            run.last_event_id = last_id
+            payload = json.loads(raw)
+        except ValueError:
+            payload = None
+        if not isinstance(payload, dict):
+            payload = {}
+        last_id = payload.get('lastId')
+        if type(last_id) is int and last_id >= 0:
+            run.last_event_id = last_id or None
+            run.dirty = True
         run.pending = {}
         run.pending_cursor = None
         run.current_at = time.time()
-        self.owe_full_sync(run, 'missed too many Sportarr changes to replay them.')
+        reason = payload.get('reason')
+        if isinstance(reason, str) and reason.startswith('cursor ahead'):
+            self.owe_full_sync(run, 'held a cursor past the newest Sportarr change, for example after a Sportarr '
+                                    'restore.')
+        else:
+            self.owe_full_sync(run, 'missed too many Sportarr changes to replay them.')
 
-    def handle_frame(self, run, frame_id, frame_name, raw):
+    def handle_frame(self, run: _Run, frame_id: str | None, frame_name: str | None, raw: str) -> None:
+        """Apply one frame, then move the cursor past it or record a debt for it."""
         if frame_name == 'stream.resync':
             self.handle_resync(run, raw)
             return
@@ -400,6 +446,9 @@ class SportarrSSEClient:
                 raise
             self.owe_full_sync(run, f'could not read the change in Sportarr stream frame {frame_id} after '
                                     f'{attempts} attempts.')
+        except UnreadableFrame as e:
+            # The stream cannot send the change again, so only a full sync covers it.
+            self.owe_full_sync(run, f'could not read Sportarr stream frame {frame_id}, because {e}.')
         except Exception:
             # For example a locked database. The frame is skipped, so a full sync covers it.
             if not run.apply_failing:
@@ -432,12 +481,14 @@ class SportarrSSEClient:
             self.save_cursor(run)
 
     @staticmethod
-    def queue_league_sync(run, league_id):
+    def queue_league_sync(run: _Run, league_id: int) -> None:
+        """Ask for a league sync, and keep the saved cursor before the frames that wait for it."""
         if not run.pending:
             run.pending_cursor = run.last_event_id
         run.pending.setdefault(league_id, {'queued': time.time(), 'attempts': 0})
 
-    def flush_league_syncs(self, run):
+    def flush_league_syncs(self, run: _Run) -> None:
+        """Run the league syncs that frames asked for, unless a retry must wait."""
         if not run.pending or time.time() < run.flush_due_at:
             return
         for league_id in list(run.pending):
@@ -456,12 +507,13 @@ class SportarrSSEClient:
         run.pending_cursor = None
         run.dirty = True
 
-    def sync_league(self, run, league_id):
+    def sync_league(self, run: _Run, league_id: int) -> bool:
         """Sync one league the way the full sync does. Returns False when Sportarr did not answer."""
         try:
             league = get_league_from_sportarr_api(apikey_sportarr=settings.sportarr.apikey, league_id=league_id)
             if league is None:
-                # The league left Sportarr. The full sync removes or moves it.
+                # The league left Sportarr. The next full league sync removes
+                # it, or moves it to a new add with the same external id.
                 return True
             if not league.get('path') or (league_left_unmonitored(league_id) and not league.get('monitored')):
                 # The full sync leaves this league as it is, so the stream does too.
@@ -481,15 +533,17 @@ class SportarrSSEClient:
             self.owe_full_sync(run, f'skipped the stream sync of Sportarr league {league_id}.')
             return True
 
-    def dispatch(self, raw, run=None):
-        """Apply one frame. Returns a league that needs a league sync, or None."""
+    def dispatch(self, raw: str, run: _Run | None = None) -> int | None:
+        """Apply one frame. Returns a league that needs a league sync, or None.
+
+        Raises UnreadableFrame when the frame does not say what changed.
+        """
         try:
             payload = json.loads(raw)
         except ValueError:
-            logging.debug('BAZARR could not read a frame from the Sportarr event stream.')
-            return None
+            raise UnreadableFrame('it is not valid JSON') from None
         if not isinstance(payload, dict):
-            return None
+            raise UnreadableFrame('it holds no object')
 
         resource = payload.get('resourceType')
         event_id = payload.get('eventId')
@@ -497,10 +551,10 @@ class SportarrSSEClient:
         pending = run.pending if run else {}
 
         if resource not in ('event', 'file'):
+            # Sportarr sends event and file frames only. Another kind has nothing to sync.
             return None
         if type(event_id) is not int:
-            logging.debug('BAZARR received a Sportarr event with no event to sync.')
-            return None
+            raise UnreadableFrame('it names no event')
         if type(league_id) is int and league_id in pending:
             # The league sync that waits already covers this event.
             return None
@@ -517,7 +571,8 @@ class SportarrSSEClient:
             return event['leagueId']
         return None
 
-    def event_gone(self, run, event_id, league_id):
+    def event_gone(self, run: _Run | None, event_id: int, league_id: int | None) -> None:
+        """Delete the rows of an event that left Sportarr, unless its whole league left."""
         if type(league_id) is not int:
             league_id = self.league_id_for_event(event_id)
         if league_id is None:
@@ -528,12 +583,15 @@ class SportarrSSEClient:
                 delete_event_rows(event_id)
                 return
             gone_leagues[league_id] = time.time()
-        # The whole league left Sportarr. The league sync removes it, or moves
-        # it when Sportarr adds it again with the same external id, which
-        # keeps its subtitles and history.
+        # The whole league left Sportarr. The rows stay until the next full
+        # league sync, which the stream does not hurry. If Sportarr adds the
+        # league again with the same external id before then, that sync moves
+        # the rows to the new league and keeps their subtitles and history.
+        # Otherwise it removes them.
 
     @staticmethod
-    def league_id_for_event(event_id):
+    def league_id_for_event(event_id: int) -> int | None:
+        """The league that Bazarr holds an event in, or None."""
         row = database.execute(
             select(TableSportsEvents.sportarrLeagueId)
             .where(TableSportsEvents.sportarrEventId == event_id)).first()

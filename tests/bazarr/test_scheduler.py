@@ -129,6 +129,14 @@ def test_upgrade_job_is_skipped_when_no_provider_is_enabled(sched_settings, buil
     assert "upgrade_subtitles" not in _job_ids(build_scheduler())
 
 
+def test_upgrade_job_is_registered_when_only_sportarr_is_enabled(sched_settings, build_scheduler):
+    sched_settings.general["use_sonarr"] = False
+    sched_settings.general["use_radarr"] = False
+    sched_settings.general["use_sportarr"] = True
+
+    assert "upgrade_subtitles" in _job_ids(build_scheduler())
+
+
 @pytest.mark.parametrize("frequency", ["Daily", "Weekly"])
 def test_full_scan_uses_cron_for_scheduled_frequencies(sched_settings, build_scheduler, frequency):
     sched_settings.sonarr["full_update"] = frequency

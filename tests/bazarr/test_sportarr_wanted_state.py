@@ -252,6 +252,9 @@ def test_wanted_download_recalculates_when_calculation_is_incomplete(sports_sess
 def sync(monkeypatch):
     deleted = []
     monkeypatch.setattr(sync_events_module, 'store_subtitles_sports', lambda event_id: None)
+    # An event that a league read leaves out is gone from Sportarr.
+    monkeypatch.setattr(sync_events_module, 'get_event_from_sportarr_api', lambda **kwargs: None)
+    monkeypatch.setattr(sync_events_module, 'get_league_from_sportarr_api', lambda **kwargs: None)
     monkeypatch.setattr(sync_events_module, 'event_stream',
                         lambda **kwargs: deleted.append(kwargs['payload']) if kwargs.get('action') == 'delete'
                         else None)
