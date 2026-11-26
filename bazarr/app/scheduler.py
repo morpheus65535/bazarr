@@ -362,7 +362,7 @@ class Scheduler:
                 kwargs=dict(wait_for_completion=True))
 
     def __upgrade_subtitles_task(self):
-        if settings.general.use_sonarr or settings.general.use_radarr:
+        if settings.general.use_sonarr or settings.general.use_radarr or settings.general.use_sportarr:
             self.aps_scheduler.add_job(
                 upgrade_subtitles, 'interval', hours=int(settings.general.upgrade_frequency), max_instances=1,
                 coalesce=True, misfire_grace_time=15, id='upgrade_subtitles', kwargs=dict(wait_for_completion=True),

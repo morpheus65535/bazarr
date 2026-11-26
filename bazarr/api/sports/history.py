@@ -6,7 +6,8 @@ from functools import reduce
 
 from api.swaggerui import subtitles_language_model
 from app.database import (TableSportsEvents, TableSportsLeagues, TableHistorySports, TableBlacklistSports, database,
-                          select, func)
+                          select, func, TableSportsEventsSubtitles)
+from subtitles.upgrade import get_upgradable_sports_subtitles, _language_still_desired
 
 import pretty
 from flask_restx import Resource, Namespace, reqparse, fields, marshal
@@ -40,6 +41,7 @@ class SportsHistory(Resource):
         'subtitles_path': fields.String(),
         'sportsEventId': fields.Integer(),
         'provider': fields.String(),
+        'upgradable': fields.Boolean(),
         'parsed_timestamp': fields.String(),
         'blacklisted': fields.Boolean(),
         'matches': fields.List(fields.String),
@@ -65,6 +67,13 @@ class SportsHistory(Resource):
                                        TableBlacklistSports.subs_id) \
             .subquery()
 
+        # The subtitles of the row must still be indexed, as the upgrade job checks. An event can hold one
+        # subtitles file for each language, so the check looks for this file, not for any file of the event.
+        subtitles_on_disk = select(TableSportsEventsSubtitles.id) \
+            .where(TableSportsEventsSubtitles.sportsEventId == TableHistorySports.sportsEventId) \
+            .where(TableSportsEventsSubtitles.path == TableHistorySports.subtitles_path) \
+            .exists()
+
         query_conditions = [(TableSportsEvents.title.is_not(None))]
         if eventid:
             query_conditions.append((TableSportsEvents.id == eventid))
@@ -77,7 +86,7 @@ class SportsHistory(Resource):
                       TableHistorySports.timestamp,
                       TableHistorySports.subs_id,
                       TableHistorySports.description,
-                      TableHistorySports.sportarrLeagueId,
+                      TableSportsEvents.sportarrLeagueId,
                       TableSportsEvents.path,
                       TableHistorySports.language,
                       TableHistorySports.score,
@@ -89,13 +98,15 @@ class SportsHistory(Resource):
                       TableHistorySports.sportsEventId,
                       TableHistorySports.provider,
                       TableSportsLeagues.sport,
+                      TableSportsLeagues.profileId,
                       TableHistorySports.matched,
                       TableHistorySports.not_matched,
+                      subtitles_on_disk.label('subtitles_on_disk'),
                       blacklisted_subtitles.c.subs_id.label('blacklisted')) \
             .select_from(TableHistorySports) \
-            .join(TableSportsLeagues,
-                  onclause=TableHistorySports.sportarrLeagueId == TableSportsLeagues.sportarrLeagueId) \
             .join(TableSportsEvents, onclause=TableHistorySports.sportsEventId == TableSportsEvents.id) \
+            .join(TableSportsLeagues,
+                  onclause=TableSportsEvents.sportarrLeagueId == TableSportsLeagues.sportarrLeagueId) \
             .join(blacklisted_subtitles, onclause=TableHistorySports.subs_id == blacklisted_subtitles.c.subs_id,
                   isouter=True) \
             .where(reduce(operator.and_, query_conditions)) \
@@ -114,6 +125,7 @@ class SportsHistory(Resource):
             'sportarrLeagueId': x.sportarrLeagueId,
             'path': x.path,
             'language': x.language,
+            'profileId': x.profileId,
             'score': x.score,
             'score_out_of': x.score_out_of,
             'tags': x.tags,
@@ -124,14 +136,32 @@ class SportsHistory(Resource):
             'provider': x.provider,
             'matches': x.matched,
             'dont_matches': x.not_matched,
+            'subtitles_on_disk': bool(x.subtitles_on_disk),
             'blacklisted': bool(x.blacklisted),
         } for x in database.execute(stmt).all()]
 
+        upgradable_sports_not_perfect = get_upgradable_sports_subtitles(history_id_list=[x['id'] for x in
+                                                                                          sports_history])
+
         for item in sports_history:
+            # is this language still desired or should we simply skip this subtitles from upgrade logic?
+            still_desired = _language_still_desired(item['language'], item['profileId'])
+
             item.update(postprocess(item))
+
+            # Mark upgradable and get original_id
+            item.update({'original_id': upgradable_sports_not_perfect.get(item['id'])})
+            item.update({'upgradable': item['id'] in upgradable_sports_not_perfect.keys()})
+
+            # Mark not upgradable if video/subtitles file doesn't exist anymore or if language isn't desired anymore
+            if item['upgradable']:
+                if not item['subtitles_on_disk'] or item['video_path'] != item['path'] or not still_desired:
+                    item.update({"upgradable": False})
 
             del item['path']
             del item['video_path']
+            del item['subtitles_on_disk']
+            del item['profileId']
 
             if item['score']:
                 item['score'] = f"{round((int(item['score']) * 100 / item['score_out_of']), 2)}%"

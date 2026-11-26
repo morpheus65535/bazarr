@@ -12,15 +12,17 @@ from app.config import settings
 from constants import HI_EXCLUDED
 from app.database import (get_exclusion_clause, get_audio_profile_languages, TableShows, TableEpisodes, TableMovies,
      TableHistory, TableHistoryMovie, database, select, func, get_profiles_list, TableEpisodesSubtitles,
-     TableMoviesSubtitles)
+     TableMoviesSubtitles, TableSportsLeagues, TableSportsEvents, TableHistorySports, TableSportsEventsSubtitles)
 from app.jobs_queue import jobs_queue, JobCanceled
 from app.get_providers import get_providers
-from app.notifier import send_notifications, send_notifications_movie
+from app.notifier import send_notifications, send_notifications_movie, send_notifications_sports
 from radarr.history import history_log_movie
 from sonarr.history import history_log
+from sportarr.history import history_log_sports
 from subliminal_patch.score import MAX_SCORES
 from subtitles.indexer.movies import store_subtitles_movie
 from subtitles.indexer.series import store_subtitles
+from subtitles.indexer.sports import store_subtitles_sports
 from utilities.path_mappings import path_mappings
 from .download import generate_subtitles
 from .language_utils import format_episode_part, resolve_audio_language
@@ -30,12 +32,16 @@ from app.event_handler import event_stream
 def upgrade_subtitles(wait_for_completion=False):
     use_sonarr = settings.general.use_sonarr
     use_radarr = settings.general.use_radarr
+    use_sportarr = settings.general.use_sportarr
 
     if use_sonarr:
         upgrade_episodes_subtitles(wait_for_completion=wait_for_completion)
 
     if use_radarr:
         upgrade_movies_subtitles(wait_for_completion=wait_for_completion)
+
+    if use_sportarr:
+        upgrade_sports_subtitles(wait_for_completion=wait_for_completion)
 
     logging.info('BAZARR Finished searching for Subtitles to upgrade. Check History for more information.')
 
@@ -279,6 +285,122 @@ def upgrade_movies_subtitles(job_id=None, wait_for_completion=False):
     jobs_queue.update_job_name(job_id=job_id, new_job_name='Tried to upgrade movies subtitles')
 
 
+def upgrade_sports_subtitles(job_id: int | None = None, wait_for_completion: bool = False) -> None:
+    """Search again for sports subtitles that the history marks as upgradable, as the episode job does."""
+    if not job_id:
+        jobs_queue.add_job_from_function("Trying to upgrade sports events subtitles", is_progress=True,
+                                         wait_for_completion=wait_for_completion, is_cancellable=True)
+        return
+    else:
+        job = jobs_queue.get_job(job_id=job_id)
+
+    events_to_upgrade = get_upgradable_sports_subtitles()
+    events_data = [{
+        'id': x.id,
+        'leagueTitle': x.leagueTitle,
+        'title': x.title,
+        'partName': x.partName,
+        'language': x.language,
+        'audio_language': x.audio_language,
+        'video_path': x.video_path,
+        'sceneName': x.sceneName,
+        'score': x.score,
+        'score_out_of': x.score_out_of,
+        'sportsEventId': x.sportsEventId,
+        'sportarrLeagueId': x.sportarrLeagueId,
+        'subtitles_path': x.subtitles_path,
+        'path': x.path,
+        'profileId': x.profileId,
+        'external_subtitles': x.external_subtitles,
+    } for x in database.execute(
+        select(TableHistorySports.id,
+               TableSportsLeagues.title.label('leagueTitle'),
+               TableSportsEvents.title,
+               TableSportsEvents.partName,
+               TableHistorySports.language,
+               TableSportsEvents.audio_language,
+               TableHistorySports.video_path,
+               TableSportsEvents.sceneName,
+               TableHistorySports.score,
+               TableHistorySports.score_out_of,
+               TableHistorySports.sportsEventId,
+               TableSportsEvents.sportarrLeagueId,
+               TableHistorySports.subtitles_path,
+               TableSportsEvents.path,
+               TableSportsLeagues.profileId,
+               TableSportsEventsSubtitles.path.label('external_subtitles'))
+        .select_from(TableHistorySports)
+        .join(TableSportsEvents, onclause=TableHistorySports.sportsEventId == TableSportsEvents.id)
+        # The league comes from the event row, which is where the event is now.
+        .join(TableSportsLeagues, onclause=TableSportsEvents.sportarrLeagueId == TableSportsLeagues.sportarrLeagueId)
+        .join(TableSportsEventsSubtitles,
+              onclause=TableHistorySports.sportsEventId == TableSportsEventsSubtitles.sportsEventId, isouter=True)
+        .where(TableSportsEventsSubtitles.path.is_not(None)))
+    .all() if _language_still_desired(x.language, x.profileId) and x.video_path == x.path]
+
+    # Keep only upgradable subtitles that are still on disk, with the id they were first upgraded from. Two index
+    # rows for one file would give the same history row twice, so each history row is searched once.
+    events_data = list({x['id']: dict(x, original_id=events_to_upgrade.get(x['id'])) for x in events_data
+                        if x['id'] in events_to_upgrade and x['subtitles_path'] == x['external_subtitles']}.values())
+
+    count_event_to_upgrade = len(events_data)
+    jobs_queue.update_job_progress(job_id=job_id, progress_max=count_event_to_upgrade)
+
+    if count_event_to_upgrade == 0:
+        jobs_queue.update_job_progress(job_id=job_id, progress_value='max')
+
+    for i, event in enumerate(events_data, start=1):
+        if job.cancel_event.is_set():
+            raise JobCanceled
+
+        providers_list = get_providers()
+
+        event_title = f'{event["title"]} - {event["partName"]}' if event['partName'] else event['title']
+        jobs_queue.update_job_progress(job_id=job_id, progress_value=i,
+                                       progress_message=f'{event["leagueTitle"]} - {event_title}')
+
+        if not providers_list:
+            logging.info("BAZARR All providers are throttled")
+            return
+
+        language, is_forced, is_hi = parse_language_string(event['language'])
+        if not language:
+            continue
+        if is_hi and not _is_hi_required(language, event['profileId']):
+            is_hi = 'False'
+
+        audio_language = resolve_audio_language(get_audio_profile_languages(event['audio_language']), fallback=None)
+
+        # A sports event is scored as an episode, so the episode maximum applies.
+        minimum_score = _upgrade_minimum_score(
+            event['score'], settings.general.minimum_score_sports, event['score_out_of'] or MAX_SCORES['episode']
+        )
+
+        result = list(generate_subtitles(path_mappings.path_replace_sports(event['video_path']),
+                                         [(language, is_hi, is_forced)],
+                                         audio_language,
+                                         event['sceneName'] or None,
+                                         event['leagueTitle'],
+                                         'sports',
+                                         event['profileId'],
+                                         forced_minimum_score=minimum_score,
+                                         is_upgrade=True,
+                                         previous_subtitles_to_delete=path_mappings.path_replace_sports(
+                                             event['subtitles_path']),
+                                         job_id=job_id))
+
+        if result:
+            if isinstance(result, list) and len(result):
+                result = result[0]
+            store_subtitles_sports(event['sportsEventId'])
+            # history_log_sports refreshes the sports history page.
+            history_log_sports(3, event['sportarrLeagueId'], event['sportsEventId'], result,
+                               upgraded_from_id=event['original_id'] or event['id'])
+            if hasattr(result, 'message'):
+                send_notifications_sports(event['sportarrLeagueId'], event['sportsEventId'], result.message)
+    jobs_queue.update_job_name(job_id=job_id, new_job_name='Tried to upgrade sports events subtitles')
+
+
 def get_queries_condition_parameters():
     days_to_upgrade_subs = settings.general.days_to_upgrade_subs
     minimum_timestamp = (datetime.now() - timedelta(days=int(days_to_upgrade_subs)))
@@ -484,6 +606,81 @@ def get_upgradable_movies_subtitles(history_id_list=None):
 
     logging.debug(f"We've found {len(upgradable_movie_subtitles)} movie subtitles IDs to be upgradable")
     return upgradable_movie_subtitles
+
+
+def get_upgradable_sports_subtitles(history_id_list: list[int] | None = None) -> dict[int, int | None]:
+    """Map each upgradable sports history id to the history id it was first upgraded from, or None."""
+    if not settings.general.upgrade_subs:
+        # return an empty set of rows
+        logging.debug("Subtitles upgrade is disabled so we won't go further.")
+        return {}
+
+    minimum_timestamp, query_actions = get_queries_condition_parameters()
+    logging.debug(f"Minimum timestamp used for subtitles upgrade: {minimum_timestamp}")
+    logging.debug(f"These actions are considered for subtitles upgrade: {query_actions}")
+
+    logging.debug("Determining upgradable sports events subtitles")
+    last_since_delete_subquery = (
+        select(TableHistorySports.video_path,
+               TableHistorySports.language,
+               func.max(TableHistorySports.id).label('last_delete_id'))
+        .group_by(TableHistorySports.video_path, TableHistorySports.language)
+        .where(TableHistorySports.action == 0)
+        .subquery()
+    )
+
+    max_id_timestamp = select(TableHistorySports.video_path,
+                              TableHistorySports.language,
+                              func.max(TableHistorySports.timestamp).label('timestamp')) \
+        .outerjoin(last_since_delete_subquery, onclause=and_(
+            TableHistorySports.video_path == last_since_delete_subquery.c.video_path,
+            TableHistorySports.language == last_since_delete_subquery.c.language)) \
+        .group_by(TableHistorySports.video_path, TableHistorySports.language) \
+        .where(and_(TableHistorySports.action.in_(query_actions),
+                    or_(last_since_delete_subquery.c.last_delete_id.is_(None),
+                        TableHistorySports.id > last_since_delete_subquery.c.last_delete_id))) \
+        .distinct() \
+        .subquery()
+
+    upgradable_sports_conditions = [(TableHistorySports.action.in_(query_actions)),
+                                    (TableHistorySports.timestamp > minimum_timestamp),
+                                    or_(and_(TableHistorySports.score.is_(None), TableHistorySports.action == 6),
+                                    (TableHistorySports.score < TableHistorySports.score_out_of - 3))]
+    upgradable_sports_conditions += get_exclusion_clause('sports')
+    subtitles_to_upgrade = database.execute(
+        select(TableHistorySports.id,
+               TableHistorySports.video_path,
+               TableHistorySports.language,
+               TableHistorySports.upgradedFromId)
+        .select_from(TableHistorySports)
+        .join(TableSportsEvents, onclause=TableHistorySports.sportsEventId == TableSportsEvents.id)
+        .join(TableSportsLeagues, onclause=TableSportsEvents.sportarrLeagueId == TableSportsLeagues.sportarrLeagueId)
+        .join(max_id_timestamp, onclause=and_(TableHistorySports.video_path == max_id_timestamp.c.video_path,
+                                              TableHistorySports.language == max_id_timestamp.c.language,
+                                              max_id_timestamp.c.timestamp == TableHistorySports.timestamp))
+        .where(reduce(operator.and_, upgradable_sports_conditions))
+        .order_by(TableHistorySports.timestamp.desc())) \
+        .all()
+    logging.debug(f"{len(subtitles_to_upgrade)} subtitles are candidates and we've selected the latest timestamp for "
+                  f"each of them.")
+
+    upgradable_sports_subtitles = {}
+    for subtitle_to_upgrade in subtitles_to_upgrade:
+        # exclude subtitles that are not in history_id_list if provided
+        if history_id_list and subtitle_to_upgrade.id not in history_id_list:
+            continue
+
+        # exclude subtitles with ID that as been "upgraded from" and shouldn't be considered
+        if any(x.upgradedFromId == subtitle_to_upgrade.id for x in subtitles_to_upgrade):
+            logging.debug(f"TableHistorySports ID {subtitle_to_upgrade.id} is the original subtitles event and has "
+                          f"already been upgraded so we'll skip it.")
+            continue
+
+        # the original subtitles ID is kept so every upgrade points at the first download
+        upgradable_sports_subtitles.update({subtitle_to_upgrade.id: subtitle_to_upgrade.upgradedFromId})
+
+    logging.debug(f"We've found {len(upgradable_sports_subtitles)} sports events subtitles IDs to be upgradable")
+    return upgradable_sports_subtitles
 
 
 def _language_still_desired(language, profile_id):
