@@ -21,6 +21,14 @@ import SettingsSonarrView from "./Sonarr";
 import SettingsSubtitleProcessingView from "./SubtitleProcessing";
 import SettingsUIView from "./UI";
 
+const mockSystemStatus = () => {
+  server.use(
+    http.get("/api/system/status", () => {
+      return HttpResponse.json({ data: {} });
+    }),
+  );
+};
+
 const languagesSetup = () => {
   server.use(
     http.get("/api/system/languages", () => {
@@ -34,24 +42,14 @@ const languagesSetup = () => {
       });
     }),
   );
-  server.use(
-    http.get("/api/system/status", () => {
-      return HttpResponse.json({ data: {} });
-    }),
-  );
+  mockSystemStatus();
 };
 
 const cases: RenderTestCase[] = [
   {
     name: "general page",
     ui: SettingsGeneralView,
-    setupEach: () => {
-      server.use(
-        http.get("/api/system/status", () => {
-          return HttpResponse.json({ data: {} });
-        }),
-      );
-    },
+    setupEach: mockSystemStatus,
   },
   {
     name: "languages general page",
@@ -165,6 +163,7 @@ const cases: RenderTestCase[] = [
   {
     name: "subtitle processing page",
     ui: SettingsSubtitleProcessingView,
+    setupEach: mockSystemStatus,
   },
   {
     name: "ui page",
