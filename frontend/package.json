@@ -84,7 +84,7 @@
     "stylelint-config-standard-scss": "^18.0.0",
     "typescript": "^7.0.2",
     "vite": "^8.4.0",
-    "vite-plugin-checker": "^0.14.5",
+    "vite-plugin-checker": "^1.1.0",
     "vite-plugin-pwa": "^2.0.0",
     "vitest": "^5.1.2",
     "yaml": "^2.9.1"
