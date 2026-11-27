@@ -23,8 +23,11 @@ export const baseSettings = {
     remove_profile_tags: [],
     serie_default_enabled: false,
     movie_default_enabled: false,
+    league_default_enabled: false,
+    use_sportarr: false,
     serie_default_profile: null,
     movie_default_profile: null,
+    league_default_profile: null,
     language_equals: [] as string[],
   },
   languages: {

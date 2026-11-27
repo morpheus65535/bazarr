@@ -2,6 +2,8 @@ export enum QueryKeys {
   Movies = "movies",
   Episodes = "episodes",
   Series = "series",
+  SportsLeagues = "sports-leagues",
+  SportsEvents = "sports-events",
   Badges = "badges",
   FileSystem = "file-system",
   System = "system",

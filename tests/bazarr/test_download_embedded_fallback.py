@@ -74,6 +74,8 @@ def test_embedded_fallback_uses_shared_extractor_then_translates(mocker):
         sonarr_series_id=None,
         sonarr_episode_id=None,
         radarr_id=42,
+        sportarr_league_id=None,
+        sports_event_id=None,
         original_format=False,
         job_id=123,
     )
@@ -96,6 +98,8 @@ def test_embedded_fallback_uses_shared_extractor_then_translates(mocker):
         sonarr_series_id=None,
         sonarr_episode_id=None,
         radarr_id=42,
+        sportarr_league_id=None,
+        sports_event_id=None,
         original_format=False,
         job_id=123,
     )
@@ -208,6 +212,8 @@ def test_generate_subtitles_uses_embedded_fallback_when_providers_miss(mocker):
         sonarr_series_id=None,
         sonarr_episode_id=None,
         radarr_id=42,
+        sportarr_league_id=None,
+        sports_event_id=None,
         original_format=False,
         job_id=99,
     )
@@ -239,6 +245,8 @@ def test_generate_subtitles_translates_downloaded_source_fallback(mocker):
         sonarr_series_id=None,
         sonarr_episode_id=None,
         radarr_id=42,
+        sportarr_league_id=None,
+        sports_event_id=None,
         original_format=False,
         job_id=99,
     )

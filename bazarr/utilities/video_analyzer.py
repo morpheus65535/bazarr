@@ -5,7 +5,7 @@ import pickle
 from typing import Literal, TypedDict, cast
 
 from app.config import settings
-from app.database import TableEpisodes, TableMovies, database, update, select, get_subtitles
+from app.database import TableEpisodes, TableMovies, TableSportsEvents, database, update, select, get_subtitles
 from languages.custom_lang import Alpha3LanguageInfo, CustomLanguage, DetectedLanguage, LanguageInfo
 from languages.get_languages import language_from_alpha3, alpha3_from_alpha2
 from utilities.path_mappings import path_mappings
@@ -111,7 +111,8 @@ def _handle_alpha3(detected_language: DetectedLanguage) -> str | None:
 
 
 def embedded_subs_reader(file: str, file_size: int, episode_file_id: int | None = None,
-                         movie_file_id: int | None = None, use_cache: bool = True) -> list[EmbeddedSubtitle]:
+                         movie_file_id: int | None = None, sports_event_id=None,
+                         use_cache: bool = True) -> list[EmbeddedSubtitle]:
     """
     Read embedded subtitle tracks from a video file's metadata.
 
@@ -137,7 +138,7 @@ def embedded_subs_reader(file: str, file_size: int, episode_file_id: int | None 
         empty list is returned when no metadata or no subtitle tracks
         are available.
     """
-    data = parse_video_metadata(file, file_size, episode_file_id, movie_file_id, use_cache=use_cache)
+    data = parse_video_metadata(file, file_size, episode_file_id, movie_file_id, sports_event_id, use_cache=use_cache)
     und_default_language = alpha3_from_alpha2(settings.general.default_und_embedded_subtitles_lang)
 
     subtitles_list: list[EmbeddedSubtitle] = []
@@ -392,7 +393,8 @@ def subtitles_sync_references(subtitles_path: str, sonarr_episode_id: int | None
 
 
 def parse_video_metadata(file: str, file_size: int, episode_file_id: int | None = None,
-                         movie_file_id: int | None = None, use_cache: bool = True) -> VideoMetadata | None:
+                         movie_file_id: int | None = None, sports_event_id=None,
+                         use_cache: bool = True) -> VideoMetadata | None:
     """
     Parse the metadata of a video file using the configured embedded
     subtitles parser (ffprobe or mediainfo).
@@ -419,17 +421,21 @@ def parse_video_metadata(file: str, file_size: int, episode_file_id: int | None 
         database, if the video belongs to an episode.
     :param movie_file_id: Identifier of the movie file in the database,
         if the video belongs to a movie.
+    :param sports_event_id: Row id of the sports event part in the
+        database, if the video belongs to a sports event.
     :param use_cache: Whether to try to reuse the cached metadata stored
         in the database before analyzing the file.
     :return: The parsed video metadata, or ``None`` if the file cannot be
         found, cannot be analyzed, or no parser binary is available.
     """
 
+    # Sportarr file IDs and Sonarr episode file IDs are unrelated sequences. Keep
+    # the sports cache in its own table, or a scan writes over an episode's cache.
     # Define default data keys value
     data: VideoMetadata = {
         "ffprobe": {},
         "mediainfo": {},
-        "file_id": episode_file_id or movie_file_id,
+        "file_id": episode_file_id or movie_file_id or sports_event_id,
         "file_size": file_size,
     }
 
@@ -447,6 +453,11 @@ def parse_video_metadata(file: str, file_size: int, episode_file_id: int | None 
                 select(TableMovies.ffprobe_cache)
                 .where(TableMovies.movie_file_id == movie_file_id)) \
                 .first()
+        elif sports_event_id:
+            cache_key = database.execute(
+                select(TableSportsEvents.ffprobe_cache)
+                .where(TableSportsEvents.id == sports_event_id)) \
+                .first()
         else:
             cache_key = None
 
@@ -462,7 +473,8 @@ def parse_video_metadata(file: str, file_size: int, episode_file_id: int | None 
         else:
             # Check if file size and file id matches and if so, we return the cached value if available for the
             # desired parser
-            if cached_value is not None and cached_value['file_size'] == file_size and cached_value['file_id'] in [episode_file_id, movie_file_id]:
+            if cached_value is not None and cached_value['file_size'] == file_size and cached_value['file_id'] in [episode_file_id, movie_file_id,
+                                                                                      sports_event_id]:
                 if embedded_subs_parser in cached_value and cached_value[embedded_subs_parser]:
                     return cached_value
                 else:
@@ -530,4 +542,9 @@ def parse_video_metadata(file: str, file_size: int, episode_file_id: int | None 
             update(TableMovies)
             .values(ffprobe_cache=pickle.dumps(data, pickle.HIGHEST_PROTOCOL))
             .where(TableMovies.movie_file_id == movie_file_id))
+    elif sports_event_id:
+        database.execute(
+            update(TableSportsEvents)
+            .values(ffprobe_cache=pickle.dumps(data, pickle.HIGHEST_PROTOCOL))
+            .where(TableSportsEvents.id == sports_event_id))
     return data

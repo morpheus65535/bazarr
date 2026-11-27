@@ -106,7 +106,8 @@ def test_combined_job_extracts_then_translates_with_same_job_id(mocker):
         video_path="/movies/Foo (2020)/Foo.mkv", source_srt_file="/tmp/extracted.en.srt",
         from_lang="eng", to_lang="fra", forced=False, hi=True, media_type="movie",
         sonarr_series_id=None, sonarr_episode_id=None, radarr_id=12,
-        metadata={"imdbId": "tt0000001"}, original_format=True, job_id=99)
+        metadata={"imdbId": "tt0000001"}, original_format=True, job_id=99, sportarr_league_id=None,
+        sports_event_id=None)
 
 
 def test_combined_job_skips_translation_when_extraction_fails(mocker):

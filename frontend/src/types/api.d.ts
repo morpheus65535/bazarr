@@ -1,10 +1,12 @@
 interface Badge {
   episodes: number;
   movies: number;
+  sports: number;
   providers: number;
   status: number;
   sonarr_signalr: string;
   radarr_signalr: string;
+  sportarr_sse: string;
   announcements: number;
 }
 
@@ -155,6 +157,22 @@ interface MovieIdType {
   radarrId: number;
 }
 
+interface LeagueIdType {
+  sportarrLeagueId: number;
+}
+
+// A sports event row is one playable file, so the id points at the part rather
+// than at the Sportarr event.
+type SportsEventIdType = LeagueIdType & {
+  sportsEventId: number;
+};
+
+interface SportsEventTitleType {
+  leagueTitle: string;
+  eventTitle: string;
+  partName?: string | null;
+}
+
 interface TitleType {
   title: string;
 }
@@ -180,15 +198,20 @@ declare namespace Item {
       profileId: number | null;
       fanart: string;
       overview: string;
-      imdbId: string;
       alternativeTitles: string[];
       poster: string;
-      year: string;
     };
 
   type Base = CamelCaseKeys<RawBase>;
 
+  // Sportarr leagues have no IMDb id and no release year.
+  interface RawReleaseType {
+    imdbId: string;
+    year: string;
+  }
+
   type RawSeries = RawBase &
+    RawReleaseType &
     SeriesIdType & {
       episodeFileCount: number;
       episodeMissingCount: number;
@@ -201,6 +224,7 @@ declare namespace Item {
   type Series = CamelCaseKeys<RawSeries>;
 
   type RawMovie = RawBase &
+    RawReleaseType &
     MovieIdType &
     RawSubtitleType &
     RawMissingSubtitleType &
@@ -222,6 +246,34 @@ declare namespace Item {
 
   type Episode = CamelCaseKeys<RawEpisode>;
 
+  type RawSportsLeague = RawBase &
+    LeagueIdType & {
+      externalId: string;
+      sport: string;
+      sortTitle: string;
+      episodeFileCount: number;
+      episodeMissingCount: number;
+    };
+
+  type SportsLeague = CamelCaseKeys<RawSportsLeague>;
+
+  type RawSportsEvent = PathType &
+    TitleType &
+    MonitoredType &
+    SportsEventIdType &
+    RawSubtitleType &
+    RawMissingSubtitleType &
+    SceneNameType &
+    RawAudioLanguageType & {
+      season: number;
+      episode: number;
+      partName?: string | null;
+      partNumber?: number | null;
+      broadcastDate?: string | null;
+    };
+
+  type SportsEvent = CamelCaseKeys<RawSportsEvent>;
+
   interface RawRefTracks {
     audio_tracks: AudioTrack[];
     embedded_subtitles_tracks: RawSubtitleTrack[];
@@ -232,10 +284,8 @@ declare namespace Item {
 }
 
 declare namespace Wanted {
-  type RawBase = MonitoredType &
-    TagType &
+  type RawBase = TagType &
     SceneNameType & {
-      hearing_impaired: boolean;
       missing_subtitles: RawSubtitle[];
     };
 
@@ -249,6 +299,14 @@ declare namespace Wanted {
     };
 
   type Episode = CamelCaseKeys<RawEpisode>;
+
+  type RawSportsEvent = RawBase &
+    SportsEventIdType &
+    SportsEventTitleType & {
+      sport: string;
+    };
+
+  type SportsEvent = CamelCaseKeys<RawSportsEvent>;
 
   type RawMovie = RawBase & MovieIdType & TitleType;
 
@@ -270,9 +328,12 @@ declare namespace Blacklist {
       episode_number: string;
     };
 
+  type RawSportsEvent = RawBase & SportsEventIdType & SportsEventTitleType;
+
   type Base = CamelCaseKeys<RawBase>;
   type Movie = CamelCaseKeys<RawMovie>;
   type Episode = CamelCaseKeys<RawEpisode>;
+  type SportsEvent = CamelCaseKeys<RawSportsEvent>;
 }
 
 declare namespace History {
@@ -287,22 +348,29 @@ declare namespace History {
       parsed_timestamp: string;
       timestamp: string;
       description: string;
-      upgradable: boolean;
       matches: string[];
       dont_matches: string[];
     };
 
-  type RawMovie = RawBase & MovieIdType & TitleType;
+  // Sports history has no upgrade marker.
+  type RawUpgradableBase = RawBase & {
+    upgradable: boolean;
+  };
 
-  type RawEpisode = RawBase &
+  type RawMovie = RawUpgradableBase & MovieIdType & TitleType;
+
+  type RawEpisode = RawUpgradableBase &
     EpisodeIdType &
     EpisodeTitleType & {
       episode_number: string;
     };
 
+  type RawSportsEvent = RawBase & SportsEventIdType & SportsEventTitleType;
+
   type Base = CamelCaseKeys<RawBase>;
   type Movie = CamelCaseKeys<RawMovie>;
   type Episode = CamelCaseKeys<RawEpisode>;
+  type SportsEvent = CamelCaseKeys<RawSportsEvent>;
 
   type StatItem = {
     count: number;

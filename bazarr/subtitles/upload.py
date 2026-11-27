@@ -21,14 +21,18 @@ from radarr.notify import notify_radarr
 from sonarr.history import history_log
 from sonarr.notify import notify_sonarr
 from languages.custom_lang import CustomLanguage
-from app.database import (TableEpisodes, TableMovies, TableShows, get_profiles_list, get_audio_profile_languages,
-                          database, select)
+from app.database import (TableEpisodes, TableMovies, TableShows, TableSportsEvents, TableSportsLeagues,
+                          get_profiles_list, get_audio_profile_languages, database, select)
 from app.jobs_queue import jobs_queue
 from app.event_handler import event_stream
 from app.notifier import send_notifications
 from app.notifier import send_notifications_movie
+from app.notifier import send_notifications_sports
 from subtitles.indexer.series import store_subtitles
 from subtitles.indexer.movies import store_subtitles_movie
+from subtitles.indexer.sports import store_subtitles_sports
+from sportarr.history import history_log_sports
+from sportarr.media_refresh import refresh_sports_media_servers
 from subtitles.processing import ProcessSubtitlesResult
 
 from .sync import sync_subtitles
@@ -61,7 +65,8 @@ def _get_audio_language_payload(audio_languages):
 
 
 def manual_upload_subtitle(path, language, forced, hi, media_type, subtitle, filename, audio_language, job_id=None,
-                           sonarrSeriesId=None, sonarrEpisodeId=None, radarrId=None):
+                           sonarrSeriesId=None, sonarrEpisodeId=None, radarrId=None, sportarrLeagueId=None,
+                           sportsEventId=None):
     if not job_id:
         return jobs_queue.add_job_from_function(f"Uploading {filename}", is_progress=False)
 
@@ -105,6 +110,20 @@ def manual_upload_subtitle(path, language, forced, hi, media_type, subtitle, fil
 
         if episode_metadata:
             use_original_format = _get_profile_original_format(episode_metadata.profileId)
+        else:
+            return
+    elif media_type == 'sports':
+        sports_metadata = database.execute(
+            select(TableSportsEvents.id,
+                   TableSportsEvents.sportarrLeagueId,
+                   TableSportsLeagues.profileId)
+            .select_from(TableSportsEvents)
+            .join(TableSportsLeagues)
+            .where(TableSportsEvents.id == sportsEventId)) \
+            .first()
+
+        if sports_metadata:
+            use_original_format = _get_profile_original_format(sports_metadata.profileId)
         else:
             return
     else:
@@ -181,10 +200,13 @@ def manual_upload_subtitle(path, language, forced, hi, media_type, subtitle, fil
     uploaded_language_code2 = alpha2_from_alpha3(language) + modifier_code
 
     if use_postprocessing:
+        # A league takes the series slot and an event takes the episode slot. A
+        # sports event is the equivalent of an episode.
         args = pp_replace(postprocessing_cmd, path, subtitle_path, uploaded_language, uploaded_language_code2,
                           uploaded_language_code3, audio_language['name'], audio_language['code2'],
-                          audio_language['code3'], 100, "1", "manual", "user", "unknown", sonarrSeriesId,
-                          sonarrEpisodeId or radarrId,)
+                          audio_language['code3'], 100, "1", "manual", "user", "unknown",
+                          sonarrSeriesId or sportarrLeagueId,
+                          sonarrEpisodeId or sportsEventId or radarrId,)
         postprocessing(args, path)
         set_chmod(subtitles_path=subtitle_path)
 
@@ -198,6 +220,17 @@ def manual_upload_subtitle(path, language, forced, hi, media_type, subtitle, fil
         reversed_subtitles_path = path_mappings.path_replace_reverse(subtitle_path)
         event_stream(type='series', action='update', payload=episode_metadata.sonarrSeriesId)
         event_stream(type='episode-wanted', action='delete', payload=episode_metadata.sonarrEpisodeId)
+    elif media_type == 'sports':
+        # Sportarr does not index subtitles. Refresh the media servers once the
+        # queued sync job is done so they see the synced file.
+        sync_subtitles(video_path=path, srt_path=subtitle_path, srt_lang=uploaded_language_code2, percent_score=100,
+                       sportarr_league_id=sports_metadata.sportarrLeagueId, forced=forced, hi=hi,
+                       sports_event_id=sports_metadata.id,
+                       callback=lambda: refresh_sports_media_servers(path))
+        reversed_path = path_mappings.path_replace_reverse_sports(path)
+        reversed_subtitles_path = path_mappings.path_replace_reverse_sports(subtitle_path)
+        event_stream(type='sports-league', action='update', payload=sports_metadata.sportarrLeagueId)
+        event_stream(type='sports-event-wanted', action='delete', payload=sports_metadata.id)
     else:
         # notify Radarr once the queued sync job is done so it sees the synced file
         sync_subtitles(video_path=path, srt_path=subtitle_path, srt_lang=uploaded_language_code2, percent_score=100,
@@ -220,8 +253,8 @@ def manual_upload_subtitle(path, language, forced, hi, media_type, subtitle, fil
                                     hearing_impaired=None)
 
     if not result:
-        logging.debug(f"BAZARR unable to process subtitles for this {'episode' if media_type == 'series' else 'movie'}:"
-                      f" {path}")
+        media_name = {'series': 'episode', 'sports': 'sports event'}.get(media_type, 'movie')
+        logging.debug(f"BAZARR unable to process subtitles for this {media_name}: {path}")
     else:
         provider = "manual"
         if media_type == 'series':
@@ -240,6 +273,14 @@ def manual_upload_subtitle(path, language, forced, hi, media_type, subtitle, fil
                 jellyfin_refresh_item(episode_metadata.imdbId, is_movie=False,
                                       season=episode_metadata.season, episode=episode_metadata.episode,
                                       tvdb_id=episode_metadata.tvdbId)
+        elif media_type == 'sports':
+            store_subtitles_sports(sportsEventId)
+            # A sports event is scored as an episode, so it uses the episode
+            # maximum score.
+            history_log_sports(4, sports_metadata.sportarrLeagueId, sportsEventId, result, fake_provider=provider,
+                               fake_score=MAX_SCORES['episode'])
+            if not settings.general.dont_notify_manual_actions:
+                send_notifications_sports(sports_metadata.sportarrLeagueId, sportsEventId, result.message)
         else:
             store_subtitles_movie(radarrId)
             history_log_movie(4, radarrId, result, fake_provider=provider, fake_score=MAX_SCORES['movie'])

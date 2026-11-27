@@ -21,6 +21,7 @@ from srt import Subtitle
 from app.config import settings
 from sonarr.history import history_log
 from radarr.history import history_log_movie
+from sportarr.history import history_log_sports
 from utilities.path_mappings import path_mappings
 from subtitles.processing import ProcessSubtitlesResult
 from app.jobs_queue import jobs_queue, JobCanceled
@@ -45,7 +46,8 @@ class SubtitleObject(typing.TypedDict):
 class GeminiTranslatorService:
 
     def __init__(self, source_srt_file, dest_srt_file, to_lang, media_type, sonarr_series_id, sonarr_episode_id,
-                 radarr_id, forced, hi, video_path, from_lang, orig_to_lang, **kwargs):
+                 radarr_id, forced, hi, video_path, from_lang, orig_to_lang, sportarr_league_id=None,
+                 sports_event_id=None, **kwargs):
         self.source_srt_file = source_srt_file
         self.dest_srt_file = dest_srt_file
         self.to_lang = to_lang
@@ -59,6 +61,8 @@ class GeminiTranslatorService:
         self.sonarr_series_id = sonarr_series_id
         self.sonarr_episode_id = sonarr_episode_id
         self.radarr_id = radarr_id
+        self.sportarr_league_id = sportarr_league_id
+        self.sports_event_id = sports_event_id
         self.orig_to_lang = orig_to_lang
 
         self.gemini_api_key = None
@@ -99,7 +103,8 @@ class GeminiTranslatorService:
             self.output_file = self.dest_srt_file
             self.model_name = settings.translator.gemini_model
             self.batch_size = self._get_batch_size()
-            self.description = get_description(self.media_type, self.radarr_id, self.sonarr_series_id)
+            self.description = get_description(self.media_type, self.radarr_id, self.sonarr_series_id,
+                                               self.sportarr_league_id)
 
             if self.input_file:
                 self.progress_file = os.path.join(os.path.dirname(self.input_file), f".{os.path.basename(self.input_file)}.progress")
@@ -130,6 +135,9 @@ class GeminiTranslatorService:
             if self.media_type == 'episode':
                 history_log(action=6, sonarr_series_id=self.sonarr_series_id, sonarr_episode_id=self.sonarr_episode_id,
                             result=result)
+            elif self.media_type == 'sports':
+                history_log_sports(action=6, sportarr_league_id=self.sportarr_league_id,
+                                   sports_event_id=self.sports_event_id, result=result)
             else:
                 history_log_movie(action=6, radarr_id=self.radarr_id, result=result)
                 

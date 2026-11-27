@@ -12,6 +12,7 @@ from retry.api import retry
 from ..core.translator_utils import add_translator_info, create_process_result
 from sonarr.history import history_log
 from radarr.history import history_log_movie
+from sportarr.history import history_log_sports
 from deep_translator import GoogleTranslator
 from concurrent.futures import ThreadPoolExecutor
 from app.jobs_queue import jobs_queue, JobCanceled
@@ -25,7 +26,7 @@ class GoogleTranslatorService:
 
     def __init__(self, source_srt_file, dest_srt_file, lang_obj, to_lang, from_lang, media_type,
                  video_path, orig_to_lang, forced, hi, sonarr_series_id, sonarr_episode_id,
-                 radarr_id):
+                 radarr_id, sportarr_league_id=None, sports_event_id=None):
         self.source_srt_file = source_srt_file
         self.dest_srt_file = dest_srt_file
         self.lang_obj = lang_obj
@@ -39,6 +40,8 @@ class GoogleTranslatorService:
         self.sonarr_series_id = sonarr_series_id
         self.sonarr_episode_id = sonarr_episode_id
         self.radarr_id = radarr_id
+        self.sportarr_league_id = sportarr_league_id
+        self.sports_event_id = sports_event_id
         self.language_code_convert_dict = {
             'he': 'iw',
             'zh': 'zh-CN',
@@ -133,6 +136,9 @@ class GoogleTranslatorService:
 
             if self.media_type == 'episode':
                 history_log(action=6, sonarr_series_id=self.sonarr_series_id, sonarr_episode_id=self.sonarr_episode_id, result=result)
+            elif self.media_type == 'sports':
+                history_log_sports(action=6, sportarr_league_id=self.sportarr_league_id,
+                                   sports_event_id=self.sports_event_id, result=result)
             else:
                 history_log_movie(action=6, radarr_id=self.radarr_id, result=result)
 

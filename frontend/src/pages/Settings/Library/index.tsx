@@ -17,6 +17,11 @@ const SettingsLibraryView: FunctionComponent = () => {
       label: "Radarr",
       status: settings?.general?.use_radarr ? "success" : undefined,
     },
+    {
+      value: "sportarr",
+      label: "Sportarr",
+      status: settings?.general?.use_sportarr ? "success" : undefined,
+    },
   ];
 
   return (

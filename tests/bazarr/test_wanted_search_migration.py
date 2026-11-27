@@ -107,9 +107,10 @@ def test_fresh_installation_and_restart(monkeypatch: pytest.MonkeyPatch, migrati
         session.commit()
         db.migrate_db(Flask(__name__))
         assert session.execute(db.select(db.func.count()).select_from(db.System)).scalar_one() == 1
-        for table in ('table_movies', 'table_episodes'):
+        for table in ('table_movies', 'table_episodes', 'table_sports_events'):
             columns = {column['name'] for column in inspect(engine).get_columns(table)}
             assert 'missing_subtitles' not in columns
+            assert 'failedAttempts' not in columns
             assert 'missing_subtitles_calculated' in columns
 
 

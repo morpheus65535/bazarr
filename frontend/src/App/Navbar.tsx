@@ -333,8 +333,9 @@ const NavbarItem: FunctionComponent<NavbarItemProps> = ({
     return true;
   }, [badge]);
 
+  // Sportarr reports its event stream with the same values as SignalR.
   const isSignalRBadge = useMemo(() => {
-    return link === "/series" || link === "/movies";
+    return link === "/series" || link === "/movies" || link === "/sports";
   }, [link]);
 
   // Compute explicit background and text style objects safely

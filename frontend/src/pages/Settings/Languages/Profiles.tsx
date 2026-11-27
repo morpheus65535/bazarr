@@ -6,7 +6,7 @@ import {
   useState,
 } from "react";
 import { Text as MantineText } from "@mantine/core";
-import { useLanguages } from "@/apis/hooks";
+import { useLanguages, useSystemSettings } from "@/apis/hooks";
 import ProfileEditor from "@/components/forms/ProfileEditor";
 import {
   Check,
@@ -79,6 +79,7 @@ const ProfilesSections: FunctionComponent<ProfilesSectionsProps> = ({
   session,
 }) => {
   const { data: languages } = useLanguages();
+  const { data: settings } = useSystemSettings();
   const enabledLanguages = useLatestEnabledLanguages() ?? [];
   const stagedValues = useStagedValues();
   const { profiles, updateProfile, removeProfile, createProfileId } =
@@ -243,6 +244,27 @@ const ProfilesSections: FunctionComponent<ProfilesSectionsProps> = ({
             settingKey="settings-general-movie_default_profile"
           ></ProfileSelector>
         </CollapseBox>
+
+        {settings?.general.use_sportarr && (
+          <>
+            <Check
+              label="Leagues"
+              settingKey="settings-general-league_default_enabled"
+            ></Check>
+            <Message>
+              Will apply only to Leagues added to Bazarr after enabling this
+              option.
+            </Message>
+
+            <CollapseBox settingKey="settings-general-league_default_enabled">
+              <ProfileSelector
+                label="Profile"
+                placeholder="Select a profile"
+                settingKey="settings-general-league_default_profile"
+              ></ProfileSelector>
+            </CollapseBox>
+          </>
+        )}
       </Section>
     </>
   );

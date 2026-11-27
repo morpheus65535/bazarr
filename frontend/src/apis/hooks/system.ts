@@ -18,7 +18,7 @@ export const useBadges = () =>
   });
 
 export const useFileSystem = (
-  type: "bazarr" | "sonarr" | "radarr",
+  type: "bazarr" | "sonarr" | "radarr" | "sportarr",
   path: string,
   enabled: boolean,
 ) =>
@@ -32,6 +32,8 @@ export const useFileSystem = (
         return api.files.radarr(path);
       } else if (type === "sonarr") {
         return api.files.sonarr(path);
+      } else if (type === "sportarr") {
+        return api.files.sportarr(path);
       }
 
       return [];
@@ -86,6 +88,14 @@ export const useSettingsMutation = (options?: { silent?: boolean }) => {
 
       void client.invalidateQueries({
         queryKey: [QueryKeys.Wanted],
+      });
+
+      void client.invalidateQueries({
+        queryKey: [QueryKeys.SportsLeagues],
+      });
+
+      void client.invalidateQueries({
+        queryKey: [QueryKeys.SportsEvents],
       });
 
       void client.invalidateQueries({

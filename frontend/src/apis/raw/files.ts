@@ -21,6 +21,10 @@ class FilesApi extends BaseApi {
   async radarr(path?: string) {
     return this.browse("/radarr", path);
   }
+
+  async sportarr(path?: string) {
+    return this.browse("/sportarr", path);
+  }
 }
 
 const filesApi = new FilesApi();

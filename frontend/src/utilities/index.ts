@@ -1,5 +1,11 @@
 import { Dispatch } from "react";
-import { isEpisode, isMovie, isSeries } from "./validate";
+import {
+  isEpisode,
+  isMovie,
+  isSeries,
+  isSportsEvent,
+  isSportsLeague,
+} from "./validate";
 
 export const toggleState = (
   dispatch: Dispatch<boolean>,
@@ -15,6 +21,10 @@ export const GetItemId = <T extends object>(item: T): number | undefined => {
     return item.radarrId;
   } else if (isEpisode(item)) {
     return item.sonarrEpisodeId;
+  } else if (isSportsEvent(item)) {
+    return item.sportsEventId;
+  } else if (isSportsLeague(item)) {
+    return item.sportarrLeagueId;
   } else if (isSeries(item)) {
     return item.sonarrSeriesId;
   } else {

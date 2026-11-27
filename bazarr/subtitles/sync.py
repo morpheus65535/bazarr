@@ -16,6 +16,8 @@ def sync_subtitles(video_path,
                    sonarr_series_id=None,
                    sonarr_episode_id=None,
                    radarr_id=None,
+                   sportarr_league_id=None,
+                   sports_event_id=None,
                    job_id=None,
                    max_offset_seconds=None,
                    gss=None,
@@ -40,7 +42,9 @@ def sync_subtitles(video_path,
     try:
         return _sync_subtitles(video_path=video_path, srt_path=srt_path, srt_lang=srt_lang, forced=forced, hi=hi,
                                percent_score=percent_score, sonarr_series_id=sonarr_series_id,
-                               sonarr_episode_id=sonarr_episode_id, radarr_id=radarr_id, job_id=job_id,
+                               sonarr_episode_id=sonarr_episode_id, radarr_id=radarr_id,
+                               sportarr_league_id=sportarr_league_id, sports_event_id=sports_event_id,
+                               job_id=job_id,
                                max_offset_seconds=max_offset_seconds, gss=gss, no_fix_framerate=no_fix_framerate,
                                reference=reference, force_sync=force_sync, quality_min_score=quality_min_score,
                                quality_max_offset_seconds=quality_max_offset_seconds,
@@ -61,14 +65,17 @@ def _run_callback(callback, srt_path):
 
 
 def _sync_subtitles(video_path, srt_path, srt_lang, forced, hi, percent_score, sonarr_series_id, sonarr_episode_id,
-                    radarr_id, job_id, max_offset_seconds, gss, no_fix_framerate, reference, force_sync,
+                    radarr_id, sportarr_league_id, sports_event_id, job_id, max_offset_seconds, gss,
+                    no_fix_framerate, reference, force_sync,
                     quality_min_score, quality_max_offset_seconds, quality_max_framerate_deviation):
     if forced:
         logging.debug('BAZARR cannot sync forced subtitles. Skipping sync routine.')
     else:
         logging.debug(f'BAZARR automatic syncing is enabled in settings. We\'ll try to sync this '
                       f'subtitles: {srt_path}.')
-        if sonarr_episode_id:
+        # A sports event is scored as an episode, so it uses the episode
+        # threshold. The movie one is on a different scale.
+        if sonarr_episode_id or sports_event_id:
             use_subsync_threshold = settings.subsync.use_subsync_threshold
             subsync_threshold = settings.subsync.subsync_threshold
         else:
@@ -114,6 +121,8 @@ def _sync_subtitles(video_path, srt_path, srt_lang, forced, hi, percent_score, s
                 'sonarr_series_id': sonarr_series_id,
                 'sonarr_episode_id': sonarr_episode_id,
                 'radarr_id': radarr_id,
+                'sportarr_league_id': sportarr_league_id,
+                'sports_event_id': sports_event_id,
                 'job_id': job_id,
                 'force_sync': force_sync,
                 'quality_min_score': quality_min_score,

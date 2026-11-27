@@ -17,6 +17,7 @@ from app.jobs_queue import jobs_queue, JobCanceled
 from languages.get_languages import language_from_alpha2, language_from_alpha3
 from radarr.history import history_log_movie
 from sonarr.history import history_log
+from sportarr.history import history_log_sports
 from ..core.translator_utils import add_translator_info, create_process_result
 
 logger = logging.getLogger(__name__)
@@ -260,7 +261,8 @@ class OpenAICompatibleTranslatorService:
     """Translate subtitle cues through an OpenAI Chat Completions-compatible endpoint."""
 
     def __init__(self, source_srt_file, dest_srt_file, to_lang, media_type, sonarr_series_id,
-                 sonarr_episode_id, radarr_id, forced, hi, video_path, from_lang, orig_to_lang, **kwargs):
+                 sonarr_episode_id, radarr_id, forced, hi, video_path, from_lang, orig_to_lang,
+                 sportarr_league_id=None, sports_event_id=None, **kwargs):
         self.source_srt_file = source_srt_file
         self.dest_srt_file = dest_srt_file
         self.to_lang = to_lang
@@ -268,6 +270,8 @@ class OpenAICompatibleTranslatorService:
         self.sonarr_series_id = sonarr_series_id
         self.sonarr_episode_id = sonarr_episode_id
         self.radarr_id = radarr_id
+        self.sportarr_league_id = sportarr_league_id
+        self.sports_event_id = sports_event_id
         self.forced = forced
         self.hi = hi
         self.video_path = video_path
@@ -357,6 +361,9 @@ class OpenAICompatibleTranslatorService:
             if self.media_type == 'episode':
                 history_log(action=6, sonarr_series_id=self.sonarr_series_id,
                             sonarr_episode_id=self.sonarr_episode_id, result=result)
+            elif self.media_type == 'sports':
+                history_log_sports(action=6, sportarr_league_id=self.sportarr_league_id,
+                                   sports_event_id=self.sports_event_id, result=result)
             else:
                 history_log_movie(action=6, radarr_id=self.radarr_id, result=result)
             jobs_queue.update_job_progress(job_id=job_id, progress_value='max')

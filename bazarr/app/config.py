@@ -58,6 +58,10 @@ def validate_tags(tags):
     return all(re.match( r'^[a-z0-9_-]+$', item) for item in tags)
 
 
+def validate_sportarr_tags(tags):
+    return all(isinstance(tag, str) and tag and tag == tag.strip() for tag in tags)
+
+
 ONE_HUNDRED_YEARS_IN_MINUTES = 52560000
 ONE_HUNDRED_YEARS_IN_HOURS = 876000
 
@@ -115,9 +119,11 @@ validators = [
     Validator('general.external_webhook_password', must_exist=True, default='', is_type_of=str),
     Validator('general.use_sonarr', must_exist=True, default=False, is_type_of=bool),
     Validator('general.use_radarr', must_exist=True, default=False, is_type_of=bool),
+    Validator('general.use_sportarr', must_exist=True, default=False, is_type_of=bool),
     Validator('general.use_plex', must_exist=True, default=False, is_type_of=bool),
     Validator('general.use_jellyfin', must_exist=True, default=False, is_type_of=bool),
     Validator('general.path_mappings_movie', must_exist=True, default=[], is_type_of=list),
+    Validator('general.path_mappings_sports', must_exist=True, default=[], is_type_of=list),
     Validator('general.serie_tag_enabled', must_exist=True, default=False, is_type_of=bool),
     Validator('general.movie_tag_enabled', must_exist=True, default=False, is_type_of=bool),
     Validator('general.remove_profile_tags', must_exist=True, default=[], is_type_of=list, condition=validate_tags),
@@ -125,12 +131,15 @@ validators = [
     Validator('general.serie_default_profile', must_exist=True, default='', is_type_of=(int, str)),
     Validator('general.movie_default_enabled', must_exist=True, default=False, is_type_of=bool),
     Validator('general.movie_default_profile', must_exist=True, default='', is_type_of=(int, str)),
+    Validator('general.league_default_enabled', must_exist=True, default=False, is_type_of=bool),
+    Validator('general.league_default_profile', must_exist=True, default='', is_type_of=(int, str)),
     Validator('general.page_size', must_exist=True, default=25, is_type_of=int,
               is_in=[25, 50, 100, 250, 500, 1000]),
     Validator('general.theme', must_exist=True, default='auto', is_type_of=str,
               is_in=['auto', 'light', 'dark']),
     Validator('general.show_live_badge', must_exist=True, default=True, is_type_of=bool),
     Validator('general.minimum_score_movie', must_exist=True, default=70, is_type_of=int, gte=0, lte=100),
+    Validator('general.minimum_score_sports', must_exist=True, default=90, is_type_of=int, gte=0, lte=100),
     Validator('general.use_embedded_subs', must_exist=True, default=True, is_type_of=bool),
     Validator('general.embedded_subs_show_desired', must_exist=True, default=True, is_type_of=bool),
     Validator('general.utf8_encode', must_exist=True, default=True, is_type_of=bool),
@@ -252,6 +261,29 @@ validators = [
     Validator('sonarr.defer_search_signalr', must_exist=True, default=False, is_type_of=bool),
     Validator('sonarr.sync_only_monitored_series', must_exist=True, default=False, is_type_of=bool),
     Validator('sonarr.sync_only_monitored_episodes', must_exist=True, default=False, is_type_of=bool),
+
+    # sportarr section
+    Validator('sportarr.ip', must_exist=True, default='127.0.0.1', is_type_of=str),
+    Validator('sportarr.port', must_exist=True, default=1867, is_type_of=int, gte=1, lte=65535),
+    Validator('sportarr.base_url', must_exist=True, default='/', is_type_of=str),
+    Validator('sportarr.ssl', must_exist=True, default=False, is_type_of=bool),
+    Validator('sportarr.http_timeout', must_exist=True, default=60, is_type_of=int,
+              is_in=[60, 120, 180, 240, 300, 600]),
+    Validator('sportarr.apikey', must_exist=True, default='', is_type_of=str),
+    Validator('sportarr.full_update', must_exist=True, default='Daily', is_type_of=str,
+              is_in=['Manually', 'Daily', 'Weekly']),
+    Validator('sportarr.full_update_day', must_exist=True, default=6, is_type_of=int, gte=0, lte=6),
+    Validator('sportarr.full_update_hour', must_exist=True, default=4, is_type_of=int, gte=0, lte=23),
+    Validator('sportarr.only_monitored', must_exist=True, default=False, is_type_of=bool),
+    Validator('sportarr.leagues_sync', must_exist=True, default=60, is_type_of=int,
+              is_in=[15, 60, 180, 360, 720, 1440, 10080, ONE_HUNDRED_YEARS_IN_MINUTES]),
+    Validator('sportarr.excluded_tags', must_exist=True, default=[], is_type_of=list, condition=validate_sportarr_tags),
+    # Sports is the closest thing a league has to a series type, so this is the
+    # sports equivalent of excluded_series_types.
+    Validator('sportarr.excluded_sports', must_exist=True, default=[], is_type_of=list),
+    Validator('sportarr.use_ffprobe_cache', must_exist=True, default=True, is_type_of=bool),
+    Validator('sportarr.sync_only_monitored_leagues', must_exist=True, default=False, is_type_of=bool),
+    Validator('sportarr.sync_only_monitored_events', must_exist=True, default=False, is_type_of=bool),
 
     # radarr section
     Validator('radarr.ip', must_exist=True, default='127.0.0.1', is_type_of=str),
@@ -655,11 +687,13 @@ array_keys = ['oidc_allowed_subjects',
               'included_codecs',
               'subzero_mods',
               'excluded_series_types',
+              'excluded_sports',
               'enabled_providers',
               'enabled_integrations',
               'gemini_keys',
               'path_mappings',
               'path_mappings_movie',
+              'path_mappings_sports',
               'remove_profile_tags',
               'language_equals',
               'blacklisted_languages',
@@ -685,6 +719,7 @@ if settings.radarr.movies_sync < 15:
 settings.general.base_url = base_url_slash_cleaner(uri=settings.general.base_url)
 settings.sonarr.base_url = base_url_slash_cleaner(uri=settings.sonarr.base_url)
 settings.radarr.base_url = base_url_slash_cleaner(uri=settings.radarr.base_url)
+settings.sportarr.base_url = base_url_slash_cleaner(uri=settings.sportarr.base_url)
 
 # increase delay between searches to reduce impact on providers
 if settings.general.wanted_search_frequency == 3:
@@ -779,6 +814,7 @@ def save_settings(settings_items):
     update_schedule = False
     sonarr_changed = False
     radarr_changed = False
+    sportarr_changed = False
     update_path_map = False
     configure_proxy = False
     configure_ssl_verify = False
@@ -827,7 +863,7 @@ def save_settings(settings_items):
             value = []
 
         # Handle path mappings settings since they are array in array
-        if settings_keys[-1] in ['path_mappings', 'path_mappings_movie']:
+        if settings_keys[-1] in ['path_mappings', 'path_mappings_movie', 'path_mappings_sports']:
             value = [x.split(',') for x in value if isinstance(x, str)]
 
         if value == 'true':
@@ -851,7 +887,8 @@ def save_settings(settings_items):
         if key == 'settings-general-default_und_embedded_subtitles_lang':
             undefined_subtitles_track_default_changed = True
 
-        if key in ['settings-general-base_url', 'settings-sonarr-base_url', 'settings-radarr-base_url']:
+        if key in ['settings-general-base_url', 'settings-sonarr-base_url', 'settings-radarr-base_url',
+                   'settings-sportarr-base_url']:
             value = base_url_slash_cleaner(value)
 
         if key == 'settings-general-instance_name' and value == '':
@@ -885,10 +922,13 @@ def save_settings(settings_items):
             configure_captcha = True
 
         if key in ['update_schedule', 'settings-general-use_sonarr', 'settings-general-use_radarr',
+                   'settings-general-use_sportarr',
                    'settings-general-auto_update', 'settings-general-upgrade_subs',
-                   'settings-sonarr-series_sync', 'settings-radarr-movies_sync',
+                   'settings-sonarr-series_sync', 'settings-radarr-movies_sync', 'settings-sportarr-leagues_sync',
                    'settings-sonarr-full_update', 'settings-sonarr-full_update_day', 'settings-sonarr-full_update_hour',
                    'settings-radarr-full_update', 'settings-radarr-full_update_day', 'settings-radarr-full_update_hour',
+                   'settings-sportarr-full_update', 'settings-sportarr-full_update_day',
+                   'settings-sportarr-full_update_hour',
                    'settings-general-wanted_search_frequency', 'settings-general-wanted_search_frequency_movie',
                    'settings-general-upgrade_frequency', 'settings-backup-frequency', 'settings-backup-day',
                    'settings-backup-hour']:
@@ -898,11 +938,16 @@ def save_settings(settings_items):
                    'settings-sonarr-base_url', 'settings-sonarr-ssl', 'settings-sonarr-apikey']:
             sonarr_changed = True
 
+        if key in ['settings-general-use_sportarr', 'settings-sportarr-ip', 'settings-sportarr-port',
+                   'settings-sportarr-base_url', 'settings-sportarr-ssl', 'settings-sportarr-apikey']:
+            sportarr_changed = True
+
         if key in ['settings-general-use_radarr', 'settings-radarr-ip', 'settings-radarr-port',
                    'settings-radarr-base_url', 'settings-radarr-ssl', 'settings-radarr-apikey']:
             radarr_changed = True
 
-        if key in ['settings-general-path_mappings', 'settings-general-path_mappings_movie']:
+        if key in ['settings-general-path_mappings', 'settings-general-path_mappings_movie',
+                   'settings-general-path_mappings_sports']:
             update_path_map = True
 
         if key in ['settings-proxy-type', 'settings-proxy-url', 'settings-proxy-port', 'settings-proxy-username',
@@ -1014,6 +1059,12 @@ def save_settings(settings_items):
                                                func='list_missing_subtitles_movies',
                                                args=[],
                                                kwargs={})
+        if settings.general.use_sportarr:
+            jobs_queue.feed_jobs_pending_queue(job_name=f'Computing missing sports events subtitles',
+                                               module='subtitles.indexer.sports',
+                                               func='list_missing_subtitles_sports',
+                                               args=[],
+                                               kwargs={})
 
     if undefined_subtitles_track_default_changed:
         if settings.general.use_sonarr:
@@ -1028,6 +1079,14 @@ def save_settings(settings_items):
             jobs_queue.feed_jobs_pending_queue(job_name=f'Indexing all existing movies subtitles',
                                                module='subtitles.indexer.movies',
                                                func='movies_full_scan_subtitles',
+                                               args=[],
+                                               kwargs={'use_cache': True},
+                                               is_progress=True,
+                                               is_cancellable=True)
+        if settings.general.use_sportarr:
+            jobs_queue.feed_jobs_pending_queue(job_name=f'Indexing all existing sports events subtitles',
+                                               module='subtitles.indexer.sports',
+                                               func='sports_full_scan_subtitles',
                                                args=[],
                                                kwargs={'use_cache': True},
                                                is_progress=True,
@@ -1107,6 +1166,13 @@ def save_settings(settings_items):
             from .signalr_client import radarr_signalr_client
             try:
                 radarr_signalr_client.restart()
+            except Exception:
+                pass
+
+        if sportarr_changed:
+            from sportarr.sse_client import sportarr_sse_client
+            try:
+                sportarr_sse_client.restart()
             except Exception:
                 pass
 

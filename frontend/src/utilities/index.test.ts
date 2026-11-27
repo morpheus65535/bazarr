@@ -63,6 +63,21 @@ describe("GetItemId", () => {
     expect(GetItemId({ episodeFileCount: 1, sonarrSeriesId: 20 })).toBe(20);
   });
 
+  it("returns sportarrLeagueId for a sports league", () => {
+    expect(GetItemId({ episodeFileCount: 1, sportarrLeagueId: 30 })).toBe(30);
+  });
+
+  it("returns sportsEventId for a sports event", () => {
+    expect(GetItemId({ sportarrLeagueId: 30, sportsEventId: 40 })).toBe(40);
+  });
+
+  it("keys sports events of one league apart", () => {
+    const first = GetItemId({ sportarrLeagueId: 30, sportsEventId: 40 });
+    const second = GetItemId({ sportarrLeagueId: 30, sportsEventId: 41 });
+
+    expect(first).not.toBe(second);
+  });
+
   it("returns undefined for an unknown item type", () => {
     expect(GetItemId({ foo: "bar" })).toBeUndefined();
   });

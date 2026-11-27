@@ -11,8 +11,8 @@ from subliminal_patch.core import save_subtitles
 from subliminal_patch.core_persistent import download_best_subtitles
 
 from app.config import settings, get_array_from
-from app.database import (TableEpisodes, TableMovies, TableMissingSubtitles, database, select, get_profiles_list,
-                          get_subtitles)
+from app.database import (TableEpisodes, TableMovies, TableSportsEvents, TableMissingSubtitles, database, select, get_profiles_list,
+                          get_subtitles, get_sports_subtitles)
 from app.jobs_queue import jobs_queue
 from constants import HI_EXCLUDED
 from utilities.path_mappings import path_mappings
@@ -39,6 +39,11 @@ def _find_embedded_fallback_source(video, source_language, media_type):
         if not episode_id:
             return None
         subtitles = get_subtitles(sonarr_episode_id=episode_id)
+    elif media_type == 'sports':
+        sports_event_id = getattr(video, 'sportsEventId', None)
+        if not sports_event_id:
+            return None
+        subtitles = get_sports_subtitles(sports_event_id=sports_event_id)
     else:
         radarr_id = getattr(video, 'radarrId', None)
         if not radarr_id:
@@ -50,7 +55,8 @@ def _find_embedded_fallback_source(video, source_language, media_type):
 
 
 def _translate_fallback_source(video_path, source_srt_file, from_lang, to_lang, forced, hi, media_type,
-                               sonarr_series_id, sonarr_episode_id, radarr_id, original_format, job_id):
+                               sonarr_series_id, sonarr_episode_id, radarr_id, original_format, job_id,
+                               sportarr_league_id=None, sports_event_id=None):
     translated_path = translate_subtitles_file(
         video_path=video_path,
         source_srt_file=source_srt_file,
@@ -64,12 +70,17 @@ def _translate_fallback_source(video_path, source_srt_file, from_lang, to_lang, 
         radarr_id=radarr_id,
         metadata=None,
         original_format=original_format,
-        job_id=job_id)
+        job_id=job_id,
+        sportarr_league_id=sportarr_league_id,
+        sports_event_id=sports_event_id)
     if translated_path:
         from subtitles.indexer.series import store_subtitles
         from subtitles.indexer.movies import store_subtitles_movie
+        from subtitles.indexer.sports import store_subtitles_sports
         if media_type == 'episode':
             store_subtitles(sonarr_episode_id)
+        elif media_type == 'sports':
+            store_subtitles_sports(sports_event_id)
         else:
             store_subtitles_movie(radarr_id)
     return translated_path
@@ -77,7 +88,8 @@ def _translate_fallback_source(video_path, source_srt_file, from_lang, to_lang, 
 
 def _extract_and_translate_embedded_fallback(subtitles_id, video_path, from_lang, to_lang, forced, hi,
                                              media_type, sonarr_series_id, sonarr_episode_id, radarr_id,
-                                             original_format, job_id=None):
+                                             original_format, job_id=None, sportarr_league_id=None,
+                                             sports_event_id=None):
     """Extract an indexed embedded track with Bazarr's shared helper, then translate it."""
     if not job_id:
         jobs_queue.add_job_from_function(
@@ -104,7 +116,14 @@ def _extract_and_translate_embedded_fallback(subtitles_id, video_path, from_lang
                                       sonarr_episode_id=sonarr_episode_id,
                                       radarr_id=radarr_id,
                                       original_format=original_format,
-                                      job_id=job_id)
+                                      job_id=job_id,
+                                      sportarr_league_id=sportarr_league_id,
+                                      sports_event_id=sports_event_id)
+
+
+def _translation_media_type(media_type):
+    # The translation tools name a series item an episode.
+    return {'series': 'episode', 'sports': 'sports'}.get(media_type, 'movie')
 
 
 @update_pools
@@ -147,7 +166,10 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
         return None
 
     if video:
-        minimum_score = settings.general.minimum_score
+        if media_type == 'sports':
+            minimum_score = settings.general.minimum_score_sports
+        else:
+            minimum_score = settings.general.minimum_score
         minimum_score_movie = settings.general.minimum_score_movie
         min_score, max_score, scores = _get_scores(media_type, minimum_score_movie, minimum_score)
 
@@ -241,10 +263,12 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
                                             to_lang=alpha2_from_alpha3(language.alpha3),
                                             forced=language.forced,
                                             hi=language.hi,
-                                            media_type='episode' if media_type == 'series' else 'movie',
+                                            media_type=_translation_media_type(media_type),
                                             sonarr_series_id=getattr(video, 'sonarrSeriesId', None),
                                             sonarr_episode_id=getattr(video, 'sonarrEpisodeId', None),
                                             radarr_id=getattr(video, 'radarrId', None),
+                                            sportarr_league_id=getattr(video, 'sportarrLeagueId', None),
+                                            sports_event_id=getattr(video, 'sportsEventId', None),
                                             original_format=original_format in (1, "1", "True", True),
                                             job_id=job_id)
                                         if translated_path:
@@ -320,10 +344,12 @@ def generate_subtitles(path, languages, audio_language, sceneName, title, media_
                                             to_lang=alpha2_from_alpha3(language.alpha3),
                                             forced=language.forced,
                                             hi=language.hi,
-                                            media_type='episode' if media_type == 'series' else 'movie',
+                                            media_type=_translation_media_type(media_type),
                                             sonarr_series_id=getattr(video, 'sonarrSeriesId', None),
                                             sonarr_episode_id=getattr(video, 'sonarrEpisodeId', None),
                                             radarr_id=getattr(video, 'radarrId', None),
+                                            sportarr_league_id=getattr(video, 'sportarrLeagueId', None),
+                                            sports_event_id=getattr(video, 'sportsEventId', None),
                                             original_format=original_format in (1, "1", "True", True),
                                             job_id=job_id)
                                     except Exception:
@@ -365,6 +391,8 @@ def _blacklist_unusable_subtitles(video, subtitles, media_type, language, failed
         'radarrId': getattr(video, 'radarrId', None),
         'sonarrSeriesId': getattr(video, 'sonarrSeriesId', None),
         'sonarrEpisodeId': getattr(video, 'sonarrEpisodeId', None),
+        'sportarrLeagueId': getattr(video, 'sportarrLeagueId', None),
+        'sportsEventId': getattr(video, 'sportsEventId', None),
     }
 
     # save_subtitles tags the exception with the subtitle it choked on. Without
@@ -412,6 +440,14 @@ def parse_language_object(language):
         return language
 
 
+def _reverse_path(path, media_type):
+    if media_type == 'series':
+        return path_mappings.path_replace_reverse(path)
+    elif media_type == 'sports':
+        return path_mappings.path_replace_reverse_sports(path)
+    return path_mappings.path_replace_reverse_movie(path)
+
+
 def reload_missing_languages_from_db(path, media_type):
     """Reload the current normalized missing-language rows for a media path."""
     if media_type == 'series':
@@ -420,6 +456,12 @@ def reload_missing_languages_from_db(path, media_type):
             .where(TableEpisodes.path == path_mappings.path_replace_reverse(path)))\
             .first()
         media_id = confirmed_missing_subs.sonarrEpisodeId if confirmed_missing_subs else None
+    elif media_type == 'sports':
+        confirmed_missing_subs = database.execute(
+            select(TableSportsEvents.id)
+            .where(TableSportsEvents.path == path_mappings.path_replace_reverse_sports(path)))\
+            .first()
+        media_id = confirmed_missing_subs.id if confirmed_missing_subs else None
     else:
         confirmed_missing_subs = database.execute(
             select(TableMovies.radarrId)
@@ -428,8 +470,7 @@ def reload_missing_languages_from_db(path, media_type):
         media_id = confirmed_missing_subs.radarrId if confirmed_missing_subs else None
 
     if not confirmed_missing_subs:
-        reversed_path = path_mappings.path_replace_reverse(path) if media_type == 'series' else \
-            path_mappings.path_replace_reverse_movie(path)
+        reversed_path = _reverse_path(path, media_type)
         logging.debug(f"BAZARR no media with this path have been found in database: {reversed_path}")
         return []
 

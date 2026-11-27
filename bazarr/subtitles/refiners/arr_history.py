@@ -17,9 +17,10 @@ def refine_from_arr_history(path, video):
 
 
 def refine_info_url(video):
-    if isinstance(video, Episode) and video.sonarrEpisodeId:
+    # A sports video is an Episode without a sonarrEpisodeId. Sportarr has no history to read.
+    if isinstance(video, Episode) and getattr(video, 'sonarrEpisodeId', None):
         history = get_history_from_sonarr_api(settings.sonarr.apikey, video.sonarrEpisodeId)
-    elif isinstance(video, Movie) and video.radarrId:
+    elif isinstance(video, Movie) and getattr(video, 'radarrId', None):
         history = get_history_from_radarr_api(settings.radarr.apikey, video.radarrId)
     else:
         return
