@@ -1,7 +1,22 @@
 import { act } from "react";
+import { notifications } from "@mantine/notifications";
 import { fireEvent, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Mock, vi, vitest } from "vitest";
+import {
+  usePlexAuthValidationQuery,
+  usePlexAutopulseConfigQuery,
+  usePlexLibrariesQuery,
+  usePlexLogoutMutation,
+  usePlexPinCheckQuery,
+  usePlexPinMutation,
+  usePlexSelectedServerQuery,
+  usePlexServerSelectionMutation,
+  usePlexServersQuery,
+  usePlexWebhookCreateMutation,
+  usePlexWebhookDeleteMutation,
+  usePlexWebhookListQuery,
+} from "@/apis/hooks/plex";
 import { useInstanceName } from "@/apis/hooks/site";
 import { useSettingsMutation, useSystemSettings } from "@/apis/hooks/system";
 import { customRender, screen } from "@/tests";
@@ -54,22 +69,6 @@ vi.mock("@mantine/notifications", async (importOriginal) => {
     },
   };
 });
-
-import { notifications } from "@mantine/notifications";
-import {
-  usePlexAuthValidationQuery,
-  usePlexAutopulseConfigQuery,
-  usePlexLibrariesQuery,
-  usePlexLogoutMutation,
-  usePlexPinCheckQuery,
-  usePlexPinMutation,
-  usePlexSelectedServerQuery,
-  usePlexServerSelectionMutation,
-  usePlexServersQuery,
-  usePlexWebhookCreateMutation,
-  usePlexWebhookDeleteMutation,
-  usePlexWebhookListQuery,
-} from "@/apis/hooks/plex";
 
 const mockedUseSystemSettings = useSystemSettings as Mock;
 const mockedUseSettingsMutation = useSettingsMutation as Mock;

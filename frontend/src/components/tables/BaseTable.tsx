@@ -4,8 +4,8 @@ import { flexRender } from "@tanstack/react-table";
 import {
   AppHeader as Header,
   AppRow as Row,
-  AppTable as TableInstance,
   RowData,
+  AppTable as TableInstance,
 } from "@/components/tables/features";
 import { useIsLoading } from "@/contexts";
 import { usePageSize } from "@/utilities/storage";

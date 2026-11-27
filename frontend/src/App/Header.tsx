@@ -12,11 +12,11 @@ import {
   Menu,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { faListCheck } from "@fortawesome/free-solid-svg-icons";
 import {
   faArrowRotateLeft,
   faGear,
   faGraduationCap,
+  faListCheck,
   faPowerOff,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";

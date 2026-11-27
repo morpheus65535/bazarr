@@ -1,4 +1,25 @@
 {
   "tabWidth": 2,
-  "useTabs": false
+  "useTabs": false,
+  "overrides": [
+    {
+      "files": "src/**/*.{js,jsx,ts,tsx}",
+      "options": {
+        "plugins": ["@ianvs/prettier-plugin-sort-imports"],
+        "importOrder": [
+          "^react",
+          "^@mantine/",
+          "<BUILTIN_MODULES>",
+          "<THIRD_PARTY_MODULES>",
+          "^@/.*(?<!\\.css)(?<!\\.scss)$",
+          "^\\.\\./.+(?<!\\.css)(?<!\\.scss)$",
+          "^\\.\\./?$",
+          "^\\./.+/.+(?<!\\.css)(?<!\\.scss)$",
+          "^\\./.+(?<!\\.css)(?<!\\.scss)$",
+          "^\\./?$",
+          "\\.(?:css|scss)$"
+        ]
+      }
+    }
+  ]
 }

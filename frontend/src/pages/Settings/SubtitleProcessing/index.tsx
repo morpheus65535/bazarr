@@ -3,9 +3,9 @@ import {
   Anchor,
   Button,
   Code,
+  Text as MantineText,
   Space,
   Table,
-  Text as MantineText,
 } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { range } from "lodash";

@@ -15,6 +15,7 @@ import {
   Title,
   Tooltip,
 } from "@mantine/core";
+import { showNotification } from "@mantine/notifications";
 import {
   faCheck,
   faChevronDown,
@@ -27,17 +28,16 @@ import {
   faXmark,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useSystemJobs } from "@/apis/hooks";
-import Jobs = System.Jobs;
-import { showNotification } from "@mantine/notifications";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { startCase } from "lodash";
-import { debounce } from "lodash";
+import { debounce, startCase } from "lodash";
+import { useSystemJobs } from "@/apis/hooks";
 import { QueryKeys } from "@/apis/queries/keys";
 import api from "@/apis/raw";
 import { useModals } from "@/modules/modals";
 import { notification } from "@/modules/task/notification";
 import classes from "./JobsManager.module.css";
+
+import Jobs = System.Jobs;
 
 const formatDuration = (seconds: number | null | undefined): string => {
   if (seconds === null || seconds === undefined) return "";

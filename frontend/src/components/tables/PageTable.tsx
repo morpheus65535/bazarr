@@ -2,10 +2,10 @@ import { MutableRefObject, useEffect } from "react";
 import { useTable } from "@tanstack/react-table";
 import BaseTable, { TableStyleProps } from "@/components/tables/BaseTable";
 import {
-  AppTable as Table,
   appTableFeatures,
-  AppTableOptions as TableOptions,
   RowData,
+  AppTable as Table,
+  AppTableOptions as TableOptions,
 } from "@/components/tables/features";
 import { ScrollToTop } from "@/utilities";
 import { usePageSize } from "@/utilities/storage";

@@ -5,7 +5,6 @@
     "correctness": "error"
   },
   "jsPlugins": [
-    "eslint-plugin-simple-import-sort",
     "eslint-plugin-testing-library",
     {
       "name": "bazarr-custom",
@@ -41,27 +40,7 @@
     "no-useless-rename": "error",
     "bazarr-custom/no-let": "error",
     "bazarr-custom/no-function-declaration": "error",
-    "bazarr-custom/no-cross-module-scss-import": "error",
-    "simple-import-sort/imports": [
-      "error",
-      {
-        "groups": [
-          [
-            "^react",
-            "^@mantine/",
-            "^(\\w|@\\w)",
-            "^\\u0000",
-            "^@/\\w",
-            "^\\.\\.(?!/?$)",
-            "^\\.\\./?$",
-            "^\\./(?=.*/)(?!/?$)",
-            "^\\.(?!/?$)",
-            "^\\./?$",
-            "^.+\\.?(css)$"
-          ]
-        ]
-      }
-    ]
+    "bazarr-custom/no-cross-module-scss-import": "error"
   },
   "overrides": [
     {

@@ -15,8 +15,8 @@ import {
   Tooltip,
 } from "@mantine/core";
 import {
-  faBookmark as farBookmark,
   faFolder,
+  faBookmark as farBookmark,
 } from "@fortawesome/free-regular-svg-icons";
 import {
   faBookmark,

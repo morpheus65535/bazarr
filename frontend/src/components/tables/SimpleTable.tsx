@@ -2,11 +2,11 @@ import { MutableRefObject, useEffect, useMemo, useRef } from "react";
 import { useTable } from "@tanstack/react-table";
 import BaseTable, { TableStyleProps } from "@/components/tables/BaseTable";
 import {
-  AppRow as Row,
-  AppTable as Table,
   appTableFeatures,
-  AppTableOptions as TableOptions,
+  AppRow as Row,
   RowData,
+  AppTable as Table,
+  AppTableOptions as TableOptions,
 } from "@/components/tables/features";
 import { usePageSize } from "@/utilities/storage";
 

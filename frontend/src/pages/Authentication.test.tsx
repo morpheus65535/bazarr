@@ -1,5 +1,5 @@
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, type Mock, vi } from "vitest";
+import { describe, expect, it, vi, type Mock } from "vitest";
 import { useSystem } from "@/apis/hooks";
 import { customRender, screen } from "@/tests";
 import { Environment } from "@/utilities";

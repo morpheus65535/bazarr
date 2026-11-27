@@ -14,9 +14,9 @@ import {
   Button,
   Divider,
   Group,
+  Text as MantineText,
   SimpleGrid,
   Stack,
-  Text as MantineText,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import {
@@ -31,10 +31,10 @@ import {
   Card,
   Check,
   Chips,
+  Selector as GlobalSelector,
   Message,
   Password,
   ProviderTestButton,
-  Selector as GlobalSelector,
   Text,
 } from "@/pages/Settings/components";
 import {

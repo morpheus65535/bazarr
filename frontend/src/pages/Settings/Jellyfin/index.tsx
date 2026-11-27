@@ -9,9 +9,9 @@ import {
   Badge,
   Button,
   Group,
+  Text as MantineText,
   Select,
   Stack,
-  Text as MantineText,
 } from "@mantine/core";
 import { get } from "lodash";
 import { useJellyfinTestConnectionMutation } from "@/apis/hooks/jellyfin";

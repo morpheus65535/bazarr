@@ -2,8 +2,11 @@ import { FunctionComponent } from "react";
 import { MultiSelect, Stack } from "@mantine/core";
 import { useJellyfinLibrariesQuery } from "@/apis/hooks/jellyfin";
 import { Message } from "@/pages/Settings/components";
-import { BaseInput, useBaseInput } from "@/pages/Settings/utilities/hooks";
-import { useSettingValue } from "@/pages/Settings/utilities/hooks";
+import {
+  BaseInput,
+  useBaseInput,
+  useSettingValue,
+} from "@/pages/Settings/utilities/hooks";
 import styles from "./LibrarySelector.module.scss";
 
 export type LibrarySelectorProps = BaseInput<string[]> & {

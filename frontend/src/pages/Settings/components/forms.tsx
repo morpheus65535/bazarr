@@ -1,20 +1,20 @@
 import { FunctionComponent, ReactNode } from "react";
 import {
   Input,
+  Slider as MantineSlider,
+  SliderProps as MantineSliderProps,
   NumberInput,
   NumberInputProps,
   PasswordInput,
   PasswordInputProps,
-  Slider as MantineSlider,
-  SliderProps as MantineSliderProps,
   Switch,
   TextInput,
   TextInputProps,
 } from "@mantine/core";
 import {
-  Action as GlobalAction,
   FileBrowser,
   FileBrowserProps,
+  Action as GlobalAction,
   MultiSelector as GlobalMultiSelector,
   MultiSelectorProps as GlobalMultiSelectorProps,
   Selector as GlobalSelector,
