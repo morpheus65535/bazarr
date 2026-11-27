@@ -44,20 +44,6 @@ const enhancedProfile = (
   ...overrides,
 });
 
-const basicProfile = (
-  overrides: Partial<Language.Profile> = {},
-): Language.Profile => ({
-  profileId: 2,
-  name: "Basic",
-  tag: undefined,
-  items: [item(1, "en"), item(2, "fr")],
-  cutoff: null,
-  mustContain: [],
-  mustNotContain: [],
-  originalFormat: false,
-  ...overrides,
-});
-
 describe("summarizeProfile requirements", () => {
   it("describes an AND group as every language being required", () => {
     const summary = summarizeProfile(enhancedProfile(), resolveLanguageName);
@@ -163,28 +149,6 @@ describe("summarizeProfile completion", () => {
 
     expect(summary.completion).toBe(
       "Stop searching once French or Portuguese is satisfied.",
-    );
-  });
-
-  it("names the selected language for a basic item cutoff", () => {
-    const summary = summarizeProfile(
-      basicProfile({ cutoff: 2 }),
-      resolveLanguageName,
-    );
-
-    expect(summary.completion).toBe(
-      "Stop searching once French subtitles are found.",
-    );
-  });
-
-  it("stops on any language for the basic any cutoff", () => {
-    const summary = summarizeProfile(
-      basicProfile({ cutoff: anyCutoff }),
-      resolveLanguageName,
-    );
-
-    expect(summary.completion).toBe(
-      "Stop searching as soon as any of these languages is found.",
     );
   });
 });

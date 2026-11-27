@@ -59,31 +59,6 @@ export const profileItem = (
   ...overrides,
 });
 
-// A basic profile as stored by older Bazarr versions: flat items and an explicit type.
-export const basicProfile: Language.Profile = {
-  profileId: 1,
-  name: "My Profile",
-  tag: "mytag",
-  profileType: "basic",
-  items: [profileItem(1, "en"), profileItem(2, "fr", { hi: "True" })],
-  cutoff: 1,
-  mustContain: [],
-  mustNotContain: [],
-  originalFormat: false,
-};
-
-// A profile saved before profile types existed: no profileType at all.
-export const legacyProfile: Language.Profile = {
-  profileId: 3,
-  name: "Legacy Profile",
-  tag: undefined,
-  items: [profileItem(1, "en"), profileItem(2, "es")],
-  cutoff: 2,
-  mustContain: ["x265"],
-  mustNotContain: ["cam"],
-  originalFormat: true,
-};
-
 // An enhanced profile with an AND group, an OR group and a group cutoff.
 export const enhancedProfile: Language.Profile = {
   profileId: 2,
@@ -114,7 +89,15 @@ export const enhancedProfile: Language.Profile = {
   originalFormat: false,
 };
 
-export const baseProfiles: Language.Profile[] = [basicProfile];
+export const baseProfiles: Language.Profile[] = [
+  {
+    ...enhancedProfile,
+    profileId: 1,
+    name: "My Profile",
+    tag: "mytag",
+    cutoff: 1,
+  },
+];
 
 export const setupMocks = (
   overrides?: {

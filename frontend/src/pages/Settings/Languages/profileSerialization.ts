@@ -1,24 +1,17 @@
 import { snakeCaseKeys } from "@/utilities/case";
 
-// Wire format for the settings endpoint. Enhanced profiles send their groups;
-// basic and legacy profiles send their flat item list.
+// Wire format for the settings endpoint. Profiles send their groups instead of a flat item list.
 export const serializeProfileSubmission = (
   profile: Language.Profile,
 ): Language.RawProfileSubmission => {
   const { groups, ...profileWithoutGroups } = profile;
 
-  const items =
-    profile.profileType === "enhanced" && groups
-      ? {
-          groups: snakeCaseKeys(
-            groups,
-          ) as unknown as Language.RawEnhancedGroup[],
-        }
-      : profile.items.map(
-          (item) => snakeCaseKeys(item) as unknown as Language.RawProfileItem,
-        );
-
-  return { ...profileWithoutGroups, items };
+  return {
+    ...profileWithoutGroups,
+    items: {
+      groups: snakeCaseKeys(groups) as unknown as Language.RawEnhancedGroup[],
+    },
+  };
 };
 
 export const serializeProfiles = (

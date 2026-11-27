@@ -19,10 +19,7 @@ import {
 import { enabledLanguageKey, languageProfileKey } from "@/pages/Settings/keys";
 import { useStagedValues } from "@/pages/Settings/utilities/FormValues";
 import { LanguageSelector, ProfileSelector } from "./components";
-import {
-  createEnhancedProfile,
-  prepareProfileForEditing,
-} from "./profileModel";
+import { createEnhancedProfile } from "./profileModel";
 import ProfilesList from "./ProfilesList";
 import { useLatestEnabledLanguages } from "./useLatestLanguages";
 import { useProfileActions } from "./useProfileActions";
@@ -96,7 +93,7 @@ const ProfilesSections: FunctionComponent<ProfilesSectionsProps> = ({
   const openEdit = useCallback(
     (profile: Language.Profile) => {
       returnFocusRef.current = `profile-edit-${profile.profileId}`;
-      onOpen(prepareProfileForEditing(profile), false);
+      onOpen(profile, false);
     },
     [onOpen],
   );

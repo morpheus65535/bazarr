@@ -29,9 +29,7 @@ export interface RequirementCardProps {
   group: Language.EnhancedGroup;
   index: number;
   count: number;
-  isBasic: boolean;
   isCutoffGroup: boolean;
-  cutoffItemId: number | null;
   languageData: readonly LanguageOption[];
   resolveLanguageName: (code: string) => string;
   issues: readonly ProfileValidationIssue[];
@@ -42,7 +40,6 @@ export interface RequirementCardProps {
   onAddItem: () => void;
   onUpdateItem: (itemId: number, patch: Partial<Language.ProfileItem>) => void;
   onRemoveItem: (itemId: number) => void;
-  onToggleItemCutoff: (itemId: number) => void;
 }
 
 const relationshipDescription = (
@@ -54,10 +51,8 @@ const relationshipDescription = (
 
 const RequirementCard: FunctionComponent<RequirementCardProps> = ({
   count,
-  cutoffItemId,
   group,
   index,
-  isBasic,
   isCutoffGroup,
   issues,
   languageData,
@@ -67,7 +62,6 @@ const RequirementCard: FunctionComponent<RequirementCardProps> = ({
   onRemoveGroup,
   onRemoveItem,
   onToggleCutoff,
-  onToggleItemCutoff,
   onUpdateItem,
   resolveLanguageName,
 }) => {
@@ -86,7 +80,7 @@ const RequirementCard: FunctionComponent<RequirementCardProps> = ({
     return map;
   }, [issues]);
 
-  const title = isBasic ? "Languages" : `Requirement ${index + 1}`;
+  const title = `Requirement ${index + 1}`;
 
   return (
     <Card
@@ -109,11 +103,9 @@ const RequirementCard: FunctionComponent<RequirementCardProps> = ({
           className={styles.requirementHeader}
         >
           <Group gap="xs" align="center" wrap="wrap">
-            {!isBasic && (
-              <span className={styles.numberBadge} aria-hidden>
-                {index + 1}
-              </span>
-            )}
+            <span className={styles.numberBadge} aria-hidden>
+              {index + 1}
+            </span>
             <Text fw={600}>{title}</Text>
             {isCutoffGroup && (
               <Badge
@@ -125,62 +117,58 @@ const RequirementCard: FunctionComponent<RequirementCardProps> = ({
               </Badge>
             )}
           </Group>
-          {!isBasic && (
-            <Group gap={4}>
-              <Action
-                label={
-                  isCutoffGroup
-                    ? "Stop searching after this requirement"
-                    : "Stop searching when this requirement is satisfied"
-                }
-                icon={faBullseye}
-                className={styles.touchAction}
-                variant={isCutoffGroup ? "filled" : "subtle"}
-                color={isCutoffGroup ? "brand" : "secondary"}
-                onClick={onToggleCutoff}
-              ></Action>
-              <Action
-                label={`Move ${title} up`}
-                icon={faArrowUp}
-                className={styles.touchAction}
-                disabled={index === 0}
-                onClick={() => onMove(-1)}
-              ></Action>
-              <Action
-                label={`Move ${title} down`}
-                icon={faArrowDown}
-                className={styles.touchAction}
-                disabled={index === count - 1}
-                onClick={() => onMove(1)}
-              ></Action>
-              <Action
-                label={`Remove ${title}`}
-                icon={faTrash}
-                c="danger"
-                className={styles.touchAction}
-                onClick={onRemoveGroup}
-              ></Action>
-            </Group>
-          )}
+          <Group gap={4}>
+            <Action
+              label={
+                isCutoffGroup
+                  ? "Stop searching after this requirement"
+                  : "Stop searching when this requirement is satisfied"
+              }
+              icon={faBullseye}
+              className={styles.touchAction}
+              variant={isCutoffGroup ? "filled" : "subtle"}
+              color={isCutoffGroup ? "brand" : "secondary"}
+              onClick={onToggleCutoff}
+            ></Action>
+            <Action
+              label={`Move ${title} up`}
+              icon={faArrowUp}
+              className={styles.touchAction}
+              disabled={index === 0}
+              onClick={() => onMove(-1)}
+            ></Action>
+            <Action
+              label={`Move ${title} down`}
+              icon={faArrowDown}
+              className={styles.touchAction}
+              disabled={index === count - 1}
+              onClick={() => onMove(1)}
+            ></Action>
+            <Action
+              label={`Remove ${title}`}
+              icon={faTrash}
+              c="danger"
+              className={styles.touchAction}
+              onClick={onRemoveGroup}
+            ></Action>
+          </Group>
         </Group>
 
-        {!isBasic && (
-          <Group gap="xs" align="center" wrap="wrap">
-            <SegmentedControl
-              size="sm"
-              className={styles.relationship}
-              aria-label={`${title} match rule`}
-              data={relationshipOptions}
-              value={group.operator}
-              onChange={(value) =>
-                onOperator(value as Language.EnhancedGroup["operator"])
-              }
-            ></SegmentedControl>
-            <Text size="xs" c="dimmed">
-              {relationshipDescription(group.operator)}
-            </Text>
-          </Group>
-        )}
+        <Group gap="xs" align="center" wrap="wrap">
+          <SegmentedControl
+            size="sm"
+            className={styles.relationship}
+            aria-label={`${title} match rule`}
+            data={relationshipOptions}
+            value={group.operator}
+            onChange={(value) =>
+              onOperator(value as Language.EnhancedGroup["operator"])
+            }
+          ></SegmentedControl>
+          <Text size="xs" c="dimmed">
+            {relationshipDescription(group.operator)}
+          </Text>
+        </Group>
 
         <Stack gap="xs" className={styles.rows}>
           {group.items.map((item) => (
@@ -189,14 +177,10 @@ const RequirementCard: FunctionComponent<RequirementCardProps> = ({
               item={item}
               languageData={languageData}
               languageName={resolveLanguageName(item.language)}
-              isCutoff={item.id === cutoffItemId}
               error={issuesByItemId.get(item.id)}
               condition={describeLanguageCondition(item, resolveLanguageName)}
               onChange={(patch) => onUpdateItem(item.id, patch)}
               onRemove={() => onRemoveItem(item.id)}
-              onToggleCutoff={
-                isBasic ? () => onToggleItemCutoff(item.id) : undefined
-              }
             ></LanguageRequirementRow>
           ))}
         </Stack>

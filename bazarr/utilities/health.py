@@ -6,7 +6,7 @@ from sqlalchemy import func
 
 from app.config import settings
 from app.database import (TableShowsRootfolder, TableMoviesRootfolder, TableLanguagesProfiles, database, select,
-                          TableShows, TableMovies, parse_profile_items)
+                          TableShows, TableMovies)
 from app.event_handler import event_stream
 from app.jobs_queue import jobs_queue
 from utilities.path_mappings import path_mappings
@@ -110,25 +110,6 @@ def get_health_issues() -> list[HealthIssue]:
         for item in rootfolder:
             health_issues.append({'object': path_mappings.path_replace_movie(item.path),
                                   'issue': item.error})
-
-    # get languages profiles duplicate ids issues when there's a cutoff set
-    languages_profiles = database.execute(
-        select(TableLanguagesProfiles.items, TableLanguagesProfiles.name, TableLanguagesProfiles.cutoff,
-               TableLanguagesProfiles.profileType)).all()
-    for languages_profile in languages_profiles:
-        if not languages_profile.cutoff:
-            # ignore profiles that don't have a cutoff set
-            continue
-        languages_profile_ids = []
-        profile_items, _ = parse_profile_items(languages_profile.profileType, languages_profile.items)
-        for items in profile_items:
-            if items['id'] in languages_profile_ids:
-                health_issues.append({'object': languages_profile.name,
-                                      'issue': 'This languages profile has duplicate IDs. You need to edit this profile'
-                                               ' and make sure to select the proper cutoff if required.'})
-                break
-            else:
-                languages_profile_ids.append(items['id'])
 
     # check if there's at least one languages profile created
     languages_profiles_count = database.execute(select(func.count(TableLanguagesProfiles.profileId))).scalar()

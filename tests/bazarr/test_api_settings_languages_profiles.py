@@ -114,17 +114,15 @@ def test_enhanced_cutoff_accepts_any_and_no_cutoff(saved, api_client, api_key):
         assert row.cutoff == cutoff
 
 
-def test_basic_profile_without_type_is_still_saved_as_basic(saved, api_client, api_key):
+def test_basic_profile_is_rejected(saved, api_client, api_key):
     session, _ = saved
     basic = {
         "profileId": 3, "name": "Basic", "cutoff": None,
         "items": [_item(1, "en")], "mustContain": [], "mustNotContain": [],
-        "originalFormat": None, "tag": None,
+        "originalFormat": None, "tag": None, "profileType": "basic",
     }
 
     response = _post_profiles(api_client, api_key, [basic])
 
-    assert response.status_code != 400
-    row = session.execute(select(TableLanguagesProfiles).where(TableLanguagesProfiles.profileId == 3)).scalar_one()
-    assert row.profileType == "basic"
-    assert json.loads(row.items) == [_item(1, "en")]
+    assert response.status_code == 400
+    assert session.execute(select(TableLanguagesProfiles).where(TableLanguagesProfiles.profileId == 3)).first() is None

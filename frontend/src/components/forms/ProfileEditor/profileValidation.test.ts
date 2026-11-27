@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ProfileDraft, toProfileDraft } from "./profileDraft";
+import { ProfileDraft } from "./profileDraft";
 import { validateProfileDraft } from "./profileValidation";
 
 const item = (
@@ -20,7 +20,6 @@ const draft = (overrides: Partial<ProfileDraft> = {}): ProfileDraft => ({
   profileId: 1,
   name: "Profile",
   tag: undefined,
-  profileType: "enhanced",
   cutoff: null,
   mustContain: [],
   mustNotContain: [],
@@ -94,26 +93,5 @@ describe("validateProfileDraft", () => {
     expect(issues.some((issue) => /cannot repeat/.test(issue.message))).toBe(
       true,
     );
-  });
-
-  it("requires at least one language for a basic profile", () => {
-    const basic = toProfileDraft({
-      profileId: 2,
-      name: "Basic",
-      tag: undefined,
-      items: [],
-      cutoff: null,
-      mustContain: [],
-      mustNotContain: [],
-      originalFormat: false,
-    });
-
-    expect(validateProfileDraft(basic)).toEqual([
-      {
-        field: "requirements",
-        groupId: 1,
-        message: "Add at least one language.",
-      },
-    ]);
   });
 });

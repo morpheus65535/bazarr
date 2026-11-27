@@ -1,5 +1,8 @@
 # coding=utf-8
 
+from collections.abc import Callable
+from typing import Any
+
 from subliminal_patch import core
 
 from constants import HI_EXCLUDED
@@ -88,43 +91,6 @@ def get_non_hi_languages(profile_items):
             and str(item.get('forced', False)) == 'False' and item.get('hi') == HI_EXCLUDED}
 
 
-def is_cutoff_met(cutoff_items, matches_audio, actual_subtitles, expanded_actual_subtitles, non_hi_languages):
-    """Return True when any cutoff item is satisfied by the existing subtitles."""
-    for cutoff_temp in cutoff_items or []:
-        if not isinstance(cutoff_temp, dict):
-            continue
-        cutoff_code = cutoff_temp.get('language')
-        if not isinstance(cutoff_code, str) or not cutoff_code:
-            continue
-        cutoff_language = {'language': cutoff_code,
-                           'forced': cutoff_temp.get('forced', 'False'),
-                           'hi': cutoff_temp.get('hi', 'False')}
-        if cutoff_temp.get('audio_only_include') == 'True' and not matches_audio(cutoff_temp):
-            # We don't want subs in this language unless it matches
-            # the audio. Don't use it to meet the cutoff.
-            continue
-        elif cutoff_temp.get('audio_exclude') == 'True' and matches_audio(cutoff_temp):
-            # The cutoff is met through one of the audio tracks.
-            return True
-        elif cutoff_language in actual_subtitles:
-            return True
-        elif cutoff_language in expanded_actual_subtitles:
-            # Check against expanded actual subtitles (includes language equals)
-            return True
-        elif (cutoff_language['hi'] == 'False' and cutoff_language['forced'] == 'False' and
-              cutoff_language['language'] not in non_hi_languages and
-              {'language': cutoff_language['language'], 'forced': 'False', 'hi': 'True'} in actual_subtitles):
-            # HI is considered as good as normal only if the language isn't set to exclude HI
-            return True
-        elif (cutoff_language['hi'] == HI_EXCLUDED and
-              {'language': cutoff_language['language'],
-               'forced': cutoff_language['forced'],
-               'hi': 'False'} in actual_subtitles):
-            # Cutoff is met by non-HI subtitles when HI subtitles are excluded in languages profile
-            return True
-    return False
-
-
 def _unsatisfied_entries(desired_subtitles, actual_subtitles, expanded_actual_subtitles, non_hi_languages):
     """Return the desired entries the existing subtitles do not satisfy. The cutoff is not considered here."""
     missing_subtitles_list = []
@@ -163,34 +129,41 @@ def _format_missing(missing_subtitles_list):
     return missing_subtitles_output_list
 
 
-def calculate_missing_subtitles(profile_items, cutoff_items, subtitles, matches_audio, lang_equals):
+def _item_outcome(item: object, matches_audio: Callable[[dict[str, Any]], bool],
+                  actual_subtitles: list[dict[str, str]], expanded_actual_subtitles: list[dict[str, str]],
+                  non_hi_languages: set[str]) -> tuple[dict[str, str] | None, bool] | None:
     """
-    Return the missing subtitles of one media item for a basic profile.
+    Return (entry, satisfied) for one item of an enhanced group, or None when the item takes no part in the group.
 
-    profile_items is the profile's raw item list, cutoff_items the items returned by get_profile_cutoff(),
-    and subtitles the stored subtitles of the media item. Nothing is missing once the cutoff is met.
+    An item takes no part when it is not a language item, or when audio_exclude left it out because a matching audio
+    track is present: it is not required, so it neither satisfies nor blocks its group. An audio_only_include item
+    with no matching audio track is unsatisfied and has no entry, so it blocks an AND group and adds nothing to the
+    missing list.
     """
-    desired_subtitles = get_desired_subtitles(profile_items, matches_audio)
-    actual_subtitles = get_actual_subtitles(subtitles)
-    expanded_actual_subtitles = expand_actual_subtitles(actual_subtitles, lang_equals)
-    non_hi_languages = get_non_hi_languages(profile_items)
+    if not isinstance(item, dict) or not isinstance(item.get('language'), str) or not item['language']:
+        return None
 
-    if is_cutoff_met(cutoff_items, matches_audio, actual_subtitles, expanded_actual_subtitles, non_hi_languages):
-        return []
+    desired = get_desired_subtitles([item], matches_audio)
+    if not desired:
+        if item.get('audio_exclude') == 'True' and matches_audio(item):
+            return None
+        return None, False
 
-    return _format_missing(
-        _unsatisfied_entries(desired_subtitles, actual_subtitles, expanded_actual_subtitles, non_hi_languages))
+    entry = desired[0]
+    satisfied = not _unsatisfied_entries([entry], actual_subtitles, expanded_actual_subtitles, non_hi_languages)
+    return entry, satisfied
 
 
 def calculate_enhanced_missing_subtitles(groups, cutoff, subtitles, matches_audio, lang_equals):
     """
     Return the missing subtitles of one media item for an enhanced profile.
 
-    A group is satisfied when all its items are satisfied (AND) or when one of them is (OR). A group whose items
-    are all removed by the audio-track options is satisfied. A satisfied group adds nothing to the missing list,
-    and an unsatisfied group adds its unsatisfied items. The cutoff is a group id: it is met when that group is
-    satisfied. 65535 is met when any group is satisfied, and no cutoff is never met. Once the cutoff is met,
-    nothing is missing.
+    A group is satisfied when all its items are satisfied (AND) or when one of them is (OR). An item left out by
+    audio_exclude because a matching audio track is present takes no part in its group. An item removed by
+    audio_only_include because no audio track matches is not satisfied, and it adds nothing to the missing list. A group
+    with no items taking part is satisfied. A satisfied group adds nothing to the missing list, and an unsatisfied group
+    adds its unsatisfied items. The cutoff is a group id: it is met when that group is satisfied. 65535 is met when any
+    group is satisfied, and no cutoff is never met. Once the cutoff is met, nothing is missing.
     """
     group_items = [item for group in groups for item in (group.get('items') or [])]
     actual_subtitles = get_actual_subtitles(subtitles)
@@ -200,23 +173,23 @@ def calculate_enhanced_missing_subtitles(groups, cutoff, subtitles, matches_audi
     satisfied_group_ids = set()
     missing_subtitles_list = []
     for group in groups:
-        entries = []
+        outcomes = []
         for item in group.get('items') or []:
-            entries.extend(get_desired_subtitles([item], matches_audio))
-        if not entries:
+            outcome = _item_outcome(item, matches_audio, actual_subtitles, expanded_actual_subtitles,
+                                    non_hi_languages)
+            if outcome is not None:
+                outcomes.append(outcome)
+        if not outcomes:
             satisfied_group_ids.add(group.get('id'))
             continue
 
-        entry_satisfied = [
-            not _unsatisfied_entries([entry], actual_subtitles, expanded_actual_subtitles, non_hi_languages)
-            for entry in entries
-        ]
-        if (any(entry_satisfied) if group.get('operator') == 'OR' else all(entry_satisfied)):
+        satisfied_flags = [satisfied for _, satisfied in outcomes]
+        if (any(satisfied_flags) if group.get('operator') == 'OR' else all(satisfied_flags)):
             satisfied_group_ids.add(group.get('id'))
             continue
 
-        for entry, satisfied in zip(entries, entry_satisfied):
-            if not satisfied and entry not in missing_subtitles_list:
+        for entry, satisfied in outcomes:
+            if entry is not None and not satisfied and entry not in missing_subtitles_list:
                 missing_subtitles_list.append(entry)
 
     if not cutoff:

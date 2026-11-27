@@ -40,8 +40,9 @@ else:
     # there's missing embedded packages after a commit
     check_if_new_update()
 
-from app.database import (System, database, update, migrate_db, create_db_revision, upgrade_languages_profile_values,
-                          fix_languages_profiles_with_duplicate_ids, fix_code3_languages_in_languages_profiles)  # noqa E402
+from app.database import (System, database, update, migrate_db, create_db_revision,
+                          fix_code3_languages_in_languages_profiles,
+                          convert_basic_languages_profiles_to_enhanced)  # noqa E402
 from app.notifier import update_notifier  # noqa E402
 from languages.get_languages import load_language_in_db  # noqa E402
 from app.jobs_queue import jobs_queue  # noqa E402
@@ -56,8 +57,6 @@ if args.create_db_revision:
     stop_bazarr(EXIT_NORMAL)
 else:
     migrate_db(app)
-    upgrade_languages_profile_values()
-    fix_languages_profiles_with_duplicate_ids()
 
 configure_sz_ssl_verify_func()
 
@@ -80,6 +79,9 @@ load_language_in_db()
 
 # Fix languages profiles if required
 fix_code3_languages_in_languages_profiles()
+
+# Convert the remaining basic profiles to the enhanced format. Does nothing when there are none.
+convert_basic_languages_profiles_to_enhanced()
 
 update_notifier()
 

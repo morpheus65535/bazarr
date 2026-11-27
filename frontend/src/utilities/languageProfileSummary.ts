@@ -15,7 +15,6 @@ export interface RequirementSummary {
 }
 
 export interface LanguageProfileSummary {
-  isEnhanced: boolean;
   requirements: RequirementSummary[];
   completion: string;
   caveats: string[];
@@ -104,12 +103,8 @@ const requirementSentence = (
     : `${languages} subtitles are required.`;
 
 const groupItems = (
-  profile: Language.Profile,
   groups: readonly Language.EnhancedGroup[],
-): Language.ProfileItem[] =>
-  profile.profileType === "enhanced"
-    ? groups.flatMap((group) => group.items)
-    : profile.items;
+): Language.ProfileItem[] => groups.flatMap((group) => group.items);
 
 const completionSentence = (
   profile: Language.Profile,
@@ -122,27 +117,15 @@ const completionSentence = (
     return "Keep searching until every unmet requirement is satisfied.";
   }
 
-  if (profile.profileType === "enhanced") {
-    if (cutoff === anyCutoff) {
-      return "Stop searching as soon as any requirement is satisfied.";
-    }
-
-    const group = groups.find((value) => value.id === cutoff);
-
-    return group
-      ? `Stop searching once ${describeGroupLanguages(group, resolveLanguageName)} is satisfied.`
-      : "Stop searching once the selected requirement is satisfied.";
-  }
-
   if (cutoff === anyCutoff) {
-    return "Stop searching as soon as any of these languages is found.";
+    return "Stop searching as soon as any requirement is satisfied.";
   }
 
-  const item = profile.items.find((value) => value.id === cutoff);
+  const group = groups.find((value) => value.id === cutoff);
 
-  return item
-    ? `Stop searching once ${describeLanguage(item, resolveLanguageName)} subtitles are found.`
-    : "Stop searching once the selected language is found.";
+  return group
+    ? `Stop searching once ${describeGroupLanguages(group, resolveLanguageName)} is satisfied.`
+    : "Stop searching once the selected requirement is satisfied.";
 };
 
 const summaryCaveats = (
@@ -151,7 +134,7 @@ const summaryCaveats = (
 ): string[] => {
   const caveats: string[] = [];
 
-  if (groupItems(profile, groups).some(isAudioConditional)) {
+  if (groupItems(groups).some(isAudioConditional)) {
     caveats.push(
       "A requirement with an audio condition counts as satisfied when the audio track does not match, even without downloading a subtitle.",
     );
@@ -196,11 +179,7 @@ export const summarizeProfile = (
   profile: Language.Profile,
   resolveLanguageName: LanguageNameResolver,
 ): LanguageProfileSummary => {
-  const isEnhanced = profile.profileType === "enhanced";
-
-  const groups: Language.EnhancedGroup[] = isEnhanced
-    ? (profile.groups ?? [])
-    : [{ id: 0, operator: "AND", items: profile.items }];
+  const { groups } = profile;
 
   const requirements = groups.map((group, index) => {
     const languages = describeGroupLanguages(group, resolveLanguageName);
@@ -214,7 +193,6 @@ export const summarizeProfile = (
   });
 
   return {
-    isEnhanced,
     requirements,
     completion: completionSentence(profile, groups, resolveLanguageName),
     caveats: summaryCaveats(profile, groups),

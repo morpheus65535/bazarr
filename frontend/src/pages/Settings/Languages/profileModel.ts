@@ -1,4 +1,3 @@
-import { cloneDeep, includes, maxBy } from "lodash";
 import { anyCutoff } from "@/components/forms/profileOptions";
 
 // Domain helpers for language profiles: creation, identity and ordering.
@@ -63,52 +62,6 @@ export const createEnhancedProfile = (
     mustContain: [],
     mustNotContain: [],
     originalFormat: false,
-  };
-};
-
-// Legacy profiles once shipped duplicated item ids; make them unique again on edit.
-export const repairDuplicateItemIds = (
-  profile: Language.Profile,
-): Language.Profile => {
-  const lastId = maxBy(profile.items, "id")?.id ?? 0;
-
-  const { items } = profile.items.reduce<{
-    ids: number[];
-    duplicatedIds: number[];
-    items: Language.ProfileItem[];
-  }>(
-    (accumulator, item) => {
-      if (includes(accumulator.ids, item.id)) {
-        accumulator.duplicatedIds.push(item.id);
-        accumulator.items.push({
-          ...item,
-          id: lastId + accumulator.duplicatedIds.length,
-        });
-        return accumulator;
-      }
-
-      accumulator.ids.push(item.id);
-      accumulator.items.push(item);
-      return accumulator;
-    },
-    { ids: [], duplicatedIds: [], items: [] },
-  );
-
-  return { ...profile, items };
-};
-
-export const prepareProfileForEditing = (
-  profile: Language.Profile,
-): Language.Profile => {
-  const cloned = cloneDeep(profile);
-
-  if (cloned.profileType === "enhanced") {
-    return cloned;
-  }
-
-  return {
-    ...repairDuplicateItemIds(cloned),
-    tag: cloned.tag || undefined,
   };
 };
 
