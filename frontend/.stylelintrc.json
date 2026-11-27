@@ -1,6 +1,18 @@
 {
-  "extends": ["stylelint-config-standard-scss", "stylelint-config-css-modules"],
+  "extends": ["stylelint-config-standard-scss"],
   "rules": {
+    "property-no-unknown": [
+      true,
+      {
+        "ignoreSelectors": [":export"]
+      }
+    ],
+    "selector-pseudo-class-no-unknown": [
+      true,
+      {
+        "ignorePseudoClasses": ["global", "export"]
+      }
+    ],
     "selector-class-pattern": null,
     "custom-property-pattern": null,
     "keyframes-name-pattern": null,
