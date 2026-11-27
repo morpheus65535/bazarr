@@ -28,7 +28,7 @@
     "braces": "^3.0.3",
     "defu": "^6.1.6",
     "dompurify": "^3.5.0",
-    "fast-uri": "^4.1.0",
+    "fast-uri": "^4.2.4",
     "flatted": "^3.4.2",
     "follow-redirects": "^1.16.3",
     "picomatch": "^4.0.5",
@@ -37,7 +37,7 @@
     "react-dom": "^19.3.0",
     "react-router": "^8.5.3",
     "react-timeago": "^8.3.0",
-    "rollup": "^4.63.3",
+    "rollup": "^4.68.8",
     "socket.io-client": "^4.8.3",
     "socket.io-parser": "^4.2.6",
     "workbox-build": "^7.4.1"
