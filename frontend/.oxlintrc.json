@@ -1,13 +1,12 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react-hooks"],
+  "plugins": ["react", "react-hooks"],
   "categories": {
     "correctness": "error"
   },
   "jsPlugins": [
     "eslint-plugin-simple-import-sort",
     "eslint-plugin-testing-library",
-    "eslint-plugin-react-refresh",
     {
       "name": "bazarr-custom",
       "specifier": "./oxlint-plugins/bazarr-custom.ts"
@@ -25,9 +24,13 @@
   "rules": {
     "react-hooks/rules-of-hooks": "error",
     "react-hooks/exhaustive-deps": "error",
-    "react-refresh/only-export-components": [
+    "react/only-export-components": [
       "error",
-      { "allowConstantExport": true, "extraHOCs": ["withModal"] }
+      {
+        "allowConstantExport": true,
+        "allowCompoundComponents": true,
+        "customHOCs": ["withModal"]
+      }
     ],
     "no-console": "error",
     "bazarr-custom/camelcase": "error",
@@ -68,7 +71,7 @@
         "src/tests/index.tsx"
       ],
       "rules": {
-        "react-refresh/only-export-components": "off"
+        "react/only-export-components": "off"
       }
     },
     {
