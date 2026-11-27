@@ -105,7 +105,7 @@ describe("hooks utilities", () => {
   });
 
   describe("useThrottle", () => {
-    it("only executes the last call after the throttle window", () => {
+    it("only executes the last call after the throttle window", async () => {
       vi.useFakeTimers();
       const fn = vi.fn();
       const { result } = renderHook(() => useThrottle(fn, 100));
@@ -116,7 +116,9 @@ describe("hooks utilities", () => {
 
       expect(fn).not.toHaveBeenCalled();
 
-      act(() => vi.advanceTimersByTime(1000));
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1000);
+      });
 
       expect(fn).toHaveBeenCalledTimes(1);
       expect(fn).toHaveBeenCalledWith("c");
@@ -126,7 +128,7 @@ describe("hooks utilities", () => {
   });
 
   describe("useDebouncedValue", () => {
-    it("delays updating the value until the debounce window passes", () => {
+    it("delays updating the value until the debounce window passes", async () => {
       vi.useFakeTimers();
       const { result, rerender } = renderHook(
         ({ value }) => useDebouncedValue(value, 100),
@@ -139,7 +141,9 @@ describe("hooks utilities", () => {
 
       expect(result.current).toBe("a");
 
-      act(() => vi.advanceTimersByTime(1000));
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1000);
+      });
 
       expect(result.current).toBe("b");
 
@@ -177,13 +181,15 @@ describe("hooks utilities", () => {
   });
 
   describe("useInterval", () => {
-    it("calls the callback repeatedly on the configured interval", () => {
+    it("calls the callback repeatedly on the configured interval", async () => {
       vi.useFakeTimers();
       const fn = vi.fn();
 
       renderHook(() => useInterval(fn, 1000));
 
-      act(() => vi.advanceTimersByTime(3000));
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(3000);
+      });
 
       expect(fn).toHaveBeenCalledTimes(3);
 

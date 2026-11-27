@@ -1,11 +1,13 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
   "plugins": ["react", "react-hooks"],
+  "options": {
+    "typeAware": true
+  },
   "categories": {
     "correctness": "error"
   },
   "jsPlugins": [
-    "eslint-plugin-testing-library",
     {
       "name": "bazarr-custom",
       "specifier": "./oxlint-plugins/bazarr-custom.ts"
@@ -58,35 +60,11 @@
         "**/__tests__/**/*.{js,jsx,ts,tsx}",
         "**/*.{test,spec}.{js,jsx,ts,tsx}"
       ],
+      "plugins": ["react", "react-hooks", "typescript"],
       "rules": {
-        "testing-library/await-async-events": [
-          "error",
-          { "eventModule": "userEvent" }
-        ],
-        "testing-library/await-async-queries": "error",
-        "testing-library/await-async-utils": "error",
-        "testing-library/no-await-sync-events": [
-          "error",
-          { "eventModules": ["fire-event"] }
-        ],
-        "testing-library/no-await-sync-queries": "error",
-        "testing-library/no-container": "error",
-        "testing-library/no-debugging-utils": "warn",
-        "testing-library/no-dom-import": ["error", "react"],
-        "testing-library/no-global-regexp-flag-in-query": "error",
-        "testing-library/no-manual-cleanup": "error",
-        "testing-library/no-node-access": "error",
-        "testing-library/no-promise-in-fire-event": "error",
-        "testing-library/no-render-in-lifecycle": "error",
-        "testing-library/no-unnecessary-act": "error",
-        "testing-library/no-wait-for-multiple-assertions": "error",
-        "testing-library/no-wait-for-side-effects": "error",
-        "testing-library/no-wait-for-snapshot": "error",
-        "testing-library/prefer-find-by": "error",
-        "testing-library/prefer-presence-queries": "error",
-        "testing-library/prefer-query-by-disappearance": "error",
-        "testing-library/prefer-screen-queries": "error",
-        "testing-library/render-result-naming-convention": "error"
+        "typescript/no-floating-promises": "error",
+        "typescript/await-thenable": "error",
+        "bazarr-custom/no-wait-for-side-effects": "error"
       }
     }
   ]

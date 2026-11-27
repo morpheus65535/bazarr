@@ -17,7 +17,6 @@ describe("StateIcon", () => {
   });
 
   const openPopover = async (container: HTMLElement) => {
-    // eslint-disable-next-line testing-library/no-node-access
     const svg = container.querySelector("svg");
     expect(svg).toBeTruthy();
     await userEvent.click(svg!);

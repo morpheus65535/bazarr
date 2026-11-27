@@ -8,6 +8,136 @@ interface RuleContext {
   filename: string;
 }
 
+interface RuleScope {
+  set: Map<string, { defs: { node: RuleNode }[] }>;
+  upper: RuleScope | null;
+}
+
+interface ScopedRuleContext extends RuleContext {
+  sourceCode: { getScope(node: RuleNode): RuleScope };
+}
+
+const findBinding = (context: ScopedRuleContext, identifier: RuleNode) => {
+  for (
+    let scope: RuleScope | null = context.sourceCode.getScope(identifier);
+    scope !== null;
+    scope = scope.upper
+  ) {
+    const binding = scope.set.get(identifier.name as string);
+    if (binding) {
+      return binding.defs[0]?.node;
+    }
+  }
+};
+
+const testingLibraryImports = new Set([
+  "@/tests",
+  "@testing-library/dom",
+  "@testing-library/react",
+]);
+
+const getTestingLibraryImport = (
+  context: ScopedRuleContext,
+  identifier: RuleNode,
+): string | undefined => {
+  if (identifier.type !== "Identifier") {
+    return;
+  }
+
+  const binding = findBinding(context, identifier);
+  const declaration = binding?.parent as RuleNode | undefined;
+  const source = (declaration?.source as RuleNode | undefined)?.value;
+
+  if (source === "@testing-library/user-event") {
+    const imported = (binding?.imported as RuleNode | undefined)?.name;
+    if (
+      binding?.type === "ImportDefaultSpecifier" ||
+      imported === "userEvent"
+    ) {
+      return "userEvent";
+    }
+  }
+
+  if (
+    typeof source === "string" &&
+    testingLibraryImports.has(source) &&
+    binding?.type === "ImportSpecifier"
+  ) {
+    return (binding.imported as RuleNode).name as string;
+  }
+};
+
+const isUserEventSession = (
+  context: ScopedRuleContext,
+  identifier: RuleNode,
+): boolean => {
+  if (identifier.type !== "Identifier") {
+    return false;
+  }
+
+  const binding = findBinding(context, identifier);
+  const initializer = binding?.init as RuleNode | undefined;
+  const callee = initializer?.callee as RuleNode | undefined;
+  return (
+    binding?.type === "VariableDeclarator" &&
+    initializer?.type === "CallExpression" &&
+    callee?.type === "MemberExpression" &&
+    !callee.computed &&
+    (callee.property as RuleNode).name === "setup" &&
+    getTestingLibraryImport(context, callee.object as RuleNode) === "userEvent"
+  );
+};
+
+const testingLibraryActions = new Set([
+  "act",
+  "customRender",
+  "fireEvent",
+  "rawRender",
+  "render",
+  "renderHook",
+]);
+
+const isTestingLibraryAction = (
+  context: ScopedRuleContext,
+  callee: RuleNode,
+): boolean => {
+  if (callee.type === "MemberExpression") {
+    const receiver = callee.object as RuleNode;
+    const imported = getTestingLibraryImport(context, receiver);
+    return (
+      imported === "fireEvent" ||
+      imported === "userEvent" ||
+      isUserEventSession(context, receiver)
+    );
+  }
+
+  const imported = getTestingLibraryImport(context, callee);
+  return imported !== undefined && testingLibraryActions.has(imported);
+};
+
+const isInsideWaitFor = (context: ScopedRuleContext, node: RuleNode) => {
+  for (
+    let ancestor = node.parent as RuleNode | undefined;
+    ancestor;
+    ancestor = ancestor.parent as RuleNode | undefined
+  ) {
+    if (
+      ancestor.type === "ArrowFunctionExpression" ||
+      ancestor.type === "FunctionExpression" ||
+      ancestor.type === "FunctionDeclaration"
+    ) {
+      const call = ancestor.parent as RuleNode | undefined;
+      return (
+        call?.type === "CallExpression" &&
+        (call.arguments as RuleNode[])[0] === ancestor &&
+        getTestingLibraryImport(context, call.callee as RuleNode) === "waitFor"
+      );
+    }
+  }
+
+  return false;
+};
+
 const dirName = (path: string): string => path.slice(0, path.lastIndexOf("/"));
 
 const resolveRelative = (fromDir: string, relative: string): string => {
@@ -70,6 +200,24 @@ const plugin = {
     name: "bazarr-custom",
   },
   rules: {
+    "no-wait-for-side-effects": {
+      create(context: ScopedRuleContext) {
+        return {
+          CallExpression(node: RuleNode) {
+            if (
+              isTestingLibraryAction(context, node.callee as RuleNode) &&
+              isInsideWaitFor(context, node)
+            ) {
+              context.report({
+                message:
+                  "Run Testing Library actions outside waitFor; its callback can run more than once.",
+                node,
+              });
+            }
+          },
+        };
+      },
+    },
     camelcase: {
       create(context: RuleContext) {
         return {
