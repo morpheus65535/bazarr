@@ -72,7 +72,7 @@
     "husky": "^9.1.7",
     "jsdom": "^31.0.1",
     "lodash": "^4.18.1",
-    "msw": "^3.0.3",
+    "msw": "^3.0.8",
     "oxlint": "^1.88.0",
     "postcss-preset-mantine": "^1.18.0",
     "postcss-simple-vars": "^7.0.1",
